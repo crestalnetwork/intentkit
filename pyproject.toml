@@ -46,7 +46,7 @@ aiogram = "^3.17.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.8.4"
+ruff = "^0.9.2"
 
 [tool.ruff.lint]
 extend-select = ["I"]
