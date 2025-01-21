@@ -70,18 +70,7 @@ class AgentSkillData(SQLModel, table=True):
         Args:
             db: Database session
         """
-        existing = db.exec(
-            select(self.__class__).where(
-                self.__class__.agent_id == self.agent_id,
-                self.__class__.skill == self.skill,
-                self.__class__.key == self.key,
-            )
-        ).first()
-        if existing:
-            existing.data = self.data
-            db.add(existing)
-        else:
-            db.add(self)
+        db.merge(self)
 
 
 class ThreadSkillData(SQLModel, table=True):
