@@ -26,17 +26,13 @@ class AgentSkillData(SQLModel, table=True):
     key: str = Field(primary_key=True)
     data: Dict[str, Any] = Field(sa_column=Column(JSONB, nullable=True))
     created_at: datetime | None = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
         sa_type=DateTime(timezone=True),
         sa_column_kwargs={"server_default": func.now()},
         nullable=False,
     )
     updated_at: datetime | None = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
         sa_type=DateTime(timezone=True),
-        sa_column_kwargs={
-            "onupdate": lambda: datetime.now(timezone.utc),
-        },
+        sa_column_kwargs={"onupdate": func.now()},
         nullable=False,
     )
 
