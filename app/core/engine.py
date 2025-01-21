@@ -78,7 +78,7 @@ def agent_prompt(agent: Agent) -> str:
         prompt += """\n\nYou are integrated to Enso API, you are able to get the token list and their information, such
         as APY, Protocol Slug, Symbol, Address, and underlying tokens using enso_get_tokens tool. for each thread first
         request, you should use enso_get_tokens with no input param and get the information of the available protocol slugs, 
-        symbols, addresses and APY. For token swap and route shortcut, you should use get_route tool. to get wallet balances 
+        symbols, addresses and APY. For token deposit, swap and route shortcut, you should use get_route tool. to get wallet balances 
         use get_wallet_balances. to get wallet approvals use get_wallet_approvals.\n\n"""
     return prompt
 
@@ -165,6 +165,8 @@ def initialize_agent(aid):
                     skill,
                     agent.enso_config.get("api_token"),
                     agent.enso_config.get("main_tokens", list[str]()),
+                    # TODO: replace it with CDP wallet.
+                    agent.enso_config.get("from_address"),
                     skill_store,
                     aid,
                 )
@@ -262,7 +264,7 @@ def initialize_agent(aid):
 
 
 def execute_agent(
-    aid: str, message: AgentMessageInput, thread_id: str, debug: bool = False
+        aid: str, message: AgentMessageInput, thread_id: str, debug: bool = False
 ) -> list[str]:
     """Execute an agent with the given prompt and return response lines.
 
@@ -348,7 +350,7 @@ def execute_agent(
             resp_debug_append = ""
     # run
     for chunk in executor.stream(
-        {"messages": [HumanMessage(content=content)]}, stream_config
+            {"messages": [HumanMessage(content=content)]}, stream_config
     ):
         if "agent" in chunk:
             v = chunk["agent"]["messages"][0].content
