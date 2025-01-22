@@ -4,7 +4,7 @@ IntentKit is an autonomous agent framework that enables the creation and managem
 
 ## Alpha Warning
 
-This project is currently in alpha stage and is not recommended for production use.
+This project is currently in alpha test stage and is not recommended for production use.
 
 ## Features
 
