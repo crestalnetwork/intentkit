@@ -93,14 +93,14 @@ The Twitter entrypoint:
 ### IntentKit
 Only when use the OAuth2.0 authentication, intentkit has a built-in rate limit:
 
-- post tweet: 20/day
-- reply tweet: 20/day
-- retweet: 5/15min
-- follow: 5/15min
+- post tweet: 30/day
+- reply tweet: 30/day
+- retweet: 6/15min
+- follow: 6/15min
 - like: 100/day
-- get mentions: 1/15min
-- get timeline: 5/15min
-- search: 3/15min
+- get mentions: 3/15min
+- get timeline: 2/15min
+- search: 2/15min
 
 ### Yourself
 You can set the rate limit under the intentkit config in the future.
@@ -196,3 +196,4 @@ Common issues and solutions:
    - Verify `since_id` tracking
    - Check `start_time` configuration
    - Monitor the Twitter entrypoint logs
+  
