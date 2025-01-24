@@ -11,7 +11,6 @@ What we send to the large model looks something like this:
 - System: `prompt`
 - User: conversation history
 - Assistant: conversation history
-- ...
 - User: conversation history
 - Assistant: conversation history
 - User: currently being said 
