@@ -41,11 +41,14 @@ class TwitterPostTweet(TwitterBaseTool):
             Exception: If there's an error posting to the Twitter API.
         """
         try:
+            print("Starting to post tweet...")
+
             # Check rate limit only when not using OAuth
             if not self.twitter.use_key:
                 is_rate_limited, error = self.check_rate_limit(
                     max_requests=24, interval=1440
                 )
+                print(f"Rate limit check: {is_rate_limited}, {error}")
                 if is_rate_limited:
                     return f"Error posting tweet: {error}"
 
@@ -55,18 +58,22 @@ class TwitterPostTweet(TwitterBaseTool):
 
             # Post tweet using tweepy client
             response = client.create_tweet(text=text, user_auth=self.twitter.use_key)
+            print("Response from Twitter API:", response)
 
             if "data" in response and "id" in response["data"]:
                 tweet_id = response["data"]["id"]
                 return f"Tweet posted successfully! Tweet ID: {tweet_id}"
+
             return "Failed to post tweet."
 
         except Exception as e:
-            return f"Error posting tweet: {str(e)}"
+            print(f"Error posting tweet: {e}")
+            raise
 
     async def _arun(self, text: str) -> str:
         """Async implementation of the tool.
 
         This tool doesn't have a native async implementation, so we call the sync version.
         """
+        print("Starting async tweet post...")
         return self._run(text=text)
