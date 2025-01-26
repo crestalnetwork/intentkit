@@ -182,13 +182,32 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 # How to Contribute
 
 We welcome contributions to the IntentKit project!
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
-## Steps to contribute:
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Write tests (if applicable) and ensure that the code works as expected.
-4. Add documentation for your changes.
-5. Create a pull request to the main branch of the repository.
+# The start command handler
+def start(update: Update, context: CallbackContext) -> None:
+    # Sending a friendly greeting message
+    update.message.reply_text("Hello! 😊 I'm happy you're here. How can I help you today? 🌟")
+    
+    # Asking the first question or starting the conversation
+    update.message.reply_text("What would you like to know or do? Feel free to ask me anything!")
+
+# Function to set up the bot
+def main():
+    # Replace 'YOUR_TOKEN' with your actual bot token
+    updater = Updater("YOUR_TOKEN")
+    
+    # Adding the start command handler
+    updater.dispatcher.add_handler(CommandHandler("start", start))
+    
+    # Start the bot
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
+ository.
 
 ## Code Style
 Follow the existing code style and structure of the project. Ensure that your code is clean and well-commented.
