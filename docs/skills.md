@@ -9,7 +9,7 @@ IntentKit skills are Python modules that extend agent capabilities. Each skill i
 A basic skill consists of:
 1. Tool implementation
 2. Registration in the skill system
-3. Configuration options (optional)
+3. Configuration options ( optional )
 
 ### Example Skill
 
