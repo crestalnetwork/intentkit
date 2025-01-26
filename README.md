@@ -179,19 +179,28 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 ### Contribute Skills
 
-If you want to add a skill collection, follow these steps:
+# How to Contribute
 
-1. Create a new skill collection in the `skills/` directory
-2. Implement the skill interface
-3. Register the skill in `skills/YOUR_SKILL_COLLECTION/__init__.py`
+We welcome contributions to the IntentKit project!
 
-If you want to add a simple skill, follow these steps:
+## Steps to contribute:
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Write tests (if applicable) and ensure that the code works as expected.
+4. Add documentation for your changes.
+5. Create a pull request to the main branch of the repository.
 
-1. Create a new skill in the `skills/common/` directory
-2. Register the skill in `skills/common/__init__.py`
-
+## Code Style
+Follow the existing code style and structure of the project. Ensure that your code is clean and well-commented.
+ء
 See the [Skill Development Guide](docs/contributing/skills.md) for more information.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+git commit -m "Update README with friendly greeting messages"
+
+git push origin main
+
+
+
