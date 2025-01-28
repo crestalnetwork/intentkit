@@ -1,7 +1,6 @@
 from typing import Type
 
 import httpx
-from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from .base import EnsoBaseTool, base_url, default_chain_id
@@ -17,13 +16,22 @@ class EnsoGetPricesInput(BaseModel):
     )
 
 
-class EnsoGetPricesOutput(BaseModel):
+class PriceInfo(BaseModel):
     decimals: int | None = Field(None, ge=0, description="Number of decimals")
     price: float | None = Field(None, gt=0, description="Price in the smallest unit")
     address: str | None = Field(None, description="Contract address")
     symbol: str | None = Field(None, description="Token symbol")
     timestamp: int | None = Field(None, ge=0, description="Timestamp in seconds")
     chainId: int | None = Field(None, ge=0, description="Chain ID")
+
+
+class EnsoGetPricesOutput(BaseModel):
+    res: PriceInfo | None = Field(
+        None, description="Price information of the requested token"
+    )
+    error: str | None = Field(
+        None, description="Error message if price retrieval fails"
+    )
 
 
 class EnsoGetPrices(EnsoBaseTool):
@@ -69,17 +77,24 @@ class EnsoGetPrices(EnsoBaseTool):
                 json_dict = response.json()
 
                 # Parse the response into a `PriceInfo` object
-                res = EnsoGetPricesOutput(**json_dict)
+                price_info = PriceInfo(**json_dict)
 
                 # Return the parsed response
-                return res
+                return EnsoGetPricesOutput(res=price_info, error=None)
             except httpx.RequestError as req_err:
-                raise ToolException(
-                    f"request error from Enso API: {req_err}"
-                ) from req_err
+                return EnsoGetPricesOutput(res=None, error=f"Request error: {req_err}")
             except httpx.HTTPStatusError as http_err:
-                raise ToolException(
-                    f"http error from Enso API: {http_err}"
-                ) from http_err
+                return EnsoGetPricesOutput(res=None, error=f"HTTP error: {http_err}")
             except Exception as e:
-                raise ToolException(f"error from Enso API: {e}") from e
+                return EnsoGetPricesOutput(res=None, error=str(e))
+
+    async def _arun(
+        self,
+        chainId: int = default_chain_id,
+        address: str = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    ) -> EnsoGetPricesOutput:
+        """Async implementation of the tool.
+
+        This tool doesn't have a native async implementation, so we call the sync version.
+        """
+        return self._run(chainId, address)
