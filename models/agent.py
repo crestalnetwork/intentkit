@@ -182,7 +182,11 @@ class Agent(SQLModel, table=True):
         existing_agent = db.exec(select(Agent).where(Agent.id == self.id)).first()
         if existing_agent:
             # Check owner
-            if existing_agent.owner and existing_agent.owner != self.owner:
+            if (
+                existing_agent.owner
+                and self.owner  # if no owner, the request is coming from internal call, so skip the check
+                and existing_agent.owner != self.owner
+            ):
                 raise HTTPException(
                     status_code=403,
                     detail="Your JWT token does not match the agent owner",

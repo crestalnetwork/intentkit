@@ -60,7 +60,9 @@ class TwitterRetweet(TwitterBaseTool):
             if not client:
                 return TwitterRetweetOutput(
                     success=False,
-                    message="Failed to get Twitter client. Please check your authentication.",
+                    message=self._get_error_with_username(
+                        "Failed to get Twitter client. Please check your authentication."
+                    ),
                 )
 
             # Get authenticated user's ID
@@ -82,12 +84,13 @@ class TwitterRetweet(TwitterBaseTool):
                     success=True, message=f"Successfully retweeted tweet {tweet_id}"
                 )
             return TwitterRetweetOutput(
-                success=False, message="Failed to retweet tweet."
+                success=False,
+                message=self._get_error_with_username("Failed to retweet."),
             )
 
         except Exception as e:
             return TwitterRetweetOutput(
-                success=False, message=f"Error retweeting tweet: {str(e)}"
+                success=False, message=self._get_error_with_username(str(e))
             )
 
     async def _arun(self, tweet_id: str) -> TwitterRetweetOutput:

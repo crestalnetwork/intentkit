@@ -72,7 +72,9 @@ class TwitterGetTimeline(TwitterBaseTool):
             if not client:
                 return TwitterGetTimelineOutput(
                     tweets=[],
-                    error="Failed to get Twitter client. Please check your authentication.",
+                    error=self._get_error_with_username(
+                        "Failed to get Twitter client. Please check your authentication."
+                    ),
                 )
 
             timeline = client.get_home_timeline(
@@ -120,7 +122,9 @@ class TwitterGetTimeline(TwitterBaseTool):
 
         except Exception as e:
             logger.error("Error getting timeline: %s", str(e))
-            return TwitterGetTimelineOutput(tweets=[], error=str(e))
+            return TwitterGetTimelineOutput(
+                tweets=[], error=self._get_error_with_username(str(e))
+            )
 
     async def _arun(self) -> TwitterGetTimelineOutput:
         """Async implementation of the tool.

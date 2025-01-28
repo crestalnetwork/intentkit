@@ -1,5 +1,39 @@
 # Changelog
 
+## 2025-01-27
+
+### New Features
+- Sentry Error Tracking
+
+### Improvements
+- Better short memory management, base on token count now
+- Better logs
+
+## 2025-01-26
+
+### Improvements
+- If you open the jwt verify of admin api, it now ignore the reqest come from internal network
+- Improve the docker compose tutorial, comment the twitter and tg entrypoint service by default
+
+### Break Changes
+- The new docker-compose.yml change the service name, add "intent-" prefix to all services
+
+## 2025-01-25
+
+### New Features
+- DeepSeek LLM Support!
+- Enso skills now use CDP wallet
+- Add an API for frontend to link twitter account to an agent
+
+## 2025-01-24
+
+### Improvements
+- Refactor telegram services
+- Save telegram user info to db when it linked to an agent
+
+### Bug Fixes
+- Fix bug when twitter token refresh some skills will not work
+
 ## 2025-01-23
 
 ### Features

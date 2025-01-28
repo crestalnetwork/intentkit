@@ -131,6 +131,10 @@ python -m app.autonomous
 
 "Create Agent" and "Try it out" refer to the Docker section.
 
+## The Model
+For now, we only support any model from OpenAI and DeepSeek.  
+We will support more models in the future.
+
 ## Integrations
 
 ### Twitter

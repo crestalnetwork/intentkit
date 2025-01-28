@@ -42,6 +42,7 @@ aws-secretsmanager-caching = "^1.1.3"
 botocore = "^1.35.97"
 aiogram = "^3.17.0"
 epyxid = "^0.3.3"
+sentry-sdk = {version = "^2.20.0", extras = ["fastapi"]}
 
 [tool.poetry.group.dev] 
 optional = true

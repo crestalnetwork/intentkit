@@ -26,7 +26,6 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
-from sqlmodel import select
 
 from abstracts.engine import AgentMessageInput
 from abstracts.graph import AgentState
@@ -121,7 +120,25 @@ def initialize_agent(aid):
         raise HTTPException(status_code=500, detail=str(e))
 
     # ==== Initialize LLM.
-    llm = ChatOpenAI(model_name=agent.model, openai_api_key=config.openai_api_key)
+    input_token_limit = 120000
+    # TODO: model name whitelist
+    if agent.model.startswith("deepseek"):
+        llm = ChatOpenAI(
+            model_name=agent.model,
+            openai_api_key=config.deepseek_api_key,
+            openai_api_base="https://api.deepseek.com",
+            presence_penalty=1,
+            streaming=False,
+            timeout=90,
+        )
+        input_token_limit = 60000
+    else:
+        llm = ChatOpenAI(
+            model_name=agent.model,
+            openai_api_key=config.openai_api_key,
+            timeout=60,
+            presence_penalty=1,
+        )
 
     # ==== Store buffered conversation history in memory.
     memory = PostgresSaver(get_coon())
@@ -258,16 +275,27 @@ def initialize_agent(aid):
         ("placeholder", "{messages}"),
     ]
     if twitter_prompt:
-        prompt_array.append(("system", twitter_prompt))
+        # deepseek only supports system prompt in the beginning
+        if agent.model.startswith("deepseek"):
+            prompt_array.insert(0, ("system", twitter_prompt))
+        else:
+            prompt_array.append(("system", twitter_prompt))
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
-        prompt_array.append(("system", escaped_append))
+        if agent.model.startswith("deepseek"):
+            prompt_array.insert(0, ("system", escaped_append))
+        else:
+            prompt_array.append(("system", escaped_append))
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
     def formatted_prompt(state: AgentState):
         # logger.debug(f"[{aid}] formatted prompt: {state}")
         return prompt_temp.invoke({"messages": state["messages"]})
+
+    # hack for deepseek
+    if agent.model == "deepseek-reasoner":
+        tools = []
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     agents[aid] = create_agent(
@@ -276,6 +304,7 @@ def initialize_agent(aid):
         checkpointer=memory,
         state_modifier=formatted_prompt,
         debug=config.debug_checkpoint,
+        input_token_limit=input_token_limit,
     )
 
 
@@ -339,31 +368,33 @@ def execute_agent(
         ]
     )
     # debug prompt
-    if debug:
-        # get the agent from the database
-        with get_session() as db:
-            try:
-                agent: Agent = db.exec(select(Agent).filter(Agent.id == aid)).one()
-            except NoResultFound:
-                # Handle the case where the user is not found
-                raise HTTPException(status_code=404, detail="Agent not found")
-            except SQLAlchemyError as e:
-                # Handle other SQLAlchemy-related errors
-                logger.error(e)
-                raise HTTPException(status_code=500, detail=str(e))
-        try:
-            resp_debug_append = "\n===================\n\n[ system ]\n"
-            resp_debug_append += agent_prompt(agent)
-            snap = executor.get_state(stream_config)
-            if snap.values and "messages" in snap.values:
-                for msg in snap.values["messages"]:
-                    resp_debug_append += f"[ {msg.type} ]\n{msg.content}\n\n"
-            if agent.prompt_append:
-                resp_debug_append += "[ system ]\n"
-                resp_debug_append += agent.prompt_append
-        except Exception as e:
-            logger.error(e)
-            resp_debug_append = ""
+    # if debug:
+    #     # get the agent from the database
+    #     with get_session() as db:
+    #         try:
+    #             agent: Agent = db.exec(select(Agent).filter(Agent.id == aid)).one()
+    #         except NoResultFound:
+    #             # Handle the case where the user is not found
+    #             raise HTTPException(status_code=404, detail="Agent not found")
+    #         except SQLAlchemyError as e:
+    #             # Handle other SQLAlchemy-related errors
+    #             logger.error(e)
+    #             raise HTTPException(status_code=500, detail=str(e))
+    # try:
+    #     resp_debug_append = "\n===================\n\n[ system ]\n"
+    #     resp_debug_append += agent_prompt(agent)
+    #     snap = executor.get_state(stream_config)
+    #     if snap.values and "messages" in snap.values:
+    #         for msg in snap.values["messages"]:
+    #             resp_debug_append += f"[ {msg.type} ]\n{str(msg.content)}\n\n"
+    #     if agent.prompt_append:
+    #         resp_debug_append += "[ system ]\n"
+    #         resp_debug_append += agent.prompt_append
+    # except Exception as e:
+    #     logger.error(
+    #         "failed to get debug prompt: " + str(e), exc_info=True, stack_info=True
+    #     )
+    #     resp_debug_append = ""
     # run
     for chunk in executor.stream(
         {"messages": [HumanMessage(content=content)]}, stream_config
@@ -391,7 +422,7 @@ def execute_agent(
     total_time = time.perf_counter() - start
     resp_debug.append(f"Total time cost: {total_time:.3f} seconds")
     if debug:
-        resp_debug.append(resp_debug_append)
+        # resp_debug.append(resp_debug_append)
         return resp_debug
     else:
         return resp

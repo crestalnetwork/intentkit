@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ def create_jwt_middleware(enable: bool, jwt_secret: str):
     """
 
     async def verify_jwt(
+        request: Request,
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     ) -> str:
         """Verify JWT token from Authorization header and return the subject claim.
@@ -29,8 +30,17 @@ def create_jwt_middleware(enable: bool, jwt_secret: str):
         Returns:
             str: The subject claim from the JWT token
         """
-        logger.debug(f"verify_jwt: enable={enable}, credentials={credentials}")
-        if not enable:
+        host = request.headers.get("host", "").split(":")[0]
+        logger.debug(
+            f"verify_jwt: enable={enable}, credentials={credentials}, host={host}"
+        )
+
+        if (
+            not enable
+            or host == "localhost"
+            or host == "127.0.0.1"
+            or host == "intent-api"
+        ):
             return ""
 
         if not credentials:

@@ -21,6 +21,20 @@ class TwitterBaseTool(IntentKitSkill):
     )
     store: SkillStoreABC = Field(description="The skill store for persisting data")
 
+    def _get_error_with_username(self, error_msg: str) -> str:
+        """Get error message with username if available.
+
+        Args:
+            error_msg: The original error message.
+
+        Returns:
+            Error message with username if available.
+        """
+        username = self.twitter.get_username()
+        if username:
+            return f"Error for Twitter user @{username}: {error_msg}"
+        return error_msg
+
     def check_rate_limit(
         self, max_requests: int = 1, interval: int = 15
     ) -> tuple[bool, str | None]:

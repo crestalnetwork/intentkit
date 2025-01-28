@@ -75,7 +75,7 @@ jobs:
       uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
       with:
         build-args: |
-          RELEASE=${{ github.sha }}
+          RELEASE=${{ github.event.release.tag_name }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}

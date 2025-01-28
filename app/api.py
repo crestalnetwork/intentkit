@@ -9,6 +9,7 @@ The API server provides endpoints for agent execution and management.
 import logging
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 
 from app.admin.api import admin_router
@@ -22,6 +23,15 @@ from models.db import init_db
 
 # init logger
 logger = logging.getLogger(__name__)
+
+if config.sentry_dsn:
+    sentry_sdk.init(
+        dsn=config.sentry_dsn,
+        traces_sample_rate=config.sentry_traces_sample_rate,
+        profiles_sample_rate=config.sentry_profiles_sample_rate,
+        environment=config.env,
+        release=config.release,
+    )
 
 
 @asynccontextmanager

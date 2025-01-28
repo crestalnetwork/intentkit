@@ -17,6 +17,8 @@ AGENT_NAME="IntentKit"
 
 # AI model to use
 # https://platform.openai.com/docs/models#current-model-aliases
+# you can also use "deepseek-reasoner" and "deepseek-chat"
+# Notice: Currently, the deepseek-reasoner does not support any skills.
 MODEL="gpt-4o-mini"
 
 # Agent initial prompt (the role is system, daily user's role is user)

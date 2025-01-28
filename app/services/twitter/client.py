@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -6,6 +7,8 @@ from tweepy import Client
 from abstracts.agent import AgentStoreABC
 from abstracts.twitter import TwitterABC
 from models.agent import AgentData
+
+logger = logging.getLogger(__name__)
 
 
 class TwitterClient(TwitterABC):
@@ -50,16 +53,6 @@ class TwitterClient(TwitterABC):
                 return_type=dict,
             )
             self.use_key = True
-            if not self._agent_data or not self._agent_data.twitter_id:
-                me = self._client.get_me(user_auth=self.use_key)
-                if me and "data" in me and "id" in me["data"]:
-                    self._agent_store.set_data(
-                        {
-                            "twitter_id": me["data"]["id"],
-                            "twitter_username": me["data"]["username"],
-                            "twitter_name": me["data"]["name"],
-                        }
-                    )
         else:
             # Try to get OAuth2 token from agent data
             if self._agent_data and self._agent_data.twitter_access_token:
@@ -78,6 +71,25 @@ class TwitterClient(TwitterABC):
                     self.need_auth = True
             else:
                 self.need_auth = True
+        # Everytime we get a client, we need to refresh the user data
+        if not self.need_auth:
+            me = self._client.get_me(user_auth=self.use_key)
+            if me and "data" in me and "id" in me["data"]:
+                self._agent_store.set_data(
+                    {
+                        "twitter_id": me["data"]["id"],
+                        "twitter_username": me["data"]["username"],
+                        "twitter_name": me["data"]["name"],
+                    }
+                )
+            self._agent_data = self._agent_store.get_data()
+            logger.info(
+                f"Twitter client initialized. "
+                f"Use API key: {self.use_key}, "
+                f"User ID: {self.get_id()}, "
+                f"Username: {self.get_username()}, "
+                f"Name: {self.get_name()}"
+            )
 
     def get_client(self) -> Optional[Client]:
         """Get a configured Tweepy client.
