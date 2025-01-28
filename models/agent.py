@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from skills.cex.okx import TradeOnOkx
 
 from epyxid import XID
 from fastapi import HTTPException
@@ -653,3 +654,23 @@ class AgentPluginData(SQLModel, table=True):
             db.add(self)
 
         db.commit()
+
+def initialize_agent():
+    cex_config = {
+        "api_key": "your_okx_api_key",
+        "secret": "your_okx_secret",
+        "password": "your_okx_password",
+    }
+
+    cex_skills = {
+        "trade_on_okx": TradeOnOkx(
+            api_key=cex_config['api_key'],
+            secret=cex_config['secret'],
+            password=cex_config['password']
+        )
+    }
+    
+    return {
+        "cex_skills": cex_skills,
+        "cex_config": cex_config,
+    }

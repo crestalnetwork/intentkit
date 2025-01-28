@@ -1,29 +1,11 @@
-from langchain_core.tools import BaseTool
-import ccxt
-import pandas as pd
-import numpy as np
+rom .base import CEXBaseSkill
 
-class TradeOnOkx(BaseTool):
+class TradeOnOkx(CEXBaseSkill):
     """
     A skill to trade cryptocurrencies on OKX using RSI, CCI, Bollinger Bands, and EMA 200 indicators.
     """
     name = "trade_on_okx"
     description = "Automatically trade crypto on OKX using technical indicators for decision-making."
-
-    def __init__(self, api_key, secret, password):
-        self.okx = ccxt.okx({
-            'apiKey': api_key,
-            'secret': secret,
-            'password': password,
-            'enableRateLimit': True,
-        })
-
-    def fetch_historical_data(self, symbol, timeframe, limit=200):
-        """Fetch historical OHLCV data from OKX."""
-        ohlcv = self.okx.fetch_ohlcv(symbol, timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        return df
 
     def calculate_indicators(self, df):
         """Calculate RSI, CCI, Bollinger Bands, and EMA 200."""
@@ -57,7 +39,6 @@ class TradeOnOkx(BaseTool):
     def determine_signal(self, df):
         """Determine buy/sell signals based on indicators."""
         latest = df.iloc[-1]
-        previous = df.iloc[-2]
 
         if (
             latest['rsi'] < 30
@@ -80,17 +61,10 @@ class TradeOnOkx(BaseTool):
     def execute_trade(self, symbol, signal, amount):
         """Execute a trade on OKX."""
         if signal == 'buy':
-            order = self.okx.create_market_buy_order(symbol, amount)
+            order = self.exchange.create_market_buy_order(symbol, amount)
             print(f"Buy order executed: {order}")
         elif signal == 'sell':
-            order = self.okx.create_market_sell_order(symbol, amount)
+            order = self.exchange.create_market_sell_order(symbol, amount)
             print(f"Sell order executed: {order}")
         else:
             print("No trade executed.")
-
-    def run(self, symbol: str, timeframe: str = '1h', amount: float = 0.001):
-        """Fetch data, calculate signals, and execute trades."""
-        df = self.fetch_historical_data(symbol, timeframe)
-        df = self.calculate_indicators(df)
-        signal = self.determine_signal(df)
-        self.execute_trade(symbol, signal, amount)
