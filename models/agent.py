@@ -73,10 +73,15 @@ class Agent(SQLModel, table=True):
         description="List of CDP skills available to this agent",
     )
     cdp_network_id: Optional[str] = Field(
-        default="base-sepolia", description="Network identifier for CDP integration"
+        default="base-mainnet", description="Network identifier for CDP integration"
     )
     cdp_wallet_data: SkipJsonSchema[Optional[str]] = Field(
         default=None, description="Deprecated: CDP wallet information"
+    )
+    rpc_config: Optional[dict] = Field(
+        default=None,
+        sa_column=Column(JSONB, nullable=True),
+        description="RPC nodes configuration for transaction broadcasting",
     )
     # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
     twitter_entrypoint_enabled: Optional[bool] = Field(
