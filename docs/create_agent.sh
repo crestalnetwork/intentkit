@@ -51,7 +51,7 @@ END_OF_AUTONOMOUS_PROMPT
 # Skill list: https://docs.cdp.coinbase.com/agentkit/docs/wallet-management
 CDP_ENABLED=false
 CDP_SKILLS='["get_wallet_details", "get_balance"]'
-CDP_NETWORK_ID="base-sepolia"
+CDP_NETWORK_ID="base-mainnet"
 
 # Enso settings (optional)
 ENSO_ENABLED=false
