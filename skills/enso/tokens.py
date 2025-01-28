@@ -1,13 +1,13 @@
-from typing import Literal, Type
+from typing import Type
 
 import httpx
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from skills.enso.base import (
     EnsoBaseTool,
     base_url,
     default_chain_id,
-    default_protocol_slug,
 )
 
 # Actual Enso output types
@@ -49,6 +49,33 @@ from skills.enso.base import (
 #     meta: MetaData | None = Field(None, description="Metadata regarding pagination")
 
 
+class EnsoGetTokensInput(BaseModel):
+    chainId: int = Field(
+        default_chain_id,
+        description="The blockchain chain ID",
+    )
+    protocolSlug: str | None = Field(
+        None,
+        description="The protocol slug (e.g., 'aave-v2', 'aave-v3', 'compound-v2')",
+    )
+    # address: str | None = Field(
+    #     None,
+    #     description="Ethereum address of the token",
+    # )
+    # underlyingTokens: str | list[str] | None = Field(
+    #     None,
+    #     description="Underlying tokens (e.g. 0xdAC17F958D2ee523a2206206994597C13D831ec7)",
+    # )
+    # primaryAddress: str | None = Field(
+    #     None,
+    #     description="Ethereum address for contract interaction of defi token",
+    # )
+    # type: Literal["defi", "base"] | None = Field(
+    #     None,
+    #     description="The type of the token (e.g., 'defi', 'base'). Note: Base Network also exists, it should not be confused with type.",
+    # )
+
+
 class UnderlyingTokenCompact(BaseModel):
     address: str | None = Field(None, description="The address of the token")
     type: str | None = Field(
@@ -56,6 +83,9 @@ class UnderlyingTokenCompact(BaseModel):
     )
     name: str | None = Field(None, description="The name of the token")
     symbol: str | None = Field(None, description="The symbol of the token")
+    decimals: int | None = Field(
+        None, description="The number of decimals for the token"
+    )
 
 
 class TokenResponseCompact(BaseModel):
@@ -79,36 +109,8 @@ class TokenResponseCompact(BaseModel):
     )
 
 
-class EnsoGetTokensInput(BaseModel):
-    chainId: int = Field(
-        default_chain_id,
-        description="The blockchain chain ID",
-    )
-    protocolSlug: str = Field(
-        default_protocol_slug,
-        description="The protocol slug (e.g., 'aave-v2', 'aave-v3', 'compound-v2')",
-    )
-    underlyingTokens: str | list[str] | None = Field(
-        None,
-        description="Underlying tokens (e.g. 0xdAC17F958D2ee523a2206206994597C13D831ec7)",
-    )
-    primaryAddress: str | None = Field(
-        None,
-        description="Ethereum address for contract interaction of defi token",
-    )
-    address: str | None = Field(
-        None,
-        description="Ethereum address of the token",
-    )
-    type: Literal["defi", "base"] | None = Field(
-        None,
-        description="The type of the token (e.g., 'defi', 'base'). Note: Base Network also exists, it should not be confused with type.",
-    )
-
-
 class EnsoGetTokensOutput(BaseModel):
     res: list[TokenResponseCompact] | None
-    error: str | None = None
 
 
 class EnsoGetTokens(EnsoBaseTool):
@@ -137,14 +139,12 @@ class EnsoGetTokens(EnsoBaseTool):
     def _run(
         self,
         chainId: int = default_chain_id,
-        protocolSlug: str = default_protocol_slug,
-        **kwargs,
+        protocolSlug: str | None = None,
     ) -> EnsoGetTokensOutput:
         """Run the tool to get Tokens and APY.
         Args:
             chainId (int): The chain id of the network.
             protocolSlug (str): The protocol slug (e.g., 'aave-v2', 'aave-v3', 'compound-v2').
-            **kwargs: kwargs for the tool with args schema defined in EnsoGetTokensInput.
         Returns:
             EnsoGetTokensOutput: A structured output containing the tokens APY data.
 
@@ -158,8 +158,10 @@ class EnsoGetTokens(EnsoBaseTool):
         }
 
         params = EnsoGetTokensInput(
-            chainId=chainId, protocolSlug=protocolSlug, **kwargs
+            chainId=chainId,
+            protocolSlug=protocolSlug,
         ).model_dump(exclude_none=True)
+
         params["page"] = 1
         params["includeMetadata"] = "true"
 
@@ -169,23 +171,46 @@ class EnsoGetTokens(EnsoBaseTool):
                 response.raise_for_status()
                 json_dict = response.json()
 
+                token_decimals = self.store.get_agent_skill_data(
+                    self.agent_id,
+                    "enso_get_tokens",
+                    "decimals",
+                )
+                if not token_decimals:
+                    token_decimals = {}
+
                 # filter the main tokens from config or the ones that have apy assigned.
-                result = EnsoGetTokensOutput(res=list[TokenResponseCompact]())
+                res = EnsoGetTokensOutput(res=list[TokenResponseCompact]())
                 for item in json_dict["data"]:
-                    if item.get("apy") or (item.get("symbol") in self.main_tokens):
-                        result.res.append(TokenResponseCompact(**item))
+                    self.main_tokens = [item.upper() for item in self.main_tokens]
+                    if item.get("apy") or (
+                        item.get("symbol").upper() in self.main_tokens
+                    ):
+                        token_response = TokenResponseCompact(**item)
+                        res.res.append(token_response)
+                        token_decimals[token_response.address] = token_response.decimals
+                        if (
+                            token_response.underlyingTokens
+                            and len(token_response.underlyingTokens) > 0
+                        ):
+                            for u_token in token_response.underlyingTokens:
+                                token_decimals[u_token.address] = u_token.decimals
 
-                return result
+                self.store.save_agent_skill_data(
+                    self.agent_id,
+                    "enso_get_tokens",
+                    "decimals",
+                    token_decimals,
+                )
+
+                return res
             except httpx.RequestError as req_err:
-                return EnsoGetTokensOutput(res=None, error=f"Request error: {req_err}")
+                raise ToolException(
+                    f"request error from Enso API: {req_err}"
+                ) from req_err
             except httpx.HTTPStatusError as http_err:
-                return EnsoGetTokensOutput(res=None, error=f"HTTP error: {http_err}")
+                raise ToolException(
+                    f"http error from Enso API: {http_err}"
+                ) from http_err
             except Exception as e:
-                return EnsoGetTokensOutput(res=None, error=str(e))
-
-    async def _arun(self, **kwargs) -> EnsoGetTokensOutput:
-        """Async implementation of the tool.
-
-        This tool doesn't have a native async implementation, so we call the sync version.
-        """
-        return self._run()
+                raise ToolException(f"error from Enso API: {e}") from e

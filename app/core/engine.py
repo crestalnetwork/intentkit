@@ -38,7 +38,6 @@ from app.services.twitter.oauth2 import get_authorization_url
 from models.agent import Agent, AgentData
 from models.db import get_coon, get_session
 from skill_sets import get_skill_set
-from skills.cdp import get_cdp_skill
 from skills.common import get_common_skill
 from skills.crestal import get_crestal_skill
 from skills.enso import get_enso_skill
@@ -62,7 +61,7 @@ def agent_prompt(agent: Agent) -> str:
         prompt += (
             "You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. "
             "You are empowered to interact onchain using your tools. If you ever need funds, you can request "
-            "them from the faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet "
+            "them from the faucet if you are on network ID 'base-mainnet'. If not, you can provide your wallet "
             "details and request funds from the user. Before executing your first action, get the wallet details "
             "to see what network you're on. If there is a 5XX (internal) HTTP error code, ask the user to try "
             "again later. If someone asks you to do something you can't do with your currently available tools, "
@@ -75,11 +74,13 @@ def agent_prompt(agent: Agent) -> str:
             current wallet, personal wallet, crypto wallet, or wallet public address, don't use any address in message history,
             you must use the "get_wallet_details" tool to retrieve your wallet address every time.\n\n"""
     if agent.enso_enabled:
-        prompt += """\n\nYou are integrated to Enso API, you are able to get the token list and their information, such
-        as APY, Protocol Slug, Symbol, Address, and underlying tokens using enso_get_tokens tool. for each thread first
-        request, you should use enso_get_tokens with no input param and get the information of the available protocol slugs, 
-        symbols, addresses and APY. For token deposit, swap and route shortcut, you should use get_route tool. to get wallet balances 
-        use get_wallet_balances. to get wallet approvals use get_wallet_approvals.\n\n"""
+        prompt += """\n\You are integrated with the Enso API. You can use enso_get_tokens to retrieve token information,
+        including APY, Protocol Slug, Symbol, Address, Decimals, and underlying tokens. When interacting with token amounts,
+        ensure to multiply input amounts by the token's decimal places and divide output amounts by the token's decimals. 
+        Utilize enso_route_shortcut to find the best swap or deposit route. Set broadcast_request to True only when the 
+        user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause 
+        Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit 
+        user confirmation before broadcasting any approval transactions for security reasons.\n\n"""
     return prompt
 
 
@@ -153,7 +154,7 @@ def initialize_agent(aid):
         values = {
             "cdp_api_key_name": config.cdp_api_key_name,
             "cdp_api_key_private_key": config.cdp_api_key_private_key,
-            "network_id": getattr(agent, "cdp_network_id", "base-sepolia"),
+            "network_id": getattr(agent, "cdp_network_id", "base-mainnet"),
         }
         if agent_data and agent_data.cdp_wallet_data:
             values["cdp_wallet_data"] = agent_data.cdp_wallet_data
@@ -176,30 +177,16 @@ def initialize_agent(aid):
             cdp_tools = [tool for tool in cdp_tools if tool.name in agent.cdp_skills]
         tools.extend(cdp_tools)
 
-        if agent.enso_enabled:
-            tools.append(
-                get_cdp_skill(
-                    "broadcast_enso_tx",
-                    agentkit.wallet,
-                    skill_store,
-                    aid,
-                )
-            )
-
     # Enso skills
-    if (
-        agent.cdp_enabled
-        and agent.enso_skills
-        and len(agent.enso_skills) > 0
-        and agent.enso_config
-    ):
+    if agent.enso_skills and len(agent.enso_skills) > 0 and agent.enso_config:
         for skill in agent.enso_skills:
             try:
                 s = get_enso_skill(
                     skill,
                     agent.enso_config.get("api_token"),
                     agent.enso_config.get("main_tokens", list[str]()),
-                    agentkit.wallet.addresses[0].address_id,
+                    agentkit.wallet if agentkit else None,
+                    agent.rpc_config,
                     skill_store,
                     aid,
                 )
