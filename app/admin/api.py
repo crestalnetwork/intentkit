@@ -16,7 +16,7 @@ verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_s
 
 
 @admin_router.post("/agents", tags=["Agent"], status_code=201)
-def create_agent(
+async def create_agent(
     agent: Agent = Body(Agent, description="Agent configuration"),
     subject: str = Depends(verify_jwt),
     db: Session = Depends(get_db),
@@ -123,7 +123,7 @@ def create_agent(
 
 
 @admin_router.get("/agents", tags=["Agent"], dependencies=[Depends(verify_jwt)])
-def get_agents(db: Session = Depends(get_db)) -> list[AgentResponse]:
+async def get_agents(db: Session = Depends(get_db)) -> list[AgentResponse]:
     """Get all agents with their quota information.
 
     Args:
@@ -152,7 +152,7 @@ def get_agents(db: Session = Depends(get_db)) -> list[AgentResponse]:
 @admin_router.get(
     "/agents/{agent_id}", tags=["Agent"], dependencies=[Depends(verify_jwt)]
 )
-def get_agent(agent_id: str, db: Session = Depends(get_db)) -> AgentResponse:
+async def get_agent(agent_id: str, db: Session = Depends(get_db)) -> AgentResponse:
     """Get a single agent by ID.
 
     Args:

@@ -85,7 +85,7 @@ router = APIRouter(tags=["Auth"])
 
 
 @router.get("/auth/twitter", response_model=TwitterAuthResponse)
-def get_twitter_auth_url(agent_id: str) -> TwitterAuthResponse:
+async def get_twitter_auth_url(agent_id: str) -> TwitterAuthResponse:
     """Get Twitter OAuth2 authorization URL.
 
     Args:
