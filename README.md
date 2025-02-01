@@ -16,8 +16,7 @@ This project is currently in alpha stage and is not recommended for production u
 - 🔌 Extensible Plugin System (WIP)
 
 ## Architecture
-
-```
+https://github.com/crestalnetwork/intentkit.git
                                                                                                        
                                  Entrypoints                                                           
                        │                             │                                                 
