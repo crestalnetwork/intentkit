@@ -43,6 +43,9 @@ class ChatMessageAttachment(BaseModel):
         examples=["https://example.com/image.jpg"],
     )
 
+    class Config:
+        use_enum_values = True
+
 
 class ChatMessageRequest(BaseModel):
     """Request model for chat messages.
@@ -79,6 +82,7 @@ class ChatMessageRequest(BaseModel):
     class Config:
         """Pydantic model configuration."""
 
+        use_enum_values = True
         json_schema_extra = {
             "example": {
                 "chat_id": "chat-123",
@@ -132,3 +136,6 @@ class ChatMessage(SQLModel, table=True):
         nullable=False,
         description="Timestamp when this message was created",
     )
+
+    class Config:
+        use_enum_values = True

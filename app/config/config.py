@@ -111,6 +111,9 @@ class Config:
         self.sentry_profiles_sample_rate = float(
             self.load("SENTRY_PROFILES_SAMPLE_RATE", "0.01")
         )
+        self.rpc_base_mainnet = self.load(
+            "RPC_BASE_MAINNET", "https://mainnet.base.org"
+        )
         # ===== config loaded
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)

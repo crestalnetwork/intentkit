@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from sqlalchemy import Column, DateTime, func
+from sqlalchemy import Column, DateTime, delete, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Session, SQLModel, select
 
@@ -82,6 +82,10 @@ class AgentSkillData(SQLModel, table=True):
             db.add(existing)
         else:
             db.add(self)
+
+    @classmethod
+    def clean_data(cls, agent_id: str, db: Session):
+        db.exec(delete(cls).where(cls.agent_id == agent_id))
 
 
 class ThreadSkillData(SQLModel, table=True):
@@ -164,3 +168,14 @@ class ThreadSkillData(SQLModel, table=True):
             db.add(existing)
         else:
             db.add(self)
+
+    @classmethod
+    def clean_data(cls, agent_id: str, thread_id: str, db: Session):
+        if thread_id and thread_id != "":
+            db.exec(
+                delete(cls).where(
+                    cls.agent_id == agent_id and cls.thread_id == thread_id
+                )
+            )
+        else:
+            db.exec(delete(cls).where(cls.agent_id == agent_id))

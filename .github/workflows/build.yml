@@ -97,6 +97,7 @@ jobs:
         aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_DEV_CLUSTER }}
         kubectl version
         kubectl set image -n testnet-dev deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-dev deployment/intent-readonly intent-readonly=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-twitter intent-twitter=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
@@ -109,6 +110,7 @@ jobs:
         aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_PROD_CLUSTER }}
         kubectl version
         kubectl set image -n testnet-prod deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-prod deployment/intent-readonly intent-readonly=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-twitter intent-twitter=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}

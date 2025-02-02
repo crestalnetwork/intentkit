@@ -21,6 +21,28 @@ AGENT_NAME="IntentKit"
 # Notice: Currently, the deepseek-reasoner does not support any skills.
 MODEL="gpt-4o-mini"
 
+# Agent temperature (0.0~2.0)
+# The randomness of the generated results is such that 
+# the higher the number, the more creative the results will be. 
+# However, this also makes them wilder and increases the likelihood of errors. 
+# For creative tasks, you can adjust it to above 1, but for rigorous tasks, 
+# such as quantitative trading, it’s advisable to set it lower, around 0.2.
+TEMPERATURE=0.7
+
+# Agent frequency penalty (-2.0~2.0)
+# The frequency penalty is a measure of how much the AI is allowed to repeat itself.
+# A lower value means the AI is more likely to repeat previous responses, 
+# while a higher value means the AI is more likely to generate new content.
+# For creative tasks, you can adjust it to 1 or a bit higher.
+FREQUENCY_PENALTY=0.0
+
+# Agent presence penalty (-2.0~2.0)
+# The presence penalty is a measure of how much the AI is allowed to deviate from the topic.
+# A higher value means the AI is more likely to deviate from the topic, 
+# while a lower value means the AI is more likely to follow the topic.
+# For creative tasks, you can adjust it to 1 or a bit higher.
+PRESENCE_PENALTY=0.0
+
 # Agent initial prompt (the role is system, daily user's role is user)
 read -r -d '' PROMPT_TEXT << 'END_OF_PROMPT'
 You are an autonomous AI agent.
@@ -98,6 +120,9 @@ JSON_DATA=$(cat << EOF
   "id": "$AGENT_ID",
   "name": "$AGENT_NAME",
   "model": "$MODEL",
+  "temperature": $TEMPERATURE,
+  "frequency_penalty": $FREQUENCY_PENALTY,
+  "presence_penalty": $PRESENCE_PENALTY,
   "prompt": "$PROMPT",
   "prompt_append": "$PROMPT_APPEND",
   "autonomous_enabled": $AUTONOMOUS_ENABLED,

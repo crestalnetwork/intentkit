@@ -24,10 +24,11 @@ from models.db import get_db
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
+chat_router_readonly = APIRouter()
 
 
 @chat_router.get("/{aid}/chat", tags=["Debug"], response_class=PlainTextResponse)
-def chat(
+async def chat(
     request: Request,
     aid: str = Path(..., description="instance id"),
     q: str = Query(None, description="Query string"),
@@ -92,10 +93,10 @@ def chat(
     return "\n".join(resp)
 
 
-@chat_router.get(
+@chat_router_readonly.get(
     "/agents/{aid}/chat/history", tags=["Chat"], response_model=List[ChatMessage]
 )
-def get_chat_history(
+async def get_chat_history(
     aid: str = Path(..., description="Agent ID"),
     chat_id: str = Query(..., description="Chat ID to get history for"),
     db: Session = Depends(get_db),
@@ -134,7 +135,7 @@ def get_chat_history(
 
 
 @chat_router.get("/agents/{aid}/chat/retry", tags=["Chat"], response_model=ChatMessage)
-def retry_chat(
+async def retry_chat(
     aid: str = Path(..., description="Agent ID"),
     chat_id: str = Query(..., description="Chat ID to retry last message"),
     db: Session = Depends(get_db),
@@ -220,7 +221,7 @@ def retry_chat(
 
 
 @chat_router.post("/agents/{aid}/chat", tags=["Chat"], response_model=ChatMessage)
-def create_chat(
+async def create_chat(
     request: ChatMessageRequest,
     aid: str = Path(..., description="Agent ID"),
     db: Session = Depends(get_db),

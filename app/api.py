@@ -12,11 +12,12 @@ from contextlib import asynccontextmanager
 import sentry_sdk
 from fastapi import FastAPI
 
-from app.admin.api import admin_router
+from app.admin.api import admin_router, admin_router_readonly
+from app.admin.health import health_router
 from app.admin.scheduler import start_scheduler
 from app.config.config import config
 from app.core.api import core_router
-from app.entrypoints.web import chat_router
+from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
 from models.db import init_db
@@ -61,17 +62,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(chat_router)
+app.include_router(chat_router_readonly)
 app.include_router(admin_router)
+app.include_router(admin_router_readonly)
 app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
-
-
-@app.get("/health", include_in_schema=False)
-async def health_check():
-    """Check API server health.
-
-    Returns:
-        dict: Health status
-    """
-    return {"status": "healthy"}
+app.include_router(health_router)

@@ -127,7 +127,7 @@ class BotPool:
                 f"bot for agent {agent.id} did not started because of invalid data. err: {e}"
             )
         except Exception as e:
-            logger.error(f"failed to init new bot for agent {agent.id}: {e}")
+            logger.info(f"failed to init new bot for agent {agent.id}: {e}")
         finally:
             if bot_item and bot_item.bot:
                 await bot_item.bot.session.close()

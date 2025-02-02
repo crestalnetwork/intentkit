@@ -1,11 +1,15 @@
 """Twitter OAuth2 authentication module."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 
 from app.config.config import config
+from utils.middleware import create_jwt_middleware
+
+# Create JWT middleware with admin config
+verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 
 # this class is forked from:
@@ -84,8 +88,12 @@ class TwitterAuthResponse(BaseModel):
 router = APIRouter(tags=["Auth"])
 
 
-@router.get("/auth/twitter", response_model=TwitterAuthResponse)
-def get_twitter_auth_url(agent_id: str) -> TwitterAuthResponse:
+@router.get(
+    "/auth/twitter",
+    response_model=TwitterAuthResponse,
+    dependencies=[Depends(verify_jwt)],
+)
+async def get_twitter_auth_url(agent_id: str) -> TwitterAuthResponse:
     """Get Twitter OAuth2 authorization URL.
 
     Args:

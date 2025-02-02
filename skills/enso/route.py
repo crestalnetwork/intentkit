@@ -156,9 +156,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
     """
 
     name: str = "enso_route_shortcut"
-    description: str = (
-        "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId."
-    )
+    description: str = "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId."
     args_schema: Type[BaseModel] = EnsoRouteShortcutInput
 
     def _run(

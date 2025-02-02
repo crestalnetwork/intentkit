@@ -47,7 +47,15 @@ class Agent(SQLModel, table=True):
     )
     temperature: Optional[float] = Field(
         default=0.7,
-        description="AI model temperature parameter controlling response randomness (0.0-1.0)",
+        description="AI model temperature parameter controlling response randomness (0.0~1.0)",
+    )
+    frequency_penalty: Optional[float] = Field(
+        default=0.0,
+        description="Frequency penalty for the AI model, a higher value penalizes new tokens based on their existing frequency in the chat history (-2.0~2.0)",
+    )
+    presence_penalty: Optional[float] = Field(
+        default=0.0,
+        description="Presence penalty for the AI model, a higher value penalizes new tokens based on whether they appear in the chat history (-2.0~2.0)",
     )
     # autonomous mode
     autonomous_enabled: Optional[bool] = Field(
@@ -77,11 +85,6 @@ class Agent(SQLModel, table=True):
     )
     cdp_wallet_data: SkipJsonSchema[Optional[str]] = Field(
         default=None, description="Deprecated: CDP wallet information"
-    )
-    rpc_config: Optional[dict] = Field(
-        default=None,
-        sa_column=Column(JSONB, nullable=True),
-        description="RPC nodes configuration for transaction broadcasting",
     )
     # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
     twitter_entrypoint_enabled: Optional[bool] = Field(

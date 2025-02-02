@@ -13,6 +13,7 @@ The module uses a global cache to store initialized agents for better performanc
 import logging
 import time
 
+import sqlalchemy
 from cdp_langchain.agent_toolkits import CdpToolkit
 from cdp_langchain.utils import CdpAgentkitWrapper
 from fastapi import HTTPException
@@ -34,9 +35,9 @@ from app.core.agent import AgentStore
 from app.core.graph import create_agent
 from app.core.skill import SkillStore
 from app.services.twitter.client import TwitterClient
-from app.services.twitter.oauth2 import get_authorization_url
 from models.agent import Agent, AgentData
 from models.db import get_coon, get_session
+from models.skill import AgentSkillData, ThreadSkillData
 from skill_sets import get_skill_set
 from skills.common import get_common_skill
 from skills.crestal import get_crestal_skill
@@ -128,8 +129,9 @@ def initialize_agent(aid):
             model_name=agent.model,
             openai_api_key=config.deepseek_api_key,
             openai_api_base="https://api.deepseek.com",
-            presence_penalty=1,
-            streaming=False,
+            frequency_penalty=agent.frequency_penalty,
+            presence_penalty=agent.presence_penalty,
+            temperature=agent.temperature,
             timeout=90,
         )
         input_token_limit = 60000
@@ -137,8 +139,10 @@ def initialize_agent(aid):
         llm = ChatOpenAI(
             model_name=agent.model,
             openai_api_key=config.openai_api_key,
+            frequency_penalty=agent.frequency_penalty,
+            presence_penalty=agent.presence_penalty,
+            temperature=agent.temperature,
             timeout=60,
-            presence_penalty=1,
         )
 
     # ==== Store buffered conversation history in memory.
@@ -186,7 +190,7 @@ def initialize_agent(aid):
                     agent.enso_config.get("api_token"),
                     agent.enso_config.get("main_tokens", list[str]()),
                     agentkit.wallet if agentkit else None,
-                    agent.rpc_config,
+                    config.rpc_base_mainnet,
                     skill_store,
                     aid,
                 )
@@ -222,12 +226,6 @@ def initialize_agent(aid):
                 )
             else:
                 logger.info(f"Twitter client needs authentication for agent {aid}")
-                twitter_prompt = (
-                    "\n\nWhen you need to use any twitter tool, "
-                    f"tell the person helping you to authenticate the Twitter account using this link: {get_authorization_url(aid)} \n"
-                    "Remember, the link will be expired. So you can only use this one, not use other links in the conversation history.\n"
-                    "Display links on separate lines, with a blank line before and after, not use markdown.\n\n"
-                )
         except Exception as e:
             logger.warning(f"Failed to initialize Twitter client for agent {aid}: {e}")
 
@@ -264,7 +262,8 @@ def initialize_agent(aid):
     if twitter_prompt:
         # deepseek only supports system prompt in the beginning
         if agent.model.startswith("deepseek"):
-            prompt_array.insert(0, ("system", twitter_prompt))
+            # prompt_array.insert(0, ("system", twitter_prompt))
+            pass
         else:
             prompt_array.append(("system", twitter_prompt))
     if agent.prompt_append:
@@ -280,8 +279,8 @@ def initialize_agent(aid):
         # logger.debug(f"[{aid}] formatted prompt: {state}")
         return prompt_temp.invoke({"messages": state["messages"]})
 
-    # hack for deepseek
-    if agent.model == "deepseek-reasoner":
+    # hack for deepseek, it doesn't support tools
+    if agent.model.startswith("deepseek"):
         tools = []
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
@@ -413,3 +412,78 @@ def execute_agent(
         return resp_debug
     else:
         return resp
+
+
+def clean_agent_memory(
+    agent_id: str,
+    thread_id: str = "",
+    clean_agent_memory: bool = False,
+    clean_skills_memory: bool = False,
+    debug: bool = False,
+):
+    """Clean an agent's memory with the given prompt and return response.
+
+    This function:
+    1. Cleans the agents skills data.
+    2. Cleans the thread skills data.
+    3. Cleans the graph checkpoint data.
+    4. Cleans the graph checkpoint_writes data.
+    5. Cleans the graph checkpoint_blobs data.
+
+    Args:
+        agent_id (str): Agent ID
+        thread_id (str): Thread ID for the agent memory cleanup
+        debug (bool): Enable debug mode
+
+    Returns:
+        str: Successful response message.
+    """
+    # get the agent from the database
+    with get_session() as db:
+        try:
+            if not clean_skills_memory and not clean_agent_memory:
+                raise HTTPException(
+                    status_code=400,
+                    detail="at least one of skills data or agent memory should be true.",
+                )
+
+            if clean_skills_memory:
+                AgentSkillData.clean_data(agent_id, db)
+                ThreadSkillData.clean_data(agent_id, thread_id, db)
+
+            if clean_agent_memory:
+                thread_id = thread_id.strip()
+                q_suffix = "%"
+                if thread_id and thread_id != "":
+                    q_suffix = thread_id
+
+                deletion_param = {"value": agent_id + "-" + q_suffix}
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoints WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoint_writes WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoint_blobs WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+
+            db.commit()
+
+            return "Agent data cleaned up successfully."
+        except SQLAlchemyError as e:
+            # Handle other SQLAlchemy-related errors
+            logger.error(e)
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            logger.error("failed to cleanup the agent memory: " + str(e))
+            raise e
