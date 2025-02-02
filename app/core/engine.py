@@ -13,6 +13,7 @@ The module uses a global cache to store initialized agents for better performanc
 import logging
 import time
 
+import sqlalchemy
 from cdp_langchain.agent_toolkits import CdpToolkit
 from cdp_langchain.utils import CdpAgentkitWrapper
 from fastapi import HTTPException
@@ -26,7 +27,6 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
-from sqlmodel import select
 
 from abstracts.engine import AgentMessageInput
 from abstracts.graph import AgentState
@@ -38,6 +38,7 @@ from app.services.twitter.client import TwitterClient
 from app.services.twitter.oauth2 import get_authorization_url
 from models.agent import Agent, AgentData
 from models.db import get_coon, get_session
+from models.skill import AgentSkillData, ThreadSkillData
 from skill_sets import get_skill_set
 from skills.common import get_common_skill
 from skills.crestal import get_crestal_skill
@@ -62,7 +63,7 @@ def agent_prompt(agent: Agent) -> str:
         prompt += (
             "You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. "
             "You are empowered to interact onchain using your tools. If you ever need funds, you can request "
-            "them from the faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet "
+            "them from the faucet if you are on network ID 'base-mainnet'. If not, you can provide your wallet "
             "details and request funds from the user. Before executing your first action, get the wallet details "
             "to see what network you're on. If there is a 5XX (internal) HTTP error code, ask the user to try "
             "again later. If someone asks you to do something you can't do with your currently available tools, "
@@ -75,11 +76,13 @@ def agent_prompt(agent: Agent) -> str:
             current wallet, personal wallet, crypto wallet, or wallet public address, don't use any address in message history,
             you must use the "get_wallet_details" tool to retrieve your wallet address every time.\n\n"""
     if agent.enso_enabled:
-        prompt += """\n\nYou are integrated to Enso API, you are able to get the token list and their information, such
-        as APY, Protocol Slug, Symbol, Address, and underlying tokens using enso_get_tokens tool. for each thread first
-        request, you should use enso_get_tokens with no input param and get the information of the available protocol slugs, 
-        symbols, addresses and APY. For token swap and route shortcut, you should use get_route tool. to get wallet balances 
-        use get_wallet_balances. to get wallet approvals use get_wallet_approvals.\n\n"""
+        prompt += """\n\You are integrated with the Enso API. You can use enso_get_tokens to retrieve token information,
+        including APY, Protocol Slug, Symbol, Address, Decimals, and underlying tokens. When interacting with token amounts,
+        ensure to multiply input amounts by the token's decimal places and divide output amounts by the token's decimals. 
+        Utilize enso_route_shortcut to find the best swap or deposit route. Set broadcast_request to True only when the 
+        user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause 
+        Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit 
+        user confirmation before broadcasting any approval transactions for security reasons.\n\n"""
     return prompt
 
 
@@ -120,7 +123,28 @@ def initialize_agent(aid):
         raise HTTPException(status_code=500, detail=str(e))
 
     # ==== Initialize LLM.
-    llm = ChatOpenAI(model_name=agent.model, openai_api_key=config.openai_api_key)
+    input_token_limit = 120000
+    # TODO: model name whitelist
+    if agent.model.startswith("deepseek"):
+        llm = ChatOpenAI(
+            model_name=agent.model,
+            openai_api_key=config.deepseek_api_key,
+            openai_api_base="https://api.deepseek.com",
+            frequency_penalty=agent.frequency_penalty,
+            presence_penalty=agent.presence_penalty,
+            temperature=agent.temperature,
+            timeout=90,
+        )
+        input_token_limit = 60000
+    else:
+        llm = ChatOpenAI(
+            model_name=agent.model,
+            openai_api_key=config.openai_api_key,
+            frequency_penalty=agent.frequency_penalty,
+            presence_penalty=agent.presence_penalty,
+            temperature=agent.temperature,
+            timeout=60,
+        )
 
     # ==== Store buffered conversation history in memory.
     memory = PostgresSaver(get_coon())
@@ -128,13 +152,14 @@ def initialize_agent(aid):
     # ==== Load skills
     tools: list[BaseTool] = []
 
+    agentkit: CdpAgentkitWrapper
     # Configure CDP Agentkit Langchain Extension.
     agent_data: AgentData = agent_store.get_data()
     if agent.cdp_enabled:
         values = {
             "cdp_api_key_name": config.cdp_api_key_name,
             "cdp_api_key_private_key": config.cdp_api_key_private_key,
-            "network_id": getattr(agent, "cdp_network_id", "base-sepolia"),
+            "network_id": getattr(agent, "cdp_network_id", "base-mainnet"),
         }
         if agent_data and agent_data.cdp_wallet_data:
             values["cdp_wallet_data"] = agent_data.cdp_wallet_data
@@ -165,6 +190,8 @@ def initialize_agent(aid):
                     skill,
                     agent.enso_config.get("api_token"),
                     agent.enso_config.get("main_tokens", list[str]()),
+                    agentkit.wallet if agentkit else None,
+                    config.rpc_base_mainnet,
                     skill_store,
                     aid,
                 )
@@ -240,16 +267,28 @@ def initialize_agent(aid):
         ("placeholder", "{messages}"),
     ]
     if twitter_prompt:
-        prompt_array.append(("system", twitter_prompt))
+        # deepseek only supports system prompt in the beginning
+        if agent.model.startswith("deepseek"):
+            # prompt_array.insert(0, ("system", twitter_prompt))
+            pass
+        else:
+            prompt_array.append(("system", twitter_prompt))
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
-        prompt_array.append(("system", escaped_append))
+        if agent.model.startswith("deepseek"):
+            prompt_array.insert(0, ("system", escaped_append))
+        else:
+            prompt_array.append(("system", escaped_append))
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
     def formatted_prompt(state: AgentState):
         # logger.debug(f"[{aid}] formatted prompt: {state}")
         return prompt_temp.invoke({"messages": state["messages"]})
+
+    # hack for deepseek, it doesn't support tools
+    if agent.model.startswith("deepseek"):
+        tools = []
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     agents[aid] = create_agent(
@@ -258,6 +297,7 @@ def initialize_agent(aid):
         checkpointer=memory,
         state_modifier=formatted_prompt,
         debug=config.debug_checkpoint,
+        input_token_limit=input_token_limit,
     )
 
 
@@ -321,31 +361,33 @@ def execute_agent(
         ]
     )
     # debug prompt
-    if debug:
-        # get the agent from the database
-        with get_session() as db:
-            try:
-                agent: Agent = db.exec(select(Agent).filter(Agent.id == aid)).one()
-            except NoResultFound:
-                # Handle the case where the user is not found
-                raise HTTPException(status_code=404, detail="Agent not found")
-            except SQLAlchemyError as e:
-                # Handle other SQLAlchemy-related errors
-                logger.error(e)
-                raise HTTPException(status_code=500, detail=str(e))
-        try:
-            resp_debug_append = "\n===================\n\n[ system ]\n"
-            resp_debug_append += agent_prompt(agent)
-            snap = executor.get_state(stream_config)
-            if snap.values and "messages" in snap.values:
-                for msg in snap.values["messages"]:
-                    resp_debug_append += f"[ {msg.type} ]\n{msg.content}\n\n"
-            if agent.prompt_append:
-                resp_debug_append += "[ system ]\n"
-                resp_debug_append += agent.prompt_append
-        except Exception as e:
-            logger.error(e)
-            resp_debug_append = ""
+    # if debug:
+    #     # get the agent from the database
+    #     with get_session() as db:
+    #         try:
+    #             agent: Agent = db.exec(select(Agent).filter(Agent.id == aid)).one()
+    #         except NoResultFound:
+    #             # Handle the case where the user is not found
+    #             raise HTTPException(status_code=404, detail="Agent not found")
+    #         except SQLAlchemyError as e:
+    #             # Handle other SQLAlchemy-related errors
+    #             logger.error(e)
+    #             raise HTTPException(status_code=500, detail=str(e))
+    # try:
+    #     resp_debug_append = "\n===================\n\n[ system ]\n"
+    #     resp_debug_append += agent_prompt(agent)
+    #     snap = executor.get_state(stream_config)
+    #     if snap.values and "messages" in snap.values:
+    #         for msg in snap.values["messages"]:
+    #             resp_debug_append += f"[ {msg.type} ]\n{str(msg.content)}\n\n"
+    #     if agent.prompt_append:
+    #         resp_debug_append += "[ system ]\n"
+    #         resp_debug_append += agent.prompt_append
+    # except Exception as e:
+    #     logger.error(
+    #         "failed to get debug prompt: " + str(e), exc_info=True, stack_info=True
+    #     )
+    #     resp_debug_append = ""
     # run
     for chunk in executor.stream(
         {"messages": [HumanMessage(content=content)]}, stream_config
@@ -373,7 +415,82 @@ def execute_agent(
     total_time = time.perf_counter() - start
     resp_debug.append(f"Total time cost: {total_time:.3f} seconds")
     if debug:
-        resp_debug.append(resp_debug_append)
+        # resp_debug.append(resp_debug_append)
         return resp_debug
     else:
         return resp
+
+
+def clean_agent_memory(
+    agent_id: str,
+    thread_id: str = "",
+    clean_agent_memory: bool = False,
+    clean_skills_memory: bool = False,
+    debug: bool = False,
+):
+    """Clean an agent's memory with the given prompt and return response.
+
+    This function:
+    1. Cleans the agents skills data.
+    2. Cleans the thread skills data.
+    3. Cleans the graph checkpoint data.
+    4. Cleans the graph checkpoint_writes data.
+    5. Cleans the graph checkpoint_blobs data.
+
+    Args:
+        agent_id (str): Agent ID
+        thread_id (str): Thread ID for the agent memory cleanup
+        debug (bool): Enable debug mode
+
+    Returns:
+        str: Successful response message.
+    """
+    # get the agent from the database
+    with get_session() as db:
+        try:
+            if not clean_skills_memory and not clean_agent_memory:
+                raise HTTPException(
+                    status_code=400,
+                    detail="at least one of skills data or agent memory should be true.",
+                )
+
+            if clean_skills_memory:
+                AgentSkillData.clean_data(agent_id, db)
+                ThreadSkillData.clean_data(agent_id, thread_id, db)
+
+            if clean_agent_memory:
+                thread_id = thread_id.strip()
+                q_suffix = "%"
+                if thread_id and thread_id != "":
+                    q_suffix = thread_id
+
+                deletion_param = {"value": agent_id + "-" + q_suffix}
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoints WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoint_writes WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+                db.execute(
+                    sqlalchemy.text(
+                        "DELETE FROM checkpoint_blobs WHERE thread_id like :value",
+                    ),
+                    deletion_param,
+                )
+
+            db.commit()
+
+            return "Agent data cleaned up successfully."
+        except SQLAlchemyError as e:
+            # Handle other SQLAlchemy-related errors
+            logger.error(e)
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            logger.error("failed to cleanup the agent memory: " + str(e))
+            raise e

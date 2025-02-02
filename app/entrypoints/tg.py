@@ -6,11 +6,11 @@ import sys
 from sqlmodel import Session, select
 
 from app.config.config import config
-from models.agent import Agent
+from app.services.tg.bot import pool
+from app.services.tg.bot.pool import BotPool, bot_by_token
+from app.services.tg.utils.cleanup import clean_token_str
+from models.agent import Agent, AgentData
 from models.db import get_engine, init_db
-from tg.bot import pool
-from tg.bot.pool import BotPool
-from tg.utils.cleanup import clean_token_str
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,25 @@ class AgentScheduler:
                             logger.info(f"New agent with id {agent.id} found...")
                             await self.bot_pool.init_new_bot(agent)
                             await asyncio.sleep(1)
+                            bot = bot_by_token(token)
+                            if not bot:
+                                continue
+                            bot_info = await bot.bot.get_me()
+                            # after bot init, refresh its info to agent data
+                            agent_data = db.exec(
+                                select(AgentData).where(AgentData.id == agent.id)
+                            ).first()
+                            if not agent_data:
+                                agent_data = AgentData(id=agent.id)
+                            agent_data.telegram_id = bot_info.id
+                            agent_data.telegram_username = bot_info.username
+                            agent_data.telegram_name = bot_info.first_name
+                            if bot_info.last_name:
+                                agent_data.telegram_name = (
+                                    f"{bot_info.first_name} {bot_info.last_name}"
+                                )
+                            db.add(agent_data)
+                            db.commit()
                     else:
                         cached_agent = pool._agent_bots[agent.id]
                         if cached_agent.updated_at != agent.updated_at:

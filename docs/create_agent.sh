@@ -3,9 +3,11 @@
 # Base URL for the API
 BASE_URL="http://localhost:8000"  # Change this to your API server URL
 
-# JWT token for authentication, if you run agentkit by yourself, and not
-# enabled the admin auth, you can ignore this
-JWT_TOKEN="your-jwt-token-here"  # Change this to your actual JWT token
+# JWT token for authentication, change it to your actual JWT token. 
+# If you run agentkit by yourself, and not enabled the admin auth, 
+# you can ignore this line
+JWT_TOKEN="your-jwt-token-here"
+# Change this to your actual JWT token
 
 # Agent ID - must contain only lowercase letters, numbers, and hyphens
 AGENT_ID="my-test-agent"
@@ -15,7 +17,31 @@ AGENT_NAME="IntentKit"
 
 # AI model to use
 # https://platform.openai.com/docs/models#current-model-aliases
+# you can also use "deepseek-reasoner" and "deepseek-chat"
+# Notice: Currently, the deepseek-reasoner does not support any skills.
 MODEL="gpt-4o-mini"
+
+# Agent temperature (0.0~2.0)
+# The randomness of the generated results is such that 
+# the higher the number, the more creative the results will be. 
+# However, this also makes them wilder and increases the likelihood of errors. 
+# For creative tasks, you can adjust it to above 1, but for rigorous tasks, 
+# such as quantitative trading, it’s advisable to set it lower, around 0.2.
+TEMPERATURE=0.7
+
+# Agent frequency penalty (-2.0~2.0)
+# The frequency penalty is a measure of how much the AI is allowed to repeat itself.
+# A lower value means the AI is more likely to repeat previous responses, 
+# while a higher value means the AI is more likely to generate new content.
+# For creative tasks, you can adjust it to 1 or a bit higher.
+FREQUENCY_PENALTY=0.0
+
+# Agent presence penalty (-2.0~2.0)
+# The presence penalty is a measure of how much the AI is allowed to deviate from the topic.
+# A higher value means the AI is more likely to deviate from the topic, 
+# while a lower value means the AI is more likely to follow the topic.
+# For creative tasks, you can adjust it to 1 or a bit higher.
+PRESENCE_PENALTY=0.0
 
 # Agent initial prompt (the role is system, daily user's role is user)
 read -r -d '' PROMPT_TEXT << 'END_OF_PROMPT'
@@ -47,8 +73,9 @@ END_OF_AUTONOMOUS_PROMPT
 # Skill list: https://docs.cdp.coinbase.com/agentkit/docs/wallet-management
 CDP_ENABLED=false
 CDP_SKILLS='["get_wallet_details", "get_balance"]'
-CDP_NETWORK_ID="base-sepolia"
+CDP_NETWORK_ID="base-mainnet"
 
+# Enso settings (optional)
 ENSO_ENABLED=false
 ENSO_CONFIG='{
   "api_token": "",
@@ -93,6 +120,9 @@ JSON_DATA=$(cat << EOF
   "id": "$AGENT_ID",
   "name": "$AGENT_NAME",
   "model": "$MODEL",
+  "temperature": $TEMPERATURE,
+  "frequency_penalty": $FREQUENCY_PENALTY,
+  "presence_penalty": $PRESENCE_PENALTY,
   "prompt": "$PROMPT",
   "prompt_append": "$PROMPT_APPEND",
   "autonomous_enabled": $AUTONOMOUS_ENABLED,

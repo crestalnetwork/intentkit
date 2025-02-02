@@ -51,7 +51,9 @@ class TwitterPostTweet(TwitterBaseTool):
 
             client = self.twitter.get_client()
             if not client:
-                return "Failed to get Twitter client. Please check your authentication."
+                return self._get_error_with_username(
+                    "Failed to get Twitter client. Please check your authentication."
+                )
 
             # Post tweet using tweepy client
             response = client.create_tweet(text=text, user_auth=self.twitter.use_key)
@@ -59,10 +61,10 @@ class TwitterPostTweet(TwitterBaseTool):
             if "data" in response and "id" in response["data"]:
                 tweet_id = response["data"]["id"]
                 return f"Tweet posted successfully! Tweet ID: {tweet_id}"
-            return "Failed to post tweet."
+            return self._get_error_with_username("Failed to post tweet.")
 
         except Exception as e:
-            return f"Error posting tweet: {str(e)}"
+            return self._get_error_with_username(str(e))
 
     async def _arun(self, text: str) -> str:
         """Async implementation of the tool.

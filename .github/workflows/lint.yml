@@ -1,8 +1,6 @@
 name: Lint
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -12,37 +10,6 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-    - name: Report CI Start
-      id: ci_start
-      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
-      with:
-        method: chat.postMessage
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
-        payload: |
-          channel: ${{ secrets.SLACK_CHANNEL }}
-          text: "Check Started 👀"
-          attachments:
-            - color: "dbab09"
-              fields:
-                - title: "Repository"
-                  short: true
-                  value: ${{ github.repository }}
-                - title: "Status"
-                  short: true
-                  value: "In Progress"
-                - title: "Branch"
-                  short: true
-                  value: ${{ github.ref }}
-                - title: "Author"
-                  short: true
-                  value: ${{ github.actor }}
-                - title: "Action"
-                  value: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                - title: "Diff"
-                  value: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-                - title: "Changes"
-                  value: ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.title) || toJSON(github.event.head_commit.message) }}
-
     - uses: actions/checkout@v3
 
     - name: Set up Python
@@ -60,65 +27,3 @@ jobs:
     - name: Ruff Check
       run: |
         poetry run ruff check
-
-    - name: Report CI Success
-      if: ${{ success() }}
-      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
-      with:
-        method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
-        payload: |
-          channel: ${{ secrets.SLACK_CHANNEL }}
-          ts: "${{ steps.ci_start.outputs.ts }}"
-          text: "Lint Succeeded ✅"
-          attachments:
-            - color: "28a745"
-              fields:
-                - title: "Repository"
-                  short: true
-                  value: ${{ github.repository }}
-                - title: "Status"
-                  short: true
-                  value: "Completed"
-                - title: "Branch"
-                  short: true
-                  value: ${{ github.ref }}
-                - title: "Author"
-                  short: true
-                  value: ${{ github.actor }}
-                - title: "Diff"
-                  value: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-                - title: "Changes"
-                  value: ${{ toJson(github.event.pull_request.title) || toJSON(github.event.head_commit.message) }}
-
-    - name: Report CI Failure
-      if: ${{ failure() }}
-      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
-      with:
-        method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
-        payload: |
-          channel: ${{ secrets.SLACK_CHANNEL }}
-          ts: "${{ steps.ci_start.outputs.ts }}"
-          text: "Lint Failed ❌"
-          attachments:
-            - color: "dc3545"
-              fields:
-                - title: "Repository"
-                  short: true
-                  value: ${{ github.repository }}
-                - title: "Status"
-                  short: true
-                  value: "Failed"
-                - title: "Branch"
-                  short: true
-                  value: ${{ github.ref }}
-                - title: "Author"
-                  short: true
-                  value: ${{ github.actor }}
-                - title: "Action"
-                  value: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                - title: "Diff"
-                  value: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-                - title: "Changes"
-                  value: ${{ toJson(github.event.pull_request.title) || toJSON(github.event.head_commit.message) }}

@@ -68,13 +68,18 @@ class TwitterGetMentions(TwitterBaseTool):
             if not client:
                 return TwitterGetMentionsOutput(
                     mentions=[],
-                    error="Failed to get Twitter client. Please check your authentication.",
+                    error=self._get_error_with_username(
+                        "Failed to get Twitter client. Please check your authentication."
+                    ),
                 )
 
             user_id = self.twitter.get_id()
             if not user_id:
                 return TwitterGetMentionsOutput(
-                    mentions=[], error="Failed to get Twitter user ID."
+                    mentions=[],
+                    error=self._get_error_with_username(
+                        "Failed to get Twitter user ID."
+                    ),
                 )
 
             mentions = client.get_users_mentions(
@@ -121,7 +126,9 @@ class TwitterGetMentions(TwitterBaseTool):
 
         except Exception as e:
             logger.error("Error getting mentions: %s", str(e))
-            return TwitterGetMentionsOutput(mentions=[], error=str(e))
+            return TwitterGetMentionsOutput(
+                mentions=[], error=self._get_error_with_username(str(e))
+            )
 
     async def _arun(self) -> TwitterGetMentionsOutput:
         """Async implementation of the tool.

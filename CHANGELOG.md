@@ -1,11 +1,81 @@
 # Changelog
 
+## 2025-01-27
+
+### New Features
+- Sentry Error Tracking
+
+### Improvements
+- Better short memory management, base on token count now
+- Better logs
+
+## 2025-01-26
+
+### Improvements
+- If you open the jwt verify of admin api, it now ignore the reqest come from internal network
+- Improve the docker compose tutorial, comment the twitter and tg entrypoint service by default
+
+### Break Changes
+- The new docker-compose.yml change the service name, add "intent-" prefix to all services
+
+## 2025-01-25
+
+### New Features
+- DeepSeek LLM Support!
+- Enso skills now use CDP wallet
+- Add an API for frontend to link twitter account to an agent
+
+## 2025-01-24
+
+### Improvements
+- Refactor telegram services
+- Save telegram user info to db when it linked to an agent
+
+### Bug Fixes
+- Fix bug when twitter token refresh some skills will not work
+
+## 2025-01-23
+
+### Features
+- Chat API released, you can use it to support a web UI
+
+### Improvements
+- Admin API: 
+  - When create agent, id is not required now, we will generate a random id if not provided
+  - All agent response data is improved, it has more data now
+- ENSO Skills improved
+
+## 2025-01-22
+
+### Features
+- If admin api enable the JWT authentication, the agent can only updated by its owner
+- Add upstream_id to Agent, when other service call admin API, can use this field to keep idempotent, or track the agent
+
+## 2025-01-21
+
+### Features
+- Enso add network skill
+
+### Improvements
+- Enso skills behavior improved
+
+## 2025-01-20
+
+### Features
+- Twitter skills now get more context, agent can know the author of the tweet, the thread of the tweet, and more.
+
+## 2025-01-19
+
+### Improvements
+- Twitter skills will not reply to your own tweets
+- Twitter docs improved
+
 ## 2025-01-18
 
 ### Improvements
 - Twitter rate limit only affected when using OAuth
 - Better twitter rate limit numbers
-- Slack notify improvement
+- Slack notify improved
 
 ## 2025-01-17
 

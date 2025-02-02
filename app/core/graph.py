@@ -3,6 +3,7 @@
 import logging
 from typing import Callable, Literal, Optional, Sequence, Type, TypeVar, Union, cast
 
+import tiktoken
 from langchain_core.language_models import BaseChatModel, LanguageModelLike
 from langchain_core.messages import (
     AIMessage,
@@ -143,6 +144,51 @@ def _validate_chat_history(
     raise ValueError(error_message)
 
 
+# Cache for tiktoken encoders
+_TIKTOKEN_CACHE = {}
+
+
+def _get_encoder(model_name: str = "gpt-4"):
+    """Get cached tiktoken encoder."""
+    if model_name not in _TIKTOKEN_CACHE:
+        try:
+            _TIKTOKEN_CACHE[model_name] = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            _TIKTOKEN_CACHE[model_name] = tiktoken.get_encoding("cl100k_base")
+    return _TIKTOKEN_CACHE[model_name]
+
+
+def _count_tokens(messages: Sequence[BaseMessage], model_name: str = "gpt-4") -> int:
+    """Count the number of tokens in a list of messages."""
+    encoding = _get_encoder(model_name)
+
+    num_tokens = 0
+    for message in messages:
+        # Every message follows <im_start>{role/name}\n{content}<im_end>\n
+        num_tokens += 4
+
+        # Count tokens for basic message attributes
+        msg_dict = message.model_dump()
+        for key in ["content", "name", "function_call", "role"]:
+            value = msg_dict.get(key)
+            if value:
+                num_tokens += len(encoding.encode(str(value)))
+
+        # Count tokens for tool calls more efficiently
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            for tool_call in message.tool_calls:
+                # Only encode essential parts of tool_call
+                if isinstance(tool_call, dict):
+                    for key in ["name", "arguments"]:
+                        if key in tool_call:
+                            num_tokens += len(encoding.encode(str(tool_call[key])))
+                else:
+                    # Handle tool_call object if it's not a dict
+                    num_tokens += len(encoding.encode(str(tool_call)))
+
+    return num_tokens
+
+
 def create_agent(
     model: LanguageModelLike,
     tools: Union[ToolExecutor, Sequence[BaseTool], ToolNode],
@@ -154,6 +200,7 @@ def create_agent(
     store: Optional[BaseStore] = None,
     interrupt_before: Optional[list[str]] = None,
     interrupt_after: Optional[list[str]] = None,
+    input_token_limit: int = 120000,
     debug: bool = False,
 ) -> CompiledGraph:
     """Creates a graph that works with a chat model that utilizes tool calling.
@@ -260,18 +307,40 @@ def create_agent(
 
     def default_memory_manager(state: AgentState) -> AgentState:
         messages = state["messages"]
-        # logger.debug("Before memory manager: %s", messages)
-        if len(messages) <= 100:
+
+        # If need_clear is True, mark all messages for removal
+        if "need_clear" in state and state["need_clear"]:
+            for index in range(len(messages)):
+                messages[index] = RemoveMessage(id=messages[index].id)
             return state
-        must_delete = len(messages) - 100
-        for index, message in enumerate(messages):
-            if index < must_delete:
-                messages[index] = RemoveMessage(id=message.id)
-            elif not isinstance(message, HumanMessage):
-                messages[index] = RemoveMessage(id=message.id)
-            else:
-                break
-        # logger.debug("After memory manager: %s", messages)
+
+        # Count total tokens
+        total_tokens = _count_tokens(messages)
+        token_limit = (
+            state.get("input_token_limit", 120000) // 2
+        )  # Half of the input token limit
+
+        # If over token limit, remove messages from front
+        if total_tokens > token_limit:
+            must_delete = 0
+            current_tokens = total_tokens
+            temp_messages = messages.copy()
+
+            # Calculate how many messages to delete
+            while current_tokens > token_limit and must_delete < len(temp_messages):
+                current_tokens -= _count_tokens([temp_messages[must_delete]])
+                must_delete += 1
+
+            # Ensure first remaining message is HumanMessage
+            while must_delete < len(messages) and not isinstance(
+                messages[must_delete], HumanMessage
+            ):
+                must_delete += 1
+
+            # Mark messages for removal
+            for index in range(must_delete):
+                messages[index] = RemoveMessage(id=messages[index].id)
+
         return state
 
     if memory_manager is None:
@@ -280,7 +349,33 @@ def create_agent(
     # Define the function that calls the model
     def call_model(state: AgentState, config: RunnableConfig) -> AgentState:
         _validate_chat_history(state["messages"])
-        response = model_runnable.invoke(state, config)
+
+        try:
+            logger.debug("Starting model invocation...")
+            response = model_runnable.invoke(state, config)
+            logger.debug(f"Model invocation completed. Response type: {type(response)}")
+
+            # Log response details
+            if isinstance(response, AIMessage):
+                has_tool_calls = bool(response.tool_calls)
+                logger.debug(f"Response is AIMessage. Has tool calls: {has_tool_calls}")
+                if has_tool_calls:
+                    logger.debug(f"Number of tool calls: {len(response.tool_calls)}")
+            else:
+                logger.debug(f"Response is not AIMessage: {type(response)}")
+
+        except Exception as e:
+            logger.error(f"Error in call model: {e}", exc_info=True)
+            # Clean message history on error
+            return {
+                "need_clear": True,
+                "messages": [
+                    AIMessage(
+                        content=f"Sorry, something went wrong. {e}",
+                    )
+                ],
+            }
+
         has_tool_calls = isinstance(response, AIMessage) and response.tool_calls
         all_tools_return_direct = (
             all(call["name"] in should_return_direct for call in response.tool_calls)
@@ -313,11 +408,24 @@ def create_agent(
                 ]
             }
         # We return a list, because this will get added to the existing list
+        logger.debug(f"Response: {response}")
         return {"messages": [response]}
 
     async def acall_model(state: AgentState, config: RunnableConfig) -> AgentState:
         _validate_chat_history(state["messages"])
-        response = await model_runnable.ainvoke(state, config)
+        try:
+            response = await model_runnable.ainvoke(state, config)
+        except Exception as e:
+            logger.error(f"Error in async call model: {e}")
+            # Clean message history on error
+            return {
+                "messages": [
+                    AIMessage(
+                        content=f"Sorry, something went wrong. {e}",
+                    )
+                ],
+                "need_clear": True,
+            }
         has_tool_calls = isinstance(response, AIMessage) and response.tool_calls
         all_tools_return_direct = (
             all(call["name"] in should_return_direct for call in response.tool_calls)

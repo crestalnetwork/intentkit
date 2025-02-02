@@ -79,6 +79,7 @@ class Config:
         self.cdp_api_key_private_key = self.load("CDP_API_KEY_PRIVATE_KEY")
         # AI
         self.openai_api_key = self.load("OPENAI_API_KEY")
+        self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
         self.system_prompt = self.load("SYSTEM_PROMPT")
         # Autonomous
         # self.autonomous_entrypoint_interval = int(
@@ -102,6 +103,17 @@ class Config:
             "SLACK_ALERT_TOKEN"
         )  # For alert purposes only
         self.slack_alert_channel = self.load("SLACK_ALERT_CHANNEL")
+        # Sentry
+        self.sentry_dsn = self.load("SENTRY_DSN")
+        self.sentry_traces_sample_rate = float(
+            self.load("SENTRY_TRACES_SAMPLE_RATE", "0.01")
+        )
+        self.sentry_profiles_sample_rate = float(
+            self.load("SENTRY_PROFILES_SAMPLE_RATE", "0.01")
+        )
+        self.rpc_base_mainnet = self.load(
+            "RPC_BASE_MAINNET", "https://mainnet.base.org"
+        )
         # ===== config loaded
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)

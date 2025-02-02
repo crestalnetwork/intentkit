@@ -13,7 +13,7 @@ from app.services.twitter.oauth2 import oauth2_user_handler
 from models.agent import Agent, AgentData
 from models.db import get_db
 
-router = APIRouter(prefix="/callback/auth", tags=["twitter"])
+router = APIRouter(prefix="/callback/auth", tags=["Callback"])
 
 
 async def _background_task(agent_id: str):

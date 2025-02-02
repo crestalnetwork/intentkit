@@ -11,7 +11,7 @@ This project is currently in alpha stage and is not recommended for production u
 - 🤖 Multiple Agent Support
 - 🔄 Autonomous Agent Management
 - 🔗 Blockchain Integration (EVM for now, will add more)
-- 🐦 Social Media Integration (Twitter,Telegram for now, will add more)
+- 🐦 Social Media Integration (Twitter, Telegram for now, will add more)
 - 🛠️ Extensible Skill System
 - 🔌 Extensible Plugin System (WIP)
 
@@ -89,13 +89,13 @@ curl -X POST http://127.0.0.1:8000/agents \
          "prompt": "You are an autonomous AI agent. Respond to user queries."
      }'
 ```
-There are many fields can control the agent behavior, we have a [helper shell](docs/create_agent.sh) to you.
+There are many fields that can control the agent's behavior, we have provided a [helper shell](docs/create_agent.sh) for you.
 
 6. Try it out:
 ```bash
-curl "http://127.0.0.1:8000/agents/admin/chat?q=Hello"
+curl "http://127.0.0.1:8000/admin/chat?q=Hello"
 ```
-In terminal, curl can not auto esacpe special chars, so you can use browser to test. Just copy the url to your browser, replace "Hello" with your words.
+In terminal, curl cannot auto escape special characters, so you can use browser to test. Just copy the URL to your browser, replace "Hello" with your words.
 
 ### Local Development
 1. Clone the repository:
@@ -131,6 +131,10 @@ python -m app.autonomous
 
 "Create Agent" and "Try it out" refer to the Docker section.
 
+## The Model
+For now, we only support any model from OpenAI and DeepSeek.  
+We will support more models in the future.
+
 ## Integrations
 
 ### Twitter
@@ -143,7 +147,7 @@ python -m app.autonomous
 
 The application can be configured using environment variables or AWS Secrets Manager. Key configuration options:
 
-- `ENV`: Environment (local, or others)
+- `ENV`: Environment (local or others)
 - `DB_*`: PostgreSQL Database configuration (Required)
 - `OPENAI_API_KEY`: OpenAI API key for agent interactions (Required)
 - `CDP_*`: Coinbase Developer Platform configuration (Optional)
@@ -179,7 +183,7 @@ If you want to add a skill collection, follow these steps:
 
 1. Create a new skill collection in the `skills/` directory
 2. Implement the skill interface
-3. Register the skill in `skill/YOUR_SKILL_COLLECTION/__init__.py`
+3. Register the skill in `skills/YOUR_SKILL_COLLECTION/__init__.py`
 
 If you want to add a simple skill, follow these steps:
 

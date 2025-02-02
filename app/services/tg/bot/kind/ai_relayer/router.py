@@ -7,12 +7,12 @@ from aiogram.types import Message
 
 from abstracts.engine import AgentMessageInput
 from app.core.client import execute_agent
-from tg.bot import pool
-from tg.bot.filter.chat_type import GroupOnlyFilter
-from tg.bot.filter.content_type import TextOnlyFilter
-from tg.bot.filter.id import WhitelistedChatIDsFilter
-from tg.bot.filter.no_bot import NoBotFilter
-from tg.utils.cleanup import remove_bot_name
+from app.services.tg.bot import pool
+from app.services.tg.bot.filter.chat_type import GroupOnlyFilter
+from app.services.tg.bot.filter.content_type import TextOnlyFilter
+from app.services.tg.bot.filter.id import WhitelistedChatIDsFilter
+from app.services.tg.bot.filter.no_bot import NoBotFilter
+from app.services.tg.utils.cleanup import remove_bot_name
 
 logger = logging.getLogger(__name__)
 

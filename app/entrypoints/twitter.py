@@ -42,7 +42,7 @@ def run_twitter_agents():
         # Get all twitter-enabled agents
         agents = db.exec(
             select(Agent).where(
-                Agent.twitter_enabled == True,  # noqa: E712
+                Agent.twitter_entrypoint_enabled == True,  # noqa: E712
                 Agent.twitter_config != None,  # noqa: E711
             )
         ).all()

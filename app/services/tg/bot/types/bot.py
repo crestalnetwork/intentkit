@@ -2,9 +2,9 @@ from aiogram import Bot
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.enums import ParseMode
 
+from app.services.tg.bot.types.kind import is_valid_kind
+from app.services.tg.utils.cleanup import clean_token_str
 from models.agent import Agent
-from tg.bot.types.kind import is_valid_kind
-from tg.utils.cleanup import clean_token_str
 
 
 class BotPoolItem:

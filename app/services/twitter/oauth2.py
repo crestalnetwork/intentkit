@@ -1,5 +1,7 @@
 """Twitter OAuth2 authentication module."""
 
+from fastapi import APIRouter
+from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 
@@ -20,15 +22,16 @@ class OAuth2UserHandler(OAuth2Session):
             self.auth = HTTPBasicAuth(client_id, client_secret)
         else:
             self.auth = None
+        self.code_challenge = self._client.create_code_challenge(
+            self._client.create_code_verifier(128), "S256"
+        )
 
     def get_authorization_url(self, agent_id: str):
         """Get the authorization URL to redirect the user to"""
         authorization_url, _ = self.authorization_url(
             "https://twitter.com/i/oauth2/authorize",
             state=agent_id,
-            code_challenge=self._client.create_code_challenge(
-                self._client.create_code_verifier(128), "S256"
-            ),
+            code_challenge=self.code_challenge,
             code_challenge_method="S256",
         )
         return authorization_url
@@ -71,6 +74,28 @@ oauth2_user_handler = OAuth2UserHandler(
         "media.write",
     ],
 )
+
+
+class TwitterAuthResponse(BaseModel):
+    agent_id: str
+    url: str
+
+
+router = APIRouter(tags=["Auth"])
+
+
+@router.get("/auth/twitter", response_model=TwitterAuthResponse)
+async def get_twitter_auth_url(agent_id: str) -> TwitterAuthResponse:
+    """Get Twitter OAuth2 authorization URL.
+
+    Args:
+        agent_id: ID of the agent to authenticate
+
+    Returns:
+        Object containing agent_id and authorization URL
+    """
+    url = oauth2_user_handler.get_authorization_url(agent_id)
+    return TwitterAuthResponse(agent_id=agent_id, url=url)
 
 
 def get_authorization_url(agent_id: str) -> str:

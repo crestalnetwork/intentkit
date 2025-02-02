@@ -3,7 +3,7 @@ import logging
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from tg.bot import pool
+from app.services.tg.bot import pool
 
 logger = logging.getLogger(__name__)
 

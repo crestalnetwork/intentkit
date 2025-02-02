@@ -11,15 +11,15 @@ from aiogram.webhook.aiohttp_server import (
 )
 from aiohttp import web
 
+from app.services.tg.bot.kind.ai_relayer.router import general_router
+from app.services.tg.bot.kind.god.router import god_router
+from app.services.tg.bot.kind.god.startup import GOD_BOT_PATH, GOD_BOT_TOKEN, on_startup
+from app.services.tg.bot.types.agent import BotPoolAgentItem
+from app.services.tg.bot.types.bot import BotPoolItem
+from app.services.tg.bot.types.kind import Kind
+from app.services.tg.bot.types.router_obj import RouterObj
+from app.services.tg.utils.cleanup import clean_token_str
 from models.agent import Agent
-from tg.bot.kind.ai_relayer.router import general_router
-from tg.bot.kind.god.router import god_router
-from tg.bot.kind.god.startup import GOD_BOT_PATH, GOD_BOT_TOKEN, on_startup
-from tg.bot.types.agent import BotPoolAgentItem
-from tg.bot.types.bot import BotPoolItem
-from tg.bot.types.kind import Kind
-from tg.bot.types.router_obj import RouterObj
-from tg.utils.cleanup import clean_token_str
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ class BotPool:
                 f"bot for agent {agent.id} did not started because of invalid data. err: {e}"
             )
         except Exception as e:
-            logger.error(f"failed to init new bot for agent {agent.id}: {e}")
+            logger.info(f"failed to init new bot for agent {agent.id}: {e}")
         finally:
             if bot_item and bot_item.bot:
                 await bot_item.bot.session.close()
