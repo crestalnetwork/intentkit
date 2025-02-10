@@ -13,7 +13,7 @@ gunicorn = "^23.0.0"
 pydantic = "*"
 pydantic-settings = "^2.7.1"
 sqlmodel = "^0.0.22"
-sqlalchemy = {version = "^2.0.37", extras = ["asyncio"]}
+sqlalchemy = {version = "^2.0.38", extras = ["asyncio"]}
 psycopg = "^3.2.3"
 psycopg2 = "*"
 psycopg-pool = "^3.2.4"
