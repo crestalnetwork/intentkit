@@ -8,7 +8,7 @@ We love your input! We want to make contributing to IntentKit as easy and transp
 - Proposing new features
 - Becoming a maintainer
 
-## We Develop with Github
+## We Develop with GitHub
 
 We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
@@ -25,7 +25,7 @@ We use GitHub to host code, to track issues and feature requests, as well as acc
 
 In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
 
-## Report bugs using Github's [issue tracker](https://github.com/crestalnetwork/intentkit/issues)
+## Report bugs using GitHub's [issue tracker](https://github.com/crestalnetwork/intentkit/issues)
 
 We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/crestalnetwork/intentkit/issues/new); it's that easy!
 
