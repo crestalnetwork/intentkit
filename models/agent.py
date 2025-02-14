@@ -85,6 +85,21 @@ class Agent(SQLModel, table=True):
     cdp_network_id: Optional[str] = Field(
         default="base-mainnet", description="Network identifier for CDP integration"
     )
+    # if goat_enabled, will load goat skills
+    crossmint_config: Optional[dict] = Field(
+        default=None,
+        sa_column=Column(JSONB, nullable=True),
+        description="Dict of Crossmint wallet configurations",
+    )
+    goat_enabled: Optional[bool] = Field(
+        default=False,
+        description="Whether GOAT integration is enabled",
+    )
+    goat_skills: Optional[dict] = Field(
+        default=None,
+        sa_column=Column(JSONB, nullable=True),
+        description="Dict of GOAT skills and their corresponding configurations",
+    )
     # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
     twitter_entrypoint_enabled: Optional[bool] = Field(
         default=False, description="Whether the agent can receive events from Twitter"
@@ -490,6 +505,11 @@ class AgentData(SQLModel, table=True):
 
     id: str = Field(primary_key=True)  # Same as Agent.id
     cdp_wallet_data: Optional[str]
+    crossmint_wallet_data: Optional[dict] = Field(
+        default=None,
+        sa_column=Column(JSONB, nullable=True),
+        description="Crossmint wallet information",
+    )
     twitter_id: Optional[str]
     twitter_username: Optional[str]
     twitter_name: Optional[str]

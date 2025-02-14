@@ -77,6 +77,8 @@ class Config:
         # CDP
         self.cdp_api_key_name = self.load("CDP_API_KEY_NAME")
         self.cdp_api_key_private_key = self.load("CDP_API_KEY_PRIVATE_KEY")
+        # Crossmint
+        self.crossmint_api_key = self.load("CROSSMINT_API_KEY")
         # AI
         self.openai_api_key = self.load("OPENAI_API_KEY")
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
@@ -111,6 +113,7 @@ class Config:
         self.sentry_profiles_sample_rate = float(
             self.load("SENTRY_PROFILES_SAMPLE_RATE", "0.01")
         )
+        # RPC
         self.rpc_base_mainnet = self.load(
             "RPC_BASE_MAINNET", "https://mainnet.base.org"
         )

@@ -44,6 +44,12 @@ from skills.acolyt import get_Acolyt_skill
 from skills.common import get_common_skill
 from skills.crestal import get_crestal_skill
 from skills.enso import get_enso_skill
+from skills.goat import (
+    create_smart_wallets_if_not_exist,
+    crossmint_chains,
+    get_goat_skill,
+    init_smart_wallets,
+)
 from skills.twitter import get_twitter_skill
 
 logger = logging.getLogger(__name__)
@@ -87,6 +93,9 @@ def agent_prompt(agent: Agent) -> str:
         user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause 
         Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit 
         user confirmation before broadcasting any approval transactions for security reasons.\n\n"""
+    if agent.goat_enabled:
+        prompt += """\n\nYou're using the Great Onchain Agent Toolkit (GOAT) SDK, which provides tools for DeFi, minting, betting, and analytics.
+        GOAT supports EVM blockchains and various wallets, including keypairs, smart wallets, LIT, and MPC.\n\n"""
     return prompt
 
 
@@ -185,6 +194,63 @@ async def initialize_agent(aid):
         if agent.cdp_skills and len(agent.cdp_skills) > 0:
             cdp_tools = [tool for tool in cdp_tools if tool.name in agent.cdp_skills]
         tools.extend(cdp_tools)
+
+    if agent.goat_enabled and agent.crossmint_config:
+        if (
+            agent.crossmint_config.get("chains")
+            and len(agent.crossmint_config.get("chains")) > 0
+        ):
+            chain_configs = {}
+            for chain_name in agent.crossmint_config["chains"]:
+                chain_config = crossmint_chains.get(chain_name)
+                if chain_config:
+                    chain_configs[chain_name] = chain_config
+
+            crossmint_wallet_data = (
+                agent_data.crossmint_wallet_data
+                if agent_data.crossmint_wallet_data
+                else {}
+            )
+            smart_wallet_data = create_smart_wallets_if_not_exist(
+                config.crossmint_api_key,
+                crossmint_wallet_data.get("smart"),
+            )
+
+            # save the wallet after first create
+            if (
+                not crossmint_wallet_data
+                or not crossmint_wallet_data.get("smart")
+                or not crossmint_wallet_data.get("smart").get("evm")
+                or not crossmint_wallet_data.get("smart").get("evm").get("address")
+            ):
+                await agent_store.set_data(
+                    {
+                        "crossmint_wallet_data": {"smart": smart_wallet_data},
+                    }
+                )
+
+            # give rpc some time to prevent error #429
+            time.sleep(1)
+
+            try:
+                evm_crossmint_wallets = init_smart_wallets(
+                    config.crossmint_api_key, chain_configs, smart_wallet_data["evm"]
+                )
+            except Exception as e:
+                logger.warning(e)
+
+            for wallet in evm_crossmint_wallets:
+                try:
+                    s = get_goat_skill(
+                        wallet,
+                        agent.goat_skills,
+                        skill_store,
+                        agent_store,
+                        aid,
+                    )
+                    tools.extend(s)
+                except Exception as e:
+                    logger.warning(e)
 
     # Enso skills
     if agent.enso_skills and len(agent.enso_skills) > 0 and agent.enso_config:
