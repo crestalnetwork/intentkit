@@ -27,7 +27,7 @@ langchain-community = "^0.3.18"
 langgraph = "^0.2.74"
 langgraph-checkpoint = "^2.0.16"
 langgraph-checkpoint-postgres = "^2.0.15"
-openai = "^1.59.6"
+openai = "^1.64.0"
 cdp-sdk = "0.17.0"
 tweepy = {version = "^4.15.0", extras = ["async"]}
 python-dotenv = "^1.0.1"
