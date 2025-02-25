@@ -208,6 +208,17 @@ class Agent(SQLModel, table=True):
         sa_column=Column(JSONB, nullable=True),
         description="Allora integration configuration settings",
     )
+    # ELFA skills
+    elfa_skills: Optional[List[str]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(String)),
+        description="List of Elfa-specific skills available to this agent",
+    )
+    elfa_config: Optional[dict] = Field(
+        default=None,
+        sa_column=Column(JSONB, nullable=True),
+        description="Elfa integration configuration settings",
+    )
     # auto timestamp
     created_at: SkipJsonSchema[datetime] = Field(
         default_factory=lambda: datetime.now(timezone.utc),

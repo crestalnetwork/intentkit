@@ -65,6 +65,7 @@ from skills.acolyt import get_Acolyt_skill
 from skills.allora import get_allora_skill
 from skills.cdp.get_balance import GetBalance
 from skills.common import get_common_skill
+from skills.elfa import get_elfa_skill
 from skills.enso import get_enso_skill
 from skills.goat import (
     create_smart_wallets_if_not_exist,
@@ -330,6 +331,20 @@ async def initialize_agent(aid, is_private=False):
                 s = get_allora_skill(
                     skill,
                     agent.allora_config.get("api_key"),
+                    skill_store,
+                    agent_store,
+                    aid,
+                )
+                tools.append(s)
+            except Exception as e:
+                logger.warning(e)
+    # Elfa skills
+    if agent.elfa_skills and len(agent.elfa_skills) > 0 and agent.elfa_config:
+        for skill in agent.elfa_skills:
+            try:
+                s = get_elfa_skill(
+                    skill,
+                    agent.elfa_config.get("api_key"),
                     skill_store,
                     agent_store,
                     aid,

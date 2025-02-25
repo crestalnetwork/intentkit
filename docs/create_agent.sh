@@ -152,6 +152,12 @@ ALLORA_CONFIG='{
 }'
 ALLORA_SKILLS='["get_price_prediction"]'
 
+# Elfa settings (optional)
+ELFA_CONFIG='{
+  "api_key": ""
+}'
+Elfa_SKILLS='["get_mentions","get_top_mentions","search_mentions","get_trending_tokens","get_smart_stats"]'
+
 # Twitter settings (optional)
 # If you don't need to use the twitter skills, you can remove it in TWITTER_SKILLS
 TWITTER_ENTRYPOINT_ENABLED=false
@@ -208,6 +214,8 @@ JSON_DATA=$(cat << EOF
   "acolyt_skills": $ACOLYT_SKILLS,
   "allora_config": $ALLORA_CONFIG,
   "allora_skills": $ALLORA_SKILLS,
+  "elfa_config": $ELFA_CONFIG,
+  "elfa_skills": $ELFA_SKILLS,
   "twitter_enabled": $TWITTER_ENTRYPOINT_ENABLED,
   "twitter_entrypoint_enabled": $TWITTER_ENTRYPOINT_ENABLED,
   "twitter_config": $TWITTER_CONFIG,
