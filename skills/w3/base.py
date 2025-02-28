@@ -1,22 +1,16 @@
 from typing import Type
 
-from cdp import Wallet
 from pydantic import BaseModel, Field
 
 from abstracts.agent import AgentStoreABC
 from abstracts.skill import IntentKitSkill, SkillStoreABC
-from utils.chain import ChainProvider, Network
-
-base_url = "https://api.enso.finance"
-default_chain_id = int(Network.BaseMainnet.value.id)
+from app.core.system import SystemStore
+from utils.chain import ChainProvider
 
 
-class EnsoBaseTool(IntentKitSkill):
-    """Base class for Twitter tools."""
+class Web3BaseTool(IntentKitSkill):
+    """Base class for Transaction tools."""
 
-    api_token: str = Field(description="API token")
-    main_tokens: list[str] = Field(description="Main supported tokens")
-    wallet: Wallet | None = Field(None, description="The wallet of the agent")
     chain_provider: ChainProvider | None = Field(
         None, description="Chain Provider object"
     )
@@ -24,6 +18,9 @@ class EnsoBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]
     agent_id: str = Field(description="The ID of the agent")
+    system_store: SystemStore = Field(
+        description="The global store for persisted data retrieval"
+    )
     agent_store: AgentStoreABC = Field(
         description="The agent store for persisting data"
     )

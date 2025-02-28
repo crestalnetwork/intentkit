@@ -113,6 +113,11 @@ class Agent(SQLModel, table=True):
     cdp_network_id: Optional[str] = Field(
         default="base-mainnet", description="Network identifier for CDP integration"
     )
+    tx_skills: Optional[List[str]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(String)),
+        description="List of Transaction skills available to this agent",
+    )
     # if goat_enabled, will load goat skills
     crossmint_config: Optional[dict] = Field(
         default=None,

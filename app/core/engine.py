@@ -56,6 +56,7 @@ from app.core.agent import AgentStore
 from app.core.graph import create_agent
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
+from app.core.system import SystemStore
 from clients import TwitterClient
 from models.agent import Agent, AgentData
 from models.chat import AuthorType, ChatMessage, ChatMessageSkillCall
@@ -73,6 +74,7 @@ from skills.goat import (
     init_smart_wallets,
 )
 from skills.twitter import get_twitter_skill
+from skills.w3 import get_web3_skill
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +108,10 @@ async def initialize_agent(aid, is_private=False):
         HTTPException: If agent not found (404) or database error (500)
     """
     """Initialize the agent with CDP Agentkit."""
+
+    # init global store
+    system_store = SystemStore()
+
     # init agent store
     agent_store = AgentStore(aid)
 
@@ -288,6 +294,25 @@ async def initialize_agent(aid, is_private=False):
                             logger.warning(e)
                 except Exception as e:
                     logger.warning(e)
+
+    if (
+        hasattr(config, "chain_provider")
+        and agent.tx_skills
+        and len(agent.tx_skills) > 0
+    ):
+        for skill in agent.tx_skills:
+            try:
+                s = get_web3_skill(
+                    skill,
+                    config.chain_provider,
+                    system_store,
+                    skill_store,
+                    agent_store,
+                    aid,
+                )
+                tools.append(s)
+            except Exception as e:
+                logger.warning(e)
 
     # Enso skills
     if agent.enso_skills and len(agent.enso_skills) > 0 and agent.enso_config:
