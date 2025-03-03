@@ -5,7 +5,10 @@ from pydantic import BaseModel, Field, field_validator
 
 class TimestampRange(BaseModel):
     """
-    Represents a range of timestamps.
+    Represents a range of epoch timestamps. If the end timestamp is not provided, it defaults to the current time.
+    If the user specifies the last n days, the start will be the current time minus n days in seconds, and the end will be the current time.
+    If the user specifies the last n hours, the start will be the current time minus n hours in seconds, and the end will be the current time.
+    If the user specifies the last n minutes, the start will be the current time minus n minutes in seconds, and the end will be the current time.
 
     Attributes:
         start: The starting timestamp (Unix epoch in seconds).

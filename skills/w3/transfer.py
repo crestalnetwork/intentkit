@@ -1,9 +1,11 @@
+import time
 from typing import Type
 
 import httpx
 from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from skills.w3.block import GetBlocksBetweenDates, GetBlocksBetweenDatesInput
 from utils.chain import (
     ChainType,
     EventSignature,
@@ -36,13 +38,18 @@ class GetTransfersInput(BaseModel):
         ...,
         description="The token decimals. this should be filled from the output of get_networks tool according to chain_id and token",
     )
-    first_block: int = Field(
+    start_timestamp: int = Field(
         ...,
-        description="The first block filled with the output of w3_get_block_range_by_time tool according to user's requested time range.",
+        description="""
+        The lower bound timestamp for the block range, if it is asked directly with time or timestamp, if it is requested with relative time 
+        (e.g., 1 hour ago, 2 days ago, 10 minutes) general_relative_time_parser tool should be used for conversion.
+        """,
     )
-    last_block: int = Field(
-        ...,
-        description="The last block filled with the output of w3_get_block_range_by_time tool according to user's requested time range.",
+    end_timestamp: int | None = Field(
+        int(time.time()),
+        description="""The end timestamp for the block range. the default value is now. otherwise if the user specifies the timestamp directly, it should be used. 
+        otherwise general_relative_time_parser tool should be used for conversion, in relative end time should be extracted from the user input if available 
+        (e.g. between 8 and 10 days ago, the input after `and` is the end timestamp).""",
     )
 
 
@@ -89,7 +96,9 @@ class GetTransfersOutput(BaseModel):
 
 class GetTransfers(Web3BaseTool):
     """
-    This tool fetches all token transfers to a specific address using the Quicknode API.
+    This tool fetches all token transfers to a specific address.
+    The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+    The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
 
     Attributes:
         name (str): Name of the tool, specifically "tx_get_token_transfers".
@@ -99,7 +108,11 @@ class GetTransfers(Web3BaseTool):
 
     name: str = "tx_get_token_transfers"
     description: str = (
-        "This tool fetches all token transfers to a specific address using the Quicknode API."
+        """
+        This tool fetches all token transfers to a specific address.
+        The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+        The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
+        """
     )
     args_schema: Type[BaseModel] = GetTransfersInput
 
@@ -109,10 +122,18 @@ class GetTransfers(Web3BaseTool):
         network_title: NetworkTitle,
         token_address: str,
         token_decimals: int,
-        first_block: int,
-        last_block: int,
+        start_timestamp: int,
+        end_timestamp: int | None,
     ) -> GetTransfersOutput:
         """Run the tool to fetch all token transfers to a specific address using the Quicknode API.
+
+        Args:
+            receiver_address (str): The receiver account address.
+            network_title (NetworkTitle): The requested network title.
+            token_address (str): The address of the token smart contract.
+            token_decimals (int): The token decimals
+            start_timestamp (int): The start timestamp for filtering transfers.
+            end_timestamp (int | None): The end timestamp for filtering transfers.
 
         Returns:
             GetTransfersOutput: A structured output containing the result of tokens and APYs.
@@ -128,8 +149,8 @@ class GetTransfers(Web3BaseTool):
         network_title: NetworkTitle,
         token_address: str,
         token_decimals: int,
-        first_block: int,
-        last_block: int,
+        start_timestamp: int,
+        end_timestamp: int | None,
     ) -> GetTransfersOutput:
         """Run the tool to fetch all token transfers to a specific address using the Quicknode API.
         Args:
@@ -137,14 +158,28 @@ class GetTransfers(Web3BaseTool):
             network_title (NetworkTitle): The requested network title.
             token_address (str): The address of the token smart contract.
             token_decimals (int): The token decimals
-            first_block (int): the first block for querying transactions, this should be filled with the output of w3_get_block_range_by_time according to the requested start timestamp by user.
-            last_block (int): the last block for querying transactions, this should be filled with the output of w3_get_block_range_by_time according to the requested end timestamp by user.
+            start_timestamp (int): The start timestamp for filtering transfers.
+            end_timestamp (int | None): The end timestamp for filtering transfers.
         Returns:
             GetTransfersOutput: A structured output containing the tokens APY data.
 
         Raises:
             Exception: If there's an error accessing the Quicknode API.
         """
+
+        blocks_range = await GetBlocksBetweenDates(
+            chain_provider=self.chain_provider,
+            system_store=self.system_store,
+            skill_store=self.skill_store,
+            agent_store=self.agent_store,
+            agent_id=self.agent_id,
+        ).arun(
+            tool_input=GetBlocksBetweenDatesInput(
+                network_title=network_title,
+                start_timestamp=start_timestamp,
+                end_timestamp=end_timestamp,
+            ).model_dump(exclude_none=True)
+        )
 
         network = get_network_by_title(network_title)
         chain_type = network.value.chain.value.chain_type
@@ -182,8 +217,8 @@ class GetTransfers(Web3BaseTool):
                                 None,
                                 get_padded_address(receiver_address),
                             ],
-                            "fromBlock": hex(first_block),
-                            "toBlock": hex(last_block),
+                            "fromBlock": hex(blocks_range.start_block),
+                            "toBlock": hex(blocks_range.end_block),
                         }
                     ],
                 }

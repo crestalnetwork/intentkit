@@ -5,7 +5,7 @@ from app.core.system import SystemStore
 from utils.chain import ChainProvider
 
 from .base import Web3BaseTool
-from .block import GetBlocksBetweenDates, GetCurrentBlock
+from .block import GetCurrentBlock
 from .network import GetNetworks
 from .token import GetToken, GetWellknownTokens
 from .transfer import GetTransfers
@@ -49,15 +49,6 @@ def get_web3_skill(
 
     if name == "get_received_transfers":
         return GetTransfers(
-            chain_provider=chain_provider,
-            agent_id=agent_id,
-            system_store=system_store,
-            skill_store=skill_store,
-            agent_store=agent_store,
-        )
-
-    if name == "get_block_range_by_time":
-        return GetBlocksBetweenDates(
             chain_provider=chain_provider,
             agent_id=agent_id,
             system_store=system_store,

@@ -1,3 +1,4 @@
+import time
 from typing import Type
 
 import httpx
@@ -138,13 +139,18 @@ class GetBlocksBetweenDatesInput(BaseModel):
     network_title: NetworkTitle = Field(
         ..., description="The network to be used for querying."
     )
-    time_range: TimestampRange = Field(
+    start_timestamp: int = Field(
         ...,
         description="""
-        The time range to query blocks for, specified as a start and end Unix epoch timestamp.
-        The current time MUST be obtained using the 'general_current_epoch_timestamp' tool.
-        Calculate the start and end times relative to the current timestamp from 'general_current_epoch_timestamp', for example, to get blocks for the last 7 days, subtract 7 days worth of seconds from the current timestamp for the start time.
+        The lower bound timestamp for the block range, if it is asked directly with time or timestamp, if it is requested with relative time 
+        (e.g., 1 hour ago, 2 days ago, 10 minutes) general_relative_time_parser tool should be used for conversion.
         """,
+    )
+    end_timestamp: int | None = Field(
+        int(time.time()),
+        description="""The end timestamp for the block range. the default value is now. otherwise if the user specifies the timestamp directly, it should be used. 
+        otherwise general_relative_time_parser tool should be used for conversion, in relative end time should be extracted from the user input if available 
+        (e.g. between 8 and 10 days ago, the input after `and` is the end timestamp).""",
     )
 
 
@@ -154,13 +160,14 @@ class GetBlocksBetweenDatesOutput(BaseModel):
     """
 
     start_block: int = Field(..., description="the start block")
-    end_block: int = Field(..., description="the start block")
+    end_block: int = Field(..., description="the end block")
 
 
 class GetBlocksBetweenDates(Web3BaseTool):
     """
-    This tool returns the block range according to the input timestamps.
-    The time_range start and end times MUST be calculated using the current timestamp from the 'general_current_epoch_timestamp' tool.
+    This tool returns the block range according to the input timestamps. if the output of this tool is going to be used in another tool, you should execute this tool every time.
+    The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+    The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
 
     Attributes:
         name (str): Name of the tool, specifically "w3_get_block_range_by_time".
@@ -171,23 +178,29 @@ class GetBlocksBetweenDates(Web3BaseTool):
     name: str = "w3_get_block_range_by_time"
     description: str = (
         """
-        This tool returns the block range according to the input timestamps.
-        The time_range start and end times MUST be calculated using the current timestamp from the 'general_current_epoch_timestamp' tool.
-        For example, to get blocks for the last 5 minutes, use the output of 'general_current_epoch_timestamp' to get the current time, subtract 300 seconds (5 minutes) from it to get the start time, and use the current time as the end time.
+        This tool returns the block range according to the input timestamps. if the output of this tool is going to be used in another tool, you should execute this tool every time.
+        The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+        The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
+        IMPORTANT: The results change according to the block time of the network, so this tool should be called every time if the block time is passed for the requested network.
         """
     )
     args_schema: Type[BaseModel] = GetBlocksBetweenDatesInput
 
     def _run(
-        self, network_title: NetworkTitle, time_range: TimestampRange
+        self,
+        network_title: NetworkTitle,
+        start_timestamp: int,
+        end_timestamp: int = int(time.time()),
     ) -> GetBlocksBetweenDatesOutput:
         """
         Run the tool to fetch the block range according to the input timestamps.
-        The time_range start and end times MUST be calculated using the current timestamp from the 'general_current_epoch_timestamp' tool.
+        The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+        The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
 
         Args:
             network_title (NetworkTitle): The network to check the block number for.
-            time_range (TimestampRange): The time range to query blocks for, specified as a start and end Unix epoch timestamp, calculated relative to the current timestamp from 'general_current_epoch_timestamp'.
+            start_timestamp (int): The start date and time range in this format: (e.g., 7 days ago, 2 minutes ago, between in 8 hours, etc.).
+            end_timestamp (int): It is optional, The end date and time range in this format: (e.g., 7 days ago, 2 minutes ago, between in 8 hours, etc.).
 
         Returns:
             GetBlocksBetweenDatesOutput: A structured output containing blocks start and end.
@@ -198,15 +211,20 @@ class GetBlocksBetweenDates(Web3BaseTool):
         raise NotImplementedError("Use _arun instead")
 
     async def _arun(
-        self, network_title: NetworkTitle, time_range: TimestampRange
+        self,
+        network_title: NetworkTitle,
+        start_timestamp: int,
+        end_timestamp: int = int(time.time()),
     ) -> GetBlocksBetweenDatesOutput:
         """
         Run the tool to fetch the block range according to the input timestamps.
-        The time_range start and end times MUST be calculated using the current timestamp from the 'general_current_epoch_timestamp' tool.
+        The start timestamp MUST be calculated using 'general_relative_time_parser' tool.
+        The end timestamp is optional, if not provided, it defaults to the current time, otherwise 'general_relative_time_parser' tool should be used for parsing the input.
 
         Args:
             network_title (NetworkTitle): The network to check the block number for.
-            time_range (TimestampRange): The time range to query blocks for, specified as a start and end Unix epoch timestamp, calculated relative to the current timestamp from 'general_current_epoch_timestamp'.
+            start_timestamp (int): The start date and time range in this format: (e.g., 7 days ago, 2 minutes ago, between in 8 hours, etc.).
+            end_timestamp (int): It is optional, The end date and time range in this format: (e.g., 7 days ago, 2 minutes ago, between in 8 hours, etc.).
 
         Returns:
             GetBlocksBetweenDatesOutput: A structured output containing blocks start and end.
@@ -215,8 +233,11 @@ class GetBlocksBetweenDates(Web3BaseTool):
             ToolException: If there's an error accessing the RPC or any other issue during the process.
         """
 
+        time_range = TimestampRange(start=start_timestamp, end=end_timestamp)
+
         network = get_network_by_title(network_title)
 
+        # the maximum block difference between start and end block supported by Quicknode API.
         max_block_difference = 10000
         try:
             current_block = await GetCurrentBlock(

@@ -68,6 +68,7 @@ from skills.cdp.get_balance import GetBalance
 from skills.common import get_common_skill
 from skills.elfa import get_elfa_skill
 from skills.enso import get_enso_skill
+from skills.general import get_general_skills
 from skills.goat import (
     create_smart_wallets_if_not_exist,
     get_goat_skill,
@@ -396,6 +397,8 @@ async def initialize_agent(aid, is_private=False):
     if agent.common_skills:
         for skill in agent.common_skills:
             tools.append(get_common_skill(skill))
+
+    tools.extend(get_general_skills(system_store, skill_store, agent_store, aid))
 
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
