@@ -1,5 +1,65 @@
 # Changelog
 
+## 2025-02-26
+
+### New Features
+- Chat entity and API
+
+## 2025-02-25
+
+### New Features
+- Elfa integration
+
+## 2025-02-24
+
+### New Features
+- Add input token limit to config
+- Auto clean memory after agent update
+## 2025-02-23
+
+### New Features
+- Defillama skills
+
+## 2025-02-21
+
+### New Features
+- AgentKit upgrade to new package
+
+## 2025-02-20
+
+### New Features
+- Add new skill config model
+- Introduce json schema for skill config
+
+## 2025-02-18
+
+### New Features
+- Introduce json schema for agent model
+- Chain provider abstraction and quicknode
+
+## 2025-02-17
+
+### New Features
+- Check and get the telegram bot info when creating an agent
+
+## 2025-02-16
+
+### New Features
+- Chat History API
+- Introduce to Chat ID concept
+
+## 2025-02-15
+
+### New Features
+- GOAT Integration
+- CrossMint Wallet Integration
+
+## 2025-02-14
+
+### New Features
+- Auto create cdp wallet when create agent
+- CryptoCompare skills
+
 ## 2025-02-13
 
 ### New Features

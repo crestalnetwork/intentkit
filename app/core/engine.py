@@ -47,6 +47,7 @@ from langchain_openai import ChatOpenAI
 from langchain_xai import ChatXAI
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
+from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -676,10 +677,9 @@ async def execute_agent(message: ChatMessage, debug: bool = False) -> list[ChatM
 
 async def clean_agent_memory(
     agent_id: str,
-    thread_id: str = "",
-    clean_agent_memory: bool = False,
-    clean_skills_memory: bool = False,
-    debug: bool = False,
+    chat_id: str = "",
+    clean_agent: bool = False,
+    clean_skill: bool = False,
 ) -> str:
     """
     Clean an agent's memory with the given prompt and return response.
@@ -693,10 +693,9 @@ async def clean_agent_memory(
 
     Args:
         agent_id (str): Agent ID
-        thread_id (str): Thread ID for the agent memory cleanup
-        clean_agent_memory (bool): Whether to clean agent's memory data
-        clean_skills_memory (bool): Whether to clean skills memory data
-        debug (bool): Enable debug mode
+        chat_id (str): Thread ID for the agent memory cleanup
+        clean_agent (bool): Whether to clean agent's memory data
+        clean_skill (bool): Whether to clean skills memory data
 
     Returns:
         str: Successful response message.
@@ -704,21 +703,21 @@ async def clean_agent_memory(
     # get the agent from the database
     async with get_session() as db:
         try:
-            if not clean_skills_memory and not clean_agent_memory:
+            if not clean_skill and not clean_agent:
                 raise HTTPException(
                     status_code=400,
                     detail="at least one of skills data or agent memory should be true.",
                 )
 
-            if clean_skills_memory:
+            if clean_skill:
                 await AgentSkillData.clean_data(agent_id)
-                await ThreadSkillData.clean_data(agent_id, thread_id)
+                await ThreadSkillData.clean_data(agent_id, chat_id)
 
-            if clean_agent_memory:
-                thread_id = thread_id.strip()
+            if clean_agent:
+                chat_id = chat_id.strip()
                 q_suffix = "%"
-                if thread_id and thread_id != "":
-                    q_suffix = thread_id
+                if chat_id and chat_id != "":
+                    q_suffix = chat_id
 
                 deletion_param = {"value": agent_id + "-" + q_suffix}
                 await db.execute(
@@ -740,6 +739,10 @@ async def clean_agent_memory(
                     deletion_param,
                 )
 
+            # update the updated_at field so that the agent instance will all reload
+            await db.execute(
+                update(Agent).where(Agent.id == agent_id).values(updated_at=func.now())
+            )
             await db.commit()
 
             logger.info(f"Agent [{agent_id}] data cleaned up successfully.")
@@ -756,8 +759,11 @@ async def clean_agent_memory(
 async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
     thread_id = f"{agent_id}-{chat_id}"
     stream_config = {"configurable": {"thread_id": thread_id}}
+    is_private = False
+    if chat_id.startswith("owner") or chat_id.startswith("autonomous"):
+        is_private = True
     try:
-        executor, _ = await agent_executor(agent_id)
+        executor, _ = await agent_executor(agent_id, is_private)
         snap = await executor.aget_state(stream_config)
         if snap.values and "messages" in snap.values:
             return snap.values["messages"]

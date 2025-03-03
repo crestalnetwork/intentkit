@@ -25,8 +25,8 @@ AGENT_SCHEMA_PATH = PROJECT_ROOT / "models" / "agent_schema.json"
 async def get_agent_schema() -> JSONResponse:
     """Get the JSON schema for Agent model with all $ref references resolved.
 
-    Returns:
-        JSONResponse: The complete JSON schema for the Agent model with application/json content type
+    **Returns:**
+    * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
     """
     base_uri = f"file://{AGENT_SCHEMA_PATH}"
     with open(AGENT_SCHEMA_PATH) as f:
@@ -48,22 +48,18 @@ async def get_agent_schema() -> JSONResponse:
     },
 )
 async def get_skill_schema(
-    skill: str = PathParam(
-        ...,
-        description="Skill name (alphanumeric and dash only)",
-        regex="^[a-zA-Z0-9-]+$",
-    ),
+    skill: str = PathParam(..., description="Skill name", regex="^[a-zA-Z0-9_-]+$"),
 ) -> JSONResponse:
-    """Get the JSON schema for a skill.
+    """Get the JSON schema for a specific skill.
 
-    Args:
-        skill: The name of the skill to get the schema for (alphanumeric and dash only)
+    **Path Parameters:**
+    * `skill` - Skill name
 
-    Returns:
-        JSONResponse: The JSON schema for the skill with application/json content type
+    **Returns:**
+    * `JSONResponse` - The complete JSON schema for the skill with application/json content type
 
-    Raises:
-        HTTPException: If the skill is not found or name is invalid
+    **Raises:**
+    * `HTTPException` - If the skill is not found or name is invalid
     """
     base_path = PROJECT_ROOT / "skills"
     schema_path = base_path / skill / "schema.json"

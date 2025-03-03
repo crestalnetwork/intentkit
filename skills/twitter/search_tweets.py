@@ -1,3 +1,4 @@
+import datetime
 import logging
 from typing import Type
 
@@ -79,6 +80,15 @@ class TwitterSearchTweets(TwitterBaseTool):
             last = last or {}
             since_id = last.get("since_id")
 
+            # Reset since_id if the saved timestamp is over 6 days old
+            if since_id and last.get("timestamp"):
+                try:
+                    saved_time = datetime.datetime.fromisoformat(last["timestamp"])
+                    if (datetime.datetime.now() - saved_time).days > 6:
+                        since_id = None
+                except (ValueError, TypeError):
+                    since_id = None
+
             tweets = await client.search_recent_tweets(
                 query=query,
                 user_auth=self.twitter.use_key,
@@ -120,6 +130,7 @@ class TwitterSearchTweets(TwitterBaseTool):
             # Update the since_id in store for the next request
             if tweets.get("meta") and tweets.get("meta").get("newest_id"):
                 last["since_id"] = tweets["meta"]["newest_id"]
+                last["timestamp"] = datetime.datetime.now().isoformat()
                 await self.skill_store.save_agent_skill_data(
                     self.agent_id, self.name, query, last
                 )

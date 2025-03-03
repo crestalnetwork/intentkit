@@ -25,17 +25,17 @@ async def execute(
 ) -> list[ChatMessage]:
     """Execute an agent with the given input and return response lines.
 
-    Args:
-        message (ChatMessage): The chat message containing agent_id, chat_id and message content
+    **Request Body:**
+    * `message` - The chat message containing agent_id, chat_id and message content
 
-    Returns:
-        list[str]: Formatted response lines from agent execution
+    **Returns:**
+    * `list[ChatMessage]` - Formatted response lines from agent execution
 
-    Raises:
-        HTTPException:
-            - 400: If input parameters are invalid
-            - 404: If agent not found
-            - 500: For other server-side errors
+    **Raises:**
+    * `HTTPException`:
+        - 400: If input parameters are invalid
+        - 404: If agent not found
+        - 500: For other server-side errors
     """
     message.created_at = None
     # Validate input parameters

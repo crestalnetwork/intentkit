@@ -348,22 +348,9 @@ def create_agent(
 
     # Define the function that calls the model
     def call_model(state: AgentState, config: RunnableConfig) -> AgentState:
-        _validate_chat_history(state["messages"])
-
         try:
-            logger.debug("Starting model invocation...")
+            _validate_chat_history(state["messages"])
             response = model_runnable.invoke(state, config)
-            logger.debug(f"Model invocation completed. Response type: {type(response)}")
-
-            # Log response details
-            if isinstance(response, AIMessage):
-                has_tool_calls = bool(response.tool_calls)
-                logger.debug(f"Response is AIMessage. Has tool calls: {has_tool_calls}")
-                if has_tool_calls:
-                    logger.debug(f"Number of tool calls: {len(response.tool_calls)}")
-            else:
-                logger.debug(f"Response is not AIMessage: {type(response)}")
-
         except Exception as e:
             logger.error(f"Error in call model: {e}", exc_info=True)
             # Clean message history on error
@@ -413,8 +400,8 @@ def create_agent(
 
     async def acall_model(state: AgentState, config: RunnableConfig) -> AgentState:
         logger.debug(f"[{aid}] Async calling model")
-        _validate_chat_history(state["messages"])
         try:
+            _validate_chat_history(state["messages"])
             response = await model_runnable.ainvoke(state, config)
         except Exception as e:
             logger.error(f"[{aid}] Error in async call model: {e}")

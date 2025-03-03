@@ -76,6 +76,4 @@ def send_slack_message(
         logger.info(f"Message sent successfully to channel {channel or _slack_channel}")
         return response
     except SlackApiError as e:
-        error_msg = f"Failed to send Slack message: {str(e)}"
-        logger.error(error_msg)
-        raise SlackApiError(message=error_msg, response=e.response)
+        logger.error(f"Failed to send Slack message: {str(e)}")

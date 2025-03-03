@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import List, NotRequired, Optional, TypedDict
 
-from fastapi import HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Index, String, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -237,10 +236,7 @@ class Chat(SQLModel, table=True):
     @classmethod
     async def get(cls, id: str) -> "Chat":
         async with get_session() as db:
-            chat = await db.get(cls, id)
-            if not chat:
-                raise HTTPException(status_code=404, detail="Chat not found")
-            return chat
+            return await db.get(cls, id)
 
     async def create(self):
         async with get_session() as db:
@@ -250,7 +246,7 @@ class Chat(SQLModel, table=True):
 
     async def delete(self):
         async with get_session() as db:
-            db.delete(self)
+            await db.delete(self)
             await db.commit()
 
     async def add_round(self):

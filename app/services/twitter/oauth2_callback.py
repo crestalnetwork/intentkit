@@ -43,15 +43,13 @@ async def twitter_oauth_callback(
     It exchanges the authorization code for access and refresh tokens, then stores
     them in the database.
 
-    Args:
-        state: URL-encoded state containing agent_id and redirect_uri
-        code: Authorization code from Twitter
+    **Query Parameters:**
+    * `state` - URL-encoded state containing agent_id and redirect_uri
+    * `code` - Authorization code from Twitter
+    * `error` - Error message from Twitter (optional)
 
-    Returns:
-        JSONResponse or RedirectResponse depending on redirect_uri
-
-    Raises:
-        HTTPException: If state/code is missing or token exchange fails
+    **Returns:**
+    * JSONResponse or RedirectResponse depending on redirect_uri
     """
     if not state:
         raise HTTPException(status_code=400, detail="Missing state parameter")

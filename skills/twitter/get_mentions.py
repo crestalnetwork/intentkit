@@ -70,7 +70,7 @@ class TwitterGetMentions(TwitterBaseTool):
             max_results = 10
             since_id = last.get("since_id")
             if since_id:
-                max_results = 100
+                max_results = 30
 
             # Always get mentions for the last day
             start_time = datetime.now(tz=timezone.utc) - timedelta(days=1)

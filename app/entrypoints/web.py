@@ -3,6 +3,7 @@
 import json
 import logging
 import secrets
+import textwrap
 from typing import List
 
 from epyxid import XID
@@ -189,11 +190,14 @@ async def debug_chat(
     3. Executes the agent with the query
     4. Updates quota usage
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
     * `q` - User's input query
     * `debug` - Enable debug mode (show whole skill response)
     * `thread` - Thread ID for conversation tracking
+    * `chat_id` - Chat ID for conversation tracking
 
     **Returns:**
     * `str` - Formatted chat response
@@ -284,15 +288,17 @@ async def get_chat_history(
     chat_id: str = Query(..., description="Chat ID to get history for"),
     db: AsyncSession = Depends(get_db),
 ) -> List[ChatMessage]:
-    """Get chat history for a specific chat.
+    """Get last 50 messages for a specific chat.
 
     **Special Chat IDs:**
     * `autonomous` - Autonomous log
     * `public` - Public chat history in X and TG groups
     * `owner` - Owner chat history (coming soon)
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
     * `chat_id` - Chat ID to get history for
 
     **Returns:**
@@ -340,8 +346,10 @@ async def retry_chat_deprecated(
     If the last message is from the agent, return it directly.
     If the last message is from a user, generate a new agent response.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
     * `chat_id` - Chat ID to retry
 
     **Returns:**
@@ -400,6 +408,15 @@ async def retry_chat_deprecated(
     response_model=list[ChatMessage],
     operation_id="retry_chat",
     summary="Retry Chat",
+    deprecated=True,
+)
+@chat_router.post(
+    "/agents/{aid}/chat/retry/v2",
+    tags=["Chat"],
+    dependencies=[Depends(verify_jwt)],
+    response_model=list[ChatMessage],
+    operation_id="retry_chat",
+    summary="Retry Chat",
 )
 async def retry_chat(
     aid: str = Path(..., description="Agent ID"),
@@ -411,8 +428,10 @@ async def retry_chat(
     If the last message is from the agent, return it directly.
     If the last message is from a user, generate a new agent response.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
     * `chat_id` - Chat ID to retry
 
     **Returns:**
@@ -488,12 +507,14 @@ async def create_chat_deprecated(
     > **Note:** This is for internal/private use and may have additional features or fewer
     > restrictions compared to the public endpoint.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Request Body:**
     * `request` - Chat message request object
 
     **Returns:**
-    * `List[ChatMessage]` - List of chat messages including both user input and agent response
+    * `ChatMessage` - Agent's response message
 
     **Raises:**
     * `404` - Agent not found
@@ -524,19 +545,27 @@ async def create_chat_deprecated(
         attachments=request.attachments,
     )
 
-    try:
-        # Execute agent
-        response_messages = await execute_agent(user_message)
+    # Execute agent
+    response_messages = await execute_agent(user_message)
 
-        # Update quota
-        await quota.add_message()
+    # Create or active chat
+    chat = await Chat.get(request.chat_id)
+    if chat:
+        await chat.add_round()
+    else:
+        chat = Chat(
+            id=request.chat_id,
+            agent_id=aid,
+            user_id=request.user_id,
+            summary=textwrap.shorten(request.message, width=20, placeholder="..."),
+            rounds=1,
+        )
+        await chat.create()
 
-        return response_messages[-1]
+    # Update quota
+    await quota.add_message()
 
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        raise HTTPException(status_code=500, detail=str(e))
+    return response_messages[-1]
 
 
 @chat_router.post(
@@ -564,8 +593,13 @@ async def create_chat(
     > **Note:** This is the public-facing endpoint with appropriate rate limiting
     > and security measures.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
+    * `owner_mode` - Enable owner mode
+
+    **Request Body:**
     * `request` - Chat message request object
 
     **Returns:**
@@ -606,26 +640,35 @@ async def create_chat(
         attachments=request.attachments,
     )
 
-    try:
-        # Execute agent
-        response_messages = await execute_agent(user_message)
+    # Execute agent
+    response_messages = await execute_agent(user_message)
 
-        # Update quota
-        await quota.add_message()
+    # Create or active chat
+    chat = await Chat.get(request.chat_id)
+    if chat:
+        await chat.add_round()
+    else:
+        chat = Chat(
+            id=request.chat_id,
+            agent_id=aid,
+            user_id=request.user_id,
+            summary=textwrap.shorten(request.message, width=20, placeholder="..."),
+            rounds=1,
+        )
+        await chat.create()
 
-        return response_messages
+    # Update quota
+    await quota.add_message()
 
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        raise HTTPException(status_code=500, detail=str(e))
+    return response_messages
 
 
 @chat_router_readonly.get(
     "/agents/{aid}/chats",
     response_model=List[Chat],
-    summary="Get chat list by agent and user",
+    summary="User Chat List",
     tags=["Chat"],
+    operation_id="get_agent_chats",
 )
 async def get_agent_chats(
     aid: str = Path(..., description="Agent ID"),
@@ -633,8 +676,10 @@ async def get_agent_chats(
 ):
     """Get chat list for a specific agent and user.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
+
+    **Query Parameters:**
     * `user_id` - User ID
 
     **Returns:**
@@ -667,8 +712,17 @@ class ChatSummaryUpdate(BaseModel):
 @chat_router.put(
     "/agents/{aid}/chats/{chat_id}",
     response_model=Chat,
-    summary="Update chat summary",
+    summary="Update Chat Summary",
     tags=["Chat"],
+    deprecated=True,
+    operation_id="update_chat_summary",
+)
+@chat_router.patch(
+    "/agents/{aid}/chats/{chat_id}",
+    response_model=Chat,
+    summary="Update Chat Summary",
+    tags=["Chat"],
+    operation_id="update_chat_summary",
 )
 async def update_chat_summary(
     update_data: ChatSummaryUpdate,
@@ -677,9 +731,11 @@ async def update_chat_summary(
 ):
     """Update the summary of a specific chat.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
     * `chat_id` - Chat ID
+
+    **Request Body:**
     * `update_data` - Summary update data (in request body)
 
     **Returns:**
@@ -710,8 +766,9 @@ async def update_chat_summary(
 @chat_router.delete(
     "/agents/{aid}/chats/{chat_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a chat",
+    summary="Delete a Chat",
     tags=["Chat"],
+    operation_id="delete_chat",
 )
 async def delete_chat(
     aid: str = Path(..., description="Agent ID"),
@@ -719,7 +776,7 @@ async def delete_chat(
 ):
     """Delete a specific chat.
 
-    **Parameters:**
+    **Path Parameters:**
     * `aid` - Agent ID
     * `chat_id` - Chat ID
 
