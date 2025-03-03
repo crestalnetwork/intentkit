@@ -374,10 +374,15 @@ class Agent(SQLModel, table=True):
                         detail="upstream_id cannot be changed after creation",
                     )
                 # Update existing agent
-                for field in self.model_fields:
-                    if field != "id":  # Skip the primary key
-                        if getattr(self, field) is not None:
-                            setattr(existing_agent, field, getattr(self, field))
+                for field, value in self.model_dump(exclude_unset=True).items():
+                    if (
+                        field != "id"
+                        and field != "number"
+                        and field != "created_at"
+                        and field != "updated_at"
+                        and field != "owner"
+                    ):  # Skip the primary key
+                        setattr(existing_agent, field, value)
                 async with get_session() as db:
                     db.add(existing_agent)
                     await db.commit()
