@@ -1,10 +1,31 @@
 from abc import ABC, abstractmethod
-from enum import IntEnum, StrEnum
+from enum import Enum, StrEnum
 
 import httpx
+from pydantic import BaseModel, Field
 
 
-class Chain(StrEnum):
+class EventSignature(StrEnum):
+    Transfer = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+
+class ChainType(Enum):
+    """
+    ChainType is an enumeration that represents different types of blockchain networks.
+    """
+
+    EVM = 1
+    Solana = 2
+    Cosmos = 3
+    Other = 4
+
+
+class ChainData(BaseModel):
+    title: str = Field(description="The name of the blockchain.")
+    chain_type: ChainType = Field(description="The type of the blockchain.")
+
+
+class Chain(Enum):
     """
     Enum of supported blockchain chains, using QuickNode's naming conventions.
 
@@ -15,55 +36,58 @@ class Chain(StrEnum):
     """
 
     # EVM Chains
-    Ethereum = "eth"  # Or "ethereum"
-    Avalanche = "avax"  # Or "avalanche"
-    Binance = "bsc"  # BNB Smart Chain
-    Polygon = "matic"  # Or "polygon"
-    Gnosis = "gnosis"  # Or "xdai"
-    Celo = "celo"
-    Fantom = "fantom"
-    Moonbeam = "moonbeam"
-    Aurora = "aurora"
-    Arbitrum = "arbitrum"
-    Optimism = "optimism"
-    Linea = "linea"
-    ZkSync = "zksync"
+    Ethereum = ChainData(title="eth", chain_type=ChainType.EVM)  # Or "ethereum"
+    Avalanche = ChainData(title="avax", chain_type=ChainType.EVM)  # Or "avalanche"
+    Binance = ChainData(title="bsc", chain_type=ChainType.EVM)  # BNB Smart Chain
+    Polygon = ChainData(title="matic", chain_type=ChainType.EVM)  # Or "polygon"
+    Gnosis = ChainData(title="gnosis", chain_type=ChainType.EVM)  # Or "xdai"
+    Celo = ChainData(title="celo", chain_type=ChainType.EVM)
+    Fantom = ChainData(title="fantom", chain_type=ChainType.EVM)
+    Moonbeam = ChainData(title="moonbeam", chain_type=ChainType.EVM)
+    Aurora = ChainData(title="aurora", chain_type=ChainType.EVM)
+    Arbitrum = ChainData(title="arbitrum", chain_type=ChainType.EVM)
+    Optimism = ChainData(title="optimism", chain_type=ChainType.EVM)
+    Linea = ChainData(title="linea", chain_type=ChainType.EVM)
+    ZkSync = ChainData(title="zksync", chain_type=ChainType.EVM)
 
     # Base
-    Base = "base"
+    Base = ChainData(title="base", chain_type=ChainType.EVM)
 
     # Cosmos Ecosystem
-    CosmosHub = "cosmos"  # Or "cosmos-hub"
-    Osmosis = "osmosis"
-    Juno = "juno"
-    Evmos = "evmos"
-    Kava = "kava"
-    Persistence = "persistence"
-    Secret = "secret"
-    Stargaze = "stargaze"
-    Terra = "terra"  # Or "terra-classic"
-    Axelar = "axelar"
+    CosmosHub = ChainData(
+        title="cosmos", chain_type=ChainType.Cosmos
+    )  # Or "cosmos-hub"
+    Osmosis = ChainData(title="osmosis", chain_type=ChainType.Cosmos)
+    Juno = ChainData(title="juno", chain_type=ChainType.Cosmos)
+    Evmos = ChainData(title="evmos", chain_type=ChainType.Cosmos)
+    Kava = ChainData(title="kava", chain_type=ChainType.Cosmos)
+    Persistence = ChainData(title="persistence", chain_type=ChainType.Cosmos)
+    Secret = ChainData(title="secret", chain_type=ChainType.Cosmos)
+    Stargaze = ChainData(title="stargaze", chain_type=ChainType.Cosmos)
+    Terra = ChainData(title="terra", chain_type=ChainType.Cosmos)  # Or "terra-classic"
+    Axelar = ChainData(title="axelar", chain_type=ChainType.Cosmos)
 
     # Solana
-    Solana = "sol"  # Or "solana"
+    Solana = ChainData(title="sol", chain_type=ChainType.Solana)  # Or "solana"
 
     # Other Chains
-    Sonic = "sonic"
-    Bera = "bera"
-    Near = "near"
-    Frontera = "frontera"
+    Sonic = ChainData(title="sonic", chain_type=ChainType.Other)
+    Bera = ChainData(title="bera", chain_type=ChainType.Other)
+    Near = ChainData(title="near", chain_type=ChainType.Other)
+    Frontera = ChainData(title="frontera", chain_type=ChainType.Other)
+
+    # def __str__(self):
+    #     return self.value.title
 
 
-class Network(StrEnum):
-    """
-    Enum of well-known blockchain network names, based on QuickNode API.
+def get_chain_by_title(title: str) -> Chain:
+    for chain in Chain:
+        if chain.value.title == title:
+            return chain
+    return None
 
-    This list is not exhaustive and might not be completely up-to-date.
-    Always consult the official QuickNode documentation for the most accurate
-    and current list of supported networks.  Network names can sometimes
-    be slightly different from what you might expect.
-    """
 
+class NetworkTitle(StrEnum):
     # Ethereum Mainnet and Testnets
     EthereumMainnet = "ethereum-mainnet"
     EthereumGoerli = "ethereum-goerli"  # Goerli Testnet (deprecated, Sepolia preferred)
@@ -90,109 +114,259 @@ class Network(StrEnum):
     BaseSepolia = "base-sepolia"
 
     # Cosmos Ecosystem (These can be tricky and may need updates)
-    CosmosHubMainnet = "cosmos-hub-mainnet"  # Or just "cosmos"
-    OsmosisMainnet = "osmosis-mainnet"  # Or just "osmosis"
-    JunoMainnet = "juno-mainnet"  # Or just "juno"
+    CosmosHubMainnet = "cosmos-hub-mainnet"  # Or just "cosmos", Cosmos doesn't have a consistent chain ID
+    OsmosisMainnet = "osmosis-mainnet"  # Or just "osmosis", Cosmos doesn't have a consistent chain ID
+    JunoMainnet = (
+        "juno-mainnet"  # Or just "juno", Cosmos doesn't have a consistent chain ID
+    )
 
     # Solana (Note: Solana uses cluster names, not typical network names)
-    SolanaMainnet = "solana-mainnet"  # Or "solana"
+    SolanaMainnet = "solana-mainnet"  # Or "solana", Solana doesn't have a chain ID
 
     # Other Chains
     SonicMainnet = "sonic-mainnet"
     BeraMainnet = "bera-mainnet"
-    NearMainnet = "near-mainnet"  # Or just "near"
-    KavaMainnet = "kava-mainnet"  # Or just "kava"
-    EvmosMainnet = "evmos-mainnet"  # Or just "evmos"
-    PersistenceMainnet = "persistence-mainnet"  # Or just "persistence"
-    SecretMainnet = "secret-mainnet"  # Or just "secret"
-    StargazeMainnet = "stargaze-mainnet"  # Or just "stargaze"
-    TerraMainnet = "terra-mainnet"  # Or "terra-classic"
-    AxelarMainnet = "axelar-mainnet"  # Or just "axelar"
+    NearMainnet = "near-mainnet"  # Or just "near", Near doesn't have a chain ID
+    KavaMainnet = (
+        "kava-mainnet"  # Or just "kava", Kava chain ID can vary depending on zone
+    )
+    EvmosMainnet = (
+        "evmos-mainnet"  # Or just "evmos", Evmos chain ID can vary depending on zone
+    )
+    PersistenceMainnet = "persistence-mainnet"  # Or just "persistence", Persistence chain ID can vary depending on zone
+    SecretMainnet = (
+        "secret-mainnet"  # Or just "secret", Secret chain ID can vary depending on zone
+    )
+    StargazeMainnet = "stargaze-mainnet"  # Or just "stargaze", Stargaze chain ID can vary depending on zone
+    TerraMainnet = (
+        "terra-mainnet"  # Or "terra-classic", Terra chain ID can vary depending on zone
+    )
+    AxelarMainnet = (
+        "axelar-mainnet"  # Or just "axelar", Axelar chain ID can vary depending on zone
+    )
     FronteraMainnet = "frontera-mainnet"
 
 
-class NetworkId(IntEnum):
+class NetworkData(BaseModel):
+    id: str = Field(description="The id of the network (chain id).")
+    title: NetworkTitle = Field(description="The name of the blockchain.")
+    chain: Chain = Field(description="The Chain technology of the network")
+    block_time: float = Field(description="Average block time in seconds.")
+
+
+class Network(Enum):
     """
-    Enum of well-known blockchain network IDs.
+    Enum of well-known blockchain network names, based on QuickNode API.
 
     This list is not exhaustive and might not be completely up-to-date.
-    Always consult the official documentation for the specific blockchain
-    you are working with for the most accurate and current chain ID.
+    Always consult the official QuickNode documentation for the most accurate
+    and current list of supported networks.  Network names can sometimes
+    be slightly different from what you might expect.
     """
 
     # Ethereum Mainnet and Testnets
-    EthereumMainnet = 1
-    EthereumGoerli = 5  # Goerli Testnet (deprecated, Sepolia is preferred)
-    EthereumSepolia = 11155111
+    EthereumMainnet = NetworkData(
+        title=NetworkTitle.EthereumMainnet,
+        id="1",
+        chain=Chain.Ethereum,
+        block_time=13.5,  # Approximate block time in seconds
+    )
+    EthereumGoerli = NetworkData(
+        title=NetworkTitle.EthereumGoerli,
+        id="5",
+        chain=Chain.Ethereum,
+        block_time=15,  # Approximate block time in seconds
+    )
+    EthereumSepolia = NetworkData(
+        title=NetworkTitle.EthereumSepolia,
+        id="11155111",
+        chain=Chain.Ethereum,
+        block_time=12,  # Approximate block time in seconds
+    )
 
     # Layer 2s on Ethereum
-    ArbitrumMainnet = 42161
-    OptimismMainnet = 10
-    LineaMainnet = 59144
-    ZkSyncMainnet = 324  # zkSync Era
+    ArbitrumMainnet = NetworkData(
+        title=NetworkTitle.ArbitrumMainnet,
+        id="42161",
+        chain=Chain.Arbitrum,
+        block_time=0.25,  # Approximate block time in seconds
+    )
+    OptimismMainnet = NetworkData(
+        title=NetworkTitle.OptimismMainnet,
+        id="10",
+        chain=Chain.Optimism,
+        block_time=2,  # Approximate block time in seconds
+    )
+    LineaMainnet = NetworkData(
+        title=NetworkTitle.LineaMainnet,
+        id="59144",
+        chain=Chain.Linea,
+        block_time=1,  # Approximate block time in seconds
+    )
+    ZkSyncMainnet = NetworkData(
+        title=NetworkTitle.ZkSyncMainnet,
+        id="324",
+        chain=Chain.ZkSync,
+        block_time=3,  # Approximate block time in seconds
+    )
 
     # Other EVM Chains
-    AvalancheMainnet = 43114
-    BinanceMainnet = 56  # BNB Smart Chain (BSC)
-    PolygonMainnet = 137
-    GnosisMainnet = 100  # xDai Chain
-    CeloMainnet = 42220
-    FantomMainnet = 250
-    MoonbeamMainnet = 1284
-    AuroraMainnet = 1313161554
+    AvalancheMainnet = NetworkData(
+        title=NetworkTitle.AvalancheMainnet,
+        id="43114",
+        chain=Chain.Avalanche,
+        block_time=2,  # Approximate block time in seconds
+    )
+    BinanceMainnet = NetworkData(
+        title=NetworkTitle.BinanceMainnet,
+        id="56",
+        chain=Chain.Binance,
+        block_time=3,  # Approximate block time in seconds
+    )
+    PolygonMainnet = NetworkData(
+        title=NetworkTitle.PolygonMainnet,
+        id="137",
+        chain=Chain.Polygon,
+        block_time=2.5,  # Approximate block time in seconds
+    )
+    GnosisMainnet = NetworkData(
+        title=NetworkTitle.GnosisMainnet,
+        id="100",
+        chain=Chain.Gnosis,
+        block_time=5,  # Approximate block time in seconds
+    )
+    CeloMainnet = NetworkData(
+        title=NetworkTitle.CeloMainnet,
+        id="42220",
+        chain=Chain.Celo,
+        block_time=5,  # Approximate block time in seconds
+    )
+    FantomMainnet = NetworkData(
+        title=NetworkTitle.FantomMainnet,
+        id="250",
+        chain=Chain.Fantom,
+        block_time=1,  # Approximate block time in seconds
+    )
+    MoonbeamMainnet = NetworkData(
+        title=NetworkTitle.MoonbeamMainnet,
+        id="1284",
+        chain=Chain.Moonbeam,
+        block_time=12,  # Approximate block time in seconds
+    )
+    AuroraMainnet = NetworkData(
+        title=NetworkTitle.AuroraMainnet,
+        id="1313161554",
+        chain=Chain.Aurora,
+        block_time=1,  # Approximate block time in seconds
+    )
 
     # Base
-    BaseMainnet = 8453
-    BaseSepolia = 84532
+    BaseMainnet = NetworkData(
+        title=NetworkTitle.BaseMainnet,
+        id="8453",
+        chain=Chain.Base,
+        block_time=2,  # Approximate block time in seconds
+    )
+    BaseSepolia = NetworkData(
+        title=NetworkTitle.BaseSepolia,
+        id="84532",
+        chain=Chain.Base,
+        block_time=2,  # Approximate block time in seconds
+    )
+
+    # Cosmos Ecosystem
+    CosmosHubMainnet = NetworkData(
+        title=NetworkTitle.CosmosHubMainnet,
+        id="cosmoshub-4",
+        chain=Chain.CosmosHub,
+        block_time=6,  # Approximate block time in seconds
+    )
+    OsmosisMainnet = NetworkData(
+        title=NetworkTitle.OsmosisMainnet,
+        id="osmosis-1",
+        chain=Chain.Osmosis,
+        block_time=6,  # Approximate block time in seconds
+    )
+    JunoMainnet = NetworkData(
+        title=NetworkTitle.JunoMainnet,
+        id="juno-1",
+        chain=Chain.Juno,
+        block_time=6,  # Approximate block time in seconds
+    )
+
+    # Solana
+    SolanaMainnet = NetworkData(
+        title=NetworkTitle.SolanaMainnet,
+        id="-1",
+        chain=Chain.Solana,
+        block_time=0.4,  # Approximate block time in seconds
+    )
 
     # Other Chains
-    SonicMainnet = 146
-    BeraMainnet = 80094
+    SonicMainnet = NetworkData(
+        title=NetworkTitle.SonicMainnet, id="146", chain=Chain.Sonic, block_time=2
+    )
+    BeraMainnet = NetworkData(
+        title=NetworkTitle.BeraMainnet, id="80094", chain=Chain.Bera, block_time=6
+    )
+    NearMainnet = NetworkData(
+        title=NetworkTitle.NearMainnet,
+        id="near",
+        chain=Chain.Near,
+        block_time=1,  # Near ID is not a number, but a string.
+    )
+    KavaMainnet = NetworkData(
+        title=NetworkTitle.KavaMainnet,
+        id="kava_2222-10",
+        chain=Chain.Kava,
+        block_time=6,  # current kava mainnet chain ID.
+    )
+    EvmosMainnet = NetworkData(
+        title=NetworkTitle.EvmosMainnet,
+        id="evmos_9001-2",
+        chain=Chain.Evmos,
+        block_time=6,  # example of evmos ID. Version will change.
+    )
+    PersistenceMainnet = NetworkData(
+        title=NetworkTitle.PersistenceMainnet,
+        id="core-1",
+        chain=Chain.Persistence,
+        block_time=6,
+    )
+    SecretMainnet = NetworkData(
+        title=NetworkTitle.SecretMainnet,
+        id="secret-4",
+        chain=Chain.Secret,
+        block_time=6,
+    )
+    StargazeMainnet = NetworkData(
+        title=NetworkTitle.StargazeMainnet,
+        id="stargaze-1",
+        chain=Chain.Stargaze,
+        block_time=6,
+    )
+    TerraMainnet = NetworkData(
+        title=NetworkTitle.TerraMainnet, id="phoenix-1", chain=Chain.Terra, block_time=6
+    )
+    AxelarMainnet = NetworkData(
+        title=NetworkTitle.AxelarMainnet,
+        id="axelar-dojo-1",
+        chain=Chain.Axelar,
+        block_time=6,
+    )
+    FronteraMainnet = NetworkData(
+        title=NetworkTitle.FronteraMainnet,
+        id="frontera-1",
+        chain=Chain.Frontera,
+        block_time=6,
+    )
 
 
-# Mapping of Network enum members to their corresponding NetworkId enum members.
-# This dictionary facilitates efficient lookup of network IDs given a network name.
-# Note: SolanaMainnet is intentionally excluded as it does not have a numeric chain ID.
-#       Always refer to the official documentation for the most up-to-date mappings.
-network_to_id: dict[Network, NetworkId] = {
-    Network.ArbitrumMainnet: NetworkId.ArbitrumMainnet,
-    Network.AvalancheMainnet: NetworkId.AvalancheMainnet,
-    Network.BaseMainnet: NetworkId.BaseMainnet,
-    Network.BaseSepolia: NetworkId.BaseSepolia,
-    Network.BeraMainnet: NetworkId.BeraMainnet,
-    Network.BinanceMainnet: NetworkId.BinanceMainnet,
-    Network.EthereumMainnet: NetworkId.EthereumMainnet,
-    Network.EthereumSepolia: NetworkId.EthereumSepolia,
-    Network.GnosisMainnet: NetworkId.GnosisMainnet,
-    Network.LineaMainnet: NetworkId.LineaMainnet,
-    Network.OptimismMainnet: NetworkId.OptimismMainnet,
-    Network.PolygonMainnet: NetworkId.PolygonMainnet,
-    Network.SonicMainnet: NetworkId.SonicMainnet,
-    Network.ZkSyncMainnet: NetworkId.ZkSyncMainnet,
-}
-
-# Mapping of NetworkId enum members (chain IDs) to their corresponding
-# Network enum members (network names). This dictionary allows for reverse
-# lookup, enabling retrieval of the network name given a chain ID.
-# Note:  Solana is not included here as it does not use a standard numeric
-#       chain ID.  Always consult official documentation for the most
-#       up-to-date mappings.
-id_to_network: dict[NetworkId, Network] = {
-    NetworkId.ArbitrumMainnet: Network.ArbitrumMainnet,
-    NetworkId.AvalancheMainnet: Network.AvalancheMainnet,
-    NetworkId.BaseMainnet: Network.BaseMainnet,
-    NetworkId.BaseSepolia: Network.BaseSepolia,
-    NetworkId.BeraMainnet: Network.BeraMainnet,
-    NetworkId.BinanceMainnet: Network.BinanceMainnet,
-    NetworkId.EthereumMainnet: Network.EthereumMainnet,
-    NetworkId.EthereumSepolia: Network.EthereumSepolia,
-    NetworkId.GnosisMainnet: Network.GnosisMainnet,
-    NetworkId.LineaMainnet: Network.LineaMainnet,
-    NetworkId.OptimismMainnet: Network.OptimismMainnet,
-    NetworkId.PolygonMainnet: Network.PolygonMainnet,
-    NetworkId.SonicMainnet: Network.SonicMainnet,
-    NetworkId.ZkSyncMainnet: Network.ZkSyncMainnet,
-}
+def get_network_by_title(title: NetworkTitle) -> Network:
+    for network in Network:
+        if network.value.title == title:
+            return network
+    return None
 
 
 class ChainConfig:
@@ -243,14 +417,6 @@ class ChainConfig:
         return self._network
 
     @property
-    def network_id(self) -> int | None:
-        """
-        Returns the network ID (chain ID) for the configured network, or None if not applicable.
-        Uses the global network_to_id mapping to retrieve the ID.
-        """
-        return network_to_id.get(self._network)
-
-    @property
     def rpc_url(self) -> str:
         """
         Returns the RPC URL.
@@ -287,9 +453,9 @@ class ChainProvider(ABC):
 
         Sets up an empty dictionary `chain_configs` to store the configurations.
         """
-        self.chain_configs: dict[Network, ChainConfig] = {}
+        self.chain_configs: dict[NetworkTitle, ChainConfig] = {}
 
-    def get_chain_config(self, network: Network) -> ChainConfig:
+    def get_chain_config(self, network_title: NetworkTitle) -> ChainConfig:
         """
         Retrieves the chain configuration for a specific network.
 
@@ -302,36 +468,13 @@ class ChainProvider(ABC):
         Raises:
             Exception: If no chain configuration is found for the specified network.
         """
-        chain_config = self.chain_configs.get(network)
+        chain_config = self.chain_configs.get(network_title)
         if not chain_config:
-            raise Exception(f"chain config for network {network} not found")
+            raise Exception(f"chain config for network {network_title} not found")
         return chain_config
 
-    def get_chain_config_by_id(self, network_id: NetworkId) -> ChainConfig:
-        """
-        Retrieves the chain configuration by network ID.
-
-        This method first looks up the `Network` enum member associated with the
-        provided `NetworkId` and then uses `get_chain_config` to retrieve the
-        configuration.
-
-        Args:
-            network_id: The `NetworkId` enum member representing the desired network ID.
-
-        Returns:
-            The `ChainConfig` object associated with the network ID.
-
-        Raises:
-            Exception: If no network is found for the given ID or if the
-                       chain configuration is not found for the resolved network.
-        """
-        network = id_to_network.get(network_id)
-        if not network:
-            raise Exception(f"network with id {network_id} not found")
-        return self.get_chain_config(network)
-
     @abstractmethod
-    def init_chain_configs(self, api_key: str) -> dict[Network, ChainConfig]:
+    def init_chain_configs(self, api_key: str) -> dict[NetworkTitle, ChainConfig]:
         """
         Initializes the chain configurations.
 
@@ -344,7 +487,7 @@ class ChainProvider(ABC):
             api_key: The API key used for initializing chain configurations.
 
         Returns:
-            A dictionary mapping `Network` enum members to `ChainConfig` objects.
+            A dictionary mapping `NetworkTitle` enum members to `ChainConfig` objects.
         """
         raise NotImplementedError
 
@@ -408,8 +551,8 @@ class QuicknodeChainProvider(ChainProvider):
                 for item in json_dict["data"]:
                     # Assuming 'item' contains 'chain', 'network', 'http_url', 'wss_url'
                     # and that these values can be used to construct the ChainConfig object
-                    chain = Chain(item["chain"])
-                    network = Network(item["network"])
+                    chain = get_chain_by_title(item["chain"])
+                    network = get_network_by_title(item["network"])
 
                     self.chain_configs[item["network"]] = ChainConfig(
                         chain,
@@ -434,3 +577,11 @@ class QuicknodeChainProvider(ChainProvider):
                 )
             except Exception as e:
                 raise (f"Quicknode API An unexpected error occurred: {e}")
+
+
+def get_padded_address(address):
+    """Pads an Ethereum address with leading zeros to 64 hex characters."""
+    if not address.startswith("0x"):
+        raise ValueError("Address must start with '0x'")
+
+    return "0x" + address[2:].lower().zfill(64)
