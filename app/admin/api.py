@@ -280,10 +280,14 @@ async def create_or_update_agent(
 
 
 @admin_router.post(
-    "/agents/v2", tags=["Agent"], status_code=201, operation_id="create_agent"
+    "/agents/v2",
+    tags=["Agent"],
+    status_code=201,
+    operation_id="create_agent",
+    response_model=AgentResponse,
 )
 async def create_agent(
-    agent: AgentCreate = Body(AgentCreate, description="Agent configuration"),
+    input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
     subject: str = Depends(verify_jwt),
 ) -> Response:
     """Create a new agent.
@@ -304,15 +308,9 @@ async def create_agent(
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
+    agent = AgentCreate.model_validate(input)
     if subject:
         agent.owner = subject
-
-    # Check if agent with this ID already exists
-    existing_agent = await Agent.get(agent.id)
-    if existing_agent:
-        raise HTTPException(
-            status_code=400, detail=f"Agent with id {agent.id} already exists"
-        )
 
     # Create new agent
     await agent.check_upstream_id()

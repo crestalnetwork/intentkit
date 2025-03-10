@@ -33,45 +33,59 @@
       "id": "skills",
       "title": "Agent Skills",
       "order": 6
+    },
+    {
+      "id": "experimental",
+      "title": "Experimental Features",
+      "order": 7
+    },
+    {
+      "id": "deprecated",
+      "title": "Deprecated",
+      "order": 8
+    },
+    {
+      "id": "internal",
+      "title": "Internal",
+      "order": 9
     }
   ],
   "properties": {
-    "id": {
-      "type": "string",
-      "description": "Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-      "readOnly": true,
-      "x-group": "basic"
-    },
     "name": {
       "type": "string",
       "description": "Display name of the agent",
+      "required": true,
       "x-group": "basic"
     },
     "ticker": {
       "type": "string",
       "description": "Ticker symbol of the agent",
+      "required": true,
       "x-group": "basic"
     },
     "purpose": {
       "type": "string",
       "description": "Purpose or role of the agent",
+      "required": true,
       "x-group": "basic"
     },
     "personality": {
       "type": "string",
       "description": "Personality traits of the agent",
+      "required": true,
       "x-group": "basic"
     },
     "principles": {
       "type": "string",
       "description": "Principles or values of the agent",
+      "required": true,
       "x-group": "basic"
     },
     "owner": {
       "type": "string",
       "description": "Owner identifier of the agent, used for access control",
       "readOnly": true,
-      "x-group": "basic"
+      "x-group": "internal"
     },
     "upstream_id": {
       "type": "string",
@@ -385,8 +399,5 @@
       "x-group": "onchain"
     }
   },
-  "required": [
-    "id"
-  ],
   "additionalProperties": false
 }

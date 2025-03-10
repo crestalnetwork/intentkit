@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Twitter Skills",
   "description": "Configuration schema for Twitter skills",
-  "x-icon": "./icon.png",
+  "x-icon": "https://ai.service.crestal.dev/skills/twitter/icon.png",
   "properties": {
     "states": {
       "type": "object",

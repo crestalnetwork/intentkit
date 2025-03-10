@@ -35,24 +35,33 @@ class AgentAutonomous(BaseModel):
 
     id: Annotated[
         str,
-        PydanticField(description="Unique identifier for the autonomous configuration"),
+        PydanticField(
+            description="Unique identifier for the autonomous configuration",
+            min_length=3,
+            max_length=20,
+            pattern=r"^[a-z0-9-]+$",
+        ),
     ]
     name: Annotated[
         Optional[str],
         PydanticField(
-            default=None, description="Display name of the autonomous configuration"
+            default=None,
+            description="Display name of the autonomous configuration",
+            max_length=50,
         ),
     ]
     description: Annotated[
         Optional[str],
         PydanticField(
-            default=None, description="Description of the autonomous configuration"
+            default=None,
+            description="Description of the autonomous configuration",
+            max_length=200,
         ),
     ]
     minutes: Annotated[
         Optional[int],
         PydanticField(
-            default=None,
+            default=1440,
             description="Interval in minutes between operations, mutually exclusive with cron",
         ),
     ]
@@ -65,12 +74,16 @@ class AgentAutonomous(BaseModel):
     ]
     prompt: Annotated[
         str,
-        PydanticField(description="Special prompt used during autonomous operation"),
+        PydanticField(
+            description="Special prompt used during autonomous operation",
+            max_length=3000,
+        ),
     ]
     enabled: Annotated[
         Optional[bool],
         PydanticField(
-            default=True, description="Whether the autonomous configuration is enabled"
+            default=False,
+            description="Whether the autonomous configuration is enabled",
         ),
     ]
 
@@ -173,6 +186,7 @@ class AgentTable(Base):
     )
     upstream_id = Column(
         String,
+        index=True,
         nullable=True,
         comment="External reference ID for idempotent operations",
     )
@@ -389,15 +403,24 @@ class AgentUpdate(BaseModel):
     """Agent update model."""
 
     model_config = ConfigDict(
+        title="Agent",
         from_attributes=True,
-        use_enum_values=True,
+        json_schema_extra={
+            "required": ["name", "purpose", "personality", "principles"],
+        },
     )
 
     name: Annotated[
         Optional[str],
         PydanticField(
             default=None,
+            title="Name",
             description="Display name of the agent",
+            max_length=30,
+            json_schema_extra={
+                "x-group": "basic",
+                "x-placeholder": "Enter agent name",
+            },
         ),
     ]
     slug: Annotated[
@@ -405,6 +428,12 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Slug of the agent, used for URL generation",
+            max_length=30,
+            min_length=2,
+            json_schema_extra={
+                "x-group": "internal",
+                "readOnly": True,
+            },
         ),
     ]
     ticker: Annotated[
@@ -412,6 +441,8 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Ticker symbol of the agent",
+            max_length=10,
+            min_length=3,
         ),
     ]
     token_address: Annotated[
@@ -419,6 +450,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Token address of the agent",
+            max_length=42,
         ),
     ]
     purpose: Annotated[
@@ -426,6 +458,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Purpose or role of the agent",
+            max_length=3000,
         ),
     ]
     personality: Annotated[
@@ -433,6 +466,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Personality traits of the agent",
+            max_length=3000,
         ),
     ]
     principles: Annotated[
@@ -440,6 +474,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Principles or values of the agent",
+            max_length=3000,
         ),
     ]
     owner: Annotated[
@@ -447,22 +482,30 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Owner identifier of the agent, used for access control",
+            max_length=50,
         ),
     ]
     upstream_id: Annotated[
         Optional[str],
         PydanticField(
             default=None,
-            index=True,
             description="External reference ID for idempotent operations",
+            max_length=100,
         ),
     ]
     # AI part
     model: Annotated[
-        Optional[str],
+        Literal[
+            "gpt-4o",
+            "gpt-4o-mini",
+            "deepseek-chat",
+            "deepseek-reasoner",
+            "grok-2",
+            "eternalai",
+        ],
         PydanticField(
             default="gpt-4o-mini",
-            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, chatgpt-4o-latest, deepseek-chat, deepseek-reasoner, grok-2",
+            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
         ),
     ]
     prompt: Annotated[
@@ -470,6 +513,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Base system prompt that defines the agent's behavior and capabilities",
+            max_length=3000,
         ),
     ]
     prompt_append: Annotated[
@@ -477,13 +521,16 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Additional system prompt that has higher priority than the base prompt",
+            max_length=3000,
         ),
     ]
     temperature: Annotated[
         Optional[float],
         PydanticField(
             default=0.7,
-            description="AI model temperature parameter controlling response randomness (0.0~1.0)",
+            description="AI model temperature parameter controlling response randomness (0.0~2.0)",
+            ge=0.0,
+            le=2.0,
         ),
     ]
     frequency_penalty: Annotated[
@@ -491,6 +538,8 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=0.0,
             description="Frequency penalty for the AI model, a higher value penalizes new tokens based on their existing frequency in the chat history (-2.0~2.0)",
+            ge=-2.0,
+            le=2.0,
         ),
     ]
     presence_penalty: Annotated[
@@ -498,6 +547,8 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=0.0,
             description="Presence penalty for the AI model, a higher value penalizes new tokens based on whether they appear in the chat history (-2.0~2.0)",
+            ge=-2.0,
+            le=2.0,
         ),
     ]
     # autonomous mode
