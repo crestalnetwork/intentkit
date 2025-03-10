@@ -73,7 +73,7 @@ pytz = "^2024.1"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.9.2"
+ruff = "^0.9.10"
 
 [tool.ruff.lint]
 extend-select = ["I"]
