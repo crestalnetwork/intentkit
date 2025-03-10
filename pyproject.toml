@@ -67,7 +67,7 @@ langchain-xai = "^0.2.1"
 coinbase-agentkit = "0.1.4.dev202502250"
 coinbase-agentkit-langchain = "^0.1.0"
 jsonref = "^1.1.0"
-pytz = "^2024.1"
+pytz = "^2025.1"
 
 [tool.poetry.group.dev] 
 optional = true
