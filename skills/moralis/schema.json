@@ -1,0 +1,101 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Wallet Portfolio",
+    "description": "Configuration schema for wallet portfolio skills (EVM chains and Solana)",
+    "properties": {
+        "api_key": {
+            "type": "string",
+            "title": "API Key",
+            "description": "Moralis API key for blockchain data access"
+        },
+        "states": {
+            "type": "object",
+            "title": "Skill States",
+            "description": "States for each wallet portfolio skill (disabled, public, or private)",
+            "properties": {
+                "fetch_wallet_portfolio": {
+                    "type": "string",
+                    "title": "Fetch Wallet Portfolio",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "description": "State of the fetch_wallet_portfolio skill"
+                },
+                "fetch_chain_portfolio": {
+                    "type": "string",
+                    "title": "Fetch Chain Portfolio",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "description": "State of the fetch_chain_portfolio skill"
+                },
+                "fetch_nft_portfolio": {
+                    "type": "string",
+                    "title": "Fetch NFT Portfolio",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "description": "State of the fetch_nft_portfolio skill"
+                },
+                "fetch_transaction_history": {
+                    "type": "string",
+                    "title": "Fetch Transaction History",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "description": "State of the fetch_transaction_history skill"
+                },
+                "fetch_solana_portfolio": {
+                    "type": "string",
+                    "title": "Fetch Solana Portfolio",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "description": "State of the fetch_solana_portfolio skill"
+                }
+            },
+            "required": [
+                "fetch_wallet_portfolio",
+                "fetch_chain_portfolio",
+                "fetch_nft_portfolio",
+                "fetch_transaction_history",
+                "fetch_solana_portfolio"
+            ]
+        },
+        "supported_chains": {
+            "type": "object",
+            "title": "Supported Blockchain Networks",
+            "description": "Configure which blockchain networks are supported",
+            "properties": {
+                "evm": {
+                    "type": "boolean",
+                    "title": "EVM Chains",
+                    "description": "Whether to support EVM-compatible chains (Ethereum, Binance Smart Chain, etc.)",
+                    "default": true
+                },
+                "solana": {
+                    "type": "boolean",
+                    "title": "Solana",
+                    "description": "Whether to support Solana blockchain",
+                    "default": true
+                }
+            }
+        }
+    },
+    "required": [
+        "api_key",
+        "states"
+    ],
+    "additionalProperties": false
+}
