@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "CryptoPanic Skills",
+  "description": "Configuration schema for CryptoPanic skills",
+  "properties": {
+    "states": {
+      "type": "object",
+      "properties": {
+        "fetch_crypto_sentiment": {
+          "type": "string",
+          "title": "Fetch Crypto Sentiment",
+          "enum": ["disabled", "public", "private"],
+          "description": "State of the fetch_crypto_sentiment skill"
+        },
+        "fetch_crypto_news": {
+          "type": "string",
+          "title": "Fetch Crypto News",
+          "enum": ["disabled", "public", "private"],
+          "description": "State of the fetch_crypto_news skill"
+        }
+      },
+      "description": "States for each CryptoPanic skill (disabled, public, or private)"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "CryptoPanic API Key",
+      "description": "API key for accessing CryptoPanic API"
+    }
+  },
+  "required": ["states", "api_key"],
+  "additionalProperties": true
+}
