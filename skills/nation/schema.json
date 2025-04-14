@@ -2,10 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Nation Skills",
-  "description": "Check NFT status, buy and stake $NATION, Get Nation stats",
+  "description": "Check nation NFT stats",
   "x-icon": "https://ai.service.crestal.dev/skills/nation/nation.png",
   "x-tags": [
-    "Nation"
+    "Nation",
+    "NFTChecker"
   ],
   "properties": {
     "enabled": {
