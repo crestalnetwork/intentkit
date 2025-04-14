@@ -3,6 +3,7 @@ S3 utility module for storing and retrieving images from AWS S3.
 """
 
 import imghdr
+import hashlib
 import logging
 from io import BytesIO
 from typing import Optional
@@ -109,4 +110,74 @@ async def store_image(url: str, key: str) -> str:
         raise
     except ClientError as e:
         logger.error(f"Failed to upload image to S3: {str(e)}")
+        raise
+
+
+async def store_image_bytes(bytes_data: bytes, key: Optional[str] = None) -> str:
+    """
+    Store image bytes to S3, checking if the file already exists first.
+    
+    Args:
+        bytes_data: Raw bytes of the image to store
+        key: Optional key to store the image under (without prefix).
+             If not provided, a SHA256 hash of the bytes will be used.
+        
+    Returns:
+        str: The CDN URL of the stored image
+        
+    Raises:
+        ClientError: If the upload fails
+        ValueError: If S3 is not initialized
+    """
+    if not _client or not _bucket or not _prefix or not _cdn_url:
+        # If S3 is not initialized, log an error and raise ValueError
+        logger.error("S3 not initialized. Cannot store image bytes.")
+        raise ValueError("S3 not initialized")
+    
+    try:
+        # Use provided key or generate one from bytes hash
+        if key is None:
+            # Generate a unique filename based on SHA256 hash of the bytes
+            file_hash = hashlib.sha256(bytes_data).hexdigest()
+            key = file_hash
+        
+        # Prepare the S3 key with prefix
+        prefixed_key = f"{_prefix}{key}"
+        
+        # Check if the file already exists in S3
+        try:
+            _client.head_object(Bucket=_bucket, Key=prefixed_key)
+            # File exists, return the CDN URL directly
+            cdn_url = f"{_cdn_url}/{prefixed_key}"
+            logger.info(f"Image already exists at {cdn_url}")
+            return cdn_url
+        except ClientError as e:
+            # If we get a 404, the file doesn't exist yet, so continue with upload
+            if e.response['Error']['Code'] not in ['404', 'NoSuchKey', 'NotFound']:
+                # If it's another type of error, raise it
+                logger.error(f"Error checking if file exists: {str(e)}")
+                raise
+        
+        # File doesn't exist, proceed with upload
+        file_obj = BytesIO(bytes_data)
+        
+        # Determine the correct content type
+        img_type = imghdr.what(None, h=bytes_data)
+        content_type = f"image/{img_type}" if img_type else "image/jpeg"
+        
+        # Upload to S3
+        _client.upload_fileobj(
+            file_obj,
+            _bucket,
+            prefixed_key,
+            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+        )
+        
+        # Return the CDN URL
+        cdn_url = f"{_cdn_url}/{prefixed_key}"
+        logger.info(f"Image bytes uploaded successfully to {cdn_url}")
+        return cdn_url
+        
+    except ClientError as e:
+        logger.error(f"Failed to upload image bytes to S3: {str(e)}")
         raise
