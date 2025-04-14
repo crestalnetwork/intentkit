@@ -32,7 +32,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "The Acolyt Data Fetcher is a LangChain tool accessing the Acolyt chat API for data across Twitter Metrics, Onchain Analysis, DEX & Trading, and Overall Metrics. It processes queries, fetches data, and returns summarized responses. Features include:\n        Twitter: Engagement metrics, top smart follower counts, best tweets, mindshare comparison, impressions/follower ratio.\n        Onchain: Market cap, holder distribution, whale concentration, holder retention, Herfindahl index, high holder count tokens.\n        DEX & Trading: 24h volume, top DEX liquidity, buy/sell ratio, price change comparison, high liquidity pairs.\n        Overall: Smart engagement/market cap ratio, mindshare/market cap ratio, smart follower percentage comparison across top AI agents.",
+          "description": "The Acolyt Data Fetcher is a LangChain tool accessing the Acolyt chat API for data across X Metrics, Onchain Analysis, DEX & Trading, and Overall Metrics. It processes queries, fetches data, and returns summarized responses. Features include:\n        Twitter: Engagement metrics, top smart follower counts, best tweets, mindshare comparison, impressions/follower ratio.\n        Onchain: Market cap, holder distribution, whale concentration, holder retention, Herfindahl index, high holder count tokens.\n        DEX & Trading: 24h volume, top DEX liquidity, buy/sell ratio, price change comparison, high liquidity pairs.\n        Overall: Smart engagement/market cap ratio, mindshare/market cap ratio, smart follower percentage comparison across top AI agents.",
           "default": "disabled"
         }
       },

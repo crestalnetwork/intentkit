@@ -216,10 +216,13 @@ async def _validate_telegram_config(token: str) -> None:
     ) as req_err:
         raise HTTPException(
             status_code=400,
-            detail=f"Unauthorized err getting telegram bot username with token {token}: {req_err}",
+            detail=f"Unauthorized err getting telegram bot username with your token: {req_err}",
         )
     except Exception as e:
-        raise Exception(f"Error getting telegram bot username with token {token}: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid telegram bot token: {e}",
+        )
 
 
 def _send_agent_notification(
@@ -301,7 +304,7 @@ def _send_agent_notification(
                         "value": str(agent.goat_enabled),
                     },
                     {
-                        "title": "Twitter Username",
+                        "title": "X Username",
                         "short": True,
                         "value": agent_data.twitter_username,
                     },
@@ -871,12 +874,12 @@ async def import_agent(
     response_class=Response,
 )
 async def unlink_twitter_endpoint(
-    agent_id: str = Path(..., description="ID of the agent to unlink from Twitter"),
+    agent_id: str = Path(..., description="ID of the agent to unlink from X"),
 ) -> Response:
-    """Unlink Twitter from an agent.
+    """Unlink X from an agent.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to unlink from Twitter
+    * `agent_id` - ID of the agent to unlink from X
 
     **Raises:**
     * `HTTPException`:

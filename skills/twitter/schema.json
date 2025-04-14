@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "type": "object",
-  "title": "Twitter Skills",
-  "description": "Integration with Twitter API enabling social media interactions including retrieving tweets, mentions, user information, and posting content with media support",
+  "title": "X Skills",
+  "description": "Integration with X API enabling social media interactions including retrieving posts, mentions, user information, and posting content with media support",
   "x-icon": "https://ai.service.crestal.dev/skills/twitter/twitter.png",
   "x-tags": [
     "Social"
@@ -31,12 +31,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Retrieves tweets that mention the authenticated user from the past 24 hours. Supports pagination and includes detailed tweet metadata like media attachments, referenced tweets, and author information.",
+          "description": "Retrieves posts that mention the authenticated user from the past 24 hours.",
           "default": "disabled"
         },
         "post_tweet": {
           "type": "string",
-          "title": "Post Tweet",
+          "title": "Create a Post",
           "enum": [
             "disabled",
             "public",
@@ -47,12 +47,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Publishes tweets with media attachments, thread support, and content moderation checks",
+          "description": "Publishes posts with media attachments, and content moderation checks",
           "default": "disabled"
         },
         "reply_tweet": {
           "type": "string",
-          "title": "Reply Tweet",
+          "title": "Reply to a Post",
           "enum": [
             "disabled",
             "public",
@@ -63,7 +63,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Constructs contextual replies to tweets with mention handling and conversation threading",
+          "description": "Constructs contextual replies to posts with mention handling and conversation threading",
           "default": "disabled"
         },
         "get_timeline": {
@@ -79,7 +79,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches user's home timeline with recent tweets.\nSupports pagination for historical data access.\nFilters sensitive content and implements rate limiting.",
+          "description": "Fetches user's home timeline with recent posts.",
           "default": "disabled"
         },
         "follow_user": {
@@ -95,12 +95,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Initiates following of Twitter accounts with rate limit handling and anti-spam safeguards",
+          "description": "Initiates following of X accounts with rate limit handling and anti-spam safeguards",
           "default": "disabled"
         },
         "like_tweet": {
           "type": "string",
-          "title": "Like Tweet",
+          "title": "Like a Post",
           "enum": [
             "disabled",
             "public",
@@ -111,12 +111,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Records tweet engagements with rate limiting and duplicate prevention",
+          "description": "Likes a post",
           "default": "disabled"
         },
         "retweet": {
           "type": "string",
-          "title": "Retweet",
+          "title": "Repost a Post",
           "enum": [
             "disabled",
             "public",
@@ -127,12 +127,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Shares tweets with attribution tracking and duplicate prevention mechanisms",
+          "description": "Shares posts with attribution tracking and duplicate prevention mechanisms",
           "default": "disabled"
         },
         "search_tweets": {
           "type": "string",
-          "title": "Search Tweets",
+          "title": "Search Posts",
           "enum": [
             "disabled",
             "public",
@@ -143,38 +143,38 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Executes advanced Twitter searches with keyword filters, date ranges, and engagement thresholds",
+          "description": "Executes advanced X searches with keyword filters, date ranges, and engagement thresholds",
           "default": "disabled"
         }
       },
-      "description": "States for each Twitter skill (disabled, public, or private)"
+      "description": "States for each X skill"
     },
     "consumer_key": {
       "type": "string",
-      "title": "Twitter API consumer key",
-      "description": "Twitter API consumer key",
+      "title": "X API consumer key",
+      "description": "X API consumer key",
       "x-link": "[Get your API key](https://developer.x.com/)",
       "x-sensitive": true,
       "maxLength": 100
     },
     "consumer_secret": {
       "type": "string",
-      "title": "Twitter API consumer secret",
-      "description": "Twitter API consumer secret",
+      "title": "X API consumer secret",
+      "description": "X API consumer secret",
       "x-sensitive": true,
       "maxLength": 100
     },
     "access_token": {
       "type": "string",
-      "title": "Twitter API access token",
-      "description": "Twitter API access token",
+      "title": "X API access token",
+      "description": "X API access token",
       "x-sensitive": true,
       "maxLength": 100
     },
     "access_token_secret": {
       "type": "string",
-      "title": "Twitter API access token secret",
-      "description": "Twitter API access token secret",
+      "title": "X API access token secret",
+      "description": "X API access token secret",
       "x-sensitive": true,
       "maxLength": 100
     }
