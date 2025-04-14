@@ -152,6 +152,13 @@ class Config:
         self.payment_fee_dev_percentage = Decimal(
             self.load("PAYMENT_FEE_DEV_PERCENTAGE", "0.1")
         )
+
+        # backend api key
+        self.nation_api_key = self.load("NATION_API_KEY")
+
+        # backend api url
+        self.nation_api_url = self.load("NATION_API_URL", "")
+
         # ===== config loaded
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)
