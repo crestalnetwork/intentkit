@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "CoinGecko Skills",
+  "description": "Configuration for cryptocurrency market data skills",
+  "properties": {
+    "states": {
+      "type": "object",
+      "properties": {
+        "get_token_details": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "description": "Token details lookup skill"
+        },
+        "get_market_chart": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "description": "Historical market data skill"
+        }
+      },
+      "required": ["get_token_details", "get_market_chart"]
+    },
+    "api_key": {
+      "type": "string",
+      "description": "Optional API key for premium endpoints"
+    }
+  },
+  "required": ["states"],
+  "additionalProperties": false
+}
