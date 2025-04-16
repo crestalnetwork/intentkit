@@ -1,4 +1,5 @@
 from typing import TypedDict
+from pydantic import Field
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from .base import CoinGeckoBaseTool
@@ -29,7 +30,7 @@ async def get_skills(
         if state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
     
-    return [get_coingecko_skill(name, store, config.get("api_key")) 
+    return [get_coingecko_skill(name, store, config.api_key) 
             for name in available_skills]
 
 def get_coingecko_skill(
