@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Type
 from .base import CoinGeckoBaseTool
 import httpx
 
