@@ -1,16 +1,16 @@
 """AkashGen image generation skill for AkashChat."""
 
+import asyncio
+import json
 import logging
-from typing import Type
+from typing import Optional, Type
 
 import httpx
-import asyncio
 from epyxid import XID
 from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from skills.akashchat.base import AkashChatBaseTool
-from utils.s3 import store_image
 
 logger = logging.getLogger(__name__)
 
@@ -18,25 +18,35 @@ logger = logging.getLogger(__name__)
 class AkashGenImageGenerationInput(BaseModel):
     """Input for AkashGenImageGeneration tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate."
-    )
+    prompt: str = Field(description="Text prompt describing the image to generate.")
     negative: str = Field(
         default="",
-        description="Negative prompt to exclude undesirable elements from the image."
+        description="Negative prompt to exclude undesirable elements from the image.",
     )
     sampler: str = Field(
         default="dpmpp_2m",
-        description="Sampling method to use for image generation. Default: dpmpp_2m."
+        description="Sampling method to use for image generation. Default: dpmpp_2m.",
     )
     scheduler: str = Field(
         default="sgm_uniform",
-        description="Scheduler to use for image generation. Default: sgm_uniform."
+        description="Scheduler to use for image generation. Default: sgm_uniform.",
     )
     preferred_gpu: list[str] = Field(
         default_factory=lambda: ["RTX4090", "A10", "A100", "V100-32Gi", "H100"],
-        description="List of preferred GPU types for image generation."
+        description="List of preferred GPU types for image generation.",
     )
+
+    @field_validator("preferred_gpu")
+    @classmethod
+    def ensure_list(cls, v):
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+            except Exception:
+                raise ValueError("preferred_gpu must be a list or a JSON array string")
+        return v
 
 
 class AkashGenImageGeneration(AkashChatBaseTool):
@@ -64,10 +74,16 @@ class AkashGenImageGeneration(AkashChatBaseTool):
     async def _arun(
         self,
         prompt: str,
-        negative: str = "",
-        sampler: str = "dpmpp_2m",
-        scheduler: str = "sgm_uniform",
-        preferred_gpu: list[str] = ["RTX4090", "A10", "A100", "V100-32Gi", "H100"],
+        negative: Optional[str] = "",
+        sampler: Optional[str] = "dpmpp_2m",
+        scheduler: Optional[str] = "sgm_uniform",
+        preferred_gpu: Optional[list[str]] = [
+            "RTX4090",
+            "A10",
+            "A100",
+            "V100-32Gi",
+            "H100",
+        ],
         config: RunnableConfig = None,
         **kwargs,
     ) -> str:
@@ -102,16 +118,19 @@ class AkashGenImageGeneration(AkashChatBaseTool):
                 "negative": negative,
                 "sampler": sampler,
                 "scheduler": scheduler,
-                "preferred_gpu": preferred_gpu
+                "preferred_gpu": preferred_gpu,
             }
-            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
 
             # Send the image generation request
             async with httpx.AsyncClient(timeout=60) as client:
                 gen_response = await client.post(
                     "https://gen.akash.network/api/generate",
                     json=payload,
-                    headers=headers
+                    headers=headers,
                 )
                 gen_response.raise_for_status()
                 gen_data = gen_response.json()
@@ -125,13 +144,19 @@ class AkashGenImageGeneration(AkashChatBaseTool):
                     status_response = await client.get(status_url, headers=headers)
                     status_response.raise_for_status()
                     status_data = status_response.json()
-                    status_entry = status_data.get(job_id) or (status_data["statuses"][0] if "statuses" in status_data and status_data["statuses"] else None)
+                    status_entry = status_data.get(job_id) or (
+                        status_data["statuses"][0]
+                        if "statuses" in status_data and status_data["statuses"]
+                        else None
+                    )
                     if not status_entry:
                         raise Exception(f"Malformed status response: {status_data}")
                     if status_entry["status"] == "completed":
                         result = status_entry.get("result")
                         if not result:
-                            raise Exception(f"No result found in completed status: {status_entry}")
+                            raise Exception(
+                                f"No result found in completed status: {status_entry}"
+                            )
                         return result
                     elif status_entry["status"] == "failed":
                         raise Exception(f"Image generation failed: {status_entry}")
