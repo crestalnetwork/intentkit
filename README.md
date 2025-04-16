@@ -95,6 +95,12 @@ First check [Wishlist](docs/contributing/wishlist.md) for active requests.
 
 Once you are ready to start, see [Skill Development Guide](docs/contributing/skills.md) for more information.
 
+### Developer Chat
+
+Join our [Discord](https://discord.com/invite/crestal), open a support ticket to apply for an intentkit dev role.
+
+We have a discussion channel there for you to join up with the rest of the developers.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
