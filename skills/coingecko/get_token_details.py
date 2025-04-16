@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Type
 from .base import CoinGeckoBaseTool
 import httpx
 
@@ -28,11 +28,11 @@ class GetTokenDetails(CoinGeckoBaseTool):
             return {
                 "name": data["name"],
                 "symbol": data["symbol"],
-                "current_price": market_data[f"current_price_{currency}"],
-                "market_cap": market_data[f"market_cap_{currency}"],
-                "24h_high": market_data[f"high_24h_{currency}"],
-                "24h_low": market_data[f"low_24h_{currency}"],
-                "24h_volume": market_data[f"total_volume_{currency}"],
-                "price_change_24h": market_data["price_change_24h_in_currency"][currency],
+                "current_price": market_data["current_price"].get(currency),
+                "market_cap": market_data["market_cap"].get(currency),
+                "24h_high": market_data["high_24h"].get(currency),
+                "24h_low": market_data["low_24h"].get(currency),
+                "24h_volume": market_data["total_volume"].get(currency),
+                "price_change_24h": market_data["price_change_24h_in_currency"].get(currency),
                 "last_updated": data["last_updated"]
             }
