@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Solana Token Rank Skill",
+  "description": "Configuration schema for Solana Token Rank skill",
+  "properties": {
+    "states": {
+      "type": "object",
+      "properties": {
+        "solana_token_rank": {
+          "type": "string",
+          "title": "Solana Token Rank",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "State of the solana_token_rank skill"
+        }
+      },
+      "description": "States for each Solana token rank skill (disabled, public, or private)"
+    }
+  },
+  "required": ["states"],
+  "additionalProperties": true
+}
