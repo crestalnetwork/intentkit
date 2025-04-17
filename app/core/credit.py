@@ -609,9 +609,10 @@ async def expense_message(
     base_llm_amount: Decimal,
     agent_fee_percentage: Decimal,
     agent_owner_id: str,
-) -> CreditAccount:
+) -> CreditEvent:
     """
     Deduct credits from a user account for message expenses.
+    Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
@@ -737,10 +738,9 @@ async def expense_message(
         )
         session.add(agent_tx)
 
-    # Commit all changes
-    await session.commit()
+    await session.refresh(event)
 
-    return user_account
+    return CreditEvent.model_validate(event)
 
 
 async def expense_skill(
@@ -753,9 +753,10 @@ async def expense_skill(
     skill_name: str,
     agent_fee_percentage: Decimal,
     agent_owner_id: str,
-) -> CreditAccount:
+) -> CreditEvent:
     """
     Deduct credits from a user account for message expenses.
+    Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
@@ -914,9 +915,9 @@ async def expense_skill(
         session.add(agent_tx)
 
     # Commit all changes
-    await session.commit()
+    await session.refresh(event)
 
-    return user_account
+    return CreditEvent.model_validate(event)
 
 
 async def refill_free_credits_for_account(

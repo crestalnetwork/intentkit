@@ -511,12 +511,9 @@ async def execute_agent(
     agent = await Agent.get(input.agent_id)
 
     # hack for temporary disable models
-    if config.env == "testnet-prod" and agent.model in [
-        "gpt-4o",
-        "deepseek-chat",
-        "deepseek-reasoner",
-        "grok-2",
-        "eternalai",
+    if config.env == "testnet-prod" and agent.model not in [
+        "gpt-4o-mini",
+        "gpt-4.1-nano",
     ]:
         error_message_create = ChatMessageCreate(
             id=str(XID()),
@@ -535,7 +532,6 @@ async def execute_agent(
         return resp
 
     # check user balance
-    # FIXME: payer is agent owner when Telegram/Twitter entrypoints
     if is_payment_required(input, agent):
         payer = input.user_id
         if (
@@ -554,7 +550,7 @@ async def execute_agent(
                 author_type=AuthorType.SYSTEM,
                 thread_type=input.author_type,
                 reply_to=input.id,
-                message="Insufficient CAPs.",
+                message="Insufficient balance.",
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
@@ -671,25 +667,25 @@ async def execute_agent(
                     if cold_start_cost > 0:
                         chat_message_create.cold_start_cost = cold_start_cost
                         cold_start_cost = 0
-                    chat_message = await chat_message_create.save()
-                    resp.append(chat_message)
-                    # payment
-                    if is_payment_required(input, agent):
-                        amount = (
-                            Decimal("200")
-                            * (
-                                Decimal(str(chat_message.input_tokens)) * Decimal("0.3")
-                                + Decimal(str(chat_message.output_tokens))
-                                * Decimal("1.2")
+                    # handle message and payment in one transaction
+                    async with get_session() as session:
+                        # payment
+                        if is_payment_required(input, agent):
+                            amount = (
+                                Decimal("200")
+                                * (
+                                    Decimal(str(chat_message_create.input_tokens))
+                                    * Decimal("0.3")
+                                    + Decimal(str(chat_message_create.output_tokens))
+                                    * Decimal("1.2")
+                                )
+                                / Decimal("1000000")
                             )
-                            / Decimal("1000000")
-                        )
-                        async with get_session() as session:
-                            await expense_message(
+                            credit_event = await expense_message(
                                 session,
                                 input.agent_id,
                                 payer,
-                                chat_message.id,
+                                chat_message_create.id,
                                 input.id,
                                 amount,
                                 agent.fee_percentage
@@ -697,7 +693,14 @@ async def execute_agent(
                                 else Decimal("0"),
                                 agent.owner,
                             )
-                        logger.info(f"[{input.agent_id}] expense message: {amount}")
+                            logger.info(f"[{input.agent_id}] expense message: {amount}")
+                            chat_message_create.credit_event_id = credit_event.id
+                            chat_message_create.credit_cost = credit_event.total_amount
+                        chat_message = await chat_message_create.save_in_session(
+                            session
+                        )
+                        await session.commit()
+                        resp.append(chat_message)
                 else:
                     logger.error(
                         "unexpected agent message: " + str(msg),
@@ -711,7 +714,6 @@ async def execute_agent(
                     )
                     continue
                 skill_calls = []
-                skill_message_id = str(XID())
                 for msg in chunk["tools"]["messages"]:
                     if not hasattr(msg, "tool_call_id"):
                         logger.error(
@@ -722,6 +724,7 @@ async def execute_agent(
                     for call in cached_tool_step.tool_calls:
                         if call["id"] == msg.tool_call_id:
                             skill_call: ChatMessageSkillCall = {
+                                "id": msg.tool_call_id,
                                 "name": call["name"],
                                 "parameters": call["args"],
                                 "success": True,
@@ -737,28 +740,9 @@ async def execute_agent(
                                         msg.content, width=100, placeholder="..."
                                     )
                             skill_calls.append(skill_call)
-                            # skill payment
-                            if is_payment_required(input, agent):
-                                async with get_session() as session:
-                                    await expense_skill(
-                                        session,
-                                        input.agent_id,
-                                        payer,
-                                        skill_message_id,
-                                        input.id,
-                                        call["id"],
-                                        call["name"],
-                                        agent.fee_percentage
-                                        if agent.fee_percentage
-                                        else Decimal("0"),
-                                        agent.owner,
-                                    )
-                                logger.info(
-                                    f"[{input.agent_id}] skill payment: {skill_call}"
-                                )
                             break
                 skill_message_create = ChatMessageCreate(
-                    id=skill_message_id,
+                    id=str(XID()),
                     agent_id=input.agent_id,
                     chat_id=input.chat_id,
                     user_id=input.user_id,
@@ -787,8 +771,60 @@ async def execute_agent(
                     skill_message_create.cold_start_cost = cold_start_cost
                     cold_start_cost = 0
                 cached_tool_step = None
-                skill_message = await skill_message_create.save()
-                resp.append(skill_message)
+                # save message and credit in one transaction
+                async with get_session() as session:
+                    if is_payment_required(input, agent):
+                        # message payment
+                        message_amount = (
+                            Decimal("200")
+                            * (
+                                Decimal(str(skill_message_create.input_tokens))
+                                * Decimal("0.3")
+                                + Decimal(str(skill_message_create.output_tokens))
+                                * Decimal("1.2")
+                            )
+                            / Decimal("1000000")
+                        )
+                        message_payment_event = await expense_message(
+                            session,
+                            input.agent_id,
+                            payer,
+                            skill_message_create.id,
+                            input.id,
+                            message_amount,
+                            agent.fee_percentage,
+                            agent.owner,
+                        )
+                        skill_message_create.credit_event_id = message_payment_event.id
+                        skill_message_create.credit_cost = (
+                            message_payment_event.total_amount
+                        )
+                        # skill payment
+                        for skill_call in skill_calls:
+                            payment_event = await expense_skill(
+                                session,
+                                input.agent_id,
+                                payer,
+                                skill_message_create.id,
+                                input.id,
+                                skill_call["id"],
+                                skill_call["name"],
+                                agent.fee_percentage
+                                if agent.fee_percentage
+                                else Decimal("0"),
+                                agent.owner,
+                            )
+                            skill_call["credit_event_id"] = payment_event.id
+                            skill_call["credit_cost"] = float(
+                                payment_event.total_amount
+                            )
+                            logger.info(
+                                f"[{input.agent_id}] skill payment: {skill_call}"
+                            )
+                    skill_message_create.skill_calls = skill_calls
+                    skill_message = await skill_message_create.save_in_session(session)
+                    await session.commit()
+                    resp.append(skill_message)
             elif "memory_manager" in chunk:
                 pass
             else:

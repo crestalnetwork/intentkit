@@ -119,7 +119,10 @@ class CreditAccount(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+            Decimal: lambda v: float(v),
+        },
     )
 
     id: Annotated[
@@ -647,7 +650,10 @@ class CreditEvent(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+            Decimal: lambda v: float(v),
+        },
     )
 
     @classmethod

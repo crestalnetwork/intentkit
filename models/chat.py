@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import Enum
 from typing import Annotated, List, NotRequired, Optional, TypedDict
 
@@ -7,8 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Column,
     DateTime,
+    Float,
     Index,
     Integer,
+    Numeric,
     String,
     desc,
     func,
@@ -16,6 +19,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import Base
 from models.db import get_session
@@ -68,6 +72,7 @@ class ChatMessageAttachment(TypedDict):
 class ChatMessageSkillCall(TypedDict):
     """TypedDict for skill call details."""
 
+    id: str
     name: str
     parameters: dict
     success: bool
@@ -75,6 +80,8 @@ class ChatMessageSkillCall(TypedDict):
         str
     ]  # Optional response from the skill call, trimmed to 100 characters
     error_message: NotRequired[str]  # Optional error message from the skill call
+    credit_event_id: NotRequired[str]  # ID of the credit event for this skill call
+    credit_cost: NotRequired[Decimal]  # Credit cost for the skill call
 
 
 class ChatMessageRequest(BaseModel):
@@ -199,11 +206,19 @@ class ChatMessageTable(Base):
         default=0,
     )
     time_cost = Column(
-        Integer,
+        Float,
         default=0,
     )
+    credit_event_id = Column(
+        String,
+        nullable=True,
+    )
+    credit_cost = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
     cold_start_cost = Column(
-        Integer,
+        Float,
         default=0,
     )
     created_at = Column(
@@ -264,10 +279,30 @@ class ChatMessageCreate(BaseModel):
     time_cost: Annotated[
         float, Field(0.0, description="Time cost for the message in seconds")
     ]
+    credit_event_id: Annotated[
+        Optional[str],
+        Field(None, description="ID of the credit event for this message"),
+    ]
+    credit_cost: Annotated[
+        Optional[Decimal],
+        Field(None, description="Credit cost for the message in credits"),
+    ]
     cold_start_cost: Annotated[
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
     ]
+
+    async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
+        """Save the chat message to the database.
+
+        Returns:
+            ChatMessage: The saved chat message with all fields populated
+        """
+        message_record = ChatMessageTable(**self.model_dump())
+        db.add(message_record)
+        await db.flush()
+        await db.refresh(message_record)
+        return ChatMessage.model_validate(message_record)
 
     async def save(self) -> "ChatMessage":
         """Save the chat message to the database.
@@ -275,15 +310,10 @@ class ChatMessageCreate(BaseModel):
         Returns:
             ChatMessage: The saved chat message with all fields populated
         """
-        message_record = ChatMessageTable(**self.model_dump())
-
         async with get_session() as db:
-            db.add(message_record)
+            resp = await self.save_in_session(db)
             await db.commit()
-            await db.refresh(message_record)
-
-            # Create and return a full ChatMessage instance
-            return ChatMessage.model_validate(message_record)
+            return resp
 
 
 class ChatMessage(ChatMessageCreate):
@@ -291,7 +321,10 @@ class ChatMessage(ChatMessageCreate):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+            Decimal: lambda v: float(v),
+        },
         from_attributes=True,
     )
 

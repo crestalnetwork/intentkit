@@ -16,12 +16,6 @@
       "description": "Whether this skill is enabled",
       "default": false
     },
-    "api_key": {
-      "type": "string",
-      "title": "DappLooker API Key",
-      "description": "API key for DappLooker service",
-      "x-sensitive": true
-    },
     "states": {
       "type": "object",
       "properties": {
@@ -43,12 +37,17 @@
         }
       },
       "description": "States for each DappLooker skill (disabled, public, or private)"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "DappLooker API Key",
+      "description": "API key for DappLooker service",
+      "x-sensitive": true
     }
   },
   "required": [
     "states",
-    "enabled",
-    "api_key"
+    "enabled"
   ],
   "additionalProperties": true
-} 
+}

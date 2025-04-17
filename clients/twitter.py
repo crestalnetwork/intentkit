@@ -123,11 +123,12 @@ class TwitterClient(TwitterABC):
                 me = await self._client.get_me(user_auth=self.use_key)
                 if me and "data" in me and "id" in me["data"]:
                     await self._skill_store.set_agent_data(
+                        self.agent_id,
                         {
                             "twitter_id": me["data"]["id"],
                             "twitter_username": me["data"]["username"],
                             "twitter_name": me["data"]["name"],
-                        }
+                        },
                     )
                 self._agent_data = await self._skill_store.get_agent_data(self.agent_id)
                 logger.info(

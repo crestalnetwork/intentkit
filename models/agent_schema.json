@@ -158,19 +158,16 @@
       "title": "AI Model",
       "type": "string",
       "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
-      "default": "gpt-4o-mini",
+      "default": "gpt-4.1-nano",
       "enum": [
-        "gpt-4o-mini",
-        "gpt-4.1-mini",
-        "gpt-4.1-nano"
+        "gpt-4.1-nano",
+        "gpt-4o-mini"
       ],
       "x-enum-title": [
-        "GPT-4o mini",
-        "GPT-4.1 mini",
-        "GPT-4.1 nano"
+        "GPT-4.1 nano",
+        "GPT-4o mini"
       ],
       "x-support-skill": [
-        true,
         true,
         true
       ],
@@ -393,6 +390,12 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
+        "dapplooker": {
+          "title": "DappLooker",
+          "$ref": "../skills/dapplooker/schema.json",
+          "x-link": "[Get your API key](https://docs.dapplooker.com/api-guides/get-api-key)",
+          "x-sensitive": true
+        },
         "cryptopanic": {
           "title": "CryptoPanic",
           "$ref": "../skills/cryptopanic/schema.json"
@@ -452,17 +455,10 @@
         "common": {
           "title": "Common",
           "$ref": "../skills/common/schema.json"
-        },    
+        },
         "github": {
           "title": "GitHub",
           "$ref": "../skills/github/schema.json"
-
-        },
-        "dapplooker": {
-          "title": "DappLooker",
-          "$ref": "../skills/dapplooker/schema.json",
-          "x-link": "[Get your API key](https://docs.dapplooker.com/api-guides/get-api-key)",
-          "x-sensitive": true
         }
       }
     },
