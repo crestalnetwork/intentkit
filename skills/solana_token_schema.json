@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Solana Token Skills",
+  "description": "Skills for token rank and analysis on Solana",
+  "properties": {
+    "helius_api_key": {
+      "type": "string",
+      "title": "Helius API Key",
+      "description": "API key for Helius API"
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "solana_token_rank": {
+          "type": "string",
+          "title": "Solana Token Rank",
+          "enum": ["disabled", "public", "private"],
+          "description": "Check token rank and balance on Solana"
+        }
+      },
+      "description": "States for each skill"
+    }
+  },
+  "required": ["helius_api_key", "states"],
+  "additionalProperties": true
+}
