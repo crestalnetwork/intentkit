@@ -95,6 +95,7 @@ class Config:
         # AI
         self.openai_api_key = self.load("OPENAI_API_KEY")
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
+        self.akash_chat_api_key = self.load("AKASH_CHAT_API_KEY")
         self.xai_api_key = self.load("XAI_API_KEY")
         self.eternal_api_key = self.load("ETERNAL_API_KEY")
         self.system_prompt = self.load("SYSTEM_PROMPT")

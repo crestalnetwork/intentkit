@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "AkashChat Skills",
+  "description": "Skills for interacting with Akash Chat API services, including image generation and other AI capabilities",
+  "x-icon": "https://ai.service.crestal.dev/skills/akashchat/akashchat.png",
+  "x-tags": [
+    "AI",
+    "Image Generation"
+  ],
+  "x-api-key": "required",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "akashgen_image_generation": {
+          "type": "string",
+          "title": "Image Generation by AkashGen",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using AkashGen model based on text prompts",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each AkashChat skill (disabled, public, or private)"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "API Key",
+      "x-link": "[Get your API key](https://chatapi.akash.network)",
+      "x-sensitive": true,
+      "description": "Akash Chat API key for authentication"
+    }
+  },
+  "required": [
+    "enabled",
+    "states"
+  ],
+  "if": {
+    "properties": {
+      "enabled": { "const": true }
+    }
+  },
+  "then": {
+    "required": ["api_key"]
+  },
+  "additionalProperties": true
+}

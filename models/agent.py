@@ -685,6 +685,7 @@ class AgentUpdate(BaseModel):
             "deepseek-reasoner",
             "grok-2",
             "eternalai",
+            "akashchat",
         ],
         PydanticField(
             default="gpt-4.1-nano",
