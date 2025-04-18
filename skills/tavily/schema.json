@@ -9,20 +9,12 @@
     "Search",
     "Information"
   ],
-  "x-api-key": "required",
   "properties": {
     "enabled": {
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
       "default": false
-    },
-    "api_key": {
-      "type": "string",
-      "title": "Tavily API Key",
-      "description": "API key for Tavily search service",
-      "x-link": "[Get your API key](https://tavily.com/)",
-      "x-sensitive": true
     },
     "states": {
       "type": "object",
@@ -53,11 +45,34 @@
   ],
   "if": {
     "properties": {
-      "enabled": { "const": true }
+      "enabled": {
+        "const": true
+      }
     }
   },
   "then": {
-    "required": ["api_key"]
+    "properties": {
+      "api_key_provider": {
+        "type": "string",
+        "title": "API Key Provider",
+        "description": "Provider of the API key for Tavily search service",
+        "enum": [
+          "agent_owner"
+        ],
+        "default": "agent_owner"
+      },
+      "api_key": {
+        "type": "string",
+        "title": "Tavily API Key",
+        "description": "API key for Tavily search service",
+        "x-link": "[Get your API key](https://tavily.com/)",
+        "x-sensitive": true
+      }
+    },
+    "required": [
+      "api_key_provider",
+      "api_key"
+    ]
   },
   "additionalProperties": true
 }

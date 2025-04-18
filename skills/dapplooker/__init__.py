@@ -1,7 +1,7 @@
 """DappLooker skills for crypto market data and analytics."""
 
 import logging
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
@@ -22,7 +22,7 @@ class Config(SkillConfig):
     """Configuration for DappLooker skills."""
 
     states: SkillStates
-    api_key: str
+    api_key: NotRequired[str]
 
 
 async def get_skills(

@@ -678,16 +678,16 @@ class AgentUpdate(BaseModel):
         Literal[
             "gpt-4o",
             "gpt-4o-mini",
-            "gpt-4.1",
-            "gpt-4.1-mini",
             "gpt-4.1-nano",
+            "gpt-4.1-mini",
+            "gpt-4.1",
             "deepseek-chat",
             "deepseek-reasoner",
             "grok-2",
             "eternalai",
         ],
         PydanticField(
-            default="gpt-4o-mini",
+            default="gpt-4.1-nano",
             description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
             json_schema_extra={
                 "x-group": "ai",

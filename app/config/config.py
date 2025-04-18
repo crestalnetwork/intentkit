@@ -122,6 +122,7 @@ class Config:
         self.elfa_api_key = self.load("ELFA_API_KEY")
         self.heurist_api_key = self.load("HEURIST_API_KEY")
         self.enso_api_token = self.load("ENSO_API_TOKEN")
+        self.dapplooker_api_key = self.load("DAPPLOOKER_API_KEY")
         # Sentry
         self.sentry_dsn = self.load("SENTRY_DSN")
         self.sentry_sample_rate = float(self.load("SENTRY_SAMPLE_RATE", "0.1"))
