@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "TokenMetrics Skills",
+  "description": "Skills for fetching price and quantitative metrics for BTC and ETH from TokenMetrics API.",
+  "x-icon": "https://tokenmetrics.com/static/images/favicon.ico",
+  "x-tags": ["Blockchain", "Data"],
+  "x-api-key": "required",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "fetch_price": {
+          "type": "string",
+          "title": "Fetch Price",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Fetches the current price for BTC or ETH from TokenMetrics.",
+          "default": "public"
+        },
+        "fetch_quant_data": {
+          "type": "string",
+          "title": "Fetch Quantitative Data",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Fetches quantitative metrics (e.g., volatility, Sharpe ratio) for BTC or ETH.",
+          "default": "public"
+        }
+      },
+      "description": "States for TokenMetrics skills (disabled, public, or private)"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "TokenMetrics API Key",
+      "x-link": "[Get your API key](https://api.tokenmetrics.com/docs)",
+      "x-sensitive": true,
+      "description": "API key for accessing TokenMetrics API"
+    }
+  },
+  "required": ["enabled", "states"],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": ["api_key"]
+  },
+  "additionalProperties": true
+}
