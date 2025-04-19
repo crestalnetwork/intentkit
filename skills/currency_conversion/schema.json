@@ -1,0 +1,11 @@
+{
+  "title": "Currency Conversion Skill Configuration",
+  "type": "object",
+  "required": ["api_key"],
+  "properties": {
+    "api_key": {
+      "type": "string",
+      "description": "Your API key for ExchangeRate-API."
+    }
+  }
+}
