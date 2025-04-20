@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "description": "Gitcoin Passport API key"
+      }
+    },
+    "required": ["api_key"]
+  }
+  
