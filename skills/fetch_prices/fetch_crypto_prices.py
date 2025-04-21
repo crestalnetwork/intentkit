@@ -2,37 +2,28 @@ import requests
 
 def run(token_name: str = "bitcoin") -> dict:
     """
-    Fetch the current price and market data for a cryptocurrency using CoinGecko API.
+    Fetch real-time price data for a cryptocurrency from the CoinGecko API.
 
     Args:
-        token_name (str): The name of the cryptocurrency (e.g., 'bitcoin', 'ethereum').
+        token_name (str): The cryptocurrency ID (e.g., 'bitcoin', 'ethereum').
 
     Returns:
-        dict: A dictionary with price, market cap, and 24h change.
+        dict: Dictionary containing token name, USD price, market cap, and 24h change.
     """
-    url = f"https://api.coingecko.com/api/v3/simple/price"
-    params = {
-        "ids": token_name.lower(),
-        "vs_currencies": "usd",
-        "include_market_cap": "true",
-        "include_24hr_change": "true"
-    }
-
+    url = f"https://api.coingecko.com/api/v3/coins/{token_name.lower()}"
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url)
         response.raise_for_status()
         data = response.json()
 
-        if token_name not in data:
-            return {"error": f"Token '{token_name}' not found on CoinGecko."}
-
-        token_data = data[token_name]
         return {
-            "token": token_name,
-            "price_usd": token_data["usd"],
-            "market_cap_usd": token_data.get("usd_market_cap"),
-            "24h_change_percent": round(token_data.get("usd_24h_change", 0), 2)
+            "token": token_name.lower(),
+            "price_usd": data["market_data"]["current_price"]["usd"],
+            "market_cap_usd": data["market_data"]["market_cap"]["usd"],
+            "24h_change_percent": data["market_data"]["price_change_percentage_24h"]
         }
 
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+    except requests.RequestException as e:
+        return {"error": f"Failed to fetch data: {str(e)}"}
+    except KeyError:
+        return {"error": "Unexpected response format. Please check token name."}
