@@ -1,14 +1,12 @@
-import json
 import logging
 from decimal import Decimal
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, Path, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field, model_validator
-from pydantic.json import pydantic_encoder
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abstracts.api import ResponseHeadersPagination
 from app.config.config import config
 from app.core.credit import (
     fetch_credit_event_by_id,
@@ -21,6 +19,7 @@ from app.core.credit import (
 )
 from models.credit import (
     CreditAccount,
+    CreditAccountTable,
     CreditEvent,
     Direction,
     EventType,
@@ -34,6 +33,15 @@ verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_s
 
 credit_router = APIRouter(prefix="/credit", tags=["Credit"])
 credit_router_readonly = APIRouter(prefix="/credit", tags=["Credit"])
+
+
+# ===== Models =====
+class CreditEventsResponse(BaseModel):
+    """Response model for credit events with pagination."""
+
+    data: List[CreditEvent] = Field(description="List of credit events")
+    has_more: bool = Field(description="Indicates if there are more items")
+    next_cursor: Optional[str] = Field(None, description="Cursor for next page")
 
 
 # ===== Input models =====
@@ -249,66 +257,52 @@ async def update_account_free_quota(
 
 @credit_router_readonly.get(
     "/users/{user_id}/events",
-    response_model=List[CreditEvent],
+    response_model=CreditEventsResponse,
     operation_id="list_user_events",
     summary="List User Events",
-    responses={
-        200: {
-            "description": "List of events",
-            "headers": ResponseHeadersPagination,
-        }
-    },
     dependencies=[Depends(verify_jwt)],
 )
 async def list_user_events(
     user_id: str,
+    event_type: Annotated[Optional[EventType], Query(description="Event type")] = None,
     cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
     db: AsyncSession = Depends(get_db),
-) -> Response:
-    """List all expense events for a user account.
+) -> CreditEventsResponse:
+    """List all events for a user account with optional event type filtering.
 
     Args:
         user_id: ID of the user
+        event_type: Optional filter for specific event type
         cursor: Cursor for pagination
         limit: Maximum number of events to return
         db: Database session
 
     Returns:
-        Response with list of expense events and pagination headers
+        Response with list of events and pagination information
     """
     events, next_cursor, has_more = await list_credit_events_by_user(
         session=db,
         user_id=user_id,
         cursor=cursor,
         limit=limit,
+        event_type=event_type,
     )
 
-    # Create response with headers
-    headers = {"X-Has-More": str(has_more).lower()}
-    if next_cursor:
-        headers["X-Next-Cursor"] = next_cursor
-
-    return Response(
-        content=json.dumps(events, default=pydantic_encoder),
-        media_type="application/json",
-        headers=headers,
+    return CreditEventsResponse(
+        data=events,
+        has_more=has_more,
+        next_cursor=next_cursor,
     )
 
 
 @credit_router_readonly.get(
     "/event/users/{user_id}/expense",
-    response_model=List[CreditEvent],
+    response_model=CreditEventsResponse,
     operation_id="list_user_expense_events",
     summary="List User Expense",
-    responses={
-        200: {
-            "description": "List of expense events",
-            "headers": ResponseHeadersPagination,
-        }
-    },
     dependencies=[Depends(verify_jwt)],
 )
 async def list_user_expense_events(
@@ -318,7 +312,7 @@ async def list_user_expense_events(
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
     db: AsyncSession = Depends(get_db),
-) -> Response:
+) -> CreditEventsResponse:
     """List all expense events for a user account.
 
     Args:
@@ -328,7 +322,7 @@ async def list_user_expense_events(
         db: Database session
 
     Returns:
-        Response with list of expense events and pagination headers
+        Response with list of expense events and pagination information
     """
     events, next_cursor, has_more = await list_credit_events_by_user(
         session=db,
@@ -338,29 +332,18 @@ async def list_user_expense_events(
         limit=limit,
     )
 
-    # Create response with headers
-    headers = {"X-Has-More": str(has_more).lower()}
-    if next_cursor:
-        headers["X-Next-Cursor"] = next_cursor
-
-    return Response(
-        content=json.dumps(events, default=pydantic_encoder),
-        media_type="application/json",
-        headers=headers,
+    return CreditEventsResponse(
+        data=events,
+        has_more=has_more,
+        next_cursor=next_cursor,
     )
 
 
 @credit_router_readonly.get(
     "/event/users/{user_id}/income",
-    response_model=List[CreditEvent],
+    response_model=CreditEventsResponse,
     operation_id="list_user_income_events",
     summary="List User Income",
-    responses={
-        200: {
-            "description": "List of income events",
-            "headers": ResponseHeadersPagination,
-        }
-    },
     dependencies=[Depends(verify_jwt)],
 )
 async def list_user_income_events(
@@ -371,7 +354,7 @@ async def list_user_income_events(
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
     db: AsyncSession = Depends(get_db),
-) -> Response:
+) -> CreditEventsResponse:
     """List all income events for a user account.
 
     Args:
@@ -382,7 +365,7 @@ async def list_user_income_events(
         db: Database session
 
     Returns:
-        Response with list of income events and pagination headers
+        Response with list of income events and pagination information
     """
     events, next_cursor, has_more = await list_credit_events_by_user(
         session=db,
@@ -393,29 +376,18 @@ async def list_user_income_events(
         event_type=event_type,
     )
 
-    # Create response with headers
-    headers = {"X-Has-More": str(has_more).lower()}
-    if next_cursor:
-        headers["X-Next-Cursor"] = next_cursor
-
-    return Response(
-        content=json.dumps(events, default=pydantic_encoder),
-        media_type="application/json",
-        headers=headers,
+    return CreditEventsResponse(
+        data=events,
+        has_more=has_more,
+        next_cursor=next_cursor,
     )
 
 
 @credit_router_readonly.get(
     "/event/agents/{agent_id}/income",
-    response_model=List[CreditEvent],
+    response_model=CreditEventsResponse,
     operation_id="list_agent_income_events",
     summary="List Agent Income",
-    responses={
-        200: {
-            "description": "List of agent income events",
-            "headers": ResponseHeadersPagination,
-        }
-    },
     dependencies=[Depends(verify_jwt)],
 )
 async def list_agent_income_events(
@@ -425,7 +397,7 @@ async def list_agent_income_events(
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
     db: AsyncSession = Depends(get_db),
-) -> Response:
+) -> CreditEventsResponse:
     """List all income events for an agent account.
 
     Args:
@@ -435,7 +407,7 @@ async def list_agent_income_events(
         db: Database session
 
     Returns:
-        Response with list of income events and pagination headers
+        Response with list of income events and pagination information
     """
     events, next_cursor, has_more = await list_fee_events_by_agent(
         session=db,
@@ -444,23 +416,18 @@ async def list_agent_income_events(
         limit=limit,
     )
 
-    # Create response with headers
-    headers = {"X-Has-More": str(has_more).lower()}
-    if next_cursor:
-        headers["X-Next-Cursor"] = next_cursor
-
-    return Response(
-        content=json.dumps(events, default=pydantic_encoder),
-        media_type="application/json",
-        headers=headers,
+    return CreditEventsResponse(
+        data=events,
+        has_more=has_more,
+        next_cursor=next_cursor,
     )
 
 
 @credit_router_readonly.get(
     "/event",
     response_model=CreditEvent,
-    operation_id="fetch_credit_event",
-    summary="Fetch Credit Event",
+    operation_id="fetch_credit_event_by_upstream_tx_id",
+    summary="Credit Event by Upstream ID",
     dependencies=[Depends(verify_jwt)],
 )
 async def fetch_credit_event(
@@ -486,17 +453,30 @@ async def fetch_credit_event(
     "/events/{event_id}",
     response_model=CreditEvent,
     operation_id="fetch_credit_event_by_id",
-    summary="Fetch Credit Event By ID",
+    summary="Credit Event by ID",
     dependencies=[Depends(verify_jwt)],
+    responses={
+        200: {"description": "Credit event found and returned successfully"},
+        403: {
+            "description": "Forbidden: Credit event does not belong to the specified user"
+        },
+        404: {
+            "description": "Not Found: Credit event with the specified ID does not exist"
+        },
+    },
 )
 async def fetch_credit_event_by_id_endpoint(
     event_id: Annotated[str, Path(description="Credit event ID")],
+    user_id: Annotated[
+        Optional[str], Query(description="Optional user ID for authorization check")
+    ] = None,
     db: AsyncSession = Depends(get_db),
 ) -> CreditEvent:
     """Fetch a credit event by its ID.
 
     Args:
         event_id: ID of the credit event
+        user_id: Optional user ID for authorization check
         db: Database session
 
     Returns:
@@ -504,5 +484,27 @@ async def fetch_credit_event_by_id_endpoint(
 
     Raises:
         404: If the credit event is not found
+        403: If the event's account does not belong to the provided user_id
     """
-    return await fetch_credit_event_by_id(db, event_id)
+    event = await fetch_credit_event_by_id(db, event_id)
+
+    # If user_id is provided, check if the event's account belongs to this user
+    if user_id:
+        # Query to find the account by ID
+        stmt = select(CreditAccountTable).where(
+            CreditAccountTable.id == event.account_id,
+            CreditAccountTable.owner_type == "user",
+            CreditAccountTable.owner_id == user_id,
+        )
+
+        # Execute query
+        account = await db.scalar(stmt)
+
+        # If no matching account found, the event doesn't belong to this user
+        if not account:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Credit event with ID '{event_id}' does not belong to user '{user_id}'",
+            )
+
+    return event

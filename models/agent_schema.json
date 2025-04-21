@@ -642,14 +642,14 @@
   "then": {
     "properties": {
       "fee_percentage": {
-        "title": "Fee Percentage",
+        "title": "Agent Fee",
         "type": "number",
-        "description": "The CAPs paid by users to Nation will increase this percentage fee and pay it to the agent account.",
+        "description": "The CAPs paid by users to Nation will increase this fee and pay it to the agent account.",
         "minimum": 0.0,
         "maximum": 1.0,
         "default": 0.1,
         "x-step": 0.01,
-        "x-group": "basic"
+        "x-group": "experimental"
       }
     }
   },
