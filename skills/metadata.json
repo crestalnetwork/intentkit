@@ -1,0 +1,7 @@
+{
+  "skill_name": "multichain_asset_locator",
+  "author": "YourName",
+  "description": "This skill fetches wallet balances from multiple blockchains.",
+  "tags": ["multichain", "wallet", "crypto", "web3"],
+  "language": "python"
+}
