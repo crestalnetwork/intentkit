@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Column, DateTime, String, delete, func, select
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, delete, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 
 from models.base import Base
@@ -265,3 +266,88 @@ class ThreadSkillData(ThreadSkillDataCreate):
                     )
                 )
             await db.commit()
+
+
+class SkillTable(Base):
+    """Database table model for Skill."""
+
+    __tablename__ = "skills"
+
+    name = Column(String, primary_key=True)
+    category = Column(String, nullable=False)
+    price_tier = Column(Integer, nullable=False, default=1)
+    price_tier_self_key = Column(Integer, nullable=False, default=1)
+    rate_limit_count = Column(Integer, nullable=True)
+    rate_limit_minutes = Column(Integer, nullable=True)
+    key_provider_agent_owner = Column(Boolean, nullable=False, default=False)
+    key_provider_platform = Column(Boolean, nullable=False, default=False)
+    key_provider_free = Column(Boolean, nullable=False, default=False)
+    author = Column(String, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class Skill(BaseModel):
+    """Pydantic model for Skill."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    name: Annotated[str, Field(description="Name of the skill")]
+    category: Annotated[str, Field(description="Category of the skill")]
+    price_tier: Annotated[
+        int, Field(description="Price tier (1-5)", default=1, le=5, ge=1)
+    ]
+    price_tier_self_key: Annotated[
+        int, Field(description="Self key for price tier", default=1, le=5, ge=1)
+    ]
+    rate_limit_count: Annotated[Optional[int], Field(description="Rate limit count")]
+    rate_limit_minutes: Annotated[
+        Optional[int], Field(description="Rate limit minutes")
+    ]
+    key_provider_agent_owner: Annotated[
+        bool, Field(description="Agent owner can provide key", default=False)
+    ]
+    key_provider_platform: Annotated[
+        bool, Field(description="Platform can provide key", default=False)
+    ]
+    key_provider_free: Annotated[
+        bool, Field(description="Free key provider", default=False)
+    ]
+    author: Annotated[Optional[str], Field(description="Author of the skill")]
+    created_at: Annotated[
+        datetime, Field(description="Timestamp when this record was created")
+    ]
+    updated_at: Annotated[
+        datetime, Field(description="Timestamp when this record was last updated")
+    ]
+
+    # helper to map price tier to Decimal price
+    def _decimal_price_for_tier(self, tier: int) -> Decimal:
+        mapping = {
+            1: Decimal("1"),
+            2: Decimal("2"),
+            3: Decimal("5"),
+            4: Decimal("10"),
+            5: Decimal("20"),
+        }
+        try:
+            return mapping[tier]
+        except KeyError:
+            raise ValueError(f"Invalid price tier: {tier}")
+
+    @property
+    def price(self) -> Decimal:
+        return self._decimal_price_for_tier(self.price_tier)
+
+    @property
+    def price_self_key(self) -> Decimal:
+        return self._decimal_price_for_tier(self.price_tier_self_key)

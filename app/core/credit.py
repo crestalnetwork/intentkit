@@ -498,7 +498,7 @@ async def list_credit_events_by_user(
     has_more = len(events_data) > limit
     events_to_return = events_data[:limit]  # Slice to the requested limit
 
-    next_cursor = events_to_return[-1].id if events_to_return else None
+    next_cursor = events_to_return[-1].id if events_to_return and has_more else None
 
     # 7. Convert to Pydantic models
     events_models = [CreditEvent.model_validate(event) for event in events_to_return]
@@ -556,7 +556,7 @@ async def list_fee_events_by_agent(
     has_more = len(events_data) > limit
     events_to_return = events_data[:limit]  # Slice to the requested limit
 
-    next_cursor = events_to_return[-1].id if events_to_return else None
+    next_cursor = events_to_return[-1].id if events_to_return and has_more else None
 
     # 6. Convert to Pydantic models
     events_models = [CreditEvent.model_validate(event) for event in events_to_return]
@@ -600,6 +600,40 @@ async def fetch_credit_event_by_upstream_tx_id(
     return CreditEvent.model_validate(result)
 
 
+async def fetch_credit_event_by_id(
+    session: AsyncSession,
+    event_id: str,
+) -> CreditEvent:
+    """
+    Fetch a credit event by its ID.
+
+    Args:
+        session: Async database session.
+        event_id: ID of the credit event.
+
+    Returns:
+        The credit event if found.
+
+    Raises:
+        HTTPException: If the credit event is not found.
+    """
+    # Build the query to find the event by ID
+    stmt = select(CreditEventTable).where(CreditEventTable.id == event_id)
+
+    # Execute query
+    result = await session.scalar(stmt)
+
+    # Raise 404 if not found
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Credit event with ID '{event_id}' not found",
+        )
+
+    # Convert to Pydantic model and return
+    return CreditEvent.model_validate(result)
+
+
 async def expense_message(
     session: AsyncSession,
     agent_id: str,
@@ -609,9 +643,10 @@ async def expense_message(
     base_llm_amount: Decimal,
     agent_fee_percentage: Decimal,
     agent_owner_id: str,
-) -> CreditAccount:
+) -> CreditEvent:
     """
     Deduct credits from a user account for message expenses.
+    Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
@@ -737,10 +772,9 @@ async def expense_message(
         )
         session.add(agent_tx)
 
-    # Commit all changes
-    await session.commit()
+    await session.refresh(event)
 
-    return user_account
+    return CreditEvent.model_validate(event)
 
 
 async def expense_skill(
@@ -753,9 +787,10 @@ async def expense_skill(
     skill_name: str,
     agent_fee_percentage: Decimal,
     agent_owner_id: str,
-) -> CreditAccount:
+) -> CreditEvent:
     """
     Deduct credits from a user account for message expenses.
+    Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
@@ -914,9 +949,9 @@ async def expense_skill(
         session.add(agent_tx)
 
     # Commit all changes
-    await session.commit()
+    await session.refresh(event)
 
-    return user_account
+    return CreditEvent.model_validate(event)
 
 
 async def refill_free_credits_for_account(
