@@ -157,6 +157,19 @@ async def initialize_agent(aid, is_private=False):
         )
         if input_token_limit > 60000:
             input_token_limit = 60000
+    elif agent.model == "akashchat":
+        agent.model = "Meta-Llama-3-3-70B-Instruct"
+        llm = ChatOpenAI(
+            model_name=agent.model,
+            openai_api_key=config.akash_chat_api_key,
+            openai_api_base="https://chatapi.akash.network/api/v1",
+            frequency_penalty=agent.frequency_penalty,
+            presence_penalty=agent.presence_penalty,
+            temperature=agent.temperature,
+            timeout=1000,
+        )
+        if input_token_limit > 60000:
+            input_token_limit = 60000
     else:
         llm = ChatOpenAI(
             model_name=agent.model,
