@@ -5,6 +5,8 @@ import httpx
 from epyxid import XID
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
+import hashlib
+from typing import Optional
 
 from skills.venice_image.base import VeniceImageBaseTool, base_url
 from skills.venice_image.input import STYLE_PRESETS, VeniceImageGenerationInput
@@ -119,7 +121,12 @@ class ImageGenerationFluxDev(VeniceImageBaseTool):
                 content_type = str(response.headers.get('content-type', '')).lower()
                 if content_type.startswith('image/'):
                     # Store the image bytes
-                    stored_url = await store_image_bytes(response.content)
+                    image_bytes = response.content
+                    image_hash = hashlib.sha256(image_bytes).hexdigest()
+                    key = f"venice/{image_hash}"
+
+                    # Store the image bytes
+                    stored_url = await store_image_bytes(image_bytes, key)
                     return stored_url
                 else:
                     # If not an image, assume error and try to parse JSON
