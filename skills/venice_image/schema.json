@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Venice Image Skills",
+  "description": "Skills for generating images using the Venice AI API.",
+  "x-icon": "https://ai.service.crestal.dev/skills/heurist/heurist.png",
+  "x-tags": [
+    "AI",
+    "Image Generation"
+  ],
+  "x-api-key": "optional",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill category is enabled",
+      "default": false
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Venice API Key",
+      "x-link": "[Get your API key](https://venice.ai/)",
+      "x-sensitive": true,
+      "description": "Optional API key for Venice AI services. If not provided, the system key will be used."
+    },
+    "safe_mode": {
+      "type": "boolean",
+      "title": "Safe Mode",
+      "description": "If true, explicit images will be blurred.",
+      "default": false
+    },
+    "hide_watermark": {
+      "type": "boolean",
+      "title": "Hide Watermark",
+      "description": "If true, the generated image will not have a watermark.",
+      "default": true
+    },
+    "negative_prompt": {
+      "type": "string",
+      "title": "Default Negative Prompt",
+      "description": "Default negative prompt to use if none is provided in the skill call.",
+      "default": "(worst quality: 1.4), bad quality, nsfw"
+    },
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window. Only applies if using an agent-specific API key."
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting. Only applies if using an agent-specific API key."
+    },
+    "states": {
+      "type": "object",
+      "title": "Skill States",
+      "description": "States for each Venice Image skill (disabled, public, or private)",
+      "properties": {
+        "image_generation_flux_dev": {
+          "type": "string",
+          "title": "Image Generation (Flux-Dev)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate versatile images using Venice AI's Flux Dev model based on text prompts.",
+          "default": "disabled"
+        }
+      },
+      "required": [
+        "image_generation_flux_dev"
+      ]
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
