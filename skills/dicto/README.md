@@ -18,7 +18,9 @@ When a user inputs a word (e.g., `run`), Dicto performs a search for said word a
 User: run
 Dicto: 🔍 Looking up "run"
 📖 Definition: To move swiftly on foot.
-Verb: To run. Noun: An act or instance of running. (Example: I went for a quick run this morning.) Noun: A trip or errand. (Example: I'm making a run to the store.
+Verb: To run. 
+Noun: An act or instance of running. (Example: I went for a quick run this morning.) 
+Noun: A trip or errand. (Example: I'm making a run to the store.
 View More on Dictionary: https://www.google.com/search?q=define+run
 
 If the word is not found or an error occurs, Dicto informs the user and provides a Google search link as an alternative.
