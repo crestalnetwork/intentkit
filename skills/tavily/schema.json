@@ -37,6 +37,25 @@
         }
       },
       "description": "States for each Tavily search skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key for Tavily search service",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Agent Owner"
+      ],
+      "default": "agent_owner"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Tavily API Key",
+      "description": "API key for Tavily search service",
+      "x-link": "[Get your API key](https://tavily.com/)",
+      "x-sensitive": true
     }
   },
   "required": [
@@ -52,21 +71,15 @@
   },
   "then": {
     "properties": {
-      "api_key_provider": {
-        "type": "string",
-        "title": "API Key Provider",
-        "description": "Provider of the API key for Tavily search service",
-        "enum": [
-          "agent_owner"
-        ],
-        "default": "agent_owner"
+      "rate_limit_number": {
+        "type": "integer",
+        "title": "Rate Limit Number",
+        "description": "Number of requests allowed per time window, only valid if api_key is set"
       },
-      "api_key": {
-        "type": "string",
-        "title": "Tavily API Key",
-        "description": "API key for Tavily search service",
-        "x-link": "[Get your API key](https://tavily.com/)",
-        "x-sensitive": true
+      "rate_limit_minutes": {
+        "type": "integer",
+        "title": "Rate Limit Minutes",
+        "description": "Time window in minutes for rate limiting, only valid if api_key is set"
       }
     },
     "required": [

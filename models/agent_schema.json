@@ -161,13 +161,16 @@
       "default": "gpt-4.1-nano",
       "enum": [
         "gpt-4.1-nano",
-        "gpt-4o-mini"
+        "gpt-4o-mini",
+        "reigent"
       ],
       "x-enum-title": [
         "GPT-4.1 nano",
-        "GPT-4o mini"
+        "GPT-4o mini",
+        "REI Network (Reigent)"
       ],
       "x-support-skill": [
+        true,
         true,
         true
       ],
@@ -642,13 +645,13 @@
   "then": {
     "properties": {
       "fee_percentage": {
-        "title": "Fee Percentage",
+        "title": "Agent Fee %",
         "type": "number",
-        "description": "The CAPs paid by users to Nation will increase this percentage fee and pay it to the agent account.",
-        "minimum": 0.0,
-        "maximum": 1.0,
-        "default": 0.1,
-        "x-step": 0.01,
+        "description": "Set a tip percentage that users will pay on top of the base CAPs fee when interacting with this Agent. This tip goes directly to the Agent’s wallet. Interactions by the creator are excluded.",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 1,
+        "x-step": 1,
         "x-group": "basic"
       }
     }

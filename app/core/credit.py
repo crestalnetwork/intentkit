@@ -8,6 +8,8 @@ from sqlalchemy import desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config import config
+from models.agent import Agent
+from models.app_setting import AppSetting
 from models.credit import (
     DEFAULT_PLATFORM_ACCOUNT_ADJUSTMENT,
     DEFAULT_PLATFORM_ACCOUNT_DEV,
@@ -29,6 +31,7 @@ from models.credit import (
     UpstreamType,
 )
 from models.db import get_session
+from models.skill import Skill
 
 logger = logging.getLogger(__name__)
 
@@ -498,7 +501,7 @@ async def list_credit_events_by_user(
     has_more = len(events_data) > limit
     events_to_return = events_data[:limit]  # Slice to the requested limit
 
-    next_cursor = events_to_return[-1].id if events_to_return else None
+    next_cursor = events_to_return[-1].id if events_to_return and has_more else None
 
     # 7. Convert to Pydantic models
     events_models = [CreditEvent.model_validate(event) for event in events_to_return]
@@ -556,7 +559,7 @@ async def list_fee_events_by_agent(
     has_more = len(events_data) > limit
     events_to_return = events_data[:limit]  # Slice to the requested limit
 
-    next_cursor = events_to_return[-1].id if events_to_return else None
+    next_cursor = events_to_return[-1].id if events_to_return and has_more else None
 
     # 6. Convert to Pydantic models
     events_models = [CreditEvent.model_validate(event) for event in events_to_return]
@@ -594,6 +597,40 @@ async def fetch_credit_event_by_upstream_tx_id(
         raise HTTPException(
             status_code=404,
             detail=f"Credit event with upstream_tx_id '{upstream_tx_id}' not found",
+        )
+
+    # Convert to Pydantic model and return
+    return CreditEvent.model_validate(result)
+
+
+async def fetch_credit_event_by_id(
+    session: AsyncSession,
+    event_id: str,
+) -> CreditEvent:
+    """
+    Fetch a credit event by its ID.
+
+    Args:
+        session: Async database session.
+        event_id: ID of the credit event.
+
+    Returns:
+        The credit event if found.
+
+    Raises:
+        HTTPException: If the credit event is not found.
+    """
+    # Build the query to find the event by ID
+    stmt = select(CreditEventTable).where(CreditEventTable.id == event_id)
+
+    # Execute query
+    result = await session.scalar(stmt)
+
+    # Raise 404 if not found
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Credit event with ID '{event_id}' not found",
         )
 
     # Convert to Pydantic model and return
@@ -745,14 +782,12 @@ async def expense_message(
 
 async def expense_skill(
     session: AsyncSession,
-    agent_id: str,
     user_id: str,
     message_id: str,
     start_message_id: str,
     skill_call_id: str,
     skill_name: str,
-    agent_fee_percentage: Decimal,
-    agent_owner_id: str,
+    agent: Agent,
 ) -> CreditEvent:
     """
     Deduct credits from a user account for message expenses.
@@ -777,12 +812,27 @@ async def expense_skill(
         session, UpstreamType.EXECUTOR, upstream_tx_id
     )
 
-    # Get amount, FIXME: hardcode now
-    logger.info(f"skill payment {skill_name}")
+    # Get skill
     base_skill_amount = 1
+    skill = await Skill.get(skill_name)
+    if skill:
+        agent_skill_config = agent.skills.get(skill.category)
+        if (
+            agent_skill_config
+            and agent_skill_config.get("api_key_provider") == "agent_owner"
+        ):
+            base_skill_amount = skill.price_self_key
+        else:
+            base_skill_amount = skill.price
+
+    # Get payment settings
+    payment_settings = await AppSetting.payment()
+
+    # Calculate fee
+    logger.info(f"skill payment {skill_name}")
     fee_dev_user = DEFAULT_PLATFORM_ACCOUNT_DEV
     fee_dev_user_type = OwnerType.PLATFORM
-    fee_dev_percentage = Decimal("0.1")
+    fee_dev_percentage = payment_settings.fee_dev_percentage
 
     if base_skill_amount < Decimal("0"):
         raise ValueError("Base skill amount must be non-negative")
@@ -790,15 +840,13 @@ async def expense_skill(
     # Calculate amount
     base_original_amount = base_skill_amount
     base_amount = base_original_amount
-    fee_platform_amount = base_amount * Decimal(
-        str(config.payment_fee_platform_percentage)
+    fee_platform_amount = (
+        base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     )
-    fee_agent_amount = (
-        base_amount * agent_fee_percentage
-        if user_id != agent_owner_id
-        else Decimal("0")
-    )
-    fee_dev_amount = base_amount * fee_dev_percentage
+    fee_agent_amount = Decimal("0")
+    if agent.fee_percentage and user_id != agent.owner:
+        fee_agent_amount = base_amount * agent.fee_percentage / Decimal("100")
+    fee_dev_amount = base_amount * fee_dev_percentage / Decimal("100")
     total_amount = base_amount + fee_platform_amount + fee_dev_amount + fee_agent_amount
 
     # 1. Update user account - deduct credits
@@ -829,7 +877,7 @@ async def expense_skill(
         agent_account = await CreditAccount.income_in_session(
             session=session,
             owner_type=OwnerType.AGENT,
-            owner_id=agent_id,
+            owner_id=agent.id,
             credit_type=credit_type,
             amount=fee_agent_amount,
         )
@@ -843,7 +891,7 @@ async def expense_skill(
         upstream_type=UpstreamType.EXECUTOR,
         upstream_tx_id=upstream_tx_id,
         direction=Direction.EXPENSE,
-        agent_id=agent_id,
+        agent_id=agent.id,
         message_id=message_id,
         start_message_id=start_message_id,
         total_amount=total_amount,

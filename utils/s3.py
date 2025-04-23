@@ -2,12 +2,12 @@
 S3 utility module for storing and retrieving images from AWS S3.
 """
 
-import imghdr
 import logging
 from io import BytesIO
 from typing import Optional
 
 import boto3
+import filetype
 import httpx
 from botocore.exceptions import ClientError
 from mypy_boto3_s3.client import S3Client
@@ -84,9 +84,9 @@ async def store_image(url: str, key: str) -> str:
             content_type = response.headers.get("Content-Type", "")
             if content_type == "binary/octet-stream" or not content_type:
                 # Try to detect the image type from the content
-                img_type = imghdr.what(None, h=response.content)
-                if img_type:
-                    content_type = f"image/{img_type}"
+                kind = filetype.guess(response.content)
+                if kind and kind.mime.startswith("image/"):
+                    content_type = kind.mime
                 else:
                     # Default to JPEG if detection fails
                     content_type = "image/jpeg"

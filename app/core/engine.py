@@ -14,6 +14,7 @@ import importlib
 import logging
 import textwrap
 import time
+import traceback
 from datetime import datetime
 from decimal import Decimal
 
@@ -45,8 +46,6 @@ from langchain_core.messages import (
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
-from langchain_openai import ChatOpenAI
-from langchain_xai import ChatXAI
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from sqlalchemy import func, update
@@ -60,9 +59,11 @@ from app.core.graph import create_agent
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
 from models.agent import Agent, AgentData, AgentQuota, AgentTable
+from models.app_setting import AppSetting
 from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageSkillCall
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
+from models.llm import get_model_cost
 from models.skill import AgentSkillData, ThreadSkillData
 from skills.acolyt import get_acolyt_skill
 from skills.allora import get_allora_skill
@@ -118,56 +119,22 @@ async def initialize_agent(aid, is_private=False):
         raise HTTPException(status_code=404, detail="Agent not found")
     agent_data: AgentData = await AgentData.get(aid)
 
-    # ==== Initialize LLM.
-    input_token_limit = config.input_token_limit
-    # TODO: model name whitelist
-    if agent.model.startswith("deepseek"):
-        llm = ChatOpenAI(
-            model_name=agent.model,
-            openai_api_key=config.deepseek_api_key,
-            openai_api_base="https://api.deepseek.com",
-            frequency_penalty=agent.frequency_penalty,
-            presence_penalty=agent.presence_penalty,
-            temperature=agent.temperature,
-            timeout=300,
-        )
-        if input_token_limit > 60000:
-            input_token_limit = 60000
-    elif agent.model.startswith("grok"):
-        llm = ChatXAI(
-            model_name=agent.model,
-            api_key=config.xai_api_key,
-            frequency_penalty=agent.frequency_penalty,
-            presence_penalty=agent.presence_penalty,
-            temperature=agent.temperature,
-            timeout=180,
-        )
-        if input_token_limit > 120000:
-            input_token_limit = 120000
-    elif agent.model == "eternalai":
-        agent.model = "unsloth/Llama-3.3-70B-Instruct-bnb-4bit"
-        llm = ChatOpenAI(
-            model_name=agent.model,
-            openai_api_key=config.eternal_api_key,
-            openai_api_base="https://api.eternalai.org/v1",
-            frequency_penalty=agent.frequency_penalty,
-            presence_penalty=agent.presence_penalty,
-            temperature=agent.temperature,
-            timeout=300,
-        )
-        if input_token_limit > 60000:
-            input_token_limit = 60000
-    else:
-        llm = ChatOpenAI(
-            model_name=agent.model,
-            openai_api_key=config.openai_api_key,
-            frequency_penalty=agent.frequency_penalty,
-            presence_penalty=agent.presence_penalty,
-            temperature=agent.temperature,
-            timeout=180,
-        )
-        if input_token_limit > 120000:
-            input_token_limit = 120000
+    # ==== Initialize LLM using the LLM abstraction.
+    from models.llm import create_llm_model
+
+    # Create the LLM model instance
+    llm_model = create_llm_model(
+        model_name=agent.model,
+        temperature=agent.temperature,
+        frequency_penalty=agent.frequency_penalty,
+        presence_penalty=agent.presence_penalty,
+    )
+
+    # Get the LLM instance
+    llm = llm_model.create_instance(config)
+
+    # Get the token limit from the model info
+    input_token_limit = min(config.input_token_limit, llm_model.get_token_limit())
 
     # ==== Store buffered conversation history in memory.
     memory = AsyncPostgresSaver(get_pool())
@@ -531,8 +498,10 @@ async def execute_agent(
         resp.append(error_message)
         return resp
 
+    need_payment = await is_payment_required(input, agent)
+
     # check user balance
-    if is_payment_required(input, agent):
+    if need_payment:
         payer = input.user_id
         if (
             input.author_type == AuthorType.TELEGRAM
@@ -670,16 +639,11 @@ async def execute_agent(
                     # handle message and payment in one transaction
                     async with get_session() as session:
                         # payment
-                        if is_payment_required(input, agent):
-                            amount = (
-                                Decimal("200")
-                                * (
-                                    Decimal(str(chat_message_create.input_tokens))
-                                    * Decimal("0.3")
-                                    + Decimal(str(chat_message_create.output_tokens))
-                                    * Decimal("1.2")
-                                )
-                                / Decimal("1000000")
+                        if need_payment:
+                            amount = await get_model_cost(
+                                agent.model,
+                                chat_message_create.input_tokens,
+                                chat_message_create.output_tokens,
                             )
                             credit_event = await expense_message(
                                 session,
@@ -773,17 +737,12 @@ async def execute_agent(
                 cached_tool_step = None
                 # save message and credit in one transaction
                 async with get_session() as session:
-                    if is_payment_required(input, agent):
+                    if need_payment:
                         # message payment
-                        message_amount = (
-                            Decimal("200")
-                            * (
-                                Decimal(str(skill_message_create.input_tokens))
-                                * Decimal("0.3")
-                                + Decimal(str(skill_message_create.output_tokens))
-                                * Decimal("1.2")
-                            )
-                            / Decimal("1000000")
+                        message_amount = await get_model_cost(
+                            agent.model,
+                            skill_message_create.input_tokens,
+                            skill_message_create.output_tokens,
                         )
                         message_payment_event = await expense_message(
                             session,
@@ -805,16 +764,12 @@ async def execute_agent(
                         for skill_call in skill_calls:
                             payment_event = await expense_skill(
                                 session,
-                                input.agent_id,
                                 payer,
                                 skill_message_create.id,
                                 input.id,
                                 skill_call["id"],
                                 skill_call["name"],
-                                agent.fee_percentage
-                                if agent.fee_percentage
-                                else Decimal("0"),
-                                agent.owner,
+                                agent,
                             )
                             skill_call["credit_event_id"] = payment_event.id
                             skill_call["credit_cost"] = payment_event.total_amount
@@ -828,13 +783,16 @@ async def execute_agent(
             elif "memory_manager" in chunk:
                 pass
             else:
+                error_traceback = traceback.format_exc()
                 logger.error(
-                    "unexpected message type: " + str(chunk),
+                    f"unexpected message type: {str(chunk)}\n{error_traceback}",
                     extra={"thread_id": thread_id},
                 )
         except SQLAlchemyError as e:
+            error_traceback = traceback.format_exc()
             logger.error(
-                f"db error when execute agent: {str(e)}", extra={"thread_id": thread_id}
+                f"failed to execute agent: {str(e)}\n{error_traceback}",
+                extra={"thread_id": thread_id},
             )
             error_message_create = ChatMessageCreate(
                 id=str(XID()),
@@ -852,8 +810,10 @@ async def execute_agent(
             resp.append(error_message)
             return resp
         except Exception as e:
+            error_traceback = traceback.format_exc()
             logger.error(
-                f"failed to execute agent: {str(e)}", extra={"thread_id": thread_id}
+                f"failed to execute agent: {str(e)}\n{error_traceback}",
+                extra={"thread_id": thread_id},
             )
             error_message_create = ChatMessageCreate(
                 id=str(XID()),
@@ -970,7 +930,11 @@ async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
         return []
 
 
-def is_payment_required(input: ChatMessageCreate, agent: Agent) -> bool:
+async def is_payment_required(input: ChatMessageCreate, agent: Agent) -> bool:
+    payment_settings = await AppSetting.payment()
+    if payment_settings.agent_whitelist_enabled:
+        if agent.id not in payment_settings.agent_whitelist:
+            return False
     if config.payment_enabled and input.user_id and agent.owner:
         return True
     return False

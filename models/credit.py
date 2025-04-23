@@ -393,8 +393,8 @@ class CreditAccount(BaseModel):
         session: AsyncSession,
         owner_type: OwnerType,
         owner_id: str,
-        free_quota: Decimal = Decimal("100.0"),
-        refill_amount: Decimal = Decimal("4.0"),
+        free_quota: Decimal = Decimal("480.0"),
+        refill_amount: Decimal = Decimal("10.0"),
     ) -> "CreditAccount":
         """Get an existing credit account or create a new one if it doesn't exist.
 
