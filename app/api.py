@@ -21,6 +21,7 @@ from app.admin import (
     credit_router,
     credit_router_readonly,
     health_router,
+    metadata_router_readonly,
     schema_router_readonly,
 )
 from app.config.config import config
@@ -110,6 +111,7 @@ app.include_router(chat_router)
 app.include_router(chat_router_readonly)
 app.include_router(admin_router)
 app.include_router(admin_router_readonly)
+app.include_router(metadata_router_readonly)
 app.include_router(credit_router)
 app.include_router(credit_router_readonly)
 app.include_router(schema_router_readonly)
