@@ -834,3 +834,59 @@ async def get_skill_history(
     messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
 
     return messages
+
+
+@chat_router_readonly.get(
+    "/messages/{message_id}",
+    tags=["Chat"],
+    dependencies=[Depends(verify_jwt)],
+    response_model=ChatMessage,
+    operation_id="get_chat_message",
+    summary="Get Chat Message",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Successfully retrieved the chat message",
+            "model": ChatMessage,
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "You don't have permission to access this message",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Message not found",
+        },
+    },
+)
+async def get_chat_message(
+    message_id: str = Path(..., description="Message ID"),
+    user_id: Optional[str] = Query(None, description="User ID for authorization check"),
+) -> ChatMessage:
+    """Get a specific chat message by its ID.
+
+    **Path Parameters:**
+    * `message_id` - Message ID
+
+    **Query Parameters:**
+    * `user_id` - Optional User ID for authorization check
+
+    **Returns:**
+    * `ChatMessage` - The requested chat message
+
+    **Raises:**
+    * `404` - Message not found
+    * `403` - Forbidden if user_id doesn't match the message's user_id
+    """
+    message = await ChatMessage.get(message_id)
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Message with ID {message_id} not found",
+        )
+
+    # If user_id is provided, check if it matches the message's user_id
+    if user_id and message.user_id and user_id != message.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to access this message",
+        )
+
+    return message

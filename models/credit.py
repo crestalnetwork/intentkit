@@ -119,7 +119,9 @@ class CreditAccount(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+        },
     )
 
     id: Annotated[
@@ -257,7 +259,9 @@ class CreditAccount(BaseModel):
             CreditAccount if found, None otherwise
         """
         async with get_session() as session:
-            return await cls.get_or_create_in_session(session, owner_type, owner_id)
+            account = await cls.get_or_create_in_session(session, owner_type, owner_id)
+            await session.commit()
+            return account
 
     @classmethod
     async def deduction_in_session(
@@ -389,8 +393,8 @@ class CreditAccount(BaseModel):
         session: AsyncSession,
         owner_type: OwnerType,
         owner_id: str,
-        free_quota: Decimal = Decimal("100.0"),
-        refill_amount: Decimal = Decimal("4.0"),
+        free_quota: Decimal = Decimal("480.0"),
+        refill_amount: Decimal = Decimal("10.0"),
     ) -> "CreditAccount":
         """Get an existing credit account or create a new one if it doesn't exist.
 
@@ -647,7 +651,9 @@ class CreditEvent(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+        },
     )
 
     @classmethod

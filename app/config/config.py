@@ -97,6 +97,7 @@ class Config:
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
         self.xai_api_key = self.load("XAI_API_KEY")
         self.eternal_api_key = self.load("ETERNAL_API_KEY")
+        self.reigent_api_key = self.load("REIGENT_API_KEY")
         self.system_prompt = self.load("SYSTEM_PROMPT")
         self.input_token_limit = int(self.load("INPUT_TOKEN_LIMIT", "60000"))
         # Telegram server settings
@@ -122,6 +123,7 @@ class Config:
         self.elfa_api_key = self.load("ELFA_API_KEY")
         self.heurist_api_key = self.load("HEURIST_API_KEY")
         self.enso_api_token = self.load("ENSO_API_TOKEN")
+        self.dapplooker_api_key = self.load("DAPPLOOKER_API_KEY")
         # Sentry
         self.sentry_dsn = self.load("SENTRY_DSN")
         self.sentry_sample_rate = float(self.load("SENTRY_SAMPLE_RATE", "0.1"))

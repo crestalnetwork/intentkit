@@ -52,7 +52,7 @@ def setup_logging(env: str, debug: bool = False):
         )
         # logging.getLogger("openai._base_client").setLevel(logging.INFO)
         # logging.getLogger("httpcore.http11").setLevel(logging.INFO)
-        # logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
     else:
         # For non-local environments, use JSON format
         handler = logging.StreamHandler()

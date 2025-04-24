@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Venice Image Skills",
+  "description": "Skills for generating images using the Venice AI API.",
+  "x-icon": "https://ai.service.crestal.dev/skills/venice_image/venice_image.jpg",
+  "x-tags": [
+    "AI",
+    "Image Generation"
+  ],
+  "x-api-key": "optional",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill category is enabled",
+      "default": false
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Venice API Key",
+      "x-link": "[Get your API key](https://venice.ai/)",
+      "x-sensitive": true,
+      "description": "Optional API key for Venice AI services. If not provided, the system key will be used."
+    },
+    "safe_mode": {
+      "type": "boolean",
+      "title": "Safe Mode",
+      "description": "If true, explicit images will be blurred.",
+      "default": true
+    },
+    "hide_watermark": {
+      "type": "boolean",
+      "title": "Hide Watermark",
+      "description": "If true, the generated image will not have a watermark.",
+      "default": true
+    },
+    "negative_prompt": {
+      "type": "string",
+      "title": "Default Negative Prompt",
+      "description": "Default negative prompt to use if none is provided in the skill call.",
+      "default": "(worst quality: 1.4), bad quality, nsfw"
+    },
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window. Only applies if using an agent-specific API key."
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting. Only applies if using an agent-specific API key."
+    },
+    "states": {
+      "type": "object",
+      "title": "Skill States",
+      "description": "States for each Venice Image skill (disabled, public, or private)",
+      "properties": {
+        "image_generation_flux_dev": {
+          "type": "string",
+          "title": "Image Generation (Flux-Dev)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Venice AI's Flux Dev model (research, art workflows).",
+          "default": "disabled"
+        },
+        "image_generation_flux_dev_uncensored": {
+          "type": "string",
+          "title": "Image Generation (Flux-Dev-Uncensored)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using the uncensored Flux Dev model (unrestricted, NSFW).",
+          "default": "disabled"
+        },
+        "image_generation_venice_sd35": {
+          "type": "string",
+          "title": "Image Generation (Venice SD3.5)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Stability AI's SD 3.5 Large (art, design).",
+          "default": "disabled"
+        },
+        "image_generation_fluently_xl": {
+          "type": "string",
+          "title": "Image Generation (Fluently-XL)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Fluently-XL (aesthetics, lighting, realism).",
+          "default": "disabled"
+        },
+        "image_generation_lustify_sdxl": {
+          "type": "string",
+          "title": "Image Generation (Lustify-SDXL)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Lustify SDXL (photorealistic, focus on NSFW).",
+          "default": "disabled"
+        },
+        "image_generation_pony_realism": {
+          "type": "string",
+          "title": "Image Generation (Pony-Realism)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Pony Realism (high-detail, realistic, anime/characters).",
+          "default": "disabled"
+        },
+        "image_generation_stable_diffusion_3_5": {
+          "type": "string",
+          "title": "Image Generation (Stable Diffusion 3.5 - Alt ID)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using Stability AI's SD 3.5 Large (alternative API ID).",
+          "default": "disabled"
+        }
+      },
+      "required": []
+    }
+  },
+  "required": [
+    "states",
+    "enabled",
+    "api_key"
+  ],
+  "additionalProperties": true
+}

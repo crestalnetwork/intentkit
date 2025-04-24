@@ -587,7 +587,7 @@ class AgentUpdate(BaseModel):
             default=None,
             description="Fee percentage of the agent",
             ge=Decimal("0.0"),
-            le=Decimal("1.0"),
+            le=Decimal("100.0"),
             json_schema_extra={
                 "x-group": "basic",
             },
@@ -678,14 +678,21 @@ class AgentUpdate(BaseModel):
         Literal[
             "gpt-4o",
             "gpt-4o-mini",
+            "gpt-4.1-nano",
+            "gpt-4.1-mini",
+            "gpt-4.1",
+            "o4-mini",
             "deepseek-chat",
             "deepseek-reasoner",
             "grok-2",
+            "grok-3",
+            "grok-3-mini",
             "eternalai",
+            "reigent",
         ],
         PydanticField(
-            default="gpt-4o-mini",
-            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
+            default="gpt-4.1-nano",
+            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
             json_schema_extra={
                 "x-group": "ai",
             },
@@ -1333,6 +1340,8 @@ class Agent(AgentCreate):
                     states = skill_config.get("states", {})
                     if states.get("image_to_text") in ["public", "private"]:
                         return True
+                    if states.get("gpt_image_to_image") in ["public", "private"]:
+                        return True
         return False
 
     def is_model_support_image(self) -> bool:
@@ -1452,13 +1461,18 @@ class Agent(AgentCreate):
                 )
                 yaml_lines.append(yaml_value.rstrip())
             else:
-                # Handle non-string values
-                yaml_value = yaml.dump(
-                    {field_name: value},
-                    default_flow_style=False,
-                    allow_unicode=True,
-                )
-                yaml_lines.append(yaml_value.rstrip())
+                # Handle Decimal values specifically
+                if isinstance(value, Decimal):
+                    # Convert Decimal to string to avoid !!python/object/apply:decimal.Decimal serialization
+                    yaml_lines.append(f"{field_name}: {value}")
+                else:
+                    # Handle other non-string values
+                    yaml_value = yaml.dump(
+                        {field_name: value},
+                        default_flow_style=False,
+                        allow_unicode=True,
+                    )
+                    yaml_lines.append(yaml_value.rstrip())
 
         return "\n".join(yaml_lines) + "\n"
 

@@ -121,7 +121,7 @@
     "api_key": {
       "type": "string",
       "title": "CryptoCompare API Key",
-      "x-link": "[Get your API key](https://developers.coindesk.com/)",
+      "x-link": "[Get your API key](https://www.cryptocompare.com/cryptopian/api-keys)",
       "x-sensitive": true,
       "description": "CryptoCompare API key for authentication"
     }
@@ -132,11 +132,15 @@
   ],
   "if": {
     "properties": {
-      "enabled": { "const": true }
+      "enabled": {
+        "const": true
+      }
     }
   },
   "then": {
-    "required": ["api_key"]
+    "required": [
+      "api_key"
+    ]
   },
   "additionalProperties": true
 }
