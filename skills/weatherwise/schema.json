@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "WeatherWise Skill",
+  "description": "Analyze current weather conditions based on location input.",
+  "x-icon": "https://ai.service.crestal.dev/skills/weatherwise/weatherwise.png",
+  "x-tags": ["Data", "Weather"],
+  "x-api-key": "required",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "analyze_weather": {
+          "type": "string",
+          "title": "Analyze Weather",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "default": "disabled",
+          "description": "Fetches and interprets current weather conditions."
+        }
+      },
+      "description": "States for each WeatherWise skill (disabled, public, or private)"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "OpenWeather API Key",
+      "x-link": "[Get your API key](https://openweathermap.org/api)",
+      "x-sensitive": true,
+      "description": "API key for accessing OpenWeather API"
+    }
+  },
+  "required": ["enabled", "states"],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": ["api_key"]
+  },
+  "additionalProperties": true
+}
