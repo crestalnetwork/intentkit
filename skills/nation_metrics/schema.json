@@ -1,0 +1,29 @@
+{
+  "title": "Crestal Nation Skills Configuration",
+  "description": "Configuration for Crestal Nation skills to fetch metrics from Dune Analytics API.",
+  "type": "object",
+  "required": ["states", "api_key"],
+  "properties": {
+    "states": {
+      "title": "Skill States",
+      "type": "object",
+      "required": ["fetch_nation_metrics"],
+      "properties": {
+        "fetch_nation_metrics": {
+          "type": "string",
+          "title": "Fetch Crestal Nation Metrics",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Fetches Crestal Nation metrics (e.g., total users, agents/citizens, market cap) from Dune Analytics API. Supports specific metrics or all metrics if none specified.",
+          "default": "public"
+        }
+      }
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Dune API Key",
+      "description": "API key for Dune Analytics (X-Dune-API-Key).",
+      "x-sensitive": true
+    }
+  }
+}
