@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "AIXBT API",
+  "description": "Cryptocurrency project data and analytics through the AIXBT API",
+  "x-icon": "https://ai.service.crestal.dev/skills/aixbt/aixbt.jpg",
+  "x-tags": [
+    "Cryptocurrency",
+    "Research",
+    "Analytics"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "aixbt_projects": {
+          "type": "string",
+          "title": "AIXBT Projects",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Search for cryptocurrency projects and retrieve detailed information using AIXBT",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each AIXBT API skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key for AIXBT API service",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Agent Owner"
+      ],
+      "default": "agent_owner"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "AIXBT API Key",
+      "description": "API key for AIXBT API service",
+      "x-link": "[Get your API key](https://aixbt.tech/)",
+      "x-sensitive": true
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "rate_limit_number": {
+        "type": "integer",
+        "title": "Rate Limit Number",
+        "description": "Number of requests allowed per time window, only valid if api_key is set"
+      },
+      "rate_limit_minutes": {
+        "type": "integer",
+        "title": "Rate Limit Minutes",
+        "description": "Time window in minutes for rate limiting, only valid if api_key is set"
+      }
+    },
+    "required": [
+      "api_key_provider",
+      "api_key"
+    ]
+  },
+  "additionalProperties": true
+} 

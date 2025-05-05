@@ -371,8 +371,7 @@ class Skill(BaseModel):
         if cached_data:
             # If found in cache, deserialize and return
             try:
-                skill_data = json.loads(cached_data)
-                return Skill(**skill_data)
+                return Skill.model_validate_json(cached_data)
             except (json.JSONDecodeError, TypeError):
                 # If cache is corrupted, invalidate it
                 await redis.delete(cache_key)
@@ -391,8 +390,6 @@ class Skill(BaseModel):
             skill_model = Skill.model_validate(skill)
 
             # Cache the skill in Redis
-            await redis.set(
-                cache_key, json.dumps(skill_model.model_dump(mode="json")), ex=cache_ttl
-            )
+            await redis.set(cache_key, skill_model.model_dump_json(), ex=cache_ttl)
 
             return skill_model

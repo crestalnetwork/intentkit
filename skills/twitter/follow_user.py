@@ -1,10 +1,19 @@
+import logging
 from typing import Type
 
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from clients.twitter import get_twitter_client
 from skills.twitter.base import TwitterBaseTool
+
+NAME = "twitter_follow_user"
+PROMPT = (
+    "Follow a Twitter user, if you don't know the user ID, "
+    "use twitter_get_user_by_username tool to get it."
+)
+logger = logging.getLogger(__name__)
 
 
 class TwitterFollowUserInput(BaseModel):
@@ -24,8 +33,8 @@ class TwitterFollowUser(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_follow_user"
-    description: str = "Follow a Twitter user"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterFollowUserInput
 
     async def _arun(self, user_id: str, config: RunnableConfig, **kwargs) -> bool:
@@ -48,6 +57,7 @@ class TwitterFollowUser(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -55,17 +65,17 @@ class TwitterFollowUser(TwitterBaseTool):
                     context.agent.id, max_requests=5, interval=15
                 )
 
-            client = await twitter.get_client()
-
             # Follow the user using tweepy client
             response = await client.follow_user(
                 target_user_id=user_id, user_auth=twitter.use_key
             )
 
-            if response.data and response.data.get("following"):
-                return True
+            if "data" in response and response["data"].get("following"):
+                return response
             else:
-                raise ValueError("Failed to follow user")
+                logger.error(f"Error following user: {str(response)}")
+                raise ToolException("Failed to follow user")
 
         except Exception as e:
+            logger.error("Error following user: %s", str(e))
             raise type(e)(f"[agent:{context.agent.id}]: {e}") from e

@@ -116,7 +116,12 @@ async def _process_agent_post_actions(
         # Run clean_agent_memory in background
         asyncio.create_task(clean_agent_memory(agent.id, clean_agent=True))
 
-    if not has_wallet:
+    if (
+        not has_wallet
+        and agent.skills
+        and agent.skills.get("cdp")
+        and agent.skills["cdp"].get("enabled")
+    ):
         # create the wallet
         Cdp.configure(
             api_key_name=config.cdp_api_key_name,

@@ -110,3 +110,65 @@ async def store_image(url: str, key: str) -> str:
     except ClientError as e:
         logger.error(f"Failed to upload image to S3: {str(e)}")
         raise
+
+
+async def store_image_bytes(
+    image_bytes: bytes, key: str, content_type: Optional[str] = None
+) -> str:
+    """
+    Store raw image bytes to S3.
+
+    Args:
+        image_bytes: Raw bytes of the image to store
+        key: Key to store the image under (without prefix)
+        content_type: Content type of the image. If None, will attempt to detect it.
+
+    Returns:
+        str: The CDN URL of the stored image, or an empty string if S3 is not initialized
+
+    Raises:
+        ClientError: If the upload fails
+        ValueError: If S3 is not initialized or image_bytes is empty
+    """
+    if not _client or not _bucket or not _prefix or not _cdn_url:
+        # If S3 is not initialized, log and return empty string
+        logger.info("S3 not initialized. Cannot store image bytes.")
+        return ""
+
+    if not image_bytes:
+        raise ValueError("Image bytes cannot be empty")
+
+    try:
+        # Prepare the S3 key with prefix
+        prefixed_key = f"{_prefix}{key}"
+
+        # Use BytesIO to create a file-like object that implements read
+        file_obj = BytesIO(image_bytes)
+
+        # Determine the correct content type if not provided
+        if not content_type:
+            # Try to detect the image type from the content
+            kind = filetype.guess(image_bytes)
+            if kind and kind.mime.startswith("image/"):
+                content_type = kind.mime
+            else:
+                # Default to JPEG if detection fails
+                content_type = "image/jpeg"
+
+        logger.info("uploading image to s3")
+        # Upload to S3
+        _client.upload_fileobj(
+            file_obj,
+            _bucket,
+            prefixed_key,
+            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+        )
+
+        # Return the CDN URL
+        cdn_url = f"{_cdn_url}/{prefixed_key}"
+        logger.info(f"image is uploaded to {cdn_url}")
+        return cdn_url
+
+    except ClientError as e:
+        logger.error(f"Failed to upload image bytes to S3: {str(e)}")
+        raise
