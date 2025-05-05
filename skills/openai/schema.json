@@ -51,6 +51,38 @@
           ],
           "description": "Generate images using OpenAI's DALL-E model based on text prompts",
           "default": "disabled"
+        },
+        "gpt_image_generation": {
+          "type": "string",
+          "title": "Image Generation by GPT",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using OpenAI's GPT-Image-1 model based on text prompts",
+          "default": "disabled"
+        },
+        "gpt_image_to_image": {
+          "type": "string",
+          "title": "Image Editing by GPT",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Edit images using OpenAI's GPT-Image-1 model based on text prompts",
+          "default": "disabled"
         }
       },
       "description": "States for each OpenAI skill (disabled, public, or private)"

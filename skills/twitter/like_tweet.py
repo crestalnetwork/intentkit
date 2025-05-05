@@ -1,10 +1,17 @@
+import logging
 from typing import Type
 
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from clients.twitter import get_twitter_client
 from skills.twitter.base import TwitterBaseTool
+
+NAME = "twitter_like_tweet"
+PROMPT = "Like a tweet on Twitter"
+
+logger = logging.getLogger(__name__)
 
 
 class TwitterLikeTweetInput(BaseModel):
@@ -24,8 +31,8 @@ class TwitterLikeTweet(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_like_tweet"
-    description: str = "Like a tweet on Twitter"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterLikeTweetInput
 
     async def _arun(self, tweet_id: str, config: RunnableConfig, **kwargs) -> bool:
@@ -48,6 +55,7 @@ class TwitterLikeTweet(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -55,15 +63,15 @@ class TwitterLikeTweet(TwitterBaseTool):
                     context.agent.id, max_requests=100, interval=1440
                 )
 
-            client = await twitter.get_client()
-
             # Like the tweet using tweepy client
             response = await client.like(tweet_id=tweet_id, user_auth=twitter.use_key)
 
             if "data" in response and "liked" in response["data"]:
-                return True
+                return response
             else:
-                raise ValueError("Failed to like tweet.")
+                logger.error(f"Error liking tweet: {str(response)}")
+                raise ToolException("Failed to like tweet.")
 
         except Exception as e:
+            logger.error(f"Error liking tweet: {str(e)}")
             raise type(e)(f"[agent:{context.agent.id}]: {e}") from e

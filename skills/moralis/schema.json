@@ -12,11 +12,6 @@
             "description": "Whether this skill is enabled",
             "default": false
         },
-        "api_key": {
-            "type": "string",
-            "title": "API Key",
-            "description": "Moralis API key for blockchain data access"
-        },
         "states": {
             "type": "object",
             "title": "Skill States",
@@ -188,6 +183,20 @@
                     "default": true
                 }
             }
+        },
+        "api_key_provider": {
+            "type": "string",
+            "title": "API Key Provider",
+            "description": "Who provides the API key",
+            "enum": [
+                "platform",
+                "agent_owner"
+            ],
+            "x-enum-title": [
+                "Nation Hosted",
+                "Owner Provided"
+            ],
+            "default": "platform"
         }
     },
     "required": [
@@ -196,11 +205,25 @@
     ],
     "if": {
         "properties": {
-            "enabled": { "const": true }
+            "enabled": {
+                "const": true
+            },
+            "api_key_provider": {
+                "const": "agent_owner"
+            }
         }
     },
     "then": {
-        "required": ["api_key"]
+        "properties": {
+            "api_key": {
+                "type": "string",
+                "title": "API Key",
+                "description": "Moralis API key for blockchain data access"
+            }
+        },
+        "required": [
+            "api_key"
+        ]
     },
     "additionalProperties": true
 }

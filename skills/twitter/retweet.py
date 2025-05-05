@@ -1,10 +1,17 @@
+import logging
 from typing import Type
 
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from clients.twitter import get_twitter_client
 from skills.twitter.base import TwitterBaseTool
+
+NAME = "twitter_retweet"
+PROMPT = "Retweet a tweet on Twitter"
+
+logger = logging.getLogger(__name__)
 
 
 class TwitterRetweetInput(BaseModel):
@@ -24,8 +31,8 @@ class TwitterRetweet(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_retweet"
-    description: str = "Retweet a tweet on Twitter"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterRetweetInput
 
     async def _arun(self, tweet_id: str, config: RunnableConfig, **kwargs) -> bool:
@@ -48,14 +55,13 @@ class TwitterRetweet(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
                     context.agent.id, max_requests=5, interval=15
                 )
-
-            client = await twitter.get_client()
 
             # Get authenticated user's ID
             user_id = twitter.self_id
@@ -72,9 +78,11 @@ class TwitterRetweet(TwitterBaseTool):
                 and "retweeted" in response["data"]
                 and response["data"]["retweeted"]
             ):
-                return True
+                return response
             else:
-                raise ValueError("Failed to retweet.")
+                logger.error(f"Error retweeting: {str(response)}")
+                raise ToolException("Failed to retweet.")
 
         except Exception as e:
+            logger.error(f"Error retweeting: {str(e)}")
             raise type(e)(f"[agent:{context.agent.id}]: {e}") from e

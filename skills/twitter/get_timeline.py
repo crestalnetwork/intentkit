@@ -10,6 +10,12 @@ from .base import TwitterBaseTool
 
 logger = logging.getLogger(__name__)
 
+NAME = "twitter_get_timeline"
+PROMPT = (
+    "Get tweets from your timeline, the result is a json object containing a list of tweets."
+    "If the result has no tweets in it, means no new tweets, don't retry this tool."
+)
+
 
 class TwitterGetTimelineInput(BaseModel):
     """Input for TwitterGetTimeline tool."""
@@ -27,8 +33,8 @@ class TwitterGetTimeline(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_get_timeline"
-    description: str = "Get tweets from the authenticated user's timeline"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterGetTimelineInput
 
     async def _arun(self, config: RunnableConfig, **kwargs) -> list[Tweet]:
@@ -54,6 +60,7 @@ class TwitterGetTimeline(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -68,7 +75,6 @@ class TwitterGetTimeline(TwitterBaseTool):
             last = last or {}
             since_id = last.get("since_id")
 
-            client = await twitter.get_client()
             user_id = twitter.self_id
             if not user_id:
                 raise ValueError("Failed to get Twitter user ID.")
@@ -80,6 +86,8 @@ class TwitterGetTimeline(TwitterBaseTool):
                 since_id=since_id,
                 expansions=[
                     "referenced_tweets.id",
+                    "referenced_tweets.id.attachments.media_keys",
+                    "referenced_tweets.id.author_id",
                     "attachments.media_keys",
                     "author_id",
                 ],
@@ -93,15 +101,14 @@ class TwitterGetTimeline(TwitterBaseTool):
                 user_fields=[
                     "username",
                     "name",
+                    "profile_image_url",
                     "description",
                     "public_metrics",
                     "location",
                     "connection_status",
                 ],
-                media_fields=["url"],
+                media_fields=["url", "type", "width", "height"],
             )
-
-            result = twitter.process_tweets_response(timeline)
 
             # Update the since_id in store for the next request
             if timeline.get("meta") and timeline["meta"].get("newest_id"):
@@ -110,7 +117,7 @@ class TwitterGetTimeline(TwitterBaseTool):
                     context.agent.id, self.name, "last", last
                 )
 
-            return result
+            return timeline
 
         except Exception as e:
             logger.error("Error getting timeline: %s", str(e))

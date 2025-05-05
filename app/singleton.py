@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.admin.api import admin_router, admin_router_readonly
 from app.admin.health import health_router
+from app.admin.metadata import metadata_router_readonly
 from app.config.config import config
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
@@ -76,6 +77,7 @@ app.add_middleware(
 
 app.include_router(admin_router)
 app.include_router(admin_router_readonly)
+app.include_router(metadata_router_readonly)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
 app.include_router(health_router)

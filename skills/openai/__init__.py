@@ -7,6 +7,8 @@ from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from skills.openai.base import OpenAIBaseTool
 from skills.openai.dalle_image_generation import DALLEImageGeneration
+from skills.openai.gpt_image_generation import GPTImageGeneration
+from skills.openai.gpt_image_to_image import GPTImageToImage
 from skills.openai.image_to_text import ImageToText
 
 # Cache skills at the system level, because they are stateless
@@ -18,6 +20,8 @@ logger = logging.getLogger(__name__)
 class SkillStates(TypedDict):
     image_to_text: SkillState
     dalle_image_generation: SkillState
+    gpt_image_generation: SkillState
+    gpt_image_to_image: SkillState
 
 
 class Config(SkillConfig):
@@ -83,6 +87,18 @@ def get_openai_skill(
     elif name == "dalle_image_generation":
         if name not in _cache:
             _cache[name] = DALLEImageGeneration(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "gpt_image_generation":
+        if name not in _cache:
+            _cache[name] = GPTImageGeneration(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "gpt_image_to_image":
+        if name not in _cache:
+            _cache[name] = GPTImageToImage(
                 skill_store=store,
             )
         return _cache[name]

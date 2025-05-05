@@ -158,18 +158,60 @@
       "title": "AI Model",
       "type": "string",
       "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
-      "default": "gpt-4o-mini",
+      "default": "gpt-4.1-nano",
       "enum": [
+        "gpt-4o",
         "gpt-4o-mini",
+        "gpt-4.1-nano",
         "gpt-4.1-mini",
-        "gpt-4.1-nano"
+        "gpt-4.1",
+        "o4-mini",
+        "deepseek-chat",
+        "grok-2",
+        "grok-3",
+        "grok-3-mini",
+        "eternalai",
+        "reigent"
       ],
+      "x-component": "category-select",
       "x-enum-title": [
+        "GPT-4o",
         "GPT-4o mini",
+        "GPT-4.1 nano",
         "GPT-4.1 mini",
-        "GPT-4.1 nano"
+        "GPT-4.1",
+        "OpenAI o4-mini",
+        "Deepseek V3 (0324)",
+        "Grok 2",
+        "Grok 3",
+        "Grok 3 Mini",
+        "Eternal AI (Llama-3.3-70B)",
+        "REI Network (Rei Core)"
+      ],
+      "x-enum-category": [
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "Deepseek",
+        "Grok",
+        "Grok",
+        "Grok",
+        "Others",
+        "Others"
       ],
       "x-support-skill": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
         true,
         true,
         true
@@ -345,20 +387,20 @@
       "type": "boolean",
       "description": "Agent replies automatically to all X mentions (use cautiously)",
       "default": false,
-      "x-group": "entrypoint"
+      "x-group": "deprecated"
     },
     "twitter_entrypoint_prompt": {
       "title": "X Entry Prompt",
       "type": "string",
       "description": "Extra prompt for X entrypoint",
       "maxLength": 10000,
-      "x-group": "entrypoint"
+      "x-group": "deprecated"
     },
     "twitter_config": {
       "title": "Enter your X API key",
       "type": "object",
       "description": "You must use your own key for X entrypoint, it is separated from X skills",
-      "x-group": "entrypoint",
+      "x-group": "deprecated",
       "properties": {
         "consumer_key": {
           "type": "string",
@@ -393,9 +435,24 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
+        "openai": {
+          "title": "OpenAI",
+          "$ref": "../skills/openai/schema.json"
+        },
+        "venice_image": {
+          "$ref": "../skills/venice_image/schema.json"
+        },
+        "dapplooker": {
+          "title": "DappLooker",
+          "$ref": "../skills/dapplooker/schema.json"
+        },
         "cryptopanic": {
           "title": "CryptoPanic",
           "$ref": "../skills/cryptopanic/schema.json"
+        },
+        "aixbt": {
+          "title": "AIXBT",
+          "$ref": "../skills/aixbt/schema.json"
         },
         "tavily": {
           "title": "Tavily",
@@ -404,10 +461,6 @@
         "heurist": {
           "title": "Heurist",
           "$ref": "../skills/heurist/schema.json"
-        },
-        "openai": {
-          "title": "OpenAI",
-          "$ref": "../skills/openai/schema.json"
         },
         "nation": {
           "title": "Nation",
@@ -420,10 +473,6 @@
         "twitter": {
           "title": "X",
           "$ref": "../skills/twitter/schema.json"
-        },
-        "acolyt": {
-          "title": "Acolyt",
-          "$ref": "../skills/acolyt/schema.json"
         },
         "allora": {
           "title": "Allora",
@@ -456,6 +505,10 @@
         "github": {
           "title": "GitHub",
           "$ref": "../skills/github/schema.json"
+        },
+        "unrealspeech": {
+          "title": "UnrealSpeech",
+          "$ref": "../skills/unrealspeech/schema.json"
         }
       }
     },
@@ -639,13 +692,11 @@
   "then": {
     "properties": {
       "fee_percentage": {
-        "title": "Fee Percentage",
+        "title": "Agent Fee %",
         "type": "number",
-        "description": "The CAPs paid by users to Nation will increase this percentage fee and pay it to the agent account.",
-        "minimum": 0.0,
-        "maximum": 1.0,
-        "default": 0.1,
-        "x-step": 0.01,
+        "description": "Set a tip percentage that users will pay on top of the base CAPs fee when interacting with this Agent. This tip goes directly to the Agent's wallet. Interactions by the creator are excluded.",
+        "minimum": 0,
+        "default": 0,
         "x-group": "basic"
       }
     }

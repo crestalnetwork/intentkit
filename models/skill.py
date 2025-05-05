@@ -1,12 +1,25 @@
+import json
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Column, DateTime, String, delete, func, select
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    delete,
+    func,
+    select,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 
 from models.base import Base
 from models.db import get_session
+from models.redis import get_redis
 
 
 class AgentSkillDataTable(Base):
@@ -265,3 +278,118 @@ class ThreadSkillData(ThreadSkillDataCreate):
                     )
                 )
             await db.commit()
+
+
+class SkillTable(Base):
+    """Database table model for Skill."""
+
+    __tablename__ = "skills"
+
+    name = Column(String, primary_key=True)
+    category = Column(String, nullable=False)
+    price = Column(Numeric(22, 4), nullable=False, default=1)
+    price_self_key = Column(Numeric(22, 4), nullable=False, default=1)
+    rate_limit_count = Column(Integer, nullable=True)
+    rate_limit_minutes = Column(Integer, nullable=True)
+    key_provider_agent_owner = Column(Boolean, nullable=False, default=False)
+    key_provider_platform = Column(Boolean, nullable=False, default=False)
+    key_provider_free = Column(Boolean, nullable=False, default=False)
+    author = Column(String, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class Skill(BaseModel):
+    """Pydantic model for Skill."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            datetime: lambda v: v.isoformat(timespec="milliseconds"),
+        },
+    )
+
+    name: Annotated[str, Field(description="Name of the skill")]
+    category: Annotated[str, Field(description="Category of the skill")]
+    price: Annotated[
+        Decimal, Field(description="Price for this skill", default=Decimal("1"))
+    ]
+    price_self_key: Annotated[
+        Decimal,
+        Field(description="Price for this skill with self key", default=Decimal("1")),
+    ]
+    rate_limit_count: Annotated[Optional[int], Field(description="Rate limit count")]
+    rate_limit_minutes: Annotated[
+        Optional[int], Field(description="Rate limit minutes")
+    ]
+    key_provider_agent_owner: Annotated[
+        bool, Field(description="Agent owner can provide key", default=False)
+    ]
+    key_provider_platform: Annotated[
+        bool, Field(description="Platform can provide key", default=False)
+    ]
+    key_provider_free: Annotated[
+        bool, Field(description="Free key provider", default=False)
+    ]
+    author: Annotated[Optional[str], Field(description="Author of the skill")]
+    created_at: Annotated[
+        datetime, Field(description="Timestamp when this record was created")
+    ]
+    updated_at: Annotated[
+        datetime, Field(description="Timestamp when this record was last updated")
+    ]
+
+    @staticmethod
+    async def get(name: str) -> Optional["Skill"]:
+        """Get a skill by name with Redis caching.
+
+        The skill is cached in Redis for 3 minutes.
+
+        Args:
+            name: Name of the skill to retrieve
+
+        Returns:
+            Skill: The skill if found, None otherwise
+        """
+        # Redis cache key for skill
+        cache_key = f"intentkit:skill:{name}"
+        cache_ttl = 180  # 3 minutes in seconds
+
+        # Try to get from Redis cache first
+        redis = get_redis()
+        cached_data = await redis.get(cache_key)
+
+        if cached_data:
+            # If found in cache, deserialize and return
+            try:
+                return Skill.model_validate_json(cached_data)
+            except (json.JSONDecodeError, TypeError):
+                # If cache is corrupted, invalidate it
+                await redis.delete(cache_key)
+
+        # If not in cache or cache is invalid, get from database
+        async with get_session() as session:
+            # Query the database for the skill
+            stmt = select(SkillTable).where(SkillTable.name == name)
+            skill = await session.scalar(stmt)
+
+            # If skill doesn't exist, return None
+            if not skill:
+                return None
+
+            # Convert to Skill model
+            skill_model = Skill.model_validate(skill)
+
+            # Cache the skill in Redis
+            await redis.set(cache_key, skill_model.model_dump_json(), ex=cache_ttl)
+
+            return skill_model

@@ -1,9 +1,12 @@
-from typing import TypedDict
+import logging
+from typing import Optional, TypedDict
 
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from skills.nation.base import NationBaseTool
 from skills.nation.nft_check import NftCheck
+
+logger = logging.getLogger(__name__)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, NationBaseTool] = {}
@@ -36,13 +39,17 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_nation_skill(name, store) for name in available_skills]
+    return [
+        skill
+        for name in available_skills
+        if (skill := get_nation_skill(name, store)) is not None
+    ]
 
 
 def get_nation_skill(
     name: str,
     store: SkillStoreABC,
-) -> NationBaseTool:
+) -> Optional[NationBaseTool]:
     """Get a nation skill by name."""
     if name == "nft_check":
         if name not in _cache:
@@ -51,4 +58,5 @@ def get_nation_skill(
             )
         return _cache[name]
     else:
-        raise ValueError(f"Unknown Nation skill: {name}")
+        logger.error(f"Unknown Nation skill: {name}")
+        return None

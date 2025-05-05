@@ -85,14 +85,14 @@ class ImageGenerationSDXL(HeuristBaseTool):
             if skill_config.get("rate_limit_number") and skill_config.get(
                 "rate_limit_minutes"
             ):
-                self.user_rate_limit_by_category(
+                await self.user_rate_limit_by_category(
                     context.user_id,
                     skill_config["rate_limit_number"],
                     skill_config["rate_limit_minutes"],
                 )
         else:
             api_key = self.skill_store.get_system_config("heurist_api_key")
-            self.user_rate_limit_by_category(context.user_id, 10, 1440)
+            await self.user_rate_limit_by_category(context.user_id, 10, 1440)
 
         # Generate a unique job ID
         job_id = str(XID())
