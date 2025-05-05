@@ -1,11 +1,34 @@
 {
-  "title": "Currency Conversion Skill Configuration",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["api_key"],
+  "title": "Currency Conversion Skills",
+  "description": "Convert between any two currencies (e.g., USD to EUR, BTC to NGN) using the ExchangeRate-API.",
+  "x-icon": "https://ai.service.crestal.dev/skills/exchangerateapi/exchangerateapi.png",
+  "x-api-key": "required",
   "properties": {
-    "api_key": {
-      "type": "string",
-      "description": "Your API key for ExchangeRate-API."
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill category is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "convert_currency": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Convert one currency to another using real-time exchange rates.",
+          "default": "disabled"
+        }
+      },
+      "description": "Skill states: enable or restrict access to individual conversion tasks."
     }
-  }
+  },
+  "required": ["states", "enabled"]
 }
