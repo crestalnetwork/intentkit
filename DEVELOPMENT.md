@@ -3,6 +3,8 @@
 ## Quick Start
 
 ### Docker (When you just want to have a quick try)
+> If you decide you want to contribute to IntentKit, skip this section and run the code in your local development environment.
+
 0. Install [Docker](https://docs.docker.com/get-started/get-docker/).
 
 1. Create a new directory and navigate into it:
@@ -90,7 +92,7 @@ sh create.sh example
 
 6. Try it out:
 ```bash
-curl "http://127.0.0.1:8000/example/chat?q=Hello"
+curl "http://127.0.0.1:8000/debug/example/chat?q=Hello"
 ```
 In terminal, curl cannot auto escape special characters, so you can use browser to test. Just copy the URL to your browser, replace "Hello" with your words.
 

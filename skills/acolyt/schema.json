@@ -38,16 +38,47 @@
       },
       "description": "States for each Acolyt skill (disabled, public, or private)"
     },
-    "api_key": {
+    "api_key_provider": {
       "type": "string",
-      "title": "Acolyt API Key",
-      "x-sensitive": true,
-      "description": "Acolyt API key for authentication"
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Platform Hosted",
+        "You"
+      ],
+      "default": "platform"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      },
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Acolyt API Key",
+        "x-sensitive": true,
+        "description": "Acolyt API key for authentication"
+      }
+    },
+    "required": [
+      "api_key"
+    ]
+  },
   "additionalProperties": true
 }

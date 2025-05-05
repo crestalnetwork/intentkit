@@ -1,83 +1,136 @@
+"""Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
+
 from typing import ClassVar, List, Type
 
-import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from .base import CryptopanicBaseTool, base_url
+from abstracts.skill import SkillStoreABC
+from skills.cryptopanic.base import CryptopanicBaseTool
+
+SUPPORTED_CURRENCIES = ["BTC", "ETH"]
 
 
 class CryptopanicSentimentInput(BaseModel):
-    currency: str = Field(default="BTC")
+    """Input schema for fetching crypto market insights."""
+
+    currency: str = Field(default="BTC", description="Currency to analyze (BTC or ETH)")
+
+
+class CryptopanicSentimentOutput(BaseModel):
+    """Output schema for crypto market insights."""
+
+    currency: str = Field(description="Currency analyzed")
+    total_posts: int = Field(description="Number of news items analyzed")
+    headlines: list[str] = Field(description="List of news headlines")
+    prompt: str = Field(description="Formatted prompt for LLM insights")
+    summary: str = Field(description="Summary of analysis process")
+
+
+class CryptopanicNewsOutput(BaseModel):
+    """Output schema for fetching crypto news (used internally)."""
+
+    currency: str = Field(description="Currency news was fetched for")
+    news_items: List[BaseModel] = Field(description="List of news items")
+    summary: str = Field(description="Summary of fetched news")
 
 
 class FetchCryptoSentiment(CryptopanicBaseTool):
+    """Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
+
     name: str = "fetch_crypto_sentiment"
-    description: str = "Fetches recent CryptoPanic posts and defines market sentiment via LLM analysis."
+    description: str = (
+        "Provides AI-driven insights on market conditions for BTC or ETH, including trends, "
+        "opportunities, risks, and outlook, based on news fetched from fetch_crypto_news "
+        "with all posts sorted by recency. Triggered by 'sentiment' or 'market state' queries. "
+        "Defaults to BTC."
+    )
     args_schema: Type[BaseModel] = CryptopanicSentimentInput
+    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
-    DEFAULT_PROMPT: ClassVar[str] = """
-    Hey, you’re a seasoned crypto analyst with a knack for reading the market, and I’ve got {total_posts} fresh CryptoPanic headlines about {currency} for you to break down. Votes are flat (all 0/0 or none), so it’s all about these headlines:
+    INSIGHTS_PROMPT: ClassVar[str] = """
+CryptoPanic Headlines for {currency}:
+{headlines}
 
-    - Headlines: {headlines}
+Total Posts: {total_posts}
+Currency: {currency}
 
-    Give me your expert take on the sentiment—Bullish, Bearish, Neutral, or something like Cautiously Bullish. Picture us chatting this out: kick off with what the vibe feels like across these {total_posts} posts, then roll through each headline, tossing in a quick note on what it’s hinting at. Dig into what’s steering the mood—market buzz, economic signals, whatever’s in play. Point out any big wins or red flags, and wrap it up with where you see {currency} heading short-term. Keep it pro, detailed, and natural—no headings or stiff formatting, just your straight-up analysis.
+Based on these headlines, provide AI-driven insights into the market conditions for {currency}. 
+Summarize key trends (e.g., price movements, adoption, network developments) inferred from the news. 
+Identify significant opportunities (e.g., growth potential) and risks (e.g., negative sentiment, competition). 
+Classify the overall market outlook as Bullish, Bearish and provide opinion on wether to buy, sell or hold.
+Conclude with a short-term outlook for {currency}. Provide a concise, professional analysis without headings.
     """
 
-    def _run(self, question: str):
-        raise NotImplementedError("Use _arun")
+    async def _arun(
+        self,
+        currency: str = "BTC",
+        config: RunnableConfig = None,
+        **kwargs,
+    ) -> CryptopanicSentimentOutput:
+        """Generate AI-driven market insights asynchronously.
 
-    async def fetch_all_posts(self, currency: str, api_key: str) -> List[dict]:
-        url = base_url
-        params = {
-            "auth_token": api_key,
-            "public": "true",
-            "currencies": currency.upper(),
-        }
+        Args:
+            currency: Currency to analyze (defaults to BTC).
+            config: Runnable configuration.
+            **kwargs: Additional keyword arguments.
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            return response.json()["results"]
+        Returns:
+            CryptopanicSentimentOutput with market insights.
 
-    async def _arun(self, currency: str, config: RunnableConfig, **kwargs):
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        Raises:
+            ToolException: If news fetching fails.
+        """
+        from langchain.tools.base import ToolException
 
-        # Fetch all recent posts
-        posts = await self.fetch_all_posts(currency, api_key)
-        total_posts = len(posts)
+        from skills.cryptopanic.fetch_crypto_news import (
+            FetchCryptoNews,
+        )  # Import here to avoid circular import
+
+        currency = currency.upper() if currency else "BTC"
+        if currency not in SUPPORTED_CURRENCIES:
+            currency = "BTC"
+
+        # Instantiate FetchCryptoNews
+        news_skill = FetchCryptoNews(skill_store=self.skill_store)
+
+        try:
+            news_output: CryptopanicNewsOutput = await news_skill._arun(
+                query=f"insights for {currency}",
+                currency=currency,
+                config=config,
+            )
+        except Exception as e:
+            raise ToolException(f"Failed to fetch news for analysis: {e}")
+
+        news_items = news_output.news_items
+        total_posts = len(news_items)
 
         if total_posts == 0:
-            data = {
-                "total_posts": 0,
-                "headlines": ["No recent posts available"],
-                "votes": "None",
-            }
+            headlines = ["No recent news available"]
+            summary = f"No news found for {currency} to analyze."
         else:
-            headlines = [p["title"] for p in posts[:5]]  # Limit to 5
-            votes = (
-                [
-                    f"{p['votes']['positive']}/{p['votes']['negative']}"
-                    for p in posts[:5]
-                ]
-                if posts and "votes" in posts[0]
-                else "None"
-            )
+            headlines = [item.title for item in news_items[:5]]  # Limit to 5
+            summary = f"Generated insights for {currency} based on {total_posts} news items sorted by recency."
 
-            data = {"total_posts": total_posts, "headlines": headlines, "votes": votes}
-
-        # Bundle data with prompt for LLM
-        formatted_headlines = "\n- ".join([""] + data["headlines"])
-        formatted_votes = (
-            "\n- ".join([""] + data["votes"]) if data["votes"] != "None" else "None"
+        # Format headlines as numbered list
+        formatted_headlines = "\n".join(
+            f"{i + 1}. {headline}" for i, headline in enumerate(headlines)
         )
-        output = {
-            "prompt": self.DEFAULT_PROMPT,
-            "currency": currency,
-            "total_posts": data["total_posts"],
-            "headlines": formatted_headlines,
-            "votes": formatted_votes,
-        }
 
-        return output
+        prompt = self.INSIGHTS_PROMPT.format(
+            total_posts=total_posts,
+            currency=currency,
+            headlines=formatted_headlines,
+        )
+
+        return CryptopanicSentimentOutput(
+            currency=currency,
+            total_posts=total_posts,
+            headlines=headlines,
+            prompt=prompt,
+            summary=summary,
+        )
+
+    def _run(self, question: str):
+        raise NotImplementedError("Use _arun for async execution")

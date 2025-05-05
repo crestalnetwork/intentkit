@@ -119,7 +119,7 @@ class DappLookerTokenData(DappLookerBaseTool):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
-                    "https://api.0xloky.com/v1/crypto-market/",
+                    "https://api.dapplooker.com/v1/crypto-market/",
                     params=params,
                 )
 

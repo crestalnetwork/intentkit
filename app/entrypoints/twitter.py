@@ -22,7 +22,6 @@ async def run_twitter_agents():
         agents = await db.scalars(
             select(AgentTable).where(
                 AgentTable.twitter_entrypoint_enabled == True,  # noqa: E712
-                AgentTable.twitter_config != None,  # noqa: E711
             )
         )
 
@@ -39,11 +38,6 @@ async def run_twitter_agents():
                         f"Daily: {quota.twitter_count_daily}/{quota.twitter_limit_daily}, "
                         f"Total: {quota.twitter_count_total}/{quota.twitter_limit_total}"
                     )
-                    continue
-
-                # Initialize Twitter client
-                if not agent.twitter_config:
-                    logger.warning(f"Agent {agent.id} has no valid twitter config")
                     continue
 
                 try:
@@ -70,7 +64,7 @@ async def run_twitter_agents():
                 # Check if we should process tweets for this agent (at least 1 hour since last processing)
                 current_time = datetime.now(tz=timezone.utc)
                 should_process = True
-                if last_processed_time:
+                if not twitter.use_key and last_processed_time:
                     # Convert string timestamp back to datetime
                     last_time = datetime.fromisoformat(last_processed_time)
                     # Calculate time difference
@@ -171,8 +165,9 @@ async def run_twitter_agents():
                     response = await execute_agent(message)
 
                     # Reply to the tweet
-                    client.create_tweet(
-                        text="\n".join(response[-1].message),
+                    await client.create_tweet(
+                        text=response[-1].message,
+                        user_auth=twitter.use_key,
                         in_reply_to_tweet_id=tweet.id,
                     )
 
