@@ -129,6 +129,22 @@
           ],
           "description": "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId.",
           "default": "disabled"
+        },
+        "get_best_yield": {
+          "type": "string",
+          "title": "Get Best Yield",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Find the best yield options for a specific token (default: USDC) across all protocols on a blockchain network (default: Base). Results are sorted by APY in descending order.",
+          "default": "disabled"
         }
       },
       "description": "States for each Enso skill (disabled, public, or private)"

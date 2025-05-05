@@ -219,6 +219,12 @@ Key points:
 - Define the structure of the skill config, it will be used or check by the agent creation/update/import/export
 - List all skills in the `states` section
 
+## Testing your skills before creating PR
+
+Make sure you have a local agent running, and you can test your skills in the agent.
+
+Read [Development Guide](../../DEVELOPMENT.md) to get started with your setup.
+
 ## More details
 
 ### About the return value

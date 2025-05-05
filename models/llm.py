@@ -1,11 +1,17 @@
+import json
+from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Annotated, Any, Dict, Optional
 
 from langchain_core.language_models import LanguageModelLike
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
 
 from models.app_setting import AppSetting
+from models.base import Base
+from models.db import get_session
+from models.redis import get_redis
 
 _credit_per_usdc = None
 
@@ -18,8 +24,54 @@ class LLMProvider(str, Enum):
     REIGENT = "reigent"
 
 
+class LLMModelInfoTable(Base):
+    """Database table model for LLM model information."""
+
+    __tablename__ = "llm_models"
+
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    provider = Column(String, nullable=False)  # Stored as string enum value
+    input_price = Column(
+        Numeric(22, 4), nullable=False
+    )  # Price per 1M input tokens in USD
+    output_price = Column(
+        Numeric(22, 4), nullable=False
+    )  # Price per 1M output tokens in USD
+    context_length = Column(Integer, nullable=False)  # Maximum context length in tokens
+    output_length = Column(Integer, nullable=False)  # Maximum output length in tokens
+    intelligence = Column(Integer, nullable=False)  # Intelligence rating from 1-5
+    speed = Column(Integer, nullable=False)  # Speed rating from 1-5
+    supports_image_input = Column(Boolean, nullable=False, default=False)
+    supports_skill_calls = Column(Boolean, nullable=False, default=False)
+    supports_structured_output = Column(Boolean, nullable=False, default=False)
+    has_reasoning = Column(Boolean, nullable=False, default=False)
+    supports_temperature = Column(Boolean, nullable=False, default=True)
+    supports_frequency_penalty = Column(Boolean, nullable=False, default=True)
+    supports_presence_penalty = Column(Boolean, nullable=False, default=True)
+    api_base = Column(String, nullable=True)  # Custom API base URL
+    timeout = Column(Integer, nullable=False, default=180)  # Default timeout in seconds
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class LLMModelInfo(BaseModel):
     """Information about an LLM model."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+    )
 
     id: str
     name: str
@@ -49,8 +101,80 @@ class LLMModelInfo(BaseModel):
         None  # Custom API base URL if not using provider's default
     )
     timeout: int = 180  # Default timeout in seconds
+    created_at: Annotated[
+        datetime,
+        Field(
+            description="Timestamp when this data was created",
+            default=datetime.now(timezone.utc),
+        ),
+    ]
+    updated_at: Annotated[
+        datetime,
+        Field(
+            description="Timestamp when this data was updated",
+            default=datetime.now(timezone.utc),
+        ),
+    ]
 
-    model_config = ConfigDict(frozen=True)  # Make instances immutable
+    @staticmethod
+    async def get(model_id: str) -> Optional["LLMModelInfo"]:
+        """Get a model by ID with Redis caching.
+
+        The model info is cached in Redis for 3 minutes.
+
+        Args:
+            model_id: ID of the model to retrieve
+
+        Returns:
+            LLMModelInfo: The model info if found, None otherwise
+        """
+        # Redis cache key for model info
+        cache_key = f"intentkit:llm_model:{model_id}"
+        cache_ttl = 180  # 3 minutes in seconds
+
+        # Try to get from Redis cache first
+        redis = get_redis()
+        cached_data = await redis.get(cache_key)
+
+        if cached_data:
+            # If found in cache, deserialize and return
+            try:
+                return LLMModelInfo.model_validate_json(cached_data)
+            except (json.JSONDecodeError, TypeError):
+                # If cache is corrupted, invalidate it
+                await redis.delete(cache_key)
+
+        # If not in cache or cache is invalid, get from database
+        async with get_session() as session:
+            # Query the database for the model
+            stmt = select(LLMModelInfoTable).where(LLMModelInfoTable.id == model_id)
+            model = await session.scalar(stmt)
+
+            # If model exists in database, convert to LLMModelInfo model and cache it
+            if model:
+                # Convert provider string to enum
+                model_info = LLMModelInfo.model_validate(model)
+
+                # Cache the model in Redis
+                await redis.set(
+                    cache_key,
+                    model_info.model_dump_json(),
+                    ex=cache_ttl,
+                )
+
+                return model_info
+
+        # If not found in database, check AVAILABLE_MODELS
+        if model_id in AVAILABLE_MODELS:
+            model_info = AVAILABLE_MODELS[model_id]
+
+            # Cache the model in Redis
+            await redis.set(cache_key, model_info.model_dump_json(), ex=cache_ttl)
+
+            return model_info
+
+        # Not found anywhere
+        return None
 
     async def calculate_cost(self, input_tokens: int, output_tokens: int) -> Decimal:
         global _credit_per_usdc
@@ -291,35 +415,41 @@ class LLMModel(BaseModel):
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
 
-    @property
-    def model_info(self) -> LLMModelInfo:
-        """Get the model information."""
-        if self.model_name not in AVAILABLE_MODELS:
+    async def model_info(self) -> LLMModelInfo:
+        """Get the model information with caching.
+
+        First tries to get from cache, then database, then AVAILABLE_MODELS.
+        Raises ValueError if model is not found anywhere.
+        """
+        model_info = await LLMModelInfo.get(self.model_name)
+        if not model_info:
             raise ValueError(f"Unknown model: {self.model_name}")
-        return AVAILABLE_MODELS[self.model_name]
+        return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
-    def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> LanguageModelLike:
         """Create and return the LLM instance based on the configuration."""
         raise NotImplementedError("Subclasses must implement create_instance")
 
-    def get_token_limit(self) -> int:
+    async def get_token_limit(self) -> int:
         """Get the token limit for this model."""
-        return self.model_info.context_length
+        info = await self.model_info()
+        return info.context_length
 
     async def calculate_cost(self, input_tokens: int, output_tokens: int) -> Decimal:
         """Calculate the cost for a given number of tokens."""
-        return await self.model_info.calculate_cost(input_tokens, output_tokens)
+        info = await self.model_info()
+        return await info.calculate_cost(input_tokens, output_tokens)
 
 
 class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
-    def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> LanguageModelLike:
         """Create and return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
-        info = self.model_info
+        info = await self.model_info()
 
         kwargs = {
             "model_name": self.model_name,
@@ -346,16 +476,16 @@ class OpenAILLM(LLMModel):
 class DeepseekLLM(LLMModel):
     """Deepseek LLM configuration."""
 
-    def create_instance(self, config: Any) -> LanguageModelLike:
-        """Create and return a ChatOpenAI instance configured for Deepseek."""
+    async def create_instance(self, config: Any) -> LanguageModelLike:
+        """Create and return a ChatDeepseek instance."""
+
         from langchain_openai import ChatOpenAI
 
-        info = self.model_info
+        info = await self.model_info()
 
         kwargs = {
             "model_name": self.model_name,
             "openai_api_key": config.deepseek_api_key,
-            "openai_api_base": info.api_base,
             "timeout": info.timeout,
         }
 
@@ -369,21 +499,25 @@ class DeepseekLLM(LLMModel):
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
 
+        if info.api_base:
+            kwargs["openai_api_base"] = info.api_base
+
         return ChatOpenAI(**kwargs)
 
 
 class XAILLM(LLMModel):
     """XAI (Grok) LLM configuration."""
 
-    def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> LanguageModelLike:
         """Create and return a ChatXAI instance."""
+
         from langchain_xai import ChatXAI
 
-        info = self.model_info
+        info = await self.model_info()
 
         kwargs = {
             "model_name": self.model_name,
-            "api_key": config.xai_api_key,
+            "xai_api_key": config.xai_api_key,
             "timeout": info.timeout,
         }
 
@@ -403,11 +537,11 @@ class XAILLM(LLMModel):
 class EternalLLM(LLMModel):
     """Eternal AI LLM configuration."""
 
-    def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> LanguageModelLike:
         """Create and return a ChatOpenAI instance configured for Eternal AI."""
         from langchain_openai import ChatOpenAI
 
-        info = self.model_info
+        info = await self.model_info()
 
         # Override model name for Eternal AI
         actual_model = "unsloth/Llama-3.3-70B-Instruct-bnb-4bit"
@@ -435,11 +569,11 @@ class EternalLLM(LLMModel):
 class ReigentLLM(LLMModel):
     """Reigent LLM configuration."""
 
-    def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> LanguageModelLike:
         """Create and return a ChatOpenAI instance configured for Reigent."""
         from langchain_openai import ChatOpenAI
 
-        info = self.model_info
+        info = await self.model_info()
 
         kwargs = {
             "openai_api_key": config.reigent_api_key,

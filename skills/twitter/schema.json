@@ -145,43 +145,93 @@
           ],
           "description": "Executes advanced X searches with keyword filters, date ranges, and engagement thresholds",
           "default": "disabled"
+        },
+        "get_user_by_username": {
+          "type": "string",
+          "title": "Get User by Username",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieves user information by username.",
+          "default": "disabled"
         }
       },
       "description": "States for each X skill"
     },
-    "consumer_key": {
+    "api_key_provider": {
       "type": "string",
-      "title": "X API consumer key",
-      "description": "X API consumer key",
-      "x-link": "[Get your API key](https://developer.x.com/)",
-      "x-sensitive": true,
-      "maxLength": 100
-    },
-    "consumer_secret": {
-      "type": "string",
-      "title": "X API consumer secret",
-      "description": "X API consumer secret",
-      "x-sensitive": true,
-      "maxLength": 100
-    },
-    "access_token": {
-      "type": "string",
-      "title": "X API access token",
-      "description": "X API access token",
-      "x-sensitive": true,
-      "maxLength": 100
-    },
-    "access_token_secret": {
-      "type": "string",
-      "title": "X API access token secret",
-      "description": "X API access token secret",
-      "x-sensitive": true,
-      "maxLength": 100
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Nation Hosted",
+        "Owner Provided"
+      ],
+      "default": "platform"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      },
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "consumer_key": {
+        "type": "string",
+        "title": "X API consumer key",
+        "description": "X API consumer key",
+        "x-link": "[Get your API key](https://developer.x.com/)",
+        "x-sensitive": true,
+        "maxLength": 100
+      },
+      "consumer_secret": {
+        "type": "string",
+        "title": "X API consumer secret",
+        "description": "X API consumer secret",
+        "x-sensitive": true,
+        "maxLength": 100
+      },
+      "access_token": {
+        "type": "string",
+        "title": "X API access token",
+        "description": "X API access token",
+        "x-sensitive": true,
+        "maxLength": 100
+      },
+      "access_token_secret": {
+        "type": "string",
+        "title": "X API access token secret",
+        "description": "X API access token secret",
+        "x-sensitive": true,
+        "maxLength": 100
+      }
+    },
+    "required": [
+      "consumer_key",
+      "consumer_secret",
+      "access_token",
+      "access_token_secret"
+    ]
+  },
   "additionalProperties": true
 }

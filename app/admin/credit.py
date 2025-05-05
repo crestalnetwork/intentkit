@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field, model_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config import config
@@ -22,6 +23,7 @@ from models.credit import (
     CreditAccount,
     CreditAccountTable,
     CreditEvent,
+    CreditEventTable,
     Direction,
     EventType,
     OwnerType,
@@ -119,6 +121,17 @@ class UpdateDailyQuotaRequest(BaseModel):
                 "At least one of free_quota or refill_amount must be provided"
             )
         return self
+
+
+# ===== Agent Statistics =====
+class AgentStatisticsResponse(BaseModel):
+    """Response model for agent statistics."""
+
+    agent_id: str = Field(description="ID of the agent")
+    account_id: str = Field(description="ID of the agent's credit account")
+    balance: Decimal = Field(description="Total balance of the agent's account")
+    total_income: Decimal = Field(description="Total income from all credit events")
+    net_income: Decimal = Field(description="Net income from all credit events")
 
 
 # ===== API Endpoints =====
@@ -253,6 +266,67 @@ async def update_account_free_quota(
         refill_amount=request.refill_amount,
         upstream_tx_id=request.upstream_tx_id,
         note=request.note,
+    )
+
+
+@credit_router.get(
+    "/accounts/agent/{agent_id}/statistics",
+    response_model=AgentStatisticsResponse,
+    operation_id="get_agent_statistics",
+    summary="Get Agent Statistics",
+    dependencies=[Depends(verify_jwt)],
+)
+async def get_agent_statistics(
+    agent_id: Annotated[str, Path(description="ID of the agent")],
+    db: AsyncSession = Depends(get_db),
+) -> AgentStatisticsResponse:
+    """Get statistics for an agent account.
+
+    Args:
+        agent_id: ID of the agent
+        db: Database session
+
+    Returns:
+        Agent statistics including balance, total income, and net income
+
+    Raises:
+        404: If the agent account is not found
+    """
+    # Get the agent account
+    agent_account = await CreditAccount.get_or_create_in_session(
+        db, OwnerType.AGENT, agent_id
+    )
+
+    # Calculate the total balance
+    balance = (
+        agent_account.free_credits
+        + agent_account.reward_credits
+        + agent_account.credits
+    )
+
+    # Calculate total income (sum of total_amount) and net income (sum of fee_agent_amount) at SQL level
+    # Query to get the sum of total_amount and fee_agent_amount
+    stmt = (
+        select(
+            func.sum(CreditEventTable.total_amount).label("total_income"),
+            func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
+        )
+        .where(CreditEventTable.fee_agent_account == agent_account.id)
+        .where(CreditEventTable.fee_agent_amount > 0)
+    )
+    result = await db.execute(stmt)
+    row = result.first()
+
+    # Extract the sums, defaulting to 0 if None
+    total_income = row.total_income if row.total_income is not None else Decimal("0")
+    net_income = row.net_income if row.net_income is not None else Decimal("0")
+
+    return AgentStatisticsResponse(
+        agent_id=agent_id,
+        account_id=agent_account.id,
+        balance=balance,
+        total_income=total_income,
+        net_income=net_income,
     )
 
 
@@ -511,7 +585,12 @@ async def fetch_credit_event_by_id_endpoint(
     return event
 
 
-@credit_router_readonly.get("/events", response_model=CreditEventsResponse)
+@credit_router_readonly.get(
+    "/events",
+    operation_id="list_credit_events",
+    summary="List Credit Events",
+    response_model=CreditEventsResponse,
+)
 async def list_all_credit_events(
     direction: Annotated[
         Optional[Direction],
@@ -522,6 +601,14 @@ async def list_all_credit_events(
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
+    start_at: Annotated[
+        Optional[datetime],
+        Query(description="Start datetime for filtering events, inclusive"),
+    ] = None,
+    end_at: Annotated[
+        Optional[datetime],
+        Query(description="End datetime for filtering events, exclusive"),
+    ] = None,
     db: AsyncSession = Depends(get_db),
 ) -> CreditEventsResponse:
     """
@@ -532,15 +619,6 @@ async def list_all_credit_events(
     Even when there are no records, it will still return a cursor that can be used for the next request.
     You can poll this endpoint using the cursor every second - when new records are created, you will get them.
 
-    Args:
-        direction: Direction of credit events (INCOME or EXPENSE), defaults to EXPENSE
-        event_type: Optional filter for specific event type
-        cursor: Cursor for pagination
-        limit: Maximum number of events to return
-        db: Database session
-
-    Returns:
-        Response with list of events and pagination information
     """
     events, next_cursor, has_more = await list_credit_events(
         session=db,
@@ -548,6 +626,8 @@ async def list_all_credit_events(
         cursor=cursor,
         limit=limit,
         event_type=event_type,
+        start_at=start_at,
+        end_at=end_at,
     )
 
     return CreditEventsResponse(

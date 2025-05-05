@@ -16,7 +16,6 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
-from decimal import Decimal
 
 import sqlalchemy
 from coinbase_agentkit import (
@@ -54,7 +53,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from abstracts.graph import AgentState
 from app.config.config import config
 from app.core.agent import AgentStore
-from app.core.credit import expense_message, expense_skill
+from app.core.credit import expense_message, expense_skill, skill_cost
 from app.core.graph import create_agent
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
@@ -64,7 +63,7 @@ from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageS
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
-from models.skill import AgentSkillData, ThreadSkillData
+from models.skill import AgentSkillData, Skill, ThreadSkillData
 from skills.acolyt import get_acolyt_skill
 from skills.allora import get_allora_skill
 from skills.cdp.get_balance import GetBalance
@@ -131,10 +130,10 @@ async def initialize_agent(aid, is_private=False):
     )
 
     # Get the LLM instance
-    llm = llm_model.create_instance(config)
+    llm = await llm_model.create_instance(config)
 
     # Get the token limit from the model info
-    input_token_limit = min(config.input_token_limit, llm_model.get_token_limit())
+    input_token_limit = min(config.input_token_limit, await llm_model.get_token_limit())
 
     # ==== Store buffered conversation history in memory.
     memory = AsyncPostgresSaver(get_pool())
@@ -477,27 +476,6 @@ async def execute_agent(
 
     agent = await Agent.get(input.agent_id)
 
-    # hack for temporary disable models
-    if config.env == "testnet-prod" and agent.model not in [
-        "gpt-4o-mini",
-        "gpt-4.1-nano",
-    ]:
-        error_message_create = ChatMessageCreate(
-            id=str(XID()),
-            agent_id=input.agent_id,
-            chat_id=input.chat_id,
-            user_id=input.user_id,
-            author_id=input.agent_id,
-            author_type=AuthorType.SYSTEM,
-            thread_type=input.author_type,
-            reply_to=input.id,
-            message="This model is currently unavailable. Please switch to a different supported model or wait for further updates from Nation App.",
-            time_cost=time.perf_counter() - start,
-        )
-        error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
-
     need_payment = await is_payment_required(input, agent)
 
     # check user balance
@@ -525,6 +503,8 @@ async def execute_agent(
             error_message = await error_message_create.save()
             resp.append(error_message)
             return resp
+        # use this in loop
+        total_paid = 0
 
     # once the input saved, reduce message quota
     await quota.add_message()
@@ -608,6 +588,30 @@ async def execute_agent(
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     # tool calls, save for later use
                     cached_tool_step = msg
+                    if need_payment:
+                        for tool_call in msg.tool_calls:
+                            skill_meta = await Skill.get(tool_call.get("name"))
+                            if skill_meta:
+                                skill_cost_info = await skill_cost(
+                                    skill_meta.name, input.user_id, agent
+                                )
+                                total_paid += skill_cost_info.total_amount
+                        if not user_account.has_sufficient_credits(total_paid):
+                            error_message_create = ChatMessageCreate(
+                                id=str(XID()),
+                                agent_id=input.agent_id,
+                                chat_id=input.chat_id,
+                                user_id=input.user_id,
+                                author_id=input.agent_id,
+                                author_type=AuthorType.SYSTEM,
+                                thread_type=input.author_type,
+                                reply_to=input.id,
+                                message="Insufficient balance.",
+                                time_cost=this_time - last,
+                            )
+                            error_message = await error_message_create.save()
+                            resp.append(error_message)
+                            return resp
                 elif hasattr(msg, "content") and msg.content:
                     # agent message
                     chat_message_create = ChatMessageCreate(
@@ -647,15 +651,11 @@ async def execute_agent(
                             )
                             credit_event = await expense_message(
                                 session,
-                                input.agent_id,
                                 payer,
                                 chat_message_create.id,
                                 input.id,
                                 amount,
-                                agent.fee_percentage
-                                if agent.fee_percentage
-                                else Decimal("0"),
-                                agent.owner,
+                                agent,
                             )
                             logger.info(f"[{input.agent_id}] expense message: {amount}")
                             chat_message_create.credit_event_id = credit_event.id
@@ -695,13 +695,13 @@ async def execute_agent(
                             }
                             if msg.status == "error":
                                 skill_call["success"] = False
-                                skill_call["error_message"] = msg.content
+                                skill_call["error_message"] = str(msg.content)
                             else:
-                                if debug:
-                                    skill_call["response"] = msg.content
+                                if config.debug:
+                                    skill_call["response"] = str(msg.content)
                                 else:
                                     skill_call["response"] = textwrap.shorten(
-                                        msg.content, width=100, placeholder="..."
+                                        str(msg.content), width=1000, placeholder="..."
                                     )
                             skill_calls.append(skill_call)
                             break
@@ -746,15 +746,11 @@ async def execute_agent(
                         )
                         message_payment_event = await expense_message(
                             session,
-                            input.agent_id,
                             payer,
                             skill_message_create.id,
                             input.id,
                             message_amount,
-                            agent.fee_percentage
-                            if agent.fee_percentage
-                            else Decimal("0"),
-                            agent.owner,
+                            agent,
                         )
                         skill_message_create.credit_event_id = message_payment_event.id
                         skill_message_create.credit_cost = (
@@ -762,6 +758,8 @@ async def execute_agent(
                         )
                         # skill payment
                         for skill_call in skill_calls:
+                            if not skill_call["success"]:
+                                continue
                             payment_event = await expense_skill(
                                 session,
                                 payer,
@@ -931,10 +929,12 @@ async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
 
 
 async def is_payment_required(input: ChatMessageCreate, agent: Agent) -> bool:
+    if not config.payment_enabled:
+        return False
     payment_settings = await AppSetting.payment()
     if payment_settings.agent_whitelist_enabled:
         if agent.id not in payment_settings.agent_whitelist:
             return False
-    if config.payment_enabled and input.user_id and agent.owner:
+    if input.user_id and agent.owner:
         return True
     return False

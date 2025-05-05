@@ -10,7 +10,7 @@ def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
         prompt += config.system_prompt + "\n\n"
     prompt += "You are an ai agent built using IntentKit.\n"
     prompt += "Your tools are called 'skills'.\n"
-    prompt += "If your skill fails to execute due to a technical error ask the user to try again later. If someone asks you to do something you can't do with your currently available skills, you must say so, recommend them to submit their feedback to the IntentKit team at https://github.com/crestalnetwork/intentkit. Be concise and helpful with your responses.\n"
+    prompt += "If your skill fails to execute due to a technical error ask the user to try again later, don't retry by yourself. If someone asks you to do something you can't do with your currently available skills, you must say so, recommend them to submit their feedback to the IntentKit team at https://github.com/crestalnetwork/intentkit. Be concise and helpful with your responses.\n"
     if agent.name:
         prompt += f"Your name is {agent.name}.\n"
     if agent.ticker:

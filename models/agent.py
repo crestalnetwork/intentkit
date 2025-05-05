@@ -587,7 +587,6 @@ class AgentUpdate(BaseModel):
             default=None,
             description="Fee percentage of the agent",
             ge=Decimal("0.0"),
-            le=Decimal("100.0"),
             json_schema_extra={
                 "x-group": "basic",
             },
@@ -1153,7 +1152,7 @@ class AgentUpdate(BaseModel):
                 )
 
             # Validate minimum interval of 1 hour
-            if config.minutes and config.minutes < 60:
+            if config.minutes and config.minutes < 5:
                 raise HTTPException(
                     status_code=400, detail="The shortest execution interval is 1 hour"
                 )
@@ -1189,7 +1188,7 @@ class AgentUpdate(BaseModel):
                 if "/" in minute:
                     # Check step value in minute field (e.g., */15)
                     step = int(minute.split("/")[1])
-                    if step < 60 and hour == "*":
+                    if step < 5 and hour == "*":
                         raise HTTPException(
                             status_code=400,
                             detail="The shortest execution interval is 1 hour",
@@ -1490,7 +1489,7 @@ class Agent(AgentCreate):
             return cls.model_validate(item)
 
 
-class AgentResponse(Agent):
+class AgentResponse(BaseModel):
     """Response model for Agent API."""
 
     model_config = ConfigDict(
@@ -1499,6 +1498,185 @@ class AgentResponse(Agent):
             datetime: lambda dt: dt.isoformat(),
         },
     )
+
+    id: Annotated[
+        str,
+        PydanticField(
+            description="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
+        ),
+    ]
+    # auto increment number by db
+    number: Annotated[
+        int,
+        PydanticField(
+            description="Auto-incrementing number assigned by the system for easy reference",
+        ),
+    ]
+    # auto timestamp
+    created_at: Annotated[
+        datetime,
+        PydanticField(
+            description="Timestamp when the agent was created, will ignore when importing"
+        ),
+    ]
+    updated_at: Annotated[
+        datetime,
+        PydanticField(
+            description="Timestamp when the agent was last updated, will ignore when importing"
+        ),
+    ]
+    # Agent part
+    name: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Display name of the agent",
+        ),
+    ]
+    slug: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Slug of the agent, used for URL generation",
+        ),
+    ]
+    description: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Description of the agent, for public view, not contained in prompt",
+        ),
+    ]
+    external_website: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Link of external website of the agent, if you have one",
+        ),
+    ]
+    picture: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Picture of the agent",
+        ),
+    ]
+    ticker: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Ticker symbol of the agent",
+        ),
+    ]
+    token_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Token address of the agent",
+        ),
+    ]
+    token_pool: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Pool of the agent token",
+        ),
+    ]
+    mode: Annotated[
+        Optional[Literal["public", "private"]],
+        PydanticField(
+            default=None,
+            description="Mode of the agent, public or private",
+        ),
+    ]
+    fee_percentage: Annotated[
+        Optional[Decimal],
+        PydanticField(
+            default=None,
+            description="Fee percentage of the agent",
+        ),
+    ]
+    owner: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Owner identifier of the agent, used for access control",
+            max_length=50,
+            json_schema_extra={
+                "x-group": "internal",
+            },
+        ),
+    ]
+    upstream_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="External reference ID for idempotent operations",
+            max_length=100,
+            json_schema_extra={
+                "x-group": "internal",
+            },
+        ),
+    ]
+    upstream_extra: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Additional data store for upstream use",
+        ),
+    ]
+    # AI part
+    model: Annotated[
+        str,
+        PydanticField(
+            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
+        ),
+    ]
+    # autonomous mode
+    autonomous: Annotated[
+        Optional[List[Dict[str, Any]]],
+        PydanticField(
+            default=None,
+            description=("Autonomous agent configurations."),
+        ),
+    ]
+    # skills
+    skills: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Dict of skills and their corresponding configurations",
+        ),
+    ]
+    wallet_provider: Annotated[
+        Optional[Literal["cdp"]],
+        PydanticField(
+            default="cdp",
+            description="Provider of the agent's wallet",
+        ),
+    ]
+    network_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default="base-mainnet",
+            description="Network identifier",
+        ),
+    ]
+    cdp_network_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default="base-mainnet",
+            description="Network identifier for CDP integration",
+        ),
+    ]
+    # telegram entrypoint
+    telegram_entrypoint_enabled: Annotated[
+        Optional[bool],
+        PydanticField(
+            default=False,
+            description="Whether the agent can play telegram bot",
+        ),
+    ]
 
     # data part
     cdp_wallet_address: Annotated[
@@ -1573,6 +1751,40 @@ class AgentResponse(Agent):
         """
         # Get base data from agent
         data = agent.model_dump()
+
+        # Filter sensitive fields from autonomous list
+        if data.get("autonomous"):
+            filtered_autonomous = []
+            for item in data["autonomous"]:
+                if isinstance(item, dict):
+                    filtered_item = {
+                        "id": item.get("id"),
+                        "name": item.get("name"),
+                        "enabled": item.get("enabled"),
+                    }
+                    filtered_autonomous.append(filtered_item)
+            data["autonomous"] = filtered_autonomous
+
+        # Filter sensitive fields from skills dictionary
+        if data.get("skills"):
+            filtered_skills = {}
+            for skill_name, skill_config in data["skills"].items():
+                if isinstance(skill_config, dict):
+                    # Only include skills that are enabled
+                    if skill_config.get("enabled") is True:
+                        filtered_config = {"enabled": True}
+                        # Only keep states with public or private values
+                        if "states" in skill_config:
+                            filtered_states = {}
+                            for state_key, state_value in skill_config[
+                                "states"
+                            ].items():
+                                if state_value in ["public", "private"]:
+                                    filtered_states[state_key] = state_value
+                            if filtered_states:
+                                filtered_config["states"] = filtered_states
+                        filtered_skills[skill_name] = filtered_config
+            data["skills"] = filtered_skills
 
         # Process CDP wallet address
         cdp_wallet_address = None

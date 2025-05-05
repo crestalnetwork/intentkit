@@ -167,13 +167,13 @@
         "gpt-4.1",
         "o4-mini",
         "deepseek-chat",
-        "deepseek-reasoner",
         "grok-2",
         "grok-3",
         "grok-3-mini",
         "eternalai",
         "reigent"
       ],
+      "x-component": "category-select",
       "x-enum-title": [
         "GPT-4o",
         "GPT-4o mini",
@@ -182,12 +182,25 @@
         "GPT-4.1",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
-        "Deepseek R1",
         "Grok 2",
         "Grok 3",
         "Grok 3 Mini",
         "Eternal AI (Llama-3.3-70B)",
         "REI Network (Rei Core)"
+      ],
+      "x-enum-category": [
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "Deepseek",
+        "Grok",
+        "Grok",
+        "Grok",
+        "Others",
+        "Others"
       ],
       "x-support-skill": [
         true,
@@ -197,7 +210,6 @@
         true,
         true,
         true,
-        false,
         true,
         true,
         true,
@@ -375,20 +387,20 @@
       "type": "boolean",
       "description": "Agent replies automatically to all X mentions (use cautiously)",
       "default": false,
-      "x-group": "entrypoint"
+      "x-group": "deprecated"
     },
     "twitter_entrypoint_prompt": {
       "title": "X Entry Prompt",
       "type": "string",
       "description": "Extra prompt for X entrypoint",
       "maxLength": 10000,
-      "x-group": "entrypoint"
+      "x-group": "deprecated"
     },
     "twitter_config": {
       "title": "Enter your X API key",
       "type": "object",
       "description": "You must use your own key for X entrypoint, it is separated from X skills",
-      "x-group": "entrypoint",
+      "x-group": "deprecated",
       "properties": {
         "consumer_key": {
           "type": "string",
@@ -438,6 +450,10 @@
           "title": "CryptoPanic",
           "$ref": "../skills/cryptopanic/schema.json"
         },
+        "aixbt": {
+          "title": "AIXBT",
+          "$ref": "../skills/aixbt/schema.json"
+        },
         "tavily": {
           "title": "Tavily",
           "$ref": "../skills/tavily/schema.json"
@@ -457,10 +473,6 @@
         "twitter": {
           "title": "X",
           "$ref": "../skills/twitter/schema.json"
-        },
-        "acolyt": {
-          "title": "Acolyt",
-          "$ref": "../skills/acolyt/schema.json"
         },
         "allora": {
           "title": "Allora",
@@ -493,6 +505,10 @@
         "github": {
           "title": "GitHub",
           "$ref": "../skills/github/schema.json"
+        },
+        "unrealspeech": {
+          "title": "UnrealSpeech",
+          "$ref": "../skills/unrealspeech/schema.json"
         }
       }
     },
@@ -678,11 +694,9 @@
       "fee_percentage": {
         "title": "Agent Fee %",
         "type": "number",
-        "description": "Set a tip percentage that users will pay on top of the base CAPs fee when interacting with this Agent. This tip goes directly to the Agent’s wallet. Interactions by the creator are excluded.",
+        "description": "Set a tip percentage that users will pay on top of the base CAPs fee when interacting with this Agent. This tip goes directly to the Agent's wallet. Interactions by the creator are excluded.",
         "minimum": 0,
-        "maximum": 100,
-        "default": 1,
-        "x-step": 1,
+        "default": 0,
         "x-group": "basic"
       }
     }

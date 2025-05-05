@@ -75,11 +75,16 @@ async def get_skills(
                 continue
 
             available_skills.append(skill_name)
+    # api key
+    if config.get("api_key_provider") == "agent_owner":
+        api_key = config.get("api_key")
+    else:
+        api_key = store.get_system_config("moralis_api_key")
 
     # Get each skill using the getter
     result = []
     for name in available_skills:
-        skill = get_wallet_skill(name, config["api_key"], store)
+        skill = get_wallet_skill(name, api_key, store)
         if skill:
             result.append(skill)
     return result
