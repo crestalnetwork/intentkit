@@ -18,7 +18,7 @@ This project is currently in alpha stage and is not recommended for production u
 - 🔗 Blockchain Integration (EVM chains first)
 - 🐦 Social Media Integration (Twitter, Telegram, and more)
 - 🛠️ Extensible Skill System
-- 🔌 Extensible Plugin System (WIP)
+- 🔌 MCP (WIP)
 
 ## Architecture
 
@@ -75,14 +75,12 @@ Check out [Documentation](docs/) before you start.
   - [singleton.py](app/singleton.py): Singleton agent scheduler
   - [scheduler.py](app/scheduler.py): Scheduler for periodic tasks
   - [readonly.py](app/readonly.py): Readonly entrypoint
-  - [twitter.py](app/twitter.py): Twitter listener
   - [telegram.py](app/telegram.py): Telegram listener
 - [clients/](clients/): Clients for external services
 - [docs/](docs/): Documentation
 - [models/](models/): Database models
 - [scripts/](scripts/): Scripts for agent management
 - [skills/](skills/): Skill implementations
-- [plugins/](plugins/): Reserved for Plugin implementations
 - [utils/](utils/): Utility functions
 
 ## Contributing

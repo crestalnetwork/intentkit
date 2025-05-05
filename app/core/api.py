@@ -11,7 +11,7 @@ from pydantic import AfterValidator
 from app.core.engine import execute_agent
 from models.chat import ChatMessage, ChatMessageCreate
 
-core_router = APIRouter(prefix="/core", tags=["core"])
+core_router = APIRouter(prefix="/core", tags=["Core"])
 
 
 @core_router.post("/execute", response_model=list[ChatMessage])

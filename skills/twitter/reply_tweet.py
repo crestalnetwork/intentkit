@@ -1,10 +1,20 @@
+import logging
 from typing import Optional, Type
 
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from clients.twitter import get_twitter_client
 from skills.twitter.base import TwitterBaseTool
+
+NAME = "twitter_reply_tweet"
+PROMPT = (
+    "Reply to an existing tweet on Twitter. If you want to post image, "
+    "you must provide image url in parameters, do not add image link in text."
+)
+
+logger = logging.getLogger(__name__)
 
 
 class TwitterReplyTweetInput(BaseModel):
@@ -28,8 +38,8 @@ class TwitterReplyTweet(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_reply_tweet"
-    description: str = "Reply to an existing tweet on Twitter"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterReplyTweetInput
 
     async def _arun(
@@ -61,6 +71,7 @@ class TwitterReplyTweet(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -68,7 +79,6 @@ class TwitterReplyTweet(TwitterBaseTool):
                     context.agent.id, max_requests=48, interval=1440
                 )
 
-            client = await twitter.get_client()
             media_ids = []
 
             # Handle image upload if provided
@@ -93,19 +103,11 @@ class TwitterReplyTweet(TwitterBaseTool):
             response = await client.create_tweet(**tweet_params)
 
             if "data" in response and "id" in response["data"]:
-                reply_id = response["data"]["id"]
-                return reply_id
+                return response
             else:
-                raise ValueError("Failed to post reply tweet.")
+                logger.error(f"Error replying to tweet: {str(response)}")
+                raise ToolException("Failed to post reply tweet.")
 
         except Exception as e:
+            logger.error(f"Error replying to tweet: {str(e)}")
             raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
-
-    def _run(self, tweet_id: str, text: str) -> str:
-        """Sync implementation of the tool.
-
-        This method is deprecated since we now have native async implementation in _arun.
-        """
-        raise NotImplementedError(
-            "Use _arun instead, which is the async implementation"
-        )
