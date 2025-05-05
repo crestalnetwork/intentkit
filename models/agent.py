@@ -1341,6 +1341,43 @@ class Agent(AgentCreate):
                         return True
                     if states.get("gpt_image_to_image") in ["public", "private"]:
                         return True
+
+                if skill == "venice_image" and skill_config.get("enabled"):
+                    states = skill_config.get("states", {})
+                    if states.get("image_upscale") in ["public", "private"]:
+                        return True
+                    if states.get("image_generation_flux_dev") in ["public", "private"]:
+                        return True
+                    if states.get("image_generation_flux_dev_uncensored") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
+                    if states.get("image_generation_venice_sd35") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
+                    if states.get("image_generation_fluently_xl") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
+                    if states.get("image_generation_lustify_sdxl") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
+                    if states.get("image_generation_pony_realism") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
+                    if states.get("image_generation_stable_diffusion_3_5") in [
+                        "public",
+                        "private",
+                    ]:
+                        return True
         return False
 
     def is_model_support_image(self) -> bool:

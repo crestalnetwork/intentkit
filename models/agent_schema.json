@@ -440,6 +440,7 @@
           "$ref": "../skills/openai/schema.json"
         },
         "venice_image": {
+          "title" : "Venice Image",
           "$ref": "../skills/venice_image/schema.json"
         },
         "dapplooker": {

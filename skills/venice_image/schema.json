@@ -29,6 +29,12 @@
       "description": "If true, explicit images will be blurred.",
       "default": true
     },
+    "embed_exif_metadata": {
+      "type": "boolean",
+      "title": "Embed Exif Metadata",
+      "description": "Embed prompt generation information into the image's EXIF metadata",
+      "default": false
+    },
     "hide_watermark": {
       "type": "boolean",
       "title": "Hide Watermark",
@@ -56,6 +62,22 @@
       "title": "Skill States",
       "description": "States for each Venice Image skill (disabled, public, or private)",
       "properties": {
+        "image_upscale": {
+          "type": "string",
+          "title": "Image Upscale",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Upscale an existing image by 2x or 4x using Venice AI.",
+          "default": "disabled"
+        },
         "image_generation_flux_dev": {
           "type": "string",
           "title": "Image Generation (Flux-Dev)",
@@ -174,8 +196,19 @@
   },
   "required": [
     "states",
-    "enabled",
-    "api_key"
+    "enabled"
   ],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "api_key"
+    ]
+  },
   "additionalProperties": true
 }
