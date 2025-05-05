@@ -2,12 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "DappLooker",
-  "description": "Retrieve comprehensive crypto market data and analytics using DappLooker",
+  "description": "Retrieve comprehensive market data and analytics for AI agent tokens using DappLooker. This API specializes in AI-focused crypto projects and may not provide data for general cryptocurrencies like BTC or ETH.",
   "x-icon": "https://ai.service.crestal.dev/skills/dapplooker/dapplooker.jpg",
   "x-tags": [
     "Crypto",
     "Market Data",
-    "Token Metrics"
+    "Token Metrics",
+    "AI Agents"
   ],
   "properties": {
     "enabled": {
@@ -21,7 +22,7 @@
       "properties": {
         "dapplooker_token_data": {
           "type": "string",
-          "title": "Token Data",
+          "title": "AI Token Data",
           "enum": [
             "disabled",
             "public",
@@ -32,11 +33,25 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Retrieve detailed token market data and analytics by token ticker or address",
+          "description": "Retrieve detailed market data and analytics for AI-focused tokens by ticker or address",
           "default": "disabled"
         }
       },
       "description": "States for each DappLooker skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Platform Hosted",
+        "Agent Owner"
+      ],
+      "default": "platform"
     },
     "api_key": {
       "type": "string",
@@ -49,5 +64,15 @@
     "states",
     "enabled"
   ],
+  "if": {
+    "properties": {
+      "enabled": { "const": true },
+      "api_key_provider": { "const": "agent_owner" }
+    },
+    "required": ["enabled", "api_key_provider"]
+  },
+  "then": {
+    "required": ["api_key"]
+  },
   "additionalProperties": true
 }

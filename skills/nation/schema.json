@@ -18,7 +18,7 @@
     "states": {
       "type": "object",
       "properties": {
-        "check_nft": {
+        "nft_check": {
           "type": "string",
           "title": "Nation NFT Usage Check",
           "enum": [

@@ -6,6 +6,7 @@ from typing import List, NotRequired, TypedDict
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from skills.enso.base import EnsoBaseTool
+from skills.enso.best_yield import EnsoGetBestYield
 from skills.enso.networks import EnsoGetNetworks
 from skills.enso.prices import EnsoGetPrices
 from skills.enso.route import EnsoRouteShortcut
@@ -27,6 +28,7 @@ class SkillStates(TypedDict):
     get_wallet_balances: SkillState
     wallet_approve: SkillState
     route_shortcut: SkillState
+    get_best_yield: SkillState
 
 
 class Config(SkillConfig):
@@ -101,6 +103,10 @@ def get_enso_skill(
         )
     if name == "route_shortcut":
         return EnsoRouteShortcut(
+            skill_store=skill_store,
+        )
+    if name == "get_best_yield":
+        return EnsoGetBestYield(
             skill_store=skill_store,
         )
     else:
