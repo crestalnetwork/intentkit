@@ -1,11 +1,16 @@
 {
-    "type": "object",
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "description": "Gitcoin Passport API key"
-      }
-    },
-    "required": ["api_key"]
+  "type": "object",
+  "properties": {
+    "api_key": {
+      "type": "string",
+      "description": "Gitcoin Passport API key"
+    }
+  },
+  "required": ["api_key"],
+  "docs": {
+    "description": "Combined Sybil Checker using Gitcoin Passport and Proof of Humanity APIs.",
+    "image": "https://raw.githubusercontent.com/crestalnetwork/intentkit/skill/sybil-checker/docs/images/sybil_checker.png"
   }
+}
+
   
