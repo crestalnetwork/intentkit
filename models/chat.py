@@ -340,6 +340,14 @@ class ChatMessage(ChatMessageCreate):
         resp += self.message
         return resp
 
+    @classmethod
+    async def get(cls, chat_id: str) -> Optional["ChatMessage"]:
+        async with get_session() as db:
+            raw = await db.get(ChatMessageTable, chat_id)
+            if raw:
+                return ChatMessage.model_validate(raw)
+            return None
+
 
 class ChatTable(Base):
     """Chat database table model."""

@@ -10,6 +10,7 @@ from skills.twitter.base import TwitterBaseTool
 from skills.twitter.follow_user import TwitterFollowUser
 from skills.twitter.get_mentions import TwitterGetMentions
 from skills.twitter.get_timeline import TwitterGetTimeline
+from skills.twitter.get_user_by_username import TwitterGetUserByUsername
 from skills.twitter.like_tweet import TwitterLikeTweet
 from skills.twitter.post_tweet import TwitterPostTweet
 from skills.twitter.reply_tweet import TwitterReplyTweet
@@ -27,6 +28,7 @@ class SkillStates(TypedDict):
     post_tweet: SkillState
     reply_tweet: SkillState
     get_timeline: SkillState
+    get_user_by_username: SkillState
     follow_user: SkillState
     like_tweet: SkillState
     retweet: SkillState
@@ -122,6 +124,12 @@ def get_twitter_skill(
     elif name == "search_tweets":
         if name not in _cache:
             _cache[name] = TwitterSearchTweets(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "get_user_by_username":
+        if name not in _cache:
+            _cache[name] = TwitterGetUserByUsername(
                 skill_store=store,
             )
         return _cache[name]

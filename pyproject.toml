@@ -72,7 +72,8 @@ dependencies = [
     "pillow (>=11.1.0,<12.0.0)",
     "cron-validator (>=1.0.8,<2.0.0)",
     "boto3 (>=1.37.23,<2.0.0)",
-    "mypy-boto3-s3 (>=1.37.24,<2.0.0)"
+    "mypy-boto3-s3 (>=1.37.24,<2.0.0)",
+    "filetype (>=1.2.0,<2.0.0)"
 ]
 
 [tool.poetry]

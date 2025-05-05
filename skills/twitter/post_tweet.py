@@ -1,10 +1,20 @@
+import logging
 from typing import Optional, Type
 
 from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from clients.twitter import get_twitter_client
 from skills.twitter.base import TwitterBaseTool
+
+NAME = "twitter_post_tweet"
+PROMPT = (
+    "Post a new tweet to Twitter. If you want to post image, "
+    "you must provide image url in parameters, do not add image link in text."
+)
+
+logger = logging.getLogger(__name__)
 
 
 class TwitterPostTweetInput(BaseModel):
@@ -29,8 +39,8 @@ class TwitterPostTweet(TwitterBaseTool):
         args_schema: The schema for the tool's input arguments.
     """
 
-    name: str = "twitter_post_tweet"
-    description: str = "Post a new tweet to Twitter"
+    name: str = NAME
+    description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterPostTweetInput
 
     async def _arun(
@@ -60,6 +70,7 @@ class TwitterPostTweet(TwitterBaseTool):
                 skill_store=self.skill_store,
                 config=context.config,
             )
+            client = await twitter.get_client()
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -67,13 +78,12 @@ class TwitterPostTweet(TwitterBaseTool):
                     context.agent.id, max_requests=24, interval=1440
                 )
 
-            client = await twitter.get_client()
             media_ids = []
 
             # Handle image upload if provided
             if image:
                 if twitter.use_key:
-                    raise ValueError(
+                    raise ToolException(
                         "Image upload is not supported when using API key authentication"
                     )
                 # Use the TwitterClient method to upload the image
@@ -86,10 +96,11 @@ class TwitterPostTweet(TwitterBaseTool):
 
             response = await client.create_tweet(**tweet_params)
             if "data" in response and "id" in response["data"]:
-                tweet_id = response["data"]["id"]
-                return tweet_id
+                return response
             else:
-                raise ValueError("Failed to post tweet.")
+                logger.error(f"Error posting tweet: {str(response)}")
+                raise ToolException("Failed to post tweet.")
 
         except Exception as e:
+            logger.error(f"Error posting tweet: {str(e)}")
             raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
