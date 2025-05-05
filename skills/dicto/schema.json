@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Dictionary Lookup Skill",
   "description": "Looks up a word's definition, part of speech, and example usage from a free dictionary.",
-  "x-icon": "https://cdn-icons-png.flaticon.com/512/2845/2845980.png",  // <-- replace with your own icon if needed
+  "x-icon": "https://raw.githubusercontent.com/Negred0/intentkit/main/skills/dicto/dicto.png",
   "x-tags": [
     "Language",
     "Utility"
