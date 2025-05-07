@@ -1,0 +1,848 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Venice Audio Skills",
+    "description": "Configuration for the Venice Audio skill.",
+    "x-icon": "https://ai.service.crestal.dev/skills/venice_audio/venice_logo.jpg",
+    "type": "object",
+    "x-tags": [
+        "AI",
+        "Audio",
+        "Text to Speech"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the Venice Audio skill.",
+            "default": false
+        },
+        "api_key": {
+            "type": "string",
+            "title": "Venice API Key",
+            "x-link": "[Get your API key](https://venice.ai/)",
+            "x-sensitive": true,
+            "description": "API Key for authenticating with the Venice AI API."
+        },
+        "states": {
+            "type": "object",
+            "title": "Skill States",
+            "description": "Enable/disable specific voice models. Only enable one if you want a consistent characteristic for your agent. See docs for voice details and quality grades.",
+            "properties": {
+                "af_alloy": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (C Grade)",
+                    "default": "disabled"
+                },
+                "af_aoede": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (C+ Grade)",
+                    "default": "disabled"
+                },
+                "af_bella": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (🔥), High Quality (A- Grade)",
+                    "default": "disabled"
+                },
+                "af_heart": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (❤️), High Quality (A Grade)",
+                    "default": "disabled"
+                },
+                "af_jadzia": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (Details unavailable in provided docs)",
+                    "default": "disabled"
+                },
+                "af_jessica": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "af_kore": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (C+ Grade)",
+                    "default": "disabled"
+                },
+                "af_nicole": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (🎧), (B- Grade)",
+                    "default": "disabled"
+                },
+                "af_nova": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (C Grade)",
+                    "default": "disabled"
+                },
+                "af_river": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "af_sarah": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female (C+ Grade)",
+                    "default": "disabled"
+                },
+                "af_sky": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Female, Low Data (C- Grade)",
+                    "default": "disabled"
+                },
+                "am_adam": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (F+ Grade)",
+                    "default": "disabled"
+                },
+                "am_echo": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "am_eric": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "am_fenrir": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (C+ Grade)",
+                    "default": "disabled"
+                },
+                "am_liam": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "am_michael": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (C+ Grade)",
+                    "default": "disabled"
+                },
+                "am_onyx": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "am_puck": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male (C+ Grade)",
+                    "default": "disabled"
+                },
+                "am_santa": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇺🇸 American English, Male, Low Data (D- Grade)",
+                    "default": "disabled"
+                },
+                "bf_alice": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "bf_emma": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Female (B- Grade)",
+                    "default": "disabled"
+                },
+                "bf_lily": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "bm_daniel": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "bm_fable": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Male (C Grade)",
+                    "default": "disabled"
+                },
+                "bm_george": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Male (C Grade)",
+                    "default": "disabled"
+                },
+                "bm_lewis": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇬🇧 British English, Male (D+ Grade)",
+                    "default": "disabled"
+                },
+                "ef_dora": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇪🇸 Spanish, Female",
+                    "default": "disabled"
+                },
+                "em_alex": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇪🇸 Spanish, Male",
+                    "default": "disabled"
+                },
+                "em_santa": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇪🇸 Spanish, Male",
+                    "default": "disabled"
+                },
+                "ff_siwis": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇫🇷 French, Female (B- Grade, CC BY)",
+                    "default": "disabled"
+                },
+                "hf_alpha": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇳 Hindi, Female (C Grade)",
+                    "default": "disabled"
+                },
+                "hf_beta": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇳 Hindi, Female (C Grade)",
+                    "default": "disabled"
+                },
+                "hm_omega": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇳 Hindi, Male (C Grade)",
+                    "default": "disabled"
+                },
+                "hm_psi": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇳 Hindi, Male (C Grade)",
+                    "default": "disabled"
+                },
+                "if_sara": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇹 Italian, Female (C Grade)",
+                    "default": "disabled"
+                },
+                "im_nicola": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇮🇹 Italian, Male (C Grade)",
+                    "default": "disabled"
+                },
+                "jf_alpha": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇯🇵 Japanese, Female (C+ Grade)",
+                    "default": "disabled"
+                },
+                "jf_gongitsune": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇯🇵 Japanese, Female (C Grade, CC BY)",
+                    "default": "disabled"
+                },
+                "jf_nezumi": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇯🇵 Japanese, Female, Low Data (C- Grade, CC BY)",
+                    "default": "disabled"
+                },
+                "jf_tebukuro": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇯🇵 Japanese, Female (C Grade, CC BY)",
+                    "default": "disabled"
+                },
+                "jm_kumo": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇯🇵 Japanese, Male, Low Data (C- Grade, CC BY)",
+                    "default": "disabled"
+                },
+                "pf_dora": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇧🇷 Brazilian Portuguese, Female",
+                    "default": "disabled"
+                },
+                "pm_alex": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇧🇷 Brazilian Portuguese, Male",
+                    "default": "disabled"
+                },
+                "pm_santa": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇧🇷 Brazilian Portuguese, Male",
+                    "default": "disabled"
+                },
+                "zf_xiaobei": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "zf_xiaoni": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "zf_xiaoxiao": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "zf_xiaoyi": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Female (D Grade)",
+                    "default": "disabled"
+                },
+                "zm_yunjian": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "zm_yunxi": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "zm_yunxia": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Male (D Grade)",
+                    "default": "disabled"
+                },
+                "zm_yunyang": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "🇨🇳 Mandarin Chinese, Male (D Grade)",
+                    "default": "disabled"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "enabled",
+        "api_key"
+    ]
+}
