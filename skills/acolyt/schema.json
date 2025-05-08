@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Acolyt Skills",
+  "title": "Acolyt",
   "description": "Integration with Acolyt Oracle providing blockchain oracle services for accessing and verifying off-chain data with secure API connections",
   "x-icon": "https://ai.service.crestal.dev/skills/acolyt/acolyt.jpg",
   "x-tags": [

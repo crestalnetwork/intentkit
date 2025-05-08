@@ -306,14 +306,10 @@ async def get_agent_statistics(
 
     # Calculate total income (sum of total_amount) and net income (sum of fee_agent_amount) at SQL level
     # Query to get the sum of total_amount and fee_agent_amount
-    stmt = (
-        select(
-            func.sum(CreditEventTable.total_amount).label("total_income"),
-            func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
-        )
-        .where(CreditEventTable.fee_agent_account == agent_account.id)
-        .where(CreditEventTable.fee_agent_amount > 0)
-    )
+    stmt = select(
+        func.sum(CreditEventTable.total_amount).label("total_income"),
+        func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
+    ).where(CreditEventTable.agent_id == agent_id)
     result = await db.execute(stmt)
     row = result.first()
 

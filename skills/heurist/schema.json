@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Heurist AI Skills",
+  "title": "Heurist AI",
   "description": "Skills for interacting with Heurist AI services, including image generation and other AI capabilities",
   "x-icon": "https://ai.service.crestal.dev/skills/heurist/heurist.png",
   "x-tags": [

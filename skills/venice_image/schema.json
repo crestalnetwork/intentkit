@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Venice Image Skills",
+  "title": "Venice Image",
   "description": "Skills for generating images using the Venice AI API.",
   "x-icon": "https://ai.service.crestal.dev/skills/venice_image/venice_image.jpg",
   "x-tags": [

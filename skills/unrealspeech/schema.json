@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "UnrealSpeech Text-to-Speech",
+  "title": "UnrealSpeech",
   "description": "Convert text to natural-sounding speech with various voices and customization options",
   "x-icon": "https://ai.service.crestal.dev/skills/unrealspeech/unrealspeech.jpg",
   "x-tags": [

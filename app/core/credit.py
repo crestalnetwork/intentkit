@@ -761,7 +761,7 @@ async def expense_message(
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_agent_amount = Decimal("0")
-    if agent.fee_percentage and user_id != agent.owner:
+    if agent.fee_percentage:
         fee_agent_amount = (
             base_amount * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -952,7 +952,7 @@ async def skill_cost(
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_agent_amount = Decimal("0")
-    if agent.fee_percentage and user_id != agent.owner:
+    if agent.fee_percentage:
         fee_agent_amount = (
             base_amount * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Elfa Skills",
+  "title": "Elfa",
   "description": "Integration with Elfa AI API providing data analysis and processing capabilities with secure authentication for advanced data operations",
   "x-icon": "https://ai.service.crestal.dev/skills/elfa/elfa.jpg",
   "x-tags": [
