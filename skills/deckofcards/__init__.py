@@ -4,12 +4,12 @@ from typing import TypedDict
 
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
-from skills.deckofcards.base import DeckOfCardsBaseSkill
-from skills.deckofcards.shuffle_deck import ShuffleDeck
-from skills.deckofcards.draw_cards import DrawCards
 from skills.deckofcards.add_to_pile import AddToPile
+from skills.deckofcards.base import DeckOfCardsBaseSkill
+from skills.deckofcards.draw_cards import DrawCards
 from skills.deckofcards.draw_from_pile import DrawFromPile
 from skills.deckofcards.list_piles import ListPiles
+from skills.deckofcards.shuffle_deck import ShuffleDeck
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, DeckOfCardsBaseSkill] = {}
@@ -21,6 +21,7 @@ class SkillStates(TypedDict):
 
 class Config(SkillConfig):
     """Configuration for Deck of Cards skills."""
+
     states: SkillStates
 
 
