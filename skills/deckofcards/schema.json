@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Deck of Cards",
+  "description": "Configuration schema for Deck of Cards skills",
+  "x-icon": "https://ai.service.crestal.dev/skills/deckofcards/deckofcards.png",
+  "x-tags": [
+    "Games",
+    "Cards",
+    "Entertainment"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether Deck of Cards skills are enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "shuffle_deck": {
+          "type": "string",
+          "title": "Shuffle Deck",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "Initialize and shuffle a new deck of cards"
+        },
+        "draw_cards": {
+          "type": "string",
+          "title": "Draw Cards",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "Draw a specified number of cards from a deck"
+        },
+        "draw_from_pile": {
+          "type": "string",
+          "title": "Draw From Pile",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "Draw specified cards from a named pile"
+        },
+        "list_piles": {
+          "type": "string",
+          "title": "List Piles",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "View existing piles and their contents in a deck"
+        },
+        "add_to_pile": {
+          "type": "string",
+          "title": "Add to Pile",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "Add specified cards to a named pile"
+        }
+      },
+      "description": "States for each Deck of Cards skill (disabled, public, or private)"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
