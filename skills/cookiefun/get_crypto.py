@@ -21,7 +21,7 @@ class GetCryptoInput(BaseModel):
 class GetCrypto(CookieFunBaseTool):
     """Tool for getting cryptocurrency information from Cookie.fun."""
 
-    name: str = "get_crypto"
+    name: str = "cookiefun_get_crypto"
     description: str = (
         "Get detailed information about a specific cryptocurrency including price, "
         "market cap, trading volume, and other metrics.\n"

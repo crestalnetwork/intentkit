@@ -19,7 +19,7 @@ class GenerateImageInput(BaseModel):
 class GenerateImage(CookieFunBaseTool):
     """Tool for generating images using Cookie.fun's AI."""
 
-    name: str = "generate_image"
+    name: str = "cookiefun_generate_image"
     description: str = (
         "Generate an image using Cookie.fun's AI image generation system.\n"
         "Use this when you need to create an AI-generated image based on a text description."

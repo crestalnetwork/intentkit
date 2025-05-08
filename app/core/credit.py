@@ -763,7 +763,7 @@ async def expense_message(
     fee_agent_amount = Decimal("0")
     if agent.fee_percentage:
         fee_agent_amount = (
-            base_amount * agent.fee_percentage / Decimal("100")
+            (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     total_amount = (base_amount + fee_platform_amount + fee_agent_amount).quantize(
         FOURPLACES, rounding=ROUND_HALF_UP
@@ -951,14 +951,16 @@ async def skill_cost(
     fee_platform_amount = (
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-    fee_agent_amount = Decimal("0")
-    if agent.fee_percentage:
-        fee_agent_amount = (
-            base_amount * agent.fee_percentage / Decimal("100")
-        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_dev_amount = (base_amount * fee_dev_percentage / Decimal("100")).quantize(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
+    fee_agent_amount = Decimal("0")
+    if agent.fee_percentage:
+        fee_agent_amount = (
+            (base_amount + fee_platform_amount + fee_dev_amount)
+            * agent.fee_percentage
+            / Decimal("100")
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     total_amount = (
         base_amount + fee_platform_amount + fee_dev_amount + fee_agent_amount
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -1130,7 +1132,7 @@ async def expense_skill(
             tx_type=TransactionType.RECEIVE_FEE_DEV,
             credit_debit=CreditDebit.CREDIT,
             change_amount=skill_cost_info.fee_dev_amount,
-            credit_type=credit_type,
+            credit_type=CreditType.REWARD,
         )
         session.add(dev_tx)
 

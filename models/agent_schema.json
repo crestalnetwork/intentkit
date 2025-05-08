@@ -515,6 +515,10 @@
           "title": "GitHub",
           "$ref": "../skills/github/schema.json"
         },
+        "moralis": {
+          "title": "Moralis",
+          "$ref": "../skills/moralis/schema.json"
+        },
         "unrealspeech": {
           "title": "UnrealSpeech",
           "$ref": "../skills/unrealspeech/schema.json"
@@ -705,6 +709,7 @@
         "type": "number",
         "description": "Set a tip percentage that users will pay on top of the base CAPs fee when interacting with this Agent. This tip goes directly to the Agent's wallet. Interactions by the creator are excluded.",
         "minimum": 0,
+        "maximum": 1000,
         "default": 0,
         "x-group": "basic"
       }

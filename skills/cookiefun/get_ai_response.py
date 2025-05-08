@@ -19,7 +19,7 @@ class GetAIResponseInput(BaseModel):
 class GetAIResponse(CookieFunBaseTool):
     """Tool for interacting with Cookie.fun's AI chat."""
 
-    name: str = "get_ai_response"
+    name: str = "cookiefun_get_ai_response"
     description: str = (
         "Get a response from Cookie.fun's AI chat system.\n"
         "Use this when you need to interact with Cookie.fun's AI assistant."

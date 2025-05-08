@@ -1203,9 +1203,6 @@ class AgentUpdate(BaseModel):
                     )
 
     async def update(self, id: str) -> "Agent":
-        # The validation is now handled by field validators
-        # No need to call check_prompt() anymore
-
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
             self.validate_autonomous_schedule()
@@ -1222,6 +1219,28 @@ class AgentUpdate(BaseModel):
                 )
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
+                setattr(db_agent, key, value)
+            await db.commit()
+            await db.refresh(db_agent)
+            return Agent.model_validate(db_agent)
+
+    async def override(self, id: str) -> "Agent":
+        # Validate autonomous schedule settings if present
+        if "autonomous" in self.model_dump(exclude_unset=True):
+            self.validate_autonomous_schedule()
+
+        async with get_session() as db:
+            db_agent = await db.get(AgentTable, id)
+            if not db_agent:
+                raise HTTPException(status_code=404, detail="Agent not found")
+            # check owner
+            if self.owner and db_agent.owner != self.owner:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have permission to update this agent",
+                )
+            # update
+            for key, value in self.model_dump().items():
                 setattr(db_agent, key, value)
             await db.commit()
             await db.refresh(db_agent)

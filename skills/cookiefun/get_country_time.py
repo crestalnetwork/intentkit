@@ -21,7 +21,7 @@ class GetCountryTimeInput(BaseModel):
 class GetCountryTime(CookieFunBaseTool):
     """Tool for getting current time in different timezones of a country."""
 
-    name: str = "get_country_time"
+    name: str = "cookiefun_get_country_time"
     description: str = (
         "Get the current time in different timezones of a specified country.\n"
         "Use this when you need to know the current time in a specific country."

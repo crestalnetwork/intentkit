@@ -145,6 +145,8 @@ class AgentStatisticsResponse(BaseModel):
 async def get_account(owner_type: OwnerType, owner_id: str) -> CreditAccount:
     """Get a credit account by owner type and ID. It will create a new account if it does not exist.
 
+    This endpoint is not in readonly router, because it may create a new account.
+
     Args:
         owner_type: Type of the owner (user, agent, company)
         owner_id: ID of the owner
@@ -281,6 +283,8 @@ async def get_agent_statistics(
     db: AsyncSession = Depends(get_db),
 ) -> AgentStatisticsResponse:
     """Get statistics for an agent account.
+
+    This endpoint is not in readonly router, because it may create a new account.
 
     Args:
         agent_id: ID of the agent
