@@ -83,7 +83,7 @@ package-mode = false
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.11.4"
+ruff = "^0.11.9"
 jsonschema = "^4.21.1"
 
 [tool.ruff.lint]
