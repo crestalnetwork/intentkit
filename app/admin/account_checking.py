@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -14,7 +15,6 @@ from models.credit import (
     CreditEventTable,
     CreditTransaction,
     CreditTransactionTable,
-    CreditType,
 )
 from models.db import get_session, init_db
 
@@ -40,8 +40,12 @@ async def check_account_balance_consistency(
 ) -> List[AccountCheckingResult]:
     """Check if all account balances are consistent with their transactions.
 
-    This verifies that the current balance in each account matches the sum of all transactions
+    This verifies that the total balance in each account matches the sum of all transactions
     for that account, properly accounting for credits and debits.
+
+    To ensure consistency during system operation, this function uses the maximum updated_at
+    timestamp from all accounts to limit transaction queries, ensuring that only transactions
+    created before or at the same time as the account snapshot are considered.
 
     Args:
         session: Database session
@@ -58,54 +62,72 @@ async def check_account_balance_consistency(
         CreditAccount.model_validate(acc) for acc in accounts_result.scalars().all()
     ]
 
+    # Find the maximum updated_at timestamp from all accounts
+    # This represents the point in time when we took the snapshot of account balances
+    max_updated_at = (
+        max([account.updated_at for account in accounts]) if accounts else None
+    )
+
+    if not max_updated_at:
+        return results
+
     for account in accounts:
-        # Check each credit type separately
-        for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
-            # Get the current balance for this credit type
-            current_balance = getattr(account, credit_type.value)
+        # Sleep for 10ms to reduce database load
+        await asyncio.sleep(0.01)
 
-            # Calculate the expected balance from transactions, considering credit/debit
-            query = text("""
-                SELECT 
-                    SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
-                    SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
-                FROM credit_transactions
-                WHERE account_id = :account_id AND credit_type = :credit_type
-            """)
+        # Calculate the total balance across all credit types
+        total_balance = account.free_credits + account.reward_credits + account.credits
 
-            tx_result = await session.execute(
-                query, {"account_id": account.id, "credit_type": credit_type.value}
+        # Calculate the expected balance from all transactions, regardless of credit type
+        # Only include transactions created before or at the same time as the account snapshot
+        query = text("""
+            SELECT 
+                SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
+                SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
+            FROM credit_transactions
+            WHERE account_id = :account_id 
+              AND created_at <= :max_updated_at
+        """)
+
+        tx_result = await session.execute(
+            query, {"account_id": account.id, "max_updated_at": max_updated_at}
+        )
+        tx_data = tx_result.fetchone()
+
+        credits = tx_data.credits or Decimal("0")
+        debits = tx_data.debits or Decimal("0")
+        expected_balance = credits - debits
+
+        # Compare total balances
+        is_consistent = total_balance == expected_balance
+
+        result = AccountCheckingResult(
+            check_type="account_total_balance",
+            status=is_consistent,
+            details={
+                "account_id": account.id,
+                "owner_type": account.owner_type,
+                "owner_id": account.owner_id,
+                "current_total_balance": float(total_balance),
+                "free_credits": float(account.free_credits),
+                "reward_credits": float(account.reward_credits),
+                "credits": float(account.credits),
+                "expected_balance": float(expected_balance),
+                "total_credits": float(credits),
+                "total_debits": float(debits),
+                "difference": float(total_balance - expected_balance),
+                "max_updated_at": max_updated_at.isoformat()
+                if max_updated_at
+                else None,
+            },
+        )
+        results.append(result)
+
+        if not is_consistent:
+            logger.warning(
+                f"Account total balance inconsistency detected: {account.id} ({account.owner_type}:{account.owner_id}) "
+                f"Current total: {total_balance}, Expected: {expected_balance}"
             )
-            tx_data = tx_result.fetchone()
-
-            credits = tx_data.credits or Decimal("0")
-            debits = tx_data.debits or Decimal("0")
-            expected_balance = credits - debits
-
-            # Compare balances
-            is_consistent = current_balance == expected_balance
-
-            result = AccountCheckingResult(
-                check_type=f"account_balance_{credit_type.value}",
-                status=is_consistent,
-                details={
-                    "account_id": account.id,
-                    "owner_type": account.owner_type,
-                    "owner_id": account.owner_id,
-                    "current_balance": float(current_balance),
-                    "expected_balance": float(expected_balance),
-                    "total_credits": float(credits),
-                    "total_debits": float(debits),
-                    "difference": float(current_balance - expected_balance),
-                },
-            )
-            results.append(result)
-
-            if not is_consistent:
-                logger.warning(
-                    f"Account balance inconsistency detected: {account.id} ({account.owner_type}:{account.owner_id}) "
-                    f"for {credit_type.value}. Current: {current_balance}, Expected: {expected_balance}"
-                )
 
     return results
 
@@ -125,10 +147,10 @@ async def check_transaction_balance(
     """
     results = []
 
-    # Get all events from the last 30 days (limit to recent events for performance)
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    # Get all events from the last 3 days (limit to recent events for performance)
+    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
     query = select(CreditEventTable).where(
-        CreditEventTable.created_at >= thirty_days_ago
+        CreditEventTable.created_at >= three_days_ago
     )
     events_result = await session.execute(query)
     events = [
@@ -136,6 +158,9 @@ async def check_transaction_balance(
     ]
 
     for event in events:
+        # Sleep for 10ms to reduce database load
+        await asyncio.sleep(0.01)
+
         # Get all transactions for this event
         tx_query = select(CreditTransactionTable).where(
             CreditTransactionTable.event_id == event.id
@@ -203,24 +228,32 @@ async def check_orphaned_transactions(
     result = await session.execute(query)
     orphaned_txs = result.fetchall()
 
+    # Process orphaned transactions with a sleep to reduce database load
+    orphaned_tx_details = []
+    for tx in orphaned_txs[:100]:  # Limit to first 100 for report size
+        # Sleep for 10ms to reduce database load
+        await asyncio.sleep(0.01)
+
+        # Add transaction details to the list
+        orphaned_tx_details.append(
+            {
+                "id": tx.id,
+                "account_id": tx.account_id,
+                "event_id": tx.event_id,
+                "tx_type": tx.tx_type,
+                "credit_debit": tx.credit_debit,
+                "change_amount": float(tx.change_amount),
+                "credit_type": tx.credit_type,
+                "created_at": tx.created_at.isoformat() if tx.created_at else None,
+            }
+        )
+
     check_result = AccountCheckingResult(
         check_type="orphaned_transactions",
         status=(len(orphaned_txs) == 0),
         details={
             "orphaned_count": len(orphaned_txs),
-            "orphaned_transactions": [
-                {
-                    "id": tx.id,
-                    "account_id": tx.account_id,
-                    "event_id": tx.event_id,
-                    "tx_type": tx.tx_type,
-                    "credit_debit": tx.credit_debit,
-                    "change_amount": float(tx.change_amount),
-                    "credit_type": tx.credit_type,
-                    "created_at": tx.created_at.isoformat() if tx.created_at else None,
-                }
-                for tx in orphaned_txs[:100]  # Limit to first 100 for report size
-            ],
+            "orphaned_transactions": orphaned_tx_details,
         },
     )
 
@@ -263,17 +296,24 @@ async def check_orphaned_events(session: AsyncSession) -> List[AccountCheckingRe
 
     # If we found orphaned events, report them
     orphaned_event_ids = [event.id for event in orphaned_events]
-    orphaned_event_details = [
-        {
-            "event_id": event.id,
-            "event_type": event.event_type,
-            "account_id": event.account_id,
-            "total_amount": float(event.total_amount),
-            "credit_type": event.credit_type,
-            "created_at": event.created_at.isoformat() if event.created_at else None,
-        }
-        for event in orphaned_events
-    ]
+    orphaned_event_details = []
+    for event in orphaned_events:
+        # Sleep for 10ms to reduce database load
+        await asyncio.sleep(0.01)
+
+        # Add event details to the list
+        orphaned_event_details.append(
+            {
+                "event_id": event.id,
+                "event_type": event.event_type,
+                "account_id": event.account_id,
+                "total_amount": float(event.total_amount),
+                "credit_type": event.credit_type,
+                "created_at": event.created_at.isoformat()
+                if event.created_at
+                else None,
+            }
+        )
 
     logger.warning(
         f"Found {len(orphaned_events)} orphaned events with no transactions: {orphaned_event_ids}"

@@ -16,6 +16,7 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
+from typing import Optional
 
 import sqlalchemy
 from coinbase_agentkit import (
@@ -113,10 +114,10 @@ async def initialize_agent(aid, is_private=False):
     agent_store = AgentStore(aid)
 
     # get the agent from the database
-    agent: Agent = await Agent.get(aid)
+    agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    agent_data: AgentData = await AgentData.get(aid)
+    agent_data: Optional[AgentData] = await AgentData.get(aid)
 
     # ==== Initialize LLM using the LLM abstraction.
     from models.llm import create_llm_model

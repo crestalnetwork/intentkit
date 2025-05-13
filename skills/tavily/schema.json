@@ -14,7 +14,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": false
+      "default": true
     },
     "states": {
       "type": "object",
@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "Search the web for real-time information and recent content using Tavily",
-          "default": "disabled"
+          "default": "private"
         }
       },
       "description": "States for each Tavily search skill (disabled, public, or private)"
@@ -41,14 +41,16 @@
     "api_key_provider": {
       "type": "string",
       "title": "API Key Provider",
-      "description": "Provider of the API key for AIXBT API service",
+      "description": "Provider of the API key",
       "enum": [
+        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
+        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "agent_owner"
+      "default": "platform"
     }
   },
   "required": [

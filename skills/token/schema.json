@@ -1,13 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Token Skills",
+  "description": "Token analysis skills powered by Moralis API",
   "type": "object",
-  "title": "OpenAI",
-  "description": "Skills for interacting with OpenAI services, including image generation, image-to-text conversion, and other AI capabilities",
-  "x-icon": "https://ai.service.crestal.dev/skills/openai/openai.png",
+  "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
   "x-tags": [
-    "AI",
-    "Image Generation",
-    "Image Analysis"
+    "Blockchain",
+    "Web3",
+    "Crypto",
+    "Token",
+    "DeFi"
   ],
   "properties": {
     "enabled": {
@@ -19,9 +21,9 @@
     "states": {
       "type": "object",
       "properties": {
-        "image_to_text": {
+        "token_price": {
           "type": "string",
-          "title": "Image to Text",
+          "title": "ERC20 Token Price",
           "enum": [
             "disabled",
             "public",
@@ -32,12 +34,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Convert images to detailed text descriptions using OpenAI's GPT-4o model",
-          "default": "private"
+          "description": "Get the token price denominated in the blockchain's native token and USD",
+          "default": "public"
         },
-        "dalle_image_generation": {
+        "token_erc20_transfers": {
           "type": "string",
-          "title": "Image Generation by DALL-E",
+          "title": "ERC20 Token Transfers",
           "enum": [
             "disabled",
             "public",
@@ -48,12 +50,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Generate images using OpenAI's DALL-E model based on text prompts",
-          "default": "disabled"
+          "description": "Get ERC20 token transactions ordered by block number",
+          "default": "public"
         },
-        "gpt_image_generation": {
+        "token_search": {
           "type": "string",
-          "title": "Image Generation by GPT",
+          "title": "Token Search (Premium)",
           "enum": [
             "disabled",
             "public",
@@ -64,12 +66,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Generate images using OpenAI's GPT-Image-1 model based on text prompts",
-          "default": "private"
+          "description": "Search for tokens based on contract address, token name or token symbol. Premium endpoint available as an add-on. Requires a Moralis Business plan or Enterprise plan.",
+          "default": "public"
         },
-        "gpt_image_to_image": {
+        "token_analytics": {
           "type": "string",
-          "title": "Image Editing by GPT",
+          "title": "Token Analytics",
           "enum": [
             "disabled",
             "public",
@@ -80,11 +82,11 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Edit images using OpenAI's GPT-Image-1 model based on text prompts",
-          "default": "private"
+          "description": "Get analytics for a token by token address",
+          "default": "public"
         }
       },
-      "description": "States for each OpenAI skill (disabled, public, or private)"
+      "description": "States for each token analysis skill (disabled, public, or private)"
     },
     "api_key_provider": {
       "type": "string",
@@ -102,13 +104,13 @@
     }
   },
   "required": [
-    "enabled",
-    "states"
+    "states",
+    "enabled"
   ],
   "if": {
     "properties": {
       "api_key_provider": {
-        "const": "agent_owner"
+        "const": "platform"
       }
     }
   },
@@ -116,10 +118,10 @@
     "properties": {
       "api_key": {
         "type": "string",
-        "title": "API Key",
-        "x-link": "[Get your API key](https://platform.openai.com/)",
-        "x-sensitive": true,
-        "description": "OpenAI API key for authentication"
+        "title": "Moralis API Key",
+        "description": "API key for Moralis API service",
+        "x-link": "[Get your API key](https://moralis.io/)",
+        "x-sensitive": true
       }
     },
     "if": {
@@ -136,4 +138,4 @@
     }
   },
   "additionalProperties": true
-}
+} 

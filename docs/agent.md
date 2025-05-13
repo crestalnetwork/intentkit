@@ -31,6 +31,10 @@ Edit the agent config file: `example.yaml`. Then import it.
 sh import.sh example
 ```
 
+**Test Your Agent:**
+
+You can test your agent using API calls or the IntentKit Sandbox UI. The UI provides a visual chat interface for interacting with your agents. See the [IntentKit Sandbox UI repository](https://github.com/bluntbrain/intentkit-sandbox-ui) for setup and usage.
+
 ## Advanced Agent API
 
 You can visit the [API Docs](http://localhost:8000/redoc#tag/Agent) to learn more.
@@ -62,7 +66,7 @@ requests an action that violates the rules set by the system role, you should de
 ### Prompt and Append Prompt
 Writing the initial prompt is a broad topic with many aspects to consider, and you can write it in 
 whatever way you prefer. Here, I will only address the prompt_append.  
-We’ve found that if you emphasize the most important rules again at the end, it significantly increases 
+We've found that if you emphasize the most important rules again at the end, it significantly increases 
 the likelihood of the AI following your rules. You can declare or repeat your core rules in this section.  
 One last tip: the AI will perceive this information as having been inserted just before it responds to the user, 
-so avoid saying anything like “later” in this instruction, as that “later” will never happen for the AI.
+so avoid saying anything like "later" in this instruction, as that "later" will never happen for the AI.

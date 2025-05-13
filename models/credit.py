@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
@@ -20,6 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import Base
 from models.db import get_session
+
+logger = logging.getLogger(__name__)
 
 
 class CreditType(str, Enum):
@@ -484,6 +487,84 @@ class CreditAccount(BaseModel):
 
         return cls.model_validate(account)
 
+    @classmethod
+    async def update_daily_quota(
+        cls,
+        session: AsyncSession,
+        user_id: str,
+        free_quota: Optional[Decimal] = None,
+        refill_amount: Optional[Decimal] = None,
+        upstream_tx_id: str = "",
+        note: str = "",
+    ) -> "CreditAccount":
+        """
+        Update the daily quota and refill amount of a user's credit account.
+
+        Args:
+            session: Async session to use for database operations
+            user_id: ID of the user to update
+            free_quota: Optional new daily quota value
+            refill_amount: Optional amount to refill hourly, not exceeding free_quota
+            upstream_tx_id: ID of the upstream transaction (for logging purposes)
+            note: Explanation for changing the daily quota
+
+        Returns:
+            Updated user credit account
+        """
+        # Log the upstream_tx_id for record keeping
+        logger.info(
+            f"Updating quota settings for user {user_id} with upstream_tx_id: {upstream_tx_id}"
+        )
+
+        # Check that at least one parameter is provided
+        if free_quota is None and refill_amount is None:
+            raise ValueError(
+                "At least one of free_quota or refill_amount must be provided"
+            )
+
+        # Get current account to check existing values and validate
+        user_account = await cls.get_or_create_in_session(
+            session, OwnerType.USER, user_id, for_update=True
+        )
+
+        # Use existing values if not provided
+        if free_quota is None:
+            free_quota = user_account.free_quota
+        elif free_quota <= Decimal("0"):
+            raise ValueError("Daily quota must be positive")
+
+        if refill_amount is None:
+            refill_amount = user_account.refill_amount
+        elif refill_amount < Decimal("0"):
+            raise ValueError("Refill amount cannot be negative")
+
+        # Ensure refill_amount doesn't exceed free_quota
+        if refill_amount > free_quota:
+            raise ValueError("Refill amount cannot exceed daily quota")
+
+        if not note:
+            raise ValueError("Quota update requires a note explaining the reason")
+
+        # Update the free_quota field
+        stmt = (
+            update(CreditAccountTable)
+            .where(
+                CreditAccountTable.owner_type == OwnerType.USER,
+                CreditAccountTable.owner_id == user_id,
+            )
+            .values(free_quota=free_quota, refill_amount=refill_amount)
+            .returning(CreditAccountTable)
+        )
+        result = await session.scalar(stmt)
+        if not result:
+            raise ValueError("Failed to update user account")
+
+        user_account = cls.model_validate(result)
+
+        # No credit event needed for updating account settings
+
+        return user_account
+
 
 class EventType(str, Enum):
     """Type of credit event."""
@@ -528,6 +609,7 @@ class CreditEventTable(Base):
         Index("ix_credit_events_user_id", "user_id"),
         Index("ix_credit_events_agent_id", "agent_id"),
         Index("ix_credit_events_fee_dev", "fee_dev_account"),
+        Index("ix_credit_events_created_at", "created_at"),
     )
 
     id = Column(

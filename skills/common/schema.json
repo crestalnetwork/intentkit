@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Provides localized timekeeping with automatic timezone detection using IP geolocation",
-          "default": "public"
+          "default": "private"
         }
       },
       "description": "States for each common utility skill (disabled, public, or private)"

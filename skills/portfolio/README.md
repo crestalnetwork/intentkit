@@ -14,9 +14,10 @@ A set of skills for analyzing blockchain wallets and portfolios through the Mora
 | `wallet_profitability_summary` | Provides overview of wallet profitability metrics | `GET /wallets/{address}/profitability/summary` | "Is wallet 0x123 profitable overall?" <br> "Give me a summary of trading performance for this address" |
 | `wallet_profitability` | Delivers detailed profitability by token with buy/sell prices | `GET /wallets/{address}/profitability` | "Show detailed profit/loss for each token in wallet 0x123" <br> "What's the cost basis of tokens in this wallet?" |
 | `wallet_stats` | Provides statistics about NFTs, collections, and transactions | `GET /wallets/{address}/stats` | "How many NFTs does wallet 0x123 have?" <br> "Give me stats about this wallet's activity" |
+| `wallet_defi_positions` | Get DeFi positions for a wallet | `GET /wallets/{address}/defi/positions` | "What DeFi positions does my wallet have?" <br> "Show my liquidity positions." |
+| `wallet_nfts` | Get NFTs owned by a wallet address | `GET /{address}/nft` | "What NFTs does wallet 0x123 own?" <br> "Show me all the NFTs in my wallet." |
 
 All endpoints use the base URL defined in `constants.py`: `https://deep-index.moralis.io/api/v2.2`
-
 
 ## Migration Note
 

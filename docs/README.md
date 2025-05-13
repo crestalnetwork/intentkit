@@ -12,6 +12,10 @@
 - [LLM](llm.md)
 - [Create an Agent](agent.md)
 
+## User Interface
+
+- [IntentKit Sandbox UI](https://github.com/bluntbrain/intentkit-sandbox-ui) - Next.js application for testing and interacting with agents
+
 ## Contributing
 
 - [Building Skills](contributing/skills.md)

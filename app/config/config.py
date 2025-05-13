@@ -129,6 +129,7 @@ class Config:
         self.enso_api_token = self.load("ENSO_API_TOKEN")
         self.dapplooker_api_key = self.load("DAPPLOOKER_API_KEY")
         self.moralis_api_key = self.load("MORALIS_API_KEY")
+        self.tavily_api_key = self.load("TAVILY_API_KEY")
         # Sentry
         self.sentry_dsn = self.load("SENTRY_DSN")
         self.sentry_sample_rate = float(self.load("SENTRY_SAMPLE_RATE", "0.1"))

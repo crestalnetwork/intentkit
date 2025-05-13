@@ -142,8 +142,8 @@ class AgentAutonomous(BaseModel):
     @field_validator("prompt")
     @classmethod
     def validate_prompt(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and len(v.encode()) > 2000:
-            raise ValueError("prompt must be at most 2000 bytes")
+        if v is not None and len(v.encode()) > 20000:
+            raise ValueError("prompt must be at most 20000 bytes")
         return v
 
     @model_validator(mode="after")
@@ -690,7 +690,7 @@ class AgentUpdate(BaseModel):
             "reigent",
         ],
         PydanticField(
-            default="gpt-4.1-nano",
+            default="gpt-4.1-mini",
             description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
             json_schema_extra={
                 "x-group": "ai",

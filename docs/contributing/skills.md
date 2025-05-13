@@ -225,6 +225,8 @@ Make sure you have a local agent running, and you can test your skills in the ag
 
 Read [Development Guide](../../DEVELOPMENT.md) to get started with your setup.
 
+You can test your skills using either API calls or the IntentKit Sandbox UI. The UI provides a visual interface for interacting with agents and testing skills. See the [IntentKit Sandbox UI repository](https://github.com/bluntbrain/intentkit-sandbox-ui) for setup and usage.
+
 ## More details
 
 ### About the return value

@@ -69,10 +69,6 @@ class TwitterReplyTweet(TwitterBaseTool):
 
             # Handle image upload if provided
             if image:
-                if twitter.use_key:
-                    raise ValueError(
-                        "Image upload is not supported when using API key authentication"
-                    )
                 # Use the TwitterClient method to upload the image
                 media_ids = await twitter.upload_media(context.agent.id, image)
 

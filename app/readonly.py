@@ -11,6 +11,7 @@ from app.admin import (
     health_router,
     metadata_router_readonly,
     schema_router_readonly,
+    user_router_readonly,
 )
 from app.config.config import config
 from app.entrypoints.web import chat_router_readonly
@@ -64,3 +65,4 @@ app.include_router(metadata_router_readonly)
 app.include_router(schema_router_readonly)
 app.include_router(chat_router_readonly)
 app.include_router(credit_router_readonly)
+app.include_router(user_router_readonly)

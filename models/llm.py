@@ -285,6 +285,9 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         has_reasoning=True,  # Has strong reasoning capabilities
+        supports_temperature=False,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     # Deepseek models
     "deepseek-chat": LLMModelInfo(

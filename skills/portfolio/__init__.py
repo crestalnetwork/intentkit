@@ -8,8 +8,10 @@ from skills.base import SkillConfig, SkillState
 from skills.portfolio.base import PortfolioBaseTool
 from skills.portfolio.token_balances import TokenBalances
 from skills.portfolio.wallet_approvals import WalletApprovals
-from skills.portfolio.wallet_history import WalletHistory
+from skills.portfolio.wallet_defi_positions import WalletDefiPositions
+from skills.portfolio.wallet_history import PortfolioWalletHistory
 from skills.portfolio.wallet_net_worth import WalletNetWorth
+from skills.portfolio.wallet_nfts import WalletNFTs
 from skills.portfolio.wallet_profitability import WalletProfitability
 from skills.portfolio.wallet_profitability_summary import WalletProfitabilitySummary
 from skills.portfolio.wallet_stats import WalletStats
@@ -32,6 +34,8 @@ class SkillStates(TypedDict):
     wallet_profitability_summary: SkillState
     wallet_profitability: SkillState
     wallet_stats: SkillState
+    wallet_defi_positions: SkillState
+    wallet_nfts: SkillState
 
 
 class Config(SkillConfig):
@@ -79,39 +83,66 @@ def get_portfolio_skill(
     name: str,
     store: SkillStoreABC,
 ) -> PortfolioBaseTool:
-    """Get a Portfolio blockchain analysis skill by name.
-
-    Args:
-        name: The name of the skill to get
-        store: The skill store for persisting data
-
-    Returns:
-        The requested Portfolio blockchain analysis skill
-    """
-    if name in _cache:
-        return _cache[name]
-
-    skill = None
+    """Get a portfolio skill by name."""
     if name == "wallet_history":
-        skill = WalletHistory(skill_store=store)
+        if name not in _cache:
+            _cache[name] = PortfolioWalletHistory(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "token_balances":
-        skill = TokenBalances(skill_store=store)
+        if name not in _cache:
+            _cache[name] = TokenBalances(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_approvals":
-        skill = WalletApprovals(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletApprovals(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_swaps":
-        skill = WalletSwaps(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletSwaps(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_net_worth":
-        skill = WalletNetWorth(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletNetWorth(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_profitability_summary":
-        skill = WalletProfitabilitySummary(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletProfitabilitySummary(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_profitability":
-        skill = WalletProfitability(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletProfitability(
+                skill_store=store,
+            )
+        return _cache[name]
     elif name == "wallet_stats":
-        skill = WalletStats(skill_store=store)
+        if name not in _cache:
+            _cache[name] = WalletStats(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "wallet_defi_positions":
+        if name not in _cache:
+            _cache[name] = WalletDefiPositions(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "wallet_nfts":
+        if name not in _cache:
+            _cache[name] = WalletNFTs(
+                skill_store=store,
+            )
+        return _cache[name]
     else:
-        logger.warning(f"Unknown Portfolio skill: {name}")
-        return None
-
-    if skill:
-        _cache[name] = skill
-    return skill
+        raise ValueError(f"Unknown portfolio skill: {name}")

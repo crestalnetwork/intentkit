@@ -85,3 +85,11 @@ author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
 [venice_image]
 author_github = "yornfifty"
 author_wallet = "0xF60D4B6780D5D51827602D7aC319458bc9e921F4"
+
+[portfolio]
+author_github = "bluntbrain"
+author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
+
+[token]
+author_github = "bluntbrain"
+author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"

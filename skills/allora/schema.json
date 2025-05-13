@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Generates 6-hour price forecasts using ensemble ML models analyzing on-chain liquidity and market sentiment",
-          "default": "public"
+          "default": "private"
         }
       },
       "description": "States for each Allora skill (disabled, public, or private)"

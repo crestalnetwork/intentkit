@@ -16,7 +16,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": false
+      "default": true
     },
     "states": {
       "type": "object",
@@ -35,7 +35,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve the full transaction history of a specified wallet address",
-          "default": "disabled"
+          "default": "private"
         },
         "token_balances": {
           "type": "string",
@@ -51,7 +51,7 @@
             "Agent Owner Only"
           ],
           "description": "Get token balances for a specific wallet address and their token prices in USD",
-          "default": "disabled"
+          "default": "private"
         },
         "wallet_approvals": {
           "type": "string",
@@ -99,7 +99,7 @@
             "Agent Owner Only"
           ],
           "description": "Get the net worth of a wallet in USD across multiple chains",
-          "default": "disabled"
+          "default": "private"
         },
         "wallet_profitability_summary": {
           "type": "string",
@@ -115,7 +115,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve a summary of wallet profitability",
-          "default": "disabled"
+          "default": "private"
         },
         "wallet_profitability": {
           "type": "string",
@@ -131,7 +131,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve detailed profitability breakdown for a wallet",
-          "default": "disabled"
+          "default": "private"
         },
         "wallet_stats": {
           "type": "string",
@@ -148,6 +148,38 @@
           ],
           "description": "Get statistical information about a wallet",
           "default": "disabled"
+        },
+        "wallet_defi_positions": {
+          "type": "string",
+          "title": "Wallet DeFi Positions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the positions summary of a wallet address",
+          "default": "disabled"
+        },
+        "wallet_nfts": {
+          "type": "string",
+          "title": "Wallet NFTs",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get NFTs owned by a given wallet address",
+          "default": "disabled"
         }
       },
       "description": "States for each portfolio blockchain analysis skill (disabled, public, or private)"
@@ -155,14 +187,16 @@
     "api_key_provider": {
       "type": "string",
       "title": "API Key Provider",
-      "description": "Provider of the API key for Moralis API service",
+      "description": "Provider of the API key",
       "enum": [
+        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
+        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "agent_owner"
+      "default": "platform"
     }
   },
   "required": [
