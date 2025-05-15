@@ -163,7 +163,7 @@ async def process_message(message: Message) -> None:
             id=str(XID()),
             agent_id=cached_bot_item.agent_id,
             chat_id=pool.agent_chat_id(False, message.chat.id),
-            user_id=str(message.from_user.id),
+            user_id=cached_bot_item.agent_owner or str(message.from_user.id),
             author_id=str(message.from_user.id),
             author_type=AuthorType.TELEGRAM,
             thread_type=AuthorType.TELEGRAM,

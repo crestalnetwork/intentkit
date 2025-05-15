@@ -3,7 +3,6 @@ import logging
 from epyxid import XID
 
 from app.core.engine import execute_agent
-from models.agent import AgentQuota
 from models.chat import AuthorType, ChatMessageCreate
 
 logger = logging.getLogger(__name__)
@@ -23,18 +22,6 @@ async def run_autonomous_task(
     logger.info(f"Running autonomous task {task_id} for agent {agent_id}")
 
     try:
-        # Get agent quota
-        quota = await AgentQuota.get(agent_id)
-
-        # Check if agent has quota
-        if not quota.has_autonomous_quota():
-            logger.warning(
-                f"Agent {agent_id} has no autonomous quota for task {task_id}. "
-                f"Monthly: {quota.autonomous_count_monthly}/{quota.autonomous_limit_monthly}, "
-                f"Total: {quota.autonomous_count_total}/{quota.autonomous_limit_total}"
-            )
-            return
-
         # Run the autonomous action
         chat_id = f"autonomous-{task_id}"
         message = ChatMessageCreate(
@@ -50,9 +37,6 @@ async def run_autonomous_task(
 
         # Execute agent and get response
         resp = await execute_agent(message)
-
-        # Update quota after successful run
-        await quota.add_autonomous()
 
         # Log the response
         logger.info(

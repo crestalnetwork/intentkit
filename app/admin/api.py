@@ -1,7 +1,7 @@
 import importlib
 import json
 import logging
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
@@ -140,7 +140,7 @@ async def _process_agent_post_actions(
 
 
 async def _process_telegram_config(
-    agent: AgentUpdate, agent_data: AgentData
+    agent: AgentUpdate, existing_agent: Optional[Agent], agent_data: AgentData
 ) -> AgentData:
     """Process telegram configuration for an agent.
 
@@ -161,6 +161,9 @@ async def _process_telegram_config(
         return agent_data
 
     tg_bot_token = changes.get("telegram_config").get("token")
+
+    if existing_agent and existing_agent.telegram_config.get("token") == tg_bot_token:
+        return agent_data
 
     try:
         bot = Bot(token=tg_bot_token)
@@ -464,7 +467,7 @@ async def create_agent(
     latest_agent = await agent.create()
     # Process common post-creation actions
     agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
-    agent_data = await _process_telegram_config(input, agent_data)
+    agent_data = await _process_telegram_config(input, None, agent_data)
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
@@ -507,13 +510,17 @@ async def update_agent(
     if subject:
         agent.owner = subject
 
+    existing_agent = await Agent.get(agent_id)
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
     # Update agent
     latest_agent = await agent.update(agent_id)
 
     # Process common post-update actions
     agent_data = await _process_agent_post_actions(latest_agent, False, "Agent Updated")
 
-    agent_data = await _process_telegram_config(agent, agent_data)
+    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -556,6 +563,13 @@ async def override_agent(
     if subject:
         agent.owner = subject
 
+    if not agent.owner:
+        raise HTTPException(status_code=500, detail="Owner is required")
+
+    existing_agent = await Agent.get(agent_id)
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
     # Update agent
     latest_agent = await agent.override(agent_id)
 
@@ -564,7 +578,7 @@ async def override_agent(
         latest_agent, False, "Agent Overridden"
     )
 
-    agent_data = await _process_telegram_config(agent, agent_data)
+    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -895,7 +909,7 @@ async def import_agent(
         latest_agent, False, "Agent Updated via YAML Import"
     )
 
-    await _process_telegram_config(agent, agent_data)
+    await _process_telegram_config(agent, existing_agent, agent_data)
 
     return "Agent import successful"
 

@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from epyxid import XID
 from fastapi import HTTPException
 from pydantic import BaseModel
-from sqlalchemy import desc, select, update
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.agent import Agent
@@ -391,62 +391,9 @@ async def update_daily_quota(
     Returns:
         Updated user credit account
     """
-    # Log the upstream_tx_id for record keeping
-    logger.info(
-        f"Updating quota settings for user {user_id} with upstream_tx_id: {upstream_tx_id}"
+    return await CreditAccount.update_daily_quota(
+        session, user_id, free_quota, refill_amount, upstream_tx_id, note
     )
-
-    # Check that at least one parameter is provided
-    if free_quota is None and refill_amount is None:
-        raise ValueError("At least one of free_quota or refill_amount must be provided")
-
-    # Get current account to check existing values and validate
-    user_account = await CreditAccount.get_or_create_in_session(
-        session, OwnerType.USER, user_id, for_update=True
-    )
-
-    # Use existing values if not provided
-    if free_quota is None:
-        free_quota = user_account.free_quota
-    elif free_quota <= Decimal("0"):
-        raise ValueError("Daily quota must be positive")
-
-    if refill_amount is None:
-        refill_amount = user_account.refill_amount
-    elif refill_amount < Decimal("0"):
-        raise ValueError("Refill amount cannot be negative")
-
-    # Ensure refill_amount doesn't exceed free_quota
-    if refill_amount > free_quota:
-        raise ValueError("Refill amount cannot exceed daily quota")
-
-    if not note:
-        raise ValueError("Quota update requires a note explaining the reason")
-
-    # Already got the user account above, no need to get it again
-
-    # Update the free_quota field
-    stmt = (
-        update(CreditAccountTable)
-        .where(
-            CreditAccountTable.owner_type == OwnerType.USER,
-            CreditAccountTable.owner_id == user_id,
-        )
-        .values(free_quota=free_quota, refill_amount=refill_amount)
-        .returning(CreditAccountTable)
-    )
-    result = await session.scalar(stmt)
-    if not result:
-        raise ValueError("Failed to update user account")
-
-    user_account = CreditAccount.model_validate(result)
-
-    # No credit event needed for updating account settings
-
-    # Commit all changes
-    await session.commit()
-
-    return user_account
 
 
 async def list_credit_events_by_user(
@@ -777,6 +724,14 @@ async def expense_message(
         amount=total_amount,
     )
 
+    # If using free credits, add to agent's free_income_daily
+    if credit_type == CreditType.FREE:
+        from models.agent import AgentQuota
+
+        await AgentQuota.add_free_income_in_session(
+            session=session, id=agent.id, amount=total_amount
+        )
+
     # 2. Update fee account - add credits
     message_account = await CreditAccount.income_in_session(
         session=session,
@@ -1021,6 +976,14 @@ async def expense_skill(
         owner_id=user_id,
         amount=skill_cost_info.total_amount,
     )
+
+    # If using free credits, add to agent's free_income_daily
+    if credit_type == CreditType.FREE:
+        from models.agent import AgentQuota
+
+        await AgentQuota.add_free_income_in_session(
+            session=session, id=agent.id, amount=skill_cost_info.total_amount
+        )
 
     # 2. Update fee account - add credits
     skill_account = await CreditAccount.income_in_session(

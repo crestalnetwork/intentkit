@@ -23,6 +23,8 @@ from app.admin import (
     health_router,
     metadata_router_readonly,
     schema_router_readonly,
+    user_router,
+    user_router_readonly,
 )
 from app.config.config import config
 from app.core.api import core_router
@@ -115,6 +117,8 @@ app.include_router(metadata_router_readonly)
 app.include_router(credit_router)
 app.include_router(credit_router_readonly)
 app.include_router(schema_router_readonly)
+app.include_router(user_router)
+app.include_router(user_router_readonly)
 app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)

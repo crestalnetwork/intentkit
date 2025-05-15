@@ -1234,7 +1234,7 @@ class AgentUpdate(BaseModel):
             if not db_agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
             # check owner
-            if self.owner and db_agent.owner != self.owner:
+            if db_agent.owner and db_agent.owner != self.owner:
                 raise HTTPException(
                     status_code=403,
                     detail="You do not have permission to update this agent",
@@ -2267,6 +2267,7 @@ class AgentQuotaTable(Base):
     twitter_count_daily = Column(BigInteger, default=0)
     twitter_limit_daily = Column(BigInteger, default=99999999)
     last_twitter_time = Column(DateTime(timezone=True), default=None, nullable=True)
+    free_income_daily = Column(Numeric(22, 4), default=0)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -2369,6 +2370,10 @@ class AgentQuota(BaseModel):
         Optional[datetime],
         PydanticField(default=None, description="Last Twitter operation timestamp"),
     ]
+    free_income_daily: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Daily free income amount"),
+    ]
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -2454,6 +2459,42 @@ class AgentQuota(BaseModel):
         if self.twitter_count_daily >= self.twitter_limit_daily:
             return False
         return True
+
+    @staticmethod
+    async def add_free_income_in_session(session, id: str, amount: Decimal) -> None:
+        """Add free income to an agent's quota directly in the database.
+
+        Args:
+            session: SQLAlchemy session
+            id: Agent ID
+            amount: Amount to add to free_income_daily
+
+        Raises:
+            HTTPException: If there are database errors
+        """
+        try:
+            # Check if the record exists using session.get
+            quota_record = await session.get(AgentQuotaTable, id)
+
+            if not quota_record:
+                # Create new record if it doesn't exist
+                quota_record = AgentQuotaTable(id=id, free_income_daily=amount)
+                session.add(quota_record)
+            else:
+                # Use update statement with func to directly add the amount
+                from sqlalchemy import update
+
+                stmt = update(AgentQuotaTable).where(AgentQuotaTable.id == id)
+                stmt = stmt.values(
+                    free_income_daily=func.coalesce(
+                        AgentQuotaTable.free_income_daily, 0
+                    )
+                    + amount
+                )
+                await session.execute(stmt)
+        except Exception as e:
+            logger.error(f"Error adding free income: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     async def add_message(self) -> None:
         """Add a message to the agent's message count."""

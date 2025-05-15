@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 NAME = "twitter_get_timeline"
 PROMPT = (
     "Get tweets from your timeline, the result is a json object containing a list of tweets."
-    "If the result has no tweets in it, means no new tweets, don't retry this tool."
+    'If the result is `{"meta": {"result_count": 0}}`, means no new tweets, don\'t retry this tool.'
 )
 
 

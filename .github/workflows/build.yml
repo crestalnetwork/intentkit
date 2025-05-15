@@ -101,6 +101,7 @@ jobs:
         kubectl set image -n testnet-dev deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-scheduler intent-scheduler=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-dev deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
      
     - name: Deploy to Amazon EKS Prod
@@ -115,6 +116,7 @@ jobs:
         kubectl set image -n testnet-prod deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-scheduler intent-scheduler=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-prod deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
      
     - name: Build Success

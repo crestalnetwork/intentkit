@@ -110,7 +110,7 @@
   "if": {
     "properties": {
       "api_key_provider": {
-        "const": "platform"
+        "const": "agent_owner"
       }
     }
   },
@@ -138,4 +138,4 @@
     }
   },
   "additionalProperties": true
-} 
+}

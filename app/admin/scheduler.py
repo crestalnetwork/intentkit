@@ -8,7 +8,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import update
 
-from app.admin.account_checking import run_all_checks
 from app.config.config import config
 from app.core.credit import refill_all_free_credits
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
@@ -24,7 +23,9 @@ async def reset_daily_quotas():
     """
     async with get_session() as session:
         stmt = update(AgentQuotaTable).values(
-            message_count_daily=0, twitter_count_daily=0
+            message_count_daily=0,
+            twitter_count_daily=0,
+            free_income_daily=0,
         )
         await session.execute(stmt)
         await session.commit()
@@ -40,20 +41,6 @@ async def reset_monthly_quotas():
         )
         await session.execute(stmt)
         await session.commit()
-
-
-async def run_account_checks():
-    """Run all account consistency checks and send results to Slack.
-
-    This checks account balances, transactions, and other credit-related consistency
-    issues and reports the results to the configured Slack channel.
-    """
-    logger.info("Running scheduled account consistency checks")
-    try:
-        await run_all_checks()
-        logger.info("Completed account consistency checks")
-    except Exception as e:
-        logger.error(f"Error running account consistency checks: {e}")
 
 
 def create_scheduler():
@@ -104,17 +91,6 @@ def create_scheduler():
         trigger=CronTrigger(minute="20", timezone="UTC"),  # Run every hour
         id="refill_free_credits",
         name="Refill free credits",
-        replace_existing=True,
-    )
-
-    # Run account consistency checks every 2 hours at the top of the hour
-    scheduler.add_job(
-        run_account_checks,
-        trigger=CronTrigger(
-            hour="*/2", minute="0", timezone="UTC"
-        ),  # Run every 2 hours at :00
-        id="account_consistency_checks",
-        name="Account Consistency Checks",
         replace_existing=True,
     )
 

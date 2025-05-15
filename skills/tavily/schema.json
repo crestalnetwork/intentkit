@@ -1,13 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Tavily Search",
-  "description": "Web search capabilities for retrieving up-to-date information from the internet using Tavily",
+  "title": "Tavily Search and Extract",
+  "description": "Web search and content extraction capabilities using Tavily",
   "x-icon": "https://ai.service.crestal.dev/skills/tavily/tavily.jpg",
   "x-tags": [
     "Internet",
     "Search",
-    "Information"
+    "Information",
+    "Content Extraction"
   ],
   "properties": {
     "enabled": {
@@ -34,9 +35,25 @@
           ],
           "description": "Search the web for real-time information and recent content using Tavily",
           "default": "private"
+        },
+        "tavily_extract": {
+          "type": "string",
+          "title": "Tavily Extract",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Extract full content from web pages using Tavily Extract API",
+          "default": "private"
         }
       },
-      "description": "States for each Tavily search skill (disabled, public, or private)"
+      "description": "States for each Tavily skill (disabled, public, or private)"
     },
     "api_key_provider": {
       "type": "string",
@@ -69,7 +86,7 @@
       "api_key": {
         "type": "string",
         "title": "Tavily API Key",
-        "description": "API key for Tavily search service",
+        "description": "API key for Tavily services",
         "x-link": "[Get your API key](https://tavily.com/)",
         "x-sensitive": true
       },
