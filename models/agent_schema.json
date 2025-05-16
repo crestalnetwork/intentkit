@@ -104,7 +104,7 @@
         "Public App",
         "Personal Assistant"
       ],
-      "x-group": "deprecated"
+      "x-group": "basic"
     },
     "fee_percentage": {
       "title": "Service Fee",
