@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.admin import (
     admin_router_readonly,
@@ -17,6 +19,13 @@ from app.config.config import config
 from app.entrypoints.web import chat_router_readonly
 from models.db import init_db
 from models.redis import init_redis
+from utils.error import (
+    IntentKitAPIError,
+    http_exception_handler,
+    intentkit_api_error_handler,
+    intentkit_other_error_handler,
+    request_validation_exception_handler,
+)
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -50,6 +59,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+app.exception_handler(RequestValidationError)(request_validation_exception_handler)
+app.exception_handler(StarletteHTTPException)(http_exception_handler)
+app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware
 app.add_middleware(

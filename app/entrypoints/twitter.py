@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.engine import execute_agent
 from app.core.skill import skill_store
 from clients.twitter import get_twitter_client
-from models.agent import Agent, AgentPluginData, AgentQuota, AgentTable
+from models.agent import Agent, AgentPluginData, AgentTable
 from models.chat import AuthorType, ChatMessageAttachmentType, ChatMessageCreate
 from models.db import get_session
 
@@ -28,18 +28,6 @@ async def run_twitter_agents():
         for item in agents:
             agent = Agent.model_validate(item)
             try:
-                # Get agent quota
-                quota = await AgentQuota.get(agent.id)
-
-                # Check if agent has quota
-                if not quota.has_twitter_quota():
-                    logger.warning(
-                        f"Agent {agent.id} has no twitter quota. "
-                        f"Daily: {quota.twitter_count_daily}/{quota.twitter_limit_daily}, "
-                        f"Total: {quota.twitter_count_total}/{quota.twitter_limit_total}"
-                    )
-                    continue
-
                 try:
                     twitter = get_twitter_client(
                         agent.id, skill_store, agent.twitter_config
@@ -170,9 +158,6 @@ async def run_twitter_agents():
                         user_auth=twitter.use_key,
                         in_reply_to_tweet_id=tweet.id,
                     )
-
-                # Update quota
-                await quota.add_twitter_message()
 
             except Exception as e:
                 logger.error(

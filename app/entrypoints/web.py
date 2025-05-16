@@ -121,7 +121,9 @@ def format_debug_messages(messages: list[ChatMessage]) -> str:
     "/debug/{agent_id}/chats/{chat_id}/memory",
     tags=["Debug"],
     response_class=Response,
-    dependencies=[Depends(verify_debug_credentials)],
+    dependencies=[Depends(verify_debug_credentials)]
+    if config.debug_auth_enabled
+    else [],
     operation_id="debug_chat_memory",
     summary="Chat Memory",
 )
@@ -142,7 +144,9 @@ async def debug_chat_memory(
     "/debug/{agent_id}/chats/{chat_id}",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)],
+    dependencies=[Depends(verify_debug_credentials)]
+    if config.debug_auth_enabled
+    else [],
     operation_id="debug_chat_history",
     summary="Chat History",
 )
@@ -173,7 +177,9 @@ async def debug_chat_deprecated(
     "/debug/{aid}/chat",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)],
+    dependencies=[Depends(verify_debug_credentials)]
+    if config.debug_auth_enabled
+    else [],
     operation_id="debug_chat",
     summary="Chat",
 )
@@ -256,7 +262,9 @@ async def debug_chat(
     "/debug/{agent_id}/prompt",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)],
+    dependencies=[Depends(verify_debug_credentials)]
+    if config.debug_auth_enabled
+    else [],
     operation_id="debug_agent_prompt",
     summary="Agent Prompt",
 )

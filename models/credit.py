@@ -718,6 +718,21 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    free_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
+    reward_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
+    permanent_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
     note = Column(
         String,
         nullable=True,
@@ -821,6 +836,18 @@ class CreditEvent(BaseModel):
     fee_agent_amount: Annotated[
         Optional[Decimal], Field(default=Decimal("0"), description="Agent fee amount")
     ]
+    free_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Free credit amount involved"),
+    ]
+    reward_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Reward credit amount involved"),
+    ]
+    permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Permanent credit amount involved"),
+    ]
     note: Annotated[Optional[str], Field(None, description="Additional notes")]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this event was created")
@@ -837,6 +864,9 @@ class CreditEvent(BaseModel):
         "fee_platform_amount",
         "fee_dev_amount",
         "fee_agent_amount",
+        "free_amount",
+        "reward_amount",
+        "permanent_amount",
     )
     @classmethod
     def round_decimal(cls, v: Any) -> Optional[Decimal]:
@@ -907,7 +937,10 @@ class CreditTransactionTable(Base):
     """
 
     __tablename__ = "credit_transactions"
-    __table_args__ = (Index("ix_credit_transactions_account", "account_id"),)
+    __table_args__ = (
+        Index("ix_credit_transactions_account", "account_id"),
+        Index("ix_credit_transactions_event_id", "event_id"),
+    )
 
     id = Column(
         String,

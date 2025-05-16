@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -33,6 +33,13 @@ from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
 from models.db import init_db
 from models.redis import init_redis
+from utils.error import (
+    IntentKitAPIError,
+    http_exception_handler,
+    intentkit_api_error_handler,
+    intentkit_other_error_handler,
+    request_validation_exception_handler,
+)
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -93,13 +100,10 @@ app = FastAPI(
 )
 
 
-@app.exception_handler(StarletteHTTPException)
-async def global_exception_handler(request, exc):
-    """Log all 500 errors at ERROR level"""
-    if exc.status_code == 500:
-        logger.error(f"Internal Server Error for request {request.url}: {str(exc)}")
-    return await http_exception_handler(request, exc)
-
+app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+app.exception_handler(RequestValidationError)(request_validation_exception_handler)
+app.exception_handler(StarletteHTTPException)(http_exception_handler)
+app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware
 app.add_middleware(

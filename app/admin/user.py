@@ -31,9 +31,6 @@ async def get_user(
 
     Returns:
         User model
-
-    Raises:
-        404: If the user is not found
     """
     user = await User.get(user_id)
     if user is None:
@@ -60,9 +57,6 @@ async def put_user(
 
     Returns:
         Updated User model
-
-    Raises:
-        404: If the user is not found
     """
     return await user_update.put(user_id)
 
@@ -86,8 +80,5 @@ async def patch_user(
 
     Returns:
         Updated User model
-
-    Raises:
-        404: If the user is not found
     """
     return await user_update.patch(user_id)

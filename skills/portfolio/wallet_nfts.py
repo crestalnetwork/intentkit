@@ -103,7 +103,7 @@ class WalletNFTs(PortfolioBaseTool):
         logger.debug(f"wallet_nfts.py: Fetching wallet NFTs with context {context}")
 
         # Get the API key from the agent's configuration
-        api_key = context.config.get("api_key")
+        api_key = self.get_api_key(context)
         if not api_key:
             return {"error": "No Moralis API key provided in the configuration."}
 

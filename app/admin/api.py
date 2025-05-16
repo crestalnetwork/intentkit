@@ -1,7 +1,7 @@
 import importlib
 import json
 import logging
-from typing import TypedDict
+from typing import Annotated, Optional, TypedDict
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
@@ -15,6 +15,7 @@ from fastapi import (
     File,
     HTTPException,
     Path,
+    Query,
     Response,
     UploadFile,
 )
@@ -39,6 +40,7 @@ from models.agent import (
     AgentUpdate,
 )
 from models.db import get_db
+from models.user import User
 from skills import __all__ as skill_categories
 from utils.middleware import create_jwt_middleware
 from utils.slack_alert import send_slack_message
@@ -140,7 +142,7 @@ async def _process_agent_post_actions(
 
 
 async def _process_telegram_config(
-    agent: AgentUpdate, agent_data: AgentData
+    agent: AgentUpdate, existing_agent: Optional[Agent], agent_data: AgentData
 ) -> AgentData:
     """Process telegram configuration for an agent.
 
@@ -162,6 +164,9 @@ async def _process_telegram_config(
 
     tg_bot_token = changes.get("telegram_config").get("token")
 
+    if existing_agent and existing_agent.telegram_config.get("token") == tg_bot_token:
+        return agent_data
+
     try:
         bot = Bot(token=tg_bot_token)
         bot_info = await bot.get_me()
@@ -181,40 +186,15 @@ async def _process_telegram_config(
         TelegramConflictError,
         TokenValidationError,
     ) as req_err:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unauthorized err getting telegram bot username with token {tg_bot_token}: {req_err}",
+        logger.error(
+            f"Unauthorized err getting telegram bot username with token {tg_bot_token}: {req_err}",
         )
+        return agent_data
     except Exception as e:
-        raise Exception(
-            f"Error getting telegram bot username with token {tg_bot_token}: {e}"
+        logger.error(
+            f"Error getting telegram bot username with token {tg_bot_token}: {e}",
         )
-
-
-async def _validate_telegram_config(token: str) -> None:
-    """Validate telegram configuration for an agent.
-
-    Args:
-        token: The telegram bot token
-    """
-    try:
-        bot = Bot(token=token)
-        await bot.get_me()
-        await bot.close()
-    except (
-        TelegramUnauthorizedError,
-        TelegramConflictError,
-        TokenValidationError,
-    ) as req_err:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unauthorized err getting telegram bot username with your token: {req_err}",
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid telegram bot token: {e}",
-        )
+        return agent_data
 
 
 def _send_agent_notification(
@@ -385,9 +365,12 @@ async def create_or_update_agent(
     "/agent/validate",
     tags=["Agent"],
     status_code=204,
-    operation_id="validate_agent",
+    operation_id="validate_agent_create",
 )
-async def validate_agent(
+async def validate_agent_create(
+    user_id: Annotated[
+        Optional[str], Query(description="Optional user ID for authorization check")
+    ] = None,
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
 ) -> Response:
     """Validate agent configuration.
@@ -401,16 +384,64 @@ async def validate_agent(
     **Raises:**
     * `HTTPException`:
         - 400: Invalid agent configuration
+        - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
+    if not input.owner:
+        raise HTTPException(status_code=400, detail="Owner is required")
+    max_fee = 100
+    if user_id:
+        if input.owner != user_id:
+            raise HTTPException(status_code=400, detail="Owner does not match user ID")
+        user = await User.get(user_id)
+        if user:
+            max_fee += user.nft_count * 10
+    if input.fee_percentage and input.fee_percentage > max_fee:
+        raise HTTPException(status_code=400, detail="Fee percentage too high")
     input.validate_autonomous_schedule()
-    changes = input.model_dump(exclude_unset=True)
-    if (
-        changes.get("telegram_entrypoint_enabled")
-        and changes.get("telegram_config")
-        and changes.get("telegram_config").get("token")
-    ):
-        await _validate_telegram_config(changes.get("telegram_config").get("token"))
+    return Response(status_code=204)
+
+
+@admin_router_readonly.post(
+    "/agents/{agent_id}/validate",
+    tags=["Agent"],
+    status_code=204,
+    operation_id="validate_agent_update",
+)
+async def validate_agent_update(
+    agent_id: Annotated[str, Path(description="Agent ID")],
+    user_id: Annotated[
+        Optional[str], Query(description="Optional user ID for authorization check")
+    ] = None,
+    input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
+) -> Response:
+    """Validate agent configuration.
+
+    **Request Body:**
+    * `agent` - Agent configuration
+
+    **Returns:**
+    * `204 No Content` - Agent configuration is valid
+
+    **Raises:**
+    * `HTTPException`:
+        - 400: Invalid agent configuration
+        - 422: Invalid agent configuration from intentkit core
+        - 500: Server error
+    """
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    max_fee = 100
+    if user_id:
+        if agent.owner != user_id:
+            raise HTTPException(status_code=400, detail="Owner does not match user ID")
+        user = await User.get(user_id)
+        if user:
+            max_fee += user.nft_count * 10
+    if input.fee_percentage and input.fee_percentage > max_fee:
+        raise HTTPException(status_code=400, detail="Fee percentage too high")
+    input.validate_autonomous_schedule()
     return Response(status_code=204)
 
 
@@ -464,7 +495,7 @@ async def create_agent(
     latest_agent = await agent.create()
     # Process common post-creation actions
     agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
-    agent_data = await _process_telegram_config(input, agent_data)
+    agent_data = await _process_telegram_config(input, None, agent_data)
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
@@ -507,13 +538,17 @@ async def update_agent(
     if subject:
         agent.owner = subject
 
+    existing_agent = await Agent.get(agent_id)
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
     # Update agent
     latest_agent = await agent.update(agent_id)
 
     # Process common post-update actions
     agent_data = await _process_agent_post_actions(latest_agent, False, "Agent Updated")
 
-    agent_data = await _process_telegram_config(agent, agent_data)
+    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -556,6 +591,13 @@ async def override_agent(
     if subject:
         agent.owner = subject
 
+    if not agent.owner:
+        raise HTTPException(status_code=400, detail="Owner is required")
+
+    existing_agent = await Agent.get(agent_id)
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
     # Update agent
     latest_agent = await agent.override(agent_id)
 
@@ -564,7 +606,7 @@ async def override_agent(
         latest_agent, False, "Agent Overridden"
     )
 
-    agent_data = await _process_telegram_config(agent, agent_data)
+    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
     agent_response = AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -895,7 +937,7 @@ async def import_agent(
         latest_agent, False, "Agent Updated via YAML Import"
     )
 
-    await _process_telegram_config(agent, agent_data)
+    await _process_telegram_config(agent, existing_agent, agent_data)
 
     return "Agent import successful"
 

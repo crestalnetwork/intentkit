@@ -56,26 +56,6 @@ services:
       - INTERNAL_BASE_URL=http://api:8000
     command: poetry run python -m app.autonomous
 
-  # intent-twitter:
-  #   image: crestal/intentkit:latest
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   environment:
-  #     - ENV=${ENV:-local}
-  #     - RELEASE=${RELEASE:-local}
-  #     - DB_USERNAME=${POSTGRES_USER:-postgres}
-  #     - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-  #     - DB_HOST=db
-  #     - DB_PORT=5432
-  #     - DB_NAME=${POSTGRES_DB:-intentkit}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-  #     - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
-  #     - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
-  #     - INTERNAL_BASE_URL=http://api:8000
-  #   command: poetry run python -m app.twitter
-
   # intent-tg:
   #   image: crestal/intentkit:latest
   #   depends_on:

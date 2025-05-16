@@ -2,17 +2,18 @@
 
 import asyncio
 import logging
+import time
 
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy import update
+from sqlalchemy import select, update
 
-from app.admin.account_checking import run_all_checks
 from app.config.config import config
+from app.core.agent import agent_avg_action_cost
 from app.core.credit import refill_all_free_credits
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
-from models.agent import AgentQuotaTable
+from models.agent import AgentQuotaTable, AgentTable
 from models.db import get_session, init_db
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,9 @@ async def reset_daily_quotas():
     """
     async with get_session() as session:
         stmt = update(AgentQuotaTable).values(
-            message_count_daily=0, twitter_count_daily=0
+            message_count_daily=0,
+            twitter_count_daily=0,
+            free_income_daily=0,
         )
         await session.execute(stmt)
         await session.commit()
@@ -42,18 +45,74 @@ async def reset_monthly_quotas():
         await session.commit()
 
 
-async def run_account_checks():
-    """Run all account consistency checks and send results to Slack.
-
-    This checks account balances, transactions, and other credit-related consistency
-    issues and reports the results to the configured Slack channel.
+async def update_agent_avg_action_costs():
     """
-    logger.info("Running scheduled account consistency checks")
-    try:
-        await run_all_checks()
-        logger.info("Completed account consistency checks")
-    except Exception as e:
-        logger.error(f"Error running account consistency checks: {e}")
+    Update average action costs for all agents.
+
+    This function processes agents in batches of 100 to avoid memory issues.
+    For each agent, it calculates the average action cost using the agent_avg_action_cost function
+    and updates the corresponding record in the agent_quotas table.
+    """
+    logger.info("Starting update of agent average action costs")
+    start_time = time.time()
+    batch_size = 100
+    last_id = None
+    total_updated = 0
+
+    while True:
+        # Get a batch of agent IDs ordered by ID
+        async with get_session() as session:
+            query = select(AgentTable.id).order_by(AgentTable.id)
+
+            # Apply pagination if we have a last_id from previous batch
+            if last_id:
+                query = query.where(AgentTable.id > last_id)
+
+            query = query.limit(batch_size)
+            result = await session.execute(query)
+            agent_ids = [row[0] for row in result]
+
+            # If no more agents, we're done
+            if not agent_ids:
+                break
+
+            # Update last_id for next batch
+            last_id = agent_ids[-1]
+
+        # Process this batch of agents
+        logger.info(
+            f"Processing batch of {len(agent_ids)} agents starting with ID {agent_ids[0]}"
+        )
+        batch_start_time = time.time()
+
+        for agent_id in agent_ids:
+            try:
+                # Calculate average action cost for this agent
+                avg_cost = await agent_avg_action_cost(agent_id)
+
+                # Update the agent's quota record
+                async with get_session() as session:
+                    update_stmt = (
+                        update(AgentQuotaTable)
+                        .where(AgentQuotaTable.id == agent_id)
+                        .values(avg_action_cost=avg_cost)
+                    )
+                    await session.execute(update_stmt)
+                    await session.commit()
+
+                total_updated += 1
+            except Exception as e:
+                logger.error(
+                    f"Error updating avg_action_cost for agent {agent_id}: {str(e)}"
+                )
+
+        batch_time = time.time() - batch_start_time
+        logger.info(f"Completed batch in {batch_time:.3f}s")
+
+    total_time = time.time() - start_time
+    logger.info(
+        f"Finished updating average action costs for {total_updated} agents in {total_time:.3f}s"
+    )
 
 
 def create_scheduler():
@@ -107,14 +166,12 @@ def create_scheduler():
         replace_existing=True,
     )
 
-    # Run account consistency checks every 2 hours at the top of the hour
+    # Update agent average action costs hourly
     scheduler.add_job(
-        run_account_checks,
-        trigger=CronTrigger(
-            hour="*/2", minute="0", timezone="UTC"
-        ),  # Run every 2 hours at :00
-        id="account_consistency_checks",
-        name="Account Consistency Checks",
+        update_agent_avg_action_costs,
+        trigger=CronTrigger(minute=40, timezone="UTC"),
+        id="update_agent_avg_action_costs",
+        name="Update agent average action costs",
         replace_existing=True,
     )
 

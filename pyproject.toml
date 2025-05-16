@@ -1,12 +1,12 @@
 [project]
 name = "intentkit"
-version = "0.1.19"
+version = "0.4.0"
 description = "Intent-based AI Agent Platform"
 authors = [{name = "Ruihua", email = "ruihua@crestal.network"}]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
-    "langgraph (>=0.3.8,<0.4.0)",
+    "langgraph (>=0.4.3,<0.5.0)",
     "uvicorn>=0.34.0,<0.35.0",
     "fastapi>=0.115.8",
     "gunicorn>=23.0.0",
@@ -18,7 +18,7 @@ dependencies = [
     "psycopg-pool>=3.2.4",
     "alembic>=1.14.0",
     "pgvector>=0.3.6",
-    "langchain (>=0.3.20,<0.4.0)",
+    "langchain (>=0.3.25,<0.4.0)",
     "langchain-core>=0.3.43",
     "langchain-openai>=0.3.8",
     "langchain-postgres>=0.0.13",
@@ -68,7 +68,7 @@ dependencies = [
     "pytz>=2025.1",
     "redis (>=5.2.1,<6.0.0)",
     "telegramify-markdown (>=0.5.0,<0.6.0)",
-    "langchain-mcp-adapters (>=0.0.5,<0.0.6)",
+    "langchain-mcp-adapters (>=0.0.11,<0.1.0)",
     "pillow (>=11.1.0,<12.0.0)",
     "cron-validator (>=1.0.8,<2.0.0)",
     "boto3 (>=1.37.23,<2.0.0)",
@@ -83,7 +83,7 @@ package-mode = false
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.11.4"
+ruff = "^0.11.9"
 jsonschema = "^4.21.1"
 
 [tool.ruff.lint]

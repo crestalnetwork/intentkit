@@ -563,7 +563,6 @@
             "title": "Frequency in Minutes",
             "type": "integer",
             "description": "How often to run (in minutes)",
-            "default": 1440,
             "x-group": "autonomous"
           },
           "cron": {
@@ -718,7 +717,8 @@
         "default": 0,
         "x-step": 1,
         "x-group": "basic",
-        "x-component": "slider-with-box"
+        "x-component": "slider-with-box",
+        "x-nft-extra": 10
       }
     }
   },
