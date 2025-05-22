@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Face Swapper Skills",
+  "description": "Configuration schema for face swapper tools",
+  "properties": {
+    "states": {
+      "type": "object",
+      "properties": {
+        "face_swap": {
+          "type": "string",
+          "title": "Face Swap Tool",
+          "enum": ["disabled", "public", "private"],
+          "description": "State of the face_swap tool"
+        }
+      },
+      "description": "States for each face swapper tool"
+    }
+  },
+  "required": ["states"],
+  "additionalProperties": true
+}
