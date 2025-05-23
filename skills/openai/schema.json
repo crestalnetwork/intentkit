@@ -32,6 +32,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
+          "x-price": 200,
+          "x-price-self-key": 15,
           "description": "Convert images to detailed text descriptions using OpenAI's GPT-4o model",
           "default": "private"
         },
@@ -48,6 +50,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
+          "x-price": 200,
+          "x-price-self-key": 15,
           "description": "Generate images using OpenAI's DALL-E model based on text prompts",
           "default": "disabled"
         },
@@ -64,6 +68,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
+          "x-price": 400,
+          "x-price-self-key": 15,
           "description": "Generate images using OpenAI's GPT-Image-1 model based on text prompts",
           "default": "private"
         },
@@ -80,6 +86,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
+          "x-price": 400,
+          "x-price-self-key": 15,
           "description": "Edit images using OpenAI's GPT-Image-1 model based on text prompts",
           "default": "private"
         }
