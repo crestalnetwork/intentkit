@@ -1,10 +1,11 @@
 import logging
-from typing import Type
+from typing import Type, Optional
 
 from pydantic import BaseModel, Field
+from langchain_core.runnables import RunnableConfig
 
 from abstracts.skill import SkillStoreABC
-from skills.base import IntentKitSkill
+from skills.base import IntentKitSkill, SkillContext
 
 logger = logging.getLogger(__name__)
 
@@ -22,3 +23,19 @@ class CookieFunBaseTool(IntentKitSkill):
     @property
     def category(self) -> str:
         return "cookiefun"
+            
+    def get_api_key(self, config: RunnableConfig) -> Optional[str]:
+        """
+        Get the API key from configuration.
+        
+        Args:
+            config: The runnable configuration containing context
+            
+        Returns:
+            The API key or None if not configured
+        """
+        context = self.context_from_config(config)
+        skill_config = context.config
+        if skill_config.get("api_key_provider") == "agent_owner":
+            return skill_config.get("api_key")
+        return self.skill_store.get_system_config("cookiefun_api_key")

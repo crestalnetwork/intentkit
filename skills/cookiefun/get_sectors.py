@@ -32,9 +32,8 @@ class GetSectors(CookieFunBaseTool):
         """
         logger.info("Getting sectors from CookieFun API")
         try:
-            # Get context to retrieve API key
-            context = self.context_from_config(config)
-            api_key = context.config.get("api_key", "")
+            # Get API key
+            api_key = self.get_api_key(config)
 
             if not api_key:
                 logger.error("No API key provided for CookieFun API")
