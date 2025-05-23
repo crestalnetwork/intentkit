@@ -15,7 +15,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Toggle to enable or disable all CookieFun skills",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -34,7 +34,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve a list of all available industry sectors in CookieFun, useful for exploring trending topics and categorization",
-          "default": "private"
+          "default": "disabled"
         },
         "get_account_details": {
           "type": "string",
@@ -50,7 +50,7 @@
             "Agent Owner Only"
           ],
           "description": "Fetch comprehensive metrics about any Twitter account including followers, engagement rates, impressions, and other analytics",
-          "default": "private"
+          "default": "disabled"
         },
         "get_account_smart_followers": {
           "type": "string",
@@ -66,7 +66,7 @@
             "Agent Owner Only"
           ],
           "description": "Identify the most valuable followers of any Twitter account based on influence, engagement, and reach metrics",
-          "default": "private"
+          "default": "disabled"
         },
         "search_accounts": {
           "type": "string",
@@ -82,7 +82,7 @@
             "Agent Owner Only"
           ],
           "description": "Find Twitter accounts posting about specific topics with filtering by engagement, impressions, and tweet types",
-          "default": "private"
+          "default": "disabled"
         },
         "get_account_feed": {
           "type": "string",
@@ -98,7 +98,7 @@
             "Agent Owner Only"
           ],
           "description": "Access a Twitter account's feed with powerful filtering by date range, media content, tweet type, and sorting options",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "Configure access levels for each CookieFun skill - disabled, available to all users, or restricted to agent owner only"
