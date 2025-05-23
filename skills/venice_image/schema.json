@@ -20,6 +20,54 @@
       "title": "Skill States",
       "description": "States for each Venice Image skill (disabled, public, or private)",
       "properties": {
+        "image_vision": {
+          "type": "string",
+          "title": "Image Vision",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Describes an image provided via URL using the Venice AI API. Ideal for understanding the content of an existing image",
+          "default": "public"
+        },
+        "image_enchance": {
+          "type": "string",
+          "title": "Image Enchance",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Tool for **Enchance** (modifying specific areas of) an existing image using a selected image model via Venice AI",
+          "default": "public"
+        },
+        "image_upscale": {
+          "type": "string",
+          "title": "Image Upscale",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Upscale an existing image by 2x or 4x using Venice AI.",
+          "default": "disabled"
+        },
         "image_generation_flux_dev": {
           "type": "string",
           "title": "Image Generation (Flux-Dev)",
@@ -34,7 +82,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate images using Venice AI's Flux Dev model (research, art workflows).",
-          "default": "disabled"
+          "default": "public"
         },
         "image_generation_flux_dev_uncensored": {
           "type": "string",
@@ -137,13 +185,19 @@
     "safe_mode": {
       "type": "boolean",
       "title": "Safe Mode",
-      "description": "If true, explicit images will be blurred.",
+      "description": "Whether to use safe mode. If enabled, this will blur images that are classified as having adult content",
       "default": true
+    },
+    "embed_exif_metadata": {
+      "type": "boolean",
+      "title": "Embed Exif Metadata",
+      "description": "Embed prompt generation information into the image's EXIF metadata",
+      "default": false
     },
     "hide_watermark": {
       "type": "boolean",
       "title": "Hide Watermark",
-      "description": "If true, the generated image will not have a watermark.",
+      "description": "Whether to hide the Venice watermark. Venice may ignore this parameter for certain generated content.",
       "default": true
     },
     "negative_prompt": {
