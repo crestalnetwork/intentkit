@@ -57,8 +57,7 @@ class GetAccountSmartFollowers(CookieFunBaseTool):
 
         try:
             # Get context to retrieve API key
-            context = self.context_from_config(config)
-            api_key = context.config.get("api_key", "")
+            api_key = self.get_api_key(config)
 
             if not api_key:
                 logger.error("No API key provided for CookieFun API")
