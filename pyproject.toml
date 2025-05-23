@@ -3,7 +3,7 @@ name = "intentkit"
 version = "0.5.0"
 description = "Intent-based AI Agent Platform"
 authors = [{ name = "Ruihua", email = "ruihua@crestal.network" }]
-requires-python = "==3.12.*"
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
 dependencies = [
     "langgraph (>=0.4.3,<0.5.0)",
@@ -90,3 +90,6 @@ build-backend = "hatchling.build"
 
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["intentkit"]
