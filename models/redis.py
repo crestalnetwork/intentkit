@@ -72,3 +72,61 @@ def get_redis() -> Redis:
     if _redis_client is None:
         raise RuntimeError("Redis client not initialized. Call init_redis first.")
     return _redis_client
+
+
+async def send_heartbeat(redis_client: Redis, name: str) -> None:
+    """Set a heartbeat key in Redis that expires after 16 minutes.
+
+    Args:
+        redis_client: Redis client instance
+        name: Name identifier for the heartbeat
+    """
+    try:
+        key = f"intentkit:heartbeat:{name}"
+        await redis_client.set(key, 1, ex=960)  # 960 seconds = 16 minutes
+    except Exception as e:
+        logger.error(f"Failed to send heartbeat for {name}: {e}")
+
+
+async def check_heartbeat(redis_client: Redis, name: str) -> bool:
+    """Check if a heartbeat key exists in Redis.
+
+    Args:
+        redis_client: Redis client instance
+        name: Name identifier for the heartbeat
+
+    Returns:
+        bool: True if heartbeat exists, False otherwise
+    """
+    import asyncio
+
+    key = f"intentkit:heartbeat:{name}"
+    retries = 3
+
+    for attempt in range(retries):
+        try:
+            exists = await redis_client.exists(key)
+            return bool(exists)
+        except Exception as e:
+            logger.error(
+                f"Error checking heartbeat for {name} (attempt {attempt + 1}/{retries}): {e}"
+            )
+            if attempt < retries - 1:  # Don't sleep on the last attempt
+                await asyncio.sleep(5)  # Wait 5 seconds before retrying
+
+    return False
+
+
+async def clean_heartbeat(redis_client: Redis, name: str) -> None:
+    """Remove a heartbeat key from Redis.
+
+    Args:
+        redis_client: Redis client instance
+        name: Name identifier for the heartbeat to remove
+    """
+    try:
+        key = f"intentkit:heartbeat:{name}"
+        await redis_client.delete(key)
+        logger.info(f"Removed heartbeat for {name}")
+    except Exception as e:
+        logger.error(f"Failed to remove heartbeat for {name}: {e}")
