@@ -83,7 +83,7 @@ async def send_heartbeat(redis_client: Redis, name: str) -> None:
     """
     try:
         key = f"intentkit:heartbeat:{name}"
-        await redis_client.set(key, 1, ex=960)  # 960 seconds = 16 minutes
+        await redis_client.set(key, 1, ex=190)  # 190 seconds = 3 minutes
     except Exception as e:
         logger.error(f"Failed to send heartbeat for {name}: {e}")
 

@@ -204,11 +204,11 @@ def create_scheduler():
         replace_existing=True,
     )
 
-    # Send heartbeat every 5 minutes
+    # Send heartbeat every minute
     if config.redis_host:
         scheduler.add_job(
             send_scheduler_heartbeat,
-            trigger=CronTrigger(minute="*/5", timezone="UTC"),  # Run every 5 minutes
+            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
             id="scheduler_heartbeat",
             name="Scheduler Heartbeat",
             replace_existing=True,
