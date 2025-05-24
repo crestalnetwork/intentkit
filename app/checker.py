@@ -116,7 +116,7 @@ def create_checker():
     if config.redis_host:
         scheduler.add_job(
             send_checker_heartbeat,
-            trigger=CronTrigger(minute="*/5", timezone="UTC"),  # Run every 5 minutes
+            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
             id="checker_heartbeat",
             name="Checker Heartbeat",
             replace_existing=True,

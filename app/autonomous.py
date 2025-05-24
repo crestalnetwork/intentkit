@@ -188,7 +188,7 @@ if __name__ == "__main__":
                 send_autonomous_heartbeat,
                 "interval",
                 id="autonomous_heartbeat",
-                minutes=5,
+                minutes=1,
                 next_run_time=datetime.now(),
                 replace_existing=True,
             )
