@@ -7,14 +7,13 @@ from app.admin.scheduler.
 import asyncio
 import logging
 import signal
-import sys
 
 import sentry_sdk
 
 from app.admin.scheduler import create_scheduler
 from app.config.config import config
 from models.db import init_db
-from models.redis import init_redis
+from models.redis import clean_heartbeat, get_redis, init_redis
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +32,9 @@ if config.sentry_dsn:
 if __name__ == "__main__":
 
     async def main():
+        # Create a shutdown event for graceful termination
+        shutdown_event = asyncio.Event()
+
         # Initialize database
         await init_db(**config.db)
 
@@ -43,29 +45,48 @@ if __name__ == "__main__":
                 port=config.redis_port,
             )
 
-        # Initialize scheduler
-        scheduler = create_scheduler()
+        # Set up signal handlers for graceful shutdown
+        loop = asyncio.get_running_loop()
 
-        # Signal handler for graceful shutdown
-        def signal_handler(signum, frame):
-            logger.info("Received termination signal. Shutting down gracefully...")
-            scheduler.shutdown()
-            sys.exit(0)
+        # Define an async function to set the shutdown event
+        async def set_shutdown():
+            shutdown_event.set()
 
         # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(set_shutdown()))
+
+        # Define the cleanup function that will be called on exit
+        async def cleanup_resources():
+            try:
+                if config.redis_host:
+                    redis_client = get_redis()
+                    await clean_heartbeat(redis_client, "scheduler")
+            except Exception as e:
+                logger.error(f"Error cleaning up heartbeat: {e}")
+
+        # Initialize scheduler
+        scheduler = create_scheduler()
 
         try:
             logger.info("Starting scheduler process...")
             scheduler.start()
-            # Keep the main thread running
-            while True:
-                await asyncio.sleep(1)
+
+            # Wait for shutdown event
+            logger.info(
+                "Scheduler process running. Press Ctrl+C or send SIGTERM to exit."
+            )
+            await shutdown_event.wait()
+            logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
             logger.error(f"Error in scheduler process: {e}")
-            scheduler.shutdown()
-            sys.exit(1)
+        finally:
+            # Run the cleanup code and shutdown the scheduler
+            await cleanup_resources()
+
+            if scheduler.running:
+                scheduler.shutdown()
 
     # Run the async main function
+    # We handle all signals inside the main function, so we don't need to handle KeyboardInterrupt here
     asyncio.run(main())
