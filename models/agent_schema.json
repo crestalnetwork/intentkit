@@ -55,8 +55,7 @@
     "model",
     "purpose",
     "personality",
-    "principles",
-    "mode"
+    "principles"
   ],
   "properties": {
     "name": {
@@ -448,7 +447,7 @@
       "x-inline": true,
       "properties": {
         "dexscreener": {
-          "title" : "DEX Screener",
+          "title": "DEX Screener",
           "$ref": "../skills/dexscreener/schema.json"
         },
         "portfolio": {
