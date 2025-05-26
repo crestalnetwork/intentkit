@@ -25,6 +25,7 @@ class LLMProvider(str, Enum):
     XAI = "xai"
     ETERNAL = "eternal"
     REIGENT = "reigent"
+    VENICE = "venice"
 
 
 class LLMModelInfoTable(Base):
@@ -419,6 +420,45 @@ AVAILABLE_MODELS = {
         api_base="https://api.reisearch.box/v1",
         timeout=300,
     ),
+    # Venice models
+    "venice-uncensored": LLMModelInfo(
+        id="venice-uncensored",
+        name="Venice Uncensored",
+        provider=LLMProvider.VENICE,
+        input_price=Decimal("0.50"),  # Placeholder price, update with actual pricing
+        output_price=Decimal("2.00"),  # Placeholder price, update with actual pricing
+        context_length=32000,
+        output_length=4096,
+        intelligence=3,
+        speed=3,
+        supports_image_input=False,
+        supports_skill_calls=True,
+        supports_structured_output=True,
+        supports_temperature=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
+        api_base="https://api.venice.ai/api/v1",
+        timeout=300,
+    ),
+    "venice-llama-4-maverick-17b": LLMModelInfo(
+        id="venice-llama-4-maverick-17b",
+        name="Venice Llama-4 Maverick 17B",
+        provider=LLMProvider.VENICE,
+        input_price=Decimal("1.50"),
+        output_price=Decimal("6.00"),
+        context_length=32000,
+        output_length=4096,
+        intelligence=3,
+        speed=3,
+        supports_image_input=False,
+        supports_skill_calls=True,
+        supports_structured_output=True,
+        supports_temperature=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
+        api_base="https://api.venice.ai/api/v1",
+        timeout=300,
+    ),
 }
 
 
@@ -592,12 +632,29 @@ class ReigentLLM(LLMModel):
 
         kwargs = {
             "openai_api_key": config.reigent_api_key,
-            "openai_api_base": "https://api.reisearch.box/v1",
+            "openai_api_base": info.api_base,
             "timeout": info.timeout,
             "model_kwargs": {
                 # Override any specific parameters required for Reigent API
                 # The Reigent API requires 'tools' instead of 'functions' and might have some specific formatting requirements
             },
+        }
+
+        return ChatOpenAI(**kwargs)
+
+class VeniceLLM(LLMModel):
+    """Venice LLM configuration."""
+
+    async def create_instance(self, config: Any) -> LanguageModelLike:
+        """Create and return a ChatOpenAI instance configured for Venice."""
+        from langchain_openai import ChatOpenAI
+
+        info = await self.model_info()
+
+        kwargs = {
+            "openai_api_key": config.venice_api_key,
+            "openai_api_base": info.api_base,
+            "timeout": info.timeout,
         }
 
         return ChatOpenAI(**kwargs)
@@ -642,6 +699,8 @@ def create_llm_model(
         return EternalLLM(**base_params)
     elif provider == LLMProvider.REIGENT:
         return ReigentLLM(**base_params)
+    elif provider == LLMProvider.VENICE:
+        return VeniceLLM(**base_params)
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)

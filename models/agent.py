@@ -674,24 +674,10 @@ class AgentUpdate(BaseModel):
     ]
     # AI part
     model: Annotated[
-        Literal[
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4.1-nano",
-            "gpt-4.1-mini",
-            "gpt-4.1",
-            "o4-mini",
-            "deepseek-chat",
-            "deepseek-reasoner",
-            "grok-2",
-            "grok-3",
-            "grok-3-mini",
-            "eternalai",
-            "reigent",
-        ],
+        str,
         PydanticField(
-            default="gpt-4.1-mini",
-            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
+            default="gpt-4.1-nano",
+            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent, venice-uncensored",
             json_schema_extra={
                 "x-group": "ai",
             },
