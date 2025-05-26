@@ -186,10 +186,9 @@ if __name__ == "__main__":
         if config.redis_host:
             scheduler.add_job(
                 send_autonomous_heartbeat,
-                "interval",
+                trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
                 id="autonomous_heartbeat",
-                minutes=1,
-                next_run_time=datetime.now(),
+                name="Autonomous Heartbeat",
                 replace_existing=True,
             )
 
