@@ -642,6 +642,7 @@ class ReigentLLM(LLMModel):
 
         return ChatOpenAI(**kwargs)
 
+
 class VeniceLLM(LLMModel):
     """Venice LLM configuration."""
 
