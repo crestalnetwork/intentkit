@@ -72,7 +72,7 @@ async def schedule_agent_autonomous_tasks():
     logger.info("Checking for agent autonomous tasks...")
 
     # List of jobs to schedule, will delete jobs not in this list
-    planned_jobs = [HEAD_JOB_ID]
+    planned_jobs = [HEAD_JOB_ID, "autonomous_heartbeat"]
 
     async with get_session() as db:
         # Get all agents with autonomous configuration
