@@ -4,10 +4,6 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 import httpx
-
-# ClientError is still imported for type hinting in the original 'store_file_bytes' if needed,
-# but we won't specifically catch it here, it will be caught by the general 'Exception'.
-# from botocore.exceptions import ClientError
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
@@ -234,7 +230,6 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                 exc_info=True,
             )
 
-            # Return a generic but informative error dictionary
             return {
                 "error": True,
                 "error_type": error_type,  # e.g., "TimeoutException", "ToolException", "ClientError", "ValueError"
@@ -242,5 +237,4 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                 "details": details,
                 "voice_model": voice_model,
                 "requested_format": final_response_format,
-                "status_code": None,  # We don't have an HTTP status code for generic exceptions
             }
