@@ -10,19 +10,19 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.12"
+        python-version-file: "pyproject.toml"
 
-    - name: Install poetry
-      uses: abatilo/actions-poetry@65c61eae400c65c9510a584af85138c1ae19bbc0
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
         
     - name: Install dependencies
       run: |
-        poetry install --with dev
+        uv sync --locked --all-extras --dev
         
     - name: Ruff Check
       run: |

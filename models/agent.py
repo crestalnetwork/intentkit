@@ -142,8 +142,8 @@ class AgentAutonomous(BaseModel):
     @field_validator("prompt")
     @classmethod
     def validate_prompt(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and len(v.encode()) > 2000:
-            raise ValueError("prompt must be at most 2000 bytes")
+        if v is not None and len(v.encode()) > 20000:
+            raise ValueError("prompt must be at most 20000 bytes")
         return v
 
     @model_validator(mode="after")
@@ -690,7 +690,7 @@ class AgentUpdate(BaseModel):
             "reigent",
         ],
         PydanticField(
-            default="gpt-4.1-nano",
+            default="gpt-4.1-mini",
             description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
             json_schema_extra={
                 "x-group": "ai",
@@ -1203,9 +1203,6 @@ class AgentUpdate(BaseModel):
                     )
 
     async def update(self, id: str) -> "Agent":
-        # The validation is now handled by field validators
-        # No need to call check_prompt() anymore
-
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
             self.validate_autonomous_schedule()
@@ -1222,6 +1219,28 @@ class AgentUpdate(BaseModel):
                 )
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
+                setattr(db_agent, key, value)
+            await db.commit()
+            await db.refresh(db_agent)
+            return Agent.model_validate(db_agent)
+
+    async def override(self, id: str) -> "Agent":
+        # Validate autonomous schedule settings if present
+        if "autonomous" in self.model_dump(exclude_unset=True):
+            self.validate_autonomous_schedule()
+
+        async with get_session() as db:
+            db_agent = await db.get(AgentTable, id)
+            if not db_agent:
+                raise HTTPException(status_code=404, detail="Agent not found")
+            # check owner
+            if db_agent.owner and db_agent.owner != self.owner:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have permission to update this agent",
+                )
+            # update
+            for key, value in self.model_dump().items():
                 setattr(db_agent, key, value)
             await db.commit()
             await db.refresh(db_agent)
@@ -1812,7 +1831,9 @@ class AgentResponse(BaseModel):
                 has_twitter_linked = True
 
         # Process Twitter self-key status
-        has_twitter_self_key = agent_data and agent_data.twitter_self_key_refreshed_at
+        has_twitter_self_key = bool(
+            agent_data and agent_data.twitter_self_key_refreshed_at
+        )
 
         # Process Telegram self-key status and remove token
         linked_telegram_username = None
@@ -1874,6 +1895,12 @@ class AgentDataTable(Base):
         DateTime(timezone=True),
         nullable=True,
         comment="Twitter self-key userinfo last refresh time",
+    )
+    twitter_is_verified = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Whether the Twitter account is verified",
     )
     telegram_id = Column(String, nullable=True, comment="Telegram user ID")
     telegram_username = Column(String, nullable=True, comment="Telegram username")
@@ -1966,6 +1993,13 @@ class AgentData(BaseModel):
         PydanticField(
             default=None,
             description="Twitter self-key userinfo last refresh time",
+        ),
+    ]
+    twitter_is_verified: Annotated[
+        bool,
+        PydanticField(
+            default=False,
+            description="Whether the Twitter account is verified",
         ),
     ]
     telegram_id: Annotated[
@@ -2246,6 +2280,13 @@ class AgentQuotaTable(Base):
     twitter_count_daily = Column(BigInteger, default=0)
     twitter_limit_daily = Column(BigInteger, default=99999999)
     last_twitter_time = Column(DateTime(timezone=True), default=None, nullable=True)
+    free_income_daily = Column(Numeric(22, 4), default=0)
+    avg_action_cost = Column(Numeric(22, 4), default=0)
+    min_action_cost = Column(Numeric(22, 4), default=0)
+    max_action_cost = Column(Numeric(22, 4), default=0)
+    low_action_cost = Column(Numeric(22, 4), default=0)
+    medium_action_cost = Column(Numeric(22, 4), default=0)
+    high_action_cost = Column(Numeric(22, 4), default=0)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -2348,6 +2389,34 @@ class AgentQuota(BaseModel):
         Optional[datetime],
         PydanticField(default=None, description="Last Twitter operation timestamp"),
     ]
+    free_income_daily: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Daily free income amount"),
+    ]
+    avg_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Average cost per action"),
+    ]
+    max_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Maximum cost per action"),
+    ]
+    min_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Minimum cost per action"),
+    ]
+    high_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="High expected action cost"),
+    ]
+    medium_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Medium expected action cost"),
+    ]
+    low_action_cost: Annotated[
+        Decimal,
+        PydanticField(default=0, description="Low expected action cost"),
+    ]
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -2433,6 +2502,42 @@ class AgentQuota(BaseModel):
         if self.twitter_count_daily >= self.twitter_limit_daily:
             return False
         return True
+
+    @staticmethod
+    async def add_free_income_in_session(session, id: str, amount: Decimal) -> None:
+        """Add free income to an agent's quota directly in the database.
+
+        Args:
+            session: SQLAlchemy session
+            id: Agent ID
+            amount: Amount to add to free_income_daily
+
+        Raises:
+            HTTPException: If there are database errors
+        """
+        try:
+            # Check if the record exists using session.get
+            quota_record = await session.get(AgentQuotaTable, id)
+
+            if not quota_record:
+                # Create new record if it doesn't exist
+                quota_record = AgentQuotaTable(id=id, free_income_daily=amount)
+                session.add(quota_record)
+            else:
+                # Use update statement with func to directly add the amount
+                from sqlalchemy import update
+
+                stmt = update(AgentQuotaTable).where(AgentQuotaTable.id == id)
+                stmt = stmt.values(
+                    free_income_daily=func.coalesce(
+                        AgentQuotaTable.free_income_daily, 0
+                    )
+                    + amount
+                )
+                await session.execute(stmt)
+        except Exception as e:
+            logger.error(f"Error adding free income: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     async def add_message(self) -> None:
         """Add a message to the agent's message count."""

@@ -6,16 +6,9 @@ from typing import Dict, List, NotRequired, TypedDict
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from skills.moralis.base import WalletBaseTool
-from skills.moralis.fetch_blockchain_data import (
-    FetchBlockByDate,
-    FetchBlockByHashOrNumber,
-    FetchLatestBlock,
-)
-from skills.moralis.fetch_blockchain_transaction import FetchTransactionByHash
 from skills.moralis.fetch_chain_portfolio import FetchChainPortfolio
 from skills.moralis.fetch_nft_portfolio import FetchNftPortfolio
 from skills.moralis.fetch_solana_portfolio import FetchSolanaPortfolio
-from skills.moralis.fetch_transaction_history import FetchTransactionHistory
 from skills.moralis.fetch_wallet_portfolio import FetchWalletPortfolio
 
 logger = logging.getLogger(__name__)
@@ -27,12 +20,7 @@ class SkillStates(TypedDict):
     fetch_wallet_portfolio: SkillState
     fetch_chain_portfolio: SkillState
     fetch_nft_portfolio: SkillState
-    fetch_transaction_history: SkillState
     fetch_solana_portfolio: SkillState
-    fetch_transaction_by_hash: SkillState
-    fetch_latest_block: SkillState
-    fetch_block_by_hash_or_number: SkillState
-    fetch_block_by_date: SkillState
 
 
 class Config(SkillConfig):
@@ -109,12 +97,7 @@ def get_wallet_skill(
         "fetch_wallet_portfolio": FetchWalletPortfolio,
         "fetch_chain_portfolio": FetchChainPortfolio,
         "fetch_nft_portfolio": FetchNftPortfolio,
-        "fetch_transaction_history": FetchTransactionHistory,
         "fetch_solana_portfolio": FetchSolanaPortfolio,
-        "fetch_transaction_by_hash": FetchTransactionByHash,
-        "fetch_latest_block": FetchLatestBlock,
-        "fetch_block_by_hash_or_number": FetchBlockByHashOrNumber,
-        "fetch_block_by_date": FetchBlockByDate,
     }
 
     if name not in skill_classes:

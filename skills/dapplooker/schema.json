@@ -15,7 +15,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": false
+      "default": true
     },
     "states": {
       "type": "object",
@@ -34,7 +34,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve detailed market data and analytics for AI-focused tokens by ticker or address",
-          "default": "disabled"
+          "default": "private"
         }
       },
       "description": "States for each DappLooker skill (disabled, public, or private)"
@@ -60,9 +60,6 @@
   ],
   "if": {
     "properties": {
-      "enabled": {
-        "const": true
-      },
       "api_key_provider": {
         "const": "agent_owner"
       }
@@ -77,9 +74,18 @@
         "x-sensitive": true
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.0
+
+### Breaking Changes
+- Switch to uv as package manager
+
+## v0.4.0
+
+### New Features
+- Support Payment
+
 ## 2025-02-26
 
 ### New Features

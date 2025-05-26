@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "type": "object",
-  "title": "X Skills",
+  "title": "X",
   "description": "Integration with X API enabling social media interactions including retrieving posts, mentions, user information, and posting content with media support",
   "x-icon": "https://ai.service.crestal.dev/skills/twitter/twitter.png",
   "x-tags": [
@@ -160,6 +160,22 @@
           ],
           "description": "Retrieves user information by username.",
           "default": "disabled"
+        },
+        "get_user_tweets": {
+          "type": "string",
+          "title": "Get User Tweets",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieves tweets from a specific user by their user ID.",
+          "default": "disabled"
         }
       },
       "description": "States for each X skill"
@@ -222,12 +238,21 @@
         "maxLength": 100
       }
     },
-    "required": [
-      "consumer_key",
-      "consumer_secret",
-      "access_token",
-      "access_token_secret"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "consumer_key",
+        "consumer_secret",
+        "access_token",
+        "access_token_secret"
+      ]
+    }
   },
   "additionalProperties": true
 }

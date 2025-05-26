@@ -1,12 +1,12 @@
 [project]
 name = "intentkit"
-version = "0.1.19"
+version = "0.5.0"
 description = "Intent-based AI Agent Platform"
-authors = [{name = "Ruihua", email = "ruihua@crestal.network"}]
+authors = [{ name = "Ruihua", email = "ruihua@crestal.network" }]
+requires-python = "==3.12.*"
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
 dependencies = [
-    "langgraph (>=0.3.8,<0.4.0)",
+    "langgraph (>=0.4.3,<0.5.0)",
     "uvicorn>=0.34.0,<0.35.0",
     "fastapi>=0.115.8",
     "gunicorn>=23.0.0",
@@ -18,7 +18,7 @@ dependencies = [
     "psycopg-pool>=3.2.4",
     "alembic>=1.14.0",
     "pgvector>=0.3.6",
-    "langchain (>=0.3.20,<0.4.0)",
+    "langchain (>=0.3.25,<0.4.0)",
     "langchain-core>=0.3.43",
     "langchain-openai>=0.3.8",
     "langchain-postgres>=0.0.13",
@@ -26,7 +26,6 @@ dependencies = [
     "langgraph-checkpoint>=2.0.18",
     "langgraph-checkpoint-postgres>=2.0.16",
     "openai>=1.59.6",
-    "cdp-sdk==0.17.0",
     "tweepy[async]>=4.15.0",
     "python-dotenv>=1.0.1",
     "APScheduler>=3.11.0",
@@ -62,51 +61,32 @@ dependencies = [
     "pyyaml>=6.0.2",
     "python-multipart>=0.0.20",
     "langchain-xai>=0.2.1",
-    "coinbase-agentkit==0.1.4.dev202502250",
-    "coinbase-agentkit-langchain>=0.1.0",
+    "coinbase-agentkit==0.4.0",
+    "coinbase-agentkit-langchain==0.3.0",
     "jsonref>=1.1.0",
     "pytz>=2025.1",
     "redis (>=5.2.1,<6.0.0)",
     "telegramify-markdown (>=0.5.0,<0.6.0)",
-    "langchain-mcp-adapters (>=0.0.5,<0.0.6)",
+    "langchain-mcp-adapters (>=0.0.11,<0.1.0)",
     "pillow (>=11.1.0,<12.0.0)",
     "cron-validator (>=1.0.8,<2.0.0)",
     "boto3 (>=1.37.23,<2.0.0)",
     "mypy-boto3-s3 (>=1.37.24,<2.0.0)",
-    "filetype (>=1.2.0,<2.0.0)"
+    "filetype (>=1.2.0,<2.0.0)",
 ]
 
-[tool.poetry]
-package-mode = false
+[dependency-groups]
+dev = [
+    "ruff>=0.11.9,<0.12",
+    "jsonschema>=4.21.1,<5",
+]
 
-[tool.poetry.group.dev] 
-optional = true
+[tool.uv]
+package = false
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.11.4"
-jsonschema = "^4.21.1"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff.lint]
 extend-select = ["I"]
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-ignore_missing_imports = true
-explicit_package_bases = true
-namespace_packages = true
-mypy_path = "."
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

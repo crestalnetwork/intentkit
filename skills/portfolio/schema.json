@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Portfolio Analysis",
+  "description": "Access blockchain wallet data and analytics through Moralis APIs for portfolio tracking, token balances, and investment performance",
+  "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
+  "x-tags": [
+    "Blockchain",
+    "Web3",
+    "Crypto",
+    "Portfolio",
+    "Wallet"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "wallet_history": {
+          "type": "string",
+          "title": "Wallet Transaction History",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve the full transaction history of a specified wallet address",
+          "default": "private"
+        },
+        "token_balances": {
+          "type": "string",
+          "title": "Token Balances",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get token balances for a specific wallet address and their token prices in USD",
+          "default": "private"
+        },
+        "wallet_approvals": {
+          "type": "string",
+          "title": "Wallet Approvals",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve active ERC20 token approvals for a specified wallet address",
+          "default": "disabled"
+        },
+        "wallet_swaps": {
+          "type": "string",
+          "title": "Wallet Swaps",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get all swap-related transactions (buy, sell) for a wallet address",
+          "default": "disabled"
+        },
+        "wallet_net_worth": {
+          "type": "string",
+          "title": "Wallet Net Worth",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the net worth of a wallet in USD across multiple chains",
+          "default": "private"
+        },
+        "wallet_profitability_summary": {
+          "type": "string",
+          "title": "Wallet Profitability Summary",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve a summary of wallet profitability",
+          "default": "private"
+        },
+        "wallet_profitability": {
+          "type": "string",
+          "title": "Wallet Profitability Breakdown",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve detailed profitability breakdown for a wallet",
+          "default": "private"
+        },
+        "wallet_stats": {
+          "type": "string",
+          "title": "Wallet Stats",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get statistical information about a wallet",
+          "default": "disabled"
+        },
+        "wallet_defi_positions": {
+          "type": "string",
+          "title": "Wallet DeFi Positions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the positions summary of a wallet address",
+          "default": "disabled"
+        },
+        "wallet_nfts": {
+          "type": "string",
+          "title": "Wallet NFTs",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get NFTs owned by a given wallet address",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each portfolio blockchain analysis skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Nation Hosted",
+        "Owner Provided"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Moralis API Key",
+        "description": "API key for Moralis API service",
+        "x-link": "[Get your API key](https://moralis.io/)",
+        "x-sensitive": true
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import signal
-import sys
 from datetime import datetime
 from typing import Dict
 
@@ -15,7 +14,7 @@ from app.config.config import config
 from app.entrypoints.autonomous import run_autonomous_task
 from models.agent import Agent, AgentTable
 from models.db import get_session, init_db
-from models.redis import init_redis
+from models.redis import clean_heartbeat, get_redis, init_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +49,21 @@ if config.sentry_dsn:
     )
 
 
+async def send_autonomous_heartbeat():
+    """Send a heartbeat signal to Redis to indicate the autonomous service is running.
+
+    This function sends a heartbeat to Redis that expires after 16 minutes,
+    allowing other services to verify that the autonomous service is operational.
+    """
+    logger.info("Sending autonomous heartbeat")
+    try:
+        redis_client = get_redis()
+        await send_heartbeat(redis_client, "autonomous")
+        logger.info("Sent autonomous heartbeat successfully")
+    except Exception as e:
+        logger.error(f"Error sending autonomous heartbeat: {e}")
+
+
 async def schedule_agent_autonomous_tasks():
     """
     Find all agents with autonomous tasks and schedule them.
@@ -58,7 +72,7 @@ async def schedule_agent_autonomous_tasks():
     logger.info("Checking for agent autonomous tasks...")
 
     # List of jobs to schedule, will delete jobs not in this list
-    planned_jobs = [HEAD_JOB_ID]
+    planned_jobs = [HEAD_JOB_ID, "autonomous_heartbeat"]
 
     async with get_session() as db:
         # Get all agents with autonomous configuration
@@ -168,24 +182,57 @@ if __name__ == "__main__":
                 replace_existing=True,
             )
 
-        # Signal handler for graceful shutdown
-        def signal_handler(signum, frame):
-            logger.info("Received termination signal. Shutting down gracefully...")
-            scheduler.shutdown()
-            sys.exit(0)
+        # Add job to send heartbeat every 5 minutes
+        if config.redis_host:
+            scheduler.add_job(
+                send_autonomous_heartbeat,
+                trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
+                id="autonomous_heartbeat",
+                name="Autonomous Heartbeat",
+                replace_existing=True,
+            )
+
+        # Create a shutdown event for graceful termination
+        shutdown_event = asyncio.Event()
+
+        # Set up signal handlers for graceful shutdown
+        loop = asyncio.get_running_loop()
+
+        # Define an async function to set the shutdown event
+        async def set_shutdown():
+            shutdown_event.set()
 
         # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(set_shutdown()))
+
+        # Define the cleanup function that will be called on exit
+        async def cleanup_resources():
+            try:
+                if config.redis_host:
+                    redis_client = get_redis()
+                    await clean_heartbeat(redis_client, "autonomous")
+            except Exception as e:
+                logger.error(f"Error cleaning up heartbeat: {e}")
 
         try:
             logger.info("Starting autonomous agents scheduler...")
             scheduler.start()
-            # Keep the main thread running
-            while True:
-                await asyncio.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
-            logger.info("Scheduler stopped. Exiting...")
+
+            # Wait for shutdown event
+            logger.info(
+                "Autonomous process running. Press Ctrl+C or send SIGTERM to exit."
+            )
+            await shutdown_event.wait()
+            logger.info("Received shutdown signal. Shutting down gracefully...")
+        except Exception as e:
+            logger.error(f"Error in autonomous process: {e}")
+        finally:
+            # Run the cleanup code and shutdown the scheduler
+            await cleanup_resources()
+
+            if scheduler.running:
+                scheduler.shutdown()
 
     # Run the async main function
     asyncio.run(main())

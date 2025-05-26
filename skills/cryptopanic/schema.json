@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "CryptoPanic Skills",
+  "title": "CryptoPanic",
   "description": "CryptoPanic is a news aggregator platform indicating impact on price and market for traders and cryptocurrency enthusiasts.",
   "x-icon": "https://ai.service.crestal.dev/skills/cryptopanic/cryptopanic.png",
   "x-tags": [
@@ -86,9 +86,18 @@
         "description": "API key for accessing CryptoPanic API"
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

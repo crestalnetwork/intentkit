@@ -79,6 +79,11 @@ class Config:
         self.debug_auth_enabled = self.load("DEBUG_AUTH_ENABLED", "false") == "true"
         self.debug_username = self.load("DEBUG_USERNAME")
         self.debug_password = self.load("DEBUG_PASSWORD")
+        self.admin_llm_skill_control = (
+            self.load("ADMIN_LLM_SKILL_CONTROL", "false") == "true"
+        )
+        # Payment
+        self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
         # API
         self.api_base_url = self.load("API_BASE_URL", "http://localhost:8000")
         self.api_auth_enabled = self.load("API_AUTH_ENABLED", "false") == "true"
@@ -124,6 +129,7 @@ class Config:
         self.enso_api_token = self.load("ENSO_API_TOKEN")
         self.dapplooker_api_key = self.load("DAPPLOOKER_API_KEY")
         self.moralis_api_key = self.load("MORALIS_API_KEY")
+        self.tavily_api_key = self.load("TAVILY_API_KEY")
         # Sentry
         self.sentry_dsn = self.load("SENTRY_DSN")
         self.sentry_sample_rate = float(self.load("SENTRY_SAMPLE_RATE", "0.1"))
@@ -146,13 +152,9 @@ class Config:
         self.rpc_networks = self.load(
             "RPC_NETWORKS", "base-mainnet,base-sepolia,ethereum-sepolia,solana-mainnet"
         )
-        # Payment
-        self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
 
-        # backend api key
+        # Nation
         self.nation_api_key = self.load("NATION_API_KEY")
-
-        # backend api url
         self.nation_api_url = self.load("NATION_API_URL", "")
 
         # ===== config loaded

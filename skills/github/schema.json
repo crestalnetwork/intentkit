@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "GitHub Search",
+  "title": "GitHub",
   "description": "Search capabilities for GitHub repositories, users, and code",
   "x-icon": "https://ai.service.crestal.dev/skills/github/github.jpg",
   "x-tags": [
@@ -9,6 +9,7 @@
     "Search",
     "Code"
   ],
+  "x-nft-requirement": 1,
   "properties": {
     "enabled": {
       "type": "boolean",

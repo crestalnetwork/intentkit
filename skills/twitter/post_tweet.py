@@ -21,7 +21,8 @@ class TwitterPostTweetInput(BaseModel):
     """Input for TwitterPostTweet tool."""
 
     text: str = Field(
-        description="The text content of the tweet to post", max_length=280
+        description="Tweet text (280 chars for regular users, 25,000 bytes for verified)",
+        max_length=25000,
     )
     image: Optional[str] = Field(
         default=None, description="Optional URL of an image to attach to the tweet"
@@ -69,10 +70,6 @@ class TwitterPostTweet(TwitterBaseTool):
 
             # Handle image upload if provided
             if image:
-                if twitter.use_key:
-                    raise ToolException(
-                        "Image upload is not supported when using API key authentication"
-                    )
                 # Use the TwitterClient method to upload the image
                 media_ids = await twitter.upload_media(context.agent.id, image)
 

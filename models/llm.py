@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
@@ -12,6 +13,8 @@ from models.app_setting import AppSetting
 from models.base import Base
 from models.db import get_session
 from models.redis import get_redis
+
+logger = logging.getLogger(__name__)
 
 _credit_per_usdc = None
 
@@ -32,6 +35,7 @@ class LLMModelInfoTable(Base):
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     provider = Column(String, nullable=False)  # Stored as string enum value
+    enabled = Column(Boolean, nullable=False, default=True)
     input_price = Column(
         Numeric(22, 4), nullable=False
     )  # Price per 1M input tokens in USD
@@ -76,6 +80,7 @@ class LLMModelInfo(BaseModel):
     id: str
     name: str
     provider: LLMProvider
+    enabled: bool = Field(default=True)
     input_price: Decimal  # Price per 1M input tokens in USD
     output_price: Decimal  # Price per 1M output tokens in USD
     context_length: int  # Maximum context length in tokens
@@ -128,21 +133,26 @@ class LLMModelInfo(BaseModel):
         Returns:
             LLMModelInfo: The model info if found, None otherwise
         """
-        # Redis cache key for model info
-        cache_key = f"intentkit:llm_model:{model_id}"
-        cache_ttl = 180  # 3 minutes in seconds
+        try:
+            has_redis = True
+            # Redis cache key for model info
+            cache_key = f"intentkit:llm_model:{model_id}"
+            cache_ttl = 180  # 3 minutes in seconds
 
-        # Try to get from Redis cache first
-        redis = get_redis()
-        cached_data = await redis.get(cache_key)
+            # Try to get from Redis cache first
+            redis = get_redis()
+            cached_data = await redis.get(cache_key)
 
-        if cached_data:
-            # If found in cache, deserialize and return
-            try:
-                return LLMModelInfo.model_validate_json(cached_data)
-            except (json.JSONDecodeError, TypeError):
-                # If cache is corrupted, invalidate it
-                await redis.delete(cache_key)
+            if cached_data:
+                # If found in cache, deserialize and return
+                try:
+                    return LLMModelInfo.model_validate_json(cached_data)
+                except (json.JSONDecodeError, TypeError):
+                    # If cache is corrupted, invalidate it
+                    await redis.delete(cache_key)
+        except Exception:
+            has_redis = False
+            logger.debug("No redis when get model info")
 
         # If not in cache or cache is invalid, get from database
         async with get_session() as session:
@@ -156,11 +166,12 @@ class LLMModelInfo(BaseModel):
                 model_info = LLMModelInfo.model_validate(model)
 
                 # Cache the model in Redis
-                await redis.set(
-                    cache_key,
-                    model_info.model_dump_json(),
-                    ex=cache_ttl,
-                )
+                if has_redis:
+                    await redis.set(
+                        cache_key,
+                        model_info.model_dump_json(),
+                        ex=cache_ttl,
+                    )
 
                 return model_info
 
@@ -169,7 +180,8 @@ class LLMModelInfo(BaseModel):
             model_info = AVAILABLE_MODELS[model_id]
 
             # Cache the model in Redis
-            await redis.set(cache_key, model_info.model_dump_json(), ex=cache_ttl)
+            if has_redis:
+                await redis.set(cache_key, model_info.model_dump_json(), ex=cache_ttl)
 
             return model_info
 
@@ -283,6 +295,9 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         has_reasoning=True,  # Has strong reasoning capabilities
+        supports_temperature=False,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     # Deepseek models
     "deepseek-chat": LLMModelInfo(
@@ -633,21 +648,23 @@ def create_llm_model(
 
 
 # Utility functions
+# FXIME: from db
 def get_available_models() -> Dict[str, LLMModelInfo]:
     """Get all available models."""
     return AVAILABLE_MODELS
 
 
-def get_model_info(model_name: str) -> LLMModelInfo:
+async def get_model_info(model_name: str) -> LLMModelInfo:
     """Get information about a specific model."""
-    if model_name not in AVAILABLE_MODELS:
+    model = await LLMModelInfo.get(model_name)
+    if not model:
         raise ValueError(f"Unknown model: {model_name}")
-    return AVAILABLE_MODELS[model_name]
+    return model
 
 
 async def get_model_cost(
     model_name: str, input_tokens: int, output_tokens: int
 ) -> Decimal:
     """Get the cost of a specific model."""
-    info = get_model_info(model_name)
+    info = await get_model_info(model_name)
     return await info.calculate_cost(input_tokens, output_tokens)

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Venice Image Skills",
+  "title": "Venice Image",
   "description": "Skills for generating images using the Venice AI API.",
   "x-icon": "https://ai.service.crestal.dev/skills/venice_image/venice_image.jpg",
   "x-tags": [
@@ -196,9 +196,18 @@
         "description": "Time window in minutes for rate limiting. Only applies if using an agent-specific API key."
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

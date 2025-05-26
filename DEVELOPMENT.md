@@ -34,22 +34,28 @@ mv example.env .env
 ```bash
 docker compose up
 ```
+This will block current terminal to show logs, you can press Ctrl+C to stop it.
+When you want to run other command, you can open another terminal.
 
-5. To create your first agent:
+5. Try it out:
 ```bash
-cd scripts
-sh create.sh example
-```
-
-6. Try it out:
-```bash
-curl "http://127.0.0.1:8000/example/chat?q=Hello"
+curl "http://127.0.0.1:8000/debug/example/chat?q=Hello"
 ```
 In terminal, curl cannot auto escape special characters, so you can use browser to test. Just copy the URL to your browser, replace "Hello" with your words.
 
-### Local Development
-0. It's recommended to use Python [3.12](https://www.python.org/downloads/).
+6. Manage your agent:
+When intentkit first starts, it will create an example agent for you. You can manage your agent by using the scripts in the `scripts` directory.
+```bash
+cd scripts
+# Export agent
+sh export.sh example
+# Import agent
+sh import.sh example
+# Create another agent
+sh create.sh my_agent
+```
 
+### Local Development
 1. Clone the repository:
 ```bash
 git clone https://github.com/crestalnetwork/intentkit.git
@@ -58,12 +64,10 @@ cd intentkit
 
 2. Set up your environment:
 
-If you haven't installed [poetry](https://python-poetry.org/), please [install](https://python-poetry.org/docs/#installation) it first.
-We recommend manually creating a venv; otherwise, the venv created automatically by Poetry may not meet your needs.
+If you haven't installed [uv](https://docs.astral.sh/uv/), please [install](https://docs.astral.sh/uv/getting-started/installation/) it first.
+You don't need to worry about your Python version and venv; uv will automatically handle everything for you.
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-poetry install --with dev
+uv sync
 ```
 
 3. Configure your environment:
@@ -84,18 +88,23 @@ uvicorn app.api:app --reload
 # python -m app.autonomous
 ```
 
-5. To create your first agent:
-```bash
-cd scripts
-sh create.sh example
-```
-
-6. Try it out:
+5. Try it out:
 ```bash
 curl "http://127.0.0.1:8000/debug/example/chat?q=Hello"
 ```
 In terminal, curl cannot auto escape special characters, so you can use browser to test. Just copy the URL to your browser, replace "Hello" with your words.
 
+6. Manage your agent:
+When intentkit first starts, it will create an example agent for you. You can manage your agent by using the scripts in the `scripts` directory.
+```bash
+cd scripts
+# Export agent
+sh export.sh example
+# Import agent
+sh import.sh example
+# Create another agent
+sh create.sh my_agent
+```
 
 ## What's Next
 

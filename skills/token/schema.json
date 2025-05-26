@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Token Skills",
+  "description": "Token analysis skills powered by Moralis API",
+  "type": "object",
+  "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
+  "x-tags": [
+    "Blockchain",
+    "Web3",
+    "Crypto",
+    "Token",
+    "DeFi"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "token_price": {
+          "type": "string",
+          "title": "ERC20 Token Price",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the token price denominated in the blockchain's native token and USD",
+          "default": "public"
+        },
+        "token_erc20_transfers": {
+          "type": "string",
+          "title": "ERC20 Token Transfers",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get ERC20 token transactions ordered by block number",
+          "default": "public"
+        },
+        "token_search": {
+          "type": "string",
+          "title": "Token Search (Premium)",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Search for tokens based on contract address, token name or token symbol. Premium endpoint available as an add-on. Requires a Moralis Business plan or Enterprise plan.",
+          "default": "public"
+        },
+        "token_analytics": {
+          "type": "string",
+          "title": "Token Analytics",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get analytics for a token by token address",
+          "default": "public"
+        }
+      },
+      "description": "States for each token analysis skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Nation Hosted",
+        "Owner Provided"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Moralis API Key",
+        "description": "API key for Moralis API service",
+        "x-link": "[Get your API key](https://moralis.io/)",
+        "x-sensitive": true
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

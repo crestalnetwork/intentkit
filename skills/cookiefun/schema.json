@@ -1,81 +1,112 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Cookie.fun Analytics",
-  "description": "Configuration schema for Cookie.fun analytics skills",
+  "title": "CookieFun Skills",
+  "description": "Access Twitter/X analytics and insights using CookieFun API. Get data about accounts, tweets, followers, and trends across different industry sectors.",
   "x-icon": "https://ai.service.crestal.dev/skills/cookiefun/cookiefun.png",
   "x-tags": [
+    "Twitter",
+    "Social Media",
     "Analytics",
-    "Agents",
-    "Tokens"
+    "X"
   ],
   "properties": {
     "enabled": {
       "type": "boolean",
       "title": "Enabled",
-      "description": "Whether Cookie.fun skills are enabled",
+      "description": "Toggle to enable or disable all CookieFun skills",
       "default": false
     },
     "states": {
       "type": "object",
       "properties": {
-        "get_country_time": {
+        "get_sectors": {
           "type": "string",
-          "title": "Get Country Time",
+          "title": "Get Sectors",
           "enum": [
             "disabled",
             "public",
             "private"
           ],
-          "description": "Get current time in different timezones of a country"
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve a list of all available industry sectors in CookieFun, useful for exploring trending topics and categorization",
+          "default": "disabled"
         },
-        "get_ai_response": {
+        "get_account_details": {
           "type": "string",
-          "title": "Get AI Response",
+          "title": "Get Account Details",
           "enum": [
             "disabled",
             "public",
             "private"
           ],
-          "description": "Get responses from Cookie.fun's AI chat system"
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Fetch comprehensive metrics about any Twitter account including followers, engagement rates, impressions, and other analytics",
+          "default": "disabled"
         },
-        "generate_image": {
+        "get_account_smart_followers": {
           "type": "string",
-          "title": "Generate Image",
+          "title": "Get Account Smart Followers",
           "enum": [
             "disabled",
             "public",
             "private"
           ],
-          "description": "Generate images using Cookie.fun's AI"
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Identify the most valuable followers of any Twitter account based on influence, engagement, and reach metrics",
+          "default": "disabled"
         },
-        "translate_text": {
+        "search_accounts": {
           "type": "string",
-          "title": "Translate Text",
+          "title": "Search Accounts",
           "enum": [
             "disabled",
             "public",
             "private"
           ],
-          "description": "Translate text to different languages"
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Find Twitter accounts posting about specific topics with filtering by engagement, impressions, and tweet types",
+          "default": "disabled"
         },
-        "get_crypto": {
+        "get_account_feed": {
           "type": "string",
-          "title": "Get Cryptocurrency Info",
+          "title": "Get Account Feed",
           "enum": [
             "disabled",
             "public",
             "private"
           ],
-          "description": "Get detailed information about cryptocurrencies"
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Access a Twitter account's feed with powerful filtering by date range, media content, tweet type, and sorting options",
+          "default": "disabled"
         }
       },
-      "description": "States for each Cookie.fun skill (disabled, public, or private)"
+      "description": "Configure access levels for each CookieFun skill - disabled, available to all users, or restricted to agent owner only"
     },
     "api_key_provider": {
       "type": "string",
       "title": "API Key Provider",
-      "description": "Provider of the API key for AIXBT API service",
+      "description": "Provider of the API key for CookieFun API service",
       "enum": [
         "agent_owner"
       ],
@@ -100,14 +131,24 @@
     "properties": {
       "api_key": {
         "type": "string",
-        "title": "Cookie.fun API Key",
+        "title": "CookieFun API Key",
+        "description": "Your personal CookieFun API key (sign up at cookie.fun)",
         "x-sensitive": true,
-        "description": "Cookie.fun API key for authentication"
+        "x-link": "[Get your API key](https://cookie.fun/)"
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

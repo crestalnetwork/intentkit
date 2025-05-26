@@ -1,44 +1,37 @@
 # Use Python slim image as the base
 FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=2.1.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_NO_INTERACTION=1
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Add Poetry to PATH
-ENV PATH="$POETRY_HOME/bin:$PATH"
-
-# Install system dependencies and Poetry
+# Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         build-essential \
         libpq-dev \
-    && curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
     && apt-get purge -y --auto-remove curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy Poetry configuration files
-COPY pyproject.toml poetry.lock* ./
-
 # Install dependencies
-RUN poetry install --no-root
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-# Copy the rest of the application code into the container
-COPY . .
+# Copy the project into the image
+ADD . /app
 
-RUN poetry install
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
 
 ARG RELEASE
 ENV RELEASE=$RELEASE
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Command to run the application using Poetry
-CMD ["poetry", "run", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "80"]
+# Command to run the application
+CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "80"]

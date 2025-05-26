@@ -16,6 +16,7 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
+from typing import Optional
 
 import sqlalchemy
 from coinbase_agentkit import (
@@ -64,6 +65,7 @@ from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
 from models.skill import AgentSkillData, Skill, ThreadSkillData
+from models.user import User
 from skills.acolyt import get_acolyt_skill
 from skills.allora import get_allora_skill
 from skills.cdp.get_balance import GetBalance
@@ -113,10 +115,10 @@ async def initialize_agent(aid, is_private=False):
     agent_store = AgentStore(aid)
 
     # get the agent from the database
-    agent: Agent = await Agent.get(aid)
+    agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    agent_data: AgentData = await AgentData.get(aid)
+    agent_data: Optional[AgentData] = await AgentData.get(aid)
 
     # ==== Initialize LLM using the LLM abstraction.
     from models.llm import create_llm_model
@@ -464,9 +466,6 @@ async def execute_agent(
     Returns:
         list[ChatMessage]: Formatted response lines including timing information
     """
-    quota = await AgentQuota.get(message.agent_id)
-    if quota and not quota.has_message_quota():
-        raise HTTPException(status_code=429, detail="Agent Daily Quota exceeded")
 
     resp = []
     start = time.perf_counter()
@@ -480,6 +479,41 @@ async def execute_agent(
 
     # check user balance
     if need_payment:
+        if agent.fee_percentage > 100:
+            owner = await User.get(agent.owner)
+            if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
+                error_message_create = ChatMessageCreate(
+                    id=str(XID()),
+                    agent_id=input.agent_id,
+                    chat_id=input.chat_id,
+                    user_id=input.user_id,
+                    author_id=input.agent_id,
+                    author_type=AuthorType.SYSTEM,
+                    thread_type=input.author_type,
+                    reply_to=input.id,
+                    message="If you are the owner of this agent, please Update the Service Fee % to be in compliance with the Nation guidelines (Max 100% + 10% per Nation Pass NFT held)",
+                    time_cost=time.perf_counter() - start,
+                )
+                error_message = await error_message_create.save()
+                resp.append(error_message)
+                return resp
+        quota = await AgentQuota.get(message.agent_id)
+        if quota and quota.free_income_daily > 24000:
+            error_message_create = ChatMessageCreate(
+                id=str(XID()),
+                agent_id=input.agent_id,
+                chat_id=input.chat_id,
+                user_id=input.user_id,
+                author_id=input.agent_id,
+                author_type=AuthorType.SYSTEM,
+                thread_type=input.author_type,
+                reply_to=input.id,
+                message="This Agent has reached its free CAP income limit for today! Start using paid CAPs or wait until this limit expires in less than 24 hours.",
+                time_cost=time.perf_counter() - start,
+            )
+            error_message = await error_message_create.save()
+            resp.append(error_message)
+            return resp
         payer = input.user_id
         if (
             input.author_type == AuthorType.TELEGRAM
@@ -487,7 +521,10 @@ async def execute_agent(
         ):
             payer = agent.owner
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
-        if not user_account.has_sufficient_credits(1):
+        avg_count = 1
+        if quota and quota.avg_action_cost > 0:
+            avg_count = quota.avg_action_cost
+        if not user_account.has_sufficient_credits(avg_count):
             error_message_create = ChatMessageCreate(
                 id=str(XID()),
                 agent_id=input.agent_id,
@@ -505,9 +542,6 @@ async def execute_agent(
             return resp
         # use this in loop
         total_paid = 0
-
-    # once the input saved, reduce message quota
-    await quota.add_message()
 
     is_private = False
     if input.user_id == agent.owner:
@@ -621,6 +655,7 @@ async def execute_agent(
                         user_id=input.user_id,
                         author_id=input.agent_id,
                         author_type=AuthorType.AGENT,
+                        model=agent.model,
                         thread_type=input.author_type,
                         reply_to=input.id,
                         message=msg.content,
@@ -712,6 +747,7 @@ async def execute_agent(
                     user_id=input.user_id,
                     author_id=input.agent_id,
                     author_type=AuthorType.SKILL,
+                    model=agent.model,
                     thread_type=input.author_type,
                     reply_to=input.id,
                     message="",

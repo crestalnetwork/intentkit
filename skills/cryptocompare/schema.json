@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "CryptoCompare Skills",
+  "title": "CryptoCompare",
   "description": "Integration with CryptoCompare API providing cryptocurrency market data, price information, and crypto news with rate limiting capabilities",
   "x-icon": "https://ai.service.crestal.dev/skills/cryptocompare/cryptocompare.png",
   "x-tags": [
@@ -151,9 +151,18 @@
         "description": "CryptoCompare API key for authentication"
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

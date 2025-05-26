@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Allora Skills",
+  "title": "Allora",
   "description": "Integration with Allora API for blockchain-based price predictions and market forecasting services via Upshot's prediction markets",
   "x-icon": "https://ai.service.crestal.dev/skills/allora/allora.jpeg",
   "x-tags": [
@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Generates 6-hour price forecasts using ensemble ML models analyzing on-chain liquidity and market sentiment",
-          "default": "public"
+          "default": "private"
         }
       },
       "description": "States for each Allora skill (disabled, public, or private)"
@@ -72,9 +72,18 @@
         "description": "Allora API key for authentication"
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

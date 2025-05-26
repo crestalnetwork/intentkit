@@ -20,6 +20,7 @@ class TelegramConfig(TypedDict):
 class BotPoolItem:
     def __init__(self, agent: Agent):
         self._agent_id = agent.id
+        self._agent_owner = agent.owner
 
         self._token = clean_token_str(agent.telegram_config.get("token"))
         if self._token is None:
@@ -49,6 +50,10 @@ class BotPoolItem:
     @property
     def agent_id(self):
         return self._agent_id
+
+    @property
+    def agent_owner(self):
+        return self._agent_owner
 
     @property
     def token(self):

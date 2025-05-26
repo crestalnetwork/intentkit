@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 NAME = "twitter_get_timeline"
 PROMPT = (
     "Get tweets from your timeline, the result is a json object containing a list of tweets."
-    "If the result has no tweets in it, means no new tweets, don't retry this tool."
+    'If the result is `{"meta": {"result_count": 0}}`, means no new tweets, don\'t retry this tool.'
 )
 
 
@@ -67,9 +67,8 @@ class TwitterGetTimeline(TwitterBaseTool):
             if not user_id:
                 raise ValueError("Failed to get Twitter user ID.")
 
-            timeline = await client.get_users_tweets(
+            timeline = await client.get_home_timeline(
                 user_auth=twitter.use_key,
-                id=user_id,
                 max_results=max_results,
                 since_id=since_id,
                 expansions=[

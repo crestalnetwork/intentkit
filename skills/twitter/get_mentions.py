@@ -13,7 +13,7 @@ from .base import TwitterBaseTool
 NAME = "twitter_get_mentions"
 PROMPT = (
     "Get tweets that mention you, the result is a json object containing a list of tweets."
-    "If the result has no tweets in it, means no new mentions, don't retry this tool."
+    'If the result is `{"meta": {"result_count": 0}}`, means no new mentions, don\'t retry this tool.'
 )
 
 logger = logging.getLogger(__name__)

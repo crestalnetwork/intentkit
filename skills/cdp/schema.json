@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Use coinbase API to get wallet balance, float result.",
-          "default": "public"
+          "default": "private"
         },
         "WalletActionProvider_get_balance": {
           "type": "string",
@@ -111,7 +111,7 @@
             "Agent Owner Only"
           ],
           "description": "State for ERC20ActionProvider_transfer",
-          "default": "disabled"
+          "default": "private"
         },
         "WethActionProvider_wrap_eth": {
           "type": "string",
@@ -319,7 +319,7 @@
             "Agent Owner Only"
           ],
           "description": "State for PythActionProvider_fetch_price_feed_id",
-          "default": "public"
+          "default": "private"
         },
         "PythActionProvider_fetch_price": {
           "type": "string",
@@ -335,7 +335,7 @@
             "Agent Owner Only"
           ],
           "description": "State for PythActionProvider_fetch_price",
-          "default": "public"
+          "default": "private"
         },
         "WowActionProvider_buy_token": {
           "type": "string",

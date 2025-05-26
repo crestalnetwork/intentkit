@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Common Skills",
+  "title": "Common Utilities",
   "description": "Utility skills",
   "x-icon": "https://ai.service.crestal.dev/skills/common/common.jpg",
   "x-tags": [
@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Provides localized timekeeping with automatic timezone detection using IP geolocation",
-          "default": "public"
+          "default": "private"
         }
       },
       "description": "States for each common utility skill (disabled, public, or private)"

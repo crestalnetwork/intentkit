@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Elfa Skills",
+  "title": "Elfa",
   "description": "Integration with Elfa AI API providing data analysis and processing capabilities with secure authentication for advanced data operations",
   "x-icon": "https://ai.service.crestal.dev/skills/elfa/elfa.jpg",
   "x-tags": [
@@ -12,7 +12,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": false
+      "default": true
     },
     "states": {
       "type": "object",
@@ -47,7 +47,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to query tweets mentioning a specific stock ticker. The tweets are ranked by view count, providing insight into the most visible and potentially influential discussions surrounding the stock. The results are updated hourly, allowing for real-time monitoring of market sentiment.",
-          "default": "disabled"
+          "default": "private"
         },
         "search_mentions": {
           "type": "string",
@@ -63,7 +63,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to search tweets mentioning up to five keywords. It can search within the past 30 days of data, which is updated every 5 minutes, or access up to six months of historical tweet data.",
-          "default": "disabled"
+          "default": "private"
         },
         "get_trending_tokens": {
           "type": "string",
@@ -95,7 +95,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to retrieve key social media metrics for a given username. These metrics include Smart Following Count, Engagement Score, and Engagement Ratio.",
-          "default": "disabled"
+          "default": "private"
         }
       },
       "description": "States for each Elfa skill (disabled, public, or private)"
@@ -135,9 +135,18 @@
         "description": "Elfa API key for authentication"
       }
     },
-    "required": [
-      "api_key"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
   },
   "additionalProperties": true
 }

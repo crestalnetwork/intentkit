@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Enso Skills",
+  "title": "Enso Finance",
   "description": "Integration with Enso Finance API providing DeFi trading and portfolio management capabilities across multiple blockchain networks",
   "x-icon": "https://ai.service.crestal.dev/skills/enso/enso.jpg",
   "x-tags": [
@@ -195,9 +195,18 @@
         "description": "Enso API token for authentication"
       }
     },
-    "required": [
-      "api_token"
-    ]
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_token"
+      ]
+    }
   },
   "additionalProperties": true
 }

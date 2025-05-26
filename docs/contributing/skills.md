@@ -225,6 +225,12 @@ Make sure you have a local agent running, and you can test your skills in the ag
 
 Read [Development Guide](../../DEVELOPMENT.md) to get started with your setup.
 
+You can test your skills using either API calls or the IntentKit Sandbox UI. The UI provides a visual interface for interacting with agents and testing skills. 
+
+For quick testing without local setup, use the hosted IntentKit Sandbox at [https://intentkit.crestal.dev/](https://intentkit.crestal.dev/).
+
+Alternatively, you can set up your own instance by following the instructions in the [IntentKit Sandbox UI repository](https://github.com/crestalnetwork/intentkit-sandbox-ui).
+
 ## More details
 
 ### About the return value
@@ -303,7 +309,7 @@ Please find in the [pyproject.toml](https://github.com/crestalnetwork/intentkit/
 
 Like for http client, we suggest you use the async client of `httpx`.
 
-If you need to use other packages, please add them to the pyproject.toml use `poetry add`.
+If you need to use other packages, please add them to the pyproject.toml use `uv add`.
 
 ### How to store data in skill
 
