@@ -7,9 +7,14 @@
 
 IntentKit is an autonomous agent framework that enables the creation and management of AI agents with various capabilities including blockchain interaction, social media management, and custom skill integration.
 
-## Alpha Warning
+## Package Manager Migration Warning
 
-This project is currently in alpha stage and is not recommended for production use.
+We just migrated to uv from poetry.
+You need to delete the .venv folder and run `uv sync` to create a new virtual environment. (one time)
+```bash
+rm -rf .venv
+uv sync
+```
 
 ## Features
 

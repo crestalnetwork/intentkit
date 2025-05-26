@@ -6,22 +6,22 @@ echo "Running code formatters and linters..."
 # Check if running in CI mode (no fixes)
 if [ "$1" = "ci" ]; then
     echo "Running in CI mode - checking only, not fixing..."
-    poetry run ruff format --check
-    poetry run ruff check
+    uv run ruff format --check
+    uv run ruff check
 else
-    poetry run ruff format
-    poetry run ruff check --fix
+    uv run ruff format
+    uv run ruff check --fix
 fi
 
 echo "Validating JSON schema files..."
 
-# Function to validate a JSON schema file using Python with Poetry
+# Function to validate a JSON schema file using Python
 validate_schema() {
     local schema_file=$1
     echo "Validating $schema_file..."
     
-    # Use Python to validate both JSON syntax and schema validity through Poetry
-    poetry run python -c "import json, jsonschema; schema = json.load(open('$schema_file')); jsonschema.Draft7Validator.check_schema(schema)" 2>/dev/null
+    # Use Python to validate both JSON syntax and schema validity
+    uv run python -c "import json, jsonschema; schema = json.load(open('$schema_file')); jsonschema.Draft7Validator.check_schema(schema)" 2>/dev/null
     
     if [ $? -ne 0 ]; then
         echo "Error: $schema_file is not a valid JSON schema"

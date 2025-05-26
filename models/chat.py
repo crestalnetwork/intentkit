@@ -177,6 +177,10 @@ class ChatMessageTable(Base):
         String,
         nullable=False,
     )
+    model = Column(
+        String,
+        nullable=True,
+    )
     thread_type = Column(
         String,
         nullable=True,
@@ -253,6 +257,9 @@ class ChatMessageCreate(BaseModel):
     ]
     author_id: Annotated[str, Field(description="ID of the message author")]
     author_type: Annotated[AuthorType, Field(description="Type of the message author")]
+    model: Annotated[
+        Optional[str], Field(None, description="LLM model used if applicable")
+    ]
     thread_type: Annotated[
         Optional[AuthorType],
         Field(None, description="Author Type of the message thread start"),

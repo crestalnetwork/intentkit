@@ -94,7 +94,10 @@ async def twitter_oauth_callback(
 
         # Get user info
         client = tweepy.Client(bearer_token=token["access_token"], return_type=dict)
-        me = client.get_me(user_auth=False)
+        me = client.get_me(
+            user_auth=False,
+            user_fields="id,username,name,verified",
+        )
 
         username = None
         if me and "data" in me:
@@ -102,6 +105,7 @@ async def twitter_oauth_callback(
             username = me.get("data").get("username")
             agent_data.twitter_username = username
             agent_data.twitter_name = me.get("data").get("name")
+            agent_data.twitter_is_verified = me.get("data").get("verified")
 
         # Commit changes
         await agent_data.save()

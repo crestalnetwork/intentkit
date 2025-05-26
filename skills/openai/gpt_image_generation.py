@@ -2,7 +2,7 @@
 
 import base64
 import logging
-from typing import Type
+from typing import Literal, Type
 
 import openai
 from epyxid import XID
@@ -21,15 +21,15 @@ class GPTImageGenerationInput(BaseModel):
     prompt: str = Field(
         description="Text prompt describing the image to generate.",
     )
-    size: str = Field(
+    size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = Field(
         default="auto",
         description="Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto",
     )
-    quality: str = Field(
+    quality: Literal["high", "medium", "low", "auto"] = Field(
         default="auto",
         description="Quality of the generated image. Options: high, medium, low, auto",
     )
-    background: str = Field(
+    background: Literal["transparent", "opaque", "auto"] = Field(
         default="auto",
         description="Background transparency. Options: transparent, opaque, auto",
     )
@@ -60,9 +60,9 @@ class GPTImageGeneration(OpenAIBaseTool):
     async def _arun(
         self,
         prompt: str,
-        size: str = "auto",
-        quality: str = "auto",
-        background: str = "auto",
+        size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = "auto",
+        quality: Literal["high", "medium", "low", "auto"] = "auto",
+        background: Literal["transparent", "opaque", "auto"] = "auto",
         config: RunnableConfig = None,
         **kwargs,
     ) -> str:

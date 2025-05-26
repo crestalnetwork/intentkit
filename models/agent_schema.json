@@ -55,8 +55,7 @@
     "model",
     "purpose",
     "personality",
-    "principles",
-    "mode"
+    "principles"
   ],
   "properties": {
     "name": {
@@ -447,6 +446,10 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
+        "dexscreener": {
+          "title": "DEX Screener",
+          "$ref": "../skills/dexscreener/schema.json"
+        },
         "portfolio": {
           "title": "Blockchain Portfolio",
           "$ref": "../skills/portfolio/schema.json"
@@ -454,6 +457,10 @@
         "token": {
           "title": "Token Operations",
           "$ref": "../skills/token/schema.json"
+        },
+        "chainlist": {
+          "title": "Chainlist RPC Endpoints",
+          "$ref": "../skills/chainlist/schema.json"
         },
         "cookiefun": {
           "title": "cookie.fun",

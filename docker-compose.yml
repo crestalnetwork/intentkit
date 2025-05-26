@@ -34,7 +34,7 @@ services:
       - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
     ports:
       - "8000:8000"
-    command: poetry run uvicorn app.api:app --host 0.0.0.0 --port 8000
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
 
   intent-autonomous:
     image: crestal/intentkit:latest
@@ -54,27 +54,26 @@ services:
       - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
       - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
       - INTERNAL_BASE_URL=http://api:8000
-    command: poetry run python -m app.autonomous
+    command: python -m app.autonomous
 
-  # intent-tg:
-  #   image: crestal/intentkit:latest
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   environment:
-  #     - ENV=${ENV:-local}
-  #     - RELEASE=${RELEASE:-local}
-  #     - DB_USERNAME=${POSTGRES_USER:-postgres}
-  #     - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-  #     - DB_HOST=db
-  #     - DB_PORT=5432
-  #     - DB_NAME=${POSTGRES_DB:-intentkit}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-  #     - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
-  #     - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
-  #     - INTERNAL_BASE_URL=http://api:8000
-  #   command: poetry run python -m app.telegram
+  intent-scheduler:
+    image: crestal/intentkit:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ENV=${ENV:-local}
+      - RELEASE=${RELEASE:-local}
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-intentkit}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
+      - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+    command: python -m app.scheduler
 
 volumes:
   postgres_data:

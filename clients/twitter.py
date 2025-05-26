@@ -117,7 +117,10 @@ class TwitterClient(TwitterABC):
                     self._agent_data.twitter_self_key_refreshed_at
                     < datetime.now(tz=timezone.utc) - timedelta(days=1)
                 ):
-                    me = await self._client.get_me(user_auth=self.use_key)
+                    me = await self._client.get_me(
+                        user_auth=self.use_key,
+                        user_fields="id,username,name,verified",
+                    )
                     if me and "data" in me and "id" in me["data"]:
                         await self._skill_store.set_agent_data(
                             self.agent_id,
@@ -125,6 +128,7 @@ class TwitterClient(TwitterABC):
                                 "twitter_id": me["data"]["id"],
                                 "twitter_username": me["data"]["username"],
                                 "twitter_name": me["data"]["name"],
+                                "twitter_is_verified": me["data"]["verified"],
                                 "twitter_self_key_refreshed_at": datetime.now(
                                     tz=timezone.utc
                                 ),
@@ -138,7 +142,8 @@ class TwitterClient(TwitterABC):
                     f"Use API key: {self.use_key}, "
                     f"User ID: {self.self_id}, "
                     f"Username: {self.self_username}, "
-                    f"Name: {self.self_name}"
+                    f"Name: {self.self_name}, "
+                    f"Verified: {self.self_is_verified}"
                 )
                 return self._client
             # Otherwise try to get OAuth2 tokens from agent data
@@ -215,6 +220,19 @@ class TwitterClient(TwitterABC):
         if not self._agent_data:
             return None
         return self._agent_data.twitter_name
+
+    @property
+    def self_is_verified(self) -> Optional[bool]:
+        """Get the Twitter account verification status.
+
+        Returns:
+            The Twitter account verification status if available, None otherwise
+        """
+        if not self._client:
+            return None
+        if not self._agent_data:
+            return None
+        return self._agent_data.twitter_is_verified
 
     def process_tweets_response(self, response: Dict[str, Any]) -> List[Tweet]:
         """Process Twitter API response and convert it to a list of Tweet objects.

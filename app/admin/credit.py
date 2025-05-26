@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -19,14 +19,19 @@ from app.core.credit import (
     reward,
     update_daily_quota,
 )
+from models.agent import AgentQuota
 from models.credit import (
     CreditAccount,
     CreditAccountTable,
+    CreditDebit,
     CreditEvent,
     CreditEventTable,
+    CreditTransaction,
+    CreditTransactionTable,
     Direction,
     EventType,
     OwnerType,
+    TransactionType,
 )
 from models.db import get_db
 from utils.middleware import create_jwt_middleware
@@ -43,6 +48,20 @@ class CreditEventsResponse(BaseModel):
     """Response model for credit events with pagination."""
 
     data: List[CreditEvent] = Field(description="List of credit events")
+    has_more: bool = Field(description="Indicates if there are more items")
+    next_cursor: Optional[str] = Field(None, description="Cursor for next page")
+
+
+class CreditTransactionResp(CreditTransaction):
+    """Credit transaction response model with event data."""
+
+    event: Optional[CreditEvent] = Field(None, description="Associated credit event")
+
+
+class CreditTransactionsResponse(BaseModel):
+    """Response model for credit transactions with pagination."""
+
+    data: List[CreditTransactionResp] = Field(description="List of credit transactions")
     has_more: bool = Field(description="Indicates if there are more items")
     next_cursor: Optional[str] = Field(None, description="Cursor for next page")
 
@@ -121,18 +140,6 @@ class UpdateDailyQuotaRequest(BaseModel):
                 "At least one of free_quota or refill_amount must be provided"
             )
         return self
-
-
-# ===== Agent Statistics =====
-class AgentStatisticsResponse(BaseModel):
-    """Response model for agent statistics."""
-
-    agent_id: str = Field(description="ID of the agent")
-    account_id: str = Field(description="ID of the agent's credit account")
-    balance: Decimal = Field(description="Total balance of the agent's account")
-    total_income: Decimal = Field(description="Total income from all credit events")
-    net_income: Decimal = Field(description="Net income from all credit events")
-    last_24h_income: Decimal = Field(description="Income from last 24 hours")
 
 
 # ===== API Endpoints =====
@@ -272,6 +279,32 @@ async def update_account_free_quota(
     )
 
 
+class AgentStatisticsResponse(BaseModel):
+    """Response model for agent statistics."""
+
+    agent_id: str = Field(description="ID of the agent")
+    account_id: str = Field(description="ID of the agent's credit account")
+    balance: Decimal = Field(description="Total balance of the agent's account")
+    total_income: Decimal = Field(description="Total income from all credit events")
+    net_income: Decimal = Field(description="Net income from all credit events")
+    permanent_income: Decimal = Field(
+        description="Permanent income from all credit events"
+    )
+    permanent_profit: Decimal = Field(
+        description="Permanent profit from all credit events"
+    )
+    last_24h_income: Decimal = Field(description="Income from last 24 hours")
+    last_24h_permanent_income: Decimal = Field(
+        description="Permanent income from last 24 hours"
+    )
+    avg_action_cost: Decimal = Field(description="Average action cost")
+    min_action_cost: Decimal = Field(description="Minimum action cost")
+    max_action_cost: Decimal = Field(description="Maximum action cost")
+    low_action_cost: Decimal = Field(description="Low action cost")
+    medium_action_cost: Decimal = Field(description="Medium action cost")
+    high_action_cost: Decimal = Field(description="High action cost")
+
+
 @credit_router.get(
     "/accounts/agent/{agent_id}/statistics",
     response_model=AgentStatisticsResponse,
@@ -314,6 +347,7 @@ async def get_agent_statistics(
     stmt = select(
         func.sum(CreditEventTable.total_amount).label("total_income"),
         func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
+        func.sum(CreditEventTable.permanent_amount).label("permanent_income"),
     ).where(CreditEventTable.agent_id == agent_id)
     result = await db.execute(stmt)
     row = result.first()
@@ -321,10 +355,14 @@ async def get_agent_statistics(
     # Extract the sums, defaulting to 0 if None
     total_income = row.total_income if row.total_income is not None else Decimal("0")
     net_income = row.net_income if row.net_income is not None else Decimal("0")
+    permanent_income = (
+        row.permanent_income if row.permanent_income is not None else Decimal("0")
+    )
 
     # Calculate last 24h income
     stmt = select(
         func.sum(CreditEventTable.total_amount).label("last_24h_income"),
+        func.sum(CreditEventTable.permanent_amount).label("last_24h_permanent_income"),
     ).where(
         CreditEventTable.agent_id == agent_id,
         CreditEventTable.created_at >= datetime.now() - timedelta(hours=24),
@@ -334,14 +372,32 @@ async def get_agent_statistics(
     last_24h_income = (
         row.last_24h_income if row.last_24h_income is not None else Decimal("0")
     )
-
+    last_24h_permanent_income = (
+        row.last_24h_permanent_income
+        if row.last_24h_permanent_income is not None
+        else Decimal("0")
+    )
+    quota = await AgentQuota.get(agent_id)
     return AgentStatisticsResponse(
         agent_id=agent_id,
         account_id=agent_account.id,
         balance=balance,
         total_income=total_income,
         net_income=net_income,
+        permanent_income=permanent_income,
+        permanent_profit=(
+            net_income * permanent_income / total_income
+            if total_income > Decimal("0")
+            else Decimal("0")
+        ).quantize(Decimal("0.0001"), ROUND_HALF_UP),
         last_24h_income=last_24h_income,
+        last_24h_permanent_income=last_24h_permanent_income,
+        avg_action_cost=quota.avg_action_cost,
+        min_action_cost=quota.min_action_cost,
+        max_action_cost=quota.max_action_cost,
+        low_action_cost=quota.low_action_cost,
+        medium_action_cost=quota.medium_action_cost,
+        high_action_cost=quota.high_action_cost,
     )
 
 
@@ -424,6 +480,130 @@ async def list_user_expense_events(
 
     return CreditEventsResponse(
         data=events,
+        has_more=has_more,
+        next_cursor=next_cursor,
+    )
+
+
+@credit_router_readonly.get(
+    "/transactions",
+    response_model=CreditTransactionsResponse,
+    operation_id="list_transactions",
+    summary="List Transactions",
+    dependencies=[Depends(verify_jwt)],
+)
+async def list_transactions(
+    user_id: Annotated[str, Query(description="ID of the user")],
+    tx_type: Annotated[
+        Optional[List[TransactionType]], Query(description="Transaction types")
+    ] = None,
+    credit_debit: Annotated[
+        Optional[CreditDebit], Query(description="Credit or debit")
+    ] = None,
+    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    limit: Annotated[
+        int, Query(description="Maximum number of transactions to return", ge=1, le=100)
+    ] = 20,
+    db: AsyncSession = Depends(get_db),
+) -> CreditTransactionsResponse:
+    """List transactions with optional filtering by transaction type and credit/debit.
+
+    You can use the `credit_debit` field to filter for debits or credits.
+    Alternatively, you can use `tx_type` to directly specify the transaction types you need.
+    For example, selecting `receive_fee_dev` and `reward` will query only those two types
+    of rewards; this way, topup will not be included.
+
+    Args:
+        user_id: ID of the user
+        tx_type: Optional filter for transaction type
+        credit_debit: Optional filter for credit or debit
+        cursor: Cursor for pagination
+        limit: Maximum number of transactions to return
+        db: Database session
+
+    Returns:
+        Response with list of transactions and pagination information
+    """
+    # First get the account ID for the user
+    account_query = select(CreditAccountTable.id).where(
+        CreditAccountTable.owner_type == OwnerType.USER,
+        CreditAccountTable.owner_id == user_id,
+    )
+    account_result = await db.execute(account_query)
+    account_id = account_result.scalar_one_or_none()
+
+    if not account_id:
+        # Return empty response if account doesn't exist
+        return CreditTransactionsResponse(
+            data=[],
+            has_more=False,
+            next_cursor=None,
+        )
+
+    # Build query for transactions
+    query = select(CreditTransactionTable).where(
+        CreditTransactionTable.account_id == account_id
+    )
+
+    # Apply optional filters
+    if tx_type:
+        query = query.where(CreditTransactionTable.tx_type.in_(tx_type))
+
+    if credit_debit:
+        query = query.where(CreditTransactionTable.credit_debit == credit_debit)
+
+    # Apply pagination
+    if cursor:
+        # Use ID directly as cursor since IDs are time-ordered
+        query = query.where(CreditTransactionTable.id < cursor)
+
+    # Order by created_at desc, id desc for consistent pagination
+    query = query.order_by(CreditTransactionTable.id.desc()).limit(
+        limit + 1
+    )  # Fetch one extra to determine if there are more
+
+    result = await db.execute(query)
+    transactions = result.scalars().all()
+
+    # Check if there are more results
+    has_more = len(transactions) > limit
+    if has_more:
+        transactions = transactions[:-1]  # Remove the extra item
+
+    # Generate next cursor
+    next_cursor = None
+    if has_more and transactions:
+        last_tx = transactions[-1]
+        next_cursor = last_tx.id
+
+    # Convert SQLAlchemy models to Pydantic models
+    tx_models = [CreditTransaction.model_validate(tx) for tx in transactions]
+
+    # Get all unique event IDs
+    event_ids = {tx.event_id for tx in tx_models}
+
+    # Fetch all related events in a single query
+    events_map = {}
+    if event_ids:
+        events_query = select(CreditEventTable).where(
+            CreditEventTable.id.in_(event_ids)
+        )
+        events_result = await db.execute(events_query)
+        events = events_result.scalars().all()
+
+        # Create a map of event_id to CreditEvent
+        events_map = {event.id: CreditEvent.model_validate(event) for event in events}
+
+    # Create response objects with associated events
+    tx_resp_models = []
+    for tx in tx_models:
+        tx_resp = CreditTransactionResp(
+            **tx.model_dump(), event=events_map.get(tx.event_id)
+        )
+        tx_resp_models.append(tx_resp)
+
+    return CreditTransactionsResponse(
+        data=tx_resp_models,
         has_more=has_more,
         next_cursor=next_cursor,
     )

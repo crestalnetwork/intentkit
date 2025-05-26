@@ -22,6 +22,10 @@ def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
             prompt += f"Your twitter username is {agent_data.twitter_username}.\n"
         if agent_data.twitter_name:
             prompt += f"Your twitter name is {agent_data.twitter_name}.\n"
+        if agent_data.twitter_is_verified:
+            prompt += "Your twitter account is verified.\n"
+        else:
+            prompt += "Your twitter account is not verified.\n"
         if agent_data.telegram_id:
             prompt += f"Your telegram bot id is {agent_data.telegram_id}.\n"
         if agent_data.telegram_username:

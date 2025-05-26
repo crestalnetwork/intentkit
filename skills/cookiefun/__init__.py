@@ -1,33 +1,33 @@
-"""Cookie.fun analytics skills."""
-
 from typing import TypedDict
 
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
-from skills.cookiefun.base import CookieFunBaseTool
-from skills.cookiefun.generate_image import GenerateImage
-from skills.cookiefun.get_ai_response import GetAIResponse
-from skills.cookiefun.get_country_time import GetCountryTime
-from skills.cookiefun.get_crypto import GetCrypto
-from skills.cookiefun.translate_text import TranslateText
+from skills.cookiefun.base import CookieFunBaseTool, logger
+from skills.cookiefun.get_account_details import GetAccountDetails
+from skills.cookiefun.get_account_feed import GetAccountFeed
+from skills.cookiefun.get_account_smart_followers import GetAccountSmartFollowers
+from skills.cookiefun.get_sectors import GetSectors
+from skills.cookiefun.search_accounts import SearchAccounts
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, CookieFunBaseTool] = {}
 
 
 class SkillStates(TypedDict):
-    get_country_time: SkillState
-    get_ai_response: SkillState
-    generate_image: SkillState
-    translate_text: SkillState
-    get_crypto: SkillState
+    """States for CookieFun skills."""
+
+    get_sectors: SkillState
+    get_account_details: SkillState
+    get_account_smart_followers: SkillState
+    search_accounts: SkillState
+    get_account_feed: SkillState
 
 
 class Config(SkillConfig):
-    """Configuration for Cookie.fun skills."""
+    """Configuration for CookieFun skills."""
 
     states: SkillStates
-    api_key: str  # Cookie.fun API key
+    api_key: str
 
 
 async def get_skills(
@@ -36,7 +36,7 @@ async def get_skills(
     store: SkillStoreABC,
     **_,
 ) -> list[CookieFunBaseTool]:
-    """Get all Cookie.fun skills."""
+    """Get all CookieFun skills."""
     available_skills = []
 
     # Include skills based on their state
@@ -47,25 +47,30 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_cookiefun_skill(name, store) for name in available_skills]
+    skills = [get_cookiefun_skill(name, store) for name in available_skills]
+    logger.info("Returning %d CookieFun skills", len(skills))
+    return skills
 
 
 def get_cookiefun_skill(
     name: str,
     store: SkillStoreABC,
 ) -> CookieFunBaseTool:
-    """Get a Cookie.fun skill by name."""
+    """Get a CookieFun skill by name."""
+
     if name not in _cache:
-        if name == "get_country_time":
-            _cache[name] = GetCountryTime(skill_store=store)
-        elif name == "get_ai_response":
-            _cache[name] = GetAIResponse(skill_store=store)
-        elif name == "generate_image":
-            _cache[name] = GenerateImage(skill_store=store)
-        elif name == "translate_text":
-            _cache[name] = TranslateText(skill_store=store)
-        elif name == "get_crypto":
-            _cache[name] = GetCrypto(skill_store=store)
+        if name == "get_sectors":
+            _cache[name] = GetSectors(skill_store=store)
+        elif name == "get_account_details":
+            _cache[name] = GetAccountDetails(skill_store=store)
+        elif name == "get_account_smart_followers":
+            _cache[name] = GetAccountSmartFollowers(skill_store=store)
+        elif name == "search_accounts":
+            _cache[name] = SearchAccounts(skill_store=store)
+        elif name == "get_account_feed":
+            _cache[name] = GetAccountFeed(skill_store=store)
         else:
-            raise ValueError(f"Unknown Cookie.fun skill: {name}")
+            logger.error("Unknown CookieFun skill: %s", name)
+            raise ValueError(f"Unknown CookieFun skill: {name}")
+
     return _cache[name]

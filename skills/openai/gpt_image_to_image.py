@@ -3,7 +3,7 @@
 import base64
 import logging
 from io import BytesIO
-from typing import Type
+from typing import Literal, Type
 
 import httpx
 import openai
@@ -26,11 +26,11 @@ class GPTImageToImageInput(BaseModel):
     prompt: str = Field(
         description="Text prompt describing the desired edits to the image.",
     )
-    size: str = Field(
+    size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = Field(
         default="auto",
         description="Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto",
     )
-    quality: str = Field(
+    quality: Literal["high", "medium", "low", "auto"] = Field(
         default="auto",
         description="Quality of the generated image. Options: high, medium, low, auto",
     )
@@ -62,8 +62,8 @@ class GPTImageToImage(OpenAIBaseTool):
         self,
         image_url: str,
         prompt: str,
-        size: str = "auto",
-        quality: str = "auto",
+        size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = "auto",
+        quality: Literal["high", "medium", "low", "auto"] = "auto",
         config: RunnableConfig = None,
         **kwargs,
     ) -> str:

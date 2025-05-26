@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any, List, Optional, Tuple
+from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from epyxid import XID
 from fastapi import HTTPException
@@ -309,7 +309,7 @@ class CreditAccount(BaseModel):
         owner_type: OwnerType,
         owner_id: str,
         amount: Decimal,
-    ) -> Tuple["CreditAccount", CreditType]:
+    ) -> Tuple["CreditAccount", Dict[CreditType, Decimal]]:
         """Expense credits and return account and credit type.
         We are not checking balance here, since a conversation may have
         multiple expenses, we can't interrupt the conversation.
@@ -318,11 +318,38 @@ class CreditAccount(BaseModel):
         account = await cls.get_or_create_in_session(session, owner_type, owner_id)
 
         # expense
-        credit_type = CreditType.PERMANENT
-        if amount <= account.free_credits:
-            credit_type = CreditType.FREE
-        elif amount <= account.reward_credits:
-            credit_type = CreditType.REWARD
+        details = {}
+
+        amount_left = amount
+
+        if amount_left <= account.free_credits:
+            details[CreditType.FREE] = amount_left
+            amount_left = Decimal("0")
+        else:
+            if account.free_credits > 0:
+                details[CreditType.FREE] = account.free_credits
+                amount_left -= account.free_credits
+            if amount_left <= account.reward_credits:
+                details[CreditType.REWARD] = amount_left
+                amount_left = Decimal("0")
+            else:
+                if account.reward_credits > 0:
+                    details[CreditType.REWARD] = account.reward_credits
+                    amount_left -= account.reward_credits
+                details[CreditType.PERMANENT] = amount_left
+
+        # Create values dict based on what's in details, defaulting to 0 for missing keys
+        values_dict = {
+            "expense_at": datetime.now(timezone.utc),
+        }
+
+        # Add credit type values only if they exist in details
+        for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
+            if credit_type in details:
+                values_dict[credit_type.value] = (
+                    getattr(CreditAccountTable, credit_type.value)
+                    - details[credit_type]
+                )
 
         stmt = (
             update(CreditAccountTable)
@@ -330,19 +357,13 @@ class CreditAccount(BaseModel):
                 CreditAccountTable.owner_type == owner_type,
                 CreditAccountTable.owner_id == owner_id,
             )
-            .values(
-                {
-                    credit_type.value: getattr(CreditAccountTable, credit_type.value)
-                    - amount,
-                    "expense_at": datetime.now(timezone.utc),
-                }
-            )
+            .values(values_dict)
             .returning(CreditAccountTable)
         )
         res = await session.scalar(stmt)
         if not res:
             raise HTTPException(status_code=500, detail="Failed to expense credits")
-        return cls.model_validate(res), credit_type
+        return cls.model_validate(res), details
 
     def has_sufficient_credits(self, amount: Decimal) -> bool:
         """Check if the account has enough credits to cover the specified amount.
@@ -452,10 +473,14 @@ class CreditAccount(BaseModel):
                 direction=Direction.INCOME,
                 account_id=account.id,
                 credit_type=CreditType.FREE,
+                credit_types=[CreditType.FREE],
                 total_amount=free_quota,
                 balance_after=free_quota,
                 base_amount=free_quota,
                 base_original_amount=free_quota,
+                free_amount=free_quota,  # Set free_amount since this is a free credit refill
+                reward_amount=Decimal("0"),  # No reward credits involved
+                permanent_amount=Decimal("0"),  # No permanent credits involved
                 note="Initial refill",
             )
             session.add(event)
@@ -570,6 +595,7 @@ class CreditAccount(BaseModel):
 class EventType(str, Enum):
     """Type of credit event."""
 
+    MEMORY = "memory"
     MESSAGE = "message"
     SKILL_CALL = "skill_call"
     RECHARGE = "recharge"
@@ -649,7 +675,15 @@ class CreditEventTable(Base):
         String,
         nullable=True,
     )
+    model = Column(
+        String,
+        nullable=True,
+    )
     skill_call_id = Column(
+        String,
+        nullable=True,
+    )
+    skill_name = Column(
         String,
         nullable=True,
     )
@@ -788,8 +822,14 @@ class CreditEvent(BaseModel):
     message_id: Annotated[
         Optional[str], Field(None, description="ID of the message if applicable")
     ]
+    model: Annotated[
+        Optional[str], Field(None, description="LLM model used if applicable")
+    ]
     skill_call_id: Annotated[
         Optional[str], Field(None, description="ID of the skill call if applicable")
+    ]
+    skill_name: Annotated[
+        Optional[str], Field(None, description="Name of the skill if applicable")
     ]
     direction: Annotated[Direction, Field(description="Direction of the credit flow")]
     total_amount: Annotated[

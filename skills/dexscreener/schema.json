@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Dexscreener",
+    "description": "Integration with DexScreener API, enabling crypto token pair information",
+    "type": "object",
+    "x-icon": "https://ai.service.crestal.dev/skills/dexscreener/dexscreener.png",
+    "x-tags": [
+        "Crypto",
+        "Market Data",
+        "Finance",
+        "Blockchain"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the Dexscreener skill.",
+            "default": true
+        },
+        "states": {
+            "type": "object",
+            "title": "Skill States",
+            "description": "Enable/disable specific tools. Only enable one if you want a consistent characteristic for your agent",
+            "properties": {
+                "search_token": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Searches on DexScreener for token pairs matching a query (symbol, name, address). Returns up to 50 pairs sorted by 'liquidity' or 'volume24h' (required input), including price, volume, etc. Use this tool to find token information based on user queries.",
+                    "default": "disabled"
+                }
+                
+            }
+        }
+    },
+    "required": [
+        "enabled",
+        "states"
+    ],
+  "additionalProperties": true
+}

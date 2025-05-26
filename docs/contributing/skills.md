@@ -309,7 +309,7 @@ Please find in the [pyproject.toml](https://github.com/crestalnetwork/intentkit/
 
 Like for http client, we suggest you use the async client of `httpx`.
 
-If you need to use other packages, please add them to the pyproject.toml use `poetry add`.
+If you need to use other packages, please add them to the pyproject.toml use `uv add`.
 
 ### How to store data in skill
 

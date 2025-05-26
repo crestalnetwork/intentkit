@@ -21,7 +21,10 @@ class TwitterReplyTweetInput(BaseModel):
     """Input for TwitterReplyTweet tool."""
 
     tweet_id: str = Field(description="The ID of the tweet to reply to")
-    text: str = Field(description="The text content of the reply tweet", max_length=280)
+    text: str = Field(
+        description="Tweet text (280 chars for regular users, 25,000 bytes for verified)",
+        max_length=25000,
+    )
     image: Optional[str] = Field(
         default=None, description="Optional URL of an image to attach to the reply"
     )

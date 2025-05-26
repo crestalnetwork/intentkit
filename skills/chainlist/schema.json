@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Chainlist Skills",
+  "description": "Access blockchain RPC endpoints and network information from chainlist.org. Enable this skill to look up EVM-compatible networks by name, symbol, or chain ID and get their RPC endpoints, native currencies, and explorer links.",
+  "x-icon": "https://ai.service.crestal.dev/skills/chainlist/chainlist.png",
+  "x-tags": [
+    "Blockchain",
+    "RPC",
+    "EVM",
+    "Network"
+  ],
+  "properties": {
+    "states": {
+      "type": "object",
+      "properties": {
+        "chain_lookup": {
+          "type": "string",
+          "title": "Chain Lookup",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "description": "Enables looking up blockchain RPC endpoints and network information. When public, available to all users; when private, only to authenticated users."
+        }
+      },
+      "description": "Configure visibility for chainlist skills (disabled: unavailable, public: available to all, private: available only to authenticated users)"
+    }
+  },
+  "required": ["states"],
+  "additionalProperties": true
+} 

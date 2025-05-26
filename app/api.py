@@ -13,6 +13,7 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.admin import (
@@ -31,7 +32,8 @@ from app.core.api import core_router
 from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
-from models.db import init_db
+from models.agent import AgentTable
+from models.db import get_session, init_db
 from models.redis import init_redis
 from utils.error import (
     IntentKitAPIError,
@@ -77,6 +79,9 @@ async def lifespan(app: FastAPI):
             host=config.redis_host,
             port=config.redis_port,
         )
+
+    # Create example agent if no agents exist
+    await create_example_agent()
 
     logger.info("API server start")
     yield
@@ -127,3 +132,36 @@ app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
 app.include_router(health_router)
+
+
+async def create_example_agent() -> None:
+    """Create an example agent if no agents exist in the database.
+
+    Creates an agent with ID 'example' and basic configuration if the agents table is empty.
+    The agent is configured with the 'common' skill with 'current_time' state set to 'public'.
+    """
+    try:
+        async with get_session() as session:
+            # Check if any agents exist - more efficient count query
+            result = await session.execute(
+                select(select(AgentTable.id).limit(1).exists().label("exists"))
+            )
+            if result.scalar():
+                logger.debug("Example agent not created: agents already exist")
+                return  # Agents exist, nothing to do
+
+            # Create example agent
+            example_agent = AgentTable(
+                id="example",
+                name="Example",
+                skills={
+                    "common": {"states": {"current_time": "public"}, "enabled": True}
+                },
+            )
+
+            session.add(example_agent)
+            await session.commit()
+            logger.info("Created example agent with ID 'example'")
+    except Exception as e:
+        logger.error(f"Failed to create example agent: {str(e)}")
+        # Don't re-raise the exception to avoid blocking server startup
