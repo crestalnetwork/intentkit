@@ -65,6 +65,7 @@ from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
 from models.skill import AgentSkillData, Skill, ThreadSkillData
+from models.user import User
 from skills.acolyt import get_acolyt_skill
 from skills.allora import get_allora_skill
 from skills.cdp.get_balance import GetBalance
@@ -478,6 +479,24 @@ async def execute_agent(
 
     # check user balance
     if need_payment:
+        if agent.fee_percentage > 100:
+            owner = await User.get(agent.owner)
+            if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
+                error_message_create = ChatMessageCreate(
+                    id=str(XID()),
+                    agent_id=input.agent_id,
+                    chat_id=input.chat_id,
+                    user_id=input.user_id,
+                    author_id=input.agent_id,
+                    author_type=AuthorType.SYSTEM,
+                    thread_type=input.author_type,
+                    reply_to=input.id,
+                    message="If you are the owner of this agent, please Update the Service Fee % to be in compliance with the Nation guidelines (Max 100% + 10% per Nation Pass NFT held)",
+                    time_cost=time.perf_counter() - start,
+                )
+                error_message = await error_message_create.save()
+                resp.append(error_message)
+                return resp
         quota = await AgentQuota.get(message.agent_id)
         if quota and quota.free_income_daily > 24000:
             error_message_create = ChatMessageCreate(
