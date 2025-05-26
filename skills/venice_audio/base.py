@@ -1,10 +1,10 @@
 import logging
-from typing import Optional, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, Field
 
 from abstracts.skill import SkillStoreABC
-from skills.base import IntentKitSkill, SkillContext
+from skills.base import IntentKitSkill, SkillContext, ToolException
 
 logger = logging.getLogger(__name__)
 
@@ -12,46 +12,83 @@ logger = logging.getLogger(__name__)
 class VeniceAudioBaseTool(IntentKitSkill):
     """Base class for Venice Audio tools."""
 
-    name: str = Field(description="The name of the tool")
+    name: str = Field(default="venice_base_tool", description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: Type[BaseModel]  # type: ignore
     skill_store: SkillStoreABC = Field(
         description="The skill store for persisting data"
-    )
-    voice_model: str = Field(
-        description="REQUIRED identifier for the specific Venice AI voice model to use for TTS generation (e.g., 'af_sky', 'am_echo'). This must be set per tool instance."
     )
 
     @property
     def category(self) -> str:
         return "venice_audio"
 
-    def get_api_key(self, context: SkillContext) -> Optional[str]:
-        """Gets Venice AI API Key, checking agent and system configs."""
-        category_config = context.config  # Config specific to 'venice_audio' category
-        agent_api_key = category_config.get("api_key")
-        if agent_api_key:
-            # Use self.name which is 'venice_audio_text_to_speech' here. Could use category for logging too.
-            logger.debug(
-                f"Using agent-specific Venice API key for audio skill {self.name} (Voice: {self.voice_model})"
-            )
-            return agent_api_key
+    def validate_voice_model(
+        self, context: SkillContext, voice_model: str
+    ) -> Tuple[bool, Optional[Dict[str, object]]]:
+        config = context.config
 
-        # Check system config for category-specific key, then generic key
-        system_api_key = self.skill_store.get_system_config(
-            f"{self.category}_api_key"
-        ) or self.skill_store.get_system_config("venice_api_key")
-        if system_api_key:
-            logger.debug(
-                f"Using system Venice API key for audio skill {self.name} (Voice: {self.voice_model})"
-            )
-            return system_api_key
+        selected_model = config.get("voice_model")
+        custom_models = config.get("voice_model_custom", [])
 
-        logger.warning(
-            f"No Venice API key found in agent ({self.category}) or system config for skill {self.name}"
-        )
-        # Let _arun handle the missing key error if it's critical
-        return None
+        allowed_voice_models: List[str] = []
+
+        if selected_model == "custom":
+            allowed_voice_models = custom_models or []
+        else:
+            allowed_voice_models = [selected_model] if selected_model else []
+
+        if voice_model not in allowed_voice_models:
+            return False, {
+                "error": f'"{voice_model}" is not allowed',
+                "allowed": allowed_voice_models,
+                "suggestion": "please try again with allowed voice model",
+            }
+
+        return True, None
+
+    def get_api_key(self, context: SkillContext) -> str:
+        """
+        Retrieves the Venice AI API key based on the api_key_provider setting.
+
+        Returns:
+            The API key if found.
+
+        Raises:
+            ToolException: If the API key is not found or provider is invalid.
+        """
+        try:
+            skillConfig = context.config
+            api_key_provider = skillConfig.get("api_key_provider")
+            if api_key_provider == "agent_owner":
+                agent_api_key = context.config.get("api_key")
+                if agent_api_key:
+                    logger.debug(
+                        f"Using agent-specific Venice API key for skill {self.name} in category {self.category}"
+                    )
+                    return agent_api_key
+                raise ToolException(
+                    f"No agent-owned Venice API key found for skill '{self.name}' in category '{self.category}'."
+                )
+
+            elif api_key_provider == "platform":
+                system_api_key = self.skill_store.get_system_config("venice_api_key")
+                if system_api_key:
+                    logger.debug(
+                        f"Using system Venice API key for skill {self.name} in category {self.category}"
+                    )
+                    return system_api_key
+                raise ToolException(
+                    f"No platform-hosted Venice API key found for skill '{self.name}' in category '{self.category}'."
+                )
+
+            else:
+                raise ToolException(
+                    f"Invalid API key provider '{api_key_provider}' for skill '{self.name}'"
+                )
+
+        except Exception as e:
+            raise ToolException(f"Failed to retrieve Venice API key: {str(e)}") from e
 
     async def apply_rate_limit(self, context: SkillContext) -> None:
         """
@@ -71,10 +108,10 @@ class VeniceAudioBaseTool(IntentKitSkill):
         if limit_num and limit_min:
             limit_source = "Agent"
             logger.debug(
-                f"Applying {limit_source} rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name} (Voice: {self.voice_model})"
+                f"Applying {limit_source} rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
             )
-            # This call might raise ConnectionAbortedError if the limit is hit
-            await self.user_rate_limit_by_category(user_id, limit_num, limit_min)
+            if user_id:
+                await self.user_rate_limit_by_category(user_id, limit_num, limit_min)
         else:
             # No valid agent configuration found, so do nothing.
             logger.debug(

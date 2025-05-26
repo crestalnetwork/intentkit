@@ -19,6 +19,10 @@ class VeniceAudioInput(BaseModel):
         max_length=4096,  # As per API docs: The maximum length is 4096 characters.
     )
 
+    voice_model: str = Field(
+        description="voice model to used to generate voice from text_to_speech tool."
+    )
+
     speed: Optional[float] = Field(
         default=1.0,  # As per API docs: default: 1 (using float for consistency)
         description="The speed of the generated audio. 1.0 is normal speed. Allowed range: 0.25 to 4.0.",
