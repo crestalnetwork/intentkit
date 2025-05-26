@@ -122,7 +122,8 @@
                         "x-link": "[Supported Voice Model](https://docs.venice.ai/api-reference/endpoint/audio/speech#body-voice)",
                         "description": "You can add one or more custom voice models.",
                         "default": [
-                            "af_heart", "bm_lewis"
+                            "af_heart",
+                            "bm_lewis"
                         ]
                     }
                 },
