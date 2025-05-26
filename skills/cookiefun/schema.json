@@ -106,16 +106,14 @@
     "api_key_provider": {
       "type": "string",
       "title": "API Key Provider",
-      "description": "Choose whether to use a platform-provided API key or provide your own CookieFun API key",
+      "description": "Provider of the API key for CookieFun API service",
       "enum": [
-        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
-        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "platform"
+      "default": "agent_owner"
     }
   },
   "required": [
@@ -134,7 +132,7 @@
       "api_key": {
         "type": "string",
         "title": "CookieFun API Key",
-        "description": "Your personal CookieFun API key, required when using Owner Provided option (sign up at cookie.fun)",
+        "description": "Your personal CookieFun API key (sign up at cookie.fun)",
         "x-sensitive": true,
         "x-link": "[Get your API key](https://cookie.fun/)"
       }
