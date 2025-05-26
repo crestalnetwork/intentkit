@@ -479,7 +479,7 @@ async def execute_agent(
 
     # check user balance
     if need_payment:
-        if agent.fee_percentage > 100:
+        if agent.fee_percentage and agent.fee_percentage > 100:
             owner = await User.get(agent.owner)
             if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
                 error_message_create = ChatMessageCreate(
