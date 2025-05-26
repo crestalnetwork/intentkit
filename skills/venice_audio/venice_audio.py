@@ -1,119 +1,246 @@
+import hashlib
+import json
 import logging
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Type
 
+import httpx
+
+# ClientError is still imported for type hinting in the original 'store_file_bytes' if needed,
+# but we won't specifically catch it here, it will be caught by the general 'Exception'.
+# from botocore.exceptions import ClientError
+from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from abstracts.skill import SkillStoreABC
-from skills.base import IntentKitSkill, SkillContext, ToolException
+from skills.venice_audio.base import VeniceAudioBaseTool
+from skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
+from utils.s3 import FileType, store_file_bytes
 
 logger = logging.getLogger(__name__)
 
+base_url = "https://api.venice.ai"
 
-class VeniceAudioBaseTool(IntentKitSkill):
-    """Base class for Venice Audio tools."""
 
-    name: str = Field(default="venice_base_tool", description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]  # type: ignore
+class VeniceAudioTool(VeniceAudioBaseTool):
+    """
+    Tool for generating audio using the Venice AI Text-to-Speech API (/audio/speech).
+    It requires a specific 'voice_model' to be configured for the instance.
+    Handles API calls, rate limiting, storage, and returns results or API errors as dictionaries.
+
+    On successful audio generation, returns a dictionary with audio details.
+    On Venice API error (non-200 status), returns a dictionary containing
+    the error details from the API response instead of raising an exception.
+    """
+
+    name: str = "venice_audio_text_to_speech"
+    description: str = (
+        "Converts text to speech using a configured Venice AI voice model. "
+        "Requires input text. Optional parameters include speed (0.25-4.0, default 1.0) "
+        "and audio format (mp3, opus, aac, flac, wav, pcm, default mp3)."
+    )
+    args_schema: Type[BaseModel] = VeniceAudioInput
     skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
+        description="The skill store instance for accessing system/agent configurations and persisting data."
     )
 
-    @property
-    def category(self) -> str:
-        return "venice_audio"
+    async def _arun(
+        self,
+        input: str,
+        voice_model: str,
+        config: RunnableConfig,
+        speed: Optional[float] = 1.0,
+        response_format: Optional[AllowedAudioFormat] = "mp3",
+        **kwargs,  # type: ignore
+    ) -> Dict[str, Any]:
+        """
+        Generates audio using the configured voice model via Venice AI TTS /audio/speech endpoint.
+        Stores the resulting audio using store_file_bytes.
+        Returns a dictionary containing audio details on success, or API error details on failure.
+        """
+        context = self.context_from_config(config)
+        final_response_format = response_format if response_format else "mp3"
+        tts_model_id = "tts-kokoro"  # API model used
 
-    def validate_voice_model(
-        self, context: SkillContext, voice_model: str
-    ) -> Tuple[bool, Optional[Dict[str, object]]]:
-        config = context.config
+        try:
+            # --- Setup Checks ---
+            api_key = self.get_api_key(context)
 
-        selected_model = config.get("voice_model")
-        custom_models = config.get("voice_model_custom", [])
+            _, error_info = self.validate_voice_model(context, voice_model)
+            if error_info:
+                return error_info
 
-        allowed_voice_models: List[str] = []
+            if not api_key:
+                message = (
+                    f"Venice AI API key configuration missing for skill '{self.name}'."
+                )
+                details = f"API key not found for category '{self.category}'. Please configure it."
+                logger.error(message)
+                return {
+                    "error": True,
+                    "error_type": "ConfigurationError",
+                    "message": message,
+                    "details": details,
+                    "voice_model": voice_model,
+                    "requested_format": final_response_format,
+                }
 
-        if selected_model == "custom":
-            allowed_voice_models = custom_models or []
-        else:
-            allowed_voice_models = [selected_model] if selected_model else []
+            if not voice_model:
+                message = (
+                    f"Instance of {self.name} was created without a 'voice_model'."
+                )
+                details = "Voice model must be specified for this tool instance."
+                logger.error(message)
+                return {
+                    "error": True,
+                    "error_type": "ConfigurationError",
+                    "message": message,
+                    "details": details,
+                    "voice_model": voice_model,
+                    "requested_format": final_response_format,
+                }
 
-        if voice_model not in allowed_voice_models:
-            return False, {
-                "error": f'"{voice_model}" is not allowed',
-                "allowed": allowed_voice_models,
-                "suggestion": "please try again with allowed voice model",
+            await self.apply_rate_limit(context)
+
+            # --- Prepare API Call ---
+            payload: Dict[str, Any] = {
+                "model": tts_model_id,
+                "input": input,
+                "voice": voice_model,
+                "response_format": final_response_format,
+                "speed": speed if speed is not None else 1.0,
+                "streaming": False,
             }
 
-        return True, None
+            payload = {k: v for k, v in payload.items() if v is not None}
 
-    def get_api_key(self, context: SkillContext) -> str:
-        """
-        Retrieves the Venice AI API key based on the api_key_provider setting.
+            logger.debug(
+                f"Venice Audio API Call: Voice='{voice_model}', Format='{final_response_format}', Payload='{payload}'"
+            )
 
-        Returns:
-            The API key if found.
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            api_url = f"{base_url}/api/v1/audio/speech"
 
-        Raises:
-            ToolException: If the API key is not found or provider is invalid.
-        """
-        try:
-            skillConfig = context.config
-            api_key_provider = skillConfig.get("api_key_provider")
-            if api_key_provider == "agent_owner":
-                agent_api_key = context.config.get("api_key")
-                if agent_api_key:
-                    logger.debug(
-                        f"Using agent-specific Venice API key for skill {self.name} in category {self.category}"
+            # --- Execute API Call ---
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(api_url, json=payload, headers=headers)
+                logger.debug(
+                    f"Venice Audio API Response: Voice='{voice_model}', Format='{final_response_format}', Status={response.status_code}"
+                )
+
+                content_type_header = str(
+                    response.headers.get("content-type", "")
+                ).lower()
+
+                # --- Handle API Success or Error from Response Body ---
+                if response.status_code == 200 and content_type_header.startswith(
+                    "audio/"
+                ):
+                    audio_bytes = response.content
+                    if not audio_bytes:
+                        message = (
+                            "API returned success status but response body was empty."
+                        )
+                        logger.warning(
+                            f"Venice Audio API (Voice: {voice_model}) returned 200 OK but empty audio content."
+                        )
+                        return {
+                            "error": True,
+                            "error_type": "NoContentError",
+                            "message": message,
+                            "status_code": response.status_code,
+                            "voice_model": voice_model,
+                            "requested_format": final_response_format,
+                        }
+
+                    # --- Store Audio ---
+                    file_extension = final_response_format
+                    audio_hash = hashlib.sha256(audio_bytes).hexdigest()
+                    key = f"{self.category}/{voice_model}/{audio_hash}.{file_extension}"
+
+                    size_limit = 1024 * 20  # 20Mb Size limit
+                    stored_url = await store_file_bytes(
+                        file_bytes=audio_bytes,
+                        key=key,
+                        file_type=FileType.AUDIO,
+                        size_limit_bytes=size_limit,
                     )
-                    return agent_api_key
-                raise ToolException(
-                    f"No agent-owned Venice API key found for skill '{self.name}' in category '{self.category}'."
-                )
 
-            elif api_key_provider == "platform":
-                system_api_key = self.skill_store.get_system_config("venice_api_key")
-                if system_api_key:
-                    logger.debug(
-                        f"Using system Venice API key for skill {self.name} in category {self.category}"
+                    if not stored_url:
+                        message = "Failed to store audio: S3 storage is not configured."
+                        logger.error(
+                            f"Failed to store audio (Voice: {voice_model}): S3 storage is not configured."
+                        )
+                        return {
+                            "error": True,
+                            "error_type": "StorageConfigurationError",
+                            "message": message,
+                            "voice_model": voice_model,
+                            "requested_format": final_response_format,
+                        }
+
+                    logger.info(
+                        f"Venice TTS success: Voice='{voice_model}', Format='{final_response_format}', Stored='{stored_url}'"
                     )
-                    return system_api_key
-                raise ToolException(
-                    f"No platform-hosted Venice API key found for skill '{self.name}' in category '{self.category}'."
-                )
+                    # --- Return Success Dictionary ---
+                    return {
+                        "audio_url": stored_url,
+                        "audio_bytes_sha256": audio_hash,
+                        "content_type": content_type_header,
+                        "voice_model": voice_model,
+                        "tts_engine": tts_model_id,
+                        "speed": speed if speed is not None else 1.0,
+                        "response_format": final_response_format,
+                        "input_text_length": len(input),
+                        "error": False,
+                        "status_code": response.status_code,
+                    }
+                else:
+                    # Non-200 API response or non-audio content
+                    error_details: Any = f"Raw error response text: {response.text}"
+                    try:
+                        parsed_details = response.json()
+                        error_details = parsed_details
+                    except json.JSONDecodeError:
+                        pass  # Keep raw text if JSON parsing fails
 
-            else:
-                raise ToolException(
-                    f"Invalid API key provider '{api_key_provider}' for skill '{self.name}'"
-                )
+                    message = "Venice Audio API returned a non-success status or unexpected content type."
+                    logger.error(
+                        f"Venice Audio API Error: Voice='{voice_model}', Format='{final_response_format}', Status={response.status_code}, Details: {error_details}"
+                    )
+                    return {
+                        "error": True,
+                        "error_type": "APIError",
+                        "message": message,
+                        "status_code": response.status_code,
+                        "details": error_details,
+                        "voice_model": voice_model,
+                        "requested_format": final_response_format,
+                    }
 
         except Exception as e:
-            raise ToolException(f"Failed to retrieve Venice API key: {str(e)}") from e
+            # Global exception handling for any uncaught error
+            error_type = type(
+                e
+            ).__name__  # Gets the class name of the exception (e.g., 'TimeoutException', 'ToolException')
+            message = f"An unexpected error occurred during audio generation for voice {voice_model}."
+            details = str(e)  # The string representation of the exception
 
-    async def apply_rate_limit(self, context: SkillContext) -> None:
-        """
-        Applies rate limiting ONLY if specified in the agent's config ('skill_config').
-        Checks for 'rate_limit_number' and 'rate_limit_minutes'.
-        If not configured, NO rate limiting is applied.
-        Raises ConnectionAbortedError if the configured limit is exceeded.
-        """
-        skill_config = context.config
-        user_id = context.user_id
-
-        # Get agent-specific limits safely
-        limit_num = skill_config.get("rate_limit_number")
-        limit_min = skill_config.get("rate_limit_minutes")
-
-        # Apply limit ONLY if both values are present and valid (truthy check handles None and 0)
-        if limit_num and limit_min:
-            limit_source = "Agent"
-            logger.debug(
-                f"Applying {limit_source} rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
+            # Log the error with full traceback for debugging
+            logger.error(
+                f"Venice Audio Tool Global Error ({error_type}): {message} | Details: {details}",
+                exc_info=True,
             )
-            if user_id:
-                await self.user_rate_limit_by_category(user_id, limit_num, limit_min)
-        else:
-            # No valid agent configuration found, so do nothing.
-            logger.debug(
-                f"No agent rate limits configured for category '{self.category}'. Skipping rate limit for user {user_id}."
-            )
+
+            # Return a generic but informative error dictionary
+            return {
+                "error": True,
+                "error_type": error_type,  # e.g., "TimeoutException", "ToolException", "ClientError", "ValueError"
+                "message": message,
+                "details": details,
+                "voice_model": voice_model,
+                "requested_format": final_response_format,
+                "status_code": None,  # We don't have an HTTP status code for generic exceptions
+            }
