@@ -38,4 +38,4 @@ class CookieFunBaseTool(IntentKitSkill):
         skill_config = context.config
         if skill_config.get("api_key_provider") == "agent_owner":
             return skill_config.get("api_key")
-        return self.skill_store.get_system_config("cookiefun_api_key")
+        return None
