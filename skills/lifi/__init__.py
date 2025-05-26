@@ -1,11 +1,11 @@
-from typing import TypedDict, List, Optional
 import logging
+from typing import List, Optional, TypedDict
 
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillState
 from skills.lifi.base import LiFiBaseTool
-from skills.lifi.token_quote import TokenQuote
 from skills.lifi.token_execute import TokenExecute
+from skills.lifi.token_quote import TokenQuote
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, LiFiBaseTool] = {}
@@ -57,18 +57,16 @@ def get_lifi_skill(
     # Create a cache key that includes configuration to ensure skills
     # with different configurations are treated as separate instances
     cache_key = f"{name}_{id(config)}"
-    
+
     # Extract configuration options
     default_slippage = config.get("default_slippage", 0.03)
     allowed_chains = config.get("allowed_chains", None)
     max_execution_time = config.get("max_execution_time", 300)
-    
+
     if name == "token_quote":
         if cache_key not in _cache:
-            logger.info(
-                "[LiFi_Skill] Initializing token_quote skill"
-            )
-            
+            logger.info("[LiFi_Skill] Initializing token_quote skill")
+
             _cache[cache_key] = TokenQuote(
                 skill_store=store,
                 default_slippage=default_slippage,
@@ -81,7 +79,7 @@ def get_lifi_skill(
             logger.info(
                 "[LiFi_Skill] Initializing token_execute skill - Note: CDP wallet is required"
             )
-            
+
             _cache[cache_key] = TokenExecute(
                 skill_store=store,
                 default_slippage=default_slippage,
@@ -91,4 +89,3 @@ def get_lifi_skill(
         return _cache[cache_key]
     else:
         raise ValueError(f"Unknown LiFi skill: {name}")
-

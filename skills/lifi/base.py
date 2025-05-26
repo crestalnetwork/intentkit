@@ -18,4 +18,4 @@ class LiFiBaseTool(IntentKitSkill):
 
     @property
     def category(self) -> str:
-        return "lifi" 
+        return "lifi"
