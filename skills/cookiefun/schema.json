@@ -10,6 +10,7 @@
     "Analytics",
     "X"
   ],
+  "x-nft-requirement": 10,
   "properties": {
     "enabled": {
       "type": "boolean",

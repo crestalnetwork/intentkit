@@ -80,7 +80,7 @@ class NationMetricsOutput(BaseModel):
 class FetchNationMetrics(DuneBaseTool):
     """Skill to fetch Crestal Nation metrics from Dune Analytics API."""
 
-    name: str = "fetch_nation_metrics"
+    name: str = "dune_fetch_nation_metrics"
     description: str = (
         "Fetches Crestal Nation metrics (e.g., total_users, agents/citizens, market_cap) from Dune Analytics API. "
         "Supports predefined metrics, direct query IDs, or all configured metrics if none specified. "
