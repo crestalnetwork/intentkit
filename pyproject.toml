@@ -6,7 +6,7 @@ authors = [{ name = "Ruihua", email = "ruihua@crestal.network" }]
 requires-python = "==3.12.*"
 readme = "README.md"
 dependencies = [
-    "langgraph (>=0.4.3,<0.5.0)",
+    "langgraph>=0.4.3,<0.5.0",
     "uvicorn>=0.34.0,<0.35.0",
     "fastapi>=0.115.8",
     "gunicorn>=23.0.0",

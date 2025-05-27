@@ -182,7 +182,9 @@
         "grok-3",
         "grok-3-mini",
         "eternalai",
-        "reigent"
+        "reigent",
+        "venice-uncensored",
+        "venice-llama-4-maverick-17b"
       ],
       "x-component": "category-select",
       "x-enum-title": [
@@ -197,7 +199,9 @@
         "Grok 3",
         "Grok 3 Mini",
         "Eternal AI (Llama-3.3-70B)",
-        "REI Network (Rei Core)"
+        "REI Network (Rei Core)",
+        "Venice Uncensored",
+        "Venice Llama-4 Maverick 17B"
       ],
       "x-enum-category": [
         "OpenAI",
@@ -211,9 +215,13 @@
         "Grok",
         "Grok",
         "Others",
-        "Others"
+        "Others",
+        "Venice",
+        "Venice"
       ],
       "x-support-skill": [
+        true,
+        true,
         true,
         true,
         true,
