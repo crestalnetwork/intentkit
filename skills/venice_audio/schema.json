@@ -18,6 +18,7 @@
         "voice_model": {
             "type": "string",
             "title": "Voice Model",
+            "x-link": "[Listen Voice Example](https://huggingface.co/spaces/hexgrad/Kokoro-TTS)",
             "enum": [
                 "af_heart",
                 "bm_lewis",
