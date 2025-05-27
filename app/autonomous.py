@@ -72,7 +72,7 @@ async def schedule_agent_autonomous_tasks():
     logger.info("Checking for agent autonomous tasks...")
 
     # List of jobs to schedule, will delete jobs not in this list
-    planned_jobs = [HEAD_JOB_ID]
+    planned_jobs = [HEAD_JOB_ID, "autonomous_heartbeat"]
 
     async with get_session() as db:
         # Get all agents with autonomous configuration
@@ -186,10 +186,9 @@ if __name__ == "__main__":
         if config.redis_host:
             scheduler.add_job(
                 send_autonomous_heartbeat,
-                "interval",
+                trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
                 id="autonomous_heartbeat",
-                minutes=1,
-                next_run_time=datetime.now(),
+                name="Autonomous Heartbeat",
                 replace_existing=True,
             )
 
