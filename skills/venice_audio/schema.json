@@ -11,11 +11,13 @@
     "properties": {
         "enabled": {
             "type": "boolean",
+            "title": "Enabled",
             "description": "Enable or disable the Venice Audio skill.",
             "default": false
         },
         "voice_model": {
             "type": "string",
+            "title": "Voice Model",
             "enum": [
                 "af_heart",
                 "bm_lewis",
@@ -27,7 +29,7 @@
                 "Custom"
             ],
             "description": "Text to speech tool",
-            "default": "disabled"
+            "default": "af_heart"
         },
         "states": {
             "type": "object",
@@ -36,6 +38,7 @@
             "properties": {
                 "text_to_speech": {
                     "type": "string",
+                    "title": "Text to Speech",
                     "enum": [
                         "disabled",
                         "public",
