@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "LiFi Token Transfer",
+  "description": "Cross-chain token transfer and swap capabilities using the LiFi protocol",
+  "x-icon": "https://ai.service.crestal.dev/skills/lifi/lifi.png",
+  "x-tags": [
+    "DeFi",
+    "Blockchain",
+    "Token Transfer",
+    "Cross-chain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "token_quote": {
+          "type": "string",
+          "title": "Token Quote",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "public",
+          "description": "Get token transfer quotes without executing transactions"
+        },
+        "token_execute": {
+          "type": "string",
+          "title": "Token Execute",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "private",
+          "description": "Execute token transfers (requires CDP wallet)"
+        }
+      },
+      "required": ["token_quote", "token_execute"],
+      "description": "States for each LiFi skill"
+    },
+    "default_slippage": {
+      "type": "number",
+      "title": "Default Slippage",
+      "description": "Default slippage tolerance for token transfers (e.g., 0.03 for 3%)",
+      "default": 0.03,
+      "minimum": 0.001,
+      "maximum": 0.5
+    },
+    "allowed_chains": {
+      "type": "array",
+      "title": "Allowed Chains",
+      "description": "List of blockchain networks that can be used (if empty, all supported chains are allowed)",
+      "items": {
+        "type": "string",
+        "examples": ["ETH", "POL", "ARB", "OPT", "DAI"]
+      },
+      "uniqueItems": true
+    },
+    "max_execution_time": {
+      "type": "integer",
+      "title": "Maximum Execution Time",
+      "description": "Maximum time (in seconds) to wait for transaction confirmation for token_execute",
+      "default": 300,
+      "minimum": 60,
+      "maximum": 1800
+    }
+  },
+  "required": ["states", "enabled"],
+  "additionalProperties": true
+} 
