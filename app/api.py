@@ -32,6 +32,7 @@ from app.core.api import core_router
 from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
+from app.services.agent_generator.router import router as agent_generator_router
 from models.agent import AgentTable
 from models.db import get_session, init_db
 from models.redis import init_redis
@@ -132,6 +133,7 @@ app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
 app.include_router(health_router)
+app.include_router(agent_generator_router)
 
 
 async def create_example_agent() -> None:
