@@ -449,6 +449,7 @@
         "venice_audio": {
           "title": "Venice Audio",
           "$ref": "../skills/venice_audio/schema.json"
+        },
         "dexscreener": {
           "title": "DEX Screener",
           "$ref": "../skills/dexscreener/schema.json"
