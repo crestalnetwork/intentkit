@@ -506,9 +506,10 @@ async def execute_agent(
             payer = agent.owner
         # user account
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
+        # quota
+        quota = await AgentQuota.get(message.agent_id)
         # agent abuse check
         if payer != agent.owner and user_account.free_credits > 0:
-            quota = await AgentQuota.get(message.agent_id)
             if quota and quota.free_income_daily > 24000:
                 error_message_create = ChatMessageCreate(
                     id=str(XID()),
