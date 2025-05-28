@@ -31,6 +31,10 @@ class Config(SkillConfig):
     api_key: Optional[str]
     voice_model_custom: Optional[list[str]]
 
+    # optional
+    rate_limit_number: Optional[int]
+    rate_limit_minutes: Optional[int]
+
 
 async def get_skills(
     config: "Config",

@@ -76,6 +76,35 @@
     "allOf": [
         {
             "if": {
+                "properties": {
+                    "voice_model": {
+                        "const": "custom"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "voice_model_custom": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Voice Model (Custom)",
+                        "x-link": "[Supported Voice Model](https://docs.venice.ai/api-reference/endpoint/audio/speech#body-voice)",
+                        "description": "You can add one or more custom voice models.",
+                        "default": [
+                            "af_heart",
+                            "bm_lewis"
+                        ]
+                    }
+                },
+                "required": [
+                    "voice_model_custom"
+                ]
+            }
+        },
+        {
+            "if": {
                 "allOf": [
                     {
                         "properties": {
@@ -101,39 +130,20 @@
                         "x-link": "[Get your API key](https://venice.ai/)",
                         "x-sensitive": true,
                         "description": "API Key for authenticating with the Venice AI API."
+                    },
+                    "rate_limit_number": {
+                        "type": "integer",
+                        "title": "Rate Limit Number",
+                        "description": "Number of requests allowed per time window."
+                    },
+                    "rate_limit_minutes": {
+                        "type": "integer",
+                        "title": "Rate Limit Minutes",
+                        "description": "Time window in minutes for rate limiting."
                     }
                 },
                 "required": [
                     "api_key"
-                ]
-            }
-        },
-        {
-            "if": {
-                "properties": {
-                    "voice_model": {
-                        "const": "custom"
-                    }
-                }
-            },
-            "then": {
-                "properties": {
-                    "voice_model_custom": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "title": "Voice Model (Custom)",
-                        "x-link": "[Supported Voice Model](https://docs.venice.ai/api-reference/endpoint/audio/speech#body-voice)",
-                        "description": "You can add one or more custom voice models.",
-                        "default": [
-                            "af_heart",
-                            "bm_lewis"
-                        ]
-                    }
-                },
-                "required": [
-                    "voice_model_custom"
                 ]
             }
         }
