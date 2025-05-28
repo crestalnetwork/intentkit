@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Venice Audio Skills",
+    "x-icon": "https://ai.service.crestal.dev/skills/venice_audio/venice_audio.jpg",
     "description": "Configuration for the Venice Audio skill.",
     "type": "object",
     "x-tags": [
