@@ -363,10 +363,7 @@ async def initialize_agent(aid, is_private=False):
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
-        if agent.model.startswith("deepseek"):
-            prompt_array.insert(1, ("system", escaped_append))
-        else:
-            prompt_array.append(("system", escaped_append))
+        prompt_array.append(("system", escaped_append))
 
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
@@ -385,12 +382,6 @@ async def initialize_agent(aid, is_private=False):
             {"messages": state["messages"], "entrypoint_prompt": entrypoint_prompt},
             config,
         )
-
-    # hack for deepseek r1, it doesn't support tools
-    if agent.model in [
-        "deepseek-reasoner",
-    ]:
-        tools = []
 
     # log all tools
     for tool in tools:
