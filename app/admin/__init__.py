@@ -1,3 +1,4 @@
+from app.admin.agent_generator_api import router as agent_generator_router
 from app.admin.api import admin_router, admin_router_readonly
 from app.admin.credit import credit_router, credit_router_readonly
 from app.admin.health import health_router
@@ -15,4 +16,5 @@ __all__ = [
     "metadata_router_readonly",
     "user_router",
     "user_router_readonly",
+    "agent_generator_router",
 ]
