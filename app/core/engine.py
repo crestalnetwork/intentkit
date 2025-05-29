@@ -363,10 +363,7 @@ async def initialize_agent(aid, is_private=False):
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
-        if agent.model.startswith("deepseek"):
-            prompt_array.insert(1, ("system", escaped_append))
-        else:
-            prompt_array.append(("system", escaped_append))
+        prompt_array.append(("system", escaped_append))
 
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
@@ -385,12 +382,6 @@ async def initialize_agent(aid, is_private=False):
             {"messages": state["messages"], "entrypoint_prompt": entrypoint_prompt},
             config,
         )
-
-    # hack for deepseek r1, it doesn't support tools
-    if agent.model in [
-        "deepseek-reasoner",
-    ]:
-        tools = []
 
     # log all tools
     for tool in tools:
@@ -497,30 +488,36 @@ async def execute_agent(
                 error_message = await error_message_create.save()
                 resp.append(error_message)
                 return resp
-        quota = await AgentQuota.get(message.agent_id)
-        if quota and quota.free_income_daily > 24000:
-            error_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                author_type=AuthorType.SYSTEM,
-                thread_type=input.author_type,
-                reply_to=input.id,
-                message="This Agent has reached its free CAP income limit for today! Start using paid CAPs or wait until this limit expires in less than 24 hours.",
-                time_cost=time.perf_counter() - start,
-            )
-            error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
+        # payer
         payer = input.user_id
         if (
             input.author_type == AuthorType.TELEGRAM
             or input.author_type == AuthorType.TWITTER
         ):
             payer = agent.owner
+        # user account
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
+        # quota
+        quota = await AgentQuota.get(message.agent_id)
+        # agent abuse check
+        if payer != agent.owner and user_account.free_credits > 0:
+            if quota and quota.free_income_daily > 24000:
+                error_message_create = ChatMessageCreate(
+                    id=str(XID()),
+                    agent_id=input.agent_id,
+                    chat_id=input.chat_id,
+                    user_id=input.user_id,
+                    author_id=input.agent_id,
+                    author_type=AuthorType.SYSTEM,
+                    thread_type=input.author_type,
+                    reply_to=input.id,
+                    message="This Agent has reached its free CAP income limit for today! Start using paid CAPs or wait until this limit expires in less than 24 hours.",
+                    time_cost=time.perf_counter() - start,
+                )
+                error_message = await error_message_create.save()
+                resp.append(error_message)
+                return resp
+        # avg cost
         avg_count = 1
         if quota and quota.avg_action_cost > 0:
             avg_count = quota.avg_action_cost

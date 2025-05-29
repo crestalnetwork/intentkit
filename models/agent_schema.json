@@ -178,6 +178,7 @@
         "gpt-4.1",
         "o4-mini",
         "deepseek-chat",
+        "deepseek-reasoner",
         "grok-2",
         "grok-3",
         "grok-3-mini",
@@ -195,6 +196,7 @@
         "GPT-4.1",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
+        "Deepseek R1 (0528)",
         "Grok 2",
         "Grok 3",
         "Grok 3 Mini",
@@ -211,6 +213,7 @@
         "OpenAI",
         "OpenAI",
         "Deepseek",
+        "Deepseek",
         "Grok",
         "Grok",
         "Grok",
@@ -220,6 +223,7 @@
         "Venice"
       ],
       "x-support-skill": [
+        true,
         true,
         true,
         true,
@@ -486,7 +490,6 @@
           "title": "Token Operations",
           "$ref": "../skills/token/schema.json"
         },
-
         "twitter": {
           "title": "X",
           "$ref": "../skills/twitter/schema.json"
@@ -531,7 +534,6 @@
           "title": "Moralis",
           "$ref": "../skills/moralis/schema.json"
         },
-
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
