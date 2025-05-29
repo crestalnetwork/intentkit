@@ -77,6 +77,7 @@ from skills.goat import (
     init_smart_wallets,
 )
 from skills.twitter import get_twitter_skill
+from utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -475,10 +476,16 @@ async def execute_agent(
 
     agent = await Agent.get(input.agent_id)
 
-    need_payment = await is_payment_required(input, agent)
+    need_payment = config.payment_enabled
 
     # check user balance
     if need_payment:
+        if not input.user_id or not agent.owner:
+            raise IntentKitAPIError(
+                500,
+                "PaymentError",
+                "Payment is enabled but user_id or agent owner is not set",
+            )
         if agent.fee_percentage and agent.fee_percentage > 100:
             owner = await User.get(agent.owner)
             if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
@@ -508,8 +515,16 @@ async def execute_agent(
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         # quota
         quota = await AgentQuota.get(message.agent_id)
+        # payment settings
+        payment_settings = await AppSetting.payment()
         # agent abuse check
-        if payer != agent.owner and user_account.free_credits > 0:
+        abuse_check = True
+        if (
+            payment_settings.agent_whitelist_enabled
+            and agent.id in payment_settings.agent_whitelist
+        ):
+            abuse_check = False
+        if abuse_check and payer != agent.owner and user_account.free_credits > 0:
             if quota and quota.free_income_daily > 24000:
                 error_message_create = ChatMessageCreate(
                     id=str(XID()),
