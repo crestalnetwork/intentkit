@@ -94,7 +94,7 @@ class OnchainQueryTool(CarvBaseTool):
                 }
 
             _normalize_unit(result, chain)
-            return result
+            return {"success": True, **result}
 
         except Exception as e:
             logger.error(f"An unexpected error occurred: {e}", exc_info=True)
@@ -117,15 +117,11 @@ def _normalize_unit(response_data: Dict[str, Any], chain: str) -> None:
     - Solana: 10^9 -> SOL
     - Bitcoin: 10^8 -> BTC
     """
-    if not response_data.get("data"):
-        return
-
-    data = response_data["data"]
-    column_infos = data.get("column_infos", [])
-    rows = data.get("rows", [])
+    column_infos = response_data.get("column_infos", [])
+    rows = response_data.get("rows", [])
 
     if "value" not in column_infos:
-        return  # Do nothing if 'value' is not present
+        return
 
     value_index = column_infos.index("value")
 
