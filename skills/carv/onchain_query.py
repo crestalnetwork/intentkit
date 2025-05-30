@@ -151,9 +151,18 @@ def _normalize_unit(response_data: Dict[str, Any], chain: str) -> None:
         if len(items) > value_index:
             original_value = items[value_index]
             try:
-                normalized = str(original_value).strip().upper()
-                value_decimal = Decimal(normalized)
+                normalized = str(original_value).strip()
+                try:
+                    value_decimal = Decimal(normalized)
+                except InvalidOperation:
+                    value_decimal = Decimal.from_float(float(normalized))
+
                 converted = value_decimal / divisor
-                items[value_index] = f"{converted.normalize()} {ticker}"
-            except (InvalidOperation, ValueError, AttributeError) as e:
+                formatted_value = (
+                    format(converted, "f").rstrip("0").rstrip(".")
+                    if "." in format(converted, "f")
+                    else format(converted, "f")
+                )
+                items[value_index] = f"{formatted_value} {ticker}"
+            except Exception as e:
                 logger.warning(f"Unable to normalize value '{original_value}': {e}")
