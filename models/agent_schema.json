@@ -329,6 +329,17 @@
       "x-group": "llm",
       "x-step": 0.1
     },
+    "short_term_memory_strategy": {
+      "title": "Short Term Memory Strategy",
+      "type": "string",
+      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+      "default": "trim",
+      "enum": [
+        "trim",
+        "summarize"
+      ],
+      "x-group": "llm"
+    },
     "cdp_enabled": {
       "title": "CDP Enabled",
       "type": "boolean",

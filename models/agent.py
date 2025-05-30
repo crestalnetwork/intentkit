@@ -296,6 +296,12 @@ class AgentTable(Base):
         default=0.0,
         comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
     )
+    short_term_memory_strategy = Column(
+        String,
+        nullable=True,
+        default="trim",
+        comment="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+    )
     # autonomous mode
     autonomous = Column(
         JSONB,
@@ -744,6 +750,16 @@ class AgentUpdate(BaseModel):
             description="The presence penalty is a measure of how much the AI is allowed to deviate from the topic. A higher value means the AI is more likely to deviate from the topic, while a lower value means the AI is more likely to follow the topic. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
             ge=-2.0,
             le=2.0,
+            json_schema_extra={
+                "x-group": "ai",
+            },
+        ),
+    ]
+    short_term_memory_strategy: Annotated[
+        Optional[Literal["trim", "summarize"]],
+        PydanticField(
+            default="trim",
+            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
             json_schema_extra={
                 "x-group": "ai",
             },
