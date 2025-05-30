@@ -35,7 +35,7 @@
           ],
           "x-price": 200,
           "x-price-self-key": 15,
-          "x-price-level": 3,
+          "x-price-level": 4,
           "description": "Convert images to detailed text descriptions using OpenAI's GPT-4o model",
           "default": "private"
         },
