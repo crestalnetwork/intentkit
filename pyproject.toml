@@ -14,7 +14,7 @@ dependencies = [
     "aws-secretsmanager-caching>=1.1.3",
     "boto3 (>=1.37.23,<2.0.0)",
     "botocore>=1.35.97",
-    "coinbase-agentkit==0.4.0",
+    "coinbase-agentkit==0.5.1",
     "coinbase-agentkit-langchain==0.3.0",
     "cron-validator (>=1.0.8,<2.0.0)",
     "epyxid>=0.3.3",
