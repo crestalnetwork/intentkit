@@ -1,0 +1,137 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "CARV",
+    "description": "Configuration for the CARV skill.",
+    "type": "object",
+    "x-icon": "https://ai.service.crestal.dev/skills/carv/carv.webp",
+    "x-tags": [
+        "AI",
+        "Data",
+        "Information",
+        "Analytics",
+        "Market Data"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable the CARV skill.",
+            "default": false
+        },
+        "states": {
+            "type": "object",
+            "title": "Skill States",
+            "description": "Enable/disable specific tools for CARV",
+            "properties": {
+                "onchain_query": {
+                    "type": "string",
+                    "title": "On-Chain Query",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "allows you to use the nature language to query the on-chain data. Behind the scean, CARV will use LLM model to interpreate the nature language input and convert into the sql query based on the above schemas",
+                    "default": "public"
+                },
+                "token_info_and_price": {
+                    "type": "string",
+                    "title": "Token Information and Price",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Fetches detailed information and current USD price of a cryptocurrency token from CARV API using its ticker symbol (e.g., 'eth', 'btc'), returning metadata like name, symbol, platform, categories, and contract addresses, useful for understanding its identity, ecosystem, market value, and for obtaining comprehensive token data with live pricing.",
+                    "default": "public"
+                },
+                "fetch_news": {
+                    "type": "string",
+                    "title": "Fetch News",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "retrieves a list of recent news items, each including a title, URL, and a short description",
+                    "default": "disabled"
+                }
+            }
+        },
+        "api_key_provider": {
+            "type": "string",
+            "title": "API Key Provider",
+            "description": "Provider of the API key",
+            "enum": [
+                "agent_owner",
+                "platform"
+            ],
+            "x-enum-title": [
+                "Owner Provided",
+                "Nation Hosted"
+            ],
+            "default": "platform"
+        }
+    },
+    "required": [
+        "enabled",
+        "states"
+    ],
+    "if": {
+        "allOf": [
+            {
+                "properties": {
+                    "enabled": {
+                        "const": true
+                    }
+                }
+            },
+            {
+                "properties": {
+                    "api_key_provider": {
+                        "const": "agent_owner"
+                    }
+                }
+            }
+        ]
+    },
+    "then": {
+        "properties": {
+            "api_key": {
+                "type": "string",
+                "title": "CARV API Key",
+                "x-link": "[Get your API key](https://docs.carv.io/d.a.t.a.-ai-framework/api-documentation#authentication)",
+                "x-sensitive": true,
+                "description": "API Key for authenticating with the CARV API."
+            },
+            "rate_limit_number": {
+                "type": "integer",
+                "title": "Rate Limit Number",
+                "description": "Number of requests allowed per time window."
+            },
+            "rate_limit_minutes": {
+                "type": "integer",
+                "title": "Rate Limit Minutes",
+                "description": "Time window in minutes for rate limiting."
+            }
+        },
+        "required": [
+            "api_key"
+        ]
+    },
+    "additionalProperties": true
+}

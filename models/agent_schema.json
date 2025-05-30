@@ -458,6 +458,10 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
+        "carv": {
+          "title": "Carv",
+          "$ref": "../skills/carv/schema.json"
+        },
         "allora": {
           "title": "Allora",
           "$ref": "../skills/allora/schema.json"
