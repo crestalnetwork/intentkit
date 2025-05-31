@@ -30,6 +30,7 @@ from models.credit import (
     CreditTransactionTable,
     Direction,
     EventType,
+    RewardType,
     OwnerType,
     TransactionType,
 )
@@ -90,6 +91,9 @@ class RewardRequest(BaseModel):
     amount: Annotated[Decimal, Field(gt=Decimal("0"), description="Amount to reward")]
     note: Annotated[
         Optional[str], Field(None, description="Optional note for the reward")
+    ]
+    reward_type: Annotated[
+        Optional[RewardType], Field(RewardType.REWARD, description="Type of reward event")
     ]
 
 
@@ -212,7 +216,7 @@ async def reward_user_account(
         The updated credit account
     """
     return await reward(
-        db, request.user_id, request.amount, request.upstream_tx_id, request.note
+        db, request.user_id, request.amount, request.upstream_tx_id, request.note, request.reward_type
     )
 
 

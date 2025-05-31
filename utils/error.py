@@ -63,10 +63,34 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
     )
 
 
+def format_validation_errors(errors: list) -> str:
+    """Format validation errors into a more readable string."""
+    formatted_errors = []
+    
+    for error in errors:
+        loc = error.get('loc', [])
+        msg = error.get('msg', '')
+        error_type = error.get('type', '')
+        
+        # Build field path
+        field_path = ' -> '.join(str(part) for part in loc if part != 'body')
+        
+        # Format the error message
+        if field_path:
+            formatted_error = f"Field '{field_path}': {msg}"
+        else:
+            formatted_error = msg
+            
+        formatted_errors.append(formatted_error)
+    
+    return '; '.join(formatted_errors)
+
+
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    formatted_msg = format_validation_errors(exc.errors())
     return JSONResponse(
         status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"error": "BadRequest", "msg": str(exc.errors())},
+        content={"error": "ValidationError", "msg": formatted_msg},
     )

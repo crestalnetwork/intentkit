@@ -29,6 +29,7 @@ from models.credit import (
     CreditType,
     Direction,
     EventType,
+    RewardType,
     OwnerType,
     TransactionType,
     UpstreamType,
@@ -148,6 +149,7 @@ async def reward(
     amount: Decimal,
     upstream_tx_id: str,
     note: Optional[str] = None,
+    reward_type: Optional[RewardType] = RewardType.REWARD,
 ) -> CreditAccount:
     """
     Reward a user account with reward credits.
@@ -158,6 +160,7 @@ async def reward(
         amount: Amount of reward credits to add
         upstream_tx_id: ID of the upstream transaction
         note: Optional note for the transaction
+        event_type: Type of reward event, defaults to RewardType.REWARD
 
     Returns:
         Updated user credit account
@@ -192,7 +195,7 @@ async def reward(
     event_id = str(XID())
     event = CreditEventTable(
         id=event_id,
-        event_type=EventType.REWARD,
+        event_type=reward_type,
         user_id=user_id,
         upstream_type=UpstreamType.API,
         upstream_tx_id=upstream_tx_id,
