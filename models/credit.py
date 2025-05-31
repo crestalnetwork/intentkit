@@ -592,6 +592,14 @@ class CreditAccount(BaseModel):
         return user_account
 
 
+class RewardType(str, Enum):
+    """Reward type enumeration for reward-specific events."""
+
+    REWARD = "reward"
+    EVENT_REWARD = "event_reward"
+    RECHARGE_BONUS = "recharge_bonus"
+
+
 class EventType(str, Enum):
     """Type of credit event."""
 
@@ -599,10 +607,19 @@ class EventType(str, Enum):
     MESSAGE = "message"
     SKILL_CALL = "skill_call"
     RECHARGE = "recharge"
-    REWARD = "reward"
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+
+    # Reference RewardType values
+    REWARD = RewardType.REWARD.value
+    EVENT_REWARD = RewardType.EVENT_REWARD.value
+    RECHARGE_BONUS = RewardType.RECHARGE_BONUS.value
+
+    @classmethod
+    def get_reward_types(cls):
+        """Get all reward-related event types"""
+        return [cls.REWARD, cls.EVENT_REWARD, cls.RECHARGE_BONUS]
 
 
 class UpstreamType(str, Enum):
@@ -966,10 +983,10 @@ class TransactionType(str, Enum):
     RECEIVE_FEE_AGENT = "receive_fee_agent"
     RECEIVE_FEE_PLATFORM = "receive_fee_platform"
     RECHARGE = "recharge"
-    REWARD = "reward"
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+    REWARD = "reward"
 
 
 class CreditDebit(str, Enum):
