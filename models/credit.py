@@ -594,7 +594,7 @@ class CreditAccount(BaseModel):
 
 class RewardType(str, Enum):
     """Reward type enumeration for reward-specific events."""
-    
+
     REWARD = "reward"
     EVENT_REWARD = "event_reward"
     RECHARGE_BONUS = "recharge_bonus"
@@ -610,12 +610,12 @@ class EventType(str, Enum):
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
-    
+
     # Reference RewardType values
     REWARD = RewardType.REWARD
     EVENT_REWARD = RewardType.EVENT_REWARD
     RECHARGE_BONUS = RewardType.RECHARGE_BONUS
-    
+
     @classmethod
     def get_reward_types(cls):
         """Get all reward-related event types"""

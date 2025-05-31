@@ -29,8 +29,8 @@ from models.credit import (
     CreditType,
     Direction,
     EventType,
-    RewardType,
     OwnerType,
+    RewardType,
     TransactionType,
     UpstreamType,
 )

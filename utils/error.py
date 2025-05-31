@@ -66,24 +66,27 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
 def format_validation_errors(errors: list) -> str:
     """Format validation errors into a more readable string."""
     formatted_errors = []
-    
+
     for error in errors:
-        loc = error.get('loc', [])
-        msg = error.get('msg', '')
-        error_type = error.get('type', '')
-        
+        loc = error.get("loc", [])
+        msg = error.get("msg", "")
+        error_type = error.get("type", "")
+
         # Build field path
-        field_path = ' -> '.join(str(part) for part in loc if part != 'body')
-        
-        # Format the error message
+        field_path = " -> ".join(str(part) for part in loc if part != "body")
+
+        # Format the error message with type information
         if field_path:
-            formatted_error = f"Field '{field_path}': {msg}"
+            if error_type:
+                formatted_error = f"Field '{field_path}' ({error_type}): {msg}"
+            else:
+                formatted_error = f"Field '{field_path}': {msg}"
         else:
             formatted_error = msg
-            
+
         formatted_errors.append(formatted_error)
-    
-    return '; '.join(formatted_errors)
+
+    return "; ".join(formatted_errors)
 
 
 async def request_validation_exception_handler(
