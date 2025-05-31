@@ -612,9 +612,9 @@ class EventType(str, Enum):
     REFILL = "refill"
 
     # Reference RewardType values
-    REWARD = RewardType.REWARD
-    EVENT_REWARD = RewardType.EVENT_REWARD
-    RECHARGE_BONUS = RewardType.RECHARGE_BONUS
+    REWARD = RewardType.REWARD.value
+    EVENT_REWARD = RewardType.EVENT_REWARD.value
+    RECHARGE_BONUS = RewardType.RECHARGE_BONUS.value
 
     @classmethod
     def get_reward_types(cls):
@@ -983,10 +983,10 @@ class TransactionType(str, Enum):
     RECEIVE_FEE_AGENT = "receive_fee_agent"
     RECEIVE_FEE_PLATFORM = "receive_fee_platform"
     RECHARGE = "recharge"
-    REWARD = "reward"
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+    REWARD = "reward"
 
 
 class CreditDebit(str, Enum):
