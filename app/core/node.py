@@ -120,3 +120,21 @@ class PreModelNode(RunnableCallable):
         raise ValueError(
             f"Invalid short_term_memory_strategy: {self.short_term_memory_strategy}"
         )
+
+class PostModelNode(RunnableCallable):
+    def __init__( self) -> None:
+        super().__init__(self._func, self._afunc, name="post_model_node", trace=False)
+        self.input_messages_key = "messages"
+        self.output_messages_key = "post_model_messages"
+
+    def _func(self, input: dict[str, Any] | BaseModel) -> dict[str, Any]:
+        raise NotImplementedError("Not implemented yet")
+
+    async def _afunc(
+        self,
+        input: dict[str, Any] | BaseModel,
+        config: RunnableConfig,
+        *,
+        store: Optional[BaseStore],
+    ) -> dict[str, Any]:
+        pass
