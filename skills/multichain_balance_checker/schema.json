@@ -1,0 +1,14 @@
+{
+  "name": "CheckBalance",
+  "description": "Check multichain wallet token balances and their USD value",
+  "parameters": {
+    "api_key": {
+      "type": "string",
+      "description": "Your Covalent API Key"
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "Wallet address to check balances for"
+    }
+  }
+}
