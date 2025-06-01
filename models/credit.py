@@ -610,11 +610,10 @@ class EventType(str, Enum):
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
-
-    # Reference RewardType values
-    REWARD = RewardType.REWARD.value
-    EVENT_REWARD = RewardType.EVENT_REWARD.value
-    RECHARGE_BONUS = RewardType.RECHARGE_BONUS.value
+    # Sync with RewardType values
+    REWARD = "reward"
+    EVENT_REWARD = "event_reward"
+    RECHARGE_BONUS = "recharge_bonus"
 
     @classmethod
     def get_reward_types(cls):
@@ -986,7 +985,10 @@ class TransactionType(str, Enum):
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+    # Sync with RewardType values
     REWARD = "reward"
+    EVENT_REWARD = "event_reward"
+    RECHARGE_BONUS = "recharge_bonus"
 
 
 class CreditDebit(str, Enum):
