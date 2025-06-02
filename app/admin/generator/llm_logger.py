@@ -36,7 +36,7 @@ class LLMLogger:
         retry_count: int = 0,
         is_update: bool = False,
         existing_agent_id: Optional[str] = None,
-        openai_model: Optional[str] = None,
+        llm_model: Optional[str] = None,
         openai_messages: Optional[List[Dict[str, Any]]] = None,
     ):
         """Context manager for logging an LLM call (simplified for conversation tracking).
@@ -47,7 +47,7 @@ class LLMLogger:
             retry_count: Retry attempt number (0 for initial, 1+ for retries)
             is_update: Whether this is an update operation
             existing_agent_id: ID of existing agent if update
-            openai_model: OpenAI model being used
+            llm_model: LLM model being used
             openai_messages: Messages being sent to OpenAI
 
         Yields:

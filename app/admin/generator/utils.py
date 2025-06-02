@@ -28,6 +28,7 @@ def extract_token_usage(response) -> Dict[str, Any]:
     usage_info = {
         "total_tokens": 0,
         "input_tokens": 0,
+        "cached_input_tokens": 0,
         "output_tokens": 0,
         "input_tokens_details": None,
         "completion_tokens_details": None,
@@ -50,6 +51,12 @@ def extract_token_usage(response) -> Dict[str, Any]:
                 if hasattr(usage.input_tokens_details, "__dict__")
                 else dict(usage.input_tokens_details)
             )
+
+            # Extract cached input tokens for cost calculation
+            if isinstance(usage_info["input_tokens_details"], dict):
+                usage_info["cached_input_tokens"] = usage_info[
+                    "input_tokens_details"
+                ].get("cached_tokens", 0)
 
         if (
             hasattr(usage, "completion_tokens_details")
@@ -131,7 +138,7 @@ Write a congratulatory message.""",
             prompt=f"Generate summary for agent: {agent_name}",
             retry_count=0,
             is_update=False,
-            openai_model="gpt-4.1-nano",
+            llm_model="gpt-4.1-nano",
             openai_messages=messages,
         ) as call_log:
             call_start_time = time.time()

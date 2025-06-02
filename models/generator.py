@@ -59,8 +59,8 @@ class AgentGenerationLogTable(Base):
         JSONB,
         nullable=True,
     )
-    # OpenAI API response data
-    openai_model = Column(
+    # LLM API response data
+    llm_model = Column(
         String,
         nullable=True,
     )
@@ -69,6 +69,10 @@ class AgentGenerationLogTable(Base):
         default=0,
     )
     input_tokens = Column(
+        Integer,
+        default=0,
+    )
+    cached_input_tokens = Column(
         Integer,
         default=0,
     )
@@ -167,9 +171,10 @@ class AgentGenerationLog(BaseModel):
     is_update: bool = False
     generated_agent_schema: Optional[dict] = None
     identified_skills: Optional[dict] = None
-    openai_model: Optional[str] = None
+    llm_model: Optional[str] = None
     total_tokens: int = 0
     input_tokens: int = 0
+    cached_input_tokens: int = 0
     output_tokens: int = 0
     input_tokens_details: Optional[dict] = None
     completion_tokens_details: Optional[dict] = None
@@ -216,9 +221,10 @@ class AgentGenerationLog(BaseModel):
         session: AsyncSession,
         generated_agent_schema: Optional[dict] = None,
         identified_skills: Optional[dict] = None,
-        openai_model: Optional[str] = None,
+        llm_model: Optional[str] = None,
         total_tokens: int = 0,
         input_tokens: int = 0,
+        cached_input_tokens: int = 0,
         output_tokens: int = 0,
         input_tokens_details: Optional[dict] = None,
         completion_tokens_details: Optional[dict] = None,
@@ -234,9 +240,10 @@ class AgentGenerationLog(BaseModel):
             session: Database session
             generated_agent_schema: The generated agent schema
             identified_skills: Skills identified during generation
-            openai_model: OpenAI model used
+            llm_model: LLM model used
             total_tokens: Total tokens used
             input_tokens: Input tokens used
+            cached_input_tokens: Cached input tokens used (for cost calculation)
             output_tokens: Output tokens used
             input_tokens_details: Detailed input token breakdown
             completion_tokens_details: Detailed completion token breakdown
@@ -254,9 +261,10 @@ class AgentGenerationLog(BaseModel):
         # Update fields
         log_record.generated_agent_schema = generated_agent_schema
         log_record.identified_skills = identified_skills
-        log_record.openai_model = openai_model
+        log_record.llm_model = llm_model
         log_record.total_tokens = total_tokens
         log_record.input_tokens = input_tokens
+        log_record.cached_input_tokens = cached_input_tokens
         log_record.output_tokens = output_tokens
         log_record.input_tokens_details = input_tokens_details
         log_record.completion_tokens_details = completion_tokens_details
@@ -274,9 +282,10 @@ class AgentGenerationLog(BaseModel):
         # Update this instance
         self.generated_agent_schema = log_record.generated_agent_schema
         self.identified_skills = log_record.identified_skills
-        self.openai_model = log_record.openai_model
+        self.llm_model = log_record.llm_model
         self.total_tokens = log_record.total_tokens
         self.input_tokens = log_record.input_tokens
+        self.cached_input_tokens = log_record.cached_input_tokens
         self.output_tokens = log_record.output_tokens
         self.input_tokens_details = log_record.input_tokens_details
         self.completion_tokens_details = log_record.completion_tokens_details

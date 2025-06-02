@@ -204,7 +204,7 @@ Make minimal changes based on the prompt. If this is part of an ongoing conversa
                 retry_count=0,
                 is_update=True,
                 existing_agent_id=getattr(existing_agent, "id", None),
-                openai_model="gpt-4.1-nano",
+                llm_model="gpt-4.1-nano",
                 openai_messages=messages,
             ) as call_log:
                 call_start_time = time.time()
@@ -353,7 +353,7 @@ If this is part of an ongoing conversation, consider the previous context while 
             prompt=prompt,
             retry_count=0,
             is_update=False,
-            openai_model="gpt-4.1-nano",
+            llm_model="gpt-4.1-nano",
             openai_messages=messages,
         ) as call_log:
             call_start_time = time.time()
@@ -559,9 +559,13 @@ async def generate_validated_agent(
                             session=session,
                             generated_agent_schema=schema,
                             identified_skills=list(identified_skills),
-                            openai_model="gpt-4.1-nano",
+                            llm_model="gpt-4.1-nano",
                             total_tokens=total_tokens_used,
                             input_tokens=total_input_tokens,
+                            cached_input_tokens=sum(
+                                usage.get("cached_input_tokens", 0)
+                                for usage in all_token_details
+                            ),
                             output_tokens=total_output_tokens,
                             generation_time_ms=int((time.time() - start_time) * 1000),
                             retry_count=attempt,
@@ -602,9 +606,12 @@ async def generate_validated_agent(
                 session=session,
                 generated_agent_schema=last_schema,
                 identified_skills=list(identified_skills),
-                openai_model="gpt-4.1-nano",
+                llm_model="gpt-4.1-nano",
                 total_tokens=total_tokens_used,
                 input_tokens=total_input_tokens,
+                cached_input_tokens=sum(
+                    usage.get("cached_input_tokens", 0) for usage in all_token_details
+                ),
                 output_tokens=total_output_tokens,
                 generation_time_ms=int((time.time() - start_time) * 1000),
                 retry_count=max_attempts,
@@ -622,9 +629,12 @@ async def generate_validated_agent(
                 session=session,
                 generated_agent_schema=last_schema,
                 identified_skills=list(identified_skills),
-                openai_model="gpt-4.1-nano",
+                llm_model="gpt-4.1-nano",
                 total_tokens=total_tokens_used,
                 input_tokens=total_input_tokens,
+                cached_input_tokens=sum(
+                    usage.get("cached_input_tokens", 0) for usage in all_token_details
+                ),
                 output_tokens=total_output_tokens,
                 generation_time_ms=int((time.time() - start_time) * 1000),
                 retry_count=max_attempts,
@@ -711,7 +721,7 @@ Please fix these errors and return the corrected agent schema as valid JSON.""",
             retry_count=retry_count,
             is_update=existing_agent is not None,
             existing_agent_id=getattr(existing_agent, "id", None),
-            openai_model="gpt-4.1-nano",
+            llm_model="gpt-4.1-nano",
             openai_messages=messages,
         ) as call_log:
             call_start_time = time.time()
