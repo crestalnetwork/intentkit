@@ -8,12 +8,18 @@ This module handles all AI-powered operations for agent generation including:
 
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from openai import OpenAI
 
 from app.config.config import config
 from models.agent import AgentUpdate
+from models.generator import (
+    AgentGenerationLog,
+    AgentGenerationLogCreate,
+)
+from models.db import get_session
 
 from .skill_processor import (
     AVAILABLE_SKILL_CATEGORIES,
@@ -46,12 +52,45 @@ ALLOWED_MODELS = [
 ]
 
 
+def _extract_token_usage(response) -> Dict[str, Any]:
+    """Extract token usage information from OpenAI response.
+    
+    Args:
+        response: OpenAI API response
+        
+    Returns:
+        Dict containing token usage information
+    """
+    usage_info = {
+        "total_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "input_tokens_details": None,
+        "completion_tokens_details": None,
+    }
+    
+    if hasattr(response, "usage") and response.usage:
+        usage = response.usage
+        usage_info["total_tokens"] = getattr(usage, "total_tokens", 0)
+        usage_info["input_tokens"] = getattr(usage, "prompt_tokens", 0) or getattr(usage, "input_tokens", 0)
+        usage_info["output_tokens"] = getattr(usage, "completion_tokens", 0) or getattr(usage, "output_tokens", 0)
+        
+        # Get detailed token information if available
+        if hasattr(usage, "input_tokens_details") and usage.input_tokens_details:
+            usage_info["input_tokens_details"] = usage.input_tokens_details.__dict__ if hasattr(usage.input_tokens_details, "__dict__") else dict(usage.input_tokens_details)
+            
+        if hasattr(usage, "completion_tokens_details") and usage.completion_tokens_details:
+            usage_info["completion_tokens_details"] = usage.completion_tokens_details.__dict__ if hasattr(usage.completion_tokens_details, "__dict__") else dict(usage.completion_tokens_details)
+    
+    return usage_info
+
+
 async def enhance_agent(
     prompt: str,
     existing_agent: "AgentUpdate",
     client: OpenAI,
     user_id: Optional[str] = None,
-) -> Tuple[Dict[str, Any], Set[str]]:
+) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
     """Generate minimal updates to an existing agent based on a prompt.
 
     This function preserves the existing agent configuration and only makes
@@ -64,9 +103,18 @@ async def enhance_agent(
         user_id: Optional user ID for validation
 
     Returns:
-        A tuple of (updated_schema, identified_skills)
+        A tuple of (updated_schema, identified_skills, token_usage)
     """
     logger.info("Generating minimal agent update based on existing configuration")
+
+    # Initialize token usage tracking
+    total_token_usage = {
+        "total_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "input_tokens_details": None,
+        "completion_tokens_details": None,
+    }
 
     # Convert existing agent to dictionary format
     existing_schema = existing_agent.model_dump(exclude_unset=True)
@@ -176,6 +224,18 @@ Return JSON with only the text fields that need updates."""
                 temperature=0.2,
             )
 
+            # Extract and accumulate token usage
+            token_usage = _extract_token_usage(response)
+            total_token_usage["total_tokens"] += token_usage["total_tokens"]
+            total_token_usage["input_tokens"] += token_usage["input_tokens"]
+            total_token_usage["output_tokens"] += token_usage["output_tokens"]
+            
+            # Store the first detailed token info (if available)
+            if not total_token_usage["input_tokens_details"] and token_usage["input_tokens_details"]:
+                total_token_usage["input_tokens_details"] = token_usage["input_tokens_details"]
+            if not total_token_usage["completion_tokens_details"] and token_usage["completion_tokens_details"]:
+                total_token_usage["completion_tokens_details"] = token_usage["completion_tokens_details"]
+
             attr_updates = json.loads(response.choices[0].message.content)
             # Apply attribute updates (but never skills)
             for key, value in attr_updates.items():
@@ -204,13 +264,17 @@ Return JSON with only the text fields that need updates."""
     )
     logger.info(f"All identified skills: {all_identified_skills}")
 
-    return updated_schema, all_identified_skills
+    return updated_schema, all_identified_skills, total_token_usage
 
 
 async def generate_agent_attributes(
     prompt: str, skills_config: Dict[str, Any], client: OpenAI
-) -> Dict[str, Any]:
-    """Generate agent attributes based on the prompt."""
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Generate agent attributes based on the prompt.
+    
+    Returns:
+        A tuple of (attributes, token_usage)
+    """
     system_prompt = """Generate agent attributes from the prompt:
 - name: Concise name (max 50 chars)
 - purpose: Clear purpose statement (1-3 paragraphs)  
@@ -233,13 +297,17 @@ Return JSON format."""
             ],
             temperature=0.7,
         )
+        
+        # Extract token usage
+        token_usage = _extract_token_usage(response)
+        
         attributes = json.loads(response.choices[0].message.content)
         attributes["name"] = attributes.get("name", "")[:50]
         attributes["owner"] = "system"
-        return attributes
+        return attributes, token_usage
     except Exception as e:
         logger.error(f"Error in generate_agent_attributes: {e}")
-        return {
+        fallback_attributes = {
             "name": "Generated Agent",
             "purpose": "This agent was automatically generated based on a natural language prompt.",
             "personality": "Helpful, friendly, and informative.",
@@ -247,6 +315,14 @@ Return JSON format."""
             "description": "An AI assistant created from a natural language prompt.",
             "owner": "system",
         }
+        fallback_token_usage = {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "input_tokens_details": None,
+            "completion_tokens_details": None,
+        }
+        return fallback_attributes, fallback_token_usage
 
 
 async def generate_validated_agent(
@@ -272,10 +348,37 @@ async def generate_validated_agent(
     Returns:
         A tuple of (validated_schema, identified_skills)
     """
+    start_time = time.time()
+    
+    # Create generation log
+    async with get_session() as session:
+        log_data = AgentGenerationLogCreate(
+            user_id=user_id,
+            prompt=prompt,
+            existing_agent_id=existing_agent.id if existing_agent else None,
+            is_update=existing_agent is not None,
+        )
+        generation_log = await AgentGenerationLog.create(session, log_data)
+    
+    # Track cumulative metrics
+    total_tokens_used = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
+    all_token_details = []
+    
     # Get OpenAI API key from config
     api_key = config.openai_api_key
     if not api_key:
-        raise ValueError("OPENAI_API_KEY is not set in configuration")
+        error_msg = "OPENAI_API_KEY is not set in configuration"
+        # Update log with error
+        async with get_session() as session:
+            await generation_log.update_completion(
+                session=session,
+                success=False,
+                error_message=error_msg,
+                generation_time_ms=int((time.time() - start_time) * 1000),
+            )
+        raise ValueError(error_msg)
 
     # Create OpenAI client
     client = OpenAI(api_key=api_key)
@@ -284,82 +387,150 @@ async def generate_validated_agent(
     last_errors = []
     identified_skills = set()
 
-    for attempt in range(max_attempts):
-        try:
-            logger.info(f"Schema generation attempt {attempt + 1}/{max_attempts}")
+    try:
+        for attempt in range(max_attempts):
+            try:
+                logger.info(f"Schema generation attempt {attempt + 1}/{max_attempts}")
 
-            if attempt == 0:
-                # First attempt: Generate from scratch
-                from .agent_generator import generate_agent_schema
+                if attempt == 0:
+                    # First attempt: Generate from scratch
+                    from .agent_generator import generate_agent_schema
 
-                schema, skills = await generate_agent_schema(
-                    prompt=prompt,
-                    user_id=user_id,
-                    existing_agent=existing_agent,
+                    schema, skills, token_usage = await generate_agent_schema(
+                        prompt=prompt,
+                        user_id=user_id,
+                        existing_agent=existing_agent,
+                    )
+                    last_schema = schema
+                    identified_skills = skills
+                    
+                    # Accumulate token usage from first attempt
+                    if token_usage:
+                        total_tokens_used += token_usage["total_tokens"]
+                        total_input_tokens += token_usage["input_tokens"]
+                        total_output_tokens += token_usage["output_tokens"]
+                        all_token_details.append(token_usage)
+                else:
+                    # Subsequent attempts: Let AI fix the validation errors
+                    logger.info("Feeding validation errors to AI for self-correction")
+                    schema, skills, token_usage = await fix_agent_schema_with_ai_logged(
+                        original_prompt=prompt,
+                        failed_schema=last_schema,
+                        validation_errors=last_errors,
+                        client=client,
+                        user_id=user_id,
+                        existing_agent=existing_agent,
+                    )
+                    last_schema = schema
+                    identified_skills = identified_skills.union(skills)
+                    
+                    # Accumulate token usage
+                    if token_usage:
+                        total_tokens_used += token_usage["total_tokens"]
+                        total_input_tokens += token_usage["input_tokens"]
+                        total_output_tokens += token_usage["output_tokens"]
+                        all_token_details.append(token_usage)
+
+                # Validate the schema
+                schema_validation = await validate_schema(schema)
+                agent_validation = await validate_agent_create(schema, user_id)
+
+                # Check if validation passed
+                if schema_validation.valid and agent_validation.valid:
+                    logger.info(f"Validation passed on attempt {attempt + 1}")
+                    
+                    # Update log with success
+                    async with get_session() as session:
+                        await generation_log.update_completion(
+                            session=session,
+                            generated_agent_schema=schema,
+                            identified_skills=list(identified_skills),
+                            openai_model="gpt-4.1-nano",
+                            total_tokens=total_tokens_used,
+                            input_tokens=total_input_tokens,
+                            output_tokens=total_output_tokens,
+                            input_tokens_details=all_token_details[0].get("input_tokens_details") if all_token_details else None,
+                            completion_tokens_details=all_token_details[0].get("completion_tokens_details") if all_token_details else None,
+                            generation_time_ms=int((time.time() - start_time) * 1000),
+                            retry_count=attempt,
+                            success=True,
+                        )
+                    
+                    return schema, identified_skills
+
+                # Collect raw validation errors for AI feedback
+                last_errors = []
+                if not schema_validation.valid:
+                    last_errors.extend(
+                        [f"Schema error: {error}" for error in schema_validation.errors]
+                    )
+                if not agent_validation.valid:
+                    last_errors.extend(
+                        [
+                            f"Agent validation error: {error}"
+                            for error in agent_validation.errors
+                        ]
+                    )
+
+                logger.warning(
+                    f"Attempt {attempt + 1} validation failed with {len(last_errors)} errors"
                 )
-                last_schema = schema
-                identified_skills = skills
-            else:
-                # Subsequent attempts: Let AI fix the validation errors
-                logger.info("Feeding validation errors to AI for self-correction")
-                schema, skills = await fix_agent_schema_with_ai(
-                    original_prompt=prompt,
-                    failed_schema=last_schema,
-                    validation_errors=last_errors,
-                    client=client,
-                    user_id=user_id,
-                    existing_agent=existing_agent,
-                )
-                last_schema = schema
-                identified_skills = identified_skills.union(skills)
 
-            # Validate the schema
-            schema_validation = await validate_schema(schema)
-            agent_validation = await validate_agent_create(schema, user_id)
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} failed with exception: {str(e)}")
+                last_errors = [f"Generation exception: {str(e)}"]
 
-            # Check if validation passed
-            if schema_validation.valid and agent_validation.valid:
-                logger.info(f"Validation passed on attempt {attempt + 1}")
-                return schema, identified_skills
-
-            # Collect raw validation errors for AI feedback
-            last_errors = []
-            if not schema_validation.valid:
-                last_errors.extend(
-                    [f"Schema error: {error}" for error in schema_validation.errors]
-                )
-            if not agent_validation.valid:
-                last_errors.extend(
-                    [
-                        f"Agent validation error: {error}"
-                        for error in agent_validation.errors
-                    ]
-                )
-
-            logger.warning(
-                f"Attempt {attempt + 1} validation failed with {len(last_errors)} errors"
+        # All attempts failed
+        error_summary = "; ".join(last_errors[-5:])  # Last 5 errors for context
+        error_message = f"Failed to generate valid agent schema after {max_attempts} attempts. Last errors: {error_summary}"
+        
+        # Update log with failure
+        async with get_session() as session:
+            await generation_log.update_completion(
+                session=session,
+                generated_agent_schema=last_schema,
+                identified_skills=list(identified_skills),
+                openai_model="gpt-4.1-nano",
+                total_tokens=total_tokens_used,
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                generation_time_ms=int((time.time() - start_time) * 1000),
+                retry_count=max_attempts,
+                validation_errors={"errors": last_errors},
+                success=False,
+                error_message=error_message,
             )
+        
+        raise ValueError(error_message)
+        
+    except Exception as e:
+        # Update log with unexpected error
+        async with get_session() as session:
+            await generation_log.update_completion(
+                session=session,
+                generated_agent_schema=last_schema,
+                identified_skills=list(identified_skills),
+                openai_model="gpt-4.1-nano",
+                total_tokens=total_tokens_used,
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                generation_time_ms=int((time.time() - start_time) * 1000),
+                retry_count=max_attempts,
+                success=False,
+                error_message=str(e),
+            )
+        raise
 
-        except Exception as e:
-            logger.error(f"Attempt {attempt + 1} failed with exception: {str(e)}")
-            last_errors = [f"Generation exception: {str(e)}"]
 
-    # All attempts failed
-    error_summary = "; ".join(last_errors[-5:])  # Last 5 errors for context
-    raise ValueError(
-        f"Failed to generate valid agent schema after {max_attempts} attempts. Last errors: {error_summary}"
-    )
-
-
-async def fix_agent_schema_with_ai(
+async def fix_agent_schema_with_ai_logged(
     original_prompt: str,
     failed_schema: Dict[str, Any],
     validation_errors: List[str],
     client: OpenAI,
     user_id: Optional[str] = None,
     existing_agent: Optional["AgentUpdate"] = None,
-) -> Tuple[Dict[str, Any], Set[str]]:
-    """Use AI to fix validation errors in agent schema.
+) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
+    """Use AI to fix validation errors in agent schema with token logging.
 
     This feeds the raw validation errors to AI and lets it understand and fix them automatically.
 
@@ -372,7 +543,7 @@ async def fix_agent_schema_with_ai(
         existing_agent: Optional existing agent for updates
 
     Returns:
-        A tuple of (fixed_schema, identified_skills)
+        A tuple of (fixed_schema, identified_skills, token_usage)
     """
     # Prepare context for AI error correction
     error_context = "\n".join(validation_errors)
@@ -380,62 +551,23 @@ async def fix_agent_schema_with_ai(
     # Valid models list for AI reference
     valid_models = ALLOWED_MODELS
 
-    # Available skills list
-    available_skills_list = sorted(list(AVAILABLE_SKILL_CATEGORIES))
-
-    if existing_agent:
-        # For updates, include existing agent context
-        existing_context = f"EXISTING AGENT TO UPDATE:\n{json.dumps(existing_agent.model_dump(exclude_unset=True), indent=2)}\n\n"
-        correction_prompt = f"""You are fixing an agent schema that failed validation during an UPDATE operation.
-
-{existing_context}ORIGINAL USER REQUEST: {original_prompt}
-
-FAILED SCHEMA:
-{json.dumps(failed_schema, indent=2) if failed_schema is not None else "null"}
-
-VALIDATION ERRORS:
-{error_context}
-
-VALID MODELS: {", ".join(valid_models)}
-
-AVAILABLE SKILLS (ONLY USE THESE): {", ".join(available_skills_list)}
-
-Fix the schema to resolve ALL validation errors while preserving the existing agent configuration and the user's requested changes. 
-
-CRITICAL REQUIREMENTS:
-1. If model field is missing or invalid, set it to "gpt-4.1-nano" (from the valid models list above)
-2. Ensure all required fields are present: name, purpose, personality, principles, model
-3. Fix all validation errors exactly as specified
-4. Preserve existing agent configuration unless explicitly requested to change
-5. Only make minimal changes to fulfill the user's request
-6. ONLY use skills from the available skills list - DO NOT create new skills like "jokes", "humor", etc.
-
-Return only the corrected schema as valid JSON."""
-    else:
-        # For new agents
-        correction_prompt = f"""You are fixing an agent schema that failed validation during CREATION.
+    correction_prompt = f"""You are an expert at fixing IntentKit agent schemas. The schema below failed validation with specific errors.
 
 ORIGINAL USER REQUEST: {original_prompt}
 
 FAILED SCHEMA:
-{json.dumps(failed_schema, indent=2) if failed_schema is not None else "null"}
+{json.dumps(failed_schema, indent=2)}
 
 VALIDATION ERRORS:
 {error_context}
 
-VALID MODELS: {", ".join(valid_models)}
-
-AVAILABLE SKILLS (ONLY USE THESE): {", ".join(available_skills_list)}
-
-Fix the schema to resolve ALL validation errors.
-
-CRITICAL REQUIREMENTS:
-1. If model field is missing or invalid, set it to "gpt-4.1-nano" (from the valid models list above)
-2. Ensure all required fields are present: name, purpose, personality, principles, model
-3. Fix all validation errors exactly as specified
-4. Keep the core intent from the original prompt
-5. Use valid skill configurations
-6. ONLY use skills from the available skills list - DO NOT create new skills like "jokes", "humor", etc.
+Your task:
+1. Analyze each validation error carefully
+2. Fix the schema to resolve ALL validation errors
+3. Maintain the original intent and functionality
+4. Only use these valid models: {', '.join(valid_models)}
+5. Ensure skills field is a proper dict with valid skill configurations
+6. All required fields must be present and properly formatted
 
 Return only the corrected schema as valid JSON."""
 
@@ -452,6 +584,9 @@ Return only the corrected schema as valid JSON."""
             ],
             temperature=0.1,  # Very low temperature for precise error correction
         )
+
+        # Extract token usage
+        token_usage = _extract_token_usage(response)
 
         corrected_schema = json.loads(response.choices[0].message.content)
         logger.info("AI successfully generated error corrections")
@@ -487,7 +622,7 @@ Return only the corrected schema as valid JSON."""
         if user_id:
             corrected_schema["owner"] = user_id
 
-        return corrected_schema, skills_in_schema
+        return corrected_schema, skills_in_schema, token_usage
 
     except Exception as e:
         logger.error(f"AI error correction failed: {e}")
@@ -512,4 +647,10 @@ Return only the corrected schema as valid JSON."""
         if user_id:
             fallback_schema["owner"] = user_id
 
-        return fallback_schema, set(fallback_schema.get("skills", {}).keys())
+        return fallback_schema, set(fallback_schema.get("skills", {}).keys()), {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "input_tokens_details": None,
+            "completion_tokens_details": None,
+        }
