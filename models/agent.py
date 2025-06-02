@@ -314,40 +314,12 @@ class AgentTable(Base):
         nullable=True,
         comment="Dict of skills and their corresponding configurations",
     )
-    # if cdp_enabled, agent will have a cdp wallet
-    cdp_enabled = Column(
-        Boolean,
-        nullable=True,
-        default=False,
-        comment="Whether CDP (Crestal Development Platform) integration is enabled",
-    )
-    cdp_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of CDP skills available to this agent",
-    )
+
     cdp_network_id = Column(
         String,
         nullable=True,
         default="base-mainnet",
         comment="Network identifier for CDP integration",
-    )
-    # if goat_enabled, will load goat skills
-    crossmint_config = Column(
-        JSONB,
-        nullable=True,
-        comment="Dict of Crossmint wallet configurations",
-    )
-    goat_enabled = Column(
-        Boolean,
-        nullable=True,
-        default=False,
-        comment="Whether GOAT integration is enabled",
-    )
-    goat_skills = Column(
-        JSONB,
-        nullable=True,
-        comment="Dict of GOAT skills and their corresponding configurations",
     )
     # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
     twitter_entrypoint_enabled = Column(
@@ -395,63 +367,6 @@ class AgentTable(Base):
         ARRAY(String),
         nullable=True,
         comment="List of Telegram-specific skills available to this agent",
-    )
-    # skills have no category
-    common_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of general-purpose skills available to this agent",
-    )
-    # if enso_enabled, the enso skillset will be enabled, enso_config will be checked
-    enso_enabled = Column(
-        Boolean,
-        nullable=True,
-        default=False,
-        comment="Whether Enso integration is enabled",
-    )
-    # enso skills
-    enso_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Enso-specific skills available to this agent",
-    )
-    enso_config = Column(
-        JSONB,
-        nullable=True,
-        comment="Enso integration configuration settings",
-    )
-    # Acolyt skills
-    acolyt_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Acolyt-specific skills available to this agent",
-    )
-    acolyt_config = Column(
-        JSONB,
-        nullable=True,
-        comment="Acolyt integration configuration settings",
-    )
-    # Allora skills
-    allora_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Allora-specific skills available to this agent",
-    )
-    allora_config = Column(
-        JSONB,
-        nullable=True,
-        comment="Allora integration configuration settings",
-    )
-    # ELFA skills
-    elfa_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Elfa-specific skills available to this agent",
-    )
-    elfa_config = Column(
-        JSONB,
-        nullable=True,
-        comment="Elfa integration configuration settings",
     )
     # auto timestamp
     created_at = Column(
@@ -836,28 +751,6 @@ class AgentUpdate(BaseModel):
             },
         ),
     ]
-    # if cdp_enabled, agent will have a cdp wallet
-    cdp_enabled: Annotated[
-        Optional[bool],
-        PydanticField(
-            default=False,
-            description="Whether CDP (Coinbase Development Platform) integration is enabled",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    cdp_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of CDP skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
     cdp_network_id: Annotated[
         Optional[
             Literal[
@@ -878,37 +771,6 @@ class AgentUpdate(BaseModel):
             description="Network identifier for CDP integration",
             json_schema_extra={
                 "x-group": "deprecated",
-            },
-        ),
-    ]
-    # if goat_enabled, will load goat skills
-    crossmint_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            description="Dict of Crossmint wallet configurations",
-            json_schema_extra={
-                "x-group": "experimental",
-            },
-        ),
-    ]
-    goat_enabled: Annotated[
-        Optional[bool],
-        PydanticField(
-            default=False,
-            description="Whether GOAT integration is enabled",
-            json_schema_extra={
-                "x-group": "experimental",
-            },
-        ),
-    ]
-    goat_skills: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            description="Dict of GOAT skills and their corresponding configurations",
-            json_schema_extra={
-                "x-group": "experimental",
             },
         ),
     ]
@@ -983,134 +845,6 @@ class AgentUpdate(BaseModel):
             description="Telegram integration configuration settings",
             json_schema_extra={
                 "x-group": "entrypoint",
-            },
-        ),
-    ]
-    # telegram skills not used for now
-    telegram_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Telegram-specific skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # skills have no category
-    common_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of general-purpose skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # if enso_enabled, the enso skillset will be enabled, enso_config will be checked
-    enso_enabled: Annotated[
-        Optional[bool],
-        PydanticField(
-            default=False,
-            deprecated="Please use skills instead",
-            description="Whether Enso integration is enabled",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # enso skills
-    enso_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Enso-specific skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    enso_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="Enso integration configuration settings",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # Acolyt skills
-    acolyt_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Acolyt-specific skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    acolyt_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="Acolyt integration configuration settings",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # Allora skills
-    allora_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Allora-specific skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    allora_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="Allora integration configuration settings",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    # ELFA skills
-    elfa_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Elfa-specific skills available to this agent",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
-    elfa_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="Elfa integration configuration settings",
-            json_schema_extra={
-                "x-group": "deprecated",
             },
         ),
     ]

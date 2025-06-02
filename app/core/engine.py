@@ -111,7 +111,6 @@ async def initialize_agent(aid, is_private=False):
     Raises:
         HTTPException: If agent not found (404) or database error (500)
     """
-    """Initialize the agent with CDP Agentkit."""
     # init agent store
     agent_store = AgentStore(aid)
 
@@ -161,194 +160,6 @@ async def initialize_agent(aid, is_private=False):
             except ImportError as e:
                 logger.error(f"Could not import skill module: {k} ({e})")
 
-    # Configure CDP Agentkit Langchain Extension.
-    # Deprecated
-    cdp_wallet_provider = None
-    if (
-        agent.cdp_enabled
-        and agent_data
-        and agent_data.cdp_wallet_data
-        and agent.cdp_skills
-        and ("cdp" not in agent.skills if agent.skills else True)
-    ):
-        cdp_wallet_provider_config = CdpWalletProviderConfig(
-            api_key_name=config.cdp_api_key_name,
-            api_key_private_key=config.cdp_api_key_private_key,
-            network_id=agent.cdp_network_id,
-            wallet_data=agent_data.cdp_wallet_data,
-        )
-        cdp_wallet_provider = CdpWalletProvider(cdp_wallet_provider_config)
-        agent_kit = AgentKit(
-            AgentKitConfig(
-                wallet_provider=cdp_wallet_provider,
-                action_providers=[
-                    wallet_action_provider(),
-                    cdp_api_action_provider(cdp_wallet_provider_config),
-                    cdp_wallet_action_provider(cdp_wallet_provider_config),
-                    pyth_action_provider(),
-                    basename_action_provider(),
-                    erc20_action_provider(),
-                    erc721_action_provider(),
-                    weth_action_provider(),
-                    morpho_action_provider(),
-                    superfluid_action_provider(),
-                    wow_action_provider(),
-                ],
-            )
-        )
-        cdp_tools = get_langchain_tools(agent_kit)
-        for skill in agent.cdp_skills:
-            if skill == "get_balance":
-                tools.append(
-                    GetBalance(
-                        wallet=cdp_wallet_provider._wallet,
-                        agent_id=aid,
-                        skill_store=skill_store,
-                    )
-                )
-                continue
-            for tool in cdp_tools:
-                if tool.name.endswith(skill):
-                    tools.append(tool)
-
-    if (
-        agent.goat_enabled
-        and agent.crossmint_config
-        and ("goat" not in agent.skills if agent.skills else True)
-    ):
-        if (
-            hasattr(config, "chain_provider")
-            and config.crossmint_api_key
-            and config.crossmint_api_base_url
-        ):
-            crossmint_networks = agent.crossmint_config.get("networks")
-            if crossmint_networks and len(crossmint_networks) > 0:
-                crossmint_wallet_data = (
-                    agent_data.crossmint_wallet_data
-                    if agent_data.crossmint_wallet_data
-                    else {}
-                )
-                try:
-                    smart_wallet_data = create_smart_wallets_if_not_exist(
-                        config.crossmint_api_base_url,
-                        config.crossmint_api_key,
-                        crossmint_wallet_data.get("smart"),
-                    )
-
-                    # save the wallet after first create
-                    if (
-                        not crossmint_wallet_data
-                        or not crossmint_wallet_data.get("smart")
-                        or not crossmint_wallet_data.get("smart").get("evm")
-                        or not crossmint_wallet_data.get("smart")
-                        .get("evm")
-                        .get("address")
-                    ):
-                        await agent_store.set_data(
-                            {
-                                "crossmint_wallet_data": {"smart": smart_wallet_data},
-                            }
-                        )
-
-                    # give rpc some time to prevent error #429
-                    time.sleep(1)
-
-                    evm_crossmint_wallets = init_smart_wallets(
-                        config.crossmint_api_key,
-                        config.chain_provider,
-                        crossmint_networks,
-                        smart_wallet_data["evm"],
-                    )
-
-                    for wallet in evm_crossmint_wallets:
-                        try:
-                            s = get_goat_skill(
-                                wallet,
-                                agent.goat_skills,
-                                skill_store,
-                                agent_store,
-                                aid,
-                            )
-                            tools.extend(s)
-                        except Exception as e:
-                            logger.warning(e)
-                except Exception as e:
-                    logger.warning(e)
-
-    # Enso skills
-    if (
-        agent.enso_skills
-        and len(agent.enso_skills) > 0
-        and agent.enso_config
-        and ("enso" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.enso_skills:
-            try:
-                s = get_enso_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Acoalyt skills
-    if (
-        agent.acolyt_skills
-        and len(agent.acolyt_skills) > 0
-        and ("acolyt" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.acolyt_skills:
-            try:
-                s = get_acolyt_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Allora skills
-    if (
-        agent.allora_skills
-        and len(agent.allora_skills) > 0
-        and ("allora" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.allora_skills:
-            try:
-                s = get_allora_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Elfa skills
-    if (
-        agent.elfa_skills
-        and len(agent.elfa_skills) > 0
-        and ("elfa" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.elfa_skills:
-            try:
-                s = get_elfa_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Twitter skills
-    if (
-        agent.twitter_skills
-        and len(agent.twitter_skills) > 0
-        and ("twitter" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.twitter_skills:
-            s = get_twitter_skill(
-                skill,
-                skill_store,
-            )
-            tools.append(s)
-
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
 
@@ -384,14 +195,14 @@ async def initialize_agent(aid, is_private=False):
             config,
         )
 
-    # log all tools
+    # log final prompt and all skills
+    logger.debug(
+        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
+    )
     for tool in tools:
         logger.info(
             f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name}"
         )
-    logger.debug(
-        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
-    )
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_agent(
