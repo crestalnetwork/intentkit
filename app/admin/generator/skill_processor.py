@@ -8,11 +8,14 @@ This module handles all skill-related operations for agent generation including:
 
 import importlib
 import logging
-from typing import Any, Dict, Set
+from typing import Any, Dict, Set, Optional, TYPE_CHECKING
 
 from openai import OpenAI
 
 from skills import __all__ as available_skill_categories
+
+if TYPE_CHECKING:
+    from .llm_logger import LLMLogger
 
 logger = logging.getLogger(__name__)
 
@@ -236,12 +239,17 @@ async def filter_skills_for_auto_generation(
     return filtered_skills
 
 
-async def identify_skills(prompt: str, client: OpenAI) -> Dict[str, Any]:
+async def identify_skills(
+    prompt: str, 
+    client: OpenAI, 
+    llm_logger: Optional["LLMLogger"] = None
+) -> Dict[str, Any]:
     """Identify relevant skills from the prompt using only real skill data.
 
     Args:
         prompt: The natural language prompt
         client: OpenAI client (not used, kept for compatibility)
+        llm_logger: Optional LLM logger for tracking API calls (not used in this implementation)
 
     Returns:
         Dict containing skill configurations with only real skill states

@@ -1,15 +1,15 @@
 """AI Assistant Module.
 
-This module handles all AI-powered operations for agent generation including:
+This module handles core AI operations for agent generation including:
 - Agent enhancement and updates using LLM
-- Attribute generation from prompts
+- Attribute generation from prompts  
 - AI-powered error correction and schema fixing
 """
 
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 from openai import OpenAI
 
@@ -21,82 +21,21 @@ from models.generator import (
     AgentGenerationLogCreate,
 )
 
+from .llm_logger import get_conversation_history
 from .skill_processor import (
     filter_skills_for_auto_generation,
     identify_skills,
 )
+from .utils import extract_token_usage, generate_agent_summary
 from .validation import (
     validate_agent_create,
     validate_schema,
 )
 
+if TYPE_CHECKING:
+    from .llm_logger import LLMLogger
+
 logger = logging.getLogger(__name__)
-
-# List of allowed models - Updated to match schema
-ALLOWED_MODELS = [
-    "gpt-4o",
-    "gpt-4o-mini",
-    "gpt-4.1-nano",
-    "gpt-4.1-mini",
-    "gpt-4.1",
-    "o4-mini",
-    "deepseek-chat",
-    "grok-2",
-    "grok-3",
-    "grok-3-mini",
-    "eternalai",
-    "reigent",
-    "venice-uncensored",
-    "venice-llama-4-maverick-17b",
-]
-
-
-def _extract_token_usage(response) -> Dict[str, Any]:
-    """Extract token usage information from OpenAI response.
-
-    Args:
-        response: OpenAI API response
-
-    Returns:
-        Dict containing token usage information
-    """
-    usage_info = {
-        "total_tokens": 0,
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "input_tokens_details": None,
-        "completion_tokens_details": None,
-    }
-
-    if hasattr(response, "usage") and response.usage:
-        usage = response.usage
-        usage_info["total_tokens"] = getattr(usage, "total_tokens", 0)
-        usage_info["input_tokens"] = getattr(usage, "prompt_tokens", 0) or getattr(
-            usage, "input_tokens", 0
-        )
-        usage_info["output_tokens"] = getattr(usage, "completion_tokens", 0) or getattr(
-            usage, "output_tokens", 0
-        )
-
-        # Get detailed token information if available
-        if hasattr(usage, "input_tokens_details") and usage.input_tokens_details:
-            usage_info["input_tokens_details"] = (
-                usage.input_tokens_details.__dict__
-                if hasattr(usage.input_tokens_details, "__dict__")
-                else dict(usage.input_tokens_details)
-            )
-
-        if (
-            hasattr(usage, "completion_tokens_details")
-            and usage.completion_tokens_details
-        ):
-            usage_info["completion_tokens_details"] = (
-                usage.completion_tokens_details.__dict__
-                if hasattr(usage.completion_tokens_details, "__dict__")
-                else dict(usage.completion_tokens_details)
-            )
-
-    return usage_info
 
 
 async def enhance_agent(
@@ -104,6 +43,7 @@ async def enhance_agent(
     existing_agent: "AgentUpdate",
     client: OpenAI,
     user_id: Optional[str] = None,
+    llm_logger: Optional["LLMLogger"] = None,
 ) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
     """Generate minimal updates to an existing agent based on a prompt.
 
@@ -115,6 +55,7 @@ async def enhance_agent(
         existing_agent: The current agent configuration
         client: OpenAI client for API calls
         user_id: Optional user ID for validation
+        llm_logger: Optional LLM logger for tracking API calls
 
     Returns:
         A tuple of (updated_schema, identified_skills, token_usage)
@@ -133,17 +74,8 @@ async def enhance_agent(
     # Convert existing agent to dictionary format
     existing_schema = existing_agent.model_dump(exclude_unset=True)
 
-    # Get current skills for context
-    current_skills = existing_schema.get("skills", {})
-    current_skill_names = [
-        skill
-        for skill, config in current_skills.items()
-        if config.get("enabled", False)
-    ]
-
     # Use the real skill processor to identify skills from prompt
-    # This ensures we only get real skill states, not AI-generated fake ones
-    identified_skills_config = await identify_skills(prompt, client)
+    identified_skills_config = await identify_skills(prompt, client, llm_logger=llm_logger)
     identified_skill_names = set(identified_skills_config.keys())
 
     logger.info(f"Real skills identified from prompt: {identified_skill_names}")
@@ -162,11 +94,8 @@ async def enhance_agent(
     # Add newly identified real skills
     for skill_name, skill_config in identified_skills_config.items():
         if skill_name not in merged_skills:
-            # Add new skill with real states
             merged_skills[skill_name] = skill_config
-            logger.info(
-                f"Added new skill: {skill_name} with real states: {list(skill_config.get('states', {}).keys())}"
-            )
+            logger.info(f"Added new skill: {skill_name}")
         else:
             # Enable existing skill if it was disabled, and merge states
             existing_skill = merged_skills[skill_name]
@@ -192,169 +121,297 @@ async def enhance_agent(
     if user_id:
         updated_schema["owner"] = user_id
 
-    # Only update agent attributes (name, purpose, etc.) if the prompt specifically asks for them
-    # Use AI only for these text fields, NOT for skills
+    # Only update agent attributes if the prompt specifically asks for them
     should_update_attributes = any(
         keyword in prompt.lower()
         for keyword in [
-            "name",
-            "purpose",
-            "personality",
-            "principle",
-            "description",
-            "change",
-            "update",
-            "modify",
-            "rename",
+            "name", "purpose", "personality", "principle", "description",
+            "rename", "change name", "update name", "modify purpose",
+            "change purpose", "update personality", "change personality",
         ]
     )
 
     if should_update_attributes:
-        logger.info("Updating agent attributes using AI (not skills)")
-        # Use AI only for text attributes, never for skills
-        attr_system_prompt = f"""Update only the text attributes (name, purpose, personality, principles, description) of this agent based on the user request.
+        logger.info("Prompt requests attribute updates - using AI for text fields only")
 
-IMPORTANT: 
-- DO NOT include "skills" in your response
-- Only update the text fields requested by the user
-- Keep existing values for fields not mentioned in the request
-- Return only the fields that need to be changed
+        # Get conversation history if logger has a project_id
+        history_messages = []
+        if llm_logger:
+            try:
+                history_messages = await get_conversation_history(
+                    project_id=llm_logger.request_id,
+                    user_id=llm_logger.user_id,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to get conversation history: {e}")
+                history_messages = []
 
-Current agent:
-{json.dumps({k: v for k, v in existing_schema.items() if k != "skills"}, indent=2)}
+        # Prepare system message for agent attribute updates
+        system_message = {
+            "role": "system",
+            "content": f"""You are updating an existing agent's text attributes only. 
+            
+CRITICAL INSTRUCTIONS:
+1. Only update name, purpose, personality, and principles based on the prompt
+2. Keep all existing skills exactly as they are - DO NOT modify skills
+3. Keep the existing model and temperature settings
+4. Only make changes if the prompt specifically requests them
+5. Return the complete agent schema as valid JSON
 
-User request: {prompt}
+The agent currently has these attributes:
+- Name: {updated_schema.get("name", "Unnamed Agent")}
+- Purpose: {updated_schema.get("purpose", "No purpose defined")}
+- Personality: {updated_schema.get("personality", "No personality defined")} 
+- Principles: {updated_schema.get("principles", "No principles defined")}
 
-Return JSON with only the text fields that need updates."""
+Make minimal changes based on the prompt. If this is part of an ongoing conversation, consider the previous context.""",
+        }
 
-        try:
+        # Build messages with conversation history
+        messages = [system_message]
+        
+        # Add conversation history if available
+        if history_messages:
+            logger.info(f"Using {len(history_messages)} messages from conversation history for update")
+            messages.extend(history_messages)
+        
+        # Add current request
+        messages.append({
+            "role": "user",
+            "content": f"Update request: {prompt}\n\nCurrent agent schema:\n{json.dumps(updated_schema, indent=2)}",
+        })
+
+        # Log the LLM call if logger is provided
+        if llm_logger:
+            async with llm_logger.log_call(
+                call_type="agent_attribute_update",
+                prompt=prompt,
+                retry_count=0,
+                is_update=True,
+                existing_agent_id=getattr(existing_agent, 'id', None),
+                openai_model="gpt-4.1-nano",
+                openai_messages=messages,
+            ) as call_log:
+                call_start_time = time.time()
+                
+                # Make OpenAI API call
+                response = client.chat.completions.create(
+                    model="gpt-4.1-nano",
+                    messages=messages,
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+
+                # Extract generated content
+                ai_response_content = response.choices[0].message.content.strip()
+                
+                try:
+                    # Parse AI response
+                    ai_updated_schema = json.loads(ai_response_content)
+                    
+                    # Safely merge only text attributes, preserving skills and other configs
+                    for attr in ["name", "purpose", "personality", "principles"]:
+                        if attr in ai_updated_schema:
+                            updated_schema[attr] = ai_updated_schema[attr]
+                    
+                    generated_content = {
+                        "updated_attributes": {
+                            attr: ai_updated_schema.get(attr) 
+                            for attr in ["name", "purpose", "personality", "principles"]
+                            if attr in ai_updated_schema
+                        }
+                    }
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse AI response as JSON: {e}")
+                    generated_content = {"error": "Failed to parse AI response"}
+
+                # Log successful call
+                await llm_logger.log_successful_call(
+                    call_log=call_log,
+                    response=response,
+                    generated_content=generated_content,
+                    openai_messages=messages,
+                    call_start_time=call_start_time,
+                )
+
+                # Extract token usage for return
+                total_token_usage = extract_token_usage(response)
+        else:
+            # Make call without logging (fallback)
             response = client.chat.completions.create(
                 model="gpt-4.1-nano",
-                response_format={"type": "json_object"},
-                messages=[
-                    {"role": "system", "content": attr_system_prompt},
-                    {"role": "user", "content": f"Update request: {prompt}"},
-                ],
-                temperature=0.2,
+                messages=messages,
+                temperature=0.3,
+                max_tokens=2000,
             )
 
-            # Extract and accumulate token usage
-            token_usage = _extract_token_usage(response)
-            total_token_usage["total_tokens"] += token_usage["total_tokens"]
-            total_token_usage["input_tokens"] += token_usage["input_tokens"]
-            total_token_usage["output_tokens"] += token_usage["output_tokens"]
+            ai_response_content = response.choices[0].message.content.strip()
+            
+            try:
+                ai_updated_schema = json.loads(ai_response_content)
+                for attr in ["name", "purpose", "personality", "principles"]:
+                    if attr in ai_updated_schema:
+                        updated_schema[attr] = ai_updated_schema[attr]
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse AI response as JSON: {e}")
 
-            # Store the first detailed token info (if available)
-            if (
-                not total_token_usage["input_tokens_details"]
-                and token_usage["input_tokens_details"]
-            ):
-                total_token_usage["input_tokens_details"] = token_usage[
-                    "input_tokens_details"
-                ]
-            if (
-                not total_token_usage["completion_tokens_details"]
-                and token_usage["completion_tokens_details"]
-            ):
-                total_token_usage["completion_tokens_details"] = token_usage[
-                    "completion_tokens_details"
-                ]
+            total_token_usage = extract_token_usage(response)
 
-            attr_updates = json.loads(response.choices[0].message.content)
-            # Apply attribute updates (but never skills)
-            for key, value in attr_updates.items():
-                if key != "skills":  # Never allow AI to update skills
-                    updated_schema[key] = value
-                    logger.info(f"Updated attribute: {key}")
-
-        except Exception as e:
-            logger.error(f"Error updating attributes with AI: {e}")
-
-    # Ensure required fields exist with fallbacks from existing agent
-    required_fields = ["name", "purpose", "personality", "principles"]
-    for field in required_fields:
-        if field not in updated_schema or not updated_schema[field]:
-            # Keep existing value or use a default
-            if field in existing_schema and existing_schema[field]:
-                updated_schema[field] = existing_schema[field]
-            else:
-                updated_schema[field] = f"Updated {field.capitalize()}"
-
-    # Combine current skills with newly identified skills
-    all_identified_skills = set(current_skill_names) | identified_skill_names
-
-    logger.info(
-        f"Final skills after update: {list(updated_schema.get('skills', {}).keys())}"
-    )
-    logger.info(f"All identified skills: {all_identified_skills}")
-
-    return updated_schema, all_identified_skills, total_token_usage
+    logger.info("Agent enhancement completed with minimal changes")
+    return updated_schema, identified_skill_names, total_token_usage
 
 
 async def generate_agent_attributes(
-    prompt: str, skills_config: Dict[str, Any], client: OpenAI
+    prompt: str, 
+    skills_config: Dict[str, Any], 
+    client: OpenAI,
+    llm_logger: Optional["LLMLogger"] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    """Generate agent attributes based on the prompt.
+    """Generate agent attributes (name, purpose, personality, principles) from prompt.
+
+    Args:
+        prompt: The natural language prompt
+        skills_config: Configuration of identified skills
+        client: OpenAI client for API calls
+        llm_logger: Optional LLM logger for tracking API calls
 
     Returns:
-        A tuple of (attributes, token_usage)
+        A tuple of (agent_attributes, token_usage)
     """
-    system_prompt = """Generate agent attributes from the prompt:
-- name: Concise name (max 50 chars)
-- purpose: Clear purpose statement (1-3 paragraphs)  
-- personality: Character traits (1-2 paragraphs)
-- principles: Core values (1-2 paragraphs)
-- description: Brief public description (1-3 sentences)
+    logger.info("Generating agent attributes from prompt")
 
-Return JSON format."""
+    # Create skill summary for context
+    skill_names = list(skills_config.keys())
+    skill_summary = ", ".join(skill_names) if skill_names else "no specific skills"
 
-    try:
+    # Get conversation history if logger has a project_id
+    history_messages = []
+    if llm_logger:
+        try:
+            history_messages = await get_conversation_history(
+                project_id=llm_logger.request_id,
+                user_id=llm_logger.user_id,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to get conversation history: {e}")
+            history_messages = []
+
+    # Prepare messages for agent generation
+    system_message = {
+        "role": "system",
+        "content": f"""You are generating agent attributes for an IntentKit AI agent.
+
+Based on the user's description, create appropriate attributes for an agent that will use these skills: {skill_summary}
+
+Generate a JSON object with these exact fields:
+- "name": A clear, descriptive name for the agent (2-4 words)
+- "purpose": A concise description of what the agent does (1-2 sentences)
+- "personality": The agent's communication style and personality traits (1-2 sentences)
+- "principles": Core rules and guidelines the agent follows (1-3 bullet points)
+
+Make the attributes coherent and well-suited for the identified skills.
+Return only valid JSON, no additional text.
+
+If this is part of an ongoing conversation, consider the previous context while creating the agent.""",
+    }
+
+    # Build messages with conversation history
+    messages = [system_message]
+    
+    # Add conversation history if available
+    if history_messages:
+        logger.info(f"Using {len(history_messages)} messages from conversation history")
+        messages.extend(history_messages)
+    
+    # Add current user message
+    messages.append({
+        "role": "user",
+        "content": f"Create an agent for: {prompt}",
+    })
+
+    # Log the LLM call if logger is provided
+    if llm_logger:
+        async with llm_logger.log_call(
+            call_type="agent_attribute_generation",
+            prompt=prompt,
+            retry_count=0,
+            is_update=False,
+            openai_model="gpt-4.1-nano",
+            openai_messages=messages,
+        ) as call_log:
+            call_start_time = time.time()
+            
+            # Make OpenAI API call
+            response = client.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1500,
+            )
+
+            # Extract and parse generated content
+            ai_response_content = response.choices[0].message.content.strip()
+            
+            try:
+                attributes = json.loads(ai_response_content)
+                generated_content = {"attributes": attributes}
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse agent attributes JSON: {e}")
+                # Provide fallback attributes
+                attributes = {
+                    "name": "AI Assistant",
+                    "purpose": "A helpful AI agent designed to assist users with various tasks.",
+                    "personality": "Friendly, professional, and helpful. Always strives to provide accurate and useful information.",
+                    "principles": "• Be helpful and accurate\n• Respect user privacy\n• Provide clear explanations",
+                }
+                generated_content = {"error": "Failed to parse AI response", "fallback_used": True, "attributes": attributes}
+
+            # Log successful call
+            await llm_logger.log_successful_call(
+                call_log=call_log,
+                response=response,
+                generated_content=generated_content,
+                openai_messages=messages,
+                call_start_time=call_start_time,
+            )
+
+            # Extract token usage
+            token_usage = extract_token_usage(response)
+    else:
+        # Make call without logging (fallback)
         response = client.chat.completions.create(
             model="gpt-4.1-nano",
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {
-                    "role": "user",
-                    "content": f"Prompt: {prompt}\nSkills: {', '.join(skills_config.keys())}",
-                },
-            ],
+            messages=messages,
             temperature=0.7,
+            max_tokens=1500,
         )
 
-        # Extract token usage
-        token_usage = _extract_token_usage(response)
+        ai_response_content = response.choices[0].message.content.strip()
+        
+        try:
+            attributes = json.loads(ai_response_content)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse agent attributes JSON: {e}")
+            attributes = {
+                "name": "AI Assistant",
+                "purpose": "A helpful AI agent designed to assist users with various tasks.",
+                "personality": "Friendly, professional, and helpful. Always strives to provide accurate and useful information.",
+                "principles": "• Be helpful and accurate\n• Respect user privacy\n• Provide clear explanations",
+            }
 
-        attributes = json.loads(response.choices[0].message.content)
-        attributes["name"] = attributes.get("name", "")[:50]
-        attributes["owner"] = "system"
-        return attributes, token_usage
-    except Exception as e:
-        logger.error(f"Error in generate_agent_attributes: {e}")
-        fallback_attributes = {
-            "name": "Generated Agent",
-            "purpose": "This agent was automatically generated based on a natural language prompt.",
-            "personality": "Helpful, friendly, and informative.",
-            "principles": "Accuracy, usefulness, and respect for user needs.",
-            "description": "An AI assistant created from a natural language prompt.",
-            "owner": "system",
-        }
-        fallback_token_usage = {
-            "total_tokens": 0,
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "input_tokens_details": None,
-            "completion_tokens_details": None,
-        }
-        return fallback_attributes, fallback_token_usage
+        token_usage = extract_token_usage(response)
+
+    logger.info(f"Generated agent attributes: {attributes.get('name', 'Unknown')}")
+    return attributes, token_usage
 
 
 async def generate_validated_agent(
     prompt: str,
     user_id: Optional[str] = None,
     existing_agent: Optional["AgentUpdate"] = None,
+    llm_logger: Optional["LLMLogger"] = None,
     max_attempts: int = 3,
-) -> Tuple[Dict[str, Any], Set[str]]:
+) -> Tuple[Dict[str, Any], Set[str], str]:
     """Generate agent schema with automatic validation retry and AI self-correction.
 
     This function uses an iterative approach:
@@ -367,19 +424,20 @@ async def generate_validated_agent(
         prompt: The natural language prompt describing the agent
         user_id: Optional user ID for validation
         existing_agent: Optional existing agent to update
+        llm_logger: Optional LLM logger for tracking API calls
         max_attempts: Maximum number of generation attempts
 
     Returns:
-        A tuple of (validated_schema, identified_skills)
+        A tuple of (validated_schema, identified_skills, summary_message)
     """
     start_time = time.time()
 
-    # Create generation log
+    # Create generation log (keeping existing aggregate logging for backward compatibility)
     async with get_session() as session:
         log_data = AgentGenerationLogCreate(
             user_id=user_id,
             prompt=prompt,
-            existing_agent_id=existing_agent.id if existing_agent else None,
+            existing_agent_id=getattr(existing_agent, 'id', None),
             is_update=existing_agent is not None,
         )
         generation_log = await AgentGenerationLog.create(session, log_data)
@@ -424,6 +482,7 @@ async def generate_validated_agent(
                         prompt=prompt,
                         user_id=user_id,
                         existing_agent=existing_agent,
+                        llm_logger=llm_logger,
                     )
                     last_schema = schema
                     identified_skills = skills
@@ -444,6 +503,8 @@ async def generate_validated_agent(
                         client=client,
                         user_id=user_id,
                         existing_agent=existing_agent,
+                        llm_logger=llm_logger,
+                        retry_count=attempt,
                     )
                     last_schema = schema
                     identified_skills = identified_skills.union(skills)
@@ -463,6 +524,14 @@ async def generate_validated_agent(
                 if schema_validation.valid and agent_validation.valid:
                     logger.info(f"Validation passed on attempt {attempt + 1}")
 
+                    # Generate summary message
+                    summary = await generate_agent_summary(
+                        schema=schema,
+                        identified_skills=identified_skills,
+                        client=client,
+                        llm_logger=llm_logger,
+                    )
+
                     # Update log with success
                     async with get_session() as session:
                         await generation_log.update_completion(
@@ -473,22 +542,12 @@ async def generate_validated_agent(
                             total_tokens=total_tokens_used,
                             input_tokens=total_input_tokens,
                             output_tokens=total_output_tokens,
-                            input_tokens_details=all_token_details[0].get(
-                                "input_tokens_details"
-                            )
-                            if all_token_details
-                            else None,
-                            completion_tokens_details=all_token_details[0].get(
-                                "completion_tokens_details"
-                            )
-                            if all_token_details
-                            else None,
                             generation_time_ms=int((time.time() - start_time) * 1000),
                             retry_count=attempt,
                             success=True,
                         )
 
-                    return schema, identified_skills
+                    return schema, identified_skills, summary
 
                 # Collect raw validation errors for AI feedback
                 last_errors = []
@@ -548,6 +607,7 @@ async def generate_validated_agent(
                 output_tokens=total_output_tokens,
                 generation_time_ms=int((time.time() - start_time) * 1000),
                 retry_count=max_attempts,
+                validation_errors={"errors": [str(e)]},
                 success=False,
                 error_message=str(e),
             )
@@ -561,132 +621,158 @@ async def fix_agent_schema_with_ai_logged(
     client: OpenAI,
     user_id: Optional[str] = None,
     existing_agent: Optional["AgentUpdate"] = None,
+    llm_logger: Optional["LLMLogger"] = None,
+    retry_count: int = 1,
 ) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
-    """Use AI to fix validation errors in agent schema with token logging.
-
-    This feeds the raw validation errors to AI and lets it understand and fix them automatically.
+    """Fix agent schema using AI based on validation errors.
 
     Args:
         original_prompt: The original user prompt
         failed_schema: The schema that failed validation
-        validation_errors: Raw validation error messages
-        client: OpenAI client
-        user_id: Optional user ID
-        existing_agent: Optional existing agent for updates
+        validation_errors: List of validation error messages
+        client: OpenAI client for API calls
+        user_id: Optional user ID for validation
+        existing_agent: Optional existing agent context
+        llm_logger: Optional LLM logger for tracking API calls
+        retry_count: Current retry attempt number
 
     Returns:
         A tuple of (fixed_schema, identified_skills, token_usage)
     """
-    # Prepare context for AI error correction
-    error_context = "\n".join(validation_errors)
+    logger.info(f"Attempting to fix schema using AI (retry {retry_count})")
 
-    # Valid models list for AI reference
-    valid_models = ALLOWED_MODELS
+    # Prepare detailed error context for AI
+    error_details = "\n".join([f"- {error}" for error in validation_errors])
 
-    correction_prompt = f"""You are an expert at fixing IntentKit agent schemas. The schema below failed validation with specific errors.
+    # Prepare messages for schema fixing
+    messages = [
+        {
+            "role": "system",
+            "content": """You are an expert at fixing IntentKit agent schema validation errors.
 
-ORIGINAL USER REQUEST: {original_prompt}
+The user created an agent but the schema has validation errors. Your job is to fix these errors while preserving the user's intent.
 
-FAILED SCHEMA:
+CRITICAL RULES:
+1. Only use real IntentKit skills that actually exist
+2. Skills must have real states (not made-up ones)
+3. Fix validation errors while maintaining user intent
+4. Return only valid JSON for the complete agent schema
+5. Do not add fake skills or fake states
+6. ALWAYS preserve the owner field if it exists in the original schema
+
+Common validation errors and fixes:
+- Missing required fields: Add them with appropriate values
+- Invalid skill names: Remove or replace with real skills
+- Invalid skill states: Replace with real states for that skill
+- Invalid model names: Use gpt-4.1-nano as default
+- Missing skill configurations: Add proper enabled/states/api_key_provider structure
+- Missing owner field: Will be automatically added after your response""",
+        },
+        {
+            "role": "user",
+            "content": f"""Original user request: {original_prompt}
+
+Failed schema:
 {json.dumps(failed_schema, indent=2)}
 
-VALIDATION ERRORS:
-{error_context}
+Validation errors to fix:
+{error_details}
 
-Your task:
-1. Analyze each validation error carefully
-2. Fix the schema to resolve ALL validation errors
-3. Maintain the original intent and functionality
-4. Only use these valid models: {", ".join(valid_models)}
-5. Ensure skills field is a proper dict with valid skill configurations
-6. All required fields must be present and properly formatted
+Please fix these errors and return the corrected agent schema as valid JSON.""",
+        },
+    ]
 
-Return only the corrected schema as valid JSON."""
+    # Log the LLM call if logger is provided
+    if llm_logger:
+        async with llm_logger.log_call(
+            call_type="schema_error_correction",
+            prompt=original_prompt,
+            retry_count=retry_count,
+            is_update=existing_agent is not None,
+            existing_agent_id=getattr(existing_agent, 'id', None),
+            openai_model="gpt-4.1-nano",
+            openai_messages=messages,
+        ) as call_log:
+            call_start_time = time.time()
+            
+            # Make OpenAI API call
+            response = client.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=messages,
+                temperature=0.3,
+                max_tokens=3000,
+            )
 
-    try:
+            # Extract and parse generated content
+            ai_response_content = response.choices[0].message.content.strip()
+            
+            try:
+                # Parse the fixed schema
+                fixed_schema = json.loads(ai_response_content)
+                
+                # Ensure owner is set if user_id is provided
+                if user_id:
+                    fixed_schema["owner"] = user_id
+                
+                # Extract skills for return value
+                identified_skills = set(fixed_schema.get("skills", {}).keys())
+                
+                generated_content = {
+                    "fixed_schema": fixed_schema,
+                    "validation_errors_addressed": validation_errors,
+                    "identified_skills": list(identified_skills),
+                }
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse AI-fixed schema JSON: {e}")
+                # Return original schema if AI response is invalid
+                fixed_schema = failed_schema
+                # Ensure owner is set even for fallback schema
+                if user_id:
+                    fixed_schema["owner"] = user_id
+                identified_skills = set(failed_schema.get("skills", {}).keys())
+                generated_content = {
+                    "error": "Failed to parse AI response", 
+                    "raw_response": ai_response_content,
+                    "fallback_schema": fixed_schema,
+                }
+
+            # Log successful call
+            await llm_logger.log_successful_call(
+                call_log=call_log,
+                response=response,
+                generated_content=generated_content,
+                openai_messages=messages,
+                call_start_time=call_start_time,
+            )
+
+            # Extract token usage
+            token_usage = extract_token_usage(response)
+    else:
+        # Make call without logging (fallback)
         response = client.chat.completions.create(
             model="gpt-4.1-nano",
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": correction_prompt},
-                {
-                    "role": "user",
-                    "content": "Fix the validation errors and return the corrected schema.",
-                },
-            ],
-            temperature=0.1,  # Very low temperature for precise error correction
+            messages=messages,
+            temperature=0.3,
+            max_tokens=3000,
         )
 
-        # Extract token usage
-        token_usage = _extract_token_usage(response)
+        ai_response_content = response.choices[0].message.content.strip()
+        
+        try:
+            fixed_schema = json.loads(ai_response_content)
+            # Ensure owner is set if user_id is provided
+            if user_id:
+                fixed_schema["owner"] = user_id
+            identified_skills = set(fixed_schema.get("skills", {}).keys())
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse AI-fixed schema JSON: {e}")
+            fixed_schema = failed_schema
+            # Ensure owner is set even for fallback schema
+            if user_id:
+                fixed_schema["owner"] = user_id
+            identified_skills = set(failed_schema.get("skills", {}).keys())
 
-        corrected_schema = json.loads(response.choices[0].message.content)
-        logger.info("AI successfully generated error corrections")
+        token_usage = extract_token_usage(response)
 
-        # Ensure model is set to a valid value if not already
-        if (
-            "model" not in corrected_schema
-            or corrected_schema["model"] not in valid_models
-        ):
-            corrected_schema["model"] = "gpt-4.1-nano"
-            logger.info("Explicitly set model to gpt-4.1-nano as fallback")
-
-        # Extract skills for tracking
-        skills_in_schema = set()
-        if "skills" in corrected_schema and isinstance(
-            corrected_schema["skills"], dict
-        ):
-            skills_in_schema = set(corrected_schema["skills"].keys())
-
-        # Filter skills for auto-generation
-        if "skills" in corrected_schema and isinstance(
-            corrected_schema["skills"], dict
-        ):
-            corrected_schema["skills"] = await filter_skills_for_auto_generation(
-                corrected_schema["skills"]
-            )
-        elif "skills" not in corrected_schema or not isinstance(
-            corrected_schema["skills"], dict
-        ):
-            corrected_schema["skills"] = {}
-
-        # Set user ID if provided
-        if user_id:
-            corrected_schema["owner"] = user_id
-
-        return corrected_schema, skills_in_schema, token_usage
-
-    except Exception as e:
-        logger.error(f"AI error correction failed: {e}")
-        # Fallback: return original schema with basic fixes
-        fallback_schema = failed_schema.copy() if failed_schema is not None else {}
-
-        # Apply basic required field fixes
-        required_fields = ["name", "purpose", "personality", "principles"]
-        for field in required_fields:
-            if field not in fallback_schema or not fallback_schema[field]:
-                fallback_schema[field] = f"Generated {field.capitalize()}"
-
-        # Ensure model is valid
-        fallback_schema["model"] = "gpt-4.1-nano"
-
-        # Ensure skills is a dict
-        if "skills" not in fallback_schema or not isinstance(
-            fallback_schema["skills"], dict
-        ):
-            fallback_schema["skills"] = {}
-
-        if user_id:
-            fallback_schema["owner"] = user_id
-
-        return (
-            fallback_schema,
-            set(fallback_schema.get("skills", {}).keys()),
-            {
-                "total_tokens": 0,
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "input_tokens_details": None,
-                "completion_tokens_details": None,
-            },
-        )
+    logger.info(f"AI schema correction completed (retry {retry_count})")
+    return fixed_schema, identified_skills, token_usage

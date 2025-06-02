@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
 
 from app.admin.generator import generate_validated_agent_schema
+from app.admin.generator.llm_logger import create_llm_logger, LLMLogger
 from models.agent import AgentUpdate
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,10 @@ class AgentGenerateRequest(BaseModel):
         None, description="User ID for logging and rate limiting purposes"
     )
 
+    project_id: Optional[str] = Field(
+        None, description="Project ID for conversation history. If not provided, a new project will be created."
+    )
+
     @validator("prompt")
     def validate_prompt_length(cls, v):
         if len(v) < 10:
@@ -53,13 +58,30 @@ class AgentGenerateRequest(BaseModel):
         return v
 
 
+class AgentGenerateResponse(BaseModel):
+    """Response model for agent generation."""
+    
+    agent: Dict[str, Any] = Field(
+        ..., description="The generated agent schema"
+    )
+    
+    project_id: str = Field(
+        ..., description="Project ID for this conversation session"
+    )
+    
+    summary: str = Field(
+        ..., description="Human-readable summary of the generated agent"
+    )
+
+
 @router.post(
     "/generate",
     summary="Generate Agent from Natural Language Prompt",
+    response_model=AgentGenerateResponse,
 )
 async def generate_agent(
     request: AgentGenerateRequest,
-) -> Dict[str, Any]:
+) -> AgentGenerateResponse:
     """Generate an agent schema from a natural language prompt.
 
     Converts plain English descriptions into complete, validated agent configurations.
@@ -70,50 +92,71 @@ async def generate_agent(
     * `prompt` - Natural language description of the agent's desired capabilities
     * `existing_agent` - Optional existing agent to update (preserves current setup while adding capabilities)
     * `user_id` - Optional user ID for logging and rate limiting
+    * `project_id` - Optional project ID for conversation history
 
     **Returns:**
-    * `Dict[str, Any]` - Complete, validated agent schema ready for immediate use
+    * `AgentGenerateResponse` - Contains agent schema, project ID, and human-readable summary
 
     **Raises:**
     * `HTTPException`:
         - 400: Invalid prompt format or length
         - 500: Agent generation failed after retries
     """
-    logger.info(f"Agent generation request received: {request.prompt[:100]}...")
+    # Create or reuse LLM logger based on project_id
+    if request.project_id:
+        llm_logger = LLMLogger(request_id=request.project_id, user_id=request.user_id)
+        project_id = request.project_id
+        logger.info(f"Using existing project_id: {project_id}")
+    else:
+        llm_logger = create_llm_logger(user_id=request.user_id)
+        project_id = llm_logger.request_id
+        logger.info(f"Created new project_id: {project_id}")
+    
+    logger.info(
+        f"Agent generation request received: {request.prompt[:100]}... "
+        f"(project_id={project_id})"
+    )
 
     # Determine if this is an update operation
     is_update = request.existing_agent is not None
 
     if is_update:
-        logger.info("Processing agent update with existing agent data")
+        logger.info(f"Processing agent update with existing agent data (project_id={project_id})")
 
     try:
         # Generate agent schema with automatic validation and AI self-correction
-        agent_schema, identified_skills = await generate_validated_agent_schema(
+        agent_schema, identified_skills, summary = await generate_validated_agent_schema(
             prompt=request.prompt,
             user_id=request.user_id,
             existing_agent=request.existing_agent,
+            llm_logger=llm_logger,
         )
 
-        logger.info("Agent generation completed successfully")
+        logger.info(f"Agent generation completed successfully (project_id={project_id})")
         if is_update:
             logger.info(
-                "Agent schema updated via minimal changes with AI self-correction"
+                f"Agent schema updated via minimal changes with AI self-correction (project_id={project_id})"
             )
         else:
-            logger.info("New agent schema generated successfully with validation")
+            logger.info(f"New agent schema generated successfully with validation (project_id={project_id})")
 
-        return agent_schema
+        return AgentGenerateResponse(
+            agent=agent_schema,
+            project_id=project_id,
+            summary=summary
+        )
 
     except Exception as e:
         # All internal retries and AI self-correction failed
         logger.error(
-            f"Agent generation failed after all attempts: {str(e)}", exc_info=True
+            f"Agent generation failed after all attempts (project_id={project_id}): {str(e)}", 
+            exc_info=True
         )
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "AgentGenerationFailed",
                 "msg": f"Failed to generate valid agent: {str(e)}",
+                "project_id": project_id,
             },
         )

@@ -1,10 +1,7 @@
 """Agent Generator Package.
 
-This package contains all the modular components for AI-powered agent generation:
-- agent_generator: Main orchestrator and entry points
-- skill_processor: Skill identification, validation, and filtering
-- validation: Schema and business logic validation
-- ai_assistant: AI-powered operations and error correction
+AI-powered system for generating IntentKit agent schemas from natural language prompts.
+Each LLM call is individually tracked with request ID and retry count for cost analysis.
 """
 
 from .agent_generator import (
@@ -13,38 +10,47 @@ from .agent_generator import (
 )
 from .ai_assistant import (
     enhance_agent,
-    fix_agent_schema_with_ai,
     generate_agent_attributes,
     generate_validated_agent,
+)
+from .llm_logger import (
+    create_llm_logger,
+    get_conversation_history,
+    LLMLogger,
 )
 from .skill_processor import (
     filter_skills_for_auto_generation,
     identify_skills,
-    validate_skills_exist,
 )
+from .utils import extract_token_usage, generate_agent_summary, generate_request_id, ALLOWED_MODELS
 from .validation import (
-    ValidationResult,
     validate_agent_create,
     validate_schema,
-    validate_schema_against_json_schema,
+    ValidationResult,
 )
 
 __all__ = [
-    # Main functions
+    # Main generation functions
     "generate_agent_schema",
     "generate_validated_agent_schema",
-    # Skill processing
-    "filter_skills_for_auto_generation",
-    "identify_skills",
-    "validate_skills_exist",
-    # Validation
-    "ValidationResult",
-    "validate_agent_create",
-    "validate_schema",
-    "validate_schema_against_json_schema",
+    "generate_validated_agent",
     # AI operations
     "enhance_agent",
     "generate_agent_attributes",
-    "generate_validated_agent",
-    "fix_agent_schema_with_ai",
+    "generate_agent_summary",
+    "get_conversation_history",
+    # LLM logging
+    "create_llm_logger",
+    "generate_request_id",
+    "LLMLogger",
+    # Skill processing
+    "identify_skills",
+    "filter_skills_for_auto_generation",
+    # Utilities
+    "extract_token_usage",
+    "ALLOWED_MODELS",
+    # Validation
+    "validate_schema",
+    "validate_agent_create",
+    "ValidationResult",
 ]
