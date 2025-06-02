@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 
 from langchain_core.language_models import LanguageModelLike
@@ -19,6 +20,7 @@ from langmem.short_term.summarization import (
 )
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
 
 class PreModelNode(RunnableCallable):
     """LangGraph node that run before the LLM is called."""
@@ -43,6 +45,7 @@ class PreModelNode(RunnableCallable):
         self.final_prompt = DEFAULT_FINAL_SUMMARY_PROMPT
         self.input_messages_key = "messages"
         self.output_messages_key = "pre_model_messages"
+        self.func_accepts_config = True
 
     def _parse_input(
         self, input: dict[str, Any] | BaseModel
@@ -86,9 +89,8 @@ class PreModelNode(RunnableCallable):
         self,
         input: dict[str, Any] | BaseModel,
         config: RunnableConfig,
-        *,
-        store: Optional[BaseStore],
     ) -> dict[str, Any]:
+        # logger.debug(f"Running PreModelNode, input: {input}, config: {config}")
         messages, context = self._parse_input(input)
         if self.short_term_memory_strategy == "trim":
             trimmed_messages = trim_messages(
@@ -116,6 +118,7 @@ class PreModelNode(RunnableCallable):
                 existing_summary_prompt=self.existing_summary_prompt,
                 final_prompt=self.final_prompt,
             )
+            logger.debug(f"Summarization result: {summarization_result}")
             return self._prepare_state_update(context, summarization_result)
         raise ValueError(
             f"Invalid short_term_memory_strategy: {self.short_term_memory_strategy}"
@@ -134,7 +137,5 @@ class PostModelNode(RunnableCallable):
         self,
         input: dict[str, Any] | BaseModel,
         config: RunnableConfig,
-        *,
-        store: Optional[BaseStore],
     ) -> dict[str, Any]:
         pass

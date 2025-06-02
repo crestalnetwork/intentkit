@@ -18,6 +18,7 @@ import traceback
 from datetime import datetime
 from typing import Optional
 
+from langgraph.prebuilt import create_react_agent
 import sqlalchemy
 from coinbase_agentkit import (
     AgentKit,
@@ -56,6 +57,7 @@ from app.config.config import config
 from app.core.agent import AgentStore
 from app.core.credit import expense_message, expense_skill, skill_cost
 from app.core.graph import create_agent
+from app.core.node import PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
 from models.agent import Agent, AgentData, AgentQuota, AgentTable
@@ -111,9 +113,6 @@ async def initialize_agent(aid, is_private=False):
     Raises:
         HTTPException: If agent not found (404) or database error (500)
     """
-    # init agent store
-    agent_store = AgentStore(aid)
-
     # get the agent from the database
     agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
@@ -204,16 +203,34 @@ async def initialize_agent(aid, is_private=False):
             f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name}"
         )
 
-    # Create ReAct Agent using the LLM and CDP Agentkit tools.
-    executor = create_agent(
-        aid,
-        llm,
-        tools=tools,
-        checkpointer=memory,
-        state_modifier=formatted_prompt,
-        debug=config.debug_checkpoint,
-        input_token_limit=input_token_limit,
+    # Pre model hook
+    pre_model_hook = PreModelNode(
+        model=llm,
+        short_term_memory_strategy=agent.short_term_memory_strategy,
+        max_tokens=input_token_limit,
+        max_summary_tokens=2048, # later we can let agent to set this
     )
+
+    # Create ReAct Agent using the LLM and CDP Agentkit tools.
+    executor = create_react_agent(
+        model=llm,
+        tools=tools,
+        prompt=formatted_prompt,
+        pre_model_hook=pre_model_hook,
+        checkpointer=memory,
+        debug=config.debug_checkpoint,
+        name=aid,
+    )
+    # executor = create_agent(
+    #     aid,
+    #     llm,
+    #     tools=tools,
+    #     checkpointer=memory,
+    #     state_modifier=formatted_prompt,
+    #     debug=config.debug_checkpoint,
+    #     input_token_limit=input_token_limit,
+    # )
+
     if is_private:
         _private_agents[aid] = executor
         _private_agents_updated[aid] = agent.updated_at
@@ -637,7 +654,7 @@ async def execute_agent(
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     resp.append(skill_message)
-            elif "memory_manager" in chunk:
+            elif "pre_model_hook" in chunk or "post_model_hook" in chunk:
                 pass
             else:
                 error_traceback = traceback.format_exc()
