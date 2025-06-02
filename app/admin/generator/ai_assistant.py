@@ -15,14 +15,13 @@ from openai import OpenAI
 
 from app.config.config import config
 from models.agent import AgentUpdate
+from models.db import get_session
 from models.generator import (
     AgentGenerationLog,
     AgentGenerationLogCreate,
 )
-from models.db import get_session
 
 from .skill_processor import (
-    AVAILABLE_SKILL_CATEGORIES,
     filter_skills_for_auto_generation,
     identify_skills,
 )
@@ -54,10 +53,10 @@ ALLOWED_MODELS = [
 
 def _extract_token_usage(response) -> Dict[str, Any]:
     """Extract token usage information from OpenAI response.
-    
+
     Args:
         response: OpenAI API response
-        
+
     Returns:
         Dict containing token usage information
     """
@@ -68,20 +67,35 @@ def _extract_token_usage(response) -> Dict[str, Any]:
         "input_tokens_details": None,
         "completion_tokens_details": None,
     }
-    
+
     if hasattr(response, "usage") and response.usage:
         usage = response.usage
         usage_info["total_tokens"] = getattr(usage, "total_tokens", 0)
-        usage_info["input_tokens"] = getattr(usage, "prompt_tokens", 0) or getattr(usage, "input_tokens", 0)
-        usage_info["output_tokens"] = getattr(usage, "completion_tokens", 0) or getattr(usage, "output_tokens", 0)
-        
+        usage_info["input_tokens"] = getattr(usage, "prompt_tokens", 0) or getattr(
+            usage, "input_tokens", 0
+        )
+        usage_info["output_tokens"] = getattr(usage, "completion_tokens", 0) or getattr(
+            usage, "output_tokens", 0
+        )
+
         # Get detailed token information if available
         if hasattr(usage, "input_tokens_details") and usage.input_tokens_details:
-            usage_info["input_tokens_details"] = usage.input_tokens_details.__dict__ if hasattr(usage.input_tokens_details, "__dict__") else dict(usage.input_tokens_details)
-            
-        if hasattr(usage, "completion_tokens_details") and usage.completion_tokens_details:
-            usage_info["completion_tokens_details"] = usage.completion_tokens_details.__dict__ if hasattr(usage.completion_tokens_details, "__dict__") else dict(usage.completion_tokens_details)
-    
+            usage_info["input_tokens_details"] = (
+                usage.input_tokens_details.__dict__
+                if hasattr(usage.input_tokens_details, "__dict__")
+                else dict(usage.input_tokens_details)
+            )
+
+        if (
+            hasattr(usage, "completion_tokens_details")
+            and usage.completion_tokens_details
+        ):
+            usage_info["completion_tokens_details"] = (
+                usage.completion_tokens_details.__dict__
+                if hasattr(usage.completion_tokens_details, "__dict__")
+                else dict(usage.completion_tokens_details)
+            )
+
     return usage_info
 
 
@@ -229,12 +243,22 @@ Return JSON with only the text fields that need updates."""
             total_token_usage["total_tokens"] += token_usage["total_tokens"]
             total_token_usage["input_tokens"] += token_usage["input_tokens"]
             total_token_usage["output_tokens"] += token_usage["output_tokens"]
-            
+
             # Store the first detailed token info (if available)
-            if not total_token_usage["input_tokens_details"] and token_usage["input_tokens_details"]:
-                total_token_usage["input_tokens_details"] = token_usage["input_tokens_details"]
-            if not total_token_usage["completion_tokens_details"] and token_usage["completion_tokens_details"]:
-                total_token_usage["completion_tokens_details"] = token_usage["completion_tokens_details"]
+            if (
+                not total_token_usage["input_tokens_details"]
+                and token_usage["input_tokens_details"]
+            ):
+                total_token_usage["input_tokens_details"] = token_usage[
+                    "input_tokens_details"
+                ]
+            if (
+                not total_token_usage["completion_tokens_details"]
+                and token_usage["completion_tokens_details"]
+            ):
+                total_token_usage["completion_tokens_details"] = token_usage[
+                    "completion_tokens_details"
+                ]
 
             attr_updates = json.loads(response.choices[0].message.content)
             # Apply attribute updates (but never skills)
@@ -271,7 +295,7 @@ async def generate_agent_attributes(
     prompt: str, skills_config: Dict[str, Any], client: OpenAI
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Generate agent attributes based on the prompt.
-    
+
     Returns:
         A tuple of (attributes, token_usage)
     """
@@ -297,10 +321,10 @@ Return JSON format."""
             ],
             temperature=0.7,
         )
-        
+
         # Extract token usage
         token_usage = _extract_token_usage(response)
-        
+
         attributes = json.loads(response.choices[0].message.content)
         attributes["name"] = attributes.get("name", "")[:50]
         attributes["owner"] = "system"
@@ -349,7 +373,7 @@ async def generate_validated_agent(
         A tuple of (validated_schema, identified_skills)
     """
     start_time = time.time()
-    
+
     # Create generation log
     async with get_session() as session:
         log_data = AgentGenerationLogCreate(
@@ -359,13 +383,13 @@ async def generate_validated_agent(
             is_update=existing_agent is not None,
         )
         generation_log = await AgentGenerationLog.create(session, log_data)
-    
+
     # Track cumulative metrics
     total_tokens_used = 0
     total_input_tokens = 0
     total_output_tokens = 0
     all_token_details = []
-    
+
     # Get OpenAI API key from config
     api_key = config.openai_api_key
     if not api_key:
@@ -403,7 +427,7 @@ async def generate_validated_agent(
                     )
                     last_schema = schema
                     identified_skills = skills
-                    
+
                     # Accumulate token usage from first attempt
                     if token_usage:
                         total_tokens_used += token_usage["total_tokens"]
@@ -423,7 +447,7 @@ async def generate_validated_agent(
                     )
                     last_schema = schema
                     identified_skills = identified_skills.union(skills)
-                    
+
                     # Accumulate token usage
                     if token_usage:
                         total_tokens_used += token_usage["total_tokens"]
@@ -438,7 +462,7 @@ async def generate_validated_agent(
                 # Check if validation passed
                 if schema_validation.valid and agent_validation.valid:
                     logger.info(f"Validation passed on attempt {attempt + 1}")
-                    
+
                     # Update log with success
                     async with get_session() as session:
                         await generation_log.update_completion(
@@ -449,13 +473,21 @@ async def generate_validated_agent(
                             total_tokens=total_tokens_used,
                             input_tokens=total_input_tokens,
                             output_tokens=total_output_tokens,
-                            input_tokens_details=all_token_details[0].get("input_tokens_details") if all_token_details else None,
-                            completion_tokens_details=all_token_details[0].get("completion_tokens_details") if all_token_details else None,
+                            input_tokens_details=all_token_details[0].get(
+                                "input_tokens_details"
+                            )
+                            if all_token_details
+                            else None,
+                            completion_tokens_details=all_token_details[0].get(
+                                "completion_tokens_details"
+                            )
+                            if all_token_details
+                            else None,
                             generation_time_ms=int((time.time() - start_time) * 1000),
                             retry_count=attempt,
                             success=True,
                         )
-                    
+
                     return schema, identified_skills
 
                 # Collect raw validation errors for AI feedback
@@ -483,7 +515,7 @@ async def generate_validated_agent(
         # All attempts failed
         error_summary = "; ".join(last_errors[-5:])  # Last 5 errors for context
         error_message = f"Failed to generate valid agent schema after {max_attempts} attempts. Last errors: {error_summary}"
-        
+
         # Update log with failure
         async with get_session() as session:
             await generation_log.update_completion(
@@ -500,9 +532,9 @@ async def generate_validated_agent(
                 success=False,
                 error_message=error_message,
             )
-        
+
         raise ValueError(error_message)
-        
+
     except Exception as e:
         # Update log with unexpected error
         async with get_session() as session:
@@ -565,7 +597,7 @@ Your task:
 1. Analyze each validation error carefully
 2. Fix the schema to resolve ALL validation errors
 3. Maintain the original intent and functionality
-4. Only use these valid models: {', '.join(valid_models)}
+4. Only use these valid models: {", ".join(valid_models)}
 5. Ensure skills field is a proper dict with valid skill configurations
 6. All required fields must be present and properly formatted
 
@@ -647,10 +679,14 @@ Return only the corrected schema as valid JSON."""
         if user_id:
             fallback_schema["owner"] = user_id
 
-        return fallback_schema, set(fallback_schema.get("skills", {}).keys()), {
-            "total_tokens": 0,
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "input_tokens_details": None,
-            "completion_tokens_details": None,
-        }
+        return (
+            fallback_schema,
+            set(fallback_schema.get("skills", {}).keys()),
+            {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "input_tokens_details": None,
+                "completion_tokens_details": None,
+            },
+        )

@@ -5,7 +5,6 @@ including token usage, prompts, AI responses, and generation metadata.
 """
 
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Annotated, Optional
 
 from epyxid import XID
@@ -14,9 +13,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Float,
     Integer,
-    Numeric,
     String,
     Text,
     func,
@@ -26,7 +23,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import Base
-from models.db import get_session
 
 
 class AgentGenerationLogTable(Base):
@@ -340,4 +336,4 @@ class AgentGenerationLog(BaseModel):
         )
         log_records = result.scalars().all()
 
-        return [cls.model_validate(record) for record in log_records] 
+        return [cls.model_validate(record) for record in log_records]
