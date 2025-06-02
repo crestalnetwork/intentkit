@@ -59,13 +59,17 @@ class LLMLogger:
             "request_id": self.request_id,
             "retry_count": retry_count,
         }
-        
-        logger.info(f"Started LLM call: {call_type} (request_id={self.request_id}, retry={retry_count})")
-        
+
+        logger.info(
+            f"Started LLM call: {call_type} (request_id={self.request_id}, retry={retry_count})"
+        )
+
         try:
             yield call_info
         except Exception as e:
-            logger.error(f"LLM call failed: {call_type} (request_id={self.request_id}): {str(e)}")
+            logger.error(
+                f"LLM call failed: {call_type} (request_id={self.request_id}): {str(e)}"
+            )
             raise
 
     async def log_successful_call(
@@ -85,8 +89,10 @@ class LLMLogger:
             openai_messages: Messages sent to OpenAI
             call_start_time: When the call started (for duration calculation)
         """
-        logger.info(f"LLM call completed successfully: {call_log.get('type', 'unknown')}")
-        
+        logger.info(
+            f"LLM call completed successfully: {call_log.get('type', 'unknown')}"
+        )
+
         # Store conversation in memory for this project
         if generated_content and self.request_id:
             self._store_conversation_turn(
@@ -96,40 +102,37 @@ class LLMLogger:
             )
 
     def _store_conversation_turn(
-        self, 
-        prompt: str, 
-        response_content: Dict[str, Any], 
-        call_type: str
+        self, prompt: str, response_content: Dict[str, Any], call_type: str
     ):
         """Store a conversation turn in memory."""
         if self.request_id not in _conversation_history:
             _conversation_history[self.request_id] = []
-        
+
         # Add user message
-        _conversation_history[self.request_id].append({
-            "role": "user",
-            "content": prompt
-        })
-        
+        _conversation_history[self.request_id].append(
+            {"role": "user", "content": prompt}
+        )
+
         # Add AI response based on call type
         ai_content = self._format_ai_response(response_content, call_type)
         if ai_content:
-            _conversation_history[self.request_id].append({
-                "role": "assistant", 
-                "content": ai_content
-            })
+            _conversation_history[self.request_id].append(
+                {"role": "assistant", "content": ai_content}
+            )
 
-    def _format_ai_response(self, content: Dict[str, Any], call_type: str) -> Optional[str]:
+    def _format_ai_response(
+        self, content: Dict[str, Any], call_type: str
+    ) -> Optional[str]:
         """Format AI response content for conversation history."""
         if call_type == "agent_attribute_generation" and "attributes" in content:
             attrs = content["attributes"]
-            response = f"I've created an agent with the following attributes:\n"
+            response = "I've created an agent with the following attributes:\n"
             response += f"Name: {attrs.get('name', 'N/A')}\n"
             response += f"Purpose: {attrs.get('purpose', 'N/A')}\n"
             response += f"Personality: {attrs.get('personality', 'N/A')}\n"
             response += f"Principles: {attrs.get('principles', 'N/A')}"
             return response
-        
+
         elif call_type == "agent_attribute_update" and "updated_attributes" in content:
             updates = content["updated_attributes"]
             response = "I've updated the agent with the following changes:\n"
@@ -137,19 +140,19 @@ class LLMLogger:
                 if value:
                     response += f"{attr.title()}: {value}\n"
             return response
-        
+
         elif call_type == "schema_error_correction":
             return "I've corrected the agent schema to fix validation errors."
-        
+
         return None
 
 
 def create_llm_logger(user_id: Optional[str] = None) -> LLMLogger:
     """Create a new LLM logger with a unique request ID.
-    
+
     Args:
         user_id: Optional user ID for the request
-        
+
     Returns:
         LLMLogger instance with unique request ID
     """
@@ -171,8 +174,8 @@ async def get_conversation_history(
         List of conversation messages in chronological order
     """
     logger.info(f"Getting conversation history for project: {project_id}")
-    
+
     history = _conversation_history.get(project_id, [])
     logger.info(f"Found {len(history)} conversation messages for project {project_id}")
-    
-    return history 
+
+    return history

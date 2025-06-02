@@ -3,13 +3,12 @@
 Common helper functions used across the generator modules.
 """
 
-import json
 import logging
 import time
-from typing import Any, Dict, Set, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
-from openai import OpenAI
 from epyxid import XID
+from openai import OpenAI
 
 if TYPE_CHECKING:
     from .llm_logger import LLMLogger
@@ -90,12 +89,14 @@ async def generate_agent_summary(
     logger.info("Generating agent summary message")
 
     # Create skills list
-    skills_list = ", ".join(identified_skills) if identified_skills else "general capabilities"
-    
+    skills_list = (
+        ", ".join(identified_skills) if identified_skills else "general capabilities"
+    )
+
     # Get agent attributes
     agent_name = schema.get("name", "AI Agent")
     agent_purpose = schema.get("purpose", "assist users with various tasks")
-    
+
     # Prepare messages for summary generation
     messages = [
         {
@@ -134,7 +135,7 @@ Write a congratulatory message.""",
             openai_messages=messages,
         ) as call_log:
             call_start_time = time.time()
-            
+
             # Make OpenAI API call
             response = client.chat.completions.create(
                 model="gpt-4.1-nano",
@@ -145,7 +146,7 @@ Write a congratulatory message.""",
 
             # Extract generated content
             summary = response.choices[0].message.content.strip()
-            
+
             generated_content = {
                 "summary": summary,
                 "agent_name": agent_name,
@@ -191,4 +192,4 @@ ALLOWED_MODELS = [
     "reigent",
     "venice-uncensored",
     "venice-llama-4-maverick-17b",
-] 
+]

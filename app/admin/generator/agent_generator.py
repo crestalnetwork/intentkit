@@ -5,7 +5,7 @@ This module coordinates the skill processing, validation, and AI assistance modu
 """
 
 import logging
-from typing import Any, Dict, Optional, Set, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple
 
 from openai import OpenAI
 
@@ -72,8 +72,8 @@ async def generate_agent_schema(
         # Create new agent from scratch
         logger.info("Creating new agent from scratch")
         schema, skills, token_usage = await _generate_new_agent_schema(
-            prompt=prompt, 
-            client=client, 
+            prompt=prompt,
+            client=client,
             user_id=user_id,
             llm_logger=llm_logger,
         )
@@ -83,8 +83,8 @@ async def generate_agent_schema(
 
 
 async def _generate_new_agent_schema(
-    prompt: str, 
-    client: OpenAI, 
+    prompt: str,
+    client: OpenAI,
     user_id: Optional[str] = None,
     llm_logger: Optional["LLMLogger"] = None,
 ) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
 
 from app.admin.generator import generate_validated_agent_schema
-from app.admin.generator.llm_logger import create_llm_logger, LLMLogger
+from app.admin.generator.llm_logger import LLMLogger, create_llm_logger
 from models.agent import AgentUpdate
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,8 @@ class AgentGenerateRequest(BaseModel):
     )
 
     project_id: Optional[str] = Field(
-        None, description="Project ID for conversation history. If not provided, a new project will be created."
+        None,
+        description="Project ID for conversation history. If not provided, a new project will be created.",
     )
 
     @validator("prompt")
@@ -60,15 +61,11 @@ class AgentGenerateRequest(BaseModel):
 
 class AgentGenerateResponse(BaseModel):
     """Response model for agent generation."""
-    
-    agent: Dict[str, Any] = Field(
-        ..., description="The generated agent schema"
-    )
-    
-    project_id: str = Field(
-        ..., description="Project ID for this conversation session"
-    )
-    
+
+    agent: Dict[str, Any] = Field(..., description="The generated agent schema")
+
+    project_id: str = Field(..., description="Project ID for this conversation session")
+
     summary: str = Field(
         ..., description="Human-readable summary of the generated agent"
     )
@@ -111,7 +108,7 @@ async def generate_agent(
         llm_logger = create_llm_logger(user_id=request.user_id)
         project_id = llm_logger.request_id
         logger.info(f"Created new project_id: {project_id}")
-    
+
     logger.info(
         f"Agent generation request received: {request.prompt[:100]}... "
         f"(project_id={project_id})"
@@ -121,36 +118,44 @@ async def generate_agent(
     is_update = request.existing_agent is not None
 
     if is_update:
-        logger.info(f"Processing agent update with existing agent data (project_id={project_id})")
+        logger.info(
+            f"Processing agent update with existing agent data (project_id={project_id})"
+        )
 
     try:
         # Generate agent schema with automatic validation and AI self-correction
-        agent_schema, identified_skills, summary = await generate_validated_agent_schema(
+        (
+            agent_schema,
+            identified_skills,
+            summary,
+        ) = await generate_validated_agent_schema(
             prompt=request.prompt,
             user_id=request.user_id,
             existing_agent=request.existing_agent,
             llm_logger=llm_logger,
         )
 
-        logger.info(f"Agent generation completed successfully (project_id={project_id})")
+        logger.info(
+            f"Agent generation completed successfully (project_id={project_id})"
+        )
         if is_update:
             logger.info(
                 f"Agent schema updated via minimal changes with AI self-correction (project_id={project_id})"
             )
         else:
-            logger.info(f"New agent schema generated successfully with validation (project_id={project_id})")
+            logger.info(
+                f"New agent schema generated successfully with validation (project_id={project_id})"
+            )
 
         return AgentGenerateResponse(
-            agent=agent_schema,
-            project_id=project_id,
-            summary=summary
+            agent=agent_schema, project_id=project_id, summary=summary
         )
 
     except Exception as e:
         # All internal retries and AI self-correction failed
         logger.error(
-            f"Agent generation failed after all attempts (project_id={project_id}): {str(e)}", 
-            exc_info=True
+            f"Agent generation failed after all attempts (project_id={project_id}): {str(e)}",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=500,
