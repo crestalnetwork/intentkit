@@ -18,26 +18,7 @@ import traceback
 from datetime import datetime
 from typing import Optional
 
-from langgraph.prebuilt import create_react_agent
 import sqlalchemy
-from coinbase_agentkit import (
-    AgentKit,
-    AgentKitConfig,
-    CdpWalletProvider,
-    CdpWalletProviderConfig,
-    basename_action_provider,
-    cdp_api_action_provider,
-    cdp_wallet_action_provider,
-    erc20_action_provider,
-    morpho_action_provider,
-    pyth_action_provider,
-    superfluid_action_provider,
-    wallet_action_provider,
-    weth_action_provider,
-    wow_action_provider,
-)
-from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
-from coinbase_agentkit_langchain import get_langchain_tools
 from epyxid import XID
 from fastapi import HTTPException
 from langchain_core.messages import (
@@ -49,15 +30,14 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
+from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from abstracts.graph import AgentState
 from app.config.config import config
-from app.core.agent import AgentStore
 from app.core.credit import expense_message, expense_skill, skill_cost
-from app.core.graph import create_agent
-from app.core.node import PreModelNode
+from app.core.node import PostModelNode, PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
 from models.agent import Agent, AgentData, AgentQuota, AgentTable
@@ -68,17 +48,6 @@ from models.db import get_pool, get_session
 from models.llm import get_model_cost
 from models.skill import AgentSkillData, Skill, ThreadSkillData
 from models.user import User
-from skills.acolyt import get_acolyt_skill
-from skills.allora import get_allora_skill
-from skills.cdp.get_balance import GetBalance
-from skills.elfa import get_elfa_skill
-from skills.enso import get_enso_skill
-from skills.goat import (
-    create_smart_wallets_if_not_exist,
-    get_goat_skill,
-    init_smart_wallets,
-)
-from skills.twitter import get_twitter_skill
 from utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -208,8 +177,10 @@ async def initialize_agent(aid, is_private=False):
         model=llm,
         short_term_memory_strategy=agent.short_term_memory_strategy,
         max_tokens=input_token_limit,
-        max_summary_tokens=2048, # later we can let agent to set this
+        max_summary_tokens=2048,  # later we can let agent to set this
     )
+    # Post model hook
+    post_model_hook = PostModelNode()
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
@@ -217,6 +188,8 @@ async def initialize_agent(aid, is_private=False):
         tools=tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
+        post_model_hook=post_model_hook,
+        state_schema=AgentState,
         checkpointer=memory,
         debug=config.debug_checkpoint,
         name=aid,
@@ -295,10 +268,10 @@ async def execute_agent(
 
     agent = await Agent.get(input.agent_id)
 
-    need_payment = config.payment_enabled
+    payment_enabled = config.payment_enabled
 
     # check user balance
-    if need_payment:
+    if payment_enabled:
         if not input.user_id or not agent.owner:
             raise IntentKitAPIError(
                 500,
@@ -441,9 +414,9 @@ async def execute_agent(
             "agent": agent,
             "thread_id": thread_id,
             "user_id": input.user_id,
-            "payer": payer,
             "entrypoint": input.author_type,
             "entrypoint_prompt": entrypoint_prompt,
+            "payer": payer if payment_enabled else None,
         }
     }
 
@@ -463,7 +436,7 @@ async def execute_agent(
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     # tool calls, save for later use
                     cached_tool_step = msg
-                    if need_payment:
+                    if payment_enabled:
                         for tool_call in msg.tool_calls:
                             skill_meta = await Skill.get(tool_call.get("name"))
                             if skill_meta:
@@ -519,7 +492,7 @@ async def execute_agent(
                     # handle message and payment in one transaction
                     async with get_session() as session:
                         # payment
-                        if need_payment:
+                        if payment_enabled:
                             amount = await get_model_cost(
                                 agent.model,
                                 chat_message_create.input_tokens,
@@ -614,7 +587,7 @@ async def execute_agent(
                 cached_tool_step = None
                 # save message and credit in one transaction
                 async with get_session() as session:
-                    if need_payment:
+                    if payment_enabled:
                         # message payment
                         message_amount = await get_model_cost(
                             agent.model,
@@ -678,7 +651,7 @@ async def execute_agent(
                 author_type=AuthorType.SYSTEM,
                 thread_type=input.author_type,
                 reply_to=input.id,
-                message="IntentKit internal error",
+                message="IntentKit Internal Error",
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
@@ -688,7 +661,7 @@ async def execute_agent(
             error_traceback = traceback.format_exc()
             logger.error(
                 f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id},
+                extra={"thread_id": thread_id, "agent_id": input.agent_id},
             )
             error_message_create = ChatMessageCreate(
                 id=str(XID()),
@@ -699,7 +672,7 @@ async def execute_agent(
                 author_type=AuthorType.SYSTEM,
                 thread_type=input.author_type,
                 reply_to=input.id,
-                message=f"Error in agent:\n  {str(e)}",
+                message="Internal Agent Error",
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()

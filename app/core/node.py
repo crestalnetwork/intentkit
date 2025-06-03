@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (
@@ -9,7 +9,6 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.store.base import BaseStore
 from langgraph.utils.runnable import RunnableCallable
 from langmem.short_term.summarization import (
     DEFAULT_EXISTING_SUMMARY_PROMPT,
@@ -20,7 +19,10 @@ from langmem.short_term.summarization import (
 )
 from pydantic import BaseModel
 
+from abstracts.graph import AgentState
+
 logger = logging.getLogger(__name__)
+
 
 class PreModelNode(RunnableCallable):
     """LangGraph node that run before the LLM is called."""
@@ -43,51 +45,38 @@ class PreModelNode(RunnableCallable):
         self.initial_summary_prompt = DEFAULT_INITIAL_SUMMARY_PROMPT
         self.existing_summary_prompt = DEFAULT_EXISTING_SUMMARY_PROMPT
         self.final_prompt = DEFAULT_FINAL_SUMMARY_PROMPT
-        self.input_messages_key = "messages"
-        self.output_messages_key = "pre_model_messages"
         self.func_accepts_config = True
 
     def _parse_input(
-        self, input: dict[str, Any] | BaseModel
+        self, input: AgentState
     ) -> tuple[list[AnyMessage], dict[str, Any]]:
-        if isinstance(input, dict):
-            messages = input.get(self.input_messages_key)
-            context = input.get("context", {})
-        elif isinstance(input, BaseModel):
-            messages = getattr(input, self.input_messages_key, None)
-            context = getattr(input, "context", {})
-        else:
-            raise ValueError(f"Invalid input type: {type(input)}")
-
+        messages = input.get("messages")
+        context = input.get("context", {})
         if messages is None:
-            raise ValueError(
-                f"Missing required field `{self.input_messages_key}` in the input."
-            )
+            raise ValueError("Missing required field `messages` in the input.")
         return messages, context
 
+    # overwrite old messages if summarization is used
     def _prepare_state_update(
         self, context: dict[str, Any], summarization_result: SummarizationResult
     ) -> dict[str, Any]:
-        state_update = {self.output_messages_key: summarization_result.messages}
+        state_update = {
+            "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]
+            + summarization_result.messages
+        }
         if summarization_result.running_summary:
             state_update["context"] = {
                 **context,
                 "running_summary": summarization_result.running_summary,
             }
-            # If the input and output messages keys are the same, we need to remove the
-            # summarized messages from the resulting message list
-            if self.input_messages_key == self.output_messages_key:
-                state_update[self.output_messages_key] = [
-                    RemoveMessage(REMOVE_ALL_MESSAGES)
-                ] + state_update[self.output_messages_key]
         return state_update
 
-    def _func(self, input: dict[str, Any] | BaseModel) -> dict[str, Any]:
+    def _func(self, AgentState) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
     async def _afunc(
         self,
-        input: dict[str, Any] | BaseModel,
+        input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
         # logger.debug(f"Running PreModelNode, input: {input}, config: {config}")
@@ -102,8 +91,7 @@ class PreModelNode(RunnableCallable):
                 end_on=("human", "tool"),
             )
             return {
-                self.output_messages_key: trimmed_messages,
-                "context": context,
+                "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
             }
         if self.short_term_memory_strategy == "summarize":
             summarization_result = await asummarize_messages(
@@ -124,18 +112,24 @@ class PreModelNode(RunnableCallable):
             f"Invalid short_term_memory_strategy: {self.short_term_memory_strategy}"
         )
 
+
 class PostModelNode(RunnableCallable):
-    def __init__( self) -> None:
+    def __init__(self) -> None:
         super().__init__(self._func, self._afunc, name="post_model_node", trace=False)
-        self.input_messages_key = "messages"
-        self.output_messages_key = "post_model_messages"
+        self.func_accepts_config = True
 
     def _func(self, input: dict[str, Any] | BaseModel) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
     async def _afunc(
         self,
-        input: dict[str, Any] | BaseModel,
+        input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
-        pass
+        messages = input.get("messages")
+        logger.debug(f"first: {messages[0]}")
+        logger.debug(f"last: {messages[-1]}")
+        payer = config.get("payer")
+        if not payer:
+            return {}
+        return {"messages": messages}
