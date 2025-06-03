@@ -441,6 +441,7 @@ async def execute_agent(
             "agent": agent,
             "thread_id": thread_id,
             "user_id": input.user_id,
+            "payer": payer,
             "entrypoint": input.author_type,
             "entrypoint_prompt": entrypoint_prompt,
         }
