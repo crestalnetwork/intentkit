@@ -13,7 +13,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -32,7 +32,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate Japanese anime-style images using Heurist's AnimagineXL model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "image_generation_arthemy_comics": {
           "type": "string",
@@ -64,7 +64,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate realistic images using Heurist's ArthemyReal model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "image_generation_braindance": {
           "type": "string",
@@ -80,7 +80,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate artistic images using Heurist's BrainDance model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "image_generation_cyber_realistic_xl": {
           "type": "string",
@@ -96,7 +96,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate hyperrealistic photographs with a cyberpunk aesthetic using Heurist's CyberRealisticXL model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "image_generation_flux_1_dev": {
           "type": "string",
@@ -128,7 +128,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate high-quality images in any style using Heurist's SDXL model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each Heurist AI skill (disabled, public, or private)"

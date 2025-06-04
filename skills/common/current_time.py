@@ -50,8 +50,6 @@ class CurrentTime(CommonBaseTool):
         """
         # Get current UTC time
         utc_now = datetime.now(pytz.UTC)
-        context = self.context_from_config(config)
-        logger.debug(f"context: {context}")
 
         # Convert to the requested timezone
         if timezone.upper() != "UTC":

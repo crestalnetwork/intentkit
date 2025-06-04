@@ -1,6 +1,5 @@
 """Scheduler for periodic tasks."""
 
-import asyncio
 import logging
 import time
 
@@ -14,7 +13,8 @@ from app.core.agent import agent_action_cost
 from app.core.credit import refill_all_free_credits
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 from models.agent import AgentQuotaTable, AgentTable
-from models.db import get_session, init_db
+from models.db import get_session
+from models.redis import get_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,21 @@ async def reset_monthly_quotas():
         )
         await session.execute(stmt)
         await session.commit()
+
+
+async def send_scheduler_heartbeat():
+    """Send a heartbeat signal to Redis to indicate the scheduler is running.
+
+    This function sends a heartbeat to Redis that expires after 16 minutes,
+    allowing other services to verify that the scheduler is operational.
+    """
+    logger.info("Sending scheduler heartbeat")
+    try:
+        redis_client = get_redis()
+        await send_heartbeat(redis_client, "scheduler")
+        logger.info("Sent scheduler heartbeat successfully")
+    except Exception as e:
+        logger.error(f"Error sending scheduler heartbeat: {e}")
 
 
 async def update_agent_action_cost():
@@ -189,6 +204,16 @@ def create_scheduler():
         replace_existing=True,
     )
 
+    # Send heartbeat every minute
+    if config.redis_host:
+        scheduler.add_job(
+            send_scheduler_heartbeat,
+            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
+            id="scheduler_heartbeat",
+            name="Scheduler Heartbeat",
+            replace_existing=True,
+        )
+
     return scheduler
 
 
@@ -197,15 +222,3 @@ def start_scheduler():
     scheduler = create_scheduler()
     scheduler.start()
     return scheduler
-
-
-if __name__ == "__main__":
-    # Initialize infrastructure
-    init_db(**config.db)
-
-    scheduler = start_scheduler()
-    try:
-        # Keep the script running with asyncio event loop
-        asyncio.get_event_loop().run_forever()
-    except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()

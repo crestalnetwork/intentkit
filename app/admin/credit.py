@@ -17,6 +17,7 @@ from app.core.credit import (
     list_fee_events_by_agent,
     recharge,
     reward,
+    update_credit_event_note,
     update_daily_quota,
 )
 from models.agent import AgentQuota
@@ -31,6 +32,7 @@ from models.credit import (
     Direction,
     EventType,
     OwnerType,
+    RewardType,
     TransactionType,
 )
 from models.db import get_db
@@ -91,6 +93,10 @@ class RewardRequest(BaseModel):
     note: Annotated[
         Optional[str], Field(None, description="Optional note for the reward")
     ]
+    reward_type: Annotated[
+        Optional[RewardType],
+        Field(RewardType.REWARD, description="Type of reward event"),
+    ]
 
 
 # class AdjustmentRequest(BaseModel):
@@ -140,6 +146,12 @@ class UpdateDailyQuotaRequest(BaseModel):
                 "At least one of free_quota or refill_amount must be provided"
             )
         return self
+
+
+class UpdateEventNoteRequest(BaseModel):
+    """Request model for updating event note."""
+
+    note: Annotated[Optional[str], Field(None, description="New note for the event")]
 
 
 # ===== API Endpoints =====
@@ -212,7 +224,12 @@ async def reward_user_account(
         The updated credit account
     """
     return await reward(
-        db, request.user_id, request.amount, request.upstream_tx_id, request.note
+        db,
+        request.user_id,
+        request.amount,
+        request.upstream_tx_id,
+        request.note,
+        request.reward_type,
     )
 
 
@@ -441,6 +458,38 @@ async def list_user_events(
         data=events,
         has_more=has_more,
         next_cursor=next_cursor,
+    )
+
+
+@credit_router.patch(
+    "/events/{event_id}",
+    response_model=CreditEvent,
+    operation_id="update_event_note",
+    summary="Update Event Note",
+    dependencies=[Depends(verify_jwt)],
+)
+async def update_event_note(
+    event_id: Annotated[str, Path(description="ID of the event to update")],
+    request: UpdateEventNoteRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CreditEvent:
+    """Update the note of a credit event.
+
+    Args:
+        event_id: ID of the event to update
+        request: Request containing the new note
+        db: Database session
+
+    Returns:
+        The updated credit event
+
+    Raises:
+        404: If the event is not found
+    """
+    return await update_credit_event_note(
+        session=db,
+        event_id=event_id,
+        note=request.note,
     )
 
 

@@ -7,7 +7,6 @@ tasks that only require read-only database access.
 import asyncio
 import logging
 import signal
-import sys
 
 import sentry_sdk
 from apscheduler.jobstores.redis import RedisJobStore
@@ -17,7 +16,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.admin.account_checking import run_quick_checks, run_slow_checks
 from app.config.config import config
 from models.db import init_db
-from models.redis import init_redis
+from models.redis import clean_heartbeat, get_redis, init_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +60,21 @@ async def run_slow_account_checks():
         logger.error(f"Error running slow account consistency checks: {e}")
 
 
+async def send_checker_heartbeat():
+    """Send a heartbeat signal to Redis to indicate the checker is running.
+
+    This function sends a heartbeat to Redis that expires after 16 minutes,
+    allowing other services to verify that the checker is operational.
+    """
+    logger.info("Sending checker heartbeat")
+    try:
+        redis_client = get_redis()
+        await send_heartbeat(redis_client, "checker")
+        logger.info("Sent checker heartbeat successfully")
+    except Exception as e:
+        logger.error(f"Error sending checker heartbeat: {e}")
+
+
 def create_checker():
     """Create and configure the AsyncIOScheduler for validation checks."""
     # Job Store
@@ -98,6 +112,16 @@ def create_checker():
         replace_existing=True,
     )
 
+    # Send heartbeat every 5 minutes to indicate checker is running
+    if config.redis_host:
+        scheduler.add_job(
+            send_checker_heartbeat,
+            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
+            id="checker_heartbeat",
+            name="Checker Heartbeat",
+            replace_existing=True,
+        )
+
     return scheduler
 
 
@@ -121,29 +145,51 @@ if __name__ == "__main__":
                 port=config.redis_port,
             )
 
-        # Initialize checker
-        scheduler = create_checker()
+        # Set up a future to handle graceful shutdown
+        shutdown_event = asyncio.Event()
 
-        # Signal handler for graceful shutdown
-        def signal_handler(signum, frame):
-            logger.info("Received termination signal. Shutting down gracefully...")
-            scheduler.shutdown()
-            sys.exit(0)
+        # Set up signal handlers for graceful shutdown
+        loop = asyncio.get_running_loop()
+
+        # Define an async function to set the shutdown event
+        async def set_shutdown():
+            shutdown_event.set()
 
         # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(set_shutdown()))
+
+        # Define the cleanup function that will be called on exit
+        async def cleanup_resources():
+            try:
+                if config.redis_host:
+                    redis_client = get_redis()
+                    await clean_heartbeat(redis_client, "checker")
+            except Exception as e:
+                logger.error(f"Error cleaning up heartbeat: {e}")
+
+        # Initialize checker
+        scheduler = create_checker()
 
         try:
             logger.info("Starting checker process...")
             scheduler.start()
-            # Keep the main thread running
-            while True:
-                await asyncio.sleep(1)
+
+            # Wait for shutdown event
+            logger.info(
+                "Checker process running. Press Ctrl+C or send SIGTERM to exit."
+            )
+            await shutdown_event.wait()
+            logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
             logger.error(f"Error in checker process: {e}")
-            scheduler.shutdown()
-            sys.exit(1)
+        finally:
+            # Run the cleanup code and shutdown the scheduler
+            await cleanup_resources()
+
+            if scheduler.running:
+                scheduler.shutdown()
 
     # Run the async main function
+    # We handle all signals inside the main function, so we don't need to handle KeyboardInterrupt here
     asyncio.run(main())

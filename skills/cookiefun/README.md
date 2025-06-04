@@ -1,10 +1,24 @@
 # CookieFun Skills
 
-This module provides skills for interacting with the CookieFun API, which offers data about Twitter accounts, sectors, and social metrics.
+This skill category provides access to CookieFun API for Twitter/X analytics and account insights.
 
-## Skills
+### Features
 
-### get_sectors
+The CookieFun skills allow you to:
+
+- Get a list of all available sectors
+- Get detailed information about Twitter accounts
+- Get the feed of tweets from specific accounts
+- Find smart followers for Twitter accounts
+- Search for Twitter accounts matching specific criteria
+
+### API Key
+
+You need a CookieFun API key to use these skills. You can get one by signing up at [CookieFun](https://cookie.fun/).
+
+### Skills
+
+#### Get Sectors
 
 Returns a list of all available sectors in the CookieFun system.
 
@@ -18,7 +32,7 @@ Example prompts:
 - "Show me all the sectors in CookieFun"
 - "Get a list of all sectors from CookieFun"
 
-### get_account_details
+#### Get Account Details
 
 Retrieves detailed information about a Twitter account including followers, following, posts, metrics, and engagement data.
 
@@ -41,7 +55,7 @@ Example prompts:
 - "Show me stats for the Twitter user elonmusk"
 - "What's the engagement rate for @elonmusk?"
 
-### get_account_smart_followers
+#### Get Account Smart Followers
 
 Returns a list of top smart followers for a specific Twitter account, with detailed metrics about these followers.
 
@@ -64,7 +78,7 @@ Example prompts:
 - "Show me the smart followers for Twitter user elonmusk"
 - "Find the most engaged followers of @elonmusk"
 
-### search_accounts
+#### Search Accounts
 
 Searches for Twitter accounts that authored tweets matching specified search criteria.
 
@@ -83,7 +97,7 @@ Example prompts:
 - "Who are the top accounts posting original tweets about NFTs?"
 - "Find Twitter users discussing climate change with the most impressions"
 
-### get_account_feed
+#### Get Account Feed
 
 Retrieves a list of tweets for a specific Twitter account with various filtering options.
 
