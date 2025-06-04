@@ -329,31 +329,16 @@
       "x-group": "llm",
       "x-step": 0.1
     },
-    "cdp_enabled": {
-      "title": "CDP Enabled",
-      "type": "boolean",
-      "description": "Whether CDP (Crestal Development Platform) integration is enabled",
-      "default": true,
-      "x-group": "deprecated"
-    },
-    "crossmint_config": {
-      "title": "Crossmint Configuration",
-      "type": "object",
-      "description": "Dict of Crossmint wallet configurations",
-      "x-group": "experimental"
-    },
-    "goat_enabled": {
-      "title": "GOAT Enabled",
-      "type": "boolean",
-      "description": "Whether GOAT integration is enabled",
-      "default": false,
-      "x-group": "experimental"
-    },
-    "goat_skills": {
-      "title": "GOAT Skills",
-      "type": "object",
-      "description": "Dict of GOAT skills and their corresponding configurations",
-      "x-group": "experimental"
+    "short_term_memory_strategy": {
+      "title": "Short Term Memory Strategy",
+      "type": "string",
+      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+      "default": "trim",
+      "enum": [
+        "trim",
+        "summarize"
+      ],
+      "x-group": "llm"
     },
     "telegram_entrypoint_enabled": {
       "title": "Enable Telegram Communication",
@@ -629,79 +614,6 @@
       "description": "Set automated prompts and schedules for your agent.",
       "x-group": "autonomous",
       "x-inline": true
-    },
-    "enso_enabled": {
-      "title": "Enso Enabled",
-      "type": "boolean",
-      "description": "Whether Enso integration is enabled",
-      "default": false,
-      "x-group": "experimental"
-    },
-    "enso_skills": {
-      "title": "Enso Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Enso-specific skills available to this agent",
-      "x-group": "experimental"
-    },
-    "enso_config": {
-      "title": "Enso Configuration",
-      "type": "object",
-      "description": "Enso integration configuration settings",
-      "x-group": "experimental"
-    },
-    "acolyt_skills": {
-      "title": "Acolyt Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Acolyt-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "acolyt_config": {
-      "title": "Acolyt Configuration",
-      "type": "object",
-      "description": "Acolyt integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "allora_skills": {
-      "title": "Allora Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Allora-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "allora_config": {
-      "title": "Allora Configuration",
-      "type": "object",
-      "description": "Allora integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "elfa_skills": {
-      "title": "Elfa Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Elfa-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "elfa_config": {
-      "title": "Elfa Configuration",
-      "type": "object",
-      "description": "Elfa integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
     },
     "wallet_provider": {
       "title": "Wallet Provider",
