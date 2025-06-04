@@ -193,6 +193,11 @@ class CreditAccount(BaseModel):
             return Decimal(str(v)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
         return v
 
+    @property
+    def balance(self) -> Decimal:
+        """Return the total balance of the account."""
+        return self.free_credits + self.reward_credits + self.credits
+
     @classmethod
     async def get_in_session(
         cls,

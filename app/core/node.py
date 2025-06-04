@@ -3,6 +3,7 @@ from typing import Any
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     RemoveMessage,
 )
@@ -19,7 +20,10 @@ from langmem.short_term.summarization import (
 )
 from pydantic import BaseModel
 
-from abstracts.graph import AgentState
+from abstracts.graph import AgentError, AgentState
+from app.core.credit import skill_cost
+from models.credit import CreditAccount, OwnerType
+from models.skill import Skill
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +56,7 @@ class PreModelNode(RunnableCallable):
     ) -> tuple[list[AnyMessage], dict[str, Any]]:
         messages = input.get("messages")
         context = input.get("context", {})
-        if messages is None:
+        if messages is None or not isinstance(messages, list) or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
         return messages, context
 
@@ -106,7 +110,10 @@ class PreModelNode(RunnableCallable):
                 existing_summary_prompt=self.existing_summary_prompt,
                 final_prompt=self.final_prompt,
             )
-            logger.debug(f"Summarization result: {summarization_result}")
+            if summarization_result.running_summary:
+                logger.debug(f"Summarization result: {summarization_result}")
+            else:
+                logger.debug("Summarization not run")
             return self._prepare_state_update(context, summarization_result)
         raise ValueError(
             f"Invalid short_term_memory_strategy: {self.short_term_memory_strategy}"
@@ -126,10 +133,30 @@ class PostModelNode(RunnableCallable):
         input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
+        state_update = {}
         messages = input.get("messages")
-        logger.debug(f"first: {messages[0]}")
-        logger.debug(f"last: {messages[-1]}")
+        if messages is None or not isinstance(messages, list) or len(messages) == 0:
+            raise ValueError("Missing required field `messages` in the input.")
         payer = config.get("payer")
         if not payer:
-            return {}
-        return {"messages": messages}
+            return state_update
+        logger.debug(f"last: {messages[-1]}")
+        msg = messages[-1]
+        agent = config.get("agent")
+        account = await CreditAccount.get_or_create(OwnerType.USER, payer)
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            for tool_call in msg.tool_calls:
+                skill_meta = await Skill.get(tool_call.get("name"))
+                if skill_meta:
+                    skill_cost_info = await skill_cost(skill_meta.name, payer, agent)
+                    total_paid = skill_cost_info.total_amount
+            if not account.has_sufficient_credits(total_paid):
+                state_update["error"] = AgentError.INSUFFICIENT_CREDITS
+                messages[-1] = RemoveMessage(id=msg.id)
+                messages.append(
+                    AIMessage(
+                        content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
+                    )
+                )
+                state_update["messages"] = messages
+        return state_update
