@@ -44,7 +44,7 @@ class KOLBuysOutput(BaseModel):
 class FetchKOLBuys(DuneBaseTool):
     """Skill to fetch KOL memecoin buys on Solana from Dune Analytics API."""
 
-    name: str = "fetch_kol_buys"
+    name: str = "dune_fetch_kol_buys"
     description: str = (
         "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API using query ID 4832844. "
         "Supports a configurable limit for the number of results. Handles rate limits with retries."

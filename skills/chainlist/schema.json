@@ -11,6 +11,11 @@
     "Network"
   ],
   "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "default": false
+    },
     "states": {
       "type": "object",
       "properties": {
@@ -28,6 +33,9 @@
       "description": "Configure visibility for chainlist skills (disabled: unavailable, public: available to all, private: available only to authenticated users)"
     }
   },
-  "required": ["states"],
+  "required": [
+    "enabled",
+    "states"
+  ],
   "additionalProperties": true
 } 

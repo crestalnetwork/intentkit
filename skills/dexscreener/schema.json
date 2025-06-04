@@ -14,7 +14,7 @@
         "enabled": {
             "type": "boolean",
             "description": "Enable or disable the Dexscreener skill.",
-            "default": true
+            "default": false
         },
         "states": {
             "type": "object",

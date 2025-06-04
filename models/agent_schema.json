@@ -178,6 +178,7 @@
         "gpt-4.1",
         "o4-mini",
         "deepseek-chat",
+        "deepseek-reasoner",
         "grok-2",
         "grok-3",
         "grok-3-mini",
@@ -195,6 +196,7 @@
         "GPT-4.1",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
+        "Deepseek R1 (0528)",
         "Grok 2",
         "Grok 3",
         "Grok 3 Mini",
@@ -211,6 +213,7 @@
         "OpenAI",
         "OpenAI",
         "Deepseek",
+        "Deepseek",
         "Grok",
         "Grok",
         "Grok",
@@ -220,6 +223,7 @@
         "Venice"
       ],
       "x-support-skill": [
+        true,
         true,
         true,
         true,
@@ -454,17 +458,41 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
-        "dexscreener": {
-          "title": "DEX Screener",
-          "$ref": "../skills/dexscreener/schema.json"
+        "allora": {
+          "title": "Allora",
+          "$ref": "../skills/allora/schema.json"
+        },
+        "cdp": {
+          "title": "Coinbase Wallet",
+          "$ref": "../skills/cdp/schema.json"
+        },
+        "dapplooker": {
+          "title": "DappLooker",
+          "$ref": "../skills/dapplooker/schema.json"
+        },
+        "elfa": {
+          "title": "Elfa",
+          "$ref": "../skills/elfa/schema.json"
+        },
+        "openai": {
+          "title": "OpenAI",
+          "$ref": "../skills/openai/schema.json"
         },
         "portfolio": {
           "title": "Blockchain Portfolio",
           "$ref": "../skills/portfolio/schema.json"
         },
+        "tavily": {
+          "title": "Tavily",
+          "$ref": "../skills/tavily/schema.json"
+        },
         "token": {
           "title": "Token Operations",
           "$ref": "../skills/token/schema.json"
+        },
+        "twitter": {
+          "title": "X",
+          "$ref": "../skills/twitter/schema.json"
         },
         "chainlist": {
           "title": "Chainlist RPC Endpoints",
@@ -474,29 +502,9 @@
           "title": "cookie.fun",
           "$ref": "../skills/cookiefun/schema.json"
         },
-        "openai": {
-          "title": "OpenAI",
-          "$ref": "../skills/openai/schema.json"
-        },
-        "venice_image": {
-          "title": "Venice Image",
-          "$ref": "../skills/venice_image/schema.json"
-        },
-        "dapplooker": {
-          "title": "DappLooker",
-          "$ref": "../skills/dapplooker/schema.json"
-        },
-        "cryptopanic": {
-          "title": "CryptoPanic",
-          "$ref": "../skills/cryptopanic/schema.json"
-        },
-        "aixbt": {
-          "title": "AIXBT",
-          "$ref": "../skills/aixbt/schema.json"
-        },
-        "tavily": {
-          "title": "Tavily",
-          "$ref": "../skills/tavily/schema.json"
+        "dexscreener": {
+          "title": "DEX Screener",
+          "$ref": "../skills/dexscreener/schema.json"
         },
         "heurist": {
           "title": "Heurist",
@@ -506,37 +514,13 @@
           "title": "Nation",
           "$ref": "../skills/nation/schema.json"
         },
-        "cdp": {
-          "title": "Coinbase Wallet",
-          "$ref": "../skills/cdp/schema.json"
-        },
-        "twitter": {
-          "title": "X",
-          "$ref": "../skills/twitter/schema.json"
-        },
-        "allora": {
-          "title": "Allora",
-          "$ref": "../skills/allora/schema.json"
-        },
-        "cryptocompare": {
-          "title": "Cryptocompare",
-          "$ref": "../skills/cryptocompare/schema.json"
-        },
         "defillama": {
           "title": "Defillama",
           "$ref": "../skills/defillama/schema.json"
         },
-        "elfa": {
-          "title": "Elfa",
-          "$ref": "../skills/elfa/schema.json"
-        },
         "enso": {
           "title": "Enso",
           "$ref": "../skills/enso/schema.json"
-        },
-        "slack": {
-          "title": "Slack",
-          "$ref": "../skills/slack/schema.json"
         },
         "common": {
           "title": "Common",
@@ -549,6 +533,30 @@
         "moralis": {
           "title": "Moralis",
           "$ref": "../skills/moralis/schema.json"
+        },
+        "aixbt": {
+          "title": "AIXBT",
+          "$ref": "../skills/aixbt/schema.json"
+        },
+        "cryptocompare": {
+          "title": "Cryptocompare",
+          "$ref": "../skills/cryptocompare/schema.json"
+        },
+        "cryptopanic": {
+          "title": "CryptoPanic",
+          "$ref": "../skills/cryptopanic/schema.json"
+        },
+        "dune_analytics": {
+          "title": "Dune Analytics",
+          "$ref": "../skills/dune_analytics/schema.json"
+        },
+        "slack": {
+          "title": "Slack",
+          "$ref": "../skills/slack/schema.json"
+        },
+        "venice_image": {
+          "title": "Venice Image",
+          "$ref": "../skills/venice_image/schema.json"
         },
         "unrealspeech": {
           "title": "UnrealSpeech",
