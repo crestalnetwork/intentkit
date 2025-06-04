@@ -1,0 +1,152 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Venice Audio Skills",
+    "x-icon": "https://ai.service.crestal.dev/skills/venice_audio/venice_audio.jpg",
+    "description": "Configuration for the Venice Audio skill.",
+    "type": "object",
+    "x-tags": [
+        "AI",
+        "Audio",
+        "Text to Speech"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Enable or disable the Venice Audio skill.",
+            "default": false
+        },
+        "voice_model": {
+            "type": "string",
+            "title": "Voice Model",
+            "x-link": "[Listen Voice Example](https://huggingface.co/spaces/hexgrad/Kokoro-TTS)",
+            "enum": [
+                "af_heart",
+                "bm_lewis",
+                "custom"
+            ],
+            "x-enum-title": [
+                "af_heart (default female)",
+                "bm_lewis (default male)",
+                "Custom"
+            ],
+            "description": "Text to speech tool",
+            "default": "af_heart"
+        },
+        "states": {
+            "type": "object",
+            "title": "Skill States",
+            "description": "Enable/disable specific voice models. Only enable one if you want a consistent characteristic for your agent. See docs for voice details and quality grades.",
+            "properties": {
+                "text_to_speech": {
+                    "type": "string",
+                    "title": "Text to Speech",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Text to speech tool",
+                    "default": "disabled"
+                }
+            }
+        },
+        "api_key_provider": {
+            "type": "string",
+            "title": "API Key Provider",
+            "description": "Provider of the API key",
+            "enum": [
+                "agent_owner"
+            ],
+            "x-enum-title": [
+                "Owner Provided"
+            ],
+            "default": "agent_owner"
+        }
+    },
+    "required": [
+        "states",
+        "enabled"
+    ],
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "voice_model": {
+                        "const": "custom"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "voice_model_custom": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Voice Model (Custom)",
+                        "x-link": "[Supported Voice Model](https://docs.venice.ai/api-reference/endpoint/audio/speech#body-voice)",
+                        "description": "You can add one or more custom voice models.",
+                        "default": [
+                            "af_heart",
+                            "bm_lewis"
+                        ]
+                    }
+                },
+                "required": [
+                    "voice_model_custom"
+                ]
+            }
+        },
+        {
+            "if": {
+                "allOf": [
+                    {
+                        "properties": {
+                            "enabled": {
+                                "const": true
+                            }
+                        }
+                    },
+                    {
+                        "properties": {
+                            "api_key_provider": {
+                                "const": "agent_owner"
+                            }
+                        }
+                    }
+                ]
+            },
+            "then": {
+                "properties": {
+                    "api_key": {
+                        "type": "string",
+                        "title": "Venice API Key",
+                        "x-link": "[Get your API key](https://venice.ai/)",
+                        "x-sensitive": true,
+                        "description": "API Key for authenticating with the Venice AI API."
+                    },
+                    "rate_limit_number": {
+                        "type": "integer",
+                        "title": "Rate Limit Number",
+                        "description": "Number of requests allowed per time window."
+                    },
+                    "rate_limit_minutes": {
+                        "type": "integer",
+                        "title": "Rate Limit Minutes",
+                        "description": "Time window in minutes for rate limiting."
+                    }
+                },
+                "required": [
+                    "api_key"
+                ]
+            }
+        }
+    ],
+    "additionalProperties": true
+}
