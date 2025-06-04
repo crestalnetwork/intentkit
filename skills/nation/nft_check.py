@@ -2,7 +2,7 @@ import logging
 from typing import Optional, Type
 
 import httpx
-from eth_utils import is_address, to_normalized_address
+from eth_utils import is_address
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
