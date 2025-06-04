@@ -19,24 +19,6 @@ from datetime import datetime
 from typing import Optional
 
 import sqlalchemy
-from coinbase_agentkit import (
-    AgentKit,
-    AgentKitConfig,
-    CdpWalletProvider,
-    CdpWalletProviderConfig,
-    basename_action_provider,
-    cdp_api_action_provider,
-    cdp_wallet_action_provider,
-    erc20_action_provider,
-    morpho_action_provider,
-    pyth_action_provider,
-    superfluid_action_provider,
-    wallet_action_provider,
-    weth_action_provider,
-    wow_action_provider,
-)
-from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
-from coinbase_agentkit_langchain import get_langchain_tools
 from epyxid import XID
 from fastapi import HTTPException
 from langchain_core.messages import (
@@ -48,14 +30,14 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
+from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from abstracts.graph import AgentState
+from abstracts.graph import AgentError, AgentState
 from app.config.config import config
-from app.core.agent import AgentStore
-from app.core.credit import expense_message, expense_skill, skill_cost
-from app.core.graph import create_agent
+from app.core.credit import expense_message, expense_skill
+from app.core.node import PostModelNode, PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
 from models.agent import Agent, AgentData, AgentQuota, AgentTable
@@ -64,19 +46,8 @@ from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageS
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
-from models.skill import AgentSkillData, Skill, ThreadSkillData
+from models.skill import AgentSkillData, ThreadSkillData
 from models.user import User
-from skills.acolyt import get_acolyt_skill
-from skills.allora import get_allora_skill
-from skills.cdp.get_balance import GetBalance
-from skills.elfa import get_elfa_skill
-from skills.enso import get_enso_skill
-from skills.goat import (
-    create_smart_wallets_if_not_exist,
-    get_goat_skill,
-    init_smart_wallets,
-)
-from skills.twitter import get_twitter_skill
 from utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -111,10 +82,6 @@ async def initialize_agent(aid, is_private=False):
     Raises:
         HTTPException: If agent not found (404) or database error (500)
     """
-    """Initialize the agent with CDP Agentkit."""
-    # init agent store
-    agent_store = AgentStore(aid)
-
     # get the agent from the database
     agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
@@ -161,194 +128,6 @@ async def initialize_agent(aid, is_private=False):
             except ImportError as e:
                 logger.error(f"Could not import skill module: {k} ({e})")
 
-    # Configure CDP Agentkit Langchain Extension.
-    # Deprecated
-    cdp_wallet_provider = None
-    if (
-        agent.cdp_enabled
-        and agent_data
-        and agent_data.cdp_wallet_data
-        and agent.cdp_skills
-        and ("cdp" not in agent.skills if agent.skills else True)
-    ):
-        cdp_wallet_provider_config = CdpWalletProviderConfig(
-            api_key_name=config.cdp_api_key_name,
-            api_key_private_key=config.cdp_api_key_private_key,
-            network_id=agent.cdp_network_id,
-            wallet_data=agent_data.cdp_wallet_data,
-        )
-        cdp_wallet_provider = CdpWalletProvider(cdp_wallet_provider_config)
-        agent_kit = AgentKit(
-            AgentKitConfig(
-                wallet_provider=cdp_wallet_provider,
-                action_providers=[
-                    wallet_action_provider(),
-                    cdp_api_action_provider(cdp_wallet_provider_config),
-                    cdp_wallet_action_provider(cdp_wallet_provider_config),
-                    pyth_action_provider(),
-                    basename_action_provider(),
-                    erc20_action_provider(),
-                    erc721_action_provider(),
-                    weth_action_provider(),
-                    morpho_action_provider(),
-                    superfluid_action_provider(),
-                    wow_action_provider(),
-                ],
-            )
-        )
-        cdp_tools = get_langchain_tools(agent_kit)
-        for skill in agent.cdp_skills:
-            if skill == "get_balance":
-                tools.append(
-                    GetBalance(
-                        wallet=cdp_wallet_provider._wallet,
-                        agent_id=aid,
-                        skill_store=skill_store,
-                    )
-                )
-                continue
-            for tool in cdp_tools:
-                if tool.name.endswith(skill):
-                    tools.append(tool)
-
-    if (
-        agent.goat_enabled
-        and agent.crossmint_config
-        and ("goat" not in agent.skills if agent.skills else True)
-    ):
-        if (
-            hasattr(config, "chain_provider")
-            and config.crossmint_api_key
-            and config.crossmint_api_base_url
-        ):
-            crossmint_networks = agent.crossmint_config.get("networks")
-            if crossmint_networks and len(crossmint_networks) > 0:
-                crossmint_wallet_data = (
-                    agent_data.crossmint_wallet_data
-                    if agent_data.crossmint_wallet_data
-                    else {}
-                )
-                try:
-                    smart_wallet_data = create_smart_wallets_if_not_exist(
-                        config.crossmint_api_base_url,
-                        config.crossmint_api_key,
-                        crossmint_wallet_data.get("smart"),
-                    )
-
-                    # save the wallet after first create
-                    if (
-                        not crossmint_wallet_data
-                        or not crossmint_wallet_data.get("smart")
-                        or not crossmint_wallet_data.get("smart").get("evm")
-                        or not crossmint_wallet_data.get("smart")
-                        .get("evm")
-                        .get("address")
-                    ):
-                        await agent_store.set_data(
-                            {
-                                "crossmint_wallet_data": {"smart": smart_wallet_data},
-                            }
-                        )
-
-                    # give rpc some time to prevent error #429
-                    time.sleep(1)
-
-                    evm_crossmint_wallets = init_smart_wallets(
-                        config.crossmint_api_key,
-                        config.chain_provider,
-                        crossmint_networks,
-                        smart_wallet_data["evm"],
-                    )
-
-                    for wallet in evm_crossmint_wallets:
-                        try:
-                            s = get_goat_skill(
-                                wallet,
-                                agent.goat_skills,
-                                skill_store,
-                                agent_store,
-                                aid,
-                            )
-                            tools.extend(s)
-                        except Exception as e:
-                            logger.warning(e)
-                except Exception as e:
-                    logger.warning(e)
-
-    # Enso skills
-    if (
-        agent.enso_skills
-        and len(agent.enso_skills) > 0
-        and agent.enso_config
-        and ("enso" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.enso_skills:
-            try:
-                s = get_enso_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Acoalyt skills
-    if (
-        agent.acolyt_skills
-        and len(agent.acolyt_skills) > 0
-        and ("acolyt" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.acolyt_skills:
-            try:
-                s = get_acolyt_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Allora skills
-    if (
-        agent.allora_skills
-        and len(agent.allora_skills) > 0
-        and ("allora" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.allora_skills:
-            try:
-                s = get_allora_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Elfa skills
-    if (
-        agent.elfa_skills
-        and len(agent.elfa_skills) > 0
-        and ("elfa" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.elfa_skills:
-            try:
-                s = get_elfa_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Twitter skills
-    if (
-        agent.twitter_skills
-        and len(agent.twitter_skills) > 0
-        and ("twitter" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.twitter_skills:
-            s = get_twitter_skill(
-                skill,
-                skill_store,
-            )
-            tools.append(s)
-
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
 
@@ -384,25 +163,47 @@ async def initialize_agent(aid, is_private=False):
             config,
         )
 
-    # log all tools
+    # log final prompt and all skills
+    logger.debug(
+        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
+    )
     for tool in tools:
         logger.info(
             f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name}"
         )
-    logger.debug(
-        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
+
+    # Pre model hook
+    pre_model_hook = PreModelNode(
+        model=llm,
+        short_term_memory_strategy=agent.short_term_memory_strategy,
+        max_tokens=input_token_limit,
+        max_summary_tokens=2048,  # later we can let agent to set this
     )
+    # Post model hook
+    post_model_hook = PostModelNode()
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
-    executor = create_agent(
-        aid,
-        llm,
+    executor = create_react_agent(
+        model=llm,
         tools=tools,
+        prompt=formatted_prompt,
+        pre_model_hook=pre_model_hook,
+        post_model_hook=post_model_hook,
+        state_schema=AgentState,
         checkpointer=memory,
-        state_modifier=formatted_prompt,
         debug=config.debug_checkpoint,
-        input_token_limit=input_token_limit,
+        name=aid,
     )
+    # executor = create_agent(
+    #     aid,
+    #     llm,
+    #     tools=tools,
+    #     checkpointer=memory,
+    #     state_modifier=formatted_prompt,
+    #     debug=config.debug_checkpoint,
+    #     input_token_limit=input_token_limit,
+    # )
+
     if is_private:
         _private_agents[aid] = executor
         _private_agents_updated[aid] = agent.updated_at
@@ -467,10 +268,10 @@ async def execute_agent(
 
     agent = await Agent.get(input.agent_id)
 
-    need_payment = config.payment_enabled
+    payment_enabled = config.payment_enabled
 
     # check user balance
-    if need_payment:
+    if payment_enabled:
         if not input.user_id or not agent.owner:
             raise IntentKitAPIError(
                 500,
@@ -552,8 +353,6 @@ async def execute_agent(
             error_message = await error_message_create.save()
             resp.append(error_message)
             return resp
-        # use this in loop
-        total_paid = 0
 
     is_private = False
     if input.user_id == agent.owner:
@@ -615,6 +414,7 @@ async def execute_agent(
             "user_id": input.user_id,
             "entrypoint": input.author_type,
             "entrypoint_prompt": entrypoint_prompt,
+            "payer": payer if payment_enabled else None,
         }
     }
 
@@ -632,32 +432,8 @@ async def execute_agent(
                     )
                 msg = chunk["agent"]["messages"][0]
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    # tool calls, save for later use
+                    # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
-                    if need_payment:
-                        for tool_call in msg.tool_calls:
-                            skill_meta = await Skill.get(tool_call.get("name"))
-                            if skill_meta:
-                                skill_cost_info = await skill_cost(
-                                    skill_meta.name, input.user_id, agent
-                                )
-                                total_paid += skill_cost_info.total_amount
-                        if not user_account.has_sufficient_credits(total_paid):
-                            error_message_create = ChatMessageCreate(
-                                id=str(XID()),
-                                agent_id=input.agent_id,
-                                chat_id=input.chat_id,
-                                user_id=input.user_id,
-                                author_id=input.agent_id,
-                                author_type=AuthorType.SYSTEM,
-                                thread_type=input.author_type,
-                                reply_to=input.id,
-                                message="Insufficient balance.",
-                                time_cost=this_time - last,
-                            )
-                            error_message = await error_message_create.save()
-                            resp.append(error_message)
-                            return resp
                 elif hasattr(msg, "content") and msg.content:
                     # agent message
                     chat_message_create = ChatMessageCreate(
@@ -690,7 +466,7 @@ async def execute_agent(
                     # handle message and payment in one transaction
                     async with get_session() as session:
                         # payment
-                        if need_payment:
+                        if payment_enabled:
                             amount = await get_model_cost(
                                 agent.model,
                                 chat_message_create.input_tokens,
@@ -785,7 +561,7 @@ async def execute_agent(
                 cached_tool_step = None
                 # save message and credit in one transaction
                 async with get_session() as session:
-                    if need_payment:
+                    if payment_enabled:
                         # message payment
                         message_amount = await get_model_cost(
                             agent.model,
@@ -826,8 +602,57 @@ async def execute_agent(
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     resp.append(skill_message)
-            elif "memory_manager" in chunk:
+            elif "pre_model_hook" in chunk:
                 pass
+            elif "post_model_hook" in chunk:
+                logger.debug(
+                    f"post_model_hook: {chunk}",
+                    extra={"thread_id": thread_id},
+                )
+                if chunk["post_model_hook"] and "error" in chunk["post_model_hook"]:
+                    if (
+                        chunk["post_model_hook"]["error"]
+                        == AgentError.INSUFFICIENT_CREDITS
+                    ):
+                        if "messages" in chunk["post_model_hook"]:
+                            msg = chunk["post_model_hook"]["messages"][-1]
+                            post_model_message_create = ChatMessageCreate(
+                                id=str(XID()),
+                                agent_id=input.agent_id,
+                                chat_id=input.chat_id,
+                                user_id=input.user_id,
+                                author_id=input.agent_id,
+                                author_type=AuthorType.AGENT,
+                                model=agent.model,
+                                thread_type=input.author_type,
+                                reply_to=input.id,
+                                message=msg.content,
+                                input_tokens=0,
+                                output_tokens=0,
+                                time_cost=this_time - last,
+                            )
+                            last = this_time
+                            if cold_start_cost > 0:
+                                post_model_message_create.cold_start_cost = (
+                                    cold_start_cost
+                                )
+                                cold_start_cost = 0
+                            post_model_message = await post_model_message_create.save()
+                            resp.append(post_model_message)
+                        error_message_create = ChatMessageCreate(
+                            id=str(XID()),
+                            agent_id=input.agent_id,
+                            chat_id=input.chat_id,
+                            user_id=input.user_id,
+                            author_id=input.agent_id,
+                            author_type=AuthorType.SYSTEM,
+                            thread_type=input.author_type,
+                            reply_to=input.id,
+                            message="Insufficient balance.",
+                            time_cost=0,
+                        )
+                        error_message = await error_message_create.save()
+                        resp.append(error_message)
             else:
                 error_traceback = traceback.format_exc()
                 logger.error(
@@ -849,7 +674,7 @@ async def execute_agent(
                 author_type=AuthorType.SYSTEM,
                 thread_type=input.author_type,
                 reply_to=input.id,
-                message="IntentKit internal error",
+                message="IntentKit Internal Error",
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
@@ -859,7 +684,7 @@ async def execute_agent(
             error_traceback = traceback.format_exc()
             logger.error(
                 f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id},
+                extra={"thread_id": thread_id, "agent_id": input.agent_id},
             )
             error_message_create = ChatMessageCreate(
                 id=str(XID()),
@@ -870,7 +695,7 @@ async def execute_agent(
                 author_type=AuthorType.SYSTEM,
                 thread_type=input.author_type,
                 reply_to=input.id,
-                message=f"Error in agent:\n  {str(e)}",
+                message="Internal Agent Error",
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
