@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import Dict
 
 import jsonref
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config import config
-from models.db import get_db
+from models.db import get_db, get_session
 from models.llm import LLMModelInfo
 from models.skill import SkillTable
 
@@ -25,22 +26,37 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Path to agent schema
 AGENT_SCHEMA_PATH = PROJECT_ROOT / "models" / "agent_schema.json"
 
+# Skills that require agent owner to provide API keys (should be excluded from auto-generation)
+AGENT_OWNER_API_KEY_SKILLS = {
+    "dune_analytics",
+    "dapplooker",
+    "cryptocompare",
+    "aixbt",
+}
 
-@schema_router_readonly.get(
-    "/schema/agent", tags=["Schema"], operation_id="get_agent_schema"
-)
-async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
+
+async def get_agent_schema_with_admin_config(
+    db: AsyncSession = None, filter_owner_api_skills: bool = False
+) -> Dict:
     """Get the JSON schema for Agent model with all $ref references resolved.
 
-    Updates the model property in the schema based on LLMModelInfo.get results.
-    For each model in the enum list:
-    - If the model is not found in LLMModelInfo, it remains unchanged
-    - If the model is found but disabled (enabled=False), it is removed from the schema
-    - If the model is found and enabled, its properties are updated based on the LLMModelInfo record
+    This is the shared function that handles admin configuration filtering
+    for both the API endpoint and agent generation.
 
-    **Returns:**
-    * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
+    Args:
+        db: Database session (optional, will create if not provided)
+        filter_owner_api_skills: Whether to filter out skills that require agent owner API keys
+
+    Returns:
+        Dict containing the complete JSON schema for the Agent model
     """
+    # Get database session if not provided
+    if db is None:
+        async with get_session() as session:
+            return await get_agent_schema_with_admin_config(
+                session, filter_owner_api_skills
+            )
+
     base_uri = f"file://{AGENT_SCHEMA_PATH}"
     with open(AGENT_SCHEMA_PATH) as f:
         schema = jsonref.load(f, base_uri=base_uri, proxies=False, lazy_load=False)
@@ -129,16 +145,44 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
                     elif not category_status[skill_category]:
                         # If category exists but all skills are disabled, remove it
                         skills_properties.pop(skill_category, None)
+                    elif (
+                        filter_owner_api_skills
+                        and skill_category in AGENT_OWNER_API_KEY_SKILLS
+                    ):
+                        # If filtering owner API skills and this skill requires it, remove it
+                        skills_properties.pop(skill_category, None)
+                        logger.info(
+                            f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
+                        )
 
         # Log the changes for debugging
         logger.debug(
-            f"Schema processed with LLM and skill controls enabled: {config.admin_llm_skill_control}"
+            f"Schema processed with LLM and skill controls enabled: {config.admin_llm_skill_control}, "
+            f"filtered owner API skills: {filter_owner_api_skills}"
         )
 
-        return JSONResponse(
-            content=schema,
-            media_type="application/json",
-        )
+        return schema
+
+
+@schema_router_readonly.get(
+    "/schema/agent", tags=["Schema"], operation_id="get_agent_schema"
+)
+async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
+    """Get the JSON schema for Agent model with all $ref references resolved.
+
+    Updates the model property in the schema based on LLMModelInfo.get results.
+    For each model in the enum list:
+    - If the model is not found in LLMModelInfo, it remains unchanged
+    - If the model is found but disabled (enabled=False), it is removed from the schema
+    - If the model is found and enabled, its properties are updated based on the LLMModelInfo record
+
+    **Returns:**
+    * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
+    """
+    return JSONResponse(
+        content=await get_agent_schema_with_admin_config(db),
+        media_type="application/json",
+    )
 
 
 @schema_router_readonly.get(

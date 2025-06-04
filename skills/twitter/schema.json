@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "X",
   "description": "Integration with X API enabling social media interactions including retrieving posts, mentions, user information, and posting content with media support",

@@ -19,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.admin import (
     admin_router,
     admin_router_readonly,
+    agent_generator_router,
     credit_router,
     credit_router_readonly,
     health_router,
@@ -132,6 +133,7 @@ app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
 app.include_router(health_router)
+app.include_router(agent_generator_router)
 
 
 async def create_example_agent() -> None:

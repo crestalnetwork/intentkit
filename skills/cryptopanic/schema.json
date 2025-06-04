@@ -66,8 +66,8 @@
     }
   },
   "required": [
-    "enabled",
-    "states"
+    "states",
+    "enabled"
   ],
   "if": {
     "properties": {

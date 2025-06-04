@@ -30,6 +30,7 @@ from models.credit import (
     Direction,
     EventType,
     OwnerType,
+    RewardType,
     TransactionType,
     UpstreamType,
 )
@@ -37,6 +38,41 @@ from models.db import get_session
 from models.skill import Skill
 
 logger = logging.getLogger(__name__)
+
+
+async def update_credit_event_note(
+    session: AsyncSession,
+    event_id: str,
+    note: Optional[str] = None,
+) -> CreditEvent:
+    """
+    Update the note of a credit event.
+
+    Args:
+        session: Async session to use for database operations
+        event_id: ID of the event to update
+        note: New note for the event
+
+    Returns:
+        Updated credit event
+
+    Raises:
+        HTTPException: If event is not found
+    """
+    # Find the event
+    stmt = select(CreditEventTable).where(CreditEventTable.id == event_id)
+    result = await session.execute(stmt)
+    event = result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(status_code=404, detail="Credit event not found")
+
+    # Update the note
+    event.note = note
+    await session.commit()
+    await session.refresh(event)
+
+    return CreditEvent.model_validate(event)
 
 
 async def recharge(
@@ -148,6 +184,7 @@ async def reward(
     amount: Decimal,
     upstream_tx_id: str,
     note: Optional[str] = None,
+    reward_type: Optional[RewardType] = RewardType.REWARD,
 ) -> CreditAccount:
     """
     Reward a user account with reward credits.
@@ -158,6 +195,7 @@ async def reward(
         amount: Amount of reward credits to add
         upstream_tx_id: ID of the upstream transaction
         note: Optional note for the transaction
+        event_type: Type of reward event, defaults to RewardType.REWARD
 
     Returns:
         Updated user credit account
@@ -192,7 +230,7 @@ async def reward(
     event_id = str(XID())
     event = CreditEventTable(
         id=event_id,
-        event_type=EventType.REWARD,
+        event_type=reward_type,
         user_id=user_id,
         upstream_type=UpstreamType.API,
         upstream_tx_id=upstream_tx_id,
@@ -220,7 +258,7 @@ async def reward(
         id=str(XID()),
         account_id=user_account.id,
         event_id=event_id,
-        tx_type=TransactionType.REWARD,
+        tx_type=reward_type,
         credit_debit=CreditDebit.CREDIT,
         change_amount=amount,
         credit_type=CreditType.REWARD,
@@ -232,7 +270,7 @@ async def reward(
         id=str(XID()),
         account_id=platform_account.id,
         event_id=event_id,
-        tx_type=TransactionType.REWARD,
+        tx_type=reward_type,
         credit_debit=CreditDebit.DEBIT,
         change_amount=amount,
         credit_type=CreditType.REWARD,

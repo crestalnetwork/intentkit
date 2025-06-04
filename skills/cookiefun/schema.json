@@ -10,6 +10,7 @@
     "Analytics",
     "X"
   ],
+  "x-nft-requirement": 10,
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -106,14 +107,16 @@
     "api_key_provider": {
       "type": "string",
       "title": "API Key Provider",
-      "description": "Provider of the API key for CookieFun API service",
+      "description": "Choose whether to use a platform-provided API key or provide your own CookieFun API key",
       "enum": [
+        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
+        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "agent_owner"
+      "default": "platform"
     }
   },
   "required": [
@@ -132,7 +135,7 @@
       "api_key": {
         "type": "string",
         "title": "CookieFun API Key",
-        "description": "Your personal CookieFun API key (sign up at cookie.fun)",
+        "description": "Your personal CookieFun API key, required when using Owner Provided option (sign up at cookie.fun)",
         "x-sensitive": true,
         "x-link": "[Get your API key](https://cookie.fun/)"
       }
