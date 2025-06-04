@@ -122,10 +122,13 @@ class PreModelNode(RunnableCallable):
         input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
-        # logger.debug(f"Running PreModelNode, input: {input}, config: {config}")
         messages, context = self._parse_input(input)
         result = self._validate_chat_history(messages)
         if result:
+            if config.get("configurable") and config.get("configurable").get("agent"):
+                logger.error(
+                    f"Invalid tool calls removed: {config.get('configurable').get('agent').id}"
+                )
             return {"messages": result}
         if self.short_term_memory_strategy == "trim":
             trimmed_messages = trim_messages(
@@ -136,6 +139,10 @@ class PreModelNode(RunnableCallable):
                 start_on="human",
                 end_on=("human", "tool"),
             )
+            if len(trimmed_messages) < len(messages):
+                logger.info(
+                    f"Trimmed messages: {len(messages)} -> {len(trimmed_messages)}"
+                )
             return {
                 "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
             }
