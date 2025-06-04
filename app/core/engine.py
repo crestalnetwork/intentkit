@@ -34,9 +34,9 @@ from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from abstracts.graph import AgentState
+from abstracts.graph import AgentError, AgentState
 from app.config.config import config
-from app.core.credit import expense_message, expense_skill, skill_cost
+from app.core.credit import expense_message, expense_skill
 from app.core.node import PostModelNode, PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
@@ -46,7 +46,7 @@ from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageS
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
-from models.skill import AgentSkillData, Skill, ThreadSkillData
+from models.skill import AgentSkillData, ThreadSkillData
 from models.user import User
 from utils.error import IntentKitAPIError
 
@@ -353,8 +353,6 @@ async def execute_agent(
             error_message = await error_message_create.save()
             resp.append(error_message)
             return resp
-        # use this in loop
-        total_paid = 0
 
     is_private = False
     if input.user_id == agent.owner:
@@ -434,32 +432,8 @@ async def execute_agent(
                     )
                 msg = chunk["agent"]["messages"][0]
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    # tool calls, save for later use
+                    # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
-                    if payment_enabled:
-                        for tool_call in msg.tool_calls:
-                            skill_meta = await Skill.get(tool_call.get("name"))
-                            if skill_meta:
-                                skill_cost_info = await skill_cost(
-                                    skill_meta.name, input.user_id, agent
-                                )
-                                total_paid += skill_cost_info.total_amount
-                        if not user_account.has_sufficient_credits(total_paid):
-                            error_message_create = ChatMessageCreate(
-                                id=str(XID()),
-                                agent_id=input.agent_id,
-                                chat_id=input.chat_id,
-                                user_id=input.user_id,
-                                author_id=input.agent_id,
-                                author_type=AuthorType.SYSTEM,
-                                thread_type=input.author_type,
-                                reply_to=input.id,
-                                message="Insufficient balance.",
-                                time_cost=this_time - last,
-                            )
-                            error_message = await error_message_create.save()
-                            resp.append(error_message)
-                            return resp
                 elif hasattr(msg, "content") and msg.content:
                     # agent message
                     chat_message_create = ChatMessageCreate(
@@ -628,8 +602,57 @@ async def execute_agent(
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     resp.append(skill_message)
-            elif "pre_model_hook" in chunk or "post_model_hook" in chunk:
+            elif "pre_model_hook" in chunk:
                 pass
+            elif "post_model_hook" in chunk:
+                logger.debug(
+                    f"post_model_hook: {chunk}",
+                    extra={"thread_id": thread_id},
+                )
+                if chunk["post_model_hook"] and "error" in chunk["post_model_hook"]:
+                    if (
+                        chunk["post_model_hook"]["error"]
+                        == AgentError.INSUFFICIENT_CREDITS
+                    ):
+                        if "messages" in chunk["post_model_hook"]:
+                            msg = chunk["post_model_hook"]["messages"][-1]
+                            post_model_message_create = ChatMessageCreate(
+                                id=str(XID()),
+                                agent_id=input.agent_id,
+                                chat_id=input.chat_id,
+                                user_id=input.user_id,
+                                author_id=input.agent_id,
+                                author_type=AuthorType.AGENT,
+                                model=agent.model,
+                                thread_type=input.author_type,
+                                reply_to=input.id,
+                                message=msg.content,
+                                input_tokens=0,
+                                output_tokens=0,
+                                time_cost=this_time - last,
+                            )
+                            last = this_time
+                            if cold_start_cost > 0:
+                                post_model_message_create.cold_start_cost = (
+                                    cold_start_cost
+                                )
+                                cold_start_cost = 0
+                            post_model_message = await post_model_message_create.save()
+                            resp.append(post_model_message)
+                        error_message_create = ChatMessageCreate(
+                            id=str(XID()),
+                            agent_id=input.agent_id,
+                            chat_id=input.chat_id,
+                            user_id=input.user_id,
+                            author_id=input.agent_id,
+                            author_type=AuthorType.SYSTEM,
+                            thread_type=input.author_type,
+                            reply_to=input.id,
+                            message="Insufficient balance.",
+                            time_cost=0,
+                        )
+                        error_message = await error_message_create.save()
+                        resp.append(error_message)
             else:
                 error_traceback = traceback.format_exc()
                 logger.error(

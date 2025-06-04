@@ -1,11 +1,13 @@
 import logging
-from typing import Any
+from typing import Any, Sequence
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
+    BaseMessage,
     RemoveMessage,
+    ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
 from langchain_core.runnables import RunnableConfig
@@ -51,6 +53,43 @@ class PreModelNode(RunnableCallable):
         self.final_prompt = DEFAULT_FINAL_SUMMARY_PROMPT
         self.func_accepts_config = True
 
+    def _validate_chat_history(
+        self,
+        messages: Sequence[BaseMessage],
+    ) -> Sequence[BaseMessage]:
+        """Validate that all tool calls in AIMessages have a corresponding ToolMessage."""
+        all_tool_calls = [
+            tool_call
+            for message in messages
+            if isinstance(message, AIMessage)
+            for tool_call in message.tool_calls
+        ]
+        tool_call_ids_with_results = {
+            message.tool_call_id
+            for message in messages
+            if isinstance(message, ToolMessage)
+        }
+        tool_calls_without_results = [
+            tool_call
+            for tool_call in all_tool_calls
+            if tool_call["id"] not in tool_call_ids_with_results
+        ]
+
+        # If there are no incomplete tool calls, return empty list
+        if not tool_calls_without_results:
+            return []
+
+        # Collect all message IDs containing incomplete tool calls
+        messages_to_remove = []
+        for message in messages:
+            if isinstance(message, AIMessage) and message.tool_calls:
+                for tool_call in message.tool_calls:
+                    if tool_call["id"] not in tool_call_ids_with_results:
+                        messages_to_remove.append(RemoveMessage(id=message.id))
+                        break  # Once we find an incomplete tool call, add this message and break inner loop
+
+        return messages_to_remove
+
     def _parse_input(
         self, input: AgentState
     ) -> tuple[list[AnyMessage], dict[str, Any]]:
@@ -85,6 +124,9 @@ class PreModelNode(RunnableCallable):
     ) -> dict[str, Any]:
         # logger.debug(f"Running PreModelNode, input: {input}, config: {config}")
         messages, context = self._parse_input(input)
+        result = self._validate_chat_history(messages)
+        if result:
+            return {"messages": result}
         if self.short_term_memory_strategy == "trim":
             trimmed_messages = trim_messages(
                 messages,
@@ -133,16 +175,20 @@ class PostModelNode(RunnableCallable):
         input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
+        logger.debug(f"Running PostModelNode, input: {input}, config: {config}")
         state_update = {}
         messages = input.get("messages")
         if messages is None or not isinstance(messages, list) or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
-        payer = config.get("payer")
+        cfg = config.get("configurable")
+        if not config:
+            raise ValueError("Missing required field `configurable` in the config.")
+        payer = cfg.get("payer")
         if not payer:
             return state_update
         logger.debug(f"last: {messages[-1]}")
         msg = messages[-1]
-        agent = config.get("agent")
+        agent = cfg.get("agent")
         account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         if hasattr(msg, "tool_calls") and msg.tool_calls:
             for tool_call in msg.tool_calls:
@@ -152,11 +198,10 @@ class PostModelNode(RunnableCallable):
                     total_paid = skill_cost_info.total_amount
             if not account.has_sufficient_credits(total_paid):
                 state_update["error"] = AgentError.INSUFFICIENT_CREDITS
-                messages[-1] = RemoveMessage(id=msg.id)
-                messages.append(
+                state_update["messages"] = [RemoveMessage(id=msg.id)]
+                state_update["messages"].append(
                     AIMessage(
                         content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
                     )
                 )
-                state_update["messages"] = messages
         return state_update
