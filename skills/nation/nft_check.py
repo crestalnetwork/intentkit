@@ -46,14 +46,6 @@ class NftCheck(NationBaseTool):
                     "Nation wallet address is not provided and not found in context"
                 )
 
-        # Convert to normalized lowercase address before validation
-        try:
-            nation_wallet_address = to_normalized_address(nation_wallet_address)
-        except ValueError:
-            raise ValueError(
-                f"Invalid Ethereum wallet address: {nation_wallet_address}"
-            )
-
         # Validate the normalized address
         if not is_address(nation_wallet_address):
             raise ValueError(
