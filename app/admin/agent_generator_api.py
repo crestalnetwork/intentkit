@@ -10,7 +10,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
 
 from app.admin.generator import generate_validated_agent_schema
-from app.admin.generator.llm_logger import LLMLogger, create_llm_logger, get_projects_by_user
+from app.admin.generator.llm_logger import (
+    LLMLogger,
+    create_llm_logger,
+    get_projects_by_user,
+)
 from app.admin.generator.utils import generate_tags_from_nation_api
 from models.agent import AgentUpdate
 
@@ -70,34 +74,31 @@ class AgentGenerateResponse(BaseModel):
     summary: str = Field(
         ..., description="Human-readable summary of the generated agent"
     )
-    
+
     tags: List[Dict[str, int]] = Field(
-        default_factory=list, 
-        description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]"
+        default_factory=list,
+        description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]",
     )
 
 
 class ChatHistoryRequest(BaseModel):
     """Request model for getting chat history."""
-    
-    user_id: Optional[str] = Field(
-        None, description="User ID to filter chat history"
-    )
-    
+
+    user_id: Optional[str] = Field(None, description="User ID to filter chat history")
+
     limit: int = Field(
-        default=50, 
+        default=50,
         description="Maximum number of recent projects to return",
         ge=1,
-        le=100
+        le=100,
     )
 
 
 class ChatHistoryResponse(BaseModel):
     """Response model for chat history."""
-    
+
     projects: List[Dict[str, Any]] = Field(
-        ..., 
-        description="List of recent projects with their conversation history"
+        ..., description="List of recent projects with their conversation history"
     )
 
 
@@ -206,48 +207,44 @@ async def generate_agent(
     response_model=ChatHistoryResponse,
 )
 async def get_chat_history(
-    user_id: Optional[str] = None,
-    limit: int = 50
+    user_id: Optional[str] = None, limit: int = 50
 ) -> ChatHistoryResponse:
     """Get the latest project chat history for a user.
-    
+
     Returns conversation history from recent agent generation projects,
     allowing users to see their past interactions and continue conversations.
-    
+
     **Query Parameters:**
     * `user_id` - Optional user ID to filter projects (if not provided, returns all recent projects)
     * `limit` - Maximum number of recent projects to return (default: 50, max: 100)
-    
+
     **Returns:**
     * `ChatHistoryResponse` - Contains list of recent projects with their conversation history
-    
+
     **Raises:**
     * `HTTPException`:
         - 400: Invalid parameters
         - 500: Failed to retrieve chat history
     """
     if limit < 1 or limit > 100:
-        raise HTTPException(
-            status_code=400,
-            detail="Limit must be between 1 and 100"
-        )
-    
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
     logger.info(f"Getting chat history for user_id={user_id}, limit={limit}")
-    
+
     try:
         # Get recent projects with their conversation history using the enhanced function
         projects = await get_projects_by_user(user_id=user_id, limit=limit)
-        
+
         logger.info(f"Retrieved {len(projects)} projects for chat history")
-        
+
         return ChatHistoryResponse(projects=projects)
-        
+
     except Exception as e:
         logger.error(f"Failed to retrieve chat history: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "ChatHistoryRetrievalFailed",
-                "msg": f"Failed to retrieve chat history: {str(e)}"
-            }
+                "msg": f"Failed to retrieve chat history: {str(e)}",
+            },
         )

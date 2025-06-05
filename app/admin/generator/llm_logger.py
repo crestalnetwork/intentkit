@@ -4,9 +4,9 @@ Simple conversation tracking for project-based agent generation.
 """
 
 import logging
+import time
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
-import time
 
 from .utils import generate_request_id
 
@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 # In-memory storage for conversation history
 _conversation_history: Dict[str, List[Dict[str, str]]] = {}
-_project_metadata: Dict[str, Dict[str, Any]] = {}  # Store project metadata including user_id
+_project_metadata: Dict[
+    str, Dict[str, Any]
+] = {}  # Store project metadata including user_id
 
 
 class LLMLogger:
@@ -29,13 +31,13 @@ class LLMLogger:
         """
         self.request_id = request_id
         self.user_id = user_id
-        
+
         # Store project metadata when logger is created
         if self.request_id not in _project_metadata:
             _project_metadata[self.request_id] = {
                 "user_id": user_id,
                 "created_at": time.time(),
-                "last_activity": time.time()
+                "last_activity": time.time(),
             }
 
     @asynccontextmanager
@@ -129,7 +131,7 @@ class LLMLogger:
             _conversation_history[self.request_id].append(
                 {"role": "assistant", "content": ai_content}
             )
-            
+
         # Update project metadata
         if self.request_id in _project_metadata:
             _project_metadata[self.request_id]["last_activity"] = time.time()
@@ -157,7 +159,7 @@ class LLMLogger:
 
         elif call_type == "schema_error_correction":
             return "I've corrected the agent schema to fix validation errors."
-            
+
         elif call_type == "tag_generation":
             if "selected_tags" in content:
                 tags = content["selected_tags"]
@@ -206,8 +208,7 @@ async def get_conversation_history(
 
 
 async def get_projects_by_user(
-    user_id: Optional[str] = None,
-    limit: int = 50
+    user_id: Optional[str] = None, limit: int = 50
 ) -> List[Dict[str, Any]]:
     """Get recent projects with conversation history, optionally filtered by user.
 
@@ -219,18 +220,18 @@ async def get_projects_by_user(
         List of project dictionaries with conversation history and metadata
     """
     logger.info(f"Getting projects for user_id={user_id}, limit={limit}")
-    
+
     projects = []
-    
+
     # Get all projects with their metadata and conversation history
     for project_id, metadata in _project_metadata.items():
         # Filter by user_id if provided
         if user_id and metadata.get("user_id") != user_id:
             continue
-            
+
         # Get conversation history for this project
         conversation_history = _conversation_history.get(project_id, [])
-        
+
         # Only include projects with conversation history
         if conversation_history:
             project_info = {
@@ -239,17 +240,21 @@ async def get_projects_by_user(
                 "created_at": metadata.get("created_at"),
                 "last_activity": metadata.get("last_activity"),
                 "message_count": len(conversation_history),
-                "last_message": conversation_history[-1] if conversation_history else None,
-                "first_message": conversation_history[0] if conversation_history else None,
-                "conversation_history": conversation_history
+                "last_message": conversation_history[-1]
+                if conversation_history
+                else None,
+                "first_message": conversation_history[0]
+                if conversation_history
+                else None,
+                "conversation_history": conversation_history,
             }
             projects.append(project_info)
-    
+
     # Sort by last activity (most recent first)
     projects.sort(key=lambda x: x.get("last_activity", 0), reverse=True)
-    
+
     # Limit results
     projects = projects[:limit]
-    
+
     logger.info(f"Retrieved {len(projects)} projects")
     return projects
