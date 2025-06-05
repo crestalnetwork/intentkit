@@ -1,6 +1,6 @@
 # Agent Generator Package
 
-AI-powered system for generating IntentKit agent schemas from natural language prompts with project-based conversation history.
+AI-powered system for generating IntentKit agent schemas from natural language prompts with project-based conversation history and automatic tag generation.
 
 ## Architecture
 
@@ -48,15 +48,25 @@ curl -X POST "http://localhost:8000/agent/generate" \
      }'
 ```
 
+### Get Chat History
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?user_id=user123&limit=20"
+```
+
+### Get All Recent Projects (No User Filter)
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?limit=10"
+```
+
 ## Request/Response Format
 
-**Request:**
+**Agent Generation Request:**
 - `prompt`: Description (10-1000 chars)
 - `existing_agent`: Optional agent to update  
 - `user_id`: Optional user ID
 - `project_id`: Optional project ID for conversation history
 
-**Response:**
+**Agent Generation Response:**
 ```json
 {
   "agent": {
@@ -81,11 +91,43 @@ curl -X POST "http://localhost:8000/agent/generate" \
     "owner": "user123"
   },
   "project_id": "bkj49k3nt2hc73jbdnp0",
-  "summary": "Congratulations! You've successfully created CryptoBot, an AI agent that can analyze cryptocurrency trends and post insights on Twitter. Your agent is ready to help you stay on top of the crypto market with automated research and social media engagement!"
+  "summary": "Congratulations! You've successfully created CryptoBot...",
+  "tags": [{"id": 3}, {"id": 11}, {"id": 25}]
 }
 ```
 
-## Project Conversation History
+**Chat History Response:**
+```json
+{
+  "projects": [
+    {
+      "project_id": "bkj49k3nt2hc73jbdnp0",
+      "user_id": "user123",
+      "created_at": 1703123456.789,
+      "last_activity": 1703123556.789,
+      "message_count": 4,
+      "first_message": {
+        "role": "user",
+        "content": "Create a Twitter bot that posts crypto analysis"
+      },
+      "last_message": {
+        "role": "assistant", 
+        "content": "I've created CryptoBot with Twitter and research capabilities..."
+      },
+      "conversation_history": [
+        {"role": "user", "content": "Create a Twitter bot..."},
+        {"role": "assistant", "content": "I've created..."},
+        {"role": "user", "content": "Now add web search..."},
+        {"role": "assistant", "content": "I've updated..."}
+      ]
+    }
+  ]
+}
+```
+
+## Features
+
+### Project Conversation History
 
 The system maintains conversation history per project_id:
 
@@ -100,5 +142,15 @@ The system maintains conversation history per project_id:
 
 This enables iterative agent refinement with context awareness.
 
+### Automatic Tag Generation
 
+The system automatically generates exactly 3 relevant tags using Nation API + LLM selection. Always returns 3 tags, never empty.
 
+### Chat History Management
+
+Track and retrieve conversation history across projects:
+
+1. **User-Specific History**: Filter projects by user_id
+2. **Project Metadata**: Stores creation time, last activity, user association
+3. **Conversation Tracking**: Complete message history for each project
+4. **Recent Activity**: Sorted by last activity for easy access
