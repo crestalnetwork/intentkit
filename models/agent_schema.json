@@ -35,19 +35,24 @@
       "order": 6
     },
     {
+      "id": "examples",
+      "title": "Examples",
+      "order": 7
+    },
+    {
       "id": "experimental",
       "title": "Experimental",
-      "order": 7
+      "order": 8
     },
     {
       "id": "deprecated",
       "title": "Deprecated",
-      "order": 8
+      "order": 9
     },
     {
       "id": "internal",
       "title": "Internal",
-      "order": 9
+      "order": 10
     }
   ],
   "required": [
@@ -613,6 +618,37 @@
       },
       "description": "Set automated prompts and schedules for your agent.",
       "x-group": "autonomous",
+      "x-inline": true
+    },
+    "examples": {
+      "title": "Prompt Examples",
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the example",
+            "maxLength": 20,
+            "x-group": "examples"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string",
+            "description": "Example prompt",
+            "maxLength": 256,
+            "x-group": "examples"
+          }
+        },
+        "required": [
+          "name",
+          "prompt"
+        ]
+      },
+      "description": "List of example prompts for the agent",
+      "x-group": "examples",
       "x-inline": true
     },
     "wallet_provider": {

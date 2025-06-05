@@ -153,6 +153,31 @@ class AgentAutonomous(BaseModel):
         return self
 
 
+class AgentExample(BaseModel):
+    """Agent example configuration."""
+
+    name: Annotated[
+        str,
+        PydanticField(
+            description="Name of the example",
+            max_length=20,
+            json_schema_extra={
+                "x-group": "examples",
+            },
+        ),
+    ]
+    prompt: Annotated[
+        str,
+        PydanticField(
+            description="Example prompt",
+            max_length=256,
+            json_schema_extra={
+                "x-group": "examples",
+            },
+        ),
+    ]
+
+
 class AgentTable(Base):
     """Agent table db model."""
 
@@ -307,6 +332,12 @@ class AgentTable(Base):
         JSONB,
         nullable=True,
         comment="Autonomous agent configurations",
+    )
+    # agent examples
+    examples = Column(
+        JSONB,
+        nullable=True,
+        comment="List of example interactions for the agent",
     )
     # skills
     skills = Column(
@@ -701,6 +732,18 @@ class AgentUpdate(BaseModel):
             ),
             json_schema_extra={
                 "x-group": "autonomous",
+                "x-inline": True,
+            },
+        ),
+    ]
+    examples: Annotated[
+        Optional[List[AgentExample]],
+        PydanticField(
+            default=None,
+            description="List of example prompts for the agent",
+            max_length=6,
+            json_schema_extra={
+                "x-group": "examples",
                 "x-inline": True,
             },
         ),
@@ -1394,6 +1437,14 @@ class AgentResponse(BaseModel):
         PydanticField(
             default=None,
             description=("Autonomous agent configurations."),
+        ),
+    ]
+    # agent examples
+    examples: Annotated[
+        Optional[List[AgentExample]],
+        PydanticField(
+            default=None,
+            description="List of example prompts for the agent",
         ),
     ]
     # skills
