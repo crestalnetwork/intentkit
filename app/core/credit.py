@@ -39,6 +39,9 @@ from models.skill import Skill
 
 logger = logging.getLogger(__name__)
 
+# Define the precision for all decimal calculations (4 decimal places)
+FOURPLACES = Decimal("0.0001")
+
 
 async def update_credit_event_note(
     session: AsyncSession,
@@ -751,9 +754,6 @@ async def expense_message(
         session, UpstreamType.EXECUTOR, message_id
     )
 
-    # Define the precision for all decimal calculations (4 decimal places)
-    FOURPLACES = Decimal("0.0001")
-
     # Ensure base_llm_amount has 4 decimal places
     base_llm_amount = base_llm_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
@@ -831,6 +831,50 @@ async def expense_message(
     else:
         credit_type = CreditType.FREE
 
+    # Calculate fee_platform amounts by credit type
+    fee_platform_free_amount = Decimal("0")
+    fee_platform_reward_amount = Decimal("0")
+    fee_platform_permanent_amount = Decimal("0")
+
+    if fee_platform_amount > Decimal("0") and total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_platform_free_amount = (
+                free_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_platform_reward_amount = (
+                reward_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_platform_amount
+        fee_platform_permanent_amount = (
+            fee_platform_amount - fee_platform_free_amount - fee_platform_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    # Calculate fee_agent amounts by credit type
+    fee_agent_free_amount = Decimal("0")
+    fee_agent_reward_amount = Decimal("0")
+    fee_agent_permanent_amount = Decimal("0")
+
+    if fee_agent_amount > Decimal("0") and total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_agent_free_amount = (
+                free_amount * fee_agent_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_agent_reward_amount = (
+                reward_amount * fee_agent_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_agent_amount
+        fee_agent_permanent_amount = (
+            fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -853,8 +897,14 @@ async def expense_message(
         base_original_amount=base_original_amount,
         base_llm_amount=base_llm_amount,
         fee_platform_amount=fee_platform_amount,
+        fee_platform_free_amount=fee_platform_free_amount,
+        fee_platform_reward_amount=fee_platform_reward_amount,
+        fee_platform_permanent_amount=fee_platform_permanent_amount,
         fee_agent_amount=fee_agent_amount,
         fee_agent_account=agent_account.id if fee_agent_amount > 0 else None,
+        fee_agent_free_amount=fee_agent_free_amount,
+        fee_agent_reward_amount=fee_agent_reward_amount,
+        fee_agent_permanent_amount=fee_agent_permanent_amount,
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
@@ -946,8 +996,6 @@ async def skill_cost(
     Returns:
         SkillCost: Object containing all cost components
     """
-    # Define the precision for all decimal calculations (4 decimal places)
-    FOURPLACES = Decimal("0.0001")
 
     skill = await Skill.get(skill_name)
     if not skill:
@@ -1108,6 +1156,94 @@ async def expense_skill(
     else:
         credit_type = CreditType.FREE
 
+    # Calculate fee_platform amounts by credit type
+    fee_platform_free_amount = Decimal("0")
+    fee_platform_reward_amount = Decimal("0")
+    fee_platform_permanent_amount = Decimal("0")
+
+    if skill_cost_info.fee_platform_amount > Decimal(
+        "0"
+    ) and skill_cost_info.total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_platform_free_amount = (
+                free_amount
+                * skill_cost_info.fee_platform_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_platform_reward_amount = (
+                reward_amount
+                * skill_cost_info.fee_platform_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_platform_amount
+        fee_platform_permanent_amount = (
+            skill_cost_info.fee_platform_amount
+            - fee_platform_free_amount
+            - fee_platform_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    # Calculate fee_agent amounts by credit type
+    fee_agent_free_amount = Decimal("0")
+    fee_agent_reward_amount = Decimal("0")
+    fee_agent_permanent_amount = Decimal("0")
+
+    if skill_cost_info.fee_agent_amount > Decimal(
+        "0"
+    ) and skill_cost_info.total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_agent_free_amount = (
+                free_amount
+                * skill_cost_info.fee_agent_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_agent_reward_amount = (
+                reward_amount
+                * skill_cost_info.fee_agent_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_agent_amount
+        fee_agent_permanent_amount = (
+            skill_cost_info.fee_agent_amount
+            - fee_agent_free_amount
+            - fee_agent_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    # Calculate fee_dev amounts by credit type
+    fee_dev_free_amount = Decimal("0")
+    fee_dev_reward_amount = Decimal("0")
+    fee_dev_permanent_amount = Decimal("0")
+
+    if skill_cost_info.fee_dev_amount > Decimal(
+        "0"
+    ) and skill_cost_info.total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_dev_free_amount = (
+                free_amount
+                * skill_cost_info.fee_dev_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_dev_reward_amount = (
+                reward_amount
+                * skill_cost_info.fee_dev_amount
+                / skill_cost_info.total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_dev_amount
+        fee_dev_permanent_amount = (
+            skill_cost_info.fee_dev_amount - fee_dev_free_amount - fee_dev_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -1131,12 +1267,21 @@ async def expense_skill(
         base_original_amount=skill_cost_info.base_original_amount,
         base_skill_amount=skill_cost_info.base_skill_amount,
         fee_platform_amount=skill_cost_info.fee_platform_amount,
+        fee_platform_free_amount=fee_platform_free_amount,
+        fee_platform_reward_amount=fee_platform_reward_amount,
+        fee_platform_permanent_amount=fee_platform_permanent_amount,
         fee_agent_amount=skill_cost_info.fee_agent_amount,
         fee_agent_account=agent_account.id
         if skill_cost_info.fee_agent_amount > 0
         else None,
+        fee_agent_free_amount=fee_agent_free_amount,
+        fee_agent_reward_amount=fee_agent_reward_amount,
+        fee_agent_permanent_amount=fee_agent_permanent_amount,
         fee_dev_amount=skill_cost_info.fee_dev_amount,
         fee_dev_account=dev_account.id if skill_cost_info.fee_dev_amount > 0 else None,
+        fee_dev_free_amount=fee_dev_free_amount,
+        fee_dev_reward_amount=fee_dev_reward_amount,
+        fee_dev_permanent_amount=fee_dev_permanent_amount,
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
