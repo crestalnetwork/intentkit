@@ -265,15 +265,14 @@ def _send_agent_notification(
             {
                 "color": "good",
                 "fields": [
-                    {"title": "ENV", "short": True, "value": config.env},
                     {"title": "Number", "short": True, "value": agent.number},
                     {"title": "ID", "short": True, "value": agent.id},
                     {"title": "Name", "short": True, "value": agent.name},
                     {"title": "Model", "short": True, "value": agent.model},
                     {
-                        "title": "GOAT Enabled",
+                        "title": "Network",
                         "short": True,
-                        "value": str(agent.goat_enabled),
+                        "value": agent.network_id or agent.cdp_network_id or "Default",
                     },
                     {
                         "title": "X Username",
@@ -289,16 +288,6 @@ def _send_agent_notification(
                         "title": "Telegram Username",
                         "short": True,
                         "value": agent_data.telegram_username,
-                    },
-                    {
-                        "title": "Wallet Provider",
-                        "short": True,
-                        "value": agent.wallet_provider,
-                    },
-                    {
-                        "title": "Network",
-                        "short": True,
-                        "value": agent.network_id or agent.cdp_network_id or "Default",
                     },
                     {
                         "title": "Wallet Address",

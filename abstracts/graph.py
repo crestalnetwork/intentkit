@@ -1,22 +1,25 @@
-from typing import Callable, Sequence
+from enum import Enum
+from typing import Any, Callable, Dict, NotRequired
 
-from langchain_core.messages import BaseMessage
-from langgraph.graph import add_messages
-from langgraph.managed import IsLastStep, RemainingSteps
-from typing_extensions import Annotated, TypedDict
+from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
+
+
+class AgentError(str, Enum):
+    """The error types that can be raised by the agent."""
+
+    INSUFFICIENT_CREDITS = "insufficient_credits"
 
 
 # We create the AgentState that we will pass around
 # This simply involves a list of messages
 # We want steps to return messages to append to the list
 # So we annotate the messages attribute with operator.add
-class AgentState(TypedDict):
+class AgentState(BaseAgentState):
     """The state of the agent."""
 
-    messages: Annotated[Sequence[BaseMessage], add_messages]
-    need_clear: bool
-    is_last_step: IsLastStep
-    remaining_steps: RemainingSteps
+    context: dict[str, Any]
+    error: NotRequired[AgentError]
+    __extra__: NotRequired[Dict[str, Any]]
 
 
 MemoryManager = Callable[[AgentState], AgentState]
