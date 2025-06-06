@@ -1,16 +1,17 @@
-# venice_image/image_generation_fluently_xl.py
-from skills.venice_image.base import VeniceImageBaseTool
-from skills.venice_image.input import STYLE_PRESETS  # Keep for description
+from skills.venice_image.image_generation.image_generation_base import (
+    VeniceImageGenerationBaseTool,
+)
+from skills.venice_image.image_generation.image_generation_input import STYLE_PRESETS
 
 
-class ImageGenerationFluentlyXL(VeniceImageBaseTool):
+class ImageGenerationFluentlyXL(VeniceImageGenerationBaseTool):
     """
     Tool for generating images using the Fluently-XL model via Venice AI.
     Known for aesthetics, lighting, realism, and correct anatomy.
     """
 
     # --- Model Specific Configuration ---
-    name: str = "venice_image_generation_fluently_xl"
+    name: str = "image_generation_fluently_xl"
     description: str = (
         "Generate images using the Fluently-XL model (via Venice AI).\n"
         "Aims for improved aesthetics, lighting, realism, and anatomy. Good for professional-quality images.\n"
@@ -20,4 +21,4 @@ class ImageGenerationFluentlyXL(VeniceImageBaseTool):
     )
     model_id: str = "fluently-xl"
 
-    # args_schema and _arun are inherited from VeniceImageBaseTool
+    # args_schema and _arun are inherited from VeniceImageGenerationBaseTool
