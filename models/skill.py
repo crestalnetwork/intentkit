@@ -288,6 +288,8 @@ class SkillTable(Base):
     name = Column(String, primary_key=True)
     enabled = Column(Boolean, nullable=False, default=True)
     category = Column(String, nullable=False)
+    config_name = Column(String, nullable=True)
+    price_level = Column(Integer, nullable=True)
     price = Column(Numeric(22, 4), nullable=False, default=1)
     price_self_key = Column(Numeric(22, 4), nullable=False, default=1)
     rate_limit_count = Column(Integer, nullable=True)
@@ -319,6 +321,10 @@ class Skill(BaseModel):
     name: Annotated[str, Field(description="Name of the skill")]
     enabled: Annotated[bool, Field(description="Is this skill enabled?")]
     category: Annotated[str, Field(description="Category of the skill")]
+    config_name: Annotated[Optional[str], Field(description="Config name of the skill")]
+    price_level: Annotated[
+        Optional[int], Field(description="Price level for this skill")
+    ]
     price: Annotated[
         Decimal, Field(description="Price for this skill", default=Decimal("1"))
     ]
