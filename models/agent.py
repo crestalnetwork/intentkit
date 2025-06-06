@@ -170,7 +170,7 @@ class AgentExample(BaseModel):
         str,
         PydanticField(
             description="Example prompt",
-            max_length=256,
+            max_length=1024,
             json_schema_extra={
                 "x-group": "examples",
             },
