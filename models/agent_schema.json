@@ -15,28 +15,28 @@
       "order": 2
     },
     {
+      "id": "examples",
+      "title": "Examples",
+      "order": 3
+    },
+    {
       "id": "onchain",
       "title": "On-Chain",
-      "order": 3
+      "order": 4
     },
     {
       "id": "entrypoint",
       "title": "Communication Channels",
-      "order": 4
+      "order": 5
     },
     {
       "id": "skills",
       "title": "Skills",
-      "order": 5
+      "order": 6
     },
     {
       "id": "autonomous",
       "title": "Autonomous",
-      "order": 6
-    },
-    {
-      "id": "examples",
-      "title": "Examples",
       "order": 7
     },
     {
@@ -621,24 +621,24 @@
       "x-inline": true
     },
     "examples": {
-      "title": "Prompt Examples",
+      "title": "Quick Actions",
       "type": "array",
       "maxItems": 6,
       "items": {
         "type": "object",
         "properties": {
           "name": {
-            "title": "Name",
+            "title": "Action Name",
             "type": "string",
-            "description": "Name of the example",
+            "description": "Quick action will show up on the UI as this name",
             "maxLength": 20,
             "x-group": "examples"
           },
           "prompt": {
             "title": "Prompt",
             "type": "string",
-            "description": "Example prompt",
-            "maxLength": 256,
+            "description": "When user clicks this action, the agent will execute this prompt",
+            "maxLength": 1024,
             "x-group": "examples"
           }
         },
@@ -647,7 +647,7 @@
           "prompt"
         ]
       },
-      "description": "List of example prompts for the agent",
+      "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
       "x-group": "examples",
       "x-inline": true
     },
