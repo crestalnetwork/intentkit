@@ -374,7 +374,7 @@ class TwitterClient(TwitterABC):
                     # Get the content type from the response headers or default to image/jpeg
                     content_type = response.headers.get("content-type", "image/jpeg")
 
-                    # Create a multipart form with the image file using the correct content type
+                    # Create a multipart form with the image file and required parameters
                     files = {
                         "media": (
                             "image",
@@ -383,8 +383,11 @@ class TwitterClient(TwitterABC):
                         )
                     }
 
+                    # Add required parameters according to new API
+                    data = {"media_category": "tweet_image", "media_type": content_type}
+
                     upload_response = await session.post(
-                        upload_url, headers=headers, files=files
+                        upload_url, headers=headers, files=files, data=data
                     )
 
                     if upload_response.status_code == 200:
