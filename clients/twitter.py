@@ -392,8 +392,8 @@ class TwitterClient(TwitterABC):
 
                     if upload_response.status_code == 200:
                         media_data = upload_response.json()
-                        if "id" in media_data:
-                            media_ids.append(media_data["id"])
+                        if "data" in media_data and "id" in media_data["data"]:
+                            media_ids.append(media_data["data"]["id"])
                         else:
                             raise ValueError(
                                 f"Unexpected response format from Twitter media upload: {media_data}"
