@@ -1,16 +1,17 @@
-# venice_image/image_generation_pony_realism.py
-from skills.venice_image.base import VeniceImageBaseTool
-from skills.venice_image.input import STYLE_PRESETS  # Keep for description
+from skills.venice_image.image_generation.image_generation_base import (
+    VeniceImageGenerationBaseTool,
+)
+from skills.venice_image.image_generation.image_generation_input import STYLE_PRESETS
 
 
-class ImageGenerationPonyRealism(VeniceImageBaseTool):
+class ImageGenerationPonyRealism(VeniceImageGenerationBaseTool):
     """
     Tool for generating images using the Pony Realism model via Venice AI.
     Focused on high-detail, realistic images, especially anime/character designs. Uses Danbooru tags.
     """
 
     # --- Model Specific Configuration ---
-    name: str = "venice_image_generation_pony_realism"
+    name: str = "image_generation_pony_realism"
     description: str = (
         "Generate images using the Pony Realism model (via Venice AI).\n"
         "Creates high-detail, realistic images, good for anime/character designs. Benefits from Danbooru tags (e.g., 'score_9', 'female'/'male').\n"
@@ -20,4 +21,4 @@ class ImageGenerationPonyRealism(VeniceImageBaseTool):
     )
     model_id: str = "pony-realism"
 
-    # args_schema and _arun are inherited from VeniceImageBaseTool
+    # args_schema and _arun are inherited from VeniceImageGenerationBaseTool

@@ -1,16 +1,17 @@
-# venice_image/image_generation_venice_sd35.py
-from skills.venice_image.base import VeniceImageBaseTool
-from skills.venice_image.input import STYLE_PRESETS  # Keep for description
+from skills.venice_image.image_generation.image_generation_base import (
+    VeniceImageGenerationBaseTool,
+)
+from skills.venice_image.image_generation.image_generation_input import STYLE_PRESETS
 
 
-class ImageGenerationVeniceSD35(VeniceImageBaseTool):
+class ImageGenerationVeniceSD35(VeniceImageGenerationBaseTool):
     """
     Tool for generating images using Venice AI's interface to Stable Diffusion 3.5 Large.
     Developed by Stability AI, using MMDiT architecture. Good for art and design.
     """
 
     # --- Model Specific Configuration ---
-    name: str = "venice_image_generation_venice_sd35"
+    name: str = "image_generation_venice_sd35"
     description: str = (
         "Generate images using Stability AI's Stable Diffusion 3.5 Large model (via Venice AI).\n"
         "Ideal for artworks, design processes, and educational use. Not for factual representations.\n"
@@ -22,4 +23,4 @@ class ImageGenerationVeniceSD35(VeniceImageBaseTool):
     # Use the specific ID provided by Venice, assuming it matches the name
     model_id: str = "venice-sd35"
 
-    # args_schema and _arun are inherited from VeniceImageBaseTool
+    # args_schema and _arun are inherited from VeniceImageGenerationBaseTool
