@@ -193,6 +193,11 @@ class CreditAccount(BaseModel):
             return Decimal(str(v)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
         return v
 
+    @property
+    def balance(self) -> Decimal:
+        """Return the total balance of the account."""
+        return self.free_credits + self.reward_credits + self.credits
+
     @classmethod
     async def get_in_session(
         cls,
@@ -755,6 +760,18 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    fee_platform_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_platform_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_platform_permanent_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
     fee_dev_account = Column(
         String,
         nullable=True,
@@ -764,6 +781,18 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    fee_dev_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_dev_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_dev_permanent_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
     fee_agent_account = Column(
         String,
         nullable=True,
@@ -771,6 +800,18 @@ class CreditEventTable(Base):
     fee_agent_amount = Column(
         Numeric(22, 4),
         default=0,
+        nullable=True,
+    )
+    fee_agent_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_agent_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_agent_permanent_amount = Column(
+        Numeric(22, 4),
         nullable=True,
     )
     free_amount = Column(
@@ -888,6 +929,25 @@ class CreditEvent(BaseModel):
         Optional[Decimal],
         Field(default=Decimal("0"), description="Platform fee amount"),
     ]
+    fee_platform_free_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Platform fee amount from free credits"
+        ),
+    ]
+    fee_platform_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Platform fee amount from reward credits"
+        ),
+    ]
+    fee_platform_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"),
+            description="Platform fee amount from permanent credits",
+        ),
+    ]
     fee_dev_account: Annotated[
         Optional[str], Field(None, description="Developer account ID receiving fee")
     ]
@@ -895,11 +955,44 @@ class CreditEvent(BaseModel):
         Optional[Decimal],
         Field(default=Decimal("0"), description="Developer fee amount"),
     ]
+    fee_dev_free_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Developer fee amount from free credits"
+        ),
+    ]
+    fee_dev_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Developer fee amount from reward credits"
+        ),
+    ]
+    fee_dev_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"),
+            description="Developer fee amount from permanent credits",
+        ),
+    ]
     fee_agent_account: Annotated[
         Optional[str], Field(None, description="Agent account ID receiving fee")
     ]
     fee_agent_amount: Annotated[
         Optional[Decimal], Field(default=Decimal("0"), description="Agent fee amount")
+    ]
+    fee_agent_free_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Agent fee amount from free credits"),
+    ]
+    fee_agent_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Agent fee amount from reward credits"),
+    ]
+    fee_agent_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Agent fee amount from permanent credits"
+        ),
     ]
     free_amount: Annotated[
         Optional[Decimal],
@@ -927,8 +1020,17 @@ class CreditEvent(BaseModel):
         "base_llm_amount",
         "base_skill_amount",
         "fee_platform_amount",
+        "fee_platform_free_amount",
+        "fee_platform_reward_amount",
+        "fee_platform_permanent_amount",
         "fee_dev_amount",
+        "fee_dev_free_amount",
+        "fee_dev_reward_amount",
+        "fee_dev_permanent_amount",
         "fee_agent_amount",
+        "fee_agent_free_amount",
+        "fee_agent_reward_amount",
+        "fee_agent_permanent_amount",
         "free_amount",
         "reward_amount",
         "permanent_amount",

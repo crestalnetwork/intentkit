@@ -134,6 +134,35 @@ async def get_agent_schema_with_admin_config(
                 result = await db.execute(stmt)
                 category_status = {row.category: row.any_enabled for row in result}
 
+                # Query all skills with their price levels for adding x-price-level fields
+                skills_stmt = select(
+                    SkillTable.category,
+                    SkillTable.config_name,
+                    SkillTable.price_level,
+                    SkillTable.enabled,
+                ).where(SkillTable.enabled)
+                skills_result = await db.execute(skills_stmt)
+                skills_data = {}
+                category_price_levels = {}
+
+                for row in skills_result:
+                    if row.category not in skills_data:
+                        skills_data[row.category] = {}
+                        category_price_levels[row.category] = []
+
+                    if row.config_name:
+                        skills_data[row.category][row.config_name] = row.price_level
+
+                    if row.price_level is not None:
+                        category_price_levels[row.category].append(row.price_level)
+
+                # Calculate average price levels for categories
+                category_avg_price_levels = {}
+                for category, price_levels in category_price_levels.items():
+                    if price_levels:
+                        avg_price_level = int(sum(price_levels) / len(price_levels))
+                        category_avg_price_levels[category] = avg_price_level
+
                 # Create a copy of keys to avoid modifying during iteration
                 skill_keys = list(skills_properties.keys())
 
@@ -154,6 +183,30 @@ async def get_agent_schema_with_admin_config(
                         logger.info(
                             f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
                         )
+                    else:
+                        # Add x-avg-price-level to category level
+                        if skill_category in category_avg_price_levels:
+                            skills_properties[skill_category]["x-avg-price-level"] = (
+                                category_avg_price_levels[skill_category]
+                            )
+
+                        # Add x-price-level to individual skill states
+                        if skill_category in skills_data:
+                            skill_states = (
+                                skills_properties[skill_category]
+                                .get("properties", {})
+                                .get("states", {})
+                                .get("properties", {})
+                            )
+                            for state_name, state_config in skill_states.items():
+                                if (
+                                    state_name in skills_data[skill_category]
+                                    and skills_data[skill_category][state_name]
+                                    is not None
+                                ):
+                                    state_config["x-price-level"] = skills_data[
+                                        skill_category
+                                    ][state_name]
 
         # Log the changes for debugging
         logger.debug(
