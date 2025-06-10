@@ -4,8 +4,8 @@ FastAPI endpoints for generating agent schemas from natural language prompts.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
@@ -113,9 +113,15 @@ class GenerationDetailResponse(BaseModel):
     created_at: Optional[str] = Field(None, description="Project creation timestamp")
     last_activity: Optional[str] = Field(None, description="Last activity timestamp")
     message_count: int = Field(..., description="Number of messages in conversation")
-    last_message: Optional[Dict[str, Any]] = Field(None, description="Last message in conversation")
-    first_message: Optional[Dict[str, Any]] = Field(None, description="First message in conversation")
-    conversation_history: List[Dict[str, Any]] = Field(..., description="Full conversation history")
+    last_message: Optional[Dict[str, Any]] = Field(
+        None, description="Last message in conversation"
+    )
+    first_message: Optional[Dict[str, Any]] = Field(
+        None, description="First message in conversation"
+    )
+    conversation_history: List[Dict[str, Any]] = Field(
+        ..., description="Full conversation history"
+    )
 
 
 @router.post(
@@ -286,7 +292,9 @@ async def get_generation_detail(
         - 404: Project not found or access denied
         - 500: Failed to retrieve generation detail
     """
-    logger.info(f"Getting generation detail for project_id={project_id}, user_id={user_id}")
+    logger.info(
+        f"Getting generation detail for project_id={project_id}, user_id={user_id}"
+    )
 
     try:
         # Get conversation history for the specific project
@@ -316,8 +324,16 @@ async def get_generation_detail(
         return GenerationDetailResponse(
             project_id=project_id,
             user_id=project_metadata.get("user_id") if project_metadata else user_id,
-            created_at=datetime.fromtimestamp(project_metadata.get("created_at")).isoformat() if project_metadata and project_metadata.get("created_at") else None,
-            last_activity=datetime.fromtimestamp(project_metadata.get("last_activity")).isoformat() if project_metadata and project_metadata.get("last_activity") else None,
+            created_at=datetime.fromtimestamp(
+                project_metadata.get("created_at")
+            ).isoformat()
+            if project_metadata and project_metadata.get("created_at")
+            else None,
+            last_activity=datetime.fromtimestamp(
+                project_metadata.get("last_activity")
+            ).isoformat()
+            if project_metadata and project_metadata.get("last_activity")
+            else None,
             message_count=len(conversation_history),
             last_message=conversation_history[-1] if conversation_history else None,
             first_message=conversation_history[0] if conversation_history else None,
