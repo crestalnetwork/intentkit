@@ -13,6 +13,8 @@ from app.admin.generator import generate_validated_agent_schema
 from app.admin.generator.llm_logger import (
     LLMLogger,
     create_llm_logger,
+    get_conversation_history,
+    get_project_metadata,
     get_projects_by_user,
 )
 from app.admin.generator.utils import generate_tags_from_nation_api
@@ -203,42 +205,108 @@ async def generate_agent(
 
 @router.get(
     "/chat-history",
-    summary="Get Latest Project Chat History by User",
+    summary="Get Chat History by User and/or Project",
     response_model=ChatHistoryResponse,
 )
 async def get_chat_history(
-    user_id: Optional[str] = None, limit: int = 50
+    user_id: Optional[str] = None, project_id: Optional[str] = None, limit: int = 50
 ) -> ChatHistoryResponse:
-    """Get the latest project chat history for a user.
+    """Get chat history filtered by user and/or specific project.
 
-    Returns conversation history from recent agent generation projects,
-    allowing users to see their past interactions and continue conversations.
+    This endpoint supports two modes:
+    1. Get all projects for a user (when only user_id is provided)
+    2. Get specific project conversation history (when project_id is provided)
 
     **Query Parameters:**
-    * `user_id` - Optional user ID to filter projects (if not provided, returns all recent projects)
-    * `limit` - Maximum number of recent projects to return (default: 50, max: 100)
+    * `user_id` - Optional user ID to filter projects
+    * `project_id` - Optional project ID to get specific conversation history
+    * `limit` - Maximum number of recent projects to return (default: 50, max: 100, ignored when project_id is provided)
 
     **Returns:**
-    * `ChatHistoryResponse` - Contains list of recent projects with their conversation history
+    * `ChatHistoryResponse` - Contains list of projects with their conversation history
 
     **Raises:**
     * `HTTPException`:
         - 400: Invalid parameters
+        - 404: Project not found or access denied
         - 500: Failed to retrieve chat history
     """
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    logger.info(f"Getting chat history for user_id={user_id}, limit={limit}")
+    logger.info(
+        f"Getting chat history for user_id={user_id}, project_id={project_id}, limit={limit}"
+    )
 
     try:
-        # Get recent projects with their conversation history using the enhanced function
-        projects = await get_projects_by_user(user_id=user_id, limit=limit)
+        if project_id:
+            # Mode 2: Get specific project conversation history
+            logger.info(
+                f"Retrieving conversation history for specific project: {project_id}"
+            )
 
-        logger.info(f"Retrieved {len(projects)} projects for chat history")
+            # Get conversation history for the specific project
+            try:
+                conversation_history = await get_conversation_history(
+                    project_id=project_id,
+                    user_id=user_id,  # Used for additional access validation
+                )
+            except ValueError as ve:
+                logger.warning(f"Access denied or project not found: {ve}")
+                raise HTTPException(status_code=404, detail=str(ve))
 
-        return ChatHistoryResponse(projects=projects)
+            if not conversation_history:
+                logger.warning(
+                    f"No conversation history found for project {project_id}"
+                )
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No conversation history found for project {project_id}",
+                )
 
+            # Get project metadata for additional information
+            project_metadata = await get_project_metadata(project_id)
+
+            # Create a single project response with the conversation history
+            project_info = {
+                "project_id": project_id,
+                "user_id": project_metadata.get("user_id")
+                if project_metadata
+                else user_id,
+                "created_at": project_metadata.get("created_at")
+                if project_metadata
+                else None,
+                "last_activity": project_metadata.get("last_activity")
+                if project_metadata
+                else None,
+                "message_count": len(conversation_history),
+                "last_message": conversation_history[-1]
+                if conversation_history
+                else None,
+                "first_message": conversation_history[0]
+                if conversation_history
+                else None,
+                "conversation_history": conversation_history,
+            }
+
+            logger.info(
+                f"Retrieved conversation with {len(conversation_history)} messages for project {project_id}"
+            )
+            return ChatHistoryResponse(projects=[project_info])
+
+        else:
+            # Mode 1: Get all projects for a user (original behavior)
+            logger.info(f"Retrieving all projects for user: {user_id}")
+
+            # Get recent projects with their conversation history using the enhanced function
+            projects = await get_projects_by_user(user_id=user_id, limit=limit)
+
+            logger.info(f"Retrieved {len(projects)} projects for user {user_id}")
+            return ChatHistoryResponse(projects=projects)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"Failed to retrieve chat history: {str(e)}", exc_info=True)
         raise HTTPException(

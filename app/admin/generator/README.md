@@ -48,9 +48,19 @@ curl -X POST "http://localhost:8000/agent/generate" \
      }'
 ```
 
-### Get Chat History
+### Get Chat History - All Projects for User
 ```bash
 curl -X GET "http://localhost:8000/agent/chat-history?user_id=user123&limit=20"
+```
+
+### Get Chat History - Specific Project
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?project_id=bkj49k3nt2hc73jbdnp0&user_id=user123"
+```
+
+### Get Chat History - Specific Project (No User Validation)
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?project_id=bkj49k3nt2hc73jbdnp0"
 ```
 
 ### Get All Recent Projects (No User Filter)
@@ -118,6 +128,98 @@ curl -X GET "http://localhost:8000/agent/chat-history?limit=10"
         {"role": "user", "content": "Create a Twitter bot..."},
         {"role": "assistant", "content": "I've created..."},
         {"role": "user", "content": "Now add web search..."},
+        {"role": "assistant", "content": "I've updated..."}
+      ]
+    }
+  ]
+}
+```
+
+## Testing the Chat History API
+
+1. **Create an Initial Agent (Get Project ID)**
+```bash
+curl -X POST "http://localhost:8000/agent/generate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "prompt": "Create a trading bot for crypto analysis",
+       "user_id": "test_user_123"
+     }'
+```
+*Save the `project_id` from the response for next steps*
+
+2. **Continue Conversation (Use Same Project ID)**
+```bash
+curl -X POST "http://localhost:8000/agent/generate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "prompt": "Add social media posting capabilities",
+       "user_id": "test_user_123", 
+       "project_id": "YOUR_PROJECT_ID_FROM_STEP_1"
+     }'
+```
+
+3. **Get All Projects for User**
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?user_id=test_user_123"
+```
+
+4. **Get Specific Project Conversation**
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?project_id=YOUR_PROJECT_ID&user_id=test_user_123"
+```
+
+5. **Test Access Control (Should Return 404)**
+```bash
+curl -X GET "http://localhost:8000/agent/chat-history?project_id=YOUR_PROJECT_ID&user_id=different_user"
+```
+
+### API Response Modes
+
+**Mode 1: All Projects for User** (`user_id` only)
+- Returns: List of all projects for the user
+- Sorted by: Last activity (most recent first)
+- Includes: Full conversation history for each project
+
+**Mode 2: Specific Project** (`project_id` provided)
+- Returns: Single project with full conversation history
+- Access Control: Validates `user_id` matches project owner (if provided)
+- Error: 404 if project not found or access denied
+
+### Expected Response Structure
+
+**All Projects Response:**
+```json
+{
+  "projects": [
+    {
+      "project_id": "bkj49k3nt2hc73jbdnp0",
+      "user_id": "test_user_123",
+      "created_at": 1703123456.789,
+      "last_activity": 1703123556.789,
+      "message_count": 4,
+      "conversation_history": [...]
+    }
+  ]
+}
+```
+
+**Specific Project Response:**
+```json
+{
+  "projects": [
+    {
+      "project_id": "bkj49k3nt2hc73jbdnp0", 
+      "user_id": "test_user_123",
+      "created_at": 1703123456.789,
+      "last_activity": 1703123556.789,
+      "message_count": 4,
+      "first_message": {"role": "user", "content": "..."},
+      "last_message": {"role": "assistant", "content": "..."},
+      "conversation_history": [
+        {"role": "user", "content": "Create a trading bot..."},
+        {"role": "assistant", "content": "I've created..."},
+        {"role": "user", "content": "Add social media..."},
         {"role": "assistant", "content": "I've updated..."}
       ]
     }
