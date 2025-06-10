@@ -5,6 +5,7 @@ FastAPI endpoints for generating agent schemas from natural language prompts.
 
 import logging
 from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
@@ -83,10 +84,10 @@ class AgentGenerateResponse(BaseModel):
     )
 
 
-class ChatHistoryRequest(BaseModel):
-    """Request model for getting chat history."""
+class GenerationsListRequest(BaseModel):
+    """Request model for getting generations list."""
 
-    user_id: Optional[str] = Field(None, description="User ID to filter chat history")
+    user_id: Optional[str] = Field(None, description="User ID to filter generations")
 
     limit: int = Field(
         default=50,
@@ -96,12 +97,25 @@ class ChatHistoryRequest(BaseModel):
     )
 
 
-class ChatHistoryResponse(BaseModel):
-    """Response model for chat history."""
+class GenerationsListResponse(BaseModel):
+    """Response model for generations list."""
 
     projects: List[Dict[str, Any]] = Field(
         ..., description="List of recent projects with their conversation history"
     )
+
+
+class GenerationDetailResponse(BaseModel):
+    """Response model for single generation detail."""
+
+    project_id: str = Field(..., description="Project ID")
+    user_id: Optional[str] = Field(None, description="User ID who owns this project")
+    created_at: Optional[str] = Field(None, description="Project creation timestamp")
+    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    message_count: int = Field(..., description="Number of messages in conversation")
+    last_message: Optional[Dict[str, Any]] = Field(None, description="Last message in conversation")
+    first_message: Optional[Dict[str, Any]] = Field(None, description="First message in conversation")
+    conversation_history: List[Dict[str, Any]] = Field(..., description="Full conversation history")
 
 
 @router.post(
@@ -204,115 +218,121 @@ async def generate_agent(
 
 
 @router.get(
-    "/chat-history",
-    summary="Get Chat History by User and/or Project",
-    response_model=ChatHistoryResponse,
+    "/generations",
+    summary="Get Generations List by User",
+    response_model=GenerationsListResponse,
 )
-async def get_chat_history(
-    user_id: Optional[str] = None, project_id: Optional[str] = None, limit: int = 50
-) -> ChatHistoryResponse:
-    """Get chat history filtered by user and/or specific project.
-
-    This endpoint supports two modes:
-    1. Get all projects for a user (when only user_id is provided)
-    2. Get specific project conversation history (when project_id is provided)
+async def get_generations(
+    user_id: Optional[str] = None, limit: int = 50
+) -> GenerationsListResponse:
+    """Get all projects/generations for a user.
 
     **Query Parameters:**
     * `user_id` - Optional user ID to filter projects
-    * `project_id` - Optional project ID to get specific conversation history
-    * `limit` - Maximum number of recent projects to return (default: 50, max: 100, ignored when project_id is provided)
+    * `limit` - Maximum number of recent projects to return (default: 50, max: 100)
 
     **Returns:**
-    * `ChatHistoryResponse` - Contains list of projects with their conversation history
+    * `GenerationsListResponse` - Contains list of projects with their conversation history
 
     **Raises:**
     * `HTTPException`:
         - 400: Invalid parameters
-        - 404: Project not found or access denied
-        - 500: Failed to retrieve chat history
+        - 500: Failed to retrieve generations
     """
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    logger.info(
-        f"Getting chat history for user_id={user_id}, project_id={project_id}, limit={limit}"
-    )
+    logger.info(f"Getting generations for user_id={user_id}, limit={limit}")
 
     try:
-        if project_id:
-            # Mode 2: Get specific project conversation history
-            logger.info(
-                f"Retrieving conversation history for specific project: {project_id}"
+        # Get recent projects with their conversation history
+        projects = await get_projects_by_user(user_id=user_id, limit=limit)
+
+        logger.info(f"Retrieved {len(projects)} projects for user {user_id}")
+        return GenerationsListResponse(projects=projects)
+
+    except Exception as e:
+        logger.error(f"Failed to retrieve generations: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "GenerationsRetrievalFailed",
+                "msg": f"Failed to retrieve generations: {str(e)}",
+            },
+        )
+
+
+@router.get(
+    "/generations/{project_id}",
+    summary="Get Generation Detail by Project ID",
+    response_model=GenerationDetailResponse,
+)
+async def get_generation_detail(
+    project_id: str, user_id: Optional[str] = None
+) -> GenerationDetailResponse:
+    """Get specific project conversation history.
+
+    **Path Parameters:**
+    * `project_id` - Project ID to get conversation history for
+
+    **Query Parameters:**
+    * `user_id` - Optional user ID for access validation
+
+    **Returns:**
+    * `GenerationDetailResponse` - Contains full conversation history for the project
+
+    **Raises:**
+    * `HTTPException`:
+        - 404: Project not found or access denied
+        - 500: Failed to retrieve generation detail
+    """
+    logger.info(f"Getting generation detail for project_id={project_id}, user_id={user_id}")
+
+    try:
+        # Get conversation history for the specific project
+        try:
+            conversation_history = await get_conversation_history(
+                project_id=project_id,
+                user_id=user_id,  # Used for additional access validation
+            )
+        except ValueError as ve:
+            logger.warning(f"Access denied or project not found: {ve}")
+            raise HTTPException(status_code=404, detail=str(ve))
+
+        if not conversation_history:
+            logger.warning(f"No conversation history found for project {project_id}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"No conversation history found for project {project_id}",
             )
 
-            # Get conversation history for the specific project
-            try:
-                conversation_history = await get_conversation_history(
-                    project_id=project_id,
-                    user_id=user_id,  # Used for additional access validation
-                )
-            except ValueError as ve:
-                logger.warning(f"Access denied or project not found: {ve}")
-                raise HTTPException(status_code=404, detail=str(ve))
+        # Get project metadata for additional information
+        project_metadata = await get_project_metadata(project_id)
 
-            if not conversation_history:
-                logger.warning(
-                    f"No conversation history found for project {project_id}"
-                )
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"No conversation history found for project {project_id}",
-                )
+        logger.info(
+            f"Retrieved conversation with {len(conversation_history)} messages for project {project_id}"
+        )
 
-            # Get project metadata for additional information
-            project_metadata = await get_project_metadata(project_id)
-
-            # Create a single project response with the conversation history
-            project_info = {
-                "project_id": project_id,
-                "user_id": project_metadata.get("user_id")
-                if project_metadata
-                else user_id,
-                "created_at": project_metadata.get("created_at")
-                if project_metadata
-                else None,
-                "last_activity": project_metadata.get("last_activity")
-                if project_metadata
-                else None,
-                "message_count": len(conversation_history),
-                "last_message": conversation_history[-1]
-                if conversation_history
-                else None,
-                "first_message": conversation_history[0]
-                if conversation_history
-                else None,
-                "conversation_history": conversation_history,
-            }
-
-            logger.info(
-                f"Retrieved conversation with {len(conversation_history)} messages for project {project_id}"
-            )
-            return ChatHistoryResponse(projects=[project_info])
-
-        else:
-            # Mode 1: Get all projects for a user (original behavior)
-            logger.info(f"Retrieving all projects for user: {user_id}")
-
-            # Get recent projects with their conversation history using the enhanced function
-            projects = await get_projects_by_user(user_id=user_id, limit=limit)
-
-            logger.info(f"Retrieved {len(projects)} projects for user {user_id}")
-            return ChatHistoryResponse(projects=projects)
+        return GenerationDetailResponse(
+            project_id=project_id,
+            user_id=project_metadata.get("user_id") if project_metadata else user_id,
+            created_at=datetime.fromtimestamp(project_metadata.get("created_at")).isoformat() if project_metadata and project_metadata.get("created_at") else None,
+            last_activity=datetime.fromtimestamp(project_metadata.get("last_activity")).isoformat() if project_metadata and project_metadata.get("last_activity") else None,
+            message_count=len(conversation_history),
+            last_message=conversation_history[-1] if conversation_history else None,
+            first_message=conversation_history[0] if conversation_history else None,
+            conversation_history=conversation_history,
+        )
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        logger.error(f"Failed to retrieve chat history: {str(e)}", exc_info=True)
+        logger.error(f"Failed to retrieve generation detail: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
-                "error": "ChatHistoryRetrievalFailed",
-                "msg": f"Failed to retrieve chat history: {str(e)}",
+                "error": "GenerationDetailRetrievalFailed",
+                "msg": f"Failed to retrieve generation detail: {str(e)}",
             },
         )

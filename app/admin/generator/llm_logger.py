@@ -6,6 +6,7 @@ Simple conversation tracking for project-based agent generation.
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from .utils import generate_request_id
@@ -270,11 +271,15 @@ async def get_projects_by_user(
 
         # Only include projects with conversation history
         if conversation_history:
+            # Convert timestamps to ISO format strings
+            created_at = metadata.get("created_at")
+            last_activity = metadata.get("last_activity")
+            
             project_info = {
                 "project_id": project_id,
                 "user_id": metadata.get("user_id"),
-                "created_at": metadata.get("created_at"),
-                "last_activity": metadata.get("last_activity"),
+                "created_at": datetime.fromtimestamp(created_at).isoformat() if created_at else None,
+                "last_activity": datetime.fromtimestamp(last_activity).isoformat() if last_activity else None,
                 "message_count": len(conversation_history),
                 "last_message": conversation_history[-1]
                 if conversation_history

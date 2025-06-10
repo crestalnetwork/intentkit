@@ -48,24 +48,24 @@ curl -X POST "http://localhost:8000/agent/generate" \
      }'
 ```
 
-### Get Chat History - All Projects for User
+### Get Generations List - All Projects for User
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?user_id=user123&limit=20"
+curl -X GET "http://localhost:8000/agent/generations?user_id=user123&limit=20"
 ```
 
-### Get Chat History - Specific Project
+### Get Generation Detail - Specific Project
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?project_id=bkj49k3nt2hc73jbdnp0&user_id=user123"
+curl -X GET "http://localhost:8000/agent/generations/bkj49k3nt2hc73jbdnp0?user_id=user123"
 ```
 
-### Get Chat History - Specific Project (No User Validation)
+### Get Generation Detail - Specific Project (No User Validation)
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?project_id=bkj49k3nt2hc73jbdnp0"
+curl -X GET "http://localhost:8000/agent/generations/bkj49k3nt2hc73jbdnp0"
 ```
 
 ### Get All Recent Projects (No User Filter)
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?limit=10"
+curl -X GET "http://localhost:8000/agent/generations?limit=10"
 ```
 
 ## Request/Response Format
@@ -106,7 +106,7 @@ curl -X GET "http://localhost:8000/agent/chat-history?limit=10"
 }
 ```
 
-**Chat History Response:**
+**Generations List Response:**
 ```json
 {
   "projects": [
@@ -135,7 +135,7 @@ curl -X GET "http://localhost:8000/agent/chat-history?limit=10"
 }
 ```
 
-## Testing the Chat History API
+## Testing the Generations API
 
 1. **Create an Initial Agent (Get Project ID)**
 ```bash
@@ -161,17 +161,17 @@ curl -X POST "http://localhost:8000/agent/generate" \
 
 3. **Get All Projects for User**
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?user_id=test_user_123"
+curl -X GET "http://localhost:8000/agent/generations?user_id=test_user_123"
 ```
 
 4. **Get Specific Project Conversation**
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?project_id=YOUR_PROJECT_ID&user_id=test_user_123"
+curl -X GET "http://localhost:8000/agent/generations/YOUR_PROJECT_ID?user_id=test_user_123"
 ```
 
 5. **Test Access Control (Should Return 404)**
 ```bash
-curl -X GET "http://localhost:8000/agent/chat-history?project_id=YOUR_PROJECT_ID&user_id=different_user"
+curl -X GET "http://localhost:8000/agent/generations/YOUR_PROJECT_ID?user_id=different_user"
 ```
 
 ### API Response Modes
@@ -248,11 +248,16 @@ This enables iterative agent refinement with context awareness.
 
 The system automatically generates exactly 3 relevant tags using Nation API + LLM selection. Always returns 3 tags, never empty.
 
-### Chat History Management
 
-Track and retrieve conversation history across projects:
+### API Endpoints
 
-1. **User-Specific History**: Filter projects by user_id
-2. **Project Metadata**: Stores creation time, last activity, user association
-3. **Conversation Tracking**: Complete message history for each project
-4. **Recent Activity**: Sorted by last activity for easy access
+**List Endpoint**: `/agent/generations`
+- Get all projects for a user
+- Query parameters: `user_id`, `limit`
+- Returns: List of projects with conversation history
+
+**Detail Endpoint**: `/agent/generations/{project_id}`
+- Get specific project conversation history
+- Path parameter: `project_id`
+- Query parameter: `user_id` (for access validation)
+- Returns: Single project with full conversation details
