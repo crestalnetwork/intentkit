@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Any, Dict, Optional
+from typing import Annotated, Any, Optional
 
 from langchain_core.language_models import LanguageModelLike
 from pydantic import BaseModel, ConfigDict, Field
@@ -43,6 +43,7 @@ class LLMModelInfoTable(Base):
     output_price = Column(
         Numeric(22, 4), nullable=False
     )  # Price per 1M output tokens in USD
+    price_level = Column(Integer, nullable=True)  # Price level rating from 1-5
     context_length = Column(Integer, nullable=False)  # Maximum context length in tokens
     output_length = Column(Integer, nullable=False)  # Maximum output length in tokens
     intelligence = Column(Integer, nullable=False)  # Intelligence rating from 1-5
@@ -84,6 +85,9 @@ class LLMModelInfo(BaseModel):
     enabled: bool = Field(default=True)
     input_price: Decimal  # Price per 1M input tokens in USD
     output_price: Decimal  # Price per 1M output tokens in USD
+    price_level: Optional[int] = Field(
+        default=None, ge=1, le=5
+    )  # Price level rating from 1-5
     context_length: int  # Maximum context length in tokens
     output_length: int  # Maximum output length in tokens
     intelligence: int = Field(ge=1, le=5)  # Intelligence rating from 1-5
@@ -705,13 +709,6 @@ def create_llm_model(
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)
-
-
-# Utility functions
-# FXIME: from db
-def get_available_models() -> Dict[str, LLMModelInfo]:
-    """Get all available models."""
-    return AVAILABLE_MODELS
 
 
 async def get_model_info(model_name: str) -> LLMModelInfo:
