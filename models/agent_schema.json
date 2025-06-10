@@ -559,6 +559,10 @@
         "unrealspeech": {
           "title": "UnrealSpeech",
           "$ref": "../skills/unrealspeech/schema.json"
+        },
+        "web_scraper": {
+          "title": "Web Scraper & Content Indexing",
+          "$ref": "../skills/web_scraper/schema.json"
         }
       }
     },
