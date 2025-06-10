@@ -448,6 +448,14 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
+        "venice_audio": {
+          "title": "Venice Audio",
+          "$ref": "../skills/venice_audio/schema.json"
+        },
+        "dexscreener": {
+          "title": "DEX Screener",
+          "$ref": "../skills/dexscreener/schema.json"
+        },
         "allora": {
           "title": "Allora",
           "$ref": "../skills/allora/schema.json"

@@ -3,6 +3,7 @@ S3 utility module for storing and retrieving images from AWS S3.
 """
 
 import logging
+from enum import Enum
 from io import BytesIO
 from typing import Optional
 
@@ -171,4 +172,96 @@ async def store_image_bytes(
 
     except ClientError as e:
         logger.error(f"Failed to upload image bytes to S3: {str(e)}")
+        raise
+
+
+class FileType(str, Enum):
+    IMAGE = "image"
+    VIDEO = "video"
+    AUDIO = "audio"
+    PDF = "pdf"
+
+
+async def store_file_bytes(
+    file_bytes: bytes,
+    key: str,
+    file_type: FileType,
+    size_limit_bytes: Optional[int] = None,
+) -> str:
+    """
+    Store raw file bytes (image, video, sound, pdf) to S3.
+
+    Args:
+        file_bytes: Raw bytes of the file to store
+        key: Key to store the file under (without prefix)
+        file_type: Type of the file (image, video, sound, pdf)
+        size_limit_bytes: Optional size limit in bytes
+
+    Returns:
+        str: The CDN URL of the stored file, or an empty string if S3 is not initialized
+
+    Raises:
+        ClientError: If the upload fails
+        ValueError: If S3 is not initialized, file_bytes is empty, or file exceeds size limit
+    """
+    if not _client or not _bucket or not _prefix or not _cdn_url:
+        logger.info("S3 not initialized. Cannot store file bytes.")
+        return ""
+    if not file_bytes:
+        raise ValueError("File bytes cannot be empty")
+
+    if size_limit_bytes is not None and len(file_bytes) > size_limit_bytes:
+        raise ValueError(
+            f"File size exceeds the allowed limit of {size_limit_bytes} bytes"
+        )
+
+    try:
+        # Prepare the S3 key with prefix
+        prefixed_key = f"{_prefix}{key}"
+
+        # Use BytesIO to create a file-like object that implements read
+        file_obj = BytesIO(file_bytes)
+
+        # Determine content type based on file_type
+        content_type = ""
+        if file_type == FileType.IMAGE:
+            kind = filetype.guess(file_bytes)
+            if kind and kind.mime.startswith("image/"):
+                content_type = kind.mime
+            else:
+                content_type = "image/jpeg"
+        elif file_type == FileType.VIDEO:
+            kind = filetype.guess(file_bytes)
+            if kind and kind.mime.startswith("video/"):
+                content_type = kind.mime
+            else:
+                content_type = "video/mp4"
+        elif file_type == FileType.AUDIO:
+            kind = filetype.guess(file_bytes)
+            if kind and kind.mime.startswith("audio/"):
+                content_type = kind.mime
+            else:
+                content_type = "audio/mpeg"
+        elif file_type == FileType.PDF:
+            content_type = "application/pdf"
+        else:
+            raise ValueError(f"Unsupported file type: {file_type}")
+
+        logger.info(f"Uploading {file_type} to S3 with content type {content_type}")
+
+        # Upload to S3
+        _client.upload_fileobj(
+            file_obj,
+            _bucket,
+            prefixed_key,
+            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+        )
+
+        # Return the CDN URL
+        cdn_url = f"{_cdn_url}/{prefixed_key}"
+        logger.info(f"{file_type} uploaded successfully to {cdn_url}")
+        return cdn_url
+
+    except ClientError as e:
+        logger.error(f"Failed to upload {file_type} bytes to S3: {str(e)}")
         raise
