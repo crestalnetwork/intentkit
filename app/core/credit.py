@@ -106,26 +106,30 @@ async def recharge(
     if amount <= Decimal("0"):
         raise ValueError("Recharge amount must be positive")
 
-    # 1. Update user account - add credits
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - add credits
     user_account = await CreditAccount.income_in_session(
         session=session,
         owner_type=OwnerType.USER,
         owner_id=user_id,
         amount=amount,
         credit_type=CreditType.PERMANENT,  # Recharge adds to permanent credits
+        event_id=event_id,
     )
 
-    # 2. Update platform recharge account - deduct credits
+    # 3. Update platform recharge account - deduct credits
     platform_account = await CreditAccount.deduction_in_session(
         session=session,
         owner_type=OwnerType.PLATFORM,
         owner_id=DEFAULT_PLATFORM_ACCOUNT_RECHARGE,
         credit_type=CreditType.PERMANENT,
         amount=amount,
+        event_id=event_id,
     )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     event = CreditEventTable(
         id=event_id,
         event_type=EventType.RECHARGE,
@@ -211,26 +215,30 @@ async def reward(
     if amount <= Decimal("0"):
         raise ValueError("Reward amount must be positive")
 
-    # 1. Update user account - add reward credits
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - add reward credits
     user_account = await CreditAccount.income_in_session(
         session=session,
         owner_type=OwnerType.USER,
         owner_id=user_id,
         amount=amount,
         credit_type=CreditType.REWARD,  # Reward adds to reward credits
+        event_id=event_id,
     )
 
-    # 2. Update platform reward account - deduct credits
+    # 3. Update platform reward account - deduct credits
     platform_account = await CreditAccount.deduction_in_session(
         session=session,
         owner_type=OwnerType.PLATFORM,
         owner_id=DEFAULT_PLATFORM_ACCOUNT_REWARD,
         credit_type=CreditType.REWARD,
         amount=amount,
+        event_id=event_id,
     )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     event = CreditEventTable(
         id=event_id,
         event_type=reward_type,
@@ -326,7 +334,10 @@ async def adjustment(
     credit_debit_user = CreditDebit.CREDIT if is_income else CreditDebit.DEBIT
     credit_debit_platform = CreditDebit.DEBIT if is_income else CreditDebit.CREDIT
 
-    # 1. Update user account
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account
     if is_income:
         user_account = await CreditAccount.income_in_session(
             session=session,
@@ -334,6 +345,7 @@ async def adjustment(
             owner_id=user_id,
             amount=abs_amount,
             credit_type=credit_type,
+            event_id=event_id,
         )
     else:
         # Deduct the credits using deduction_in_session
@@ -345,9 +357,10 @@ async def adjustment(
             owner_id=user_id,
             credit_type=credit_type,
             amount=abs_amount,
+            event_id=event_id,
         )
 
-    # 2. Update platform adjustment account
+    # 3. Update platform adjustment account
     if is_income:
         platform_account = await CreditAccount.deduction_in_session(
             session=session,
@@ -355,6 +368,7 @@ async def adjustment(
             owner_id=DEFAULT_PLATFORM_ACCOUNT_ADJUSTMENT,
             credit_type=credit_type,
             amount=abs_amount,
+            event_id=event_id,
         )
     else:
         platform_account = await CreditAccount.income_in_session(
@@ -363,10 +377,10 @@ async def adjustment(
             owner_id=DEFAULT_PLATFORM_ACCOUNT_ADJUSTMENT,
             amount=abs_amount,
             credit_type=credit_type,
+            event_id=event_id,
         )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     # Set the appropriate credit amount field based on credit type
     free_amount = Decimal("0")
     reward_amount = Decimal("0")
@@ -778,12 +792,16 @@ async def expense_message(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 
-    # 1. Update user account - deduct credits
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - deduct credits
     user_account, details = await CreditAccount.expense_in_session(
         session=session,
         owner_type=OwnerType.USER,
         owner_id=user_id,
         amount=total_amount,
+        event_id=event_id,
     )
 
     # If using free credits, add to agent's free_income_daily
@@ -794,13 +812,14 @@ async def expense_message(
             session=session, id=agent.id, amount=details.get(CreditType.FREE)
         )
 
-    # 2. Update fee account - add credits
+    # 3. Update fee account - add credits
     message_account = await CreditAccount.income_in_session(
         session=session,
         owner_type=OwnerType.PLATFORM,
         owner_id=DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
         credit_type=CreditType.PERMANENT,
         amount=base_amount,
+        event_id=event_id,
     )
     platform_fee_account = await CreditAccount.income_in_session(
         session=session,
@@ -808,6 +827,7 @@ async def expense_message(
         owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
         credit_type=CreditType.PERMANENT,
         amount=fee_platform_amount,
+        event_id=event_id,
     )
     if fee_agent_amount > 0:
         agent_account = await CreditAccount.income_in_session(
@@ -816,10 +836,10 @@ async def expense_message(
             owner_id=agent.id,
             credit_type=CreditType.REWARD,
             amount=fee_agent_amount,
+            event_id=event_id,
         )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     # Set the appropriate credit amount field based on credit type
     free_amount = details.get(CreditType.FREE, Decimal("0"))
     reward_amount = details.get(CreditType.REWARD, Decimal("0"))
@@ -1095,12 +1115,16 @@ async def expense_skill(
     # Calculate skill cost using the skill_cost function
     skill_cost_info = await skill_cost(skill_name, user_id, agent)
 
-    # 1. Update user account - deduct credits
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - deduct credits
     user_account, details = await CreditAccount.expense_in_session(
         session=session,
         owner_type=OwnerType.USER,
         owner_id=user_id,
         amount=skill_cost_info.total_amount,
+        event_id=event_id,
     )
 
     # If using free credits, add to agent's free_income_daily
@@ -1111,13 +1135,14 @@ async def expense_skill(
             session=session, id=agent.id, amount=details[CreditType.FREE]
         )
 
-    # 2. Update fee account - add credits
+    # 3. Update fee account - add credits
     skill_account = await CreditAccount.income_in_session(
         session=session,
         owner_type=OwnerType.PLATFORM,
         owner_id=DEFAULT_PLATFORM_ACCOUNT_SKILL,
         credit_type=CreditType.PERMANENT,
         amount=skill_cost_info.base_amount,
+        event_id=event_id,
     )
     platform_account = await CreditAccount.income_in_session(
         session=session,
@@ -1125,6 +1150,7 @@ async def expense_skill(
         owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
         credit_type=CreditType.PERMANENT,
         amount=skill_cost_info.fee_platform_amount,
+        event_id=event_id,
     )
     if skill_cost_info.fee_dev_amount > 0:
         dev_account = await CreditAccount.income_in_session(
@@ -1133,6 +1159,7 @@ async def expense_skill(
             owner_id=skill_cost_info.fee_dev_user,
             credit_type=CreditType.REWARD,  # put dev fee in reward
             amount=skill_cost_info.fee_dev_amount,
+            event_id=event_id,
         )
     if skill_cost_info.fee_agent_amount > 0:
         agent_account = await CreditAccount.income_in_session(
@@ -1141,10 +1168,10 @@ async def expense_skill(
             owner_id=agent.id,
             credit_type=CreditType.REWARD,
             amount=skill_cost_info.fee_agent_amount,
+            event_id=event_id,
         )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     # Set the appropriate credit amount field based on credit type
     free_amount = details.get(CreditType.FREE, Decimal("0"))
     reward_amount = details.get(CreditType.REWARD, Decimal("0"))
@@ -1385,26 +1412,30 @@ async def refill_free_credits_for_account(
     if amount_to_add <= Decimal("0"):
         return  # Nothing to add
 
-    # 1. Update user account - add free credits
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - add free credits
     updated_account = await CreditAccount.income_in_session(
         session=session,
         owner_type=account.owner_type,
         owner_id=account.owner_id,
         amount=amount_to_add,
         credit_type=CreditType.FREE,
+        event_id=event_id,
     )
 
-    # 2. Update platform refill account - deduct credits
+    # 3. Update platform refill account - deduct credits
     platform_account = await CreditAccount.deduction_in_session(
         session=session,
         owner_type=OwnerType.PLATFORM,
         owner_id=DEFAULT_PLATFORM_ACCOUNT_REFILL,
         credit_type=CreditType.FREE,
         amount=amount_to_add,
+        event_id=event_id,
     )
 
-    # 3. Create credit event record
-    event_id = str(XID())
+    # 4. Create credit event record
     event = CreditEventTable(
         id=event_id,
         account_id=updated_account.id,
