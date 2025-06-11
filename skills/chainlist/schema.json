@@ -27,7 +27,13 @@
             "public",
             "private"
           ],
-          "description": "Enables looking up blockchain RPC endpoints and network information. When public, available to all users; when private, only to authenticated users."
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Enables looking up blockchain RPC endpoints and network information. When public, available to all users; when private, only to authenticated users.",
+          "default": "disabled"
         }
       },
       "description": "Configure visibility for chainlist skills (disabled: unavailable, public: available to all, private: available only to authenticated users)"
@@ -38,4 +44,4 @@
     "states"
   ],
   "additionalProperties": true
-} 
+}

@@ -5,6 +5,7 @@ Common helper functions used across the generator modules.
 
 import json
 import logging
+import random
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
@@ -209,48 +210,58 @@ ALLOWED_MODELS = [
 async def generate_tags_from_nation_api(
     agent_schema: Dict[str, Any], prompt: str
 ) -> List[Dict[str, int]]:
-    """Generate tags using Nation API and LLM selection."""
+    """Generate tags using Crestal API and LLM selection."""
 
-    # Simple fallback tags if everything fails
+    # Simple fallback tags if everything fails - randomized to add variety
     def get_default_tags() -> List[Dict[str, int]]:
-        return [
-            {"id": 28},
-            {"id": 23},
-            {"id": 20},
-        ]  # Analytics, Social Media, Automation
+        fallback_sets = [
+            [{"id": 28}, {"id": 23}, {"id": 20}],  # Analytics, Social Media, Automation
+            [{"id": 3}, {"id": 11}, {"id": 53}],  # Trading, Gaming, API
+            [
+                {"id": 5},
+                {"id": 14},
+                {"id": 47},
+            ],  # Investing, Content Creation, Security
+            [
+                {"id": 17},
+                {"id": 27},
+                {"id": 32},
+            ],  # Personal Assistant, Marketing, Reporting
+            [{"id": 33}, {"id": 43}, {"id": 38}],  # Art, Tutor, Fitness
+            [{"id": 51}, {"id": 46}, {"id": 49}],  # DevOps, Research, Compliance
+        ]
 
-    if not config.nation_api_url:
-        logger.info("Nation API URL not configured, using default tags")
-        return get_default_tags()
+        # Add randomization based on current time
+        random.seed(int(time.time()) % 10000)
+        selected_set = random.choice(fallback_sets)
+
+        logger.info(f"Using randomized fallback tags: {selected_set}")
+        return selected_set
 
     try:
-        logger.info(f"Fetching tags from Nation API: {config.nation_api_url}/v1/tags")
+        # Use the fixed Crestal API endpoint
+        crestal_api_url = "https://api.service.crestal.dev/v1/tags"
+        logger.info(f"Fetching tags from Crestal API: {crestal_api_url}")
 
-        # Get tags from Nation API
-        headers = {}
-        if config.nation_api_key:
-            headers["Authorization"] = f"Bearer {config.nation_api_key}"
+        # Get tags from Crestal API
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(crestal_api_url)
 
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(
-                f"{config.nation_api_url}/v1/tags", headers=headers
-            )
-
-            logger.info(f"Nation API response status: {response.status_code}")
+            logger.info(f"Crestal API response status: {response.status_code}")
 
             if response.status_code != 200:
                 logger.warning(
-                    f"Nation API returned status {response.status_code}: {response.text}"
+                    f"Crestal API returned status {response.status_code}: {response.text}"
                 )
                 return get_default_tags()
 
             tags_data = response.json()
             logger.info(
-                f"Received {len(tags_data) if isinstance(tags_data, list) else 0} tags from Nation API"
+                f"Received {len(tags_data) if isinstance(tags_data, list) else 0} tags from Crestal API"
             )
 
             if not isinstance(tags_data, list) or len(tags_data) == 0:
-                logger.warning("Nation API response is not a valid list or is empty")
+                logger.warning("Crestal API response is not a valid list or is empty")
                 return get_default_tags()
 
             # Group by category with tag IDs
@@ -258,15 +269,23 @@ async def generate_tags_from_nation_api(
             tag_lookup = {}  # name -> {id, name, category}
 
             for tag in tags_data:
+                # Handle the actual Crestal API response format
                 cat = tag.get("category", "")
                 name = tag.get("name", "")
                 tag_id = tag.get("id")
 
                 if cat and name and tag_id:
-                    if cat not in categories:
-                        categories[cat] = []
-                    categories[cat].append(name)
-                    tag_lookup[name] = {"id": tag_id, "name": name, "category": cat}
+                    # Clean up category name (decode \u0026 to &)
+                    clean_category = cat.replace("\\u0026", "&")
+
+                    if clean_category not in categories:
+                        categories[clean_category] = []
+                    categories[clean_category].append(name)
+                    tag_lookup[name] = {
+                        "id": tag_id,
+                        "name": name,
+                        "category": clean_category,
+                    }
 
             logger.info(
                 f"Grouped tags into {len(categories)} categories: {list(categories.keys())}"
@@ -309,10 +328,10 @@ async def generate_tags_from_nation_api(
             return final_tags
 
     except httpx.TimeoutException:
-        logger.warning("Nation API request timed out")
+        logger.warning("Crestal API request timed out")
         return get_default_tags()
     except httpx.ConnectError:
-        logger.warning("Could not connect to Nation API")
+        logger.warning("Could not connect to Crestal API")
         return get_default_tags()
     except Exception as e:
         logger.error(f"Error in tag generation: {str(e)}")
@@ -330,30 +349,63 @@ async def select_tags_with_llm(
 
         client = OpenAI(api_key=config.openai_api_key)
 
+        random_seed = int(time.time() * 1000) % 10000
+        random.seed(random_seed)
+
+        # Shuffle categories
+        category_items = list(categories.items())
+        random.shuffle(category_items)
+
         # Build category info for prompt
         cat_info = []
-        for cat_name, tag_list in categories.items():
-            cat_info.append(f"{cat_name}: {', '.join(tag_list)}")
+        for cat_name, tag_list in category_items:
+            # Also shuffle tags within each category
+            shuffled_tags = tag_list.copy()
+            random.shuffle(shuffled_tags)
+            cat_info.append(f"{cat_name}: {', '.join(shuffled_tags)}")
 
-        llm_prompt = f"""Select exactly 3 most relevant tags from different categories for this agent:
+        # Add randomization elements to make prompt more unique
+        variation_phrases = [
+            "Based on the agent's characteristics, identify the most suitable tags",
+            "Analyze the agent's purpose and skills to determine appropriate tags",
+            "Consider the agent's functionality and select relevant tags",
+            "Evaluate the agent's capabilities and choose fitting tags",
+        ]
 
-Agent: {agent_schema.get("name", "AI Agent")}
-Purpose: {agent_schema.get("purpose", "")}
-Skills: {", ".join(agent_schema.get("skills", {}).keys())}
-Prompt: {prompt}
+        selected_phrase = random.choice(variation_phrases)
 
-Categories:
+        timestamp_hash = abs(hash(str(time.time()))) % 1000
+
+        llm_prompt = f"""{selected_phrase} from the available categories below.
+
+Agent Configuration:
+- Name: {agent_schema.get("name", "AI Agent")}
+- Purpose: {agent_schema.get("purpose", "Not specified")}
+- Skills: {", ".join(agent_schema.get("skills", {}).keys()) or "None specified"}
+- User Request: {prompt}
+- Session ID: {timestamp_hash}
+
+Available Tag Categories:
 {chr(10).join(cat_info)}
 
-Return exactly 3 tag names as a JSON array from different categories. Example: ["Trading", "Social Media", "Analytics"]"""
+Instructions:
+- Select exactly 3 tag names from DIFFERENT categories
+- Prioritize tags that best match the agent's purpose and skills
+- Return response as a JSON array of tag names
+- Example format: ["Trading", "Social Media", "Analytics"]
+- Avoid selecting tags from the same category
 
-        logger.info("Calling OpenAI for tag selection")
+Your selection:"""
 
+        logger.info("Calling OpenAI for tag selection with randomized prompt")
+
+        # Increase temperature for more diverse outputs
         response = client.chat.completions.create(
             model="gpt-4.1-nano",
             messages=[{"role": "user", "content": llm_prompt}],
-            temperature=0.3,
-            max_tokens=100,
+            temperature=0.8,
+            max_tokens=150,
+            top_p=0.9,
         )
 
         result = response.choices[0].message.content.strip()
@@ -370,14 +422,51 @@ Return exactly 3 tag names as a JSON array from different categories. Example: [
         # Validate tags exist in categories and limit to 3
         valid_tags = []
         all_tag_names = [tag for tags in categories.values() for tag in tags]
+        selected_categories = set()
+
         for tag in selected_tags:
             if tag in all_tag_names and len(valid_tags) < 3:
-                valid_tags.append(tag)
+                # Find the category of this tag
+                tag_category = None
+                for cat_name, tag_list in categories.items():
+                    if tag in tag_list:
+                        tag_category = cat_name
+                        break
+
+                # Only add if from a different category (for diversity)
+                if tag_category and tag_category not in selected_categories:
+                    valid_tags.append(tag)
+                    selected_categories.add(tag_category)
+                    logger.info(f"Added tag '{tag}' from category '{tag_category}'")
+                elif tag_category in selected_categories:
+                    logger.info(
+                        f"Skipped tag '{tag}' - category '{tag_category}' already selected"
+                    )
             elif tag not in all_tag_names:
                 logger.warning(f"Tag '{tag}' not found in available tags")
 
-        logger.info(f"Valid tags after filtering (max 3): {valid_tags}")
-        return valid_tags
+        if len(valid_tags) < 3:
+            unused_categories = [
+                cat for cat in categories.keys() if cat not in selected_categories
+            ]
+            random.shuffle(unused_categories)
+
+            for cat_name in unused_categories:
+                if len(valid_tags) >= 3:
+                    break
+                available_tags = categories[cat_name]
+                if available_tags:
+                    random_tag = random.choice(available_tags)
+                    valid_tags.append(random_tag)
+                    selected_categories.add(cat_name)
+                    logger.info(
+                        f"Added random tag '{random_tag}' from unused category '{cat_name}'"
+                    )
+
+        logger.info(
+            f"Final valid tags after filtering and diversification: {valid_tags}"
+        )
+        return valid_tags[:3]  # Ensure exactly 3 tags
 
     except Exception as e:
         logger.error(f"Error in LLM tag selection: {str(e)}")
