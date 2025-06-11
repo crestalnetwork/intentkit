@@ -3,6 +3,12 @@
   "description": "Configuration for Dune Analytics skills to fetch data from Dune Analytics API.",
   "type": "object",
   "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
     "states": {
       "title": "Skill States",
       "type": "object",
@@ -10,18 +16,34 @@
         "fetch_nation_metrics": {
           "type": "string",
           "title": "Fetch Crestal Nation Metrics",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Fetches Crestal Nation metrics (e.g., total_users, agents/citizens, market_cap) from Dune Analytics API.",
-          "default": "public"
+          "default": "disabled"
         },
         "fetch_kol_buys": {
           "type": "string",
           "title": "Fetch KOL Memecoin Buys",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API.",
-          "default": "public"
+          "default": "disabled"
         }
       }
     },
