@@ -166,6 +166,16 @@ class AgentExample(BaseModel):
             },
         ),
     ]
+    description: Annotated[
+        str,
+        PydanticField(
+            description="Description of the example",
+            max_length=200,
+            json_schema_extra={
+                "x-group": "examples",
+            },
+        ),
+    ]
     prompt: Annotated[
         str,
         PydanticField(
@@ -733,6 +743,17 @@ class AgentUpdate(BaseModel):
             json_schema_extra={
                 "x-group": "autonomous",
                 "x-inline": True,
+            },
+        ),
+    ]
+    example_intro: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Introduction of the example",
+            max_length=2048,
+            json_schema_extra={
+                "x-group": "examples",
             },
         ),
     ]

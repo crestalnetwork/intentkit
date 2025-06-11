@@ -628,6 +628,13 @@
       "x-group": "autonomous",
       "x-inline": true
     },
+    "example_intro": {
+      "title": "Example Intro",
+      "type": "string",
+      "description": "Introduction of the example",
+      "maxLength": 2048,
+      "x-group": "examples"
+    },
     "examples": {
       "title": "Quick Actions",
       "type": "array",
@@ -642,6 +649,13 @@
             "maxLength": 20,
             "x-group": "examples"
           },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Description of what this action does",
+            "maxLength": 200,
+            "x-group": "examples"
+          },
           "prompt": {
             "title": "Prompt",
             "type": "string",
@@ -652,12 +666,12 @@
         },
         "required": [
           "name",
+          "description",
           "prompt"
         ]
       },
       "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
-      "x-group": "examples",
-      "x-inline": true
+      "x-group": "examples"
     },
     "wallet_provider": {
       "title": "Wallet Provider",

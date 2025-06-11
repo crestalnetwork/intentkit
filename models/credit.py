@@ -109,6 +109,10 @@ class CreditAccountTable(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    last_event_id = Column(
+        String,
+        nullable=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -176,6 +180,10 @@ class CreditAccount(BaseModel):
     expense_at: Annotated[
         Optional[datetime],
         Field(None, description="Timestamp of the last expense transaction"),
+    ]
+    last_event_id: Annotated[
+        Optional[str],
+        Field(None, description="ID of the last event that modified this account"),
     ]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this account was created")
@@ -285,10 +293,18 @@ class CreditAccount(BaseModel):
         owner_id: str,
         credit_type: CreditType,
         amount: Decimal,
+        event_id: Optional[str] = None,
     ) -> "CreditAccount":
         """Deduct credits from an account. Not checking balance"""
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
+
+        values_dict = {
+            credit_type.value: getattr(CreditAccountTable, credit_type.value) - amount,
+            "expense_at": datetime.now(timezone.utc),
+        }
+        if event_id:
+            values_dict["last_event_id"] = event_id
 
         stmt = (
             update(CreditAccountTable)
@@ -296,13 +312,7 @@ class CreditAccount(BaseModel):
                 CreditAccountTable.owner_type == owner_type,
                 CreditAccountTable.owner_id == owner_id,
             )
-            .values(
-                {
-                    credit_type.value: getattr(CreditAccountTable, credit_type.value)
-                    - amount,
-                    "expense_at": datetime.now(timezone.utc),
-                }
-            )
+            .values(values_dict)
             .returning(CreditAccountTable)
         )
         res = await session.scalar(stmt)
@@ -317,6 +327,7 @@ class CreditAccount(BaseModel):
         owner_type: OwnerType,
         owner_id: str,
         amount: Decimal,
+        event_id: Optional[str] = None,
     ) -> Tuple["CreditAccount", Dict[CreditType, Decimal]]:
         """Expense credits and return account and credit type.
         We are not checking balance here, since a conversation may have
@@ -350,6 +361,8 @@ class CreditAccount(BaseModel):
         values_dict = {
             "expense_at": datetime.now(timezone.utc),
         }
+        if event_id:
+            values_dict["last_event_id"] = event_id
 
         # Add credit type values only if they exist in details
         for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
@@ -392,23 +405,25 @@ class CreditAccount(BaseModel):
         owner_id: str,
         amount: Decimal,
         credit_type: CreditType,
+        event_id: Optional[str] = None,
     ) -> "CreditAccount":
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
         # income
+        values_dict = {
+            credit_type.value: getattr(CreditAccountTable, credit_type.value) + amount,
+            "income_at": datetime.now(timezone.utc),
+        }
+        if event_id:
+            values_dict["last_event_id"] = event_id
+
         stmt = (
             update(CreditAccountTable)
             .where(
                 CreditAccountTable.owner_type == owner_type,
                 CreditAccountTable.owner_id == owner_id,
             )
-            .values(
-                {
-                    credit_type.value: getattr(CreditAccountTable, credit_type.value)
-                    + amount,
-                    "income_at": datetime.now(timezone.utc),
-                }
-            )
+            .values(values_dict)
             .returning(CreditAccountTable)
         )
         res = await session.scalar(stmt)
@@ -442,6 +457,9 @@ class CreditAccount(BaseModel):
             # only users have daily quota
             free_quota = 0.0
             refill_amount = 0.0
+        # Create event_id at the beginning for consistency
+        event_id = str(XID())
+
         account = CreditAccountTable(
             id=str(XID()),
             owner_type=owner_type,
@@ -453,6 +471,7 @@ class CreditAccount(BaseModel):
             credits=0.0,
             income_at=datetime.now(timezone.utc),
             expense_at=None,
+            last_event_id=event_id if owner_type == OwnerType.USER else None,
         )
         # Platform virtual accounts have fixed IDs, same as owner_id
         if owner_type == OwnerType.PLATFORM:
@@ -469,9 +488,9 @@ class CreditAccount(BaseModel):
                 DEFAULT_PLATFORM_ACCOUNT_REFILL,
                 CreditType.FREE,
                 free_quota,
+                event_id,
             )
             # Create refill event record
-            event_id = str(XID())
             event = CreditEventTable(
                 id=event_id,
                 event_type=EventType.REFILL,
