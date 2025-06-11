@@ -6,6 +6,7 @@ Simple conversation tracking for project-based agent generation.
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from .utils import generate_request_id
@@ -194,17 +195,53 @@ async def get_conversation_history(
 
     Args:
         project_id: Project/request ID to get history for
-        user_id: Optional user ID for additional filtering
+        user_id: Optional user ID for access validation
 
     Returns:
         List of conversation messages in chronological order
+
+    Raises:
+        ValueError: If project not found or access denied
     """
     logger.info(f"Getting conversation history for project: {project_id}")
+
+    # Check if project exists
+    if project_id not in _conversation_history:
+        logger.warning(f"Project {project_id} not found in conversation history")
+        return []
+
+    # Check if project exists in metadata
+    if project_id not in _project_metadata:
+        logger.warning(f"Project {project_id} not found in project metadata")
+        return []
+
+    # Access control: if user_id is provided, verify it matches the project owner
+    if user_id is not None:
+        project_metadata = _project_metadata.get(project_id, {})
+        project_user_id = project_metadata.get("user_id")
+
+        if project_user_id and project_user_id != user_id:
+            logger.warning(
+                f"Access denied: user {user_id} cannot access project {project_id} owned by {project_user_id}"
+            )
+            raise ValueError(f"Access denied: cannot access project {project_id}")
 
     history = _conversation_history.get(project_id, [])
     logger.info(f"Found {len(history)} conversation messages for project {project_id}")
 
     return history
+
+
+async def get_project_metadata(project_id: str) -> Optional[Dict[str, Any]]:
+    """Get metadata for a specific project.
+
+    Args:
+        project_id: Project/request ID to get metadata for
+
+    Returns:
+        Project metadata dict or None if not found
+    """
+    return _project_metadata.get(project_id)
 
 
 async def get_projects_by_user(
@@ -234,11 +271,19 @@ async def get_projects_by_user(
 
         # Only include projects with conversation history
         if conversation_history:
+            # Convert timestamps to ISO format strings
+            created_at = metadata.get("created_at")
+            last_activity = metadata.get("last_activity")
+
             project_info = {
                 "project_id": project_id,
                 "user_id": metadata.get("user_id"),
-                "created_at": metadata.get("created_at"),
-                "last_activity": metadata.get("last_activity"),
+                "created_at": datetime.fromtimestamp(created_at).isoformat()
+                if created_at
+                else None,
+                "last_activity": datetime.fromtimestamp(last_activity).isoformat()
+                if last_activity
+                else None,
                 "message_count": len(conversation_history),
                 "last_message": conversation_history[-1]
                 if conversation_history

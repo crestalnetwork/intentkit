@@ -12,6 +12,7 @@ The module uses a global cache to store initialized agents for better performanc
 
 import importlib
 import logging
+import re
 import textwrap
 import time
 import traceback
@@ -46,11 +47,49 @@ from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageS
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
 from models.llm import get_model_cost
-from models.skill import AgentSkillData, ThreadSkillData
+from models.skill import AgentSkillData, Skill, ThreadSkillData
 from models.user import User
 from utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
+
+
+async def explain_input_message(message: str) -> str:
+    """
+    Process input message to replace @skill:*:* patterns with (call skill xxxxx) format.
+
+    Args:
+        message (str): The input message to process
+
+    Returns:
+        str: The processed message with @skill patterns replaced
+    """
+    # Pattern to match @skill:category:config_name with spaces around
+    pattern = r"\s@skill:([^:]+):([^\s]+)\s"
+
+    async def replace_skill_pattern(match):
+        category = match.group(1)
+        config_name = match.group(2)
+
+        # Get skill by category and config_name
+        skill = await Skill.get_by_config_name(category, config_name)
+
+        if skill:
+            return f" (call skill {skill.name}) "
+        else:
+            # If skill not found, keep original pattern
+            return match.group(0)
+
+    # Find all matches
+    matches = list(re.finditer(pattern, message))
+
+    # Process matches in reverse order to maintain string positions
+    result = message
+    for match in reversed(matches):
+        replacement = await replace_skill_pattern(match)
+        result = result[: match.start()] + replacement + result[match.end() :]
+
+    return result
 
 
 # Global variable to cache all agent executors
@@ -264,6 +303,7 @@ async def execute_agent(
     start = time.perf_counter()
     # make sure reply_to is set
     message.reply_to = message.id
+
     input = await message.save()
 
     agent = await Agent.get(input.agent_id)
@@ -370,12 +410,14 @@ async def execute_agent(
             if "type" in att and att["type"] == "image" and "url" in att
         ]
 
-    # message
+    # Process input message to handle @skill patterns
+    input_message = await explain_input_message(input.message)
+
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
-        input.message += f"\n\nImages:\n{'\n'.join(image_urls)}"
+        input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
     content = [
-        {"type": "text", "text": input.message},
+        {"type": "text", "text": input_message},
     ]
     if not agent.has_image_parser_skill() and image_urls:
         # anyway, pass it directly to LLM
@@ -385,6 +427,7 @@ async def execute_agent(
                 for image_url in image_urls
             ]
         )
+
     messages = [
         HumanMessage(content=content),
     ]
