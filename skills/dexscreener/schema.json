@@ -13,6 +13,7 @@
     "properties": {
         "enabled": {
             "type": "boolean",
+            "title": "Enabled",
             "description": "Enable or disable the Dexscreener skill.",
             "default": false
         },
@@ -36,7 +37,6 @@
                     "description": "Searches on DexScreener for token pairs matching a query (symbol, name, address). Returns up to 50 pairs sorted by 'liquidity' or 'volume24h' (required input), including price, volume, etc. Use this tool to find token information based on user queries.",
                     "default": "disabled"
                 }
-                
             }
         }
     },
@@ -44,5 +44,5 @@
         "enabled",
         "states"
     ],
-  "additionalProperties": true
+    "additionalProperties": true
 }
