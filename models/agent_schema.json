@@ -16,7 +16,7 @@
     },
     {
       "id": "examples",
-      "title": "Examples",
+      "title": "Quick Actions",
       "order": 3
     },
     {
@@ -629,14 +629,14 @@
       "x-inline": true
     },
     "example_intro": {
-      "title": "Example Intro",
+      "title": "Intro",
       "type": "string",
-      "description": "Introduction of the example",
+      "description": "Introduction to the frequency actions of your agent",
       "maxLength": 2048,
       "x-group": "examples"
     },
     "examples": {
-      "title": "Quick Actions",
+      "title": "Quick Action List",
       "type": "array",
       "maxItems": 6,
       "items": {
