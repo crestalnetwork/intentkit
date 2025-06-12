@@ -256,6 +256,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent purpose"
     },
     "personality": {
@@ -268,6 +269,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent personality"
     },
     "principles": {
@@ -280,6 +282,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent principles"
     },
     "prompt": {
@@ -291,6 +294,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "prompt_append": {
@@ -302,6 +306,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "temperature": {
@@ -357,6 +362,7 @@
       "type": "string",
       "description": "Extra prompt for telegram entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "entrypoint"
     },
     "telegram_config": {
@@ -407,6 +413,7 @@
       "type": "string",
       "description": "Extra prompt for X entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "deprecated"
     },
     "twitter_config": {
@@ -448,14 +455,6 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
-        "venice_audio": {
-          "title": "Venice Audio",
-          "$ref": "../skills/venice_audio/schema.json"
-        },
-        "dexscreener": {
-          "title": "DEX Screener",
-          "$ref": "../skills/dexscreener/schema.json"
-        },
         "allora": {
           "title": "Allora",
           "$ref": "../skills/allora/schema.json"
@@ -552,6 +551,10 @@
           "title": "Slack",
           "$ref": "../skills/slack/schema.json"
         },
+        "venice_audio": {
+          "title": "Venice Audio",
+          "$ref": "../skills/venice_audio/schema.json"
+        },
         "venice_image": {
           "title": "Venice Image",
           "$ref": "../skills/venice_image/schema.json"
@@ -609,6 +612,7 @@
             "type": "string",
             "description": "Prompt the agent will execute on schedule",
             "maxLength": 20000,
+            "x-str-type": "prompt",
             "x-group": "autonomous"
           },
           "enabled": {
@@ -661,6 +665,7 @@
             "type": "string",
             "description": "When user clicks this action, the agent will execute this prompt",
             "maxLength": 1024,
+            "x-str-type": "prompt",
             "x-group": "examples"
           }
         },
