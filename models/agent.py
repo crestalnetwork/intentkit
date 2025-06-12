@@ -1466,6 +1466,13 @@ class AgentResponse(BaseModel):
         ),
     ]
     # agent examples
+    example_intro: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Introduction for example interactions",
+        ),
+    ]
     examples: Annotated[
         Optional[List[AgentExample]],
         PydanticField(
