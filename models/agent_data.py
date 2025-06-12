@@ -61,6 +61,9 @@ class AgentDataTable(Base):
     telegram_username = Column(String, nullable=True, comment="Telegram username")
     telegram_name = Column(String, nullable=True, comment="Telegram display name")
     error_message = Column(String, nullable=True, comment="Last error message")
+    api_key = Column(
+        String, nullable=True, unique=True, comment="API key for the agent"
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -185,6 +188,13 @@ class AgentData(BaseModel):
             description="Last error message",
         ),
     ]
+    api_key: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="API key for the agent",
+        ),
+    ]
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -215,6 +225,28 @@ class AgentData(BaseModel):
         """
         async with get_session() as db:
             item = await db.get(AgentDataTable, agent_id)
+            if item:
+                return cls.model_validate(item)
+            return None
+
+    @classmethod
+    async def get_by_api_key(cls, api_key: str) -> Optional["AgentData"]:
+        """Get agent data by API key.
+
+        Args:
+            api_key: API key
+
+        Returns:
+            AgentData if found, None otherwise
+
+        Raises:
+            HTTPException: If there are database errors
+        """
+        async with get_session() as db:
+            result = await db.execute(
+                select(AgentDataTable).where(AgentDataTable.api_key == api_key)
+            )
+            item = result.scalar_one_or_none()
             if item:
                 return cls.model_validate(item)
             return None
