@@ -47,7 +47,9 @@ class ConversationService:
         self, content: str, message_metadata: Optional[Dict[str, Any]] = None
     ) -> ConversationMessage:
         """Add an assistant message to the conversation."""
-        return await add_message(self.project_id, "assistant", content, message_metadata)
+        return await add_message(
+            self.project_id, "assistant", content, message_metadata
+        )
 
     async def get_history(self) -> List[Dict[str, Any]]:
         """Get the conversation history."""
