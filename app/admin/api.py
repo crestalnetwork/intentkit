@@ -33,12 +33,11 @@ from clients.twitter import unlink_twitter
 from models.agent import (
     Agent,
     AgentCreate,
-    AgentData,
-    AgentDataTable,
     AgentResponse,
     AgentTable,
     AgentUpdate,
 )
+from models.agent_data import AgentData, AgentDataTable
 from models.db import get_db
 from models.user import User
 from skills import __all__ as skill_categories

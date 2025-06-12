@@ -1,7 +1,8 @@
 import json
 
 from app.config.config import config
-from models.agent import Agent, AgentData
+from models.agent import Agent
+from models.agent_data import AgentData
 
 
 def agent_prompt(agent: Agent, agent_data: AgentData) -> str:

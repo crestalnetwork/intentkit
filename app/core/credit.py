@@ -806,7 +806,7 @@ async def expense_message(
 
     # If using free credits, add to agent's free_income_daily
     if details.get(CreditType.FREE):
-        from models.agent import AgentQuota
+        from models.agent_data import AgentQuota
 
         await AgentQuota.add_free_income_in_session(
             session=session, id=agent.id, amount=details.get(CreditType.FREE)
@@ -1129,7 +1129,7 @@ async def expense_skill(
 
     # If using free credits, add to agent's free_income_daily
     if CreditType.FREE in details:
-        from models.agent import AgentQuota
+        from models.agent_data import AgentQuota
 
         await AgentQuota.add_free_income_in_session(
             session=session, id=agent.id, amount=details[CreditType.FREE]

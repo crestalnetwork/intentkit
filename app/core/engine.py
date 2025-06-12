@@ -41,7 +41,8 @@ from app.core.credit import expense_message, expense_skill
 from app.core.node import PostModelNode, PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
-from models.agent import Agent, AgentData, AgentQuota, AgentTable
+from models.agent import Agent, AgentTable
+from models.agent_data import AgentData, AgentQuota
 from models.app_setting import AppSetting
 from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageSkillCall
 from models.credit import CreditAccount, OwnerType
