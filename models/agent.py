@@ -344,6 +344,11 @@ class AgentTable(Base):
         comment="Autonomous agent configurations",
     )
     # agent examples
+    example_intro = Column(
+        String,
+        nullable=True,
+        comment="Introduction for example interactions",
+    )
     examples = Column(
         JSONB,
         nullable=True,
