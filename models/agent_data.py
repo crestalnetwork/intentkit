@@ -227,7 +227,7 @@ class AgentData(BaseModel):
             item = await db.get(AgentDataTable, agent_id)
             if item:
                 return cls.model_validate(item)
-            return None
+            return cls(id=agent_id)
 
     @classmethod
     async def get_by_api_key(cls, api_key: str) -> Optional["AgentData"]:

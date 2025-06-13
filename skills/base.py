@@ -17,13 +17,15 @@ from models.agent import Agent
 from models.redis import get_redis
 
 SkillState = Literal["disabled", "public", "private"]
+SkillOwnerState = Literal["disabled", "private"]
 
 
 class SkillConfig(TypedDict):
     """Abstract base class for skill configuration."""
 
     enabled: bool
-    states: Dict[str, SkillState]
+    states: Dict[str, SkillState | SkillOwnerState]
+    api_key_provider: NotRequired[str]
     __extra__: NotRequired[Dict[str, Any]]
 
 

@@ -1,0 +1,76 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Liquid glass gradient -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8F4FD;stop-opacity:0.9"/>
+      <stop offset="25%" style="stop-color:#B8E0FF;stop-opacity:0.8"/>
+      <stop offset="50%" style="stop-color:#7CC7FF;stop-opacity:0.7"/>
+      <stop offset="75%" style="stop-color:#4A9EFF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:0.9"/>
+    </linearGradient>
+    
+    <!-- Inner shadow gradient -->
+    <radialGradient id="innerShadow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.6"/>
+      <stop offset="70%" style="stop-color:#FFFFFF;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:0.3"/>
+    </radialGradient>
+    
+    <!-- Highlight gradient -->
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </linearGradient>
+    
+    <!-- Drop shadow filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2" filter="url(#dropShadow)"/>
+  
+  <!-- Main gear shape -->
+  <g transform="translate(128,128)">
+    <!-- Outer gear teeth -->
+    <g fill="url(#glassGradient)" stroke="#1E40AF" stroke-width="1.5" opacity="0.9">
+      <!-- 12 gear teeth positioned around the circle -->
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(0)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(30)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(60)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(90)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(120)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(150)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(180)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(210)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(240)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(270)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(300)"/>
+      <rect x="-8" y="-65" width="16" height="20" rx="2" transform="rotate(330)"/>
+    </g>
+    
+    <!-- Main gear body -->
+    <circle r="45" fill="url(#glassGradient)" stroke="#1E40AF" stroke-width="2"/>
+    
+    <!-- Inner shadow overlay -->
+    <circle r="45" fill="url(#innerShadow)"/>
+    
+    <!-- Center hole -->
+    <circle r="18" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+    
+    <!-- Inner hole shadow -->
+    <circle r="18" fill="none" stroke="#94A3B8" stroke-width="1" opacity="0.5"/>
+    
+    <!-- Glass highlight effect -->
+    <ellipse cx="-15" cy="-15" rx="25" ry="35" fill="url(#highlight)" opacity="0.6" transform="rotate(-30)"/>
+    
+    <!-- Small decorative bolts -->
+    <circle cx="0" cy="-30" r="3" fill="#64748B"/>
+    <circle cx="26" cy="-15" r="3" fill="#64748B"/>
+    <circle cx="26" cy="15" r="3" fill="#64748B"/>
+    <circle cx="0" cy="30" r="3" fill="#64748B"/>
+    <circle cx="-26" cy="15" r="3" fill="#64748B"/>
+    <circle cx="-26" cy="-15" r="3" fill="#64748B"/>
+  </g>
+</svg>
