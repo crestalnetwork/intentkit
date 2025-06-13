@@ -111,7 +111,7 @@ async def _generate_new_agent_schema(
     # Step 2: Generate agent attributes (name, purpose, personality, etc.)
     logger.info("Step 2: Generating agent attributes")
     attributes, token_usage = await generate_agent_attributes(
-        prompt, skills_config, client, llm_logger=llm_logger
+        prompt, skills_config, client, llm_logger=llm_logger, user_id=user_id
     )
 
     # Step 3: Combine into complete agent schema

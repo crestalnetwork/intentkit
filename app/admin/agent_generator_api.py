@@ -11,12 +11,14 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
 
 from app.admin.generator import generate_validated_agent_schema
-from app.admin.generator.llm_logger import (
-    LLMLogger,
-    create_llm_logger,
+from app.admin.generator.conversation_service import (
     get_conversation_history,
     get_project_metadata,
     get_projects_by_user,
+)
+from app.admin.generator.llm_logger import (
+    LLMLogger,
+    create_llm_logger,
 )
 from app.admin.generator.utils import generate_tags_from_nation_api
 from models.agent import AgentUpdate
