@@ -54,9 +54,9 @@ from utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 
-async def explain_input_message(message: str) -> str:
+async def explain_prompt(message: str) -> str:
     """
-    Process input message to replace @skill:*:* patterns with (call skill xxxxx) format.
+    Process message to replace @skill:*:* patterns with (call skill xxxxx) format.
 
     Args:
         message (str): The input message to process
@@ -174,6 +174,9 @@ async def initialize_agent(aid, is_private=False):
     prompt = agent_prompt(agent, agent_data)
     # Escape curly braces in the prompt
     escaped_prompt = prompt.replace("{", "{{").replace("}", "}}")
+    # Process message to handle @skill patterns
+    if config.admin_llm_skill_control:
+        escaped_prompt = await explain_prompt(escaped_prompt)
     prompt_array = [
         ("system", escaped_prompt),
         ("placeholder", "{entrypoint_prompt}"),
@@ -182,6 +185,9 @@ async def initialize_agent(aid, is_private=False):
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
+        # Process message to handle @skill patterns
+        if config.admin_llm_skill_control:
+            escaped_append = await explain_prompt(escaped_append)
         prompt_array.append(("system", escaped_append))
 
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
@@ -411,7 +417,10 @@ async def execute_agent(
         ]
 
     # Process input message to handle @skill patterns
-    input_message = await explain_input_message(input.message)
+    if config.admin_llm_skill_control:
+        input_message = await explain_prompt(input.message)
+    else:
+        input_message = input.message
 
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
@@ -447,6 +456,8 @@ async def execute_agent(
     ):
         entrypoint_prompt = agent.telegram_entrypoint_prompt
         logger.debug("telegram entrypoint prompt added")
+    if entrypoint_prompt and config.admin_llm_skill_control:
+        entrypoint_prompt = await explain_prompt(entrypoint_prompt)
 
     # stream config
     thread_id = f"{input.agent_id}-{input.chat_id}"
