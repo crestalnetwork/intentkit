@@ -633,9 +633,9 @@
       "x-inline": true
     },
     "example_intro": {
-      "title": "Intro",
+      "title": "Introduction",
       "type": "string",
-      "description": "Introduction to the frequency actions of your agent",
+      "description": "An introductory paragraph explaining how to use this agent to any new users. Include specific actions or prompts to write in order to onboard your users quickly and clearly.",
       "maxLength": 2048,
       "x-group": "examples"
     },
