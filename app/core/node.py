@@ -203,12 +203,12 @@ class PostModelNode(RunnableCallable):
                 if skill_meta:
                     skill_cost_info = await skill_cost(skill_meta.name, payer, agent)
                     total_paid = skill_cost_info.total_amount
-            if not account.has_sufficient_credits(total_paid):
-                state_update["error"] = AgentError.INSUFFICIENT_CREDITS
-                state_update["messages"] = [RemoveMessage(id=msg.id)]
-                state_update["messages"].append(
-                    AIMessage(
-                        content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
-                    )
-                )
+                    if not account.has_sufficient_credits(total_paid):
+                        state_update["error"] = AgentError.INSUFFICIENT_CREDITS
+                        state_update["messages"] = [RemoveMessage(id=msg.id)]
+                        state_update["messages"].append(
+                            AIMessage(
+                                content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
+                            )
+                        )
         return state_update
