@@ -21,7 +21,7 @@ from models.generator import (
     AgentGenerationLogCreate,
 )
 
-from .llm_logger import get_conversation_history
+from .conversation_service import ConversationService, get_conversation_history
 from .skill_processor import (
     filter_skills_for_auto_generation,
     identify_skills,
@@ -61,6 +61,15 @@ async def enhance_agent(
         A tuple of (updated_schema, identified_skills, token_usage)
     """
     logger.info("Generating minimal agent update based on existing configuration")
+
+    # Initialize conversation service
+    conversation_service = None
+    if llm_logger:
+        conversation_service = ConversationService(
+            project_id=llm_logger.request_id, user_id=llm_logger.user_id
+        )
+        # Store the initial user prompt for updates
+        await conversation_service.add_user_message(prompt)
 
     # Initialize token usage tracking
     total_token_usage = {
@@ -272,6 +281,24 @@ Make minimal changes based on the prompt. If this is part of an ongoing conversa
 
             total_token_usage = extract_token_usage(response)
 
+    # Store assistant response in conversation for updates
+    if conversation_service:
+        if should_update_attributes and len(identified_skill_names) > 0:
+            response_content = f"I've updated your agent with the requested changes and added {len(identified_skill_names)} skills: {', '.join(identified_skill_names)}."
+        elif should_update_attributes:
+            response_content = "I've updated your agent's attributes as requested."
+        else:
+            response_content = f"I've updated your agent with {len(identified_skill_names)} new skills: {', '.join(identified_skill_names) if identified_skill_names else 'none'}."
+
+        await conversation_service.add_assistant_message(
+            content=response_content,
+            message_metadata={
+                "call_type": "agent_enhancement",
+                "identified_skills": list(identified_skill_names),
+                "attribute_updates": should_update_attributes,
+            },
+        )
+
     logger.info("Agent enhancement completed with minimal changes")
     return updated_schema, identified_skill_names, total_token_usage
 
@@ -281,6 +308,7 @@ async def generate_agent_attributes(
     skills_config: Dict[str, Any],
     client: OpenAI,
     llm_logger: Optional["LLMLogger"] = None,
+    user_id: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Generate agent attributes (name, purpose, personality, principles) from prompt.
 
@@ -299,7 +327,7 @@ async def generate_agent_attributes(
     skill_names = list(skills_config.keys())
     skill_summary = ", ".join(skill_names) if skill_names else "no specific skills"
 
-    # Get conversation history if logger has a project_id
+    # Get conversation history if we have an llm_logger
     history_messages = []
     if llm_logger:
         try:
@@ -453,6 +481,15 @@ async def generate_validated_agent(
     """
     start_time = time.time()
 
+    # Initialize conversation service
+    conversation_service = None
+    if llm_logger:
+        conversation_service = ConversationService(
+            project_id=llm_logger.request_id, user_id=llm_logger.user_id
+        )
+        # Store the initial user prompt
+        await conversation_service.add_user_message(prompt)
+
     # Create generation log (keeping existing aggregate logging for backward compatibility)
     async with get_session() as session:
         log_data = AgentGenerationLogCreate(
@@ -552,6 +589,18 @@ async def generate_validated_agent(
                         client=client,
                         llm_logger=llm_logger,
                     )
+
+                    # Store assistant response in conversation
+                    if conversation_service:
+                        await conversation_service.add_assistant_message(
+                            content=summary,
+                            message_metadata={
+                                "call_type": "agent_generation_success",
+                                "identified_skills": list(identified_skills),
+                                "attempt": attempt + 1,
+                                "validation_passed": True,
+                            },
+                        )
 
                     # Update log with success
                     async with get_session() as session:
