@@ -33,7 +33,7 @@ class SkillContext(BaseModel):
     agent: Agent
     config: Dict[str, Any]
     user_id: Optional[str]
-    entrypoint: Literal["web", "twitter", "telegram", "trigger"]
+    entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
 
 
 class IntentKitSkill(BaseTool):

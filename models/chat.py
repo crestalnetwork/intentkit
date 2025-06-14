@@ -43,6 +43,7 @@ class AuthorType(str, Enum):
     TWITTER = "twitter"
     WEB = "web"
     SYSTEM = "system"
+    API = "api"
 
 
 class ChatMessageAttachment(TypedDict):

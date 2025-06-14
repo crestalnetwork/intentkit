@@ -24,12 +24,10 @@
           "title": "Get API Key",
           "enum": [
             "disabled",
-            "public",
             "private"
           ],
           "x-enum-title": [
             "Disabled",
-            "Agent Owner + All Users",
             "Agent Owner Only"
           ],
           "description": "Retrieve the API key for the agent. If no API key exists, generates and sets a new one.",
@@ -40,12 +38,10 @@
           "title": "Reset API Key",
           "enum": [
             "disabled",
-            "public",
             "private"
           ],
           "x-enum-title": [
             "Disabled",
-            "Agent Owner + All Users",
             "Agent Owner Only"
           ],
           "description": "Generate a new API key for the agent, replacing any existing key.",

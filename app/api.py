@@ -30,6 +30,7 @@ from app.admin import (
 )
 from app.config.config import config
 from app.core.api import core_router
+from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
@@ -121,6 +122,7 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(chat_router_readonly)
+app.include_router(openai_router)
 app.include_router(admin_router)
 app.include_router(admin_router_readonly)
 app.include_router(metadata_router_readonly)
