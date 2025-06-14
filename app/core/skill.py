@@ -2,7 +2,8 @@ from typing import Any, Dict, Optional
 
 from abstracts.skill import SkillStoreABC
 from app.config.config import config
-from models.agent import Agent, AgentData, AgentQuota
+from models.agent import Agent
+from models.agent_data import AgentData, AgentQuota
 from models.skill import (
     AgentSkillData,
     AgentSkillDataCreate,

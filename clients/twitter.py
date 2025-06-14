@@ -10,7 +10,7 @@ from tweepy.asynchronous import AsyncClient
 
 from abstracts.skill import SkillStoreABC
 from abstracts.twitter import TwitterABC
-from models.agent import AgentData
+from models.agent_data import AgentData
 
 logger = logging.getLogger(__name__)
 

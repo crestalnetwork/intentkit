@@ -7,7 +7,8 @@ from typing import Dict, Optional
 from sqlalchemy import func, select, text
 
 from abstracts.agent import AgentStoreABC
-from models.agent import Agent, AgentData, AgentQuota
+from models.agent import Agent
+from models.agent_data import AgentData, AgentQuota
 from models.credit import CreditEventTable, EventType, UpstreamType
 from models.db import get_session
 

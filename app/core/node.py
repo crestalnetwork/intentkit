@@ -211,4 +211,5 @@ class PostModelNode(RunnableCallable):
                                 content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
                             )
                         )
+                        return state_update
         return state_update

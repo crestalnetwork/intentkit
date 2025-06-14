@@ -26,7 +26,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.config import config
 from app.core.engine import execute_agent, thread_stats
 from app.core.prompt import agent_prompt
-from models.agent import Agent, AgentData
+from models.agent import Agent
+from models.agent_data import AgentData
 from models.chat import (
     AuthorType,
     Chat,

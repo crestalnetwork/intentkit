@@ -7,7 +7,8 @@ from sqlalchemy import select
 from app.core.engine import execute_agent
 from app.core.skill import skill_store
 from clients.twitter import get_twitter_client
-from models.agent import Agent, AgentPluginData, AgentTable
+from models.agent import Agent, AgentTable
+from models.agent_data import AgentPluginData
 from models.chat import AuthorType, ChatMessageAttachmentType, ChatMessageCreate
 from models.db import get_session
 

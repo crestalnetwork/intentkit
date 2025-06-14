@@ -12,7 +12,8 @@ from app.config.config import config
 from app.core.agent import agent_action_cost
 from app.core.credit import refill_all_free_credits
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
-from models.agent import AgentQuotaTable, AgentTable
+from models.agent import AgentTable
+from models.agent_data import AgentQuotaTable
 from models.db import get_session
 from models.redis import get_redis, send_heartbeat
 
