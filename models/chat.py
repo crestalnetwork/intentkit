@@ -151,7 +151,11 @@ class ChatMessageTable(Base):
     """Chat message database table model."""
 
     __tablename__ = "chat_messages"
-    __table_args__ = (Index("ix_chat_messages_chat_id", "chat_id"),)
+    __table_args__ = (
+        Index("ix_chat_messages_chat_id", "chat_id"),
+        Index("ix_chat_messages_agent_id_author_type", "agent_id", "author_type"),
+        Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
+    )
 
     id = Column(
         String,
