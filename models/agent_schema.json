@@ -531,6 +531,10 @@
           "title": "Moralis",
           "$ref": "../skills/moralis/schema.json"
         },
+        "system": {
+          "title": "System",
+          "$ref": "../skills/system/schema.json"
+        },
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
