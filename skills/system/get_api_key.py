@@ -15,7 +15,7 @@ class GetApiKeyOutput(BaseModel):
 
     api_key: str = Field(description="The API key for the agent")
     is_new: bool = Field(description="Whether a new API key was generated")
-    api_base_url: str = Field(description="The base URL for the API")
+    open_api_base_url: str = Field(description="The base URL for the API")
     api_endpoint: str = Field(description="The full API endpoint URL")
 
 
@@ -43,15 +43,15 @@ class GetApiKey(SystemBaseTool):
             raise ValueError(f"Agent data not found for agent_id: {agent_id}")
 
         # Get API base URL from system config
-        api_base_url = self.skill_store.get_system_config("api_base_url")
-        api_endpoint = f"{api_base_url}/v1/chat/completions"
+        open_api_base_url = self.skill_store.get_system_config("open_api_base_url")
+        api_endpoint = f"{open_api_base_url}/v1/chat/completions"
 
         # Check if API key exists
         if agent_data.api_key:
             return GetApiKeyOutput(
                 api_key=agent_data.api_key,
                 is_new=False,
-                api_base_url=api_base_url,
+                open_api_base_url=open_api_base_url,
                 api_endpoint=api_endpoint,
             )
 
@@ -64,6 +64,6 @@ class GetApiKey(SystemBaseTool):
         return GetApiKeyOutput(
             api_key=new_api_key,
             is_new=True,
-            api_base_url=api_base_url,
+            open_api_base_url=open_api_base_url,
             api_endpoint=api_endpoint,
         )
