@@ -161,7 +161,7 @@ class AgentExample(BaseModel):
         str,
         PydanticField(
             description="Name of the example",
-            max_length=20,
+            max_length=50,
             json_schema_extra={
                 "x-group": "examples",
             },
@@ -181,7 +181,7 @@ class AgentExample(BaseModel):
         str,
         PydanticField(
             description="Example prompt",
-            max_length=1024,
+            max_length=2000,
             json_schema_extra={
                 "x-group": "examples",
             },
@@ -757,7 +757,7 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Introduction of the example",
-            max_length=2048,
+            max_length=2000,
             json_schema_extra={
                 "x-group": "examples",
             },
