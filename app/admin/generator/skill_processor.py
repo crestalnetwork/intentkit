@@ -9,7 +9,6 @@ This module handles all skill-related operations for agent generation including:
 import importlib
 import json
 import logging
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
@@ -35,14 +34,14 @@ def load_skill_schema(skill_name: str) -> Optional[Dict[str, Any]]:
     """Load schema.json for a specific skill."""
     if skill_name in _skill_schemas_cache:
         return _skill_schemas_cache[skill_name]
-    
+
     try:
         # Get the skills directory path
         skills_dir = Path(__file__).parent.parent.parent.parent / "skills"
         schema_path = skills_dir / skill_name / "schema.json"
-        
+
         if schema_path.exists():
-            with open(schema_path, 'r') as f:
+            with open(schema_path, "r") as f:
                 schema = json.load(f)
                 _skill_schemas_cache[skill_name] = schema
                 return schema
@@ -57,62 +56,76 @@ def load_skill_schema(skill_name: str) -> Optional[Dict[str, Any]]:
 def get_agent_owner_api_key_skills() -> Set[str]:
     """Get skills that require agent owner API keys."""
     agent_owner_skills = set()
-    
+
     for skill_name in AVAILABLE_SKILL_CATEGORIES:
         try:
             schema = load_skill_schema(skill_name)
-            if schema and "properties" in schema and "api_key_provider" in schema["properties"]:
+            if (
+                schema
+                and "properties" in schema
+                and "api_key_provider" in schema["properties"]
+            ):
                 api_key_provider = schema["properties"]["api_key_provider"]
-                if "enum" in api_key_provider and api_key_provider["enum"] == ["agent_owner"]:
+                if "enum" in api_key_provider and api_key_provider["enum"] == [
+                    "agent_owner"
+                ]:
                     agent_owner_skills.add(skill_name)
         except Exception as e:
-            logger.warning(f"Error checking API key requirement for skill {skill_name}: {e}")
-    
+            logger.warning(
+                f"Error checking API key requirement for skill {skill_name}: {e}"
+            )
+
     return agent_owner_skills
 
 
 def get_configurable_api_key_skills() -> Set[str]:
     """Get skills with configurable API key providers."""
     configurable_skills = set()
-    
+
     for skill_name in AVAILABLE_SKILL_CATEGORIES:
         try:
             schema = load_skill_schema(skill_name)
-            if schema and "properties" in schema and "api_key_provider" in schema["properties"]:
+            if (
+                schema
+                and "properties" in schema
+                and "api_key_provider" in schema["properties"]
+            ):
                 api_key_provider = schema["properties"]["api_key_provider"]
                 if "enum" in api_key_provider:
                     enum_values = set(api_key_provider["enum"])
                     if "platform" in enum_values and "agent_owner" in enum_values:
                         configurable_skills.add(skill_name)
         except Exception as e:
-            logger.warning(f"Error checking API key configurability for skill {skill_name}: {e}")
-    
+            logger.warning(
+                f"Error checking API key configurability for skill {skill_name}: {e}"
+            )
+
     return configurable_skills
 
 
 def get_skill_keyword_config() -> Dict[str, List[str]]:
     """Generate skill keyword configuration from schemas."""
     config = {}
-    
+
     for skill_name in AVAILABLE_SKILL_CATEGORIES:
         try:
             schema = load_skill_schema(skill_name)
             keywords = [skill_name]  # Always include skill name
-            
+
             if schema:
                 # Add title words
                 if "title" in schema:
                     keywords.extend(schema["title"].lower().split())
-                
+
                 # Add x-tags
                 if "x-tags" in schema:
                     keywords.extend([tag.lower() for tag in schema["x-tags"]])
-            
+
             config[skill_name] = keywords
         except Exception as e:
             logger.warning(f"Error getting keywords for skill {skill_name}: {e}")
             config[skill_name] = [skill_name]
-    
+
     return config
 
 
@@ -120,23 +133,26 @@ def get_skill_state_default(skill_name: str, state_name: str) -> str:
     """Get the default value for a specific skill state from its schema."""
     try:
         schema = load_skill_schema(skill_name)
-        if (schema and "properties" in schema and "states" in schema["properties"] and 
-            "properties" in schema["properties"]["states"] and 
-            state_name in schema["properties"]["states"]["properties"]):
-            
+        if (
+            schema
+            and "properties" in schema
+            and "states" in schema["properties"]
+            and "properties" in schema["properties"]["states"]
+            and state_name in schema["properties"]["states"]["properties"]
+        ):
             state_config = schema["properties"]["states"]["properties"][state_name]
-            
+
             # Return the default value if specified
             if "default" in state_config:
                 return state_config["default"]
-            
+
             # If no default, use the first valid enum value
             if "enum" in state_config and state_config["enum"]:
                 return state_config["enum"][0]
-        
+
         # Fallback to "private"
         return "private"
-    
+
     except Exception as e:
         logger.warning(f"Error getting default for {skill_name}.{state_name}: {e}")
         return "private"
@@ -146,22 +162,26 @@ def get_skill_default_api_key_provider(skill_name: str) -> str:
     """Get the default API key provider for a skill from its schema."""
     try:
         schema = load_skill_schema(skill_name)
-        if schema and "properties" in schema and "api_key_provider" in schema["properties"]:
+        if (
+            schema
+            and "properties" in schema
+            and "api_key_provider" in schema["properties"]
+        ):
             api_key_provider = schema["properties"]["api_key_provider"]
-            
+
             # Return the default value if specified
             if "default" in api_key_provider:
                 return api_key_provider["default"]
-            
+
             # If no default, prefer platform if available
             if "enum" in api_key_provider and api_key_provider["enum"]:
                 if "platform" in api_key_provider["enum"]:
                     return "platform"
                 return api_key_provider["enum"][0]
-        
+
         # Fallback to "platform"
         return "platform"
-    
+
     except Exception as e:
         logger.warning(f"Error getting API key provider default for {skill_name}: {e}")
         return "platform"
@@ -254,7 +274,7 @@ def add_skill_by_name(prompt: str, skills_config: Dict[str, Any]) -> Dict[str, A
             states_dict = {}
             for state in all_real_skills[skill_name]:
                 states_dict[state] = get_skill_state_default(skill_name, state)
-            
+
             skills_config[skill_name] = {
                 "enabled": True,
                 "states": states_dict,
@@ -269,7 +289,7 @@ def add_skill_by_name(prompt: str, skills_config: Dict[str, Any]) -> Dict[str, A
                 states_dict = {}
                 for state in all_real_skills[skill_name]:
                     states_dict[state] = get_skill_state_default(skill_name, state)
-                
+
                 skills_config[skill_name] = {
                     "enabled": True,
                     "states": states_dict,
@@ -333,7 +353,9 @@ async def filter_skills_for_auto_generation(
             skill_config["api_key_provider"] = "platform"
         else:
             # For other skills, use the schema default
-            skill_config["api_key_provider"] = get_skill_default_api_key_provider(skill_name)
+            skill_config["api_key_provider"] = get_skill_default_api_key_provider(
+                skill_name
+            )
 
         filtered_skills[skill_name] = skill_config
 
@@ -381,17 +403,21 @@ def keyword_match_skills(prompt: str) -> Dict[str, Any]:
                     states_dict = {}
                     for state in states:
                         states_dict[state] = get_skill_state_default(skill_name, state)
-                    
+
                     skills_config[skill_name] = {
                         "enabled": True,
                         "states": states_dict,
-                        "api_key_provider": get_skill_default_api_key_provider(skill_name),
+                        "api_key_provider": get_skill_default_api_key_provider(
+                            skill_name
+                        ),
                     }
                 else:
                     # Merge states if skill already exists
                     existing_states = skills_config[skill_name]["states"]
                     for state in states:
                         if state not in existing_states:
-                            existing_states[state] = get_skill_state_default(skill_name, state)
+                            existing_states[state] = get_skill_state_default(
+                                skill_name, state
+                            )
 
     return skills_config

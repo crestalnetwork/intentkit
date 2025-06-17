@@ -41,7 +41,9 @@ class ConversationService:
         self, content: str, message_metadata: Optional[Dict[str, Any]] = None
     ) -> ConversationMessage:
         """Add a user message to the conversation."""
-        return await add_message(self.project_id, "user", content, message_metadata, self.user_id)
+        return await add_message(
+            self.project_id, "user", content, message_metadata, self.user_id
+        )
 
     async def add_assistant_message(
         self, content: str, message_metadata: Optional[Dict[str, Any]] = None
