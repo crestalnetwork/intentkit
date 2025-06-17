@@ -41,14 +41,14 @@ class ConversationService:
         self, content: str, message_metadata: Optional[Dict[str, Any]] = None
     ) -> ConversationMessage:
         """Add a user message to the conversation."""
-        return await add_message(self.project_id, "user", content, message_metadata)
+        return await add_message(self.project_id, "user", content, message_metadata, self.user_id)
 
     async def add_assistant_message(
         self, content: str, message_metadata: Optional[Dict[str, Any]] = None
     ) -> ConversationMessage:
         """Add an assistant message to the conversation."""
         return await add_message(
-            self.project_id, "assistant", content, message_metadata
+            self.project_id, "assistant", content, message_metadata, self.user_id
         )
 
     async def get_history(self) -> List[Dict[str, Any]]:
@@ -130,10 +130,11 @@ async def add_message(
     role: str,
     content: str,
     message_metadata: Optional[Dict[str, Any]] = None,
+    user_id: Optional[str] = None,
 ) -> ConversationMessage:
     """Add a message to a conversation project."""
     # Ensure project exists
-    await create_or_get_project(project_id)
+    await create_or_get_project(project_id, user_id)
 
     # Create and save message
     message_create = ConversationMessageCreate(

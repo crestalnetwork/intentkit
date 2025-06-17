@@ -47,8 +47,8 @@ class AgentGenerateRequest(BaseModel):
         description="Existing agent to update. If provided, the LLM will make minimal changes to this agent based on the prompt. If null, a new agent will be created.",
     )
 
-    user_id: Optional[str] = Field(
-        None, description="User ID for logging and rate limiting purposes"
+    user_id: str = Field(
+        ..., description="User ID for logging and rate limiting purposes"
     )
 
     project_id: Optional[str] = Field(
@@ -67,6 +67,14 @@ class AgentGenerateRequest(BaseModel):
                 "Prompt is too long. Please keep your description under 1000 characters to ensure efficient processing."
             )
         return v
+
+    @validator("user_id")
+    def validate_user_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError(
+                "User ID is required and cannot be empty. Please provide a valid user identifier."
+            )
+        return v.strip()
 
 
 class AgentGenerateResponse(BaseModel):
@@ -143,7 +151,7 @@ async def generate_agent(
     **Request Body:**
     * `prompt` - Natural language description of the agent's desired capabilities
     * `existing_agent` - Optional existing agent to update (preserves current setup while adding capabilities)
-    * `user_id` - Optional user ID for logging and rate limiting
+    * `user_id` - Required user ID for logging and rate limiting
     * `project_id` - Optional project ID for conversation history
 
     **Returns:**
@@ -151,7 +159,7 @@ async def generate_agent(
 
     **Raises:**
     * `HTTPException`:
-        - 400: Invalid prompt format or length
+        - 400: Invalid request (missing user_id, invalid prompt format or length)
         - 500: Agent generation failed after retries
     """
     # Create or reuse LLM logger based on project_id
