@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from epyxid import XID
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.core.engine import execute_agent
@@ -79,6 +80,38 @@ class OpenAIUsage(BaseModel):
     prompt_tokens: int = Field(0, description="Number of tokens in the prompt")
     completion_tokens: int = Field(0, description="Number of tokens in the completion")
     total_tokens: int = Field(0, description="Total number of tokens used")
+
+
+class OpenAIDelta(BaseModel):
+    """OpenAI delta object for streaming."""
+
+    role: Optional[str] = Field(None, description="The role of the message author")
+    content: Optional[str] = Field(None, description="The content of the message")
+
+
+class OpenAIChoiceDelta(BaseModel):
+    """OpenAI choice object for streaming."""
+
+    index: int = Field(0, description="The index of the choice")
+    delta: OpenAIDelta = Field(..., description="The delta object")
+    finish_reason: Optional[str] = Field(
+        None, description="The reason the model stopped generating tokens"
+    )
+
+
+class OpenAIChatCompletionChunk(BaseModel):
+    """OpenAI Chat Completion chunk for streaming."""
+
+    id: str = Field(..., description="A unique identifier for the chat completion")
+    object: str = Field("chat.completion.chunk", description="The object type")
+    created: int = Field(
+        ..., description="The Unix timestamp when the chat completion was created"
+    )
+    model: str = Field(..., description="The model used for the chat completion")
+    choices: List[OpenAIChoiceDelta] = Field(
+        ..., description="A list of chat completion choices"
+    )
+    system_fingerprint: Optional[str] = Field(None, description="System fingerprint")
 
 
 class OpenAIChoice(BaseModel):
@@ -183,16 +216,85 @@ def extract_text_and_images(
     return " ".join(text_parts), attachments
 
 
+def create_streaming_response(content: str, request_id: str, model: str, created: int):
+    """Create a streaming response generator for OpenAI-compatible streaming.
+
+    Args:
+        content: The complete message content to stream
+        request_id: The request ID
+        model: The model name
+        created: The creation timestamp
+
+    Yields:
+        str: Server-sent events formatted chunks
+    """
+    # First chunk with role
+    first_chunk = OpenAIChatCompletionChunk(
+        id=request_id,
+        object="chat.completion.chunk",
+        created=created,
+        model=model,
+        choices=[
+            OpenAIChoiceDelta(
+                index=0,
+                delta=OpenAIDelta(role="assistant"),
+                finish_reason=None,
+            )
+        ],
+        system_fingerprint=None,
+    )
+    yield f"data: {first_chunk.model_dump_json()}\n\n"
+
+    # Content chunks - split content into smaller pieces for streaming effect
+    chunk_size = 20  # Characters per chunk
+    for i in range(0, len(content), chunk_size):
+        chunk_content = content[i : i + chunk_size]
+        content_chunk = OpenAIChatCompletionChunk(
+            id=request_id,
+            object="chat.completion.chunk",
+            created=created,
+            model=model,
+            choices=[
+                OpenAIChoiceDelta(
+                    index=0,
+                    delta=OpenAIDelta(content=chunk_content),
+                    finish_reason=None,
+                )
+            ],
+            system_fingerprint=None,
+        )
+        yield f"data: {content_chunk.model_dump_json()}\n\n"
+
+    # Final chunk with finish_reason
+    final_chunk = OpenAIChatCompletionChunk(
+        id=request_id,
+        object="chat.completion.chunk",
+        created=created,
+        model=model,
+        choices=[
+            OpenAIChoiceDelta(
+                index=0,
+                delta=OpenAIDelta(),
+                finish_reason="stop",
+            )
+        ],
+        system_fingerprint=None,
+    )
+    yield f"data: {final_chunk.model_dump_json()}\n\n"
+
+    # End of stream
+    yield "data: [DONE]\n\n"
+
+
 @openai_router.post(
     "/v1/chat/completions",
-    response_model=OpenAIChatCompletionResponse,
     tags=["Compatible"],
     operation_id="create_chat_completion",
     summary="Create chat completion",
 )
 async def create_chat_completion(
     request: OpenAIChatCompletionRequest, agent: Agent = Depends(verify_token)
-) -> OpenAIChatCompletionResponse:
+):
     """Create a chat completion using OpenAI-compatible API.
 
     This endpoint provides OpenAI Chat Completion API compatibility.
@@ -251,24 +353,40 @@ async def create_chat_completion(
     # Create OpenAI-compatible response
     import time
 
-    response = OpenAIChatCompletionResponse(
-        id=f"chatcmpl-{XID()}",
-        object="chat.completion",
-        created=int(time.time()),
-        model=request.model,
-        choices=[
-            OpenAIChoice(
-                index=0,
-                message=OpenAIMessage(
-                    role="assistant", content=agent_response.message or ""
-                ),
-                finish_reason="stop",
-            )
-        ],
-        usage=OpenAIUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
-        system_fingerprint=None,
-    )
+    request_id = f"chatcmpl-{XID()}"
+    created = int(time.time())
+    content = agent_response.message or ""
 
-    logger.debug(f"OpenAI-compatible response: {response}")
+    # Check if streaming is requested
+    if request.stream:
+        # Return streaming response
+        return StreamingResponse(
+            create_streaming_response(content, request_id, request.model, created),
+            media_type="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/plain; charset=utf-8",
+            },
+        )
+    else:
+        # Return regular response
+        response = OpenAIChatCompletionResponse(
+            id=request_id,
+            object="chat.completion",
+            created=created,
+            model=request.model,
+            choices=[
+                OpenAIChoice(
+                    index=0,
+                    message=OpenAIMessage(role="assistant", content=content),
+                    finish_reason="stop",
+                )
+            ],
+            usage=OpenAIUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
+            system_fingerprint=None,
+        )
 
-    return response
+        logger.debug(f"OpenAI-compatible response: {response}")
+
+        return response
