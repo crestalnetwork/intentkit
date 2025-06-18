@@ -19,9 +19,9 @@
     "states": {
       "type": "object",
       "properties": {
-        "get_api_key": {
+        "read_agent_api_key": {
           "type": "string",
-          "title": "Get API Key",
+          "title": "Read Agent API Key",
           "enum": [
             "disabled",
             "private"
@@ -33,9 +33,9 @@
           "description": "Retrieve the API key for the agent. If no API key exists, generates and sets a new one.",
           "default": "private"
         },
-        "reset_api_key": {
+        "regenerate_agent_api_key": {
           "type": "string",
-          "title": "Reset API Key",
+          "title": "Regenerate Agent API Key",
           "enum": [
             "disabled",
             "private"
