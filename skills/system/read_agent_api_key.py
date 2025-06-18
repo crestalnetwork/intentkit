@@ -4,14 +4,14 @@ from pydantic import BaseModel, Field
 from skills.system.base import SystemBaseTool
 
 
-class GetApiKeyInput(BaseModel):
-    """Input model for get_api_key skill."""
+class ReadAgentApiKeyInput(BaseModel):
+    """Input model for read_agent_api_key skill."""
 
     pass
 
 
-class GetApiKeyOutput(BaseModel):
-    """Output model for get_api_key skill."""
+class ReadAgentApiKeyOutput(BaseModel):
+    """Output model for read_agent_api_key skill."""
 
     api_key: str = Field(description="The API key for the agent")
     is_new: bool = Field(description="Whether a new API key was generated")
@@ -19,18 +19,20 @@ class GetApiKeyOutput(BaseModel):
     api_endpoint: str = Field(description="The full API endpoint URL")
 
 
-class GetApiKey(SystemBaseTool):
+class ReadAgentApiKey(SystemBaseTool):
     """Skill to retrieve or generate an API key for the agent."""
 
-    name: str = "system_get_api_key"
+    name: str = "system_read_agent_api_key"
     description: str = (
-        "Retrieve the API key for the agent. "
-        "Make sure to tell the user the base URL and endpoint. "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key."
+        "Retrieve the API key for the agent.  "
+        "Make sure to tell the user the base URL and endpoint.  "
+        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
+        "Always use markdown code block to wrap the API key, base URL, and endpoint.  "
+        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/skills/agent_api_key.md "
     )
-    args_schema = GetApiKeyInput
+    args_schema = ReadAgentApiKeyInput
 
-    async def _arun(self, config: RunnableConfig, **kwargs) -> GetApiKeyOutput:
+    async def _arun(self, config: RunnableConfig, **kwargs) -> ReadAgentApiKeyOutput:
         """Retrieve or generate an API key for the agent."""
         # Get context from runnable config to access agent.id
         context = self.context_from_config(config)
@@ -48,7 +50,7 @@ class GetApiKey(SystemBaseTool):
 
         # Check if API key exists
         if agent_data.api_key:
-            return GetApiKeyOutput(
+            return ReadAgentApiKeyOutput(
                 api_key=agent_data.api_key,
                 is_new=False,
                 open_api_base_url=open_api_base_url,
@@ -61,7 +63,7 @@ class GetApiKey(SystemBaseTool):
         # Save the new API key to agent data
         await self.skill_store.set_agent_data(agent_id, {"api_key": new_api_key})
 
-        return GetApiKeyOutput(
+        return ReadAgentApiKeyOutput(
             api_key=new_api_key,
             is_new=True,
             open_api_base_url=open_api_base_url,
