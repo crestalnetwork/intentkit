@@ -222,7 +222,7 @@ async def initialize_agent(aid, is_private=False):
     pre_model_hook = PreModelNode(
         model=llm,
         short_term_memory_strategy=agent.short_term_memory_strategy,
-        max_tokens=input_token_limit,
+        max_tokens=input_token_limit // 2,
         max_summary_tokens=2048,  # later we can let agent to set this
     )
     # Post model hook
