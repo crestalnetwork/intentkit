@@ -24,9 +24,11 @@ class RegenerateAgentApiKey(SystemBaseTool):
 
     name: str = "system_regenerate_agent_api_key"
     description: str = (
-        "Generate a new API key for the agent, revoke any existing key. "
-        "Make sure to tell the user the base URL and endpoint. "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key."
+        "Generate a new API key for the agent, revoke any existing key.  "
+        "Make sure to tell the user the base URL and endpoint.  "
+        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
+        "Always use markdown code block to wrap the API key, base URL, and endpoint.  "
+        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/skills/agent_api_key.md "
     )
     args_schema = RegenerateAgentApiKeyInput
 

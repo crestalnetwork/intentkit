@@ -24,9 +24,11 @@ class ReadAgentApiKey(SystemBaseTool):
 
     name: str = "system_read_agent_api_key"
     description: str = (
-        "Retrieve the API key for the agent. "
-        "Make sure to tell the user the base URL and endpoint. "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key."
+        "Retrieve the API key for the agent.  "
+        "Make sure to tell the user the base URL and endpoint.  "
+        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
+        "Always use markdown code block to wrap the API key, base URL, and endpoint.  "
+        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/skills/agent_api_key.md "
     )
     args_schema = ReadAgentApiKeyInput
 
