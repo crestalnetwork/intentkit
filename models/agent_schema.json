@@ -637,10 +637,10 @@
       "x-inline": true
     },
     "example_intro": {
-      "title": "Introduction",
+      "title": "Agent Greeting",
       "type": "string",
-      "description": "An introductory paragraph explaining how to use this agent to any new users. Include specific actions or prompts to write in order to onboard your users quickly and clearly.",
-      "maxLength": 2048,
+      "description": "This is the first thing users see when they meet your agent. Use it to explain what your agent does, the services it provides and how it fits into the Nation.",
+      "maxLength": 2000,
       "x-group": "examples"
     },
     "examples": {
@@ -654,7 +654,7 @@
             "title": "Action Name",
             "type": "string",
             "description": "Quick action will show up on the UI as this name",
-            "maxLength": 20,
+            "maxLength": 50,
             "x-group": "examples"
           },
           "description": {
@@ -668,7 +668,7 @@
             "title": "Prompt",
             "type": "string",
             "description": "When user clicks this action, the agent will execute this prompt",
-            "maxLength": 1024,
+            "maxLength": 2000,
             "x-str-type": "prompt",
             "x-group": "examples"
           }

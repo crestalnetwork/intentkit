@@ -4,14 +4,14 @@ from pydantic import BaseModel, Field
 from skills.system.base import SystemBaseTool
 
 
-class ResetApiKeyInput(BaseModel):
-    """Input model for reset_api_key skill."""
+class RegenerateAgentApiKeyInput(BaseModel):
+    """Input model for regenerate_agent_api_key skill."""
 
     pass
 
 
-class ResetApiKeyOutput(BaseModel):
-    """Output model for reset_api_key skill."""
+class RegenerateAgentApiKeyOutput(BaseModel):
+    """Output model for regenerate_agent_api_key skill."""
 
     api_key: str = Field(description="The new API key for the agent")
     previous_key_existed: bool = Field(description="Whether a previous API key existed")
@@ -19,18 +19,22 @@ class ResetApiKeyOutput(BaseModel):
     api_endpoint: str = Field(description="The full API endpoint URL")
 
 
-class ResetApiKey(SystemBaseTool):
+class RegenerateAgentApiKey(SystemBaseTool):
     """Skill to regenerate and reset the API key for the agent."""
 
-    name: str = "system_reset_api_key"
+    name: str = "system_regenerate_agent_api_key"
     description: str = (
-        "Generate a new API key for the agent, revoke any existing key. "
-        "Make sure to tell the user the base URL and endpoint. "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key."
+        "Generate a new API key for the agent, revoke any existing key.  "
+        "Make sure to tell the user the base URL and endpoint.  "
+        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
+        "Always use markdown code block to wrap the API key, base URL, and endpoint.  "
+        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/skills/agent_api_key.md "
     )
-    args_schema = ResetApiKeyInput
+    args_schema = RegenerateAgentApiKeyInput
 
-    async def _arun(self, config: RunnableConfig, **kwargs) -> ResetApiKeyOutput:
+    async def _arun(
+        self, config: RunnableConfig, **kwargs
+    ) -> RegenerateAgentApiKeyOutput:
         """Generate and set a new API key for the agent."""
         # Get context from runnable config to access agent.id
         context = self.context_from_config(config)
@@ -55,7 +59,7 @@ class ResetApiKey(SystemBaseTool):
         # Save the new API key to agent data (overwrites existing)
         await self.skill_store.set_agent_data(agent_id, {"api_key": new_api_key})
 
-        return ResetApiKeyOutput(
+        return RegenerateAgentApiKeyOutput(
             api_key=new_api_key,
             previous_key_existed=previous_key_existed,
             open_api_base_url=open_api_base_url,

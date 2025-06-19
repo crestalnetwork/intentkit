@@ -6,8 +6,8 @@ from typing import TypedDict
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillOwnerState
 from skills.system.base import SystemBaseTool
-from skills.system.get_api_key import GetApiKey
-from skills.system.reset_api_key import ResetApiKey
+from skills.system.read_agent_api_key import ReadAgentApiKey
+from skills.system.regenerate_agent_api_key import RegenerateAgentApiKey
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, SystemBaseTool] = {}
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class SkillStates(TypedDict):
-    get_api_key: SkillOwnerState
-    reset_api_key: SkillOwnerState
+    read_agent_api_key: SkillOwnerState
+    regenerate_agent_api_key: SkillOwnerState
 
 
 class Config(SkillConfig):
@@ -73,15 +73,15 @@ def get_system_skill(
     Returns:
         The requested system skill
     """
-    if name == "get_api_key":
+    if name == "read_agent_api_key":
         if name not in _cache:
-            _cache[name] = GetApiKey(
+            _cache[name] = ReadAgentApiKey(
                 skill_store=store,
             )
         return _cache[name]
-    elif name == "reset_api_key":
+    elif name == "regenerate_agent_api_key":
         if name not in _cache:
-            _cache[name] = ResetApiKey(
+            _cache[name] = RegenerateAgentApiKey(
                 skill_store=store,
             )
         return _cache[name]
