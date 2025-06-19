@@ -181,6 +181,7 @@
         "gpt-4.1-nano",
         "gpt-4.1-mini",
         "gpt-4.1",
+        "o3",
         "o4-mini",
         "deepseek-chat",
         "deepseek-reasoner",
@@ -199,6 +200,7 @@
         "GPT-4.1 nano",
         "GPT-4.1 mini",
         "GPT-4.1",
+        "OpenAI o3",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
         "Deepseek R1 (0528)",
@@ -217,6 +219,7 @@
         "OpenAI",
         "OpenAI",
         "OpenAI",
+        "OpenAI",
         "Deepseek",
         "Deepseek",
         "Grok",
@@ -228,6 +231,7 @@
         "Venice"
       ],
       "x-support-skill": [
+        true,
         true,
         true,
         true,
