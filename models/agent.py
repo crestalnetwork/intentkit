@@ -30,6 +30,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from models.agent_data import AgentData
 from models.base import Base
 from models.db import get_session
+from models.llm import LLMModelInfo
 
 logger = logging.getLogger(__name__)
 
@@ -1163,14 +1164,17 @@ class Agent(AgentCreate):
             for skill, skill_config in self.skills.items():
                 if skill == "openai" and skill_config.get("enabled"):
                     states = skill_config.get("states", {})
-                    if states.get("image_to_text") in ["public", "private"]:
+                    if states.get("image_to_text") in ["public"]:
                         return True
-                    if states.get("gpt_image_to_image") in ["public", "private"]:
+                    if states.get("gpt_image_to_image") in ["public"]:
                         return True
         return False
 
-    def is_model_support_image(self) -> bool:
-        return self.model in ["gpt-4o"]
+    async def is_model_support_image(self) -> bool:
+        model = await LLMModelInfo.get(self.model)
+        if model:
+            return model.supports_image_input
+        return False
 
     def to_yaml(self) -> str:
         """
@@ -1578,7 +1582,7 @@ class AgentResponse(BaseModel):
         return f"{hashlib.md5(data.encode()).hexdigest()}"
 
     @classmethod
-    def from_agent(
+    async def from_agent(
         cls, agent: Agent, agent_data: Optional[AgentData] = None
     ) -> "AgentResponse":
         """Create an AgentResponse from an Agent instance.
@@ -1669,7 +1673,7 @@ class AgentResponse(BaseModel):
                 linked_telegram_name = agent_data.telegram_name
 
         accept_image_input = (
-            agent.is_model_support_image() or agent.has_image_parser_skill()
+            await agent.is_model_support_image() or agent.has_image_parser_skill()
         )
 
         # Add processed fields to response

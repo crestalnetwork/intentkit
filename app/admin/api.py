@@ -339,7 +339,7 @@ async def create_or_update_agent(
         - 500: Database error
     """
     latest_agent, agent_data = await _process_agent(agent, subject)
-    agent_response = AgentResponse.from_agent(latest_agent, agent_data)
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -472,7 +472,7 @@ async def create_agent(
     existing = await agent.get_by_upstream_id()
     if existing:
         agent_data = await AgentData.get(existing.id)
-        agent_response = AgentResponse.from_agent(existing, agent_data)
+        agent_response = await AgentResponse.from_agent(existing, agent_data)
         return Response(
             status_code=200,
             content=agent_response.model_dump_json(),
@@ -484,7 +484,7 @@ async def create_agent(
     # Process common post-creation actions
     agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
     agent_data = await _process_telegram_config(input, None, agent_data)
-    agent_response = AgentResponse.from_agent(latest_agent, agent_data)
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -538,7 +538,7 @@ async def update_agent(
 
     agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
-    agent_response = AgentResponse.from_agent(latest_agent, agent_data)
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -596,7 +596,7 @@ async def override_agent(
 
     agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
 
-    agent_response = AgentResponse.from_agent(latest_agent, agent_data)
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -630,7 +630,7 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
 
     # Convert to AgentResponse objects
     return [
-        AgentResponse.from_agent(
+        await AgentResponse.from_agent(
             Agent.model_validate(agent),
             AgentData.model_validate(agent_data_map.get(agent.id))
             if agent.id in agent_data_map
@@ -668,7 +668,7 @@ async def get_agent(
     # Get agent data
     agent_data = await AgentData.get(agent_id)
 
-    agent_response = AgentResponse.from_agent(agent, agent_data)
+    agent_response = await AgentResponse.from_agent(agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -957,7 +957,7 @@ async def unlink_twitter_endpoint(
     # Call the unlink_twitter function from clients.twitter
     agent_data = await unlink_twitter(agent_id)
 
-    agent_response = AgentResponse.from_agent(agent, agent_data)
+    agent_response = await AgentResponse.from_agent(agent, agent_data)
 
     return Response(
         content=agent_response.model_dump_json(),
