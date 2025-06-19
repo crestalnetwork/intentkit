@@ -85,7 +85,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         Dict[str, Decimal]: Dictionary containing all calculated cost metrics
     """
     start_time = time.time()
-    default_value = Decimal("1.0")
+    default_value = Decimal("0")
 
     async with get_session() as session:
         # Calculate the date 3 days ago from now
