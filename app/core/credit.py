@@ -15,6 +15,7 @@ from models.credit import (
     DEFAULT_PLATFORM_ACCOUNT_ADJUSTMENT,
     DEFAULT_PLATFORM_ACCOUNT_DEV,
     DEFAULT_PLATFORM_ACCOUNT_FEE,
+    DEFAULT_PLATFORM_ACCOUNT_MEMORY,
     DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
     DEFAULT_PLATFORM_ACCOUNT_RECHARGE,
     DEFAULT_PLATFORM_ACCOUNT_REFILL,
@@ -1521,3 +1522,250 @@ async def refill_all_free_credits():
             # Continue with other accounts even if one fails
             continue
     logger.info(f"Refilled {refilled_count} accounts")
+
+
+async def expense_summarize(
+    session: AsyncSession,
+    user_id: str,
+    message_id: str,
+    start_message_id: str,
+    base_llm_amount: Decimal,
+    agent: Agent,
+) -> CreditEvent:
+    """
+    Deduct credits from a user account for memory/summarize expenses.
+    Don't forget to commit the session after calling this function.
+
+    Args:
+        session: Async session to use for database operations
+        user_id: ID of the user to deduct credits from
+        message_id: ID of the message that incurred the expense
+        start_message_id: ID of the starting message in a conversation
+        base_llm_amount: Amount of LLM costs
+        agent: Agent instance
+
+    Returns:
+        Updated user credit account
+    """
+    # Check for idempotency - prevent duplicate transactions
+    await CreditEvent.check_upstream_tx_id_exists(
+        session, UpstreamType.EXECUTOR, message_id
+    )
+
+    # Ensure base_llm_amount has 4 decimal places
+    base_llm_amount = base_llm_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    if base_llm_amount < Decimal("0"):
+        raise ValueError("Base LLM amount must be non-negative")
+
+    # Get payment settings
+    payment_settings = await AppSetting.payment()
+
+    # Calculate amount with exact 4 decimal places
+    base_original_amount = base_llm_amount
+    base_amount = base_original_amount
+    fee_platform_amount = (
+        base_amount * payment_settings.fee_platform_percentage / Decimal("100")
+    ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    fee_agent_amount = Decimal("0")
+    if agent.fee_percentage and user_id != agent.owner:
+        fee_agent_amount = (
+            (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    total_amount = (base_amount + fee_platform_amount + fee_agent_amount).quantize(
+        FOURPLACES, rounding=ROUND_HALF_UP
+    )
+
+    # 1. Create credit event record first to get event_id
+    event_id = str(XID())
+
+    # 2. Update user account - deduct credits
+    user_account, details = await CreditAccount.expense_in_session(
+        session=session,
+        owner_type=OwnerType.USER,
+        owner_id=user_id,
+        amount=total_amount,
+        event_id=event_id,
+    )
+
+    # If using free credits, add to agent's free_income_daily
+    if details.get(CreditType.FREE):
+        from models.agent_data import AgentQuota
+
+        await AgentQuota.add_free_income_in_session(
+            session=session, id=agent.id, amount=details.get(CreditType.FREE)
+        )
+
+    # 3. Update fee account - add credits
+    memory_account = await CreditAccount.income_in_session(
+        session=session,
+        owner_type=OwnerType.PLATFORM,
+        owner_id=DEFAULT_PLATFORM_ACCOUNT_MEMORY,
+        credit_type=CreditType.PERMANENT,
+        amount=base_amount,
+        event_id=event_id,
+    )
+    platform_fee_account = await CreditAccount.income_in_session(
+        session=session,
+        owner_type=OwnerType.PLATFORM,
+        owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
+        credit_type=CreditType.PERMANENT,
+        amount=fee_platform_amount,
+        event_id=event_id,
+    )
+    if fee_agent_amount > 0:
+        agent_account = await CreditAccount.income_in_session(
+            session=session,
+            owner_type=OwnerType.AGENT,
+            owner_id=agent.id,
+            credit_type=CreditType.REWARD,
+            amount=fee_agent_amount,
+            event_id=event_id,
+        )
+
+    # 4. Create credit event record
+    # Set the appropriate credit amount field based on credit type
+    free_amount = details.get(CreditType.FREE, Decimal("0"))
+    reward_amount = details.get(CreditType.REWARD, Decimal("0"))
+    permanent_amount = details.get(CreditType.PERMANENT, Decimal("0"))
+    if CreditType.PERMANENT in details:
+        credit_type = CreditType.PERMANENT
+    elif CreditType.REWARD in details:
+        credit_type = CreditType.REWARD
+    else:
+        credit_type = CreditType.FREE
+
+    # Calculate fee_platform amounts by credit type
+    fee_platform_free_amount = Decimal("0")
+    fee_platform_reward_amount = Decimal("0")
+    fee_platform_permanent_amount = Decimal("0")
+
+    if fee_platform_amount > Decimal("0") and total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_platform_free_amount = (
+                free_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_platform_reward_amount = (
+                reward_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_platform_amount
+        fee_platform_permanent_amount = (
+            fee_platform_amount - fee_platform_free_amount - fee_platform_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    # Calculate fee_agent amounts by credit type
+    fee_agent_free_amount = Decimal("0")
+    fee_agent_reward_amount = Decimal("0")
+    fee_agent_permanent_amount = Decimal("0")
+
+    if fee_agent_amount > Decimal("0") and total_amount > Decimal("0"):
+        # Calculate proportions based on the formula
+        if free_amount > Decimal("0"):
+            fee_agent_free_amount = (
+                free_amount * fee_agent_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        if reward_amount > Decimal("0"):
+            fee_agent_reward_amount = (
+                reward_amount * fee_agent_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+        # Calculate permanent amount as the remainder to ensure the sum equals fee_agent_amount
+        fee_agent_permanent_amount = (
+            fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    event = CreditEventTable(
+        id=event_id,
+        account_id=user_account.id,
+        event_type=EventType.MEMORY,
+        user_id=user_id,
+        upstream_type=UpstreamType.EXECUTOR,
+        upstream_tx_id=message_id,
+        direction=Direction.EXPENSE,
+        agent_id=agent.id,
+        message_id=message_id,
+        start_message_id=start_message_id,
+        model=agent.model,
+        total_amount=total_amount,
+        credit_type=credit_type,
+        credit_types=details.keys(),
+        balance_after=user_account.credits
+        + user_account.free_credits
+        + user_account.reward_credits,
+        base_amount=base_amount,
+        base_original_amount=base_original_amount,
+        base_llm_amount=base_llm_amount,
+        fee_platform_amount=fee_platform_amount,
+        fee_platform_free_amount=fee_platform_free_amount,
+        fee_platform_reward_amount=fee_platform_reward_amount,
+        fee_platform_permanent_amount=fee_platform_permanent_amount,
+        fee_agent_amount=fee_agent_amount,
+        fee_agent_free_amount=fee_agent_free_amount,
+        fee_agent_reward_amount=fee_agent_reward_amount,
+        fee_agent_permanent_amount=fee_agent_permanent_amount,
+        free_amount=free_amount,
+        reward_amount=reward_amount,
+        permanent_amount=permanent_amount,
+    )
+    session.add(event)
+
+    # 4. Create credit transaction records
+    # 4.1 User account transaction (debit)
+    user_tx = CreditTransactionTable(
+        id=str(XID()),
+        account_id=user_account.id,
+        event_id=event_id,
+        tx_type=TransactionType.PAY,
+        credit_debit=CreditDebit.DEBIT,
+        change_amount=total_amount,
+        credit_type=credit_type,
+    )
+    session.add(user_tx)
+
+    # 4.2 Memory account transaction (credit)
+    memory_tx = CreditTransactionTable(
+        id=str(XID()),
+        account_id=memory_account.id,
+        event_id=event_id,
+        tx_type=TransactionType.RECEIVE_BASE_MEMORY,
+        credit_debit=CreditDebit.CREDIT,
+        change_amount=base_amount,
+        credit_type=credit_type,
+    )
+    session.add(memory_tx)
+
+    # 4.3 Platform fee account transaction (credit)
+    platform_tx = CreditTransactionTable(
+        id=str(XID()),
+        account_id=platform_fee_account.id,
+        event_id=event_id,
+        tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
+        credit_debit=CreditDebit.CREDIT,
+        change_amount=fee_platform_amount,
+        credit_type=credit_type,
+    )
+    session.add(platform_tx)
+
+    # 4.4 Agent fee account transaction (credit) - only if there's an agent fee
+    if fee_agent_amount > 0:
+        agent_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=agent_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_FEE_AGENT,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=fee_agent_amount,
+            credit_type=CreditType.REWARD,
+        )
+        session.add(agent_tx)
+
+    # 5. Refresh session to get updated data
+    await session.refresh(user_account)
+
+    # 6. Return credit event model
+    return CreditEvent.model_validate(event)
