@@ -228,6 +228,60 @@ def get_all_real_skills() -> Dict[str, Set[str]]:
     return all_skills
 
 
+def merge_autonomous_skills(
+    skills_config: Dict[str, Any], autonomous_skills: List[str]
+) -> Dict[str, Any]:
+    """Merge autonomous skills into existing skills configuration.
+
+    Args:
+     skills_config: Existing skills configuration
+     autonomous_skills: List of skill names required for autonomous tasks
+
+    Returns:
+     Updated skills configuration with autonomous skills added
+    """
+    if not autonomous_skills:
+        logger.debug(" No autonomous skills to merge")
+        return skills_config
+
+    logger.info(
+        f"Merging {len(autonomous_skills)} autonomous skills: {autonomous_skills}"
+    )
+    logger.debug(f"Input skills config keys: {list(skills_config.keys())}")
+
+    for skill_name in autonomous_skills:
+        if skill_name not in skills_config:
+            # Add required autonomous skills with dynamic configuration
+            skill_states = get_skill_states(skill_name)
+            logger.debug(
+                f"Got {len(skill_states)} states for {skill_name}: {skill_states}"
+            )
+
+            if not skill_states:
+                logger.warning(f"No states found for autonomous skill: {skill_name}")
+                continue
+
+            states_dict = {}
+            for state in skill_states:
+                states_dict[state] = get_skill_state_default(skill_name, state)
+
+            skills_config[skill_name] = {
+                "enabled": True,
+                "states": states_dict,
+                "api_key_provider": get_skill_default_api_key_provider(skill_name),
+            }
+            logger.info(
+                f"Added autonomous skill: {skill_name} (with {len(skill_states)} states)"
+            )
+        else:
+            # Ensure autonomous skills are enabled
+            skills_config[skill_name]["enabled"] = True
+            logger.info(f"Enabled existing skill for autonomous use: {skill_name}")
+
+    logger.debug(f"Output skills config keys: {list(skills_config.keys())}")
+    return skills_config
+
+
 def get_skill_mapping() -> Dict[str, Dict[str, Set[str]]]:
     """Generate skill mapping dynamically from actual skill implementations."""
     mapping = {}
@@ -303,21 +357,26 @@ async def validate_skills_exist(skills_config: Dict[str, Any]) -> Dict[str, Any]
     """Validate that all skills in the config actually exist in IntentKit.
 
     Args:
-        skills_config: Skills configuration to validate
+     skills_config: Skills configuration to validate
 
     Returns:
-        Validated skills configuration with only existing skills
+     Validated skills configuration with only existing skills
     """
+    logger.debug(f"Validating skills exist - input: {list(skills_config.keys())}")
+    logger.debug(f"Available skill categories: {list(AVAILABLE_SKILL_CATEGORIES)}")
+
     validated_skills = {}
 
     for skill_name, skill_config in skills_config.items():
         if skill_name in AVAILABLE_SKILL_CATEGORIES:
             validated_skills[skill_name] = skill_config
+            logger.debug(f"Skill {skill_name} exists and validated")
         else:
             logger.warning(
                 f"Skipping non-existent skill '{skill_name}' - only available skills: {list(AVAILABLE_SKILL_CATEGORIES)}"
             )
 
+    logger.debug(f"Validated skills output: {list(validated_skills.keys())}")
     return validated_skills
 
 
@@ -327,10 +386,10 @@ async def filter_skills_for_auto_generation(
     """Filter out skills that require agent owner API keys from auto-generation.
 
     Args:
-        skills_config: Original skills configuration
+     skills_config: Original skills configuration
 
     Returns:
-        Filtered skills configuration without agent-owner API key requirements
+     Filtered skills configuration without agent-owner API key requirements
     """
     # First validate that all skills exist
     skills_config = await validate_skills_exist(skills_config)
@@ -368,12 +427,12 @@ async def identify_skills(
     """Identify relevant skills from the prompt using only real skill data.
 
     Args:
-        prompt: The natural language prompt
-        client: OpenAI client (not used, kept for compatibility)
-        llm_logger: Optional LLM logger for tracking API calls (not used in this implementation)
+     prompt: The natural language prompt
+     client: OpenAI client (not used, kept for compatibility)
+     llm_logger: Optional LLM logger for tracking API calls (not used in this implementation)
 
     Returns:
-        Dict containing skill configurations with only real skill states
+     Dict containing skill configurations with only real skill states
     """
     # Use keyword matching first
     skills_config = keyword_match_skills(prompt)
@@ -387,10 +446,10 @@ def keyword_match_skills(prompt: str) -> Dict[str, Any]:
     """Match skills using keyword matching with real skill states only.
 
     Args:
-        prompt: The natural language prompt
+     prompt: The natural language prompt
 
     Returns:
-        Dict containing skill configurations with real states only
+     Dict containing skill configurations with real states only
     """
     skills_config = {}
     prompt_lower = prompt.lower()
