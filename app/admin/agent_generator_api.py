@@ -93,6 +93,16 @@ class AgentGenerateResponse(BaseModel):
         description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]",
     )
 
+    autonomous_tasks: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of autonomous tasks generated for the agent",
+    )
+
+    activated_skills: List[str] = Field(
+        default_factory=list,
+        description="List of skills that were activated based on the prompt",
+    )
+
 
 class GenerationsListRequest(BaseModel):
     """Request model for getting generations list."""
@@ -145,22 +155,36 @@ async def generate_agent(
     """Generate an agent schema from a natural language prompt.
 
     Converts plain English descriptions into complete, validated agent configurations.
-    Automatically identifies required skills, sets up configurations, and ensures
-    everything works correctly with intelligent error correction.
+    Automatically identifies required skills, sets up configurations, detects autonomous
+    task patterns, and ensures everything works correctly with intelligent error correction.
+
+    **Autonomous Task Detection:**
+    The API can automatically detect scheduling patterns in prompts like:
+    - "Buy 0.1 ETH every hour" → Creates 60-minute autonomous task with CDP trade skill
+    - "Check portfolio daily" → Creates 24-hour autonomous task with portfolio skills
+    - "Post tweet every 30 minutes" → Creates 30-minute autonomous task with Twitter skill
 
     **Request Body:**
-    * `prompt` - Natural language description of the agent's desired capabilities
+    * `prompt` - Natural language description of the agent's desired capabilities and schedule
     * `existing_agent` - Optional existing agent to update (preserves current setup while adding capabilities)
     * `user_id` - Required user ID for logging and rate limiting
     * `project_id` - Optional project ID for conversation history
 
     **Returns:**
-    * `AgentGenerateResponse` - Contains agent schema, project ID, and human-readable summary
+    * `AgentGenerateResponse` - Contains agent schema, autonomous tasks, activated skills, project ID, and summary
+
+    **Response Fields:**
+    * `agent` - Complete agent schema with skills and autonomous configurations
+    * `autonomous_tasks` - List of autonomous tasks detected and configured
+    * `activated_skills` - List of skills that were activated based on the prompt
+    * `project_id` - Project ID for conversation tracking
+    * `summary` - Human-readable summary of the generated agent
+    * `tags` - Generated tags for categorization
 
     **Raises:**
     * `HTTPException`:
-        - 400: Invalid request (missing user_id, invalid prompt format or length)
-        - 500: Agent generation failed after retries
+      - 400: Invalid request (missing user_id, invalid prompt format or length)
+      - 500: Agent generation failed after retries
     """
     # Create or reuse LLM logger based on project_id
     if request.project_id:
@@ -213,8 +237,34 @@ async def generate_agent(
                 f"New agent schema generated successfully with validation (project_id={project_id})"
             )
 
+        # Extract autonomous tasks and activated skills from the schema
+        autonomous_tasks = agent_schema.get("autonomous", [])
+        activated_skills = list(agent_schema.get("skills", {}).keys())
+
+        # Enhanced logging for autonomous functionality
+        if autonomous_tasks:
+            logger.info(f" Autonomous tasks detected: {len(autonomous_tasks)} tasks")
+            for task in autonomous_tasks:
+                schedule_info = (
+                    f"{task.get('minutes')} minutes"
+                    if task.get("minutes")
+                    else task.get("cron", "unknown")
+                )
+                logger.info(f"  '{task.get('name', 'Unnamed Task')}' - {schedule_info}")
+        else:
+            logger.info(" No autonomous tasks in generated agent")
+
+        logger.info(
+            f" Activated skills: {len(activated_skills)} skills - {activated_skills}"
+        )
+
         return AgentGenerateResponse(
-            agent=agent_schema, project_id=project_id, summary=summary, tags=tags
+            agent=agent_schema,
+            project_id=project_id,
+            summary=summary,
+            tags=tags,
+            autonomous_tasks=autonomous_tasks,
+            activated_skills=activated_skills,
         )
 
     except Exception as e:
@@ -252,8 +302,8 @@ async def get_generations(
 
     **Raises:**
     * `HTTPException`:
-        - 400: Invalid parameters
-        - 500: Failed to retrieve generations
+      - 400: Invalid parameters
+      - 500: Failed to retrieve generations
     """
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
@@ -299,8 +349,8 @@ async def get_generation_detail(
 
     **Raises:**
     * `HTTPException`:
-        - 404: Project not found or access denied
-        - 500: Failed to retrieve generation detail
+      - 404: Project not found or access denied
+      - 500: Failed to retrieve generation detail
     """
     logger.info(
         f"Getting generation detail for project_id={project_id}, user_id={user_id}"

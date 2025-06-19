@@ -21,10 +21,12 @@ from models.generator import (
     AgentGenerationLogCreate,
 )
 
+from .autonomous_generator import generate_autonomous_configuration
 from .conversation_service import ConversationService, get_conversation_history
 from .skill_processor import (
     filter_skills_for_auto_generation,
     identify_skills,
+    merge_autonomous_skills,
 )
 from .utils import extract_token_usage, generate_agent_summary
 from .validation import (
@@ -83,11 +85,30 @@ async def enhance_agent(
     # Convert existing agent to dictionary format
     existing_schema = existing_agent.model_dump(exclude_unset=True)
 
+    # Check for autonomous patterns first
+    logger.info("Checking for autonomous patterns in update prompt")
+    autonomous_result = await generate_autonomous_configuration(
+        prompt, client, llm_logger=llm_logger
+    )
+
+    autonomous_configs = []
+    autonomous_skills = []
+    if autonomous_result:
+        autonomous_configs, autonomous_skills = autonomous_result
+        logger.info(f"Generated {len(autonomous_configs)} autonomous tasks for update")
+        logger.info(f"Autonomous tasks require skills: {autonomous_skills}")
+
     # Use the real skill processor to identify skills from prompt
     identified_skills_config = await identify_skills(
         prompt, client, llm_logger=llm_logger
     )
     identified_skill_names = set(identified_skills_config.keys())
+
+    # Merge autonomous skills with identified skills
+    identified_skills_config = merge_autonomous_skills(
+        identified_skills_config, autonomous_skills
+    )
+    identified_skill_names.update(autonomous_skills)
 
     logger.info(f"Real skills identified from prompt: {identified_skill_names}")
 
@@ -122,6 +143,23 @@ async def enhance_agent(
                 logger.info(f"Merged states for skill: {skill_name}")
 
     updated_schema["skills"] = merged_skills
+
+    # Add or update autonomous configuration if detected
+    if autonomous_configs:
+        existing_autonomous = updated_schema.get("autonomous", [])
+        # Convert existing autonomous configs to list of dicts if they aren't already
+        if existing_autonomous and not isinstance(existing_autonomous[0], dict):
+            existing_autonomous = [
+                config.model_dump() for config in existing_autonomous
+            ]
+
+        # Add new autonomous configs
+        new_autonomous_dicts = [config.model_dump() for config in autonomous_configs]
+        updated_autonomous = existing_autonomous + new_autonomous_dicts
+        updated_schema["autonomous"] = updated_autonomous
+        logger.info(
+            f"Added {len(autonomous_configs)} autonomous configurations to existing agent"
+        )
 
     # Filter skills for auto-generation (remove agent-owner API key skills)
     updated_schema["skills"] = await filter_skills_for_auto_generation(
@@ -740,13 +778,21 @@ CRITICAL RULES:
 5. Do not add fake skills or fake states
 6. ALWAYS preserve the owner field if it exists in the original schema
 
+AUTONOMOUS CONFIGURATION RULES:
+- For autonomous tasks, use EITHER "minutes" OR "cron", NEVER both
+- If both are present, keep only "minutes" and remove "cron" entirely
+- If "cron" is null/None, remove it entirely from the configuration
+- Minimum interval is 5 minutes for "minutes" field
+- Example: {"minutes": 60} OR {"cron": "0 * * * *"} but NOT both
+
 Common validation errors and fixes:
 - Missing required fields: Add them with appropriate values
 - Invalid skill names: Remove or replace with real skills
 - Invalid skill states: Replace with real states for that skill
 - Invalid model names: Use gpt-4.1-nano as default
 - Missing skill configurations: Add proper enabled/states/api_key_provider structure
-- Missing owner field: Will be automatically added after your response""",
+- Missing owner field: Will be automatically added after your response
+- "only one of minutes or cron can be set": Remove the cron field if minutes is present""",
         },
         {
             "role": "user",
