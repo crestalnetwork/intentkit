@@ -29,10 +29,10 @@ from models.db import get_session
 class ConversationProjectTable(Base):
     """Conversation project database table model."""
 
-    __tablename__ = "conversation_projects"
+    __tablename__ = "generator_conversation_projects"
     __table_args__ = (
-        Index("ix_conversation_projects_user_id", "user_id"),
-        Index("ix_conversation_projects_created_at", "created_at"),
+        Index("ix_generator_conversation_projects_user_id", "user_id"),
+        Index("ix_generator_conversation_projects_created_at", "created_at"),
     )
 
     id = Column(
@@ -58,10 +58,10 @@ class ConversationProjectTable(Base):
 class ConversationMessageTable(Base):
     """Conversation message database table model."""
 
-    __tablename__ = "conversation_messages"
+    __tablename__ = "generator_conversation_messages"
     __table_args__ = (
-        Index("ix_conversation_messages_project_id", "project_id"),
-        Index("ix_conversation_messages_created_at", "created_at"),
+        Index("ix_generator_conversation_messages_project_id", "project_id"),
+        Index("ix_generator_conversation_messages_created_at", "created_at"),
     )
 
     id = Column(
