@@ -424,6 +424,13 @@ async def execute_agent(
     else:
         input_message = input.message
 
+    # super mode
+    recursion_limit = 30
+    if re.search(r"\s@super\s", input_message):
+        recursion_limit = 300
+        # Remove @super from the message
+        input_message = re.sub(r"\s@super\s", " ", input_message).strip()
+
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
         input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
@@ -472,7 +479,7 @@ async def execute_agent(
             "entrypoint_prompt": entrypoint_prompt,
             "payer": payer if payment_enabled else None,
         },
-        "recursion_limit": 30,
+        "recursion_limit": recursion_limit,
     }
 
     # run
