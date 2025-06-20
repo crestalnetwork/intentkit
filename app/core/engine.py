@@ -30,6 +30,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.errors import GraphRecursionError
 from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
@@ -470,13 +471,14 @@ async def execute_agent(
             "entrypoint": input.author_type,
             "entrypoint_prompt": entrypoint_prompt,
             "payer": payer if payment_enabled else None,
-        }
+        },
+        "recursion_limit": 30,
     }
 
     # run
     cached_tool_step = None
-    async for chunk in executor.astream({"messages": messages}, stream_config):
-        try:
+    try:
+        async for chunk in executor.astream({"messages": messages}, stream_config):
             this_time = time.perf_counter()
             # logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
             if "agent" in chunk and "messages" in chunk["agent"]:
@@ -613,7 +615,6 @@ async def execute_agent(
                 if cold_start_cost > 0:
                     skill_message_create.cold_start_cost = cold_start_cost
                     cold_start_cost = 0
-                cached_tool_step = None
                 # save message and credit in one transaction
                 async with get_session() as session:
                     if payment_enabled:
@@ -714,48 +715,69 @@ async def execute_agent(
                     f"unexpected message type: {str(chunk)}\n{error_traceback}",
                     extra={"thread_id": thread_id},
                 )
-        except SQLAlchemyError as e:
-            error_traceback = traceback.format_exc()
-            logger.error(
-                f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id},
-            )
-            error_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                author_type=AuthorType.SYSTEM,
-                thread_type=input.author_type,
-                reply_to=input.id,
-                message="IntentKit Internal Error",
-                time_cost=time.perf_counter() - start,
-            )
-            error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
-        except Exception as e:
-            error_traceback = traceback.format_exc()
-            logger.error(
-                f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id, "agent_id": input.agent_id},
-            )
-            error_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                author_type=AuthorType.SYSTEM,
-                thread_type=input.author_type,
-                reply_to=input.id,
-                message="Internal Agent Error",
-                time_cost=time.perf_counter() - start,
-            )
-            error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
+    except SQLAlchemyError as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="IntentKit Internal Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
+    except GraphRecursionError as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"reached recursion limit: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="Step Limit Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
+    except Exception as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="Internal Agent Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
     return resp
 
 
