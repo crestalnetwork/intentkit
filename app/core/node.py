@@ -6,6 +6,7 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    HumanMessage,
     RemoveMessage,
     ToolMessage,
 )
@@ -152,6 +153,9 @@ class PreModelNode(RunnableCallable):
                 "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
             }
         if self.short_term_memory_strategy == "summarize":
+            # if last message is not human message, skip summarize
+            if not isinstance(messages[-1], HumanMessage):
+                return {}
             summarization_result = await asummarize_messages(
                 messages,
                 running_summary=context.get("running_summary"),
