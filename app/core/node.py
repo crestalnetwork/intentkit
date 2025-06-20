@@ -143,9 +143,11 @@ class PreModelNode(RunnableCallable):
                 logger.info(
                     f"Trimmed messages: {len(messages)} -> {len(trimmed_messages)}"
                 )
-            if len(trimmed_messages) <= 3:
-                logger.error(f"Too few messages after trim: {len(trimmed_messages)}")
-                return {}
+                if len(trimmed_messages) <= 3:
+                    logger.error(
+                        f"Too few messages after trim: {len(trimmed_messages)}"
+                    )
+                    return {}
             return {
                 "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
             }
@@ -185,7 +187,7 @@ class PostModelNode(RunnableCallable):
         input: AgentState,
         config: RunnableConfig,
     ) -> dict[str, Any]:
-        # logger.debug(f"Running PostModelNode, input: {input}, config: {config}")
+        logger.debug(f"Running PostModelNode, input: {input}, config: {config}")
         state_update = {}
         messages = input.get("messages")
         if messages is None or not isinstance(messages, list) or len(messages) == 0:
