@@ -66,8 +66,8 @@ async def explain_prompt(message: str) -> str:
     Returns:
         str: The processed message with @skill patterns replaced
     """
-    # Pattern to match @skill:category:config_name with spaces around
-    pattern = r"\s@skill:([^:]+):([^\s]+)\s"
+    # Pattern to match @skill:category:config_name with word boundaries
+    pattern = r"\b@skill:([^:]+):([^\s]+)\b"
 
     async def replace_skill_pattern(match):
         category = match.group(1)
@@ -77,7 +77,7 @@ async def explain_prompt(message: str) -> str:
         skill = await Skill.get_by_config_name(category, config_name)
 
         if skill:
-            return f" (call skill {skill.name}) "
+            return f"(call skill {skill.name})"
         else:
             # If skill not found, keep original pattern
             return match.group(0)
@@ -426,10 +426,10 @@ async def execute_agent(
 
     # super mode
     recursion_limit = 30
-    if re.search(r"\s@super\s", input_message):
+    if re.search(r"\b@super\b", input_message):
         recursion_limit = 300
         # Remove @super from the message
-        input_message = re.sub(r"\s@super\s", " ", input_message).strip()
+        input_message = re.sub(r"\b@super\b", "", input_message).strip()
 
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
