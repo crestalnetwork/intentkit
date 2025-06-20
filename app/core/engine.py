@@ -480,7 +480,7 @@ async def execute_agent(
     try:
         async for chunk in executor.astream({"messages": messages}, stream_config):
             this_time = time.perf_counter()
-            # logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
+            logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
             if "agent" in chunk and "messages" in chunk["agent"]:
                 if len(chunk["agent"]["messages"]) != 1:
                     logger.error(
@@ -491,7 +491,7 @@ async def execute_agent(
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
-                elif hasattr(msg, "content") and msg.content:
+                if hasattr(msg, "content") and msg.content:
                     # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
@@ -545,11 +545,6 @@ async def execute_agent(
                         )
                         await session.commit()
                         resp.append(chat_message)
-                else:
-                    logger.error(
-                        "unexpected agent message: " + str(msg),
-                        extra={"thread_id": thread_id},
-                    )
             elif "tools" in chunk and "messages" in chunk["tools"]:
                 if not cached_tool_step:
                     logger.error(
@@ -558,6 +553,7 @@ async def execute_agent(
                     )
                     continue
                 skill_calls = []
+                have_first_call_in_cache = False  # tool node emit every tool call
                 for msg in chunk["tools"]["messages"]:
                     if not hasattr(msg, "tool_call_id"):
                         logger.error(
@@ -565,8 +561,10 @@ async def execute_agent(
                             extra={"thread_id": thread_id},
                         )
                         continue
-                    for call in cached_tool_step.tool_calls:
+                    for call_index, call in enumerate(cached_tool_step.tool_calls):
                         if call["id"] == msg.tool_call_id:
+                            if call_index == 0:
+                                have_first_call_in_cache = True
                             skill_call: ChatMessageSkillCall = {
                                 "id": msg.tool_call_id,
                                 "name": call["name"],
@@ -601,12 +599,14 @@ async def execute_agent(
                         cached_tool_step.usage_metadata.get("input_tokens", 0)
                         if hasattr(cached_tool_step, "usage_metadata")
                         and cached_tool_step.usage_metadata
+                        and have_first_call_in_cache
                         else 0
                     ),
                     output_tokens=(
                         cached_tool_step.usage_metadata.get("output_tokens", 0)
                         if hasattr(cached_tool_step, "usage_metadata")
                         and cached_tool_step.usage_metadata
+                        and have_first_call_in_cache
                         else 0
                     ),
                     time_cost=this_time - last,
@@ -618,24 +618,27 @@ async def execute_agent(
                 # save message and credit in one transaction
                 async with get_session() as session:
                     if payment_enabled:
-                        # message payment
-                        message_amount = await get_model_cost(
-                            agent.model,
-                            skill_message_create.input_tokens,
-                            skill_message_create.output_tokens,
-                        )
-                        message_payment_event = await expense_message(
-                            session,
-                            payer,
-                            skill_message_create.id,
-                            input.id,
-                            message_amount,
-                            agent,
-                        )
-                        skill_message_create.credit_event_id = message_payment_event.id
-                        skill_message_create.credit_cost = (
-                            message_payment_event.total_amount
-                        )
+                        # message payment, only first call in a group has message bill
+                        if have_first_call_in_cache:
+                            message_amount = await get_model_cost(
+                                agent.model,
+                                skill_message_create.input_tokens,
+                                skill_message_create.output_tokens,
+                            )
+                            message_payment_event = await expense_message(
+                                session,
+                                payer,
+                                skill_message_create.id,
+                                input.id,
+                                message_amount,
+                                agent,
+                            )
+                            skill_message_create.credit_event_id = (
+                                message_payment_event.id
+                            )
+                            skill_message_create.credit_cost = (
+                                message_payment_event.total_amount
+                            )
                         # skill payment
                         for skill_call in skill_calls:
                             if not skill_call["success"]:

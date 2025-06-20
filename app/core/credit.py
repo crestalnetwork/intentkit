@@ -1035,7 +1035,6 @@ async def skill_cost(
     payment_settings = await AppSetting.payment()
 
     # Calculate fee
-    logger.info(f"[{agent.id}] skill payment {skill_name}")
     if skill.author:
         fee_dev_user = skill.author
         fee_dev_user_type = OwnerType.USER
@@ -1112,6 +1111,7 @@ async def expense_skill(
     await CreditEvent.check_upstream_tx_id_exists(
         session, UpstreamType.EXECUTOR, upstream_tx_id
     )
+    logger.info(f"[{agent.id}] skill payment {skill_name}")
 
     # Calculate skill cost using the skill_cost function
     skill_cost_info = await skill_cost(skill_name, user_id, agent)
