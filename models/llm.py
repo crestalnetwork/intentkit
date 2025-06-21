@@ -590,6 +590,9 @@ class XAILLM(LLMModel):
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
 
+        if self.model_name == "grok-3":
+            kwargs["search_parameters"] = {"mode": "auto"}
+
         return ChatXAI(**kwargs)
 
 
