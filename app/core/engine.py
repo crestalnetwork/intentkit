@@ -150,7 +150,7 @@ async def initialize_agent(aid, is_private=False):
     memory = AsyncPostgresSaver(get_pool())
 
     # ==== Load skills
-    tools: list[BaseTool] = []
+    tools: list[BaseTool | dict] = []
 
     if agent.skills:
         for k, v in agent.skills.items():
@@ -171,6 +171,10 @@ async def initialize_agent(aid, is_private=False):
 
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
+
+    # testing native search, FIXME: use flag
+    if agent.model in ["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"]:
+        tools.append({"type": "web_search_preview"})
 
     # finally, set up the system prompt
     prompt = agent_prompt(agent, agent_data)
@@ -216,7 +220,7 @@ async def initialize_agent(aid, is_private=False):
     )
     for tool in tools:
         logger.info(
-            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name}"
+            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
 
     # Pre model hook
@@ -431,6 +435,21 @@ async def execute_agent(
         # Remove @super from the message
         input_message = re.sub(r"\b@super\b", "", input_message).strip()
 
+    # testing native search, FIXME: use flag
+    if re.search(r"\b@search\b", input_message):
+        if agent.model in [
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "grok-3",
+        ]:
+            input_message = re.sub(
+                r"\b@search\b", "(search for results)", input_message
+            ).strip()
+        else:
+            input_message = re.sub(r"\b@search\b", "", input_message).strip()
+
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
         input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
@@ -499,6 +518,16 @@ async def execute_agent(
                     # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
                 if hasattr(msg, "content") and msg.content:
+                    content = msg.content
+                    if isinstance(msg.content, list):
+                        # in new version, content item maybe a list
+                        content = msg.content[0]
+                    if isinstance(content, dict):
+                        if "text" in content:
+                            content = content["text"]
+                        else:
+                            content = str(content)
+                            logger.error(f"unexpected content type: {content}")
                     # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
@@ -510,7 +539,7 @@ async def execute_agent(
                         model=agent.model,
                         thread_type=input.author_type,
                         reply_to=input.id,
-                        message=msg.content,
+                        message=content,
                         input_tokens=(
                             msg.usage_metadata.get("input_tokens", 0)
                             if hasattr(msg, "usage_metadata") and msg.usage_metadata
@@ -536,6 +565,22 @@ async def execute_agent(
                                 chat_message_create.input_tokens,
                                 chat_message_create.output_tokens,
                             )
+
+                            # Check for web_search_call in additional_kwargs
+                            if (
+                                hasattr(msg, "additional_kwargs")
+                                and msg.additional_kwargs
+                            ):
+                                tool_outputs = msg.additional_kwargs.get(
+                                    "tool_outputs", []
+                                )
+                                for tool_output in tool_outputs:
+                                    if tool_output.get("type") == "web_search_call":
+                                        logger.info(
+                                            f"[{input.agent_id}] Found web_search_call in additional_kwargs"
+                                        )
+                                        amount += 35
+                                        break
                             credit_event = await expense_message(
                                 session,
                                 payer,
@@ -682,6 +727,10 @@ async def execute_agent(
                     ):
                         if "messages" in chunk["post_model_hook"]:
                             msg = chunk["post_model_hook"]["messages"][-1]
+                            content = msg.content
+                            if isinstance(msg.content, list):
+                                # in new version, content item maybe a list
+                                content = msg.content[0]
                             post_model_message_create = ChatMessageCreate(
                                 id=str(XID()),
                                 agent_id=input.agent_id,
@@ -692,7 +741,7 @@ async def execute_agent(
                                 model=agent.model,
                                 thread_type=input.author_type,
                                 reply_to=input.id,
-                                message=msg.content,
+                                message=content,
                                 input_tokens=0,
                                 output_tokens=0,
                                 time_cost=this_time - last,
