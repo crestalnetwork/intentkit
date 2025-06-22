@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
-from models.agent import Agent, AgentData, AgentQuota
+from models.agent import Agent
+from models.agent_data import AgentData, AgentQuota
 
 
 class AgentStoreABC(ABC):

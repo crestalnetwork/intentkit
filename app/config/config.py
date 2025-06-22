@@ -71,9 +71,8 @@ class Config:
         # AWS
         self.aws_s3_bucket = self.load("AWS_S3_BUCKET")
         self.aws_s3_cdn_url = self.load("AWS_S3_CDN_URL")
-        # Internal
+        # Internal API
         self.internal_base_url = self.load("INTERNAL_BASE_URL", "http://intent-api")
-        # Admin
         self.admin_auth_enabled = self.load("ADMIN_AUTH_ENABLED", "false") == "true"
         self.admin_jwt_secret = self.load("ADMIN_JWT_SECRET")
         self.debug_auth_enabled = self.load("DEBUG_AUTH_ENABLED", "false") == "true"
@@ -84,19 +83,12 @@ class Config:
         )
         # Payment
         self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
-        # API
-        self.api_base_url = self.load("API_BASE_URL", "http://localhost:8000")
-        self.api_auth_enabled = self.load("API_AUTH_ENABLED", "false") == "true"
-        self.api_jwt_secret = self.load("API_JWT_SECRET")
+        # Open API for agent
+        self.open_api_base_url = self.load("OPEN_API_BASE_URL", "http://localhost:8000")
         # CDP
         self.cdp_api_key_name = self.load("CDP_API_KEY_NAME")
         self.cdp_api_key_private_key = self.load("CDP_API_KEY_PRIVATE_KEY")
-        # Crossmint
-        self.crossmint_api_key = self.load("CROSSMINT_API_KEY")
-        self.crossmint_api_base_url = self.load(
-            "CROSSMINT_API_BASE_URL", "https://staging.crossmint.com"
-        )
-        # AI
+        # LLM providers
         self.openai_api_key = self.load("OPENAI_API_KEY")
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
         self.xai_api_key = self.load("XAI_API_KEY")
@@ -118,11 +110,9 @@ class Config:
             self.load("TWITTER_ENTRYPOINT_INTERVAL", "5")
         )  # in minutes
         # Slack Alert
-        self.slack_alert_token = self.load(
-            "SLACK_ALERT_TOKEN"
-        )  # For alert purposes only
+        self.slack_alert_token = self.load("SLACK_ALERT_TOKEN")
         self.slack_alert_channel = self.load("SLACK_ALERT_CHANNEL")
-        # Skills
+        # Skills - Platform Hosted Keys
         self.acolyt_api_key = self.load("ACOLYT_API_KEY")
         self.allora_api_key = self.load("ALLORA_API_KEY")
         self.elfa_api_key = self.load("ELFA_API_KEY")
@@ -147,10 +137,8 @@ class Config:
             self.chain_provider: ChainProvider = QuicknodeChainProvider(
                 self.quicknode_api_key
             )
-
         if hasattr(self, "chain_provider"):
             self.chain_provider.init_chain_configs()
-        # RPC
         self.rpc_networks = self.load(
             "RPC_NETWORKS", "base-mainnet,base-sepolia,ethereum-sepolia,solana-mainnet"
         )

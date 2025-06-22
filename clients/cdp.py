@@ -7,7 +7,8 @@ from coinbase_agentkit import (
 )
 
 from abstracts.skill import SkillStoreABC
-from models.agent import Agent, AgentData
+from models.agent import Agent
+from models.agent_data import AgentData
 
 _clients: Dict[str, "CdpClient"] = {}
 

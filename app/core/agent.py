@@ -7,7 +7,8 @@ from typing import Dict, Optional
 from sqlalchemy import func, select, text
 
 from abstracts.agent import AgentStoreABC
-from models.agent import Agent, AgentData, AgentQuota
+from models.agent import Agent
+from models.agent_data import AgentData, AgentQuota
 from models.credit import CreditEventTable, EventType, UpstreamType
 from models.db import get_session
 
@@ -84,7 +85,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         Dict[str, Decimal]: Dictionary containing all calculated cost metrics
     """
     start_time = time.time()
-    default_value = Decimal("1.0")
+    default_value = Decimal("0")
 
     async with get_session() as session:
         # Calculate the date 3 days ago from now

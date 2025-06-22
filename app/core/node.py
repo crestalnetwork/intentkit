@@ -6,6 +6,7 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    HumanMessage,
     RemoveMessage,
     ToolMessage,
 )
@@ -143,10 +144,18 @@ class PreModelNode(RunnableCallable):
                 logger.info(
                     f"Trimmed messages: {len(messages)} -> {len(trimmed_messages)}"
                 )
+                if len(trimmed_messages) <= 3:
+                    logger.error(
+                        f"Too few messages after trim: {len(trimmed_messages)}"
+                    )
+                    return {}
             return {
                 "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
             }
         if self.short_term_memory_strategy == "summarize":
+            # if last message is not human message, skip summarize
+            if not isinstance(messages[-1], HumanMessage):
+                return {}
             summarization_result = await asummarize_messages(
                 messages,
                 running_summary=context.get("running_summary"),
@@ -203,12 +212,13 @@ class PostModelNode(RunnableCallable):
                 if skill_meta:
                     skill_cost_info = await skill_cost(skill_meta.name, payer, agent)
                     total_paid = skill_cost_info.total_amount
-            if not account.has_sufficient_credits(total_paid):
-                state_update["error"] = AgentError.INSUFFICIENT_CREDITS
-                state_update["messages"] = [RemoveMessage(id=msg.id)]
-                state_update["messages"].append(
-                    AIMessage(
-                        content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
-                    )
-                )
+                    if not account.has_sufficient_credits(total_paid):
+                        state_update["error"] = AgentError.INSUFFICIENT_CREDITS
+                        state_update["messages"] = [RemoveMessage(id=msg.id)]
+                        state_update["messages"].append(
+                            AIMessage(
+                                content=f"Insufficient credits. Please top up your account. You need {total_paid} credits, but you only have {account.balance} credits.",
+                            )
+                        )
+                        return state_update
         return state_update

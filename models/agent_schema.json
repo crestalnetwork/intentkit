@@ -16,7 +16,7 @@
     },
     {
       "id": "examples",
-      "title": "Examples",
+      "title": "Quick Actions",
       "order": 3
     },
     {
@@ -181,6 +181,7 @@
         "gpt-4.1-nano",
         "gpt-4.1-mini",
         "gpt-4.1",
+        "o3",
         "o4-mini",
         "deepseek-chat",
         "deepseek-reasoner",
@@ -199,6 +200,7 @@
         "GPT-4.1 nano",
         "GPT-4.1 mini",
         "GPT-4.1",
+        "OpenAI o3",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
         "Deepseek R1 (0528)",
@@ -211,6 +213,7 @@
         "Venice Llama-4 Maverick 17B"
       ],
       "x-enum-category": [
+        "OpenAI",
         "OpenAI",
         "OpenAI",
         "OpenAI",
@@ -242,6 +245,7 @@
         true,
         true,
         true,
+        true,
         true
       ],
       "x-group": "llm"
@@ -256,6 +260,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent purpose"
     },
     "personality": {
@@ -268,6 +273,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent personality"
     },
     "principles": {
@@ -280,6 +286,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent principles"
     },
     "prompt": {
@@ -291,6 +298,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "prompt_append": {
@@ -302,6 +310,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "temperature": {
@@ -357,6 +366,7 @@
       "type": "string",
       "description": "Extra prompt for telegram entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "entrypoint"
     },
     "telegram_config": {
@@ -407,6 +417,7 @@
       "type": "string",
       "description": "Extra prompt for X entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "deprecated"
     },
     "twitter_config": {
@@ -448,14 +459,6 @@
       "x-group": "skills",
       "x-inline": true,
       "properties": {
-        "venice_audio": {
-          "title": "Venice Audio",
-          "$ref": "../skills/venice_audio/schema.json"
-        },
-        "dexscreener": {
-          "title": "DEX Screener",
-          "$ref": "../skills/dexscreener/schema.json"
-        },
         "allora": {
           "title": "Allora",
           "$ref": "../skills/allora/schema.json"
@@ -532,6 +535,10 @@
           "title": "Moralis",
           "$ref": "../skills/moralis/schema.json"
         },
+        "system": {
+          "title": "System",
+          "$ref": "../skills/system/schema.json"
+        },
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
@@ -551,6 +558,10 @@
         "slack": {
           "title": "Slack",
           "$ref": "../skills/slack/schema.json"
+        },
+        "venice_audio": {
+          "title": "Venice Audio",
+          "$ref": "../skills/venice_audio/schema.json"
         },
         "venice_image": {
           "title": "Venice Image",
@@ -613,6 +624,7 @@
             "type": "string",
             "description": "Prompt the agent will execute on schedule",
             "maxLength": 20000,
+            "x-str-type": "prompt",
             "x-group": "autonomous"
           },
           "enabled": {
@@ -632,8 +644,15 @@
       "x-group": "autonomous",
       "x-inline": true
     },
+    "example_intro": {
+      "title": "Agent Greeting",
+      "type": "string",
+      "description": "This is the first thing users see when they meet your agent. Use it to explain what your agent does, the services it provides and how it fits into the Nation.",
+      "maxLength": 2000,
+      "x-group": "examples"
+    },
     "examples": {
-      "title": "Quick Actions",
+      "title": "Quick Action List",
       "type": "array",
       "maxItems": 6,
       "items": {
@@ -643,25 +662,33 @@
             "title": "Action Name",
             "type": "string",
             "description": "Quick action will show up on the UI as this name",
-            "maxLength": 20,
+            "maxLength": 50,
+            "x-group": "examples"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Description of what this action does",
+            "maxLength": 200,
             "x-group": "examples"
           },
           "prompt": {
             "title": "Prompt",
             "type": "string",
             "description": "When user clicks this action, the agent will execute this prompt",
-            "maxLength": 1024,
+            "maxLength": 2000,
+            "x-str-type": "prompt",
             "x-group": "examples"
           }
         },
         "required": [
           "name",
+          "description",
           "prompt"
         ]
       },
       "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
-      "x-group": "examples",
-      "x-inline": true
+      "x-group": "examples"
     },
     "wallet_provider": {
       "title": "Wallet Provider",

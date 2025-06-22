@@ -13,10 +13,15 @@ from .ai_assistant import (
     generate_agent_attributes,
     generate_validated_agent,
 )
+from .conversation_service import (
+    ConversationService,
+    get_conversation_history,
+    get_project_metadata,
+    get_projects_by_user,
+)
 from .llm_logger import (
     LLMLogger,
     create_llm_logger,
-    get_conversation_history,
 )
 from .skill_processor import (
     filter_skills_for_auto_generation,
@@ -43,7 +48,11 @@ __all__ = [
     "enhance_agent",
     "generate_agent_attributes",
     "generate_agent_summary",
+    # Conversation history
+    "ConversationService",
     "get_conversation_history",
+    "get_project_metadata",
+    "get_projects_by_user",
     # LLM logging
     "create_llm_logger",
     "generate_request_id",

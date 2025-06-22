@@ -74,6 +74,10 @@ author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 author_github = "hyacinthus"
 author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 
+[system]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [tavily]
 author_github = "bluntbrain"
 author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
