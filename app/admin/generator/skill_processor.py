@@ -33,16 +33,16 @@ _skill_schemas_cache: Dict[str, Dict[str, Any]] = {}
 
 def get_default_skills_config() -> Dict[str, Any]:
     """Get default skills configuration based on config settings.
-    
+
     Returns:
         Dict containing default skills configurations
     """
     if not config.generator_add_default_skills:
         return {}
-    
+
     default_skills = {}
     all_real_skills = get_all_real_skills()
-    
+
     for skill_name in config.generator_default_skills:
         skill_name = skill_name.strip()
         if skill_name in all_real_skills:
@@ -58,8 +58,10 @@ def get_default_skills_config() -> Dict[str, Any]:
             }
             logger.debug(f"Added default skill: {skill_name}")
         else:
-            logger.warning(f"Default skill '{skill_name}' not found in available skills")
-    
+            logger.warning(
+                f"Default skill '{skill_name}' not found in available skills"
+            )
+
     return default_skills
 
 
@@ -472,17 +474,17 @@ async def identify_skills(
 
     # Use keyword matching
     keyword_skills = keyword_match_skills(prompt)
-    
+
     # Merge keyword skills with defaults (keyword skills take precedence)
     for skill_name, skill_config in keyword_skills.items():
         skills_config[skill_name] = skill_config
 
     # Add skills mentioned by exact name
     skills_config = add_skill_by_name(prompt, skills_config)
-    
+
     if config.generator_add_default_skills and skills_config:
         logger.info(f"Added default skills: {list(get_default_skills_config().keys())}")
-    
+
     return skills_config
 
 
