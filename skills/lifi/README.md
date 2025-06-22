@@ -1,212 +1,294 @@
-# LiFi Token Transfer Skills
-
-This module provides two skills for token transfers using the [LiFi protocol](https://li.fi):
-
-1. **Token Quote** - Get quotes for token transfers without execution
-2. **Token Execute** - Execute actual token transfers (requires CDP wallet)
+# LiFi Skills
+Cross-chain token transfers and swaps using the LiFi protocol with CDP wallet integration.
 
 ## Features
 
-- Get quotes for token transfers across different blockchains
-- Get quotes for token swaps on the same blockchain
-- Execute actual token transfers using the agent's CDP wallet
-- View estimated fees, gas costs, and slippage
-- See the routing path of the transfer
+- **Token Quotes**: Get real-time quotes for token swaps and cross-chain transfers
+- **Token Execution**: Execute token swaps and transfers with automatic transaction handling
+- **Explorer URLs**: Get direct blockchain explorer links for all transactions
+- **Multi-chain Support**: Works with 15+ blockchains including Base, Ethereum, Arbitrum, Polygon
+- **Testnet Support**: Full support for testnet operations (Base Sepolia, Ethereum Sepolia, etc.)
 
-> **IMPORTANT:** A properly configured CDP wallet is **required** for the `token_execute` skill.
-> The `token_quote` skill works without a CDP wallet.
+## Skills Available
+
+1. **`token_quote`** - Get quotes for token transfers (public access)
+2. **`lifi_token_execute`** - Execute token transfers (requires CDP wallet)
+
+## Test Prompts
+
+Use these exact prompts to test the LiFi skills:
+
+### 1. Check Wallet Address
+```
+what is my wallet address
+```
+
+### 2. Check Balances
+```
+tell me my balance in eth and usdc
+```
+
+### 3. Get Quote for Token Swap
+```
+now get me quote to swap my usdc to eth on the same chain that is base mainnet
+```
+
+### 4. Execute Token Swap
+```
+yes do the swap now
+```
+
+### 5. Verify Transaction
+```
+tell me my balance in eth and usdc
+```
+
+## Expected Results
+
+### Quote Response
+```
+### Token Transfer Quote
+
+**From:** 2.2019 USDC on Base
+**To:** 0.00100259 ETH on Base
+**Minimum Received:** 0.00097251 ETH
+**Bridge/Exchange:** sushiswap
+
+**Value:** $2.2017 → $2.2067
+**Estimated Time:** 30 seconds
+
+**Gas Cost:**
+- SEND: 0.00001005 ETH ($0.0221)
+- **Total Gas:** ~$0.0221
+```
+
+### Execution Response
+```
+**Token Swap Executed Successfully**
+
+Transaction successful!
+Transaction Hash: 0xe7d026c7598699909794df9f7858e48cc56c03e4d428f5cc62f51c1979617fd1
+Network: Base
+Explorer: https://basescan.org/tx/0xe7d026c7598699909794df9f7858e48cc56c03e4d428f5cc62f51c1979617fd1
+Token: USDC → ETH
+Amount: 2.2019
+
+**Status:** Completed (same-chain swap)
+```
+
+## Supported Chains
+
+**Mainnet**: Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, Fantom, BSC, Linea, zkSync Era, Scroll
+
+**Testnet**: Ethereum Sepolia, Base Sepolia, Arbitrum Sepolia, Optimism Sepolia, Polygon Mumbai
+
+## Prerequisites
+
+- CDP wallet configured and funded
+- Agent with LiFi skills enabled
+- Sufficient token balance for swaps/transfers
+- Network gas tokens for transaction fees
 
 ## Configuration
 
-To enable the LiFi skills in your agent configuration:
+The skills are automatically configured with:
+- Default slippage: 3%
+- Maximum execution time: 300 seconds
+- Support for all major tokens (ETH, USDC, USDT, DAI, WETH, etc.)
 
-```yaml
-id: my-agent
-skills:
-  lifi:
-    enabled: true
-    states: 
-      token_quote: public  # can be public, private, or disabled
-      token_execute: private  # can be public, private, or disabled
-    # Optional configuration parameters
-    default_slippage: 0.03  # 3% slippage tolerance
-    allowed_chains: ["ETH", "POL", "ARB"]  # Limit to specific chains (optional)
-    max_execution_time: 300  # Maximum execution time in seconds for token_execute
-```
+## Error Handling
 
-The agent **must** have a CDP wallet configured to use the `token_execute` skill. See the [CDP Wallet Requirements](#cdp-wallet-requirements) section for details.
+The skills handle common errors automatically:
+- Invalid chain identifiers
+- Insufficient balances
+- Network connectivity issues
+- Transaction failures with detailed error messages
 
-## CDP Wallet Requirements
+### CDP Wallet Requirements
 
 To use the `token_execute` skill, your agent must have:
 
-1. A properly configured CDP wallet with `cdp_wallet_data` set
-2. Sufficient funds for the transfer amount and gas fees
-3. Network configuration that matches the chains you intend to use
+1. **CDP Wallet Configuration**: A properly configured CDP wallet with `cdp_wallet_data` set
+2. **Sufficient Funds**: Enough tokens for the transfer amount plus gas fees
+3. **Network Configuration**: Proper network settings matching your intended chains
 
-Example agent configuration with CDP wallet:
 
-```yaml
-id: my-agent
-wallet_provider: "cdp"
-cdp_network_id: "ethereum-mainnet"  # Set to the network you want to use
-# The system needs to have CDP credentials configured
+## Usage Examples
+
+### Token Quote Examples
+
+#### Cross-Chain Transfer Quote
+```
+"Get a quote for transferring 100 USDC from Ethereum to Polygon"
 ```
 
-### Setting Up the CDP Wallet
-
-1. In your agent settings, ensure `wallet_provider` is set to `"cdp"` 
-2. Set the `cdp_network_id` to the blockchain network you want to use
-3. Ensure your agent has been initialized with the appropriate CDP wallet credentials
-
-## Troubleshooting
-
-### Missing CDP Wallet Configuration
-
-If you see an error like:
+#### Same-Chain Swap Quote
 ```
-AttributeError: 'NoneType' object has no attribute 'cdp_wallet_data'
+"What's the rate for swapping 0.5 ETH to USDC on Ethereum?"
 ```
 
-This indicates that:
-1. Your agent doesn't have CDP wallet configuration properly set up
-2. You're trying to use the `token_execute` skill which requires the wallet
+#### Fee Analysis
+```
+"Check the fees for sending 1000 DAI from Arbitrum to Base"
+```
 
-Solutions:
-- Use the `token_quote` skill instead which doesn't require a CDP wallet
-- Configure your agent with a proper CDP wallet (see [CDP Wallet Requirements](#cdp-wallet-requirements))
-- Check that your system has CDP API keys properly configured
+#### Amount Calculation
+```
+"How much MATIC would I get if I transfer 50 USDC from Ethereum to Polygon?"
+```
 
-Note: When using the quote-only skill, the system uses a dummy address 
-`0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0` to request quotes from the LiFi API. This 
-allows getting accurate price information without requiring a real wallet.
+### Token Execute Examples
 
-### API Errors
+#### Execute Cross-Chain Transfer
+```
+"Execute a transfer of 100 USDC from Ethereum to Polygon"
+```
 
-Common LiFi API errors:
+#### Execute Same-Chain Swap
+```
+"Swap 0.1 ETH for USDC on Base"
+```
 
-- **400 Bad Request - "Token not supported"**: The token symbol or address you provided is not recognized on the specified chain.
-- **404 Not Found - "No Route Found"**: There's no available path to complete the requested transfer. Try different tokens or chains.
+#### Execute with Custom Slippage
+```
+"Transfer 500 DAI from Arbitrum to Optimism with 1% slippage"
+```
 
-### Other Common Issues
+## Supported Networks
 
-- **Insufficient funds**: Ensure your CDP wallet has enough tokens for the transfer and gas fees
-- **Chain not supported**: Verify that the chains you're using are supported by LiFi
-- **Slippage too low**: If transactions are failing, try increasing the slippage tolerance
+### Major Networks
+- **Ethereum** (ETH) - Chain ID: 1
+- **Polygon** (POL) - Chain ID: 137  
+- **Arbitrum One** (ARB) - Chain ID: 42161
+- **Optimism** (OPT) - Chain ID: 10
+- **Base** (BASE) - Chain ID: 8453
+- **BNB Chain** (BSC) - Chain ID: 56
+- **Avalanche** (AVAX) - Chain ID: 43114
+- **Gnosis Chain** (DAI) - Chain ID: 100
 
-## Usage
-
-### Token Quote Skill
-
-Use the `token_quote` skill to get information about rates, fees, and execution paths without performing actual transfers.
-
-#### Example Interactions for Token Quote:
-
-- "Get a quote for transferring 1 USDC from Gnosis to Polygon"
-- "What's the rate for swapping 0.1 ETH to USDC on Ethereum?"
-- "Check the fees for sending DAI to USDT on Arbitrum"
-- "How much MATIC would I get if I transfer 10 USDC from Ethereum to Polygon?"
-
-#### Parameters for Token Quote:
-
-- `from_chain`: The source chain (e.g., 'ETH', 'POL', 'ARB', 'DAI')
-- `to_chain`: The destination chain (e.g., 'ETH', 'POL', 'ARB', 'DAI')
-- `from_token`: The token to send (e.g., 'USDC', 'ETH', 'DAI')
-- `to_token`: The token to receive (e.g., 'USDC', 'ETH', 'DAI')
-- `from_amount`: The amount to send including all decimals (e.g., '1000000' for 1 USDC with 6 decimals)
-- `slippage`: The maximum allowed slippage for the transaction (0.03 represents 3%)
-
-### Token Execute Skill
-
-Use the `token_execute` skill to perform actual token transfers using the agent's CDP wallet.
-
-#### Example Interactions for Token Execute:
-
-- "Execute a transfer of 1 USDC from Gnosis to Polygon"
-- "Swap 0.1 ETH for USDC on Ethereum"
-- "Transfer 5 USDC from Ethereum to Optimism"
-
-#### Parameters for Token Execute:
-
-- `from_chain`: The source chain (e.g., 'ETH', 'POL', 'ARB', 'DAI')
-- `to_chain`: The destination chain (e.g., 'ETH', 'POL', 'ARB', 'DAI')
-- `from_token`: The token to send (e.g., 'USDC', 'ETH', 'DAI')
-- `to_token`: The token to receive (e.g., 'USDC', 'ETH', 'DAI')
-- `from_amount`: The amount to send including all decimals (e.g., '1000000' for 1 USDC with 6 decimals)
-- `slippage`: The maximum allowed slippage for the transaction (0.03 represents 3%)
+### Layer 2 Networks
+- **Linea** - Chain ID: 59144
+- **zkSync Era** - Chain ID: 324
+- **Polygon zkEVM** - Chain ID: 1101
+- **Scroll** - Chain ID: 534352
 
 ## How It Works
 
-### Token Quote
+### Token Quote Process
 
-The `token_quote` skill:
-1. Makes a request to the LiFi API for quote information
-2. Formats the response into readable information including:
+1. **Validates** input parameters (chains, tokens, amounts, slippage)
+2. **Queries** LiFi API for the best route and pricing
+3. **Formats** comprehensive quote information including:
    - Token amounts and conversion rates
-   - Estimated fees and gas costs
-   - USD value equivalents
+   - Detailed fee breakdown (LP fees, bridge fees, etc.)
+   - Gas cost estimates in native tokens and USD
    - Execution time estimates
-   - Transaction routing path
+   - Routing path through bridges/exchanges
+   - USD value equivalents
 
-### Token Execute
+### Token Execute Process
 
-The `token_execute` skill:
-1. Retrieves a quote from the LiFi API
-2. Checks and sets token allowances if needed (for ERC20 tokens)
-3. Executes the transfer using the agent's CDP wallet
-4. Monitors the transaction status
-5. Returns the transaction hash, status, and detailed information
+1. **Gets Quote** - Retrieves routing and pricing information
+2. **Checks Wallet** - Validates CDP wallet configuration and funds
+3. **Sets Approval** - Automatically approves ERC20 tokens if needed
+4. **Executes Transaction** - Sends the transfer transaction
+5. **Monitors Status** - Tracks cross-chain transfer completion
+6. **Reports Results** - Provides transaction hash and final status
 
-## Advanced Configuration
+## Troubleshooting
 
-### Default Slippage
+### Common Issues
 
-You can set a default slippage tolerance for all transfers in the agent configuration:
+#### "CDP client not available"
+**Problem**: Agent doesn't have CDP wallet configuration
+**Solution**: 
+- Set `wallet_provider: "cdp"` in agent configuration
+- Ensure CDP credentials are properly configured
+- Use `token_quote` for research without requiring a wallet
 
-```yaml
-skills:
-  lifi:
-    default_slippage: 0.03  # 3% slippage tolerance
+#### "No route found"
+**Problem**: LiFi cannot find a path for the requested transfer
+**Solutions**:
+- Try different token pairs
+- Use more liquid tokens (USDC, ETH, etc.)
+- Check if both chains support the requested tokens
+- Reduce transfer amount if liquidity is limited
+
+#### "Invalid request: Token not supported"
+**Problem**: Token symbol or address not recognized
+**Solutions**:
+- Use popular token symbols (USDC, ETH, DAI, MATIC)
+- Verify token exists on the source chain
+- Use full token contract address instead of symbol
+
+#### "Failed to approve token"
+**Problem**: ERC20 token approval failed
+**Solutions**:
+- Ensure wallet has enough native tokens for gas
+- Check if token contract allows approvals
+- Try again with a smaller amount
+
+#### "Transfer pending" (taking too long)
+**Problem**: Cross-chain transfer is slow
+**Solutions**:
+- Wait longer (some bridges take 10-30 minutes)
+- Check the explorer link for detailed status
+- Contact LiFi support if transfer is stuck
+
+### Configuration Issues
+
+#### Invalid Slippage
 ```
-
-This value will be used if no slippage parameter is provided when calling the skills.
-
-### Allowed Chains
-
-You can restrict which chains the agent can use for transfers:
-
-```yaml
-skills:
-  lifi:
-    allowed_chains: ["ETH", "POL", "ARB", "OPT"]
+Error: "Invalid slippage: must be between 0.001 (0.1%) and 0.5 (50%)"
 ```
+**Solution**: Use slippage between 0.1% and 50% (e.g., 0.03 for 3%)
 
-If this option is not set, all chains supported by LiFi can be used.
-
-### Maximum Execution Time
-
-You can set a maximum time to wait for transaction confirmation when using the `token_execute` skill:
-
-```yaml
-skills:
-  lifi:
-    max_execution_time: 300  # 5 minutes
+#### Chain Restrictions
 ```
+Error: "Source chain 'ETH' is not allowed"
+```
+**Solution**: Update `allowed_chains` in configuration or remove the restriction
 
-## Example Usage Flow
+#### Execution Timeout
+```
+Status: "Still pending - transfer may take longer to complete"
+```
+**Solution**: Increase `max_execution_time` or wait for manual completion
 
-1. User: "What would I get if I swap 0.1 ETH for USDC on Ethereum?"
-2. Agent: [Uses token_quote to get and show the transfer details]
-3. User: "That looks good, please execute the transfer"
-4. Agent: [Uses token_execute to perform the actual transfer]
-5. Agent: [Returns transaction hash and status information]
+## Best Practices
 
-## Notes
+### For Token Quotes
+- Use quotes to compare different routes before executing
+- Check gas costs and fees before large transfers
+- Consider execution time for time-sensitive operations
 
-The `token_execute` skill requires sufficient funds in the agent's CDP wallet. Before using this skill, ensure that:
+### For Token Execution  
+- Always get a quote first to understand costs
+- Ensure sufficient gas tokens in your wallet
+- Use appropriate slippage (1-3% for stable pairs, 3-5% for volatile pairs)
+- Monitor large transfers using the explorer link
 
-1. Your agent has a properly configured CDP wallet
-2. The wallet has sufficient funds for the transfer and gas fees
-3. The wallet has the appropriate permissions on the source chain
+### For Production Use
+- Set reasonable `allowed_chains` to prevent unexpected transfers
+- Use `private` state for execution skills in production
+- Monitor transfer status for cross-chain operations
+- Keep some native tokens for gas in each chain you use
 
-This skill can be used alongside other CDP-related skills to provide a complete token management solution for your agent. 
+## API Reference
+
+### Token Quote Parameters
+- `from_chain`: Source blockchain (string)
+- `to_chain`: Destination blockchain (string)  
+- `from_token`: Token to send (symbol or address)
+- `to_token`: Token to receive (symbol or address)
+- `from_amount`: Amount in smallest unit (string)
+- `slippage`: Slippage tolerance 0.001-0.5 (float, optional)
+
+### Token Execute Parameters
+Same as Token Quote - the skill handles the execution automatically.
+
+### Response Format
+
+**Quote Response**: Detailed markdown with transfer details, fees, gas costs, and routing information.
+
+**Execute Response**: Transaction hash, status monitoring, and complete transfer summary.

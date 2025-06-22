@@ -1,13 +1,28 @@
 from typing import Any, Dict, List, Optional, Type
+import asyncio
 
 import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
+from web3 import Web3
 
 from abstracts.skill import SkillStoreABC
 from clients.cdp import get_cdp_client
 from skills.lifi.base import LiFiBaseTool
 from skills.lifi.token_quote import TokenQuote
+from skills.lifi.utils import (
+    LIFI_API_URL,
+    ERC20_ABI,
+    validate_inputs,
+    build_quote_params,
+    handle_api_response,
+    is_native_token,
+    prepare_transaction_params,
+    create_erc20_approve_data,
+    format_transaction_result,
+    convert_chain_to_id,
+    format_amount,
+)
 
 
 class TokenExecuteInput(BaseModel):
@@ -30,25 +45,26 @@ class TokenExecuteInput(BaseModel):
     )
     slippage: float = Field(
         default=0.03,
-        description="The maximum allowed slippage for the transaction (0.03 represents 3%).",
+        description="Maximum acceptable slippage as a decimal (e.g., 0.03 for 3%). Default is 3%."
     )
 
 
 class TokenExecute(LiFiBaseTool):
     """Tool for executing token transfers across chains using LiFi.
 
-    This tool executes actual token transfers and swaps using the CDP wallet.
+    This tool executes actual token transfers and swaps using the CDP wallet provider.
     Requires a properly configured CDP wallet to work.
     """
 
-    name: str = "token_execute"
+    name: str = "lifi_token_execute"
     description: str = (
         "Execute a token transfer across blockchains or swap tokens on the same chain.\n"
-        "This requires a CDP wallet with sufficient funds.\n"
-        "Use token_quote first to check rates before executing."
+        "This requires a CDP wallet with sufficient funds and proper network configuration.\n"
+        "Use token_quote first to check rates and fees before executing.\n"
+        "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
     )
     args_schema: Type[BaseModel] = TokenExecuteInput
-    api_url: str = "https://li.quest/v1"
+    api_url: str = LIFI_API_URL
 
     # Configuration options
     default_slippage: float = 0.03
@@ -68,28 +84,18 @@ class TokenExecute(LiFiBaseTool):
         self.default_slippage = default_slippage
         self.allowed_chains = allowed_chains
         self.max_execution_time = max_execution_time
-        # Use TokenQuote for quote formatting
-        self.quote_tool = TokenQuote(
-            skill_store=skill_store,
-            default_slippage=default_slippage,
-            allowed_chains=allowed_chains,
-        )
+        # Initialize quote tool if not set
+        if not self.quote_tool:
+            self.quote_tool = TokenQuote(
+                skill_store=skill_store,
+                default_slippage=default_slippage,
+                allowed_chains=allowed_chains,
+            )
 
     def _format_quote_result(self, data: Dict[str, Any]) -> str:
-        """Format quote result using the quote tool's formatting function."""
-        if self.quote_tool:
-            return self.quote_tool._format_quote_result(data)
-
-        # Fallback if quote_tool is not available
-        action = data.get("action", {})
-        estimate = data.get("estimate", {})
-        from_token = action.get("fromToken", {}).get("symbol", "Unknown")
-        to_token = action.get("toToken", {}).get("symbol", "Unknown")
-        to_amount = estimate.get("toAmount", "0")
-
-        return (
-            f"Transfer from {from_token} to {to_token}, estimated amount: {to_amount}"
-        )
+        """Format the quote result in a readable format."""
+        # Use the same formatting as token_quote
+        return self.quote_tool._format_quote_result(data)
 
     async def _arun(
         self,
@@ -108,283 +114,327 @@ class TokenExecute(LiFiBaseTool):
             if slippage is None:
                 slippage = self.default_slippage
 
-            # Validate chains if restricted
-            if self.allowed_chains:
-                if from_chain not in self.allowed_chains:
-                    return f"Source chain '{from_chain}' is not allowed. Allowed chains: {', '.join(self.allowed_chains)}"
-                if to_chain not in self.allowed_chains:
-                    return f"Destination chain '{to_chain}' is not allowed. Allowed chains: {', '.join(self.allowed_chains)}"
+            # Validate all inputs
+            validation_error = validate_inputs(
+                from_chain, to_chain, from_token, to_token, 
+                from_amount, slippage, self.allowed_chains
+            )
+            if validation_error:
+                return validation_error
 
             # Get agent context for CDP wallet
             context = self.context_from_config(config)
             agent_id = context.agent.id
 
+            self.logger.info(f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}")
+
+            # Get CDP wallet provider
+            cdp_wallet_provider = await self._get_cdp_wallet_provider(agent_id)
+            if isinstance(cdp_wallet_provider, str):  # Error message
+                return cdp_wallet_provider
+
+            # Get wallet address
+            from_address = cdp_wallet_provider.get_address()
+            if not from_address:
+                return "No wallet address available. Please check your CDP wallet configuration."
+
+            # Get quote and execute transfer
             async with httpx.AsyncClient() as client:
-                # Get CDP client and wallet
-                cdp_client = await get_cdp_client(agent_id, self.skill_store)
+                # Step 1: Get quote
+                quote_data = await self._get_quote(
+                    client, from_chain, to_chain, from_token, to_token, 
+                    from_amount, slippage, from_address
+                )
+                if isinstance(quote_data, str):  # Error message
+                    return quote_data
 
-                try:
-                    wallet = await cdp_client.get_wallet()
-                except AttributeError:
-                    self.logger.error("LiFi_CDP_Error: wallet not configured")
-                    return "Cannot execute token transfer: CDP wallet is not properly configured. Please ensure your agent has a CDP wallet set up."
-                except Exception as e:
-                    self.logger.error("LiFi_Error: %s", str(e))
-                    return f"Error accessing wallet: {str(e)}"
+                # Step 2: Handle token approval if needed
+                approval_result = await self._handle_token_approval(
+                    cdp_wallet_provider, quote_data
+                )
+                if approval_result:
+                    self.logger.info(f"Token approval completed: {approval_result}")
 
-                # Verify wallet is available
-                if "wallet" not in locals():
-                    return "Cannot execute token transfer: No wallet available"
-
-                from_address = (
-                    wallet.addresses[0].address_id if wallet.addresses else ""
+                # Step 3: Execute transaction
+                tx_hash = await self._execute_transfer_transaction(
+                    cdp_wallet_provider, quote_data
                 )
 
-                if not from_address:
-                    return "No wallet address available for transfer. Please check your CDP wallet configuration."
+                # Step 4: Monitor status and return result
+                return await self._finalize_transfer(
+                    client, tx_hash, from_chain, to_chain, quote_data
+                )
 
-                # Request quote from LiFi API
-                api_params = {
-                    "fromChain": from_chain,
-                    "toChain": to_chain,
-                    "fromToken": from_token,
-                    "toToken": to_token,
-                    "fromAmount": from_amount,
-                    "fromAddress": from_address,
-                    "slippage": slippage,
-                }
+        except Exception as e:
+            self.logger.error("LiFi_Error: %s", str(e))
+            return f"An unexpected error occurred: {str(e)}"
 
-                try:
-                    response = await client.get(
-                        f"{self.api_url}/quote",
-                        params=api_params,
-                        timeout=30.0,
-                    )
-                except Exception as e:
-                    self.logger.error("LiFi_API_Error: %s", str(e))
-                    return f"Error making API request: {str(e)}"
+    async def _get_cdp_wallet_provider(self, agent_id: str):
+        """Get CDP wallet provider with error handling."""
+        try:
+            cdp_client = await get_cdp_client(agent_id, self.skill_store)
+            if not cdp_client:
+                return "CDP client not available. Please ensure your agent has CDP wallet configuration."
+            
+            cdp_wallet_provider = await cdp_client.get_wallet_provider()
+            if not cdp_wallet_provider:
+                return "CDP wallet provider not configured. Please set up your agent's CDP wallet first."
+            
+            return cdp_wallet_provider
 
-                if response.status_code != 200:
-                    self.logger.error("LiFi_API_Error: %s", response.text)
-                    return (
-                        f"Error getting quote: {response.status_code} - {response.text}"
-                    )
+        except Exception as e:
+            self.logger.error("LiFi_CDP_Error: %s", str(e))
+            return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
 
-                data = response.json()
+    async def _get_quote(
+        self, 
+        client: httpx.AsyncClient, 
+        from_chain: str, 
+        to_chain: str, 
+        from_token: str, 
+        to_token: str,
+        from_amount: str, 
+        slippage: float, 
+        from_address: str
+    ) -> Dict[str, Any]:
+        """Get quote from LiFi API."""
+        api_params = build_quote_params(
+            from_chain, to_chain, from_token, to_token, 
+            from_amount, slippage, from_address
+        )
 
-                # For execution mode, perform the actual token transfer
-                transaction_request = data.get("transactionRequest")
-                if not transaction_request:
-                    return "No transaction request found in the quote. Cannot execute transfer."
+        try:
+            response = await client.get(
+                f"{self.api_url}/quote",
+                params=api_params,
+                timeout=30.0,
+            )
+        except httpx.TimeoutException:
+            return "Request timed out. The LiFi service might be temporarily unavailable. Please try again."
+        except httpx.ConnectError:
+            return "Connection error. Unable to reach LiFi service. Please check your internet connection."
+        except Exception as e:
+            self.logger.error("LiFi_API_Error: %s", str(e))
+            return f"Error making API request: {str(e)}"
 
-                # Check and set approval for ERC20 tokens if needed
-                estimate = data.get("estimate", {})
-                approval_address = estimate.get("approvalAddress")
-                from_token_info = data.get("action", {}).get("fromToken", {})
-                from_token_address = from_token_info.get("address")
+        # Handle response
+        data, error = handle_api_response(response, from_token, from_chain, to_token, to_chain)
+        if error:
+            self.logger.error("LiFi_API_Error: %s", error)
+            return error
 
-                # If not native token and approval needed
-                if (
-                    from_token_address != "0x0000000000000000000000000000000000000000"
-                    and from_token_address != ""
-                    and approval_address
-                ):
-                    try:
-                        approval_result = await self._check_and_set_allowance(
-                            wallet,
-                            from_token_address,
-                            approval_address,
-                            from_amount,
-                            from_chain,
-                        )
-                    except Exception as e:
-                        self.logger.error("LiFi_Token_Approval_Error: %s", str(e))
-                        return f"Failed to approve token: {str(e)}"
+        # Validate transaction request
+        transaction_request = data.get("transactionRequest")
+        if not transaction_request:
+            return "No transaction request found in the quote. Cannot execute transfer."
 
-                # Execute transaction
-                try:
-                    tx_hash = await self._execute_transaction(
-                        wallet, transaction_request, from_chain
-                    )
+        return data
 
-                    # Check transaction status
-                    try:
-                        status_response = await client.get(
-                            f"{self.api_url}/status",
-                            params={
-                                "txHash": tx_hash,
-                                "fromChain": from_chain,
-                                "toChain": to_chain,
-                            },
-                            timeout=min(30.0, self.max_execution_time),
-                        )
-                    except Exception as e:
-                        self.logger.error("LiFi_Status_Error: %s", str(e))
-                        return f"Transaction sent: {tx_hash}\nFailed to get status: {str(e)}"
+    async def _handle_token_approval(
+        self, 
+        wallet_provider, 
+        quote_data: Dict[str, Any]
+    ) -> Optional[str]:
+        """Handle ERC20 token approval if needed."""
+        estimate = quote_data.get("estimate", {})
+        approval_address = estimate.get("approvalAddress")
+        from_token_info = quote_data.get("action", {}).get("fromToken", {})
+        from_token_address = from_token_info.get("address", "")
+        from_amount = quote_data.get("action", {}).get("fromAmount", "0")
 
-                    if status_response.status_code != 200:
-                        return f"Transaction sent: {tx_hash}\nFailed to get status: {status_response.status_code} - {status_response.text}"
+        # Skip approval for native tokens
+        if is_native_token(from_token_address) or not approval_address:
+            return None
 
-                    status_data = status_response.json()
+        self.logger.info("Checking token approval for ERC20 transfer...")
+        
+        try:
+            return await self._check_and_set_allowance(
+                wallet_provider, from_token_address, approval_address, from_amount
+            )
+        except Exception as e:
+            self.logger.error("LiFi_Token_Approval_Error: %s", str(e))
+            raise Exception(f"Failed to approve token: {str(e)}")
 
-                    # Return transaction summary
-                    formatted_quote = self._format_quote_result(data)
-                    return f"""
-### Transfer Executed
+    async def _execute_transfer_transaction(
+        self, 
+        wallet_provider, 
+        quote_data: Dict[str, Any]
+    ) -> str:
+        """Execute the main transfer transaction."""
+        transaction_request = quote_data.get("transactionRequest")
+        
+        try:
+            tx_params = prepare_transaction_params(transaction_request)
+            self.logger.info(f"Sending transaction to {tx_params['to']} with value {tx_params['value']}")
 
-**Transaction Hash:** {tx_hash}
-**Status:** {status_data.get("status", "PENDING")}
-**Explorer Link:** {status_data.get("lifiExplorerLink", "")}
+            # Send transaction
+            tx_hash = wallet_provider.send_transaction(tx_params)
+            
+            # Wait for confirmation
+            receipt = wallet_provider.wait_for_transaction_receipt(tx_hash)
+            if not receipt or receipt.get("status") == 0:
+                raise Exception(f"Transaction failed: {tx_hash}")
+
+            return tx_hash
+
+        except Exception as e:
+            self.logger.error("LiFi_Execution_Error: %s", str(e))
+            raise Exception(f"Failed to execute transaction: {str(e)}")
+
+    async def _finalize_transfer(
+        self, 
+        client: httpx.AsyncClient, 
+        tx_hash: str, 
+        from_chain: str, 
+        to_chain: str, 
+        quote_data: Dict[str, Any]
+    ) -> str:
+        """Finalize transfer and return formatted result."""
+        self.logger.info(f"Transaction sent: {tx_hash}")
+
+        # Get chain ID for explorer URL
+        from_chain_id = convert_chain_to_id(from_chain)
+        
+        # Extract token info for result formatting
+        action = quote_data.get("action", {})
+        from_token_info = action.get("fromToken", {})
+        to_token_info = action.get("toToken", {})
+        
+        token_info = {
+            "symbol": f"{from_token_info.get('symbol', 'Unknown')} → {to_token_info.get('symbol', 'Unknown')}",
+            "amount": format_amount(action.get("fromAmount", "0"), from_token_info.get("decimals", 18))
+        }
+
+        # Format transaction result with explorer URL
+        transaction_result = format_transaction_result(tx_hash, from_chain_id, token_info)
+        
+        # Format quote details
+        formatted_quote = self._format_quote_result(quote_data)
+
+        # Handle cross-chain vs same-chain transfers
+        if from_chain.lower() != to_chain.lower():
+            self.logger.info("Monitoring cross-chain transfer status...")
+            status_result = await self._monitor_transfer_status(
+                client, tx_hash, from_chain, to_chain
+            )
+            
+            return f"""**Token Transfer Executed Successfully**
+
+{transaction_result}
+{status_result}
+
+{formatted_quote}
+"""
+        else:
+            return f"""**Token Swap Executed Successfully**
+
+{transaction_result}
+**Status:** Completed (same-chain swap)
 
 {formatted_quote}
 """
 
-                except Exception as e:
-                    self.logger.error("LiFi_Execution_Error: %s", str(e))
-                    return f"Failed to execute transaction: {str(e)}"
-
-        except Exception as e:
-            self.logger.error("LiFi_Error: %s", str(e))
-            return f"An error occurred: {str(e)}"
+    async def _monitor_transfer_status(
+        self, 
+        client: httpx.AsyncClient, 
+        tx_hash: str, 
+        from_chain: str, 
+        to_chain: str
+    ) -> str:
+        """Monitor the status of a cross-chain transfer."""
+        max_attempts = min(self.max_execution_time // 10, 30)  # Check every 10 seconds
+        attempt = 0
+        
+        while attempt < max_attempts:
+            try:
+                status_response = await client.get(
+                    f"{self.api_url}/status",
+                    params={"txHash": tx_hash, "fromChain": from_chain, "toChain": to_chain},
+                    timeout=10.0,
+                )
+                
+                if status_response.status_code == 200:
+                    status_data = status_response.json()
+                    status = status_data.get("status", "UNKNOWN")
+                    
+                    if status == "DONE":
+                        receiving_tx = status_data.get("receiving", {}).get("txHash")
+                        if receiving_tx:
+                            return f"**Status:** Complete (destination tx: {receiving_tx})"
+                        else:
+                            return "**Status:** Complete"
+                    elif status == "FAILED":
+                        return "**Status:** Failed"
+                    elif status in ["PENDING", "NOT_FOUND"]:
+                        # Continue monitoring
+                        pass
+                    else:
+                        return f"**Status:** {status}"
+                        
+            except Exception as e:
+                self.logger.warning(f"Status check failed (attempt {attempt + 1}): {str(e)}")
+            
+            attempt += 1
+            if attempt < max_attempts:
+                await asyncio.sleep(10)  # Wait 10 seconds before next check
+        
+        return "**Status:** Processing (monitoring timed out, but transfer may still complete)"
 
     async def _check_and_set_allowance(
         self,
-        wallet,
+        wallet_provider,
         token_address: str,
         approval_address: str,
         amount: str,
-        chain_id: str,
     ) -> Optional[str]:
-        """Check and set token allowance for transfer if needed."""
+        """Check if token allowance is sufficient and set approval if needed."""
         try:
-            # Get the wallet address
-            owner_address = wallet.addresses[0].address_id
+            # Normalize addresses
+            token_address = Web3.to_checksum_address(token_address)
+            approval_address = Web3.to_checksum_address(approval_address)
+            wallet_address = wallet_provider.get_address()
 
             # Check current allowance
-            allowance_data = self._encode_allowance_data(
-                owner_address, approval_address
-            )
-
             try:
-                allowance_result = await wallet.call_contract(
-                    to_address=token_address, data=allowance_data, chain_id=chain_id
+                current_allowance = wallet_provider.read_contract(
+                    contract_address=token_address,
+                    abi=ERC20_ABI,
+                    function_name="allowance",
+                    args=[wallet_address, approval_address]
                 )
+                
+                required_amount = int(amount)
+                
+                if current_allowance >= required_amount:
+                    self.logger.info(f"Sufficient allowance already exists: {current_allowance}")
+                    return None  # No approval needed
+                    
             except Exception as e:
-                self.logger.error("LiFi_Allowance_Error: %s", str(e))
-                raise Exception(f"Failed to check token allowance: {str(e)}")
+                self.logger.warning(f"Could not check current allowance: {str(e)}")
+                # Continue with approval anyway
 
-            # Parse the result
-            current_allowance = (
-                int(allowance_result, 16)
-                if allowance_result.startswith("0x")
-                else int(allowance_result)
-            )
-            amount_int = int(amount)
+            # Set approval for the required amount
+            self.logger.info(f"Setting token approval for {amount} tokens to {approval_address}")
+            
+            # Create approval transaction
+            approve_data = create_erc20_approve_data(approval_address, amount)
 
-            # If allowance is less than amount, approve more
-            if current_allowance < amount_int:
-                # Use max approval amount to save gas on future transfers
-                max_approval_amount = 2**256 - 1
+            # Send approval transaction
+            approval_tx_hash = wallet_provider.send_transaction({
+                "to": token_address,
+                "data": approve_data,
+                "value": 0,
+            })
 
-                # Encode approval data
-                approve_data = self._encode_approve_data(
-                    approval_address, str(max_approval_amount)
-                )
+            # Wait for approval transaction confirmation
+            receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash)
+            
+            if not receipt or receipt.get("status") == 0:
+                raise Exception(f"Approval transaction failed: {approval_tx_hash}")
 
-                # Send approval transaction
-                try:
-                    approval_tx = await wallet.send_transaction(
-                        to=token_address, data=approve_data, chain_id=chain_id
-                    )
-                except Exception as e:
-                    self.logger.error("LiFi_Approval_Tx_Error: %s", str(e))
-                    raise Exception(f"Failed to send approval transaction: {str(e)}")
-
-                return approval_tx.hash
-
-            # Already approved
-            return None
+            return approval_tx_hash
 
         except Exception as e:
-            self.logger.error("LiFi_Allowance_Error: %s", str(e))
-            raise Exception(f"Failed to check/set token allowance: {str(e)}")
-
-    def _encode_allowance_data(self, owner_address: str, spender_address: str) -> str:
-        """Encode allowance function call data for ERC20 contract."""
-        # Function selector for allowance(address,address)
-        function_selector = "0xdd62ed3e"
-
-        # Pad addresses to 32 bytes
-        owner_param = (
-            owner_address[2:].lower().zfill(64)
-            if owner_address.startswith("0x")
-            else owner_address.lower().zfill(64)
-        )
-        spender_param = (
-            spender_address[2:].lower().zfill(64)
-            if spender_address.startswith("0x")
-            else spender_address.lower().zfill(64)
-        )
-
-        # Combine function selector and parameters
-        return function_selector + owner_param + spender_param
-
-    def _encode_approve_data(self, spender_address: str, amount: str) -> str:
-        """Encode approve function call data for ERC20 contract."""
-        # Function selector for approve(address,uint256)
-        function_selector = "0x095ea7b3"
-
-        # Pad parameters to 32 bytes
-        spender_param = (
-            spender_address[2:].lower().zfill(64)
-            if spender_address.startswith("0x")
-            else spender_address.lower().zfill(64)
-        )
-        amount_int = int(amount)
-        amount_param = hex(amount_int)[2:].zfill(64)
-
-        # Combine function selector and parameters
-        return function_selector + spender_param + amount_param
-
-    async def _execute_transaction(
-        self, wallet, transaction_request: Dict[str, Any], chain_id: str
-    ) -> str:
-        """Execute a transaction using the CDP wallet."""
-        try:
-            # Extract transaction data
-            to_address = transaction_request.get("to")
-            value = transaction_request.get("value", "0x0")
-            data = transaction_request.get("data")
-
-            # Validate required fields
-            if not to_address:
-                raise ValueError("Transaction request missing 'to' address")
-
-            if not data:
-                raise ValueError("Transaction request missing 'data'")
-
-            # Convert value to int if hex
-            if isinstance(value, str) and value.startswith("0x"):
-                value_int = int(value, 16)
-            else:
-                value_int = int(value) if value else 0
-
-            # Send transaction
-            try:
-                tx = await wallet.send_transaction(
-                    to=to_address,
-                    value=str(value_int) if value_int > 0 else None,
-                    data=data,
-                    chain_id=chain_id,
-                )
-            except Exception as e:
-                self.logger.error("LiFi_Tx_Error: %s", str(e))
-                raise Exception(
-                    f"Error sending transaction through CDP wallet: {str(e)}"
-                )
-
-            return tx.hash
-
-        except Exception as e:
-            self.logger.error("LiFi_Tx_Error: %s", str(e))
-            raise Exception(f"Failed to execute transaction: {str(e)}")
+            self.logger.error(f"Token approval failed: {str(e)}")
+            raise Exception(f"Failed to approve token transfer: {str(e)}")
