@@ -50,7 +50,9 @@ async def get_skills(
             available_skills.append(skill_name)
             logger.info(f"[LiFi_Skills] Including skill: {skill_name} (state: {state})")
         else:
-            logger.info(f"[LiFi_Skills] Skipping private skill in public session: {skill_name}")
+            logger.info(
+                f"[LiFi_Skills] Skipping private skill in public session: {skill_name}"
+            )
 
     logger.info(f"[LiFi_Skills] Available skills: {available_skills}")
 
@@ -86,16 +88,22 @@ def get_lifi_skill(
 
     # Validate configuration
     if default_slippage < 0.001 or default_slippage > 0.5:
-        logger.warning(f"[LiFi_Skills] Invalid default_slippage: {default_slippage}, using 0.03")
+        logger.warning(
+            f"[LiFi_Skills] Invalid default_slippage: {default_slippage}, using 0.03"
+        )
         default_slippage = 0.03
 
     if max_execution_time < 60 or max_execution_time > 1800:
-        logger.warning(f"[LiFi_Skills] Invalid max_execution_time: {max_execution_time}, using 300")
+        logger.warning(
+            f"[LiFi_Skills] Invalid max_execution_time: {max_execution_time}, using 300"
+        )
         max_execution_time = 300
 
     if name == "token_quote":
         if cache_key not in _cache:
-            logger.info(f"[LiFi_Skills] Initializing token_quote skill with slippage: {default_slippage}")
+            logger.info(
+                f"[LiFi_Skills] Initializing token_quote skill with slippage: {default_slippage}"
+            )
             if allowed_chains:
                 logger.info(f"[LiFi_Skills] Allowed chains: {allowed_chains}")
 
@@ -105,14 +113,16 @@ def get_lifi_skill(
                 allowed_chains=allowed_chains,
             )
         return _cache[cache_key]
-        
+
     elif name == "token_execute":
         if cache_key not in _cache:
-            logger.info(f"[LiFi_Skills] Initializing token_execute skill")
-            logger.info(f"[LiFi_Skills] Configuration - slippage: {default_slippage}, max_time: {max_execution_time}")
+            logger.info("[LiFi_Skills] Initializing token_execute skill")
+            logger.info(
+                f"[LiFi_Skills] Configuration - slippage: {default_slippage}, max_time: {max_execution_time}"
+            )
             if allowed_chains:
                 logger.info(f"[LiFi_Skills] Allowed chains: {allowed_chains}")
-            
+
             # Log a warning about CDP wallet requirements
             logger.warning(
                 "[LiFi_Skills] token_execute requires a properly configured CDP wallet with sufficient funds"
@@ -125,7 +135,7 @@ def get_lifi_skill(
                 max_execution_time=max_execution_time,
             )
         return _cache[cache_key]
-        
+
     else:
         logger.error(f"[LiFi_Skills] Unknown LiFi skill requested: {name}")
         raise ValueError(f"Unknown LiFi skill: {name}")

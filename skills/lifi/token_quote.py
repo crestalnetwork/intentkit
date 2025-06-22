@@ -8,13 +8,13 @@ from abstracts.skill import SkillStoreABC
 from skills.lifi.base import LiFiBaseTool
 from skills.lifi.utils import (
     LIFI_API_URL,
-    validate_inputs,
     build_quote_params,
-    handle_api_response,
-    format_quote_basic_info,
-    format_fees_and_gas,
-    format_route_info,
     format_duration,
+    format_fees_and_gas,
+    format_quote_basic_info,
+    format_route_info,
+    handle_api_response,
+    validate_inputs,
 )
 
 
@@ -91,18 +91,24 @@ class TokenQuote(LiFiBaseTool):
 
             # Validate all inputs
             validation_error = validate_inputs(
-                from_chain, to_chain, from_token, to_token, 
-                from_amount, slippage, self.allowed_chains
+                from_chain,
+                to_chain,
+                from_token,
+                to_token,
+                from_amount,
+                slippage,
+                self.allowed_chains,
             )
             if validation_error:
                 return validation_error
 
-            self.logger.info(f"Requesting LiFi quote: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}")
+            self.logger.info(
+                f"Requesting LiFi quote: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
+            )
 
             # Build API parameters
             api_params = build_quote_params(
-                from_chain, to_chain, from_token, to_token, 
-                from_amount, slippage
+                from_chain, to_chain, from_token, to_token, from_amount, slippage
             )
 
             # Make API request
@@ -122,7 +128,9 @@ class TokenQuote(LiFiBaseTool):
                     return f"Error making API request: {str(e)}"
 
                 # Handle response
-                data, error = handle_api_response(response, from_token, from_chain, to_token, to_chain)
+                data, error = handle_api_response(
+                    response, from_token, from_chain, to_token, to_chain
+                )
                 if error:
                     self.logger.error("LiFi_API_Error: %s", error)
                     return error
@@ -139,21 +147,23 @@ class TokenQuote(LiFiBaseTool):
         try:
             # Get basic info
             info = format_quote_basic_info(data)
-            
+
             # Build result string
             result = "### Token Transfer Quote\n\n"
             result += f"**From:** {info['from_amount']} {info['from_token']} on {info['from_chain']}\n"
             result += f"**To:** {info['to_amount']} {info['to_token']} on {info['to_chain']}\n"
-            result += f"**Minimum Received:** {info['to_amount_min']} {info['to_token']}\n"
+            result += (
+                f"**Minimum Received:** {info['to_amount_min']} {info['to_token']}\n"
+            )
             result += f"**Bridge/Exchange:** {info['tool']}\n\n"
 
             # Add USD values if available
-            if info['from_amount_usd'] and info['to_amount_usd']:
+            if info["from_amount_usd"] and info["to_amount_usd"]:
                 result += f"**Value:** ${info['from_amount_usd']} → ${info['to_amount_usd']}\n\n"
 
             # Add execution time estimate
-            if info['execution_duration']:
-                time_str = format_duration(info['execution_duration'])
+            if info["execution_duration"]:
+                time_str = format_duration(info["execution_duration"])
                 result += f"**Estimated Time:** {time_str}\n\n"
 
             # Add fees and gas costs
@@ -169,12 +179,12 @@ class TokenQuote(LiFiBaseTool):
                 result += route_text + "\n"
 
             result += "---\n"
-            result += "*Use token_execute to perform this transfer with your CDP wallet*"
+            result += (
+                "*Use token_execute to perform this transfer with your CDP wallet*"
+            )
 
             return result
 
         except Exception as e:
             self.logger.error("Format_Error: %s", str(e))
             return f"Quote received but formatting failed: {str(e)}\nRaw data: {str(data)[:500]}..."
-
-

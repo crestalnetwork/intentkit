@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional, Type
 import asyncio
+from typing import Any, Dict, List, Optional, Type
 
 import httpx
 from langchain_core.runnables import RunnableConfig
@@ -11,17 +11,17 @@ from clients.cdp import get_cdp_client
 from skills.lifi.base import LiFiBaseTool
 from skills.lifi.token_quote import TokenQuote
 from skills.lifi.utils import (
-    LIFI_API_URL,
     ERC20_ABI,
-    validate_inputs,
+    LIFI_API_URL,
     build_quote_params,
+    convert_chain_to_id,
+    create_erc20_approve_data,
+    format_amount,
+    format_transaction_result,
     handle_api_response,
     is_native_token,
     prepare_transaction_params,
-    create_erc20_approve_data,
-    format_transaction_result,
-    convert_chain_to_id,
-    format_amount,
+    validate_inputs,
 )
 
 
@@ -45,7 +45,7 @@ class TokenExecuteInput(BaseModel):
     )
     slippage: float = Field(
         default=0.03,
-        description="Maximum acceptable slippage as a decimal (e.g., 0.03 for 3%). Default is 3%."
+        description="Maximum acceptable slippage as a decimal (e.g., 0.03 for 3%). Default is 3%.",
     )
 
 
@@ -116,8 +116,13 @@ class TokenExecute(LiFiBaseTool):
 
             # Validate all inputs
             validation_error = validate_inputs(
-                from_chain, to_chain, from_token, to_token, 
-                from_amount, slippage, self.allowed_chains
+                from_chain,
+                to_chain,
+                from_token,
+                to_token,
+                from_amount,
+                slippage,
+                self.allowed_chains,
             )
             if validation_error:
                 return validation_error
@@ -126,7 +131,9 @@ class TokenExecute(LiFiBaseTool):
             context = self.context_from_config(config)
             agent_id = context.agent.id
 
-            self.logger.info(f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}")
+            self.logger.info(
+                f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
+            )
 
             # Get CDP wallet provider
             cdp_wallet_provider = await self._get_cdp_wallet_provider(agent_id)
@@ -142,8 +149,14 @@ class TokenExecute(LiFiBaseTool):
             async with httpx.AsyncClient() as client:
                 # Step 1: Get quote
                 quote_data = await self._get_quote(
-                    client, from_chain, to_chain, from_token, to_token, 
-                    from_amount, slippage, from_address
+                    client,
+                    from_chain,
+                    to_chain,
+                    from_token,
+                    to_token,
+                    from_amount,
+                    slippage,
+                    from_address,
                 )
                 if isinstance(quote_data, str):  # Error message
                     return quote_data
@@ -175,11 +188,11 @@ class TokenExecute(LiFiBaseTool):
             cdp_client = await get_cdp_client(agent_id, self.skill_store)
             if not cdp_client:
                 return "CDP client not available. Please ensure your agent has CDP wallet configuration."
-            
+
             cdp_wallet_provider = await cdp_client.get_wallet_provider()
             if not cdp_wallet_provider:
                 return "CDP wallet provider not configured. Please set up your agent's CDP wallet first."
-            
+
             return cdp_wallet_provider
 
         except Exception as e:
@@ -187,20 +200,25 @@ class TokenExecute(LiFiBaseTool):
             return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
 
     async def _get_quote(
-        self, 
-        client: httpx.AsyncClient, 
-        from_chain: str, 
-        to_chain: str, 
-        from_token: str, 
+        self,
+        client: httpx.AsyncClient,
+        from_chain: str,
+        to_chain: str,
+        from_token: str,
         to_token: str,
-        from_amount: str, 
-        slippage: float, 
-        from_address: str
+        from_amount: str,
+        slippage: float,
+        from_address: str,
     ) -> Dict[str, Any]:
         """Get quote from LiFi API."""
         api_params = build_quote_params(
-            from_chain, to_chain, from_token, to_token, 
-            from_amount, slippage, from_address
+            from_chain,
+            to_chain,
+            from_token,
+            to_token,
+            from_amount,
+            slippage,
+            from_address,
         )
 
         try:
@@ -218,7 +236,9 @@ class TokenExecute(LiFiBaseTool):
             return f"Error making API request: {str(e)}"
 
         # Handle response
-        data, error = handle_api_response(response, from_token, from_chain, to_token, to_chain)
+        data, error = handle_api_response(
+            response, from_token, from_chain, to_token, to_chain
+        )
         if error:
             self.logger.error("LiFi_API_Error: %s", error)
             return error
@@ -231,9 +251,7 @@ class TokenExecute(LiFiBaseTool):
         return data
 
     async def _handle_token_approval(
-        self, 
-        wallet_provider, 
-        quote_data: Dict[str, Any]
+        self, wallet_provider, quote_data: Dict[str, Any]
     ) -> Optional[str]:
         """Handle ERC20 token approval if needed."""
         estimate = quote_data.get("estimate", {})
@@ -247,7 +265,7 @@ class TokenExecute(LiFiBaseTool):
             return None
 
         self.logger.info("Checking token approval for ERC20 transfer...")
-        
+
         try:
             return await self._check_and_set_allowance(
                 wallet_provider, from_token_address, approval_address, from_amount
@@ -257,20 +275,20 @@ class TokenExecute(LiFiBaseTool):
             raise Exception(f"Failed to approve token: {str(e)}")
 
     async def _execute_transfer_transaction(
-        self, 
-        wallet_provider, 
-        quote_data: Dict[str, Any]
+        self, wallet_provider, quote_data: Dict[str, Any]
     ) -> str:
         """Execute the main transfer transaction."""
         transaction_request = quote_data.get("transactionRequest")
-        
+
         try:
             tx_params = prepare_transaction_params(transaction_request)
-            self.logger.info(f"Sending transaction to {tx_params['to']} with value {tx_params['value']}")
+            self.logger.info(
+                f"Sending transaction to {tx_params['to']} with value {tx_params['value']}"
+            )
 
             # Send transaction
             tx_hash = wallet_provider.send_transaction(tx_params)
-            
+
             # Wait for confirmation
             receipt = wallet_provider.wait_for_transaction_receipt(tx_hash)
             if not receipt or receipt.get("status") == 0:
@@ -283,32 +301,36 @@ class TokenExecute(LiFiBaseTool):
             raise Exception(f"Failed to execute transaction: {str(e)}")
 
     async def _finalize_transfer(
-        self, 
-        client: httpx.AsyncClient, 
-        tx_hash: str, 
-        from_chain: str, 
-        to_chain: str, 
-        quote_data: Dict[str, Any]
+        self,
+        client: httpx.AsyncClient,
+        tx_hash: str,
+        from_chain: str,
+        to_chain: str,
+        quote_data: Dict[str, Any],
     ) -> str:
         """Finalize transfer and return formatted result."""
         self.logger.info(f"Transaction sent: {tx_hash}")
 
         # Get chain ID for explorer URL
         from_chain_id = convert_chain_to_id(from_chain)
-        
+
         # Extract token info for result formatting
         action = quote_data.get("action", {})
         from_token_info = action.get("fromToken", {})
         to_token_info = action.get("toToken", {})
-        
+
         token_info = {
             "symbol": f"{from_token_info.get('symbol', 'Unknown')} → {to_token_info.get('symbol', 'Unknown')}",
-            "amount": format_amount(action.get("fromAmount", "0"), from_token_info.get("decimals", 18))
+            "amount": format_amount(
+                action.get("fromAmount", "0"), from_token_info.get("decimals", 18)
+            ),
         }
 
         # Format transaction result with explorer URL
-        transaction_result = format_transaction_result(tx_hash, from_chain_id, token_info)
-        
+        transaction_result = format_transaction_result(
+            tx_hash, from_chain_id, token_info
+        )
+
         # Format quote details
         formatted_quote = self._format_quote_result(quote_data)
 
@@ -318,7 +340,7 @@ class TokenExecute(LiFiBaseTool):
             status_result = await self._monitor_transfer_status(
                 client, tx_hash, from_chain, to_chain
             )
-            
+
             return f"""**Token Transfer Executed Successfully**
 
 {transaction_result}
@@ -336,32 +358,34 @@ class TokenExecute(LiFiBaseTool):
 """
 
     async def _monitor_transfer_status(
-        self, 
-        client: httpx.AsyncClient, 
-        tx_hash: str, 
-        from_chain: str, 
-        to_chain: str
+        self, client: httpx.AsyncClient, tx_hash: str, from_chain: str, to_chain: str
     ) -> str:
         """Monitor the status of a cross-chain transfer."""
         max_attempts = min(self.max_execution_time // 10, 30)  # Check every 10 seconds
         attempt = 0
-        
+
         while attempt < max_attempts:
             try:
                 status_response = await client.get(
                     f"{self.api_url}/status",
-                    params={"txHash": tx_hash, "fromChain": from_chain, "toChain": to_chain},
+                    params={
+                        "txHash": tx_hash,
+                        "fromChain": from_chain,
+                        "toChain": to_chain,
+                    },
                     timeout=10.0,
                 )
-                
+
                 if status_response.status_code == 200:
                     status_data = status_response.json()
                     status = status_data.get("status", "UNKNOWN")
-                    
+
                     if status == "DONE":
                         receiving_tx = status_data.get("receiving", {}).get("txHash")
                         if receiving_tx:
-                            return f"**Status:** Complete (destination tx: {receiving_tx})"
+                            return (
+                                f"**Status:** Complete (destination tx: {receiving_tx})"
+                            )
                         else:
                             return "**Status:** Complete"
                     elif status == "FAILED":
@@ -371,14 +395,16 @@ class TokenExecute(LiFiBaseTool):
                         pass
                     else:
                         return f"**Status:** {status}"
-                        
+
             except Exception as e:
-                self.logger.warning(f"Status check failed (attempt {attempt + 1}): {str(e)}")
-            
+                self.logger.warning(
+                    f"Status check failed (attempt {attempt + 1}): {str(e)}"
+                )
+
             attempt += 1
             if attempt < max_attempts:
                 await asyncio.sleep(10)  # Wait 10 seconds before next check
-        
+
         return "**Status:** Processing (monitoring timed out, but transfer may still complete)"
 
     async def _check_and_set_allowance(
@@ -401,35 +427,41 @@ class TokenExecute(LiFiBaseTool):
                     contract_address=token_address,
                     abi=ERC20_ABI,
                     function_name="allowance",
-                    args=[wallet_address, approval_address]
+                    args=[wallet_address, approval_address],
                 )
-                
+
                 required_amount = int(amount)
-                
+
                 if current_allowance >= required_amount:
-                    self.logger.info(f"Sufficient allowance already exists: {current_allowance}")
+                    self.logger.info(
+                        f"Sufficient allowance already exists: {current_allowance}"
+                    )
                     return None  # No approval needed
-                    
+
             except Exception as e:
                 self.logger.warning(f"Could not check current allowance: {str(e)}")
                 # Continue with approval anyway
 
             # Set approval for the required amount
-            self.logger.info(f"Setting token approval for {amount} tokens to {approval_address}")
-            
+            self.logger.info(
+                f"Setting token approval for {amount} tokens to {approval_address}"
+            )
+
             # Create approval transaction
             approve_data = create_erc20_approve_data(approval_address, amount)
 
             # Send approval transaction
-            approval_tx_hash = wallet_provider.send_transaction({
-                "to": token_address,
-                "data": approve_data,
-                "value": 0,
-            })
+            approval_tx_hash = wallet_provider.send_transaction(
+                {
+                    "to": token_address,
+                    "data": approve_data,
+                    "value": 0,
+                }
+            )
 
             # Wait for approval transaction confirmation
             receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash)
-            
+
             if not receipt or receipt.get("status") == 0:
                 raise Exception(f"Approval transaction failed: {approval_tx_hash}")
 

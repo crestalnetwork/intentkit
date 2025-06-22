@@ -5,9 +5,9 @@ Common utilities and helper functions for LiFi token transfer skills.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
+
 import httpx
 from web3 import Web3
-
 
 # Constants
 LIFI_API_URL = "https://li.quest/v1"
@@ -17,7 +17,7 @@ DUMMY_ADDRESS = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0"  # For quotes
 CHAIN_NAMES = {
     # Mainnet chains
     1: "Ethereum",
-    10: "Optimism", 
+    10: "Optimism",
     56: "BNB Chain",
     100: "Gnosis Chain",
     137: "Polygon",
@@ -29,11 +29,10 @@ CHAIN_NAMES = {
     324: "zkSync Era",
     1101: "Polygon zkEVM",
     534352: "Scroll",
-    
     # Testnet chains
     11155111: "Ethereum Sepolia",
     84532: "Base Sepolia",
-    421614: "Arbitrum Sepolia", 
+    421614: "Arbitrum Sepolia",
     11155420: "Optimism Sepolia",
     80001: "Polygon Mumbai",
     5: "Ethereum Goerli",  # Legacy testnet
@@ -46,22 +45,22 @@ ERC20_ABI = [
         "constant": True,
         "inputs": [
             {"name": "_owner", "type": "address"},
-            {"name": "_spender", "type": "address"}
+            {"name": "_spender", "type": "address"},
         ],
         "name": "allowance",
         "outputs": [{"name": "", "type": "uint256"}],
-        "type": "function"
+        "type": "function",
     },
     {
         "constant": False,
         "inputs": [
             {"name": "_spender", "type": "address"},
-            {"name": "_value", "type": "uint256"}
+            {"name": "_value", "type": "uint256"},
         ],
         "name": "approve",
         "outputs": [{"name": "", "type": "bool"}],
-        "type": "function"
-    }
+        "type": "function",
+    },
 ]
 
 
@@ -72,11 +71,11 @@ def validate_inputs(
     to_token: str,
     from_amount: str,
     slippage: float,
-    allowed_chains: Optional[List[str]] = None
+    allowed_chains: Optional[List[str]] = None,
 ) -> Optional[str]:
     """
     Validate all input parameters for LiFi operations.
-    
+
     Returns:
         None if valid, error message string if invalid
     """
@@ -89,7 +88,7 @@ def validate_inputs(
         convert_chain_to_id(from_chain)
     except ValueError as e:
         return f"Invalid source chain: {str(e)}"
-    
+
     try:
         convert_chain_to_id(to_chain)
     except ValueError as e:
@@ -116,18 +115,18 @@ def validate_inputs(
 def format_amount(amount: str, decimals: int) -> str:
     """
     Format amount from wei/smallest unit to human readable.
-    
+
     Args:
         amount: Amount in smallest unit (wei/satoshi/etc)
         decimals: Number of decimal places for the token
-        
+
     Returns:
         Formatted amount string
     """
     try:
         amount_int = int(amount)
-        amount_float = amount_int / (10 ** decimals)
-        
+        amount_float = amount_int / (10**decimals)
+
         # Format with appropriate precision
         if amount_float >= 1000:
             return f"{amount_float:,.2f}"
@@ -144,10 +143,10 @@ def format_amount(amount: str, decimals: int) -> str:
 def get_chain_name(chain_id: int) -> str:
     """
     Get human readable chain name from chain ID.
-    
+
     Args:
         chain_id: Blockchain chain ID
-        
+
     Returns:
         Human readable chain name
     """
@@ -157,10 +156,10 @@ def get_chain_name(chain_id: int) -> str:
 def format_duration(duration: int) -> str:
     """
     Format duration in seconds to human readable format.
-    
+
     Args:
         duration: Duration in seconds
-        
+
     Returns:
         Formatted duration string
     """
@@ -174,14 +173,20 @@ def format_duration(duration: int) -> str:
         return f"{hours} hours {minutes} minutes"
 
 
-def handle_api_response(response: httpx.Response, from_token: str, from_chain: str, to_token: str, to_chain: str) -> Tuple[Optional[Dict], Optional[str]]:
+def handle_api_response(
+    response: httpx.Response,
+    from_token: str,
+    from_chain: str,
+    to_token: str,
+    to_chain: str,
+) -> Tuple[Optional[Dict], Optional[str]]:
     """
     Handle LiFi API response and return data or error message.
-    
+
     Args:
         response: HTTP response from LiFi API
         from_token, from_chain, to_token, to_chain: Transfer parameters for error messages
-        
+
     Returns:
         Tuple of (data, error_message). One will be None.
     """
@@ -190,10 +195,13 @@ def handle_api_response(response: httpx.Response, from_token: str, from_chain: s
             error_data = response.json()
             error_message = error_data.get("message", response.text)
             return None, f"Invalid request: {error_message}"
-        except:
+        except (ValueError, TypeError, AttributeError):
             return None, f"Invalid request: {response.text}"
     elif response.status_code == 404:
-        return None, f"No route found for transfer from {from_token} on {from_chain} to {to_token} on {to_chain}. Try different tokens or chains."
+        return (
+            None,
+            f"No route found for transfer from {from_token} on {from_chain} to {to_token} on {to_chain}. Try different tokens or chains.",
+        )
     elif response.status_code != 200:
         return None, f"LiFi API error ({response.status_code}): {response.text}"
 
@@ -202,27 +210,27 @@ def handle_api_response(response: httpx.Response, from_token: str, from_chain: s
         if not isinstance(data, dict):
             return None, "Invalid response format from LiFi API."
         return data, None
-    except Exception as e:
+    except Exception:
         return None, "Invalid response from LiFi API. Please try again."
 
 
 def convert_chain_to_id(chain: str) -> int:
     """
     Convert chain identifier to numeric chain ID.
-    
+
     Args:
         chain: Chain identifier (can be name, key, or numeric ID as string)
-        
+
     Returns:
         Numeric chain ID
-        
+
     Raises:
         ValueError: If chain identifier is not recognized
     """
     # If it's already a number, return it
     if chain.isdigit():
         return int(chain)
-    
+
     # Chain name/key to ID mapping
     chain_mapping = {
         # Mainnet chains
@@ -262,7 +270,6 @@ def convert_chain_to_id(chain: str) -> int:
         "1101": 1101,
         "scroll": 534352,
         "534352": 534352,
-        
         # Testnet chains
         "ethereum-sepolia": 11155111,
         "sepolia": 11155111,
@@ -277,22 +284,22 @@ def convert_chain_to_id(chain: str) -> int:
         "mumbai": 80001,
         "80001": 80001,
     }
-    
+
     chain_lower = chain.lower()
     if chain_lower in chain_mapping:
         return chain_mapping[chain_lower]
-    
+
     raise ValueError(f"Unsupported chain identifier: {chain}")
 
 
 def convert_amount_to_wei(amount: str, token_symbol: str = "ETH") -> str:
     """
     Convert human-readable amount to wei format for LiFi API.
-    
+
     Args:
         amount: Amount in human readable format (e.g., "0.0015")
         token_symbol: Token symbol to determine decimals
-        
+
     Returns:
         Amount in wei format as string
     """
@@ -307,13 +314,13 @@ def convert_amount_to_wei(amount: str, token_symbol: str = "ETH") -> str:
         "BNB": 18,
         "AVAX": 18,
     }
-    
+
     decimals = token_decimals.get(token_symbol.upper(), 18)
-    
+
     try:
         # Convert string to float, then to wei
         amount_float = float(amount)
-        amount_wei = int(amount_float * (10 ** decimals))
+        amount_wei = int(amount_float * (10**decimals))
         return str(amount_wei)
     except (ValueError, TypeError):
         # If conversion fails, return original amount
@@ -327,25 +334,25 @@ def build_quote_params(
     to_token: str,
     from_amount: str,
     slippage: float,
-    from_address: Optional[str] = None
+    from_address: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Build parameters for LiFi quote API request.
-    
+
     Args:
         from_chain, to_chain, from_token, to_token, from_amount: Transfer parameters
         slippage: Slippage tolerance
         from_address: Wallet address (uses dummy if None)
-        
+
     Returns:
         Dictionary of API parameters
-        
+
     Raises:
         ValueError: If chain identifiers are not recognized
     """
     # Convert amount to wei format for API
     wei_amount = convert_amount_to_wei(from_amount, from_token)
-    
+
     return {
         "fromChain": convert_chain_to_id(from_chain),
         "toChain": convert_chain_to_id(to_chain),
@@ -360,16 +367,16 @@ def build_quote_params(
 def is_native_token(token_address: str) -> bool:
     """
     Check if token address represents a native token (ETH, MATIC, etc).
-    
+
     Args:
         token_address: Token contract address
-        
+
     Returns:
         True if native token, False if ERC20
     """
     return (
-        token_address == "0x0000000000000000000000000000000000000000" 
-        or token_address == "" 
+        token_address == "0x0000000000000000000000000000000000000000"
+        or token_address == ""
         or token_address.lower() == "0x0"
     )
 
@@ -377,13 +384,13 @@ def is_native_token(token_address: str) -> bool:
 def prepare_transaction_params(transaction_request: Dict[str, Any]) -> Dict[str, Any]:
     """
     Prepare transaction parameters for CDP wallet provider.
-    
+
     Args:
         transaction_request: Transaction request from LiFi API
-        
+
     Returns:
         Formatted transaction parameters
-        
+
     Raises:
         Exception: If required parameters are missing
     """
@@ -408,26 +415,26 @@ def prepare_transaction_params(transaction_request: Dict[str, Any]) -> Dict[str,
 def format_quote_basic_info(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Extract and format basic quote information.
-    
+
     Args:
         data: Quote response from LiFi API
-        
+
     Returns:
         Dictionary with formatted basic info
     """
     action = data.get("action", {})
     estimate = data.get("estimate", {})
-    
+
     from_token_info = action.get("fromToken", {})
     to_token_info = action.get("toToken", {})
-    
+
     from_amount = action.get("fromAmount", "0")
     to_amount = estimate.get("toAmount", "0")
     to_amount_min = estimate.get("toAmountMin", "0")
-    
+
     from_token_decimals = from_token_info.get("decimals", 18)
     to_token_decimals = to_token_info.get("decimals", 18)
-    
+
     return {
         "from_token": from_token_info.get("symbol", "Unknown"),
         "to_token": to_token_info.get("symbol", "Unknown"),
@@ -446,25 +453,25 @@ def format_quote_basic_info(data: Dict[str, Any]) -> Dict[str, Any]:
 def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
     """
     Format fee and gas cost information from quote data.
-    
+
     Args:
         data: Quote response from LiFi API
-        
+
     Returns:
         Tuple of (fees_text, gas_text)
     """
     estimate = data.get("estimate", {})
-    
+
     # Extract gas and fee costs
     gas_costs = estimate.get("gasCosts", [])
     fee_costs = []
-    
+
     # Collect fee information from included steps
     for step in data.get("includedSteps", []):
         step_fees = step.get("estimate", {}).get("feeCosts", [])
         if step_fees:
             fee_costs.extend(step_fees)
-    
+
     # Format fees
     fees_text = ""
     if fee_costs:
@@ -479,18 +486,24 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
             fee_usd = fee.get("amountUSD", "0")
 
             fee_amount_formatted = format_amount(fee_amount, fee_decimals)
-            percentage_str = f" ({float(fee_percentage) * 100:.3f}%)" if fee_percentage != "0" else ""
-            fees_text += f"- {fee_name}: {fee_amount_formatted} {fee_token}{percentage_str}"
-            
+            percentage_str = (
+                f" ({float(fee_percentage) * 100:.3f}%)"
+                if fee_percentage != "0"
+                else ""
+            )
+            fees_text += (
+                f"- {fee_name}: {fee_amount_formatted} {fee_token}{percentage_str}"
+            )
+
             if fee_usd and float(fee_usd) > 0:
                 fees_text += f" (${fee_usd})"
                 total_fee_usd += float(fee_usd)
-            
+
             fees_text += "\n"
 
         if total_fee_usd > 0:
             fees_text += f"- **Total Fees:** ~${total_fee_usd:.4f}\n"
-    
+
     # Format gas costs
     gas_text = ""
     if gas_costs:
@@ -505,56 +518,56 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
 
             gas_amount_formatted = format_amount(gas_amount, gas_decimals)
             gas_text += f"- {gas_type}: {gas_amount_formatted} {gas_token}"
-            
+
             if gas_usd and float(gas_usd) > 0:
                 gas_text += f" (${gas_usd})"
                 total_gas_usd += float(gas_usd)
-            
+
             gas_text += "\n"
 
         if total_gas_usd > 0:
             gas_text += f"- **Total Gas:** ~${total_gas_usd:.4f}\n"
-    
+
     return fees_text, gas_text
 
 
 def format_route_info(data: Dict[str, Any]) -> str:
     """
     Format routing information from quote data.
-    
+
     Args:
         data: Quote response from LiFi API
-        
+
     Returns:
         Formatted route information text
     """
     included_steps = data.get("includedSteps", [])
     if len(included_steps) <= 1:
         return ""
-    
+
     route_text = "**Route:**\n"
     for i, step in enumerate(included_steps, 1):
         step_tool = step.get("tool", "Unknown")
         step_type = step.get("type", "unknown")
         route_text += f"{i}. {step_tool} ({step_type})\n"
-    
+
     return route_text
 
 
 def create_erc20_approve_data(spender_address: str, amount: str) -> str:
     """
     Create encoded data for ERC20 approve function call.
-    
+
     Args:
         spender_address: Address to approve
         amount: Amount to approve
-        
+
     Returns:
         Encoded function call data
     """
     contract = Web3().eth.contract(
-        address=Web3.to_checksum_address("0x0000000000000000000000000000000000000000"), 
-        abi=ERC20_ABI
+        address=Web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
+        abi=ERC20_ABI,
     )
     return contract.encode_abi("approve", [spender_address, int(amount)])
 
@@ -562,81 +575,82 @@ def create_erc20_approve_data(spender_address: str, amount: str) -> str:
 def get_api_error_message(response: httpx.Response) -> str:
     """
     Extract error message from API response.
-    
+
     Args:
         response: HTTP response
-        
+
     Returns:
         Formatted error message
     """
     try:
         error_data = response.json()
         return error_data.get("message", response.text)
-    except:
+    except (ValueError, TypeError, AttributeError):
         return response.text
 
 
 def get_explorer_url(chain_id: int, tx_hash: str) -> str:
     """
     Generate blockchain explorer URL for a transaction.
-    
+
     Args:
         chain_id: Blockchain chain ID
         tx_hash: Transaction hash
-        
+
     Returns:
         Explorer URL for the transaction
     """
     # Explorer URLs for different chains
     explorers = {
-        1: "https://etherscan.io/tx/",           # Ethereum
+        1: "https://etherscan.io/tx/",  # Ethereum
         10: "https://optimistic.etherscan.io/tx/",  # Optimism
-        56: "https://bscscan.com/tx/",          # BSC
-        100: "https://gnosisscan.io/tx/",       # Gnosis
-        137: "https://polygonscan.com/tx/",     # Polygon
-        250: "https://ftmscan.com/tx/",         # Fantom
-        8453: "https://basescan.org/tx/",       # Base
-        42161: "https://arbiscan.io/tx/",       # Arbitrum
-        43114: "https://snowtrace.io/tx/",      # Avalanche
-        59144: "https://lineascan.build/tx/",   # Linea
+        56: "https://bscscan.com/tx/",  # BSC
+        100: "https://gnosisscan.io/tx/",  # Gnosis
+        137: "https://polygonscan.com/tx/",  # Polygon
+        250: "https://ftmscan.com/tx/",  # Fantom
+        8453: "https://basescan.org/tx/",  # Base
+        42161: "https://arbiscan.io/tx/",  # Arbitrum
+        43114: "https://snowtrace.io/tx/",  # Avalanche
+        59144: "https://lineascan.build/tx/",  # Linea
         324: "https://explorer.zksync.io/tx/",  # zkSync Era
-        1101: "https://zkevm.polygonscan.com/tx/", # Polygon zkEVM
-        534352: "https://scrollscan.com/tx/",   # Scroll
-        
+        1101: "https://zkevm.polygonscan.com/tx/",  # Polygon zkEVM
+        534352: "https://scrollscan.com/tx/",  # Scroll
         # Testnet explorers
-        11155111: "https://sepolia.etherscan.io/tx/",     # Ethereum Sepolia
-        84532: "https://sepolia.basescan.org/tx/",        # Base Sepolia
-        421614: "https://sepolia.arbiscan.io/tx/",        # Arbitrum Sepolia
-        11155420: "https://sepolia-optimism.etherscan.io/tx/", # Optimism Sepolia
-        80001: "https://mumbai.polygonscan.com/tx/",      # Polygon Mumbai
+        11155111: "https://sepolia.etherscan.io/tx/",  # Ethereum Sepolia
+        84532: "https://sepolia.basescan.org/tx/",  # Base Sepolia
+        421614: "https://sepolia.arbiscan.io/tx/",  # Arbitrum Sepolia
+        11155420: "https://sepolia-optimism.etherscan.io/tx/",  # Optimism Sepolia
+        80001: "https://mumbai.polygonscan.com/tx/",  # Polygon Mumbai
     }
-    
-    base_url = explorers.get(chain_id, f"https://etherscan.io/tx/")
+
+    base_url = explorers.get(chain_id, "https://etherscan.io/tx/")
     return f"{base_url}{tx_hash}"
 
 
-def format_transaction_result(tx_hash: str, chain_id: int, token_info: dict = None) -> str:
+def format_transaction_result(
+    tx_hash: str, chain_id: int, token_info: dict = None
+) -> str:
     """
     Format transaction result with explorer link.
-    
+
     Args:
         tx_hash: Transaction hash
         chain_id: Chain ID where transaction was executed
         token_info: Optional token information for context
-        
+
     Returns:
         Formatted transaction result message
     """
     explorer_url = get_explorer_url(chain_id, tx_hash)
     chain_name = get_chain_name(chain_id)
-    
-    result = f"Transaction successful!\n"
+
+    result = "Transaction successful!\n"
     result += f"Transaction Hash: {tx_hash}\n"
     result += f"Network: {chain_name}\n"
     result += f"Explorer: {explorer_url}\n"
-    
+
     if token_info:
         result += f"Token: {token_info.get('symbol', 'Unknown')}\n"
         result += f"Amount: {token_info.get('amount', 'Unknown')}\n"
-    
-    return result 
+
+    return result
