@@ -288,6 +288,8 @@ class SkillTable(Base):
     name = Column(String, primary_key=True)
     enabled = Column(Boolean, nullable=False, default=True)
     category = Column(String, nullable=False)
+    config_name = Column(String, nullable=True)
+    price_level = Column(Integer, nullable=True)
     price = Column(Numeric(22, 4), nullable=False, default=1)
     price_self_key = Column(Numeric(22, 4), nullable=False, default=1)
     rate_limit_count = Column(Integer, nullable=True)
@@ -319,6 +321,10 @@ class Skill(BaseModel):
     name: Annotated[str, Field(description="Name of the skill")]
     enabled: Annotated[bool, Field(description="Is this skill enabled?")]
     category: Annotated[str, Field(description="Category of the skill")]
+    config_name: Annotated[Optional[str], Field(description="Config name of the skill")]
+    price_level: Annotated[
+        Optional[int], Field(description="Price level for this skill")
+    ]
     price: Annotated[
         Decimal, Field(description="Price for this skill", default=Decimal("1"))
     ]
@@ -383,3 +389,28 @@ class Skill(BaseModel):
             await redis.set(cache_key, skill_model.model_dump_json(), ex=cache_ttl)
 
             return skill_model
+
+    @staticmethod
+    async def get_by_config_name(category: str, config_name: str) -> Optional["Skill"]:
+        """Get a skill by category and config_name.
+
+        Args:
+            category: Category of the skill
+            config_name: Config name of the skill
+
+        Returns:
+            Skill: The skill if found, None otherwise
+        """
+        async with get_session() as session:
+            # Query the database for the skill
+            stmt = select(SkillTable).where(
+                SkillTable.category == category, SkillTable.config_name == config_name
+            )
+            skill = await session.scalar(stmt)
+
+            # If skill doesn't exist, return None
+            if not skill:
+                return None
+
+            # Convert to Skill model
+            return Skill.model_validate(skill)

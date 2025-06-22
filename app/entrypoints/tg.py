@@ -9,7 +9,8 @@ from app.config.config import config
 from app.services.tg.bot import pool
 from app.services.tg.bot.pool import BotPool, bot_by_token
 from app.services.tg.utils.cleanup import clean_token_str
-from models.agent import Agent, AgentData, AgentTable
+from models.agent import Agent, AgentTable
+from models.agent_data import AgentData
 from models.db import get_session, init_db
 from models.redis import init_redis
 

@@ -4,13 +4,23 @@ FastAPI endpoints for generating agent schemas from natural language prompts.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, validator
 
 from app.admin.generator import generate_validated_agent_schema
-from app.admin.generator.llm_logger import LLMLogger, create_llm_logger
+from app.admin.generator.conversation_service import (
+    get_conversation_history,
+    get_project_metadata,
+    get_projects_by_user,
+)
+from app.admin.generator.llm_logger import (
+    LLMLogger,
+    create_llm_logger,
+)
+from app.admin.generator.utils import generate_tags_from_nation_api
 from models.agent import AgentUpdate
 
 logger = logging.getLogger(__name__)
@@ -37,8 +47,8 @@ class AgentGenerateRequest(BaseModel):
         description="Existing agent to update. If provided, the LLM will make minimal changes to this agent based on the prompt. If null, a new agent will be created.",
     )
 
-    user_id: Optional[str] = Field(
-        None, description="User ID for logging and rate limiting purposes"
+    user_id: str = Field(
+        ..., description="User ID for logging and rate limiting purposes"
     )
 
     project_id: Optional[str] = Field(
@@ -58,6 +68,14 @@ class AgentGenerateRequest(BaseModel):
             )
         return v
 
+    @validator("user_id")
+    def validate_user_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError(
+                "User ID is required and cannot be empty. Please provide a valid user identifier."
+            )
+        return v.strip()
+
 
 class AgentGenerateResponse(BaseModel):
     """Response model for agent generation."""
@@ -68,6 +86,61 @@ class AgentGenerateResponse(BaseModel):
 
     summary: str = Field(
         ..., description="Human-readable summary of the generated agent"
+    )
+
+    tags: List[Dict[str, int]] = Field(
+        default_factory=list,
+        description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]",
+    )
+
+    autonomous_tasks: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of autonomous tasks generated for the agent",
+    )
+
+    activated_skills: List[str] = Field(
+        default_factory=list,
+        description="List of skills that were activated based on the prompt",
+    )
+
+
+class GenerationsListRequest(BaseModel):
+    """Request model for getting generations list."""
+
+    user_id: Optional[str] = Field(None, description="User ID to filter generations")
+
+    limit: int = Field(
+        default=50,
+        description="Maximum number of recent projects to return",
+        ge=1,
+        le=100,
+    )
+
+
+class GenerationsListResponse(BaseModel):
+    """Response model for generations list."""
+
+    projects: List[Dict[str, Any]] = Field(
+        ..., description="List of recent projects with their conversation history"
+    )
+
+
+class GenerationDetailResponse(BaseModel):
+    """Response model for single generation detail."""
+
+    project_id: str = Field(..., description="Project ID")
+    user_id: Optional[str] = Field(None, description="User ID who owns this project")
+    created_at: Optional[str] = Field(None, description="Project creation timestamp")
+    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    message_count: int = Field(..., description="Number of messages in conversation")
+    last_message: Optional[Dict[str, Any]] = Field(
+        None, description="Last message in conversation"
+    )
+    first_message: Optional[Dict[str, Any]] = Field(
+        None, description="First message in conversation"
+    )
+    conversation_history: List[Dict[str, Any]] = Field(
+        ..., description="Full conversation history"
     )
 
 
@@ -82,22 +155,36 @@ async def generate_agent(
     """Generate an agent schema from a natural language prompt.
 
     Converts plain English descriptions into complete, validated agent configurations.
-    Automatically identifies required skills, sets up configurations, and ensures
-    everything works correctly with intelligent error correction.
+    Automatically identifies required skills, sets up configurations, detects autonomous
+    task patterns, and ensures everything works correctly with intelligent error correction.
+
+    **Autonomous Task Detection:**
+    The API can automatically detect scheduling patterns in prompts like:
+    - "Buy 0.1 ETH every hour" → Creates 60-minute autonomous task with CDP trade skill
+    - "Check portfolio daily" → Creates 24-hour autonomous task with portfolio skills
+    - "Post tweet every 30 minutes" → Creates 30-minute autonomous task with Twitter skill
 
     **Request Body:**
-    * `prompt` - Natural language description of the agent's desired capabilities
+    * `prompt` - Natural language description of the agent's desired capabilities and schedule
     * `existing_agent` - Optional existing agent to update (preserves current setup while adding capabilities)
-    * `user_id` - Optional user ID for logging and rate limiting
+    * `user_id` - Required user ID for logging and rate limiting
     * `project_id` - Optional project ID for conversation history
 
     **Returns:**
-    * `AgentGenerateResponse` - Contains agent schema, project ID, and human-readable summary
+    * `AgentGenerateResponse` - Contains agent schema, autonomous tasks, activated skills, project ID, and summary
+
+    **Response Fields:**
+    * `agent` - Complete agent schema with skills and autonomous configurations
+    * `autonomous_tasks` - List of autonomous tasks detected and configured
+    * `activated_skills` - List of skills that were activated based on the prompt
+    * `project_id` - Project ID for conversation tracking
+    * `summary` - Human-readable summary of the generated agent
+    * `tags` - Generated tags for categorization
 
     **Raises:**
     * `HTTPException`:
-        - 400: Invalid prompt format or length
-        - 500: Agent generation failed after retries
+      - 400: Invalid request (missing user_id, invalid prompt format or length)
+      - 500: Agent generation failed after retries
     """
     # Create or reuse LLM logger based on project_id
     if request.project_id:
@@ -135,6 +222,9 @@ async def generate_agent(
             llm_logger=llm_logger,
         )
 
+        # Generate tags using Nation API
+        tags = await generate_tags_from_nation_api(agent_schema, request.prompt)
+
         logger.info(
             f"Agent generation completed successfully (project_id={project_id})"
         )
@@ -147,8 +237,34 @@ async def generate_agent(
                 f"New agent schema generated successfully with validation (project_id={project_id})"
             )
 
+        # Extract autonomous tasks and activated skills from the schema
+        autonomous_tasks = agent_schema.get("autonomous", [])
+        activated_skills = list(agent_schema.get("skills", {}).keys())
+
+        # Enhanced logging for autonomous functionality
+        if autonomous_tasks:
+            logger.info(f" Autonomous tasks detected: {len(autonomous_tasks)} tasks")
+            for task in autonomous_tasks:
+                schedule_info = (
+                    f"{task.get('minutes')} minutes"
+                    if task.get("minutes")
+                    else task.get("cron", "unknown")
+                )
+                logger.info(f"  '{task.get('name', 'Unnamed Task')}' - {schedule_info}")
+        else:
+            logger.info(" No autonomous tasks in generated agent")
+
+        logger.info(
+            f" Activated skills: {len(activated_skills)} skills - {activated_skills}"
+        )
+
         return AgentGenerateResponse(
-            agent=agent_schema, project_id=project_id, summary=summary
+            agent=agent_schema,
+            project_id=project_id,
+            summary=summary,
+            tags=tags,
+            autonomous_tasks=autonomous_tasks,
+            activated_skills=activated_skills,
         )
 
     except Exception as e:
@@ -163,5 +279,136 @@ async def generate_agent(
                 "error": "AgentGenerationFailed",
                 "msg": f"Failed to generate valid agent: {str(e)}",
                 "project_id": project_id,
+            },
+        )
+
+
+@router.get(
+    "/generations",
+    summary="Get Generations List by User",
+    response_model=GenerationsListResponse,
+)
+async def get_generations(
+    user_id: Optional[str] = None, limit: int = 50
+) -> GenerationsListResponse:
+    """Get all projects/generations for a user.
+
+    **Query Parameters:**
+    * `user_id` - Optional user ID to filter projects
+    * `limit` - Maximum number of recent projects to return (default: 50, max: 100)
+
+    **Returns:**
+    * `GenerationsListResponse` - Contains list of projects with their conversation history
+
+    **Raises:**
+    * `HTTPException`:
+      - 400: Invalid parameters
+      - 500: Failed to retrieve generations
+    """
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    logger.info(f"Getting generations for user_id={user_id}, limit={limit}")
+
+    try:
+        # Get recent projects with their conversation history
+        projects = await get_projects_by_user(user_id=user_id, limit=limit)
+
+        logger.info(f"Retrieved {len(projects)} projects for user {user_id}")
+        return GenerationsListResponse(projects=projects)
+
+    except Exception as e:
+        logger.error(f"Failed to retrieve generations: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "GenerationsRetrievalFailed",
+                "msg": f"Failed to retrieve generations: {str(e)}",
+            },
+        )
+
+
+@router.get(
+    "/generations/{project_id}",
+    summary="Get Generation Detail by Project ID",
+    response_model=GenerationDetailResponse,
+)
+async def get_generation_detail(
+    project_id: str, user_id: Optional[str] = None
+) -> GenerationDetailResponse:
+    """Get specific project conversation history.
+
+    **Path Parameters:**
+    * `project_id` - Project ID to get conversation history for
+
+    **Query Parameters:**
+    * `user_id` - Optional user ID for access validation
+
+    **Returns:**
+    * `GenerationDetailResponse` - Contains full conversation history for the project
+
+    **Raises:**
+    * `HTTPException`:
+      - 404: Project not found or access denied
+      - 500: Failed to retrieve generation detail
+    """
+    logger.info(
+        f"Getting generation detail for project_id={project_id}, user_id={user_id}"
+    )
+
+    try:
+        # Get conversation history for the specific project
+        try:
+            conversation_history = await get_conversation_history(
+                project_id=project_id,
+                user_id=user_id,  # Used for additional access validation
+            )
+        except ValueError as ve:
+            logger.warning(f"Access denied or project not found: {ve}")
+            raise HTTPException(status_code=404, detail=str(ve))
+
+        if not conversation_history:
+            logger.warning(f"No conversation history found for project {project_id}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"No conversation history found for project {project_id}",
+            )
+
+        # Get project metadata for additional information
+        project_metadata = await get_project_metadata(project_id)
+
+        logger.info(
+            f"Retrieved conversation with {len(conversation_history)} messages for project {project_id}"
+        )
+
+        return GenerationDetailResponse(
+            project_id=project_id,
+            user_id=project_metadata.get("user_id") if project_metadata else user_id,
+            created_at=datetime.fromtimestamp(
+                project_metadata.get("created_at")
+            ).isoformat()
+            if project_metadata and project_metadata.get("created_at")
+            else None,
+            last_activity=datetime.fromtimestamp(
+                project_metadata.get("last_activity")
+            ).isoformat()
+            if project_metadata and project_metadata.get("last_activity")
+            else None,
+            message_count=len(conversation_history),
+            last_message=conversation_history[-1] if conversation_history else None,
+            first_message=conversation_history[0] if conversation_history else None,
+            conversation_history=conversation_history,
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"Failed to retrieve generation detail: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "GenerationDetailRetrievalFailed",
+                "msg": f"Failed to retrieve generation detail: {str(e)}",
             },
         )

@@ -15,39 +15,44 @@
       "order": 2
     },
     {
+      "id": "examples",
+      "title": "Quick Actions",
+      "order": 3
+    },
+    {
       "id": "onchain",
       "title": "On-Chain",
-      "order": 3
+      "order": 4
     },
     {
       "id": "entrypoint",
       "title": "Communication Channels",
-      "order": 4
+      "order": 5
     },
     {
       "id": "skills",
       "title": "Skills",
-      "order": 5
+      "order": 6
     },
     {
       "id": "autonomous",
       "title": "Autonomous",
-      "order": 6
+      "order": 7
     },
     {
       "id": "experimental",
       "title": "Experimental",
-      "order": 7
+      "order": 8
     },
     {
       "id": "deprecated",
       "title": "Deprecated",
-      "order": 8
+      "order": 9
     },
     {
       "id": "internal",
       "title": "Internal",
-      "order": 9
+      "order": 10
     }
   ],
   "required": [
@@ -176,6 +181,7 @@
         "gpt-4.1-nano",
         "gpt-4.1-mini",
         "gpt-4.1",
+        "o3",
         "o4-mini",
         "deepseek-chat",
         "deepseek-reasoner",
@@ -194,6 +200,7 @@
         "GPT-4.1 nano",
         "GPT-4.1 mini",
         "GPT-4.1",
+        "OpenAI o3",
         "OpenAI o4-mini",
         "Deepseek V3 (0324)",
         "Deepseek R1 (0528)",
@@ -206,6 +213,7 @@
         "Venice Llama-4 Maverick 17B"
       ],
       "x-enum-category": [
+        "OpenAI",
         "OpenAI",
         "OpenAI",
         "OpenAI",
@@ -237,6 +245,7 @@
         true,
         true,
         true,
+        true,
         true
       ],
       "x-group": "llm"
@@ -251,6 +260,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent purpose"
     },
     "personality": {
@@ -263,6 +273,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent personality"
     },
     "principles": {
@@ -275,6 +286,7 @@
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
       "x-group": "llm",
+      "x-str-type": "prompt",
       "x-placeholder": "Enter agent principles"
     },
     "prompt": {
@@ -286,6 +298,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "prompt_append": {
@@ -297,6 +310,7 @@
       "errorMessage": {
         "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
       },
+      "x-str-type": "prompt",
       "x-group": "llm"
     },
     "temperature": {
@@ -329,31 +343,16 @@
       "x-group": "llm",
       "x-step": 0.1
     },
-    "cdp_enabled": {
-      "title": "CDP Enabled",
-      "type": "boolean",
-      "description": "Whether CDP (Crestal Development Platform) integration is enabled",
-      "default": true,
-      "x-group": "deprecated"
-    },
-    "crossmint_config": {
-      "title": "Crossmint Configuration",
-      "type": "object",
-      "description": "Dict of Crossmint wallet configurations",
-      "x-group": "experimental"
-    },
-    "goat_enabled": {
-      "title": "GOAT Enabled",
-      "type": "boolean",
-      "description": "Whether GOAT integration is enabled",
-      "default": false,
-      "x-group": "experimental"
-    },
-    "goat_skills": {
-      "title": "GOAT Skills",
-      "type": "object",
-      "description": "Dict of GOAT skills and their corresponding configurations",
-      "x-group": "experimental"
+    "short_term_memory_strategy": {
+      "title": "Short Term Memory Strategy",
+      "type": "string",
+      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+      "default": "trim",
+      "enum": [
+        "trim",
+        "summarize"
+      ],
+      "x-group": "llm"
     },
     "telegram_entrypoint_enabled": {
       "title": "Enable Telegram Communication",
@@ -367,6 +366,7 @@
       "type": "string",
       "description": "Extra prompt for telegram entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "entrypoint"
     },
     "telegram_config": {
@@ -417,6 +417,7 @@
       "type": "string",
       "description": "Extra prompt for X entrypoint",
       "maxLength": 10000,
+      "x-str-type": "prompt",
       "x-group": "deprecated"
     },
     "twitter_config": {
@@ -534,6 +535,10 @@
           "title": "Moralis",
           "$ref": "../skills/moralis/schema.json"
         },
+        "system": {
+          "title": "System",
+          "$ref": "../skills/system/schema.json"
+        },
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
@@ -553,6 +558,10 @@
         "slack": {
           "title": "Slack",
           "$ref": "../skills/slack/schema.json"
+        },
+        "venice_audio": {
+          "title": "Venice Audio",
+          "$ref": "../skills/venice_audio/schema.json"
         },
         "venice_image": {
           "title": "Venice Image",
@@ -611,6 +620,7 @@
             "type": "string",
             "description": "Prompt the agent will execute on schedule",
             "maxLength": 20000,
+            "x-str-type": "prompt",
             "x-group": "autonomous"
           },
           "enabled": {
@@ -630,78 +640,51 @@
       "x-group": "autonomous",
       "x-inline": true
     },
-    "enso_enabled": {
-      "title": "Enso Enabled",
-      "type": "boolean",
-      "description": "Whether Enso integration is enabled",
-      "default": false,
-      "x-group": "experimental"
+    "example_intro": {
+      "title": "Agent Greeting",
+      "type": "string",
+      "description": "This is the first thing users see when they meet your agent. Use it to explain what your agent does, the services it provides and how it fits into the Nation.",
+      "maxLength": 2000,
+      "x-group": "examples"
     },
-    "enso_skills": {
-      "title": "Enso Skills",
+    "examples": {
+      "title": "Quick Action List",
       "type": "array",
+      "maxItems": 6,
       "items": {
-        "type": "string"
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Action Name",
+            "type": "string",
+            "description": "Quick action will show up on the UI as this name",
+            "maxLength": 50,
+            "x-group": "examples"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Description of what this action does",
+            "maxLength": 200,
+            "x-group": "examples"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string",
+            "description": "When user clicks this action, the agent will execute this prompt",
+            "maxLength": 2000,
+            "x-str-type": "prompt",
+            "x-group": "examples"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "prompt"
+        ]
       },
-      "description": "List of Enso-specific skills available to this agent",
-      "x-group": "experimental"
-    },
-    "enso_config": {
-      "title": "Enso Configuration",
-      "type": "object",
-      "description": "Enso integration configuration settings",
-      "x-group": "experimental"
-    },
-    "acolyt_skills": {
-      "title": "Acolyt Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Acolyt-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "acolyt_config": {
-      "title": "Acolyt Configuration",
-      "type": "object",
-      "description": "Acolyt integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "allora_skills": {
-      "title": "Allora Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Allora-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "allora_config": {
-      "title": "Allora Configuration",
-      "type": "object",
-      "description": "Allora integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "elfa_skills": {
-      "title": "Elfa Skills",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Elfa-specific skills available to this agent",
-      "deprecated": true,
-      "x-group": "deprecated"
-    },
-    "elfa_config": {
-      "title": "Elfa Configuration",
-      "type": "object",
-      "description": "Elfa integration configuration settings",
-      "deprecated": true,
-      "x-group": "deprecated"
+      "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
+      "x-group": "examples"
     },
     "wallet_provider": {
       "title": "Wallet Provider",

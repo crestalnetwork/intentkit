@@ -20,7 +20,7 @@ from app.core.credit import (
     update_credit_event_note,
     update_daily_quota,
 )
-from models.agent import AgentQuota
+from models.agent_data import AgentQuota
 from models.credit import (
     CreditAccount,
     CreditAccountTable,

@@ -51,6 +51,9 @@ DEFAULT_PLATFORM_ACCOUNT_REWARD = "platform_reward"
 DEFAULT_PLATFORM_ACCOUNT_REFUND = "platform_refund"
 DEFAULT_PLATFORM_ACCOUNT_MESSAGE = "platform_message"
 DEFAULT_PLATFORM_ACCOUNT_SKILL = "platform_skill"
+DEFAULT_PLATFORM_ACCOUNT_MEMORY = "platform_memory"
+DEFAULT_PLATFORM_ACCOUNT_VOICE = "platform_voice"
+DEFAULT_PLATFORM_ACCOUNT_KNOWLEDGE = "platform_knowledge"
 DEFAULT_PLATFORM_ACCOUNT_FEE = "platform_fee"
 DEFAULT_PLATFORM_ACCOUNT_DEV = "platform_dev"
 
@@ -104,6 +107,10 @@ class CreditAccountTable(Base):
     )
     expense_at = Column(
         DateTime(timezone=True),
+        nullable=True,
+    )
+    last_event_id = Column(
+        String,
         nullable=True,
     )
     created_at = Column(
@@ -174,6 +181,10 @@ class CreditAccount(BaseModel):
         Optional[datetime],
         Field(None, description="Timestamp of the last expense transaction"),
     ]
+    last_event_id: Annotated[
+        Optional[str],
+        Field(None, description="ID of the last event that modified this account"),
+    ]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this account was created")
     ]
@@ -192,6 +203,11 @@ class CreditAccount(BaseModel):
         elif isinstance(v, (int, float)):
             return Decimal(str(v)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
         return v
+
+    @property
+    def balance(self) -> Decimal:
+        """Return the total balance of the account."""
+        return self.free_credits + self.reward_credits + self.credits
 
     @classmethod
     async def get_in_session(
@@ -277,10 +293,18 @@ class CreditAccount(BaseModel):
         owner_id: str,
         credit_type: CreditType,
         amount: Decimal,
+        event_id: Optional[str] = None,
     ) -> "CreditAccount":
         """Deduct credits from an account. Not checking balance"""
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
+
+        values_dict = {
+            credit_type.value: getattr(CreditAccountTable, credit_type.value) - amount,
+            "expense_at": datetime.now(timezone.utc),
+        }
+        if event_id:
+            values_dict["last_event_id"] = event_id
 
         stmt = (
             update(CreditAccountTable)
@@ -288,13 +312,7 @@ class CreditAccount(BaseModel):
                 CreditAccountTable.owner_type == owner_type,
                 CreditAccountTable.owner_id == owner_id,
             )
-            .values(
-                {
-                    credit_type.value: getattr(CreditAccountTable, credit_type.value)
-                    - amount,
-                    "expense_at": datetime.now(timezone.utc),
-                }
-            )
+            .values(values_dict)
             .returning(CreditAccountTable)
         )
         res = await session.scalar(stmt)
@@ -309,6 +327,7 @@ class CreditAccount(BaseModel):
         owner_type: OwnerType,
         owner_id: str,
         amount: Decimal,
+        event_id: Optional[str] = None,
     ) -> Tuple["CreditAccount", Dict[CreditType, Decimal]]:
         """Expense credits and return account and credit type.
         We are not checking balance here, since a conversation may have
@@ -342,6 +361,8 @@ class CreditAccount(BaseModel):
         values_dict = {
             "expense_at": datetime.now(timezone.utc),
         }
+        if event_id:
+            values_dict["last_event_id"] = event_id
 
         # Add credit type values only if they exist in details
         for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
@@ -384,23 +405,25 @@ class CreditAccount(BaseModel):
         owner_id: str,
         amount: Decimal,
         credit_type: CreditType,
+        event_id: Optional[str] = None,
     ) -> "CreditAccount":
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
         # income
+        values_dict = {
+            credit_type.value: getattr(CreditAccountTable, credit_type.value) + amount,
+            "income_at": datetime.now(timezone.utc),
+        }
+        if event_id:
+            values_dict["last_event_id"] = event_id
+
         stmt = (
             update(CreditAccountTable)
             .where(
                 CreditAccountTable.owner_type == owner_type,
                 CreditAccountTable.owner_id == owner_id,
             )
-            .values(
-                {
-                    credit_type.value: getattr(CreditAccountTable, credit_type.value)
-                    + amount,
-                    "income_at": datetime.now(timezone.utc),
-                }
-            )
+            .values(values_dict)
             .returning(CreditAccountTable)
         )
         res = await session.scalar(stmt)
@@ -434,6 +457,9 @@ class CreditAccount(BaseModel):
             # only users have daily quota
             free_quota = 0.0
             refill_amount = 0.0
+        # Create event_id at the beginning for consistency
+        event_id = str(XID())
+
         account = CreditAccountTable(
             id=str(XID()),
             owner_type=owner_type,
@@ -445,6 +471,7 @@ class CreditAccount(BaseModel):
             credits=0.0,
             income_at=datetime.now(timezone.utc),
             expense_at=None,
+            last_event_id=event_id if owner_type == OwnerType.USER else None,
         )
         # Platform virtual accounts have fixed IDs, same as owner_id
         if owner_type == OwnerType.PLATFORM:
@@ -461,9 +488,9 @@ class CreditAccount(BaseModel):
                 DEFAULT_PLATFORM_ACCOUNT_REFILL,
                 CreditType.FREE,
                 free_quota,
+                event_id,
             )
             # Create refill event record
-            event_id = str(XID())
             event = CreditEventTable(
                 id=event_id,
                 event_type=EventType.REFILL,
@@ -606,6 +633,8 @@ class EventType(str, Enum):
     MEMORY = "memory"
     MESSAGE = "message"
     SKILL_CALL = "skill_call"
+    VOICE = "voice"
+    KNOWLEDGE_BASE = "knowledge_base"
     RECHARGE = "recharge"
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
@@ -755,6 +784,18 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    fee_platform_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_platform_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_platform_permanent_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
     fee_dev_account = Column(
         String,
         nullable=True,
@@ -764,6 +805,18 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    fee_dev_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_dev_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_dev_permanent_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
     fee_agent_account = Column(
         String,
         nullable=True,
@@ -771,6 +824,18 @@ class CreditEventTable(Base):
     fee_agent_amount = Column(
         Numeric(22, 4),
         default=0,
+        nullable=True,
+    )
+    fee_agent_free_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_agent_reward_amount = Column(
+        Numeric(22, 4),
+        nullable=True,
+    )
+    fee_agent_permanent_amount = Column(
+        Numeric(22, 4),
         nullable=True,
     )
     free_amount = Column(
@@ -888,6 +953,25 @@ class CreditEvent(BaseModel):
         Optional[Decimal],
         Field(default=Decimal("0"), description="Platform fee amount"),
     ]
+    fee_platform_free_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Platform fee amount from free credits"
+        ),
+    ]
+    fee_platform_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Platform fee amount from reward credits"
+        ),
+    ]
+    fee_platform_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"),
+            description="Platform fee amount from permanent credits",
+        ),
+    ]
     fee_dev_account: Annotated[
         Optional[str], Field(None, description="Developer account ID receiving fee")
     ]
@@ -895,11 +979,44 @@ class CreditEvent(BaseModel):
         Optional[Decimal],
         Field(default=Decimal("0"), description="Developer fee amount"),
     ]
+    fee_dev_free_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Developer fee amount from free credits"
+        ),
+    ]
+    fee_dev_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Developer fee amount from reward credits"
+        ),
+    ]
+    fee_dev_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"),
+            description="Developer fee amount from permanent credits",
+        ),
+    ]
     fee_agent_account: Annotated[
         Optional[str], Field(None, description="Agent account ID receiving fee")
     ]
     fee_agent_amount: Annotated[
         Optional[Decimal], Field(default=Decimal("0"), description="Agent fee amount")
+    ]
+    fee_agent_free_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Agent fee amount from free credits"),
+    ]
+    fee_agent_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Agent fee amount from reward credits"),
+    ]
+    fee_agent_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(
+            default=Decimal("0"), description="Agent fee amount from permanent credits"
+        ),
     ]
     free_amount: Annotated[
         Optional[Decimal],
@@ -927,8 +1044,17 @@ class CreditEvent(BaseModel):
         "base_llm_amount",
         "base_skill_amount",
         "fee_platform_amount",
+        "fee_platform_free_amount",
+        "fee_platform_reward_amount",
+        "fee_platform_permanent_amount",
         "fee_dev_amount",
+        "fee_dev_free_amount",
+        "fee_dev_reward_amount",
+        "fee_dev_permanent_amount",
         "fee_agent_amount",
+        "fee_agent_free_amount",
+        "fee_agent_reward_amount",
+        "fee_agent_permanent_amount",
         "free_amount",
         "reward_amount",
         "permanent_amount",
@@ -978,6 +1104,9 @@ class TransactionType(str, Enum):
     PAY = "pay"
     RECEIVE_BASE_LLM = "receive_base_llm"
     RECEIVE_BASE_SKILL = "receive_base_skill"
+    RECEIVE_BASE_MEMORY = "receive_base_memory"
+    RECEIVE_BASE_VOICE = "receive_base_voice"
+    RECEIVE_BASE_KNOWLEDGE = "receive_base_knowledge"
     RECEIVE_FEE_DEV = "receive_fee_dev"
     RECEIVE_FEE_AGENT = "receive_fee_agent"
     RECEIVE_FEE_PLATFORM = "receive_fee_platform"

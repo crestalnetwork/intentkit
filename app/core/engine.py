@@ -12,6 +12,7 @@ The module uses a global cache to store initialized agents for better performanc
 
 import importlib
 import logging
+import re
 import textwrap
 import time
 import traceback
@@ -19,24 +20,6 @@ from datetime import datetime
 from typing import Optional
 
 import sqlalchemy
-from coinbase_agentkit import (
-    AgentKit,
-    AgentKitConfig,
-    CdpWalletProvider,
-    CdpWalletProviderConfig,
-    basename_action_provider,
-    cdp_api_action_provider,
-    cdp_wallet_action_provider,
-    erc20_action_provider,
-    morpho_action_provider,
-    pyth_action_provider,
-    superfluid_action_provider,
-    wallet_action_provider,
-    weth_action_provider,
-    wow_action_provider,
-)
-from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
-from coinbase_agentkit_langchain import get_langchain_tools
 from epyxid import XID
 from fastapi import HTTPException
 from langchain_core.messages import (
@@ -47,18 +30,20 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.errors import GraphRecursionError
 from langgraph.graph.graph import CompiledGraph
+from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from abstracts.graph import AgentState
+from abstracts.graph import AgentError, AgentState
 from app.config.config import config
-from app.core.agent import AgentStore
-from app.core.credit import expense_message, expense_skill, skill_cost
-from app.core.graph import create_agent
+from app.core.credit import expense_message, expense_skill
+from app.core.node import PostModelNode, PreModelNode
 from app.core.prompt import agent_prompt
 from app.core.skill import skill_store
-from models.agent import Agent, AgentData, AgentQuota, AgentTable
+from models.agent import Agent, AgentTable
+from models.agent_data import AgentData, AgentQuota
 from models.app_setting import AppSetting
 from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageSkillCall
 from models.credit import CreditAccount, OwnerType
@@ -66,20 +51,47 @@ from models.db import get_pool, get_session
 from models.llm import get_model_cost
 from models.skill import AgentSkillData, Skill, ThreadSkillData
 from models.user import User
-from skills.acolyt import get_acolyt_skill
-from skills.allora import get_allora_skill
-from skills.cdp.get_balance import GetBalance
-from skills.elfa import get_elfa_skill
-from skills.enso import get_enso_skill
-from skills.goat import (
-    create_smart_wallets_if_not_exist,
-    get_goat_skill,
-    init_smart_wallets,
-)
-from skills.twitter import get_twitter_skill
 from utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
+
+
+async def explain_prompt(message: str) -> str:
+    """
+    Process message to replace @skill:*:* patterns with (call skill xxxxx) format.
+
+    Args:
+        message (str): The input message to process
+
+    Returns:
+        str: The processed message with @skill patterns replaced
+    """
+    # Pattern to match @skill:category:config_name with word boundaries
+    pattern = r"\b@skill:([^:]+):([^\s]+)\b"
+
+    async def replace_skill_pattern(match):
+        category = match.group(1)
+        config_name = match.group(2)
+
+        # Get skill by category and config_name
+        skill = await Skill.get_by_config_name(category, config_name)
+
+        if skill:
+            return f"(call skill {skill.name})"
+        else:
+            # If skill not found, keep original pattern
+            return match.group(0)
+
+    # Find all matches
+    matches = list(re.finditer(pattern, message))
+
+    # Process matches in reverse order to maintain string positions
+    result = message
+    for match in reversed(matches):
+        replacement = await replace_skill_pattern(match)
+        result = result[: match.start()] + replacement + result[match.end() :]
+
+    return result
 
 
 # Global variable to cache all agent executors
@@ -111,10 +123,6 @@ async def initialize_agent(aid, is_private=False):
     Raises:
         HTTPException: If agent not found (404) or database error (500)
     """
-    """Initialize the agent with CDP Agentkit."""
-    # init agent store
-    agent_store = AgentStore(aid)
-
     # get the agent from the database
     agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
@@ -142,7 +150,7 @@ async def initialize_agent(aid, is_private=False):
     memory = AsyncPostgresSaver(get_pool())
 
     # ==== Load skills
-    tools: list[BaseTool] = []
+    tools: list[BaseTool | dict] = []
 
     if agent.skills:
         for k, v in agent.skills.items():
@@ -161,201 +169,20 @@ async def initialize_agent(aid, is_private=False):
             except ImportError as e:
                 logger.error(f"Could not import skill module: {k} ({e})")
 
-    # Configure CDP Agentkit Langchain Extension.
-    # Deprecated
-    cdp_wallet_provider = None
-    if (
-        agent.cdp_enabled
-        and agent_data
-        and agent_data.cdp_wallet_data
-        and agent.cdp_skills
-        and ("cdp" not in agent.skills if agent.skills else True)
-    ):
-        cdp_wallet_provider_config = CdpWalletProviderConfig(
-            api_key_name=config.cdp_api_key_name,
-            api_key_private_key=config.cdp_api_key_private_key,
-            network_id=agent.cdp_network_id,
-            wallet_data=agent_data.cdp_wallet_data,
-        )
-        cdp_wallet_provider = CdpWalletProvider(cdp_wallet_provider_config)
-        agent_kit = AgentKit(
-            AgentKitConfig(
-                wallet_provider=cdp_wallet_provider,
-                action_providers=[
-                    wallet_action_provider(),
-                    cdp_api_action_provider(cdp_wallet_provider_config),
-                    cdp_wallet_action_provider(cdp_wallet_provider_config),
-                    pyth_action_provider(),
-                    basename_action_provider(),
-                    erc20_action_provider(),
-                    erc721_action_provider(),
-                    weth_action_provider(),
-                    morpho_action_provider(),
-                    superfluid_action_provider(),
-                    wow_action_provider(),
-                ],
-            )
-        )
-        cdp_tools = get_langchain_tools(agent_kit)
-        for skill in agent.cdp_skills:
-            if skill == "get_balance":
-                tools.append(
-                    GetBalance(
-                        wallet=cdp_wallet_provider._wallet,
-                        agent_id=aid,
-                        skill_store=skill_store,
-                    )
-                )
-                continue
-            for tool in cdp_tools:
-                if tool.name.endswith(skill):
-                    tools.append(tool)
-
-    if (
-        agent.goat_enabled
-        and agent.crossmint_config
-        and ("goat" not in agent.skills if agent.skills else True)
-    ):
-        if (
-            hasattr(config, "chain_provider")
-            and config.crossmint_api_key
-            and config.crossmint_api_base_url
-        ):
-            crossmint_networks = agent.crossmint_config.get("networks")
-            if crossmint_networks and len(crossmint_networks) > 0:
-                crossmint_wallet_data = (
-                    agent_data.crossmint_wallet_data
-                    if agent_data.crossmint_wallet_data
-                    else {}
-                )
-                try:
-                    smart_wallet_data = create_smart_wallets_if_not_exist(
-                        config.crossmint_api_base_url,
-                        config.crossmint_api_key,
-                        crossmint_wallet_data.get("smart"),
-                    )
-
-                    # save the wallet after first create
-                    if (
-                        not crossmint_wallet_data
-                        or not crossmint_wallet_data.get("smart")
-                        or not crossmint_wallet_data.get("smart").get("evm")
-                        or not crossmint_wallet_data.get("smart")
-                        .get("evm")
-                        .get("address")
-                    ):
-                        await agent_store.set_data(
-                            {
-                                "crossmint_wallet_data": {"smart": smart_wallet_data},
-                            }
-                        )
-
-                    # give rpc some time to prevent error #429
-                    time.sleep(1)
-
-                    evm_crossmint_wallets = init_smart_wallets(
-                        config.crossmint_api_key,
-                        config.chain_provider,
-                        crossmint_networks,
-                        smart_wallet_data["evm"],
-                    )
-
-                    for wallet in evm_crossmint_wallets:
-                        try:
-                            s = get_goat_skill(
-                                wallet,
-                                agent.goat_skills,
-                                skill_store,
-                                agent_store,
-                                aid,
-                            )
-                            tools.extend(s)
-                        except Exception as e:
-                            logger.warning(e)
-                except Exception as e:
-                    logger.warning(e)
-
-    # Enso skills
-    if (
-        agent.enso_skills
-        and len(agent.enso_skills) > 0
-        and agent.enso_config
-        and ("enso" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.enso_skills:
-            try:
-                s = get_enso_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Acoalyt skills
-    if (
-        agent.acolyt_skills
-        and len(agent.acolyt_skills) > 0
-        and ("acolyt" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.acolyt_skills:
-            try:
-                s = get_acolyt_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Allora skills
-    if (
-        agent.allora_skills
-        and len(agent.allora_skills) > 0
-        and ("allora" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.allora_skills:
-            try:
-                s = get_allora_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Elfa skills
-    if (
-        agent.elfa_skills
-        and len(agent.elfa_skills) > 0
-        and ("elfa" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.elfa_skills:
-            try:
-                s = get_elfa_skill(
-                    skill,
-                    skill_store,
-                )
-                tools.append(s)
-            except Exception as e:
-                logger.warning(e)
-    # Twitter skills
-    if (
-        agent.twitter_skills
-        and len(agent.twitter_skills) > 0
-        and ("twitter" not in agent.skills if agent.skills else True)
-    ):
-        for skill in agent.twitter_skills:
-            s = get_twitter_skill(
-                skill,
-                skill_store,
-            )
-            tools.append(s)
-
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
+
+    # testing native search, FIXME: use flag
+    if agent.model in ["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"]:
+        tools.append({"type": "web_search_preview"})
 
     # finally, set up the system prompt
     prompt = agent_prompt(agent, agent_data)
     # Escape curly braces in the prompt
     escaped_prompt = prompt.replace("{", "{{").replace("}", "}}")
+    # Process message to handle @skill patterns
+    if config.admin_llm_skill_control:
+        escaped_prompt = await explain_prompt(escaped_prompt)
     prompt_array = [
         ("system", escaped_prompt),
         ("placeholder", "{entrypoint_prompt}"),
@@ -364,6 +191,9 @@ async def initialize_agent(aid, is_private=False):
     if agent.prompt_append:
         # Escape any curly braces in prompt_append
         escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
+        # Process message to handle @skill patterns
+        if config.admin_llm_skill_control:
+            escaped_append = await explain_prompt(escaped_append)
         prompt_array.append(("system", escaped_append))
 
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
@@ -384,25 +214,47 @@ async def initialize_agent(aid, is_private=False):
             config,
         )
 
-    # log all tools
-    for tool in tools:
-        logger.info(
-            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name}"
-        )
+    # log final prompt and all skills
     logger.debug(
         f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
     )
+    for tool in tools:
+        logger.info(
+            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
+        )
+
+    # Pre model hook
+    pre_model_hook = PreModelNode(
+        model=llm,
+        short_term_memory_strategy=agent.short_term_memory_strategy,
+        max_tokens=input_token_limit // 2,
+        max_summary_tokens=2048,  # later we can let agent to set this
+    )
+    # Post model hook
+    post_model_hook = PostModelNode()
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
-    executor = create_agent(
-        aid,
-        llm,
+    executor = create_react_agent(
+        model=llm,
         tools=tools,
+        prompt=formatted_prompt,
+        pre_model_hook=pre_model_hook,
+        post_model_hook=post_model_hook,
+        state_schema=AgentState,
         checkpointer=memory,
-        state_modifier=formatted_prompt,
         debug=config.debug_checkpoint,
-        input_token_limit=input_token_limit,
+        name=aid,
     )
+    # executor = create_agent(
+    #     aid,
+    #     llm,
+    #     tools=tools,
+    #     checkpointer=memory,
+    #     state_modifier=formatted_prompt,
+    #     debug=config.debug_checkpoint,
+    #     input_token_limit=input_token_limit,
+    # )
+
     if is_private:
         _private_agents[aid] = executor
         _private_agents_updated[aid] = agent.updated_at
@@ -463,14 +315,15 @@ async def execute_agent(
     start = time.perf_counter()
     # make sure reply_to is set
     message.reply_to = message.id
+
     input = await message.save()
 
     agent = await Agent.get(input.agent_id)
 
-    need_payment = config.payment_enabled
+    payment_enabled = config.payment_enabled
 
     # check user balance
-    if need_payment:
+    if payment_enabled:
         if not input.user_id or not agent.owner:
             raise IntentKitAPIError(
                 500,
@@ -552,8 +405,6 @@ async def execute_agent(
             error_message = await error_message_create.save()
             resp.append(error_message)
             return resp
-        # use this in loop
-        total_paid = 0
 
     is_private = False
     if input.user_id == agent.owner:
@@ -571,12 +422,39 @@ async def execute_agent(
             if "type" in att and att["type"] == "image" and "url" in att
         ]
 
-    # message
+    # Process input message to handle @skill patterns
+    if config.admin_llm_skill_control:
+        input_message = await explain_prompt(input.message)
+    else:
+        input_message = input.message
+
+    # super mode
+    recursion_limit = 30
+    if re.search(r"\b@super\b", input_message):
+        recursion_limit = 300
+        # Remove @super from the message
+        input_message = re.sub(r"\b@super\b", "", input_message).strip()
+
+    # testing native search, FIXME: use flag
+    if re.search(r"\b@search\b", input_message):
+        if agent.model in [
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "grok-3",
+        ]:
+            input_message = re.sub(
+                r"\b@search\b", "(search for results)", input_message
+            ).strip()
+        else:
+            input_message = re.sub(r"\b@search\b", "", input_message).strip()
+
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if agent.has_image_parser_skill() and image_urls:
-        input.message += f"\n\nImages:\n{'\n'.join(image_urls)}"
+        input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
     content = [
-        {"type": "text", "text": input.message},
+        {"type": "text", "text": input_message},
     ]
     if not agent.has_image_parser_skill() and image_urls:
         # anyway, pass it directly to LLM
@@ -586,6 +464,7 @@ async def execute_agent(
                 for image_url in image_urls
             ]
         )
+
     messages = [
         HumanMessage(content=content),
     ]
@@ -605,6 +484,8 @@ async def execute_agent(
     ):
         entrypoint_prompt = agent.telegram_entrypoint_prompt
         logger.debug("telegram entrypoint prompt added")
+    if entrypoint_prompt and config.admin_llm_skill_control:
+        entrypoint_prompt = await explain_prompt(entrypoint_prompt)
 
     # stream config
     thread_id = f"{input.agent_id}-{input.chat_id}"
@@ -615,15 +496,17 @@ async def execute_agent(
             "user_id": input.user_id,
             "entrypoint": input.author_type,
             "entrypoint_prompt": entrypoint_prompt,
-        }
+            "payer": payer if payment_enabled else None,
+        },
+        "recursion_limit": recursion_limit,
     }
 
     # run
     cached_tool_step = None
-    async for chunk in executor.astream({"messages": messages}, stream_config):
-        try:
+    try:
+        async for chunk in executor.astream({"messages": messages}, stream_config):
             this_time = time.perf_counter()
-            # logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
+            logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
             if "agent" in chunk and "messages" in chunk["agent"]:
                 if len(chunk["agent"]["messages"]) != 1:
                     logger.error(
@@ -632,33 +515,19 @@ async def execute_agent(
                     )
                 msg = chunk["agent"]["messages"][0]
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    # tool calls, save for later use
+                    # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
-                    if need_payment:
-                        for tool_call in msg.tool_calls:
-                            skill_meta = await Skill.get(tool_call.get("name"))
-                            if skill_meta:
-                                skill_cost_info = await skill_cost(
-                                    skill_meta.name, input.user_id, agent
-                                )
-                                total_paid += skill_cost_info.total_amount
-                        if not user_account.has_sufficient_credits(total_paid):
-                            error_message_create = ChatMessageCreate(
-                                id=str(XID()),
-                                agent_id=input.agent_id,
-                                chat_id=input.chat_id,
-                                user_id=input.user_id,
-                                author_id=input.agent_id,
-                                author_type=AuthorType.SYSTEM,
-                                thread_type=input.author_type,
-                                reply_to=input.id,
-                                message="Insufficient balance.",
-                                time_cost=this_time - last,
-                            )
-                            error_message = await error_message_create.save()
-                            resp.append(error_message)
-                            return resp
-                elif hasattr(msg, "content") and msg.content:
+                if hasattr(msg, "content") and msg.content:
+                    content = msg.content
+                    if isinstance(msg.content, list):
+                        # in new version, content item maybe a list
+                        content = msg.content[0]
+                    if isinstance(content, dict):
+                        if "text" in content:
+                            content = content["text"]
+                        else:
+                            content = str(content)
+                            logger.error(f"unexpected content type: {content}")
                     # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
@@ -670,7 +539,7 @@ async def execute_agent(
                         model=agent.model,
                         thread_type=input.author_type,
                         reply_to=input.id,
-                        message=msg.content,
+                        message=content,
                         input_tokens=(
                             msg.usage_metadata.get("input_tokens", 0)
                             if hasattr(msg, "usage_metadata") and msg.usage_metadata
@@ -690,12 +559,28 @@ async def execute_agent(
                     # handle message and payment in one transaction
                     async with get_session() as session:
                         # payment
-                        if need_payment:
+                        if payment_enabled:
                             amount = await get_model_cost(
                                 agent.model,
                                 chat_message_create.input_tokens,
                                 chat_message_create.output_tokens,
                             )
+
+                            # Check for web_search_call in additional_kwargs
+                            if (
+                                hasattr(msg, "additional_kwargs")
+                                and msg.additional_kwargs
+                            ):
+                                tool_outputs = msg.additional_kwargs.get(
+                                    "tool_outputs", []
+                                )
+                                for tool_output in tool_outputs:
+                                    if tool_output.get("type") == "web_search_call":
+                                        logger.info(
+                                            f"[{input.agent_id}] Found web_search_call in additional_kwargs"
+                                        )
+                                        amount += 35
+                                        break
                             credit_event = await expense_message(
                                 session,
                                 payer,
@@ -712,11 +597,6 @@ async def execute_agent(
                         )
                         await session.commit()
                         resp.append(chat_message)
-                else:
-                    logger.error(
-                        "unexpected agent message: " + str(msg),
-                        extra={"thread_id": thread_id},
-                    )
             elif "tools" in chunk and "messages" in chunk["tools"]:
                 if not cached_tool_step:
                     logger.error(
@@ -725,6 +605,7 @@ async def execute_agent(
                     )
                     continue
                 skill_calls = []
+                have_first_call_in_cache = False  # tool node emit every tool call
                 for msg in chunk["tools"]["messages"]:
                     if not hasattr(msg, "tool_call_id"):
                         logger.error(
@@ -732,8 +613,10 @@ async def execute_agent(
                             extra={"thread_id": thread_id},
                         )
                         continue
-                    for call in cached_tool_step.tool_calls:
+                    for call_index, call in enumerate(cached_tool_step.tool_calls):
                         if call["id"] == msg.tool_call_id:
+                            if call_index == 0:
+                                have_first_call_in_cache = True
                             skill_call: ChatMessageSkillCall = {
                                 "id": msg.tool_call_id,
                                 "name": call["name"],
@@ -768,12 +651,14 @@ async def execute_agent(
                         cached_tool_step.usage_metadata.get("input_tokens", 0)
                         if hasattr(cached_tool_step, "usage_metadata")
                         and cached_tool_step.usage_metadata
+                        and have_first_call_in_cache
                         else 0
                     ),
                     output_tokens=(
                         cached_tool_step.usage_metadata.get("output_tokens", 0)
                         if hasattr(cached_tool_step, "usage_metadata")
                         and cached_tool_step.usage_metadata
+                        and have_first_call_in_cache
                         else 0
                     ),
                     time_cost=this_time - last,
@@ -782,28 +667,30 @@ async def execute_agent(
                 if cold_start_cost > 0:
                     skill_message_create.cold_start_cost = cold_start_cost
                     cold_start_cost = 0
-                cached_tool_step = None
                 # save message and credit in one transaction
                 async with get_session() as session:
-                    if need_payment:
-                        # message payment
-                        message_amount = await get_model_cost(
-                            agent.model,
-                            skill_message_create.input_tokens,
-                            skill_message_create.output_tokens,
-                        )
-                        message_payment_event = await expense_message(
-                            session,
-                            payer,
-                            skill_message_create.id,
-                            input.id,
-                            message_amount,
-                            agent,
-                        )
-                        skill_message_create.credit_event_id = message_payment_event.id
-                        skill_message_create.credit_cost = (
-                            message_payment_event.total_amount
-                        )
+                    if payment_enabled:
+                        # message payment, only first call in a group has message bill
+                        if have_first_call_in_cache:
+                            message_amount = await get_model_cost(
+                                agent.model,
+                                skill_message_create.input_tokens,
+                                skill_message_create.output_tokens,
+                            )
+                            message_payment_event = await expense_message(
+                                session,
+                                payer,
+                                skill_message_create.id,
+                                input.id,
+                                message_amount,
+                                agent,
+                            )
+                            skill_message_create.credit_event_id = (
+                                message_payment_event.id
+                            )
+                            skill_message_create.credit_cost = (
+                                message_payment_event.total_amount
+                            )
                         # skill payment
                         for skill_call in skill_calls:
                             if not skill_call["success"]:
@@ -826,56 +713,130 @@ async def execute_agent(
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     resp.append(skill_message)
-            elif "memory_manager" in chunk:
+            elif "pre_model_hook" in chunk:
                 pass
+            elif "post_model_hook" in chunk:
+                logger.debug(
+                    f"post_model_hook: {chunk}",
+                    extra={"thread_id": thread_id},
+                )
+                if chunk["post_model_hook"] and "error" in chunk["post_model_hook"]:
+                    if (
+                        chunk["post_model_hook"]["error"]
+                        == AgentError.INSUFFICIENT_CREDITS
+                    ):
+                        if "messages" in chunk["post_model_hook"]:
+                            msg = chunk["post_model_hook"]["messages"][-1]
+                            content = msg.content
+                            if isinstance(msg.content, list):
+                                # in new version, content item maybe a list
+                                content = msg.content[0]
+                            post_model_message_create = ChatMessageCreate(
+                                id=str(XID()),
+                                agent_id=input.agent_id,
+                                chat_id=input.chat_id,
+                                user_id=input.user_id,
+                                author_id=input.agent_id,
+                                author_type=AuthorType.AGENT,
+                                model=agent.model,
+                                thread_type=input.author_type,
+                                reply_to=input.id,
+                                message=content,
+                                input_tokens=0,
+                                output_tokens=0,
+                                time_cost=this_time - last,
+                            )
+                            last = this_time
+                            if cold_start_cost > 0:
+                                post_model_message_create.cold_start_cost = (
+                                    cold_start_cost
+                                )
+                                cold_start_cost = 0
+                            post_model_message = await post_model_message_create.save()
+                            resp.append(post_model_message)
+                        error_message_create = ChatMessageCreate(
+                            id=str(XID()),
+                            agent_id=input.agent_id,
+                            chat_id=input.chat_id,
+                            user_id=input.user_id,
+                            author_id=input.agent_id,
+                            author_type=AuthorType.SYSTEM,
+                            thread_type=input.author_type,
+                            reply_to=input.id,
+                            message="Insufficient balance.",
+                            time_cost=0,
+                        )
+                        error_message = await error_message_create.save()
+                        resp.append(error_message)
             else:
                 error_traceback = traceback.format_exc()
                 logger.error(
                     f"unexpected message type: {str(chunk)}\n{error_traceback}",
                     extra={"thread_id": thread_id},
                 )
-        except SQLAlchemyError as e:
-            error_traceback = traceback.format_exc()
-            logger.error(
-                f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id},
-            )
-            error_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                author_type=AuthorType.SYSTEM,
-                thread_type=input.author_type,
-                reply_to=input.id,
-                message="IntentKit internal error",
-                time_cost=time.perf_counter() - start,
-            )
-            error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
-        except Exception as e:
-            error_traceback = traceback.format_exc()
-            logger.error(
-                f"failed to execute agent: {str(e)}\n{error_traceback}",
-                extra={"thread_id": thread_id},
-            )
-            error_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                author_type=AuthorType.SYSTEM,
-                thread_type=input.author_type,
-                reply_to=input.id,
-                message=f"Error in agent:\n  {str(e)}",
-                time_cost=time.perf_counter() - start,
-            )
-            error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
+    except SQLAlchemyError as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="IntentKit Internal Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
+    except GraphRecursionError as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"reached recursion limit: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="Step Limit Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
+    except Exception as e:
+        error_traceback = traceback.format_exc()
+        logger.error(
+            f"failed to execute agent: {str(e)}\n{error_traceback}",
+            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+        )
+        error_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=input.agent_id,
+            chat_id=input.chat_id,
+            user_id=input.user_id,
+            author_id=input.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=input.author_type,
+            reply_to=input.id,
+            message="Internal Agent Error",
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        resp.append(error_message)
+        return resp
     return resp
 
 
