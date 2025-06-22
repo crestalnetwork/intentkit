@@ -19,7 +19,7 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
     Useful for improving visual quality, adding style, or refining image features.
     """
 
-    name: str = "image_enhance"
+    name: str = "venice_image_enhance"
     description: str = (
         "Enhances an existing image from a URL using Venice AI.\n"
         "Provide the public URL of the image to enhance.\n"

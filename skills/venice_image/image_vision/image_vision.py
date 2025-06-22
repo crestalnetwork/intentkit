@@ -20,7 +20,7 @@ class ImageVision(VeniceImageVisionBaseTool):
     Ideal for understanding the content of an existing image.
     """
 
-    name: str = "image_vision"
+    name: str = "venice_image_vision"
     description: str = (
         "Describes an image from a URL using Venice AI.\n"
         "Provide the public URL of the image to describe.\n"

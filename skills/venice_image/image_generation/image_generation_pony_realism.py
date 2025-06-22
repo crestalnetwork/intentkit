@@ -11,7 +11,7 @@ class ImageGenerationPonyRealism(VeniceImageGenerationBaseTool):
     """
 
     # --- Model Specific Configuration ---
-    name: str = "image_generation_pony_realism"
+    name: str = "venice_image_generation_pony_realism"
     description: str = (
         "Generate images using the Pony Realism model (via Venice AI).\n"
         "Creates high-detail, realistic images, good for anime/character designs. Benefits from Danbooru tags (e.g., 'score_9', 'female'/'male').\n"

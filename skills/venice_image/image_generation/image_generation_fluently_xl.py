@@ -11,7 +11,7 @@ class ImageGenerationFluentlyXL(VeniceImageGenerationBaseTool):
     """
 
     # --- Model Specific Configuration ---
-    name: str = "image_generation_fluently_xl"
+    name: str = "venice_image_generation_fluently_xl"
     description: str = (
         "Generate images using the Fluently-XL model (via Venice AI).\n"
         "Aims for improved aesthetics, lighting, realism, and anatomy. Good for professional-quality images.\n"

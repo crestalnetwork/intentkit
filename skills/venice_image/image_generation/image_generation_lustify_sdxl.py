@@ -11,7 +11,7 @@ class ImageGenerationLustifySDXL(VeniceImageGenerationBaseTool):
     """
 
     # --- Model Specific Configuration ---
-    name: str = "image_generation_lustify_sdxl"
+    name: str = "venice_image_generation_lustify_sdxl"
     description: str = (
         "Generate images using the Lustify SDXL model (via Venice AI).\n"
         "A photorealistic SDXL model focused on NSFW scenes, but can generate SFW images (objects, animals, fantasy).\n"

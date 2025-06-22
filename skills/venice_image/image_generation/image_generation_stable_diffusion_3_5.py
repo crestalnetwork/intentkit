@@ -11,7 +11,7 @@ class ImageGenerationStableDiffusion35(VeniceImageGenerationBaseTool):
     """
 
     # --- Model Specific Configuration ---
-    name: str = "image_generation_stable_diffusion_3_5"  # Different skill name
+    name: str = "venice_image_generation_stable_diffusion_3_5"  # Different skill name
     description: str = (
         "Generate images using Stability AI's Stable Diffusion 3.5 Large model (alternative ID via Venice AI).\n"
         "Ideal for artworks, design processes, and educational use. Not for factual representations.\n"
