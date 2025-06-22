@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
@@ -66,7 +66,7 @@ class ERC20Transfers(TokenBaseTool):
         "Get ERC20 token transactions for a wallet address, ordered by block number. "
         "Returns transaction details, token information, and wallet interactions."
     )
-    args_schema: Type[BaseModel] = ERC20TransfersInput
+    args_schema: type[BaseModel] = ERC20TransfersInput
 
     async def _arun(
         self,
@@ -102,18 +102,9 @@ class ERC20Transfers(TokenBaseTool):
             Dict containing ERC20 transfer data
         """
         context = self.context_from_config(config)
-        if context is None:
-            logger.error("Context is None, cannot retrieve API key")
-            return {
-                "error": "Cannot retrieve API key. Please check agent configuration."
-            }
 
         # Get the API key
         api_key = self.get_api_key(context)
-
-        if not api_key:
-            logger.error("No Moralis API key available")
-            return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
         params = {"chain": chain, "limit": limit, "order": order}
@@ -133,13 +124,7 @@ class ERC20Transfers(TokenBaseTool):
             params["cursor"] = cursor
 
         # Call Moralis API
-        try:
-            endpoint = f"/{address}/erc20/transfers"
-            return await self._make_request(
-                method="GET", endpoint=endpoint, api_key=api_key, params=params
-            )
-        except Exception as e:
-            logger.error(f"Error fetching ERC20 transfers: {e}")
-            return {
-                "error": f"An error occurred while fetching ERC20 transfers: {str(e)}. Please try again later."
-            }
+        endpoint = f"/{address}/erc20/transfers"
+        return await self._make_request(
+            method="GET", endpoint=endpoint, api_key=api_key, params=params
+        )

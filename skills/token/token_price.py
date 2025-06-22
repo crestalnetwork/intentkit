@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
@@ -54,7 +54,7 @@ class TokenPrice(TokenBaseTool):
         "Get the token price denominated in the blockchain's native token and USD for a given token contract address. "
         "Returns price, token information and exchange data."
     )
-    args_schema: Type[BaseModel] = TokenPriceInput
+    args_schema: type[BaseModel] = TokenPriceInput
 
     async def _arun(
         self,
@@ -86,18 +86,8 @@ class TokenPrice(TokenBaseTool):
         # Extract context from config
         context = self.context_from_config(config)
 
-        if context is None:
-            logger.error("Context is None, cannot retrieve API key")
-            return {
-                "error": "Cannot retrieve API key. Please check agent configuration."
-            }
-
         # Get the API key
         api_key = self.get_api_key(context)
-
-        if not api_key:
-            logger.error("No Moralis API key available")
-            return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
         params = {"chain": chain}
@@ -115,18 +105,7 @@ class TokenPrice(TokenBaseTool):
             params["min_pair_side_liquidity_usd"] = min_pair_side_liquidity_usd
 
         # Call Moralis API
-        try:
-            endpoint = f"/erc20/{address}/price"
-            response = await self._make_request(
-                method="GET", endpoint=endpoint, api_key=api_key, params=params
-            )
-
-            if "error" in response:
-                logger.error(f"API returned error: {response.get('error')}")
-
-            return response
-        except Exception as e:
-            logger.error(f"Error fetching token price: {e}")
-            return {
-                "error": f"An error occurred while fetching token price: {str(e)}. Please try again later."
-            }
+        endpoint = f"/erc20/{address}/price"
+        return await self._make_request(
+            method="GET", endpoint=endpoint, api_key=api_key, params=params
+        )

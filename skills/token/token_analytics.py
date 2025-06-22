@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Dict
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
@@ -32,7 +32,7 @@ class TokenAnalytics(TokenBaseTool):
         "Get analytics for a token by token address. "
         "Returns trading volumes, number of buyers/sellers, and liquidity information over various time periods."
     )
-    args_schema: Type[BaseModel] = TokenAnalyticsInput
+    args_schema: type[BaseModel] = TokenAnalyticsInput
 
     async def _arun(
         self,
@@ -52,30 +52,15 @@ class TokenAnalytics(TokenBaseTool):
             Dict containing token analytics data
         """
         context = self.context_from_config(config)
-        if context is None:
-            logger.error("Context is None, cannot retrieve API key")
-            return {
-                "error": "Cannot retrieve API key. Please check agent configuration."
-            }
 
         # Get the API key
         api_key = self.get_api_key(context)
-
-        if not api_key:
-            logger.error("No Moralis API key available")
-            return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
         params = {"chain": chain}
 
         # Call Moralis API
-        try:
-            endpoint = f"/tokens/{address}/analytics"
-            return await self._make_request(
-                method="GET", endpoint=endpoint, api_key=api_key, params=params
-            )
-        except Exception as e:
-            logger.error(f"Error fetching token analytics: {e}")
-            return {
-                "error": f"An error occurred while fetching token analytics: {str(e)}. Please try again later."
-            }
+        endpoint = f"/tokens/{address}/analytics"
+        return await self._make_request(
+            method="GET", endpoint=endpoint, api_key=api_key, params=params
+        )

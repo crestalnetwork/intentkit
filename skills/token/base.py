@@ -36,25 +36,38 @@ class TokenBaseTool(IntentKitSkill):
 
         Returns:
             The API key to use for API requests
+
+        Raises:
+            ValueError: If no API key is available
         """
         skill_config = context.config
         if skill_config.get("api_key_provider") == "agent_owner":
-            return skill_config.get("api_key")
-        return self.skill_store.get_system_config("moralis_api_key")
+            api_key = skill_config.get("api_key")
+            if not api_key:
+                raise ValueError(
+                    "No agent-specific API key provided in the configuration."
+                )
+            return api_key
+
+        api_key = self.skill_store.get_system_config("moralis_api_key")
+        if not api_key:
+            raise ValueError("No Moralis API key provided in the configuration.")
+        return api_key
 
     def context_from_config(self, config: Optional[RunnableConfig] = None) -> Any:
-        """Extract context from the runnable config."""
+        """Extract context from the runnable config.
+
+        Raises:
+            ValueError: If config is invalid or missing required fields
+        """
         if not config:
-            logger.error("No config provided to context_from_config")
-            return None
+            raise ValueError("No config provided to context_from_config")
 
         if "configurable" not in config:
-            logger.error("'configurable' not in config")
-            return None
+            raise ValueError("'configurable' not in config")
 
         if "agent" not in config["configurable"]:
-            logger.error("'agent' not in config['configurable']")
-            return None
+            raise ValueError("'agent' not in config['configurable']")
 
         agent = config["configurable"].get("agent")
         category_config = None
@@ -118,37 +131,31 @@ class TokenBaseTool(IntentKitSkill):
 
         Returns:
             Response data as dictionary
+
+        Raises:
+            ValueError: If API key is missing
+            aiohttp.ClientError: For HTTP client errors
+            Exception: For API errors or unexpected errors
         """
         url = f"{MORALIS_API_BASE_URL}{endpoint}"
 
         if not api_key:
-            logger.error("API key is missing")
-            return {"error": "API key is missing"}
+            raise ValueError("API key is missing")
 
         headers = {"accept": "application/json", "X-API-Key": api_key}
         processed_params = self._prepare_params(params) if params else None
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    params=processed_params,
-                    json=data,
-                ) as response:
-                    if response.status >= 400:
-                        error_text = await response.text()
-                        logger.error(f"API error {response.status}: {error_text}")
-                        return {
-                            "error": f"API error: {response.status}",
-                            "details": error_text,
-                        }
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=processed_params,
+                json=data,
+            ) as response:
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error(f"API error {response.status}: {error_text}")
+                    raise Exception(f"API error {response.status}: {error_text}")
 
-                    return await response.json()
-        except aiohttp.ClientError as e:
-            logger.error(f"HTTP error making request: {str(e)}")
-            return {"error": f"HTTP error: {str(e)}"}
-        except Exception as e:
-            logger.error(f"Unexpected error making request: {str(e)}")
-            return {"error": f"Unexpected error: {str(e)}"}
+                return await response.json()
