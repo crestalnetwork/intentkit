@@ -113,7 +113,7 @@ def _normalize_unit(response_data: Dict[str, Any], chain: str) -> None:
 
     Supported chains:
     - Ethereum: 10^18 -> ETH
-    - Base: 10^18 -> BASE
+    - Base: 10^18 -> ETH
     - Solana: 10^9 -> SOL
     - Bitcoin: 10^8 -> BTC
     """
