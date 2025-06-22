@@ -147,6 +147,10 @@ class Config:
         self.nation_api_key = self.load("NATION_API_KEY")
         self.nation_api_url = self.load("NATION_API_URL", "")
 
+        # Agent Generator - Default Skills
+        self.generator_add_default_skills = self.load("GENERATOR_ADD_DEFAULT_SKILLS", "false") == "true"
+        self.generator_default_skills = self.load("GENERATOR_DEFAULT_SKILLS", "common,tavily").split(",")
+
         # ===== config loaded
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)
