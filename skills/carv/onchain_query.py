@@ -40,7 +40,7 @@ class OnchainQueryTool(CarvBaseTool):
     tool will return an error.
     """
 
-    name: str = "onchain_query"
+    name: str = "carv_onchain_query"
     description: str = (
         "Query blockchain data from Ethereum, Base, Bitcoin, or Solana using natural language. "
         "This tool provides access to detailed metrics including block information (timestamps, hashes, miners, gas used/limits), "

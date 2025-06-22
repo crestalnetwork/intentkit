@@ -31,7 +31,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
     Use this tool when you need comprehensive token data and live pricing from CARV
     """
 
-    name: str = "token_info_and_price"
+    name: str = "carv_token_info_and_price"
     description: str = (
         "Fetches detailed information and the current USD price of a cryptocurrency token from the CARV API, "
         "given its ticker symbol (e.g., 'eth', 'btc', 'aave'). or token name"

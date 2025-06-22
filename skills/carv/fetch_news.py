@@ -25,7 +25,7 @@ class FetchNewsTool(CarvBaseTool):
     It's useful for getting up-to-date information on various topics covered by CARV's news aggregation.
     """
 
-    name: str = "fetch_news"
+    name: str = "carv_fetch_news"
     description: str = (
         "Fetches the latest news articles from the CARV API. "
         "Returns a list of news items, each with a title, URL, and a short summary (card_text)."
