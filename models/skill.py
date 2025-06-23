@@ -60,17 +60,17 @@ class AgentSkillDataCreate(BaseModel):
 
         Returns:
             AgentSkillData: The saved agent skill data instance
-            
+
         Raises:
             Exception: If the total size would exceed the 10MB limit
         """
         # Calculate the size of the data
-        data_size = len(json.dumps(self.data).encode('utf-8'))
-        
+        data_size = len(json.dumps(self.data).encode("utf-8"))
+
         async with get_session() as db:
             # Check current total size for this agent
             current_total = await AgentSkillData.total_size(self.agent_id)
-            
+
             record = await db.scalar(
                 select(AgentSkillDataTable).where(
                     AgentSkillDataTable.agent_id == self.agent_id,
@@ -86,10 +86,12 @@ class AgentSkillDataCreate(BaseModel):
             else:
                 # Create new record - add new size
                 new_total = current_total + data_size
-            
+
             # Check if new total would exceed limit (10MB = 10 * 1024 * 1024 bytes)
             if new_total > 10 * 1024 * 1024:
-                raise Exception(f"Total size would exceed 10MB limit. Current: {current_total}, New: {new_total}")
+                raise Exception(
+                    f"Total size would exceed 10MB limit. Current: {current_total}, New: {new_total}"
+                )
 
             if record:
                 # Update existing record
@@ -102,9 +104,9 @@ class AgentSkillDataCreate(BaseModel):
                     skill=self.skill,
                     key=self.key,
                     data=self.data,
-                    size=data_size
+                    size=data_size,
                 )
-            
+
             db.add(record)
             await db.commit()
             await db.refresh(record)
