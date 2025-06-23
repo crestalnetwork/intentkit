@@ -48,7 +48,7 @@ class TokenQuote(LiFiBaseTool):
     This tool provides quotes for token transfers and swaps without executing transactions.
     """
 
-    name: str = "token_quote"
+    name: str = "lifi_token_quote"
     description: str = (
         "Get a quote for transferring tokens across blockchains or swapping tokens.\n"
         "Use this tool to check rates, fees, and estimated time for token transfers without executing them.\n"
