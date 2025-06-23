@@ -16,7 +16,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -26,12 +26,10 @@
           "title": "Scrape & Index Content",
           "enum": [
             "disabled",
-            "public",
             "private"
           ],
           "x-enum-title": [
             "Disabled",
-            "Agent Owner + All Users",
             "Agent Owner Only"
           ],
           "description": "Scrape content from web URLs and index it into a searchable vector store for later retrieval. Supports multiple URLs, customizable chunking, and persistent storage.",
@@ -114,4 +112,4 @@
     "enabled"
   ],
   "additionalProperties": true
-} 
+}
