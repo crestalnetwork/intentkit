@@ -570,6 +570,10 @@
         "unrealspeech": {
           "title": "UnrealSpeech",
           "$ref": "../skills/unrealspeech/schema.json"
+        },
+        "lifi": {
+          "title": "LiFi",
+          "$ref": "../skills/lifi/schema.json"
         }
       }
     },
