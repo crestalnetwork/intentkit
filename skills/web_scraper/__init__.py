@@ -4,7 +4,7 @@ import logging
 from typing import TypedDict
 
 from abstracts.skill import SkillStoreABC
-from skills.base import SkillConfig, SkillState
+from skills.base import SkillConfig, SkillOwnerState, SkillState
 from skills.web_scraper.base import WebScraperBaseTool
 from skills.web_scraper.scrape_and_index import QueryIndexedContent, ScrapeAndIndex
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class SkillStates(TypedDict):
-    scrape_and_index: SkillState
+    scrape_and_index: SkillOwnerState
     query_indexed_content: SkillState
 
 
