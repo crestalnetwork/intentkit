@@ -1,9 +1,10 @@
-# venice_image/image_generation_lustify_sdxl.py
-from skills.venice_image.base import VeniceImageBaseTool
-from skills.venice_image.input import STYLE_PRESETS  # Keep for description
+from skills.venice_image.image_generation.image_generation_base import (
+    VeniceImageGenerationBaseTool,
+)
+from skills.venice_image.image_generation.image_generation_input import STYLE_PRESETS
 
 
-class ImageGenerationLustifySDXL(VeniceImageBaseTool):
+class ImageGenerationLustifySDXL(VeniceImageGenerationBaseTool):
     """
     Tool for generating images using the Lustify SDXL model via Venice AI.
     A photorealistic SDXL checkpoint primarily focused on NSFW content, but can do SFW.
@@ -20,4 +21,4 @@ class ImageGenerationLustifySDXL(VeniceImageBaseTool):
     )
     model_id: str = "lustify-sdxl"
 
-    # args_schema and _arun are inherited from VeniceImageBaseTool
+    # args_schema and _arun are inherited from VeniceImageGenerationBaseTool
