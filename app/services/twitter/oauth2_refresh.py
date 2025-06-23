@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.services.twitter.oauth2 import oauth2_user_handler
-from models.agent import AgentData, AgentDataTable
+from models.agent_data import AgentData, AgentDataTable
 from models.db import get_session
 
 logger = logging.getLogger(__name__)

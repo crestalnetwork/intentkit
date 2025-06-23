@@ -10,7 +10,8 @@ from starlette.responses import JSONResponse, RedirectResponse
 
 from app.config.config import config
 from app.services.twitter.oauth2 import oauth2_user_handler
-from models.agent import Agent, AgentData
+from models.agent import Agent
+from models.agent_data import AgentData
 
 router = APIRouter(prefix="/callback/auth", tags=["Callback"])
 

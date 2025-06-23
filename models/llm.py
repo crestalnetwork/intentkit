@@ -52,6 +52,7 @@ class LLMModelInfoTable(Base):
     supports_skill_calls = Column(Boolean, nullable=False, default=False)
     supports_structured_output = Column(Boolean, nullable=False, default=False)
     has_reasoning = Column(Boolean, nullable=False, default=False)
+    supports_search = Column(Boolean, nullable=False, default=False)
     supports_temperature = Column(Boolean, nullable=False, default=True)
     supports_frequency_penalty = Column(Boolean, nullable=False, default=True)
     supports_presence_penalty = Column(Boolean, nullable=False, default=True)
@@ -98,6 +99,9 @@ class LLMModelInfo(BaseModel):
         False  # Whether the model supports structured output
     )
     has_reasoning: bool = False  # Whether the model has strong reasoning capabilities
+    supports_search: bool = (
+        False  # Whether the model supports native search functionality
+    )
     supports_temperature: bool = (
         True  # Whether the model supports temperature parameter
     )
@@ -229,6 +233,7 @@ AVAILABLE_MODELS = {
         supports_image_input=True,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_search=True,
     ),
     "gpt-4o-mini": LLMModelInfo(
         id="gpt-4o-mini",
@@ -243,6 +248,7 @@ AVAILABLE_MODELS = {
         supports_image_input=False,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_search=True,
     ),
     "gpt-4.1-nano": LLMModelInfo(
         id="gpt-4.1-nano",
@@ -271,6 +277,7 @@ AVAILABLE_MODELS = {
         supports_image_input=False,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_search=True,
     ),
     "gpt-4.1": LLMModelInfo(
         id="gpt-4.1",
@@ -285,6 +292,7 @@ AVAILABLE_MODELS = {
         supports_image_input=True,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_search=True,
     ),
     "o4-mini": LLMModelInfo(
         id="o4-mini",
@@ -367,6 +375,7 @@ AVAILABLE_MODELS = {
         supports_image_input=False,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_search=True,
         timeout=180,
     ),
     "grok-3-mini": LLMModelInfo(
@@ -589,6 +598,9 @@ class XAILLM(LLMModel):
 
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
+
+        if self.model_name in ["grok-3", "grok-3-mini"]:
+            kwargs["search_parameters"] = {"mode": "auto"}
 
         return ChatXAI(**kwargs)
 

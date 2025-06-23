@@ -41,9 +41,9 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
     for that account, properly accounting for credits and debits.
 
     To ensure consistency during system operation, this function processes accounts in batches
-    using ID-based pagination and uses the maximum updated_at timestamp from each batch to limit
-    transaction queries, ensuring that only transactions created before or at the same time as
-    the account snapshot are considered.
+    using ID-based pagination and uses the last_event_id from each account to limit
+    transaction queries, ensuring that only transactions from events up to and including
+    the last recorded event for that account are considered.
 
     Returns:
         List of checking results
@@ -84,17 +84,6 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 f"Processing account balance batch: {batch_count}, accounts: {current_batch_size}"
             )
 
-            # Find the maximum updated_at timestamp for this batch of accounts
-            # This represents the point in time when we took the snapshot of this batch of account balances
-            batch_max_updated_at = (
-                max([account.updated_at for account in batch_accounts])
-                if batch_accounts
-                else None
-            )
-
-            if not batch_max_updated_at:
-                continue
-
             # Process each account in the batch
             for account in batch_accounts:
                 # Sleep for 10ms to reduce database load
@@ -106,20 +95,39 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 )
 
                 # Calculate the expected balance from all transactions, regardless of credit type
-                # Only include transactions created before or at the same time as the account snapshot
-                query = text("""
-                SELECT 
-                    SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
-                    SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
-                FROM credit_transactions
-                WHERE account_id = :account_id 
-                  AND created_at <= :max_updated_at
-            """)
+                # If account has last_event_id, only include transactions from events up to and including that event
+                # If no last_event_id, include all transactions for the account
+                if account.last_event_id:
+                    query = text("""
+                    SELECT 
+                        SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
+                        SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
+                    FROM credit_transactions ct
+                    JOIN credit_events ce ON ct.event_id = ce.id
+                    WHERE ct.account_id = :account_id 
+                      AND ce.id <= :last_event_id
+                """)
 
-                tx_result = await session.execute(
-                    query,
-                    {"account_id": account.id, "max_updated_at": batch_max_updated_at},
-                )
+                    tx_result = await session.execute(
+                        query,
+                        {
+                            "account_id": account.id,
+                            "last_event_id": account.last_event_id,
+                        },
+                    )
+                else:
+                    query = text("""
+                    SELECT 
+                        SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
+                        SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
+                    FROM credit_transactions
+                    WHERE account_id = :account_id
+                """)
+
+                    tx_result = await session.execute(
+                        query,
+                        {"account_id": account.id},
+                    )
                 tx_data = tx_result.fetchone()
 
                 credits = tx_data.credits or Decimal("0")
@@ -144,9 +152,7 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                         "total_credits": float(credits),
                         "total_debits": float(debits),
                         "difference": float(total_balance - expected_balance),
-                        "max_updated_at": batch_max_updated_at.isoformat()
-                        if batch_max_updated_at
-                        else None,
+                        "last_event_id": account.last_event_id,
                         "batch": batch_count,
                     },
                 )
@@ -694,7 +700,7 @@ async def main():
     """Main entry point for running account checks."""
     await init_db(**config.db)
     logger.info("Starting account checking procedures")
-    results = await run_quick_checks()
+    results = await run_slow_checks()
     logger.info("Completed account checking procedures")
     return results
 

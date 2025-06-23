@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "System",
+  "description": "System management and configuration skills for agent operations including API key management",
+  "x-icon": "https://ai.service.crestal.dev/skills/system/system.svg",
+  "x-tags": [
+    "System",
+    "Management",
+    "Configuration"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "read_agent_api_key": {
+          "type": "string",
+          "title": "Read Agent API Key",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve the API key for the agent. If no API key exists, generates and sets a new one.",
+          "default": "private"
+        },
+        "regenerate_agent_api_key": {
+          "type": "string",
+          "title": "Regenerate Agent API Key",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Generate a new API key for the agent, replacing any existing key.",
+          "default": "private"
+        }
+      }
+    }
+  }
+}
