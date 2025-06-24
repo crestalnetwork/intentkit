@@ -84,16 +84,7 @@ async def get_agent_schema_with_admin_config(
                     # Try to get model info from LLMModelInfo
                     model_info = await LLMModelInfo.get(model_id)
 
-                    if model_info is None:
-                        # If model not found, keep it as is
-                        new_enum.append(model_id)
-                        if i < len(enum_titles):
-                            new_enum_title.append(enum_titles[i])
-                        if i < len(enum_categories):
-                            new_enum_category.append(enum_categories[i])
-                        if i < len(enum_support_skill):
-                            new_enum_support_skill.append(enum_support_skill[i])
-                    elif model_info.enabled:
+                    if model_info.enabled:
                         # If model is enabled, update it with the latest info
                         new_enum.append(model_id)
                         if i < len(enum_titles):
