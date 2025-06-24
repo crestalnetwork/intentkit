@@ -135,7 +135,8 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 return "Error: No content could be processed into chunks."
 
             # Create embeddings and vector store
-            embeddings = OpenAIEmbeddings()
+            api_key = self.skill_store.get_system_config("openai_api_key")
+            embeddings = OpenAIEmbeddings(api_key=api_key)
 
             # Create vector store
             vector_store = FAISS.from_documents(split_docs, embeddings)
