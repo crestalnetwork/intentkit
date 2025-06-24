@@ -2,6 +2,7 @@ import logging
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
+from langchain_core.tools.base import ToolException
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -97,3 +98,36 @@ async def request_validation_exception_handler(
         status_code=HTTP_422_UNPROCESSABLE_ENTITY,
         content={"error": "ValidationError", "msg": formatted_msg},
     )
+
+
+class IntentKitLookUpError(LookupError):
+    """Custom lookup error for IntentKit."""
+
+    pass
+
+
+class AgentError(Exception):
+    """Custom exception for agent-related errors."""
+
+    def __init__(self, agent_id: str, message: str = None):
+        self.agent_id = agent_id
+        if message is None:
+            message = f"Agent error occurred for agent_id: {agent_id}"
+        super().__init__(message)
+
+    def __str__(self):
+        return f"AgentError(agent_id={self.agent_id}): {super().__str__()}"
+
+
+class SkillError(ToolException):
+    """Custom exception for skill-related errors."""
+
+    def __init__(self, agent_id: str, skill_name: str, message: str = None):
+        self.agent_id = agent_id
+        self.skill_name = skill_name
+        if message is None:
+            message = f"Skill error occurred for agent_id: {agent_id}, skill_name: {skill_name}"
+        super().__init__(message)
+
+    def __str__(self):
+        return f"SkillError(agent_id={self.agent_id}, skill_name={self.skill_name}): {super().__str__()}"

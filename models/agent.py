@@ -1159,22 +1159,28 @@ class Agent(AgentCreate):
         ),
     ]
 
-    def has_image_parser_skill(self) -> bool:
+    def has_image_parser_skill(self, is_private: bool = False) -> bool:
         if self.skills:
             for skill, skill_config in self.skills.items():
                 if skill == "openai" and skill_config.get("enabled"):
                     states = skill_config.get("states", {})
-                    if states.get("image_to_text") in ["public"]:
-                        return True
-                    if states.get("gpt_image_to_image") in ["public"]:
-                        return True
+                    if is_private:
+                        # Include both private and public when is_private=True
+                        if states.get("image_to_text") in ["private", "public"]:
+                            return True
+                        if states.get("gpt_image_to_image") in ["private", "public"]:
+                            return True
+                    else:
+                        # Only public when is_private=False
+                        if states.get("image_to_text") in ["public"]:
+                            return True
+                        if states.get("gpt_image_to_image") in ["public"]:
+                            return True
         return False
 
     async def is_model_support_image(self) -> bool:
         model = await LLMModelInfo.get(self.model)
-        if model:
-            return model.supports_image_input
-        return False
+        return model.supports_image_input
 
     def to_yaml(self) -> str:
         """
@@ -1561,7 +1567,15 @@ class AgentResponse(BaseModel):
     ]
     accept_image_input: Annotated[
         bool,
-        PydanticField(description="Whether the agent accepts image inputs"),
+        PydanticField(
+            description="Whether the agent accepts image inputs in public mode"
+        ),
+    ]
+    accept_image_input_private: Annotated[
+        bool,
+        PydanticField(
+            description="Whether the agent accepts image inputs in private mode"
+        ),
     ]
 
     def etag(self) -> str:
@@ -1675,6 +1689,10 @@ class AgentResponse(BaseModel):
         accept_image_input = (
             await agent.is_model_support_image() or agent.has_image_parser_skill()
         )
+        accept_image_input_private = (
+            await agent.is_model_support_image()
+            or agent.has_image_parser_skill(is_private=True)
+        )
 
         # Add processed fields to response
         data.update(
@@ -1688,6 +1706,7 @@ class AgentResponse(BaseModel):
                 "linked_telegram_username": linked_telegram_username,
                 "linked_telegram_name": linked_telegram_name,
                 "accept_image_input": accept_image_input,
+                "accept_image_input_private": accept_image_input_private,
             }
         )
 
