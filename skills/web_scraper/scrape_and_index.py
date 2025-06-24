@@ -259,7 +259,8 @@ class QueryIndexedContent(WebScraperBaseTool):
                 )
 
             # Restore vector store from base64 encoded files
-            embeddings = OpenAIEmbeddings()
+            api_key = self.skill_store.get_system_config("openai_api_key")
+            embeddings = OpenAIEmbeddings(api_key=api_key)
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Decode and write files to temporary directory
