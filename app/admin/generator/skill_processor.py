@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from openai import OpenAI
 
+from app.config.config import config
 from skills import __all__ as available_skill_categories
 
 if TYPE_CHECKING:
@@ -28,6 +29,40 @@ AVAILABLE_SKILL_CATEGORIES = set(available_skill_categories)
 _skill_states_cache: Dict[str, Set[str]] = {}
 _all_skills_cache: Dict[str, Dict[str, Set[str]]] = {}
 _skill_schemas_cache: Dict[str, Dict[str, Any]] = {}
+
+
+def get_default_skills_config() -> Dict[str, Any]:
+    """Get default skills configuration based on config settings.
+
+    Returns:
+        Dict containing default skills configurations
+    """
+    if not config.generator_add_default_skills:
+        return {}
+
+    default_skills = {}
+    all_real_skills = get_all_real_skills()
+
+    for skill_name in config.generator_default_skills:
+        skill_name = skill_name.strip()
+        if skill_name in all_real_skills:
+            # Get states with schema-based defaults
+            states_dict = {}
+            for state in all_real_skills[skill_name]:
+                states_dict[state] = get_skill_state_default(skill_name, state)
+
+            default_skills[skill_name] = {
+                "enabled": True,
+                "states": states_dict,
+                "api_key_provider": get_skill_default_api_key_provider(skill_name),
+            }
+            logger.debug(f"Added default skill: {skill_name}")
+        else:
+            logger.warning(
+                f"Default skill '{skill_name}' not found in available skills"
+            )
+
+    return default_skills
 
 
 def load_skill_schema(skill_name: str) -> Optional[Dict[str, Any]]:
@@ -434,11 +469,22 @@ async def identify_skills(
     Returns:
      Dict containing skill configurations with only real skill states
     """
-    # Use keyword matching first
-    skills_config = keyword_match_skills(prompt)
+    # Start with default skills if enabled
+    skills_config = get_default_skills_config()
+
+    # Use keyword matching
+    keyword_skills = keyword_match_skills(prompt)
+
+    # Merge keyword skills with defaults (keyword skills take precedence)
+    for skill_name, skill_config in keyword_skills.items():
+        skills_config[skill_name] = skill_config
 
     # Add skills mentioned by exact name
     skills_config = add_skill_by_name(prompt, skills_config)
+
+    if config.generator_add_default_skills and skills_config:
+        logger.info(f"Added default skills: {list(get_default_skills_config().keys())}")
+
     return skills_config
 
 

@@ -2,12 +2,28 @@
 
 AI-powered system for generating IntentKit agent schemas from natural language prompts with project-based conversation history and automatic tag generation.
 
+## Configuration
+
+### Default Skills
+
+The Agent Generator can automatically include default skills in all generated agents:
+
+```env
+# Enable default skills (disabled by default)
+GENERATOR_ADD_DEFAULT_SKILLS=true
+
+# Specify which skills to include as defaults (comma-separated)
+GENERATOR_DEFAULT_SKILLS=common,tavily,cdp
+```
+
+When enabled, these skills will be automatically added to every generated agent schema with appropriate default configurations from their schemas. Identified skills from prompts will take precedence over defaults.
+
 ## Architecture
 
 ```
 generator/
 ├── agent_generator.py    # Main orchestrator
-├── skill_processor.py   # Skill identification  
+├── skill_processor.py   # Skill identification + default skills
 ├── validation.py         # Schema validation
 ├── ai_assistant.py       # AI operations + conversation history
 ├── llm_logger.py         # Individual LLM call tracking
