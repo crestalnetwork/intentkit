@@ -69,9 +69,9 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
 
     async def _arun(
         self,
-        timeWindow: str,
-        minMentions: int,
-        config: RunnableConfig,
+        timeWindow: str = "24h",
+        minMentions: int = 5,
+        config: RunnableConfig = None,
         **kwargs,
     ) -> ElfaGetTrendingTokensOutput:
         """Run the tool to ranks the most discussed tokens by smart mentions count for a given period, updated every 5 minutes via the Elfa API.
