@@ -50,7 +50,7 @@
             "Agent Owner Only"
           ],
           "default": "private",
-          "description": "Execute token transfers (requires CDP wallet)"
+          "description": "Execute token transfers (requires CDP wallet and cdp skills enabled)"
         }
       },
       "required": ["token_quote", "token_execute"],
