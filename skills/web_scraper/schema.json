@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Web Scraper & Content Indexing",
+  "description": "Scrape web content and index it for intelligent querying and retrieval",
+  "x-icon": "https://ai.service.crestal.dev/skills/web_scraper/langchain.png",
+  "x-tags": [
+    "Web Scraping",
+    "Content Indexing",
+    "Vector Search",
+    "LangChain",
+    "Document Retrieval"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "scrape_and_index": {
+          "type": "string",
+          "title": "Scrape & Index Content",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Scrape content from web URLs and index it into a searchable vector store for later retrieval. Supports multiple URLs, customizable chunking, and persistent storage.",
+          "default": "private"
+        },
+        "query_indexed_content": {
+          "type": "string",
+          "title": "Query Indexed Content",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Search and retrieve relevant information from previously indexed web content using semantic similarity. Perfect for answering questions based on scraped documents.",
+          "default": "private"
+        }
+      },
+      "description": "Configure the availability of each web scraper skill (disabled, public, or private)"
+    },
+    "max_urls_per_request": {
+      "type": "integer",
+      "title": "Max URLs per Request",
+      "description": "Maximum number of URLs that can be scraped in a single request",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 20
+    },
+    "default_chunk_size": {
+      "type": "integer",
+      "title": "Default Chunk Size",
+      "description": "Default size of text chunks for document indexing (characters)",
+      "default": 1000,
+      "minimum": 100,
+      "maximum": 4000
+    },
+    "default_chunk_overlap": {
+      "type": "integer",
+      "title": "Default Chunk Overlap",
+      "description": "Default overlap between chunks to maintain context (characters)",
+      "default": 200,
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "requests_per_second": {
+      "type": "number",
+      "title": "Requests per Second",
+      "description": "Rate limit for web scraping to be respectful to target servers",
+      "default": 2,
+      "minimum": 0.1,
+      "maximum": 10
+    },
+    "request_timeout": {
+      "type": "integer",
+      "title": "Request Timeout",
+      "description": "Timeout for web requests in seconds",
+      "default": 30,
+      "minimum": 5,
+      "maximum": 120
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key for embeddings",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Platform Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}

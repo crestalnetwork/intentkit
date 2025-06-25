@@ -13,6 +13,7 @@ from models.app_setting import AppSetting
 from models.base import Base
 from models.db import get_session
 from models.redis import get_redis
+from utils.error import IntentKitLookUpError
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class LLMModelInfo(BaseModel):
     ]
 
     @staticmethod
-    async def get(model_id: str) -> Optional["LLMModelInfo"]:
+    async def get(model_id: str) -> "LLMModelInfo":
         """Get a model by ID with Redis caching.
 
         The model info is cached in Redis for 3 minutes.
@@ -195,7 +196,7 @@ class LLMModelInfo(BaseModel):
             return model_info
 
         # Not found anywhere
-        return None
+        raise IntentKitLookUpError(f"Model {model_id} not found")
 
     async def calculate_cost(self, input_tokens: int, output_tokens: int) -> Decimal:
         global _credit_per_usdc
@@ -482,6 +483,7 @@ class LLMModel(BaseModel):
     temperature: float = 0.7
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
+    info: LLMModelInfo
 
     async def model_info(self) -> LLMModelInfo:
         """Get the model information with caching.
@@ -490,8 +492,6 @@ class LLMModel(BaseModel):
         Raises ValueError if model is not found anywhere.
         """
         model_info = await LLMModelInfo.get(self.model_name)
-        if not model_info:
-            raise ValueError(f"Unknown model: {self.model_name}")
         return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
@@ -678,7 +678,7 @@ class VeniceLLM(LLMModel):
 
 
 # Factory function to create the appropriate LLM model based on the model name
-def create_llm_model(
+async def create_llm_model(
     model_name: str,
     temperature: float = 0.7,
     frequency_penalty: float = 0.0,
@@ -696,17 +696,17 @@ def create_llm_model(
     Returns:
         An instance of a subclass of LLMModel
     """
-    if model_name not in AVAILABLE_MODELS:
-        raise ValueError(f"Unknown model: {model_name}")
+    info = await LLMModelInfo.get(model_name)
 
     base_params = {
         "model_name": model_name,
         "temperature": temperature,
         "frequency_penalty": frequency_penalty,
         "presence_penalty": presence_penalty,
+        "info": info,
     }
 
-    provider = AVAILABLE_MODELS[model_name].provider
+    provider = info.provider
 
     if provider == LLMProvider.DEEPSEEK:
         return DeepseekLLM(**base_params)
@@ -721,19 +721,3 @@ def create_llm_model(
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)
-
-
-async def get_model_info(model_name: str) -> LLMModelInfo:
-    """Get information about a specific model."""
-    model = await LLMModelInfo.get(model_name)
-    if not model:
-        raise ValueError(f"Unknown model: {model_name}")
-    return model
-
-
-async def get_model_cost(
-    model_name: str, input_tokens: int, output_tokens: int
-) -> Decimal:
-    """Get the cost of a specific model."""
-    info = await get_model_info(model_name)
-    return await info.calculate_cost(input_tokens, output_tokens)

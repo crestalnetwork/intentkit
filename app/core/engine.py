@@ -48,7 +48,7 @@ from models.app_setting import AppSetting
 from models.chat import AuthorType, ChatMessage, ChatMessageCreate, ChatMessageSkillCall
 from models.credit import CreditAccount, OwnerType
 from models.db import get_pool, get_session
-from models.llm import get_model_cost
+from models.llm import LLMModelInfo, LLMProvider
 from models.skill import AgentSkillData, Skill, ThreadSkillData
 from models.user import User
 from utils.error import IntentKitAPIError
@@ -133,7 +133,7 @@ async def initialize_agent(aid, is_private=False):
     from models.llm import create_llm_model
 
     # Create the LLM model instance
-    llm_model = create_llm_model(
+    llm_model = await create_llm_model(
         model_name=agent.model,
         temperature=agent.temperature,
         frequency_penalty=agent.frequency_penalty,
@@ -144,7 +144,7 @@ async def initialize_agent(aid, is_private=False):
     llm = await llm_model.create_instance(config)
 
     # Get the token limit from the model info
-    input_token_limit = min(config.input_token_limit, await llm_model.get_token_limit())
+    input_token_limit = min(config.input_token_limit, llm_model.info.context_length)
 
     # ==== Store buffered conversation history in memory.
     memory = AsyncPostgresSaver(get_pool())
@@ -172,8 +172,8 @@ async def initialize_agent(aid, is_private=False):
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
 
-    # testing native search, FIXME: use flag
-    if agent.model in ["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini"]:
+    # testing native search
+    if llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search:
         tools.append({"type": "web_search_preview"})
 
     # finally, set up the system prompt
@@ -316,9 +316,14 @@ async def execute_agent(
     # make sure reply_to is set
     message.reply_to = message.id
 
+    # save input message first
     input = await message.save()
 
+    # agent
     agent = await Agent.get(input.agent_id)
+
+    # model
+    model = await LLMModelInfo.get(agent.model)
 
     payment_enabled = config.payment_enabled
 
@@ -350,10 +355,11 @@ async def execute_agent(
                 return resp
         # payer
         payer = input.user_id
-        if (
-            input.author_type == AuthorType.TELEGRAM
-            or input.author_type == AuthorType.TWITTER
-        ):
+        if input.author_type in [
+            AuthorType.TELEGRAM,
+            AuthorType.TWITTER,
+            AuthorType.API,
+        ]:
             payer = agent.owner
         # user account
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
@@ -435,35 +441,43 @@ async def execute_agent(
         # Remove @super from the message
         input_message = re.sub(r"\b@super\b", "", input_message).strip()
 
-    # testing native search, FIXME: use flag
-    if re.search(r"\b@search\b", input_message):
-        if agent.model in [
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "gpt-4o",
-            "gpt-4o-mini",
-            "grok-3",
-        ]:
+    # llm native search
+    if re.search(r"\b@search\b", input_message) or re.search(
+        r"\b@web\b", input_message
+    ):
+        if model.supports_search:
             input_message = re.sub(
                 r"\b@search\b", "(search for results)", input_message
             ).strip()
+            input_message = re.sub(
+                r"\b@web\b", "(search for results)", input_message
+            ).strip()
         else:
             input_message = re.sub(r"\b@search\b", "", input_message).strip()
+            input_message = re.sub(r"\b@web\b", "", input_message).strip()
 
-    # if the model doesn't natively support image parsing, add the image URLs to the message
-    if agent.has_image_parser_skill() and image_urls:
-        input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
+    # content to llm
     content = [
         {"type": "text", "text": input_message},
     ]
-    if not agent.has_image_parser_skill() and image_urls:
-        # anyway, pass it directly to LLM
-        content.extend(
-            [
-                {"type": "image_url", "image_url": {"url": image_url}}
-                for image_url in image_urls
+    # if the model doesn't natively support image parsing, add the image URLs to the message
+    if image_urls:
+        if (
+            agent.has_image_parser_skill(is_private=is_private)
+            and not model.supports_image_input
+        ):
+            input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
+            content = [
+                {"type": "text", "text": input_message},
             ]
-        )
+        else:
+            # anyway, pass it directly to LLM
+            content.extend(
+                [
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                    for image_url in image_urls
+                ]
+            )
 
     messages = [
         HumanMessage(content=content),
@@ -560,8 +574,7 @@ async def execute_agent(
                     async with get_session() as session:
                         # payment
                         if payment_enabled:
-                            amount = await get_model_cost(
-                                agent.model,
+                            amount = await model.calculate_cost(
                                 chat_message_create.input_tokens,
                                 chat_message_create.output_tokens,
                             )
@@ -672,8 +685,7 @@ async def execute_agent(
                     if payment_enabled:
                         # message payment, only first call in a group has message bill
                         if have_first_call_in_cache:
-                            message_amount = await get_model_cost(
-                                agent.model,
+                            message_amount = await model.calculate_cost(
                                 skill_message_create.input_tokens,
                                 skill_message_create.output_tokens,
                             )

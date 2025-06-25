@@ -31,6 +31,7 @@ class AgentSkillDataTable(Base):
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
     data = Column(JSONB, nullable=True)
+    size = Column(Integer, nullable=False, default=0)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -59,8 +60,17 @@ class AgentSkillDataCreate(BaseModel):
 
         Returns:
             AgentSkillData: The saved agent skill data instance
+
+        Raises:
+            Exception: If the total size would exceed the 10MB limit
         """
+        # Calculate the size of the data
+        data_size = len(json.dumps(self.data).encode("utf-8"))
+
         async with get_session() as db:
+            # Check current total size for this agent
+            current_total = await AgentSkillData.total_size(self.agent_id)
+
             record = await db.scalar(
                 select(AgentSkillDataTable).where(
                     AgentSkillDataTable.agent_id == self.agent_id,
@@ -69,12 +79,34 @@ class AgentSkillDataCreate(BaseModel):
                 )
             )
 
+            # Calculate new total size
+            if record:
+                # Update existing record - subtract old size, add new size
+                new_total = current_total - record.size + data_size
+            else:
+                # Create new record - add new size
+                new_total = current_total + data_size
+
+            # Check if new total would exceed limit (10MB = 10 * 1024 * 1024 bytes)
+            if new_total > 10 * 1024 * 1024:
+                raise Exception(
+                    f"Total size would exceed 10MB limit. Current: {current_total}, New: {new_total}"
+                )
+
             if record:
                 # Update existing record
                 record.data = self.data
+                record.size = data_size
             else:
                 # Create new record
-                record = AgentSkillDataTable(**self.model_dump())
+                record = AgentSkillDataTable(
+                    agent_id=self.agent_id,
+                    skill=self.skill,
+                    key=self.key,
+                    data=self.data,
+                    size=data_size,
+                )
+
             db.add(record)
             await db.commit()
             await db.refresh(record)
@@ -93,12 +125,31 @@ class AgentSkillData(AgentSkillDataCreate):
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
+    size: Annotated[int, Field(description="Size of the data in bytes")]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this data was created")
     ]
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this data was updated")
     ]
+
+    @classmethod
+    async def total_size(cls, agent_id: str) -> int:
+        """Calculate the total size of all skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+
+        Returns:
+            int: Total size in bytes of all skill data for the agent
+        """
+        async with get_session() as db:
+            result = await db.scalar(
+                select(func.coalesce(func.sum(AgentSkillDataTable.size), 0)).where(
+                    AgentSkillDataTable.agent_id == agent_id
+                )
+            )
+            return result or 0
 
     @classmethod
     async def get(cls, agent_id: str, skill: str, key: str) -> Optional[dict]:
