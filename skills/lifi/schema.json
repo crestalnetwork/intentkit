@@ -62,7 +62,8 @@
       "description": "Default slippage tolerance for token transfers (e.g., 0.03 for 3%)",
       "default": 0.03,
       "minimum": 0.001,
-      "maximum": 0.5
+      "maximum": 0.5,
+      "x-step": 0.001
     },
     "allowed_chains": {
       "type": "array",
