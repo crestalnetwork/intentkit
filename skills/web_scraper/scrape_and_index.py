@@ -6,14 +6,12 @@ from pydantic import BaseModel, Field
 
 from skills.web_scraper.base import WebScraperBaseTool
 from skills.web_scraper.utils import (
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
     MetadataManager,
     ResponseFormatter,
     VectorStoreManager,
-    handle_skill_errors,
     scrape_and_index_urls,
-    DEFAULT_CHUNK_SIZE,
-    DEFAULT_CHUNK_OVERLAP,
-    DEFAULT_REQUEST_TIMEOUT,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,8 +70,6 @@ class ScrapeAndIndex(WebScraperBaseTool):
     )
     args_schema: Type[BaseModel] = ScrapeAndIndexInput
 
-
-
     async def _arun(
         self,
         urls: List[str],
@@ -87,21 +83,25 @@ class ScrapeAndIndex(WebScraperBaseTool):
             # Get agent context - throw error if not available
             if not config:
                 raise ValueError("Configuration is required but not provided")
-            
+
             context = self.context_from_config(config)
             if not context or not context.agent or not context.agent.id:
                 raise ValueError("Agent ID is required but not found in configuration")
-            
+
             agent_id = context.agent.id
 
-            logger.info(f"[{agent_id}] Starting scrape and index operation with {len(urls)} URLs")
+            logger.info(
+                f"[{agent_id}] Starting scrape and index operation with {len(urls)} URLs"
+            )
 
             # Use the utility function to scrape and index URLs
             total_chunks, was_merged, valid_urls = await scrape_and_index_urls(
                 urls, agent_id, self.skill_store, chunk_size, chunk_overlap
             )
 
-            logger.info(f"[{agent_id}] Scraping completed: {total_chunks} chunks indexed, merged: {was_merged}")
+            logger.info(
+                f"[{agent_id}] Scraping completed: {total_chunks} chunks indexed, merged: {was_merged}"
+            )
 
             if not valid_urls:
                 logger.error(f"[{agent_id}] No valid URLs provided")
@@ -127,12 +127,14 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 total_chunks,
                 chunk_size,
                 chunk_overlap,
-                was_merged
+                was_merged,
             )
-            
-            logger.info(f"[{agent_id}] Scrape and index operation completed successfully")
+
+            logger.info(
+                f"[{agent_id}] Scrape and index operation completed successfully"
+            )
             return response
-            
+
         except Exception as e:
             # Extract agent_id for error logging if possible
             agent_id = "UNKNOWN"
@@ -141,9 +143,9 @@ class ScrapeAndIndex(WebScraperBaseTool):
                     context = self.context_from_config(config)
                     if context and context.agent and context.agent.id:
                         agent_id = context.agent.id
-            except:
+            except Exception:
                 pass
-                
+
             logger.error(f"[{agent_id}] Error in ScrapeAndIndex: {e}", exc_info=True)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e
 
@@ -175,25 +177,24 @@ class QueryIndexedContent(WebScraperBaseTool):
             # Get agent context - throw error if not available
             if not config:
                 raise ValueError("Configuration is required but not provided")
-            
+
             context = self.context_from_config(config)
             if not context or not context.agent or not context.agent.id:
                 raise ValueError("Agent ID is required but not found in configuration")
-            
+
             agent_id = context.agent.id
 
             logger.info(f"[{agent_id}] Starting query operation: '{query}'")
 
             # Retrieve vector store
             vector_store_key = f"vector_store_{agent_id}"
-            metadata_key = f"indexed_urls_{agent_id}"
-            
+
             logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
-            
+
             stored_data = await self.skill_store.get_agent_skill_data(
                 agent_id, "web_scraper", vector_store_key
             )
-            
+
             if not stored_data:
                 logger.warning(f"[{agent_id}] No vector store found")
                 return "No indexed content found. Please use the scrape_and_index tool first to scrape and index some web content before querying."
@@ -206,9 +207,13 @@ class QueryIndexedContent(WebScraperBaseTool):
             logger.info(f"[{agent_id}] Decoding vector store")
             vs_manager = VectorStoreManager(self.skill_store)
             embeddings = vs_manager.create_embeddings()
-            vector_store = vs_manager.decode_vector_store(stored_data["faiss_files"], embeddings)
-            
-            logger.info(f"[{agent_id}] Vector store loaded, index count: {vector_store.index.ntotal}")
+            vector_store = vs_manager.decode_vector_store(
+                stored_data["faiss_files"], embeddings
+            )
+
+            logger.info(
+                f"[{agent_id}] Vector store loaded, index count: {vector_store.index.ntotal}"
+            )
 
             # Perform similarity search
             docs = vector_store.similarity_search(query, k=max_results)
@@ -226,8 +231,10 @@ class QueryIndexedContent(WebScraperBaseTool):
                 results.append(f"**Source {i}:** {source}\n{content}")
 
             response = "\n\n".join(results)
-            logger.info(f"[{agent_id}] Query completed successfully, returning {len(response)} chars")
-            
+            logger.info(
+                f"[{agent_id}] Query completed successfully, returning {len(response)} chars"
+            )
+
             return response
 
         except Exception as e:
@@ -238,8 +245,10 @@ class QueryIndexedContent(WebScraperBaseTool):
                     context = self.context_from_config(config)
                     if context and context.agent and context.agent.id:
                         agent_id = context.agent.id
-            except:
+            except Exception:
                 pass
-                
-            logger.error(f"[{agent_id}] Error in QueryIndexedContent: {e}", exc_info=True)
+
+            logger.error(
+                f"[{agent_id}] Error in QueryIndexedContent: {e}", exc_info=True
+            )
             raise type(e)(f"[agent:{agent_id}]: {e}") from e

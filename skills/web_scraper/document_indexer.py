@@ -9,7 +9,6 @@ from skills.web_scraper.utils import (
     DocumentProcessor,
     MetadataManager,
     ResponseFormatter,
-    handle_skill_errors,
     index_documents,
 )
 
@@ -68,8 +67,6 @@ class DocumentIndexer(WebScraperBaseTool):
     )
     args_schema: Type[BaseModel] = DocumentIndexerInput
 
-
-
     async def _arun(
         self,
         text_content: str,
@@ -85,11 +82,11 @@ class DocumentIndexer(WebScraperBaseTool):
         # Get agent context - throw error if not available
         if not config:
             raise ValueError("Configuration is required but not provided")
-        
+
         context = self.context_from_config(config)
         if not context or not context.agent or not context.agent.id:
             raise ValueError("Agent ID is required but not found in configuration")
-        
+
         agent_id = context.agent.id
 
         logger.info(f"[{agent_id}] Starting document indexing for title: '{title}'")
@@ -101,18 +98,25 @@ class DocumentIndexer(WebScraperBaseTool):
 
         # Create document with metadata
         document = DocumentProcessor.create_document(
-            text_content, title, source, tags, 
-            extra_metadata={"source_type": "document_indexer"}
+            text_content,
+            title,
+            source,
+            tags,
+            extra_metadata={"source_type": "document_indexer"},
         )
 
-        logger.info(f"[{agent_id}] Document created, length: {len(document.page_content)} chars")
+        logger.info(
+            f"[{agent_id}] Document created, length: {len(document.page_content)} chars"
+        )
 
         # Index the document using the unified workflow
         total_chunks, was_merged = await index_documents(
             [document], agent_id, self.skill_store, chunk_size, chunk_overlap
         )
 
-        logger.info(f"[{agent_id}] Document indexed: {total_chunks} chunks, merged: {was_merged}")
+        logger.info(
+            f"[{agent_id}] Document indexed: {total_chunks} chunks, merged: {was_merged}"
+        )
 
         # Update metadata
         metadata_manager = MetadataManager(self.skill_store)
@@ -120,14 +124,16 @@ class DocumentIndexer(WebScraperBaseTool):
             title, source, tags, [], len(document.page_content)
         )
         await metadata_manager.update_metadata(agent_id, new_metadata)
-        
+
         logger.info(f"[{agent_id}] Metadata updated successfully")
 
         # Format response
         extra_info = {
             "Title": title,
             "Source": source,
-            "Tags": ', '.join([tag.strip() for tag in tags.split(',') if tag.strip()]) if tags else 'None',
+            "Tags": ", ".join([tag.strip() for tag in tags.split(",") if tag.strip()])
+            if tags
+            else "None",
             "Content length": f"{len(document.page_content):,} characters",
         }
 
@@ -138,8 +144,8 @@ class DocumentIndexer(WebScraperBaseTool):
             chunk_size,
             chunk_overlap,
             was_merged,
-            extra_info
+            extra_info,
         )
-        
+
         logger.info(f"[{agent_id}] Document indexing completed successfully")
-        return response 
+        return response

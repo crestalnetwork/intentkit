@@ -6,9 +6,9 @@ from typing import TypedDict
 from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillOwnerState, SkillState
 from skills.web_scraper.base import WebScraperBaseTool
+from skills.web_scraper.document_indexer import DocumentIndexer
 from skills.web_scraper.scrape_and_index import QueryIndexedContent, ScrapeAndIndex
 from skills.web_scraper.website_indexer import WebsiteIndexer
-from skills.web_scraper.document_indexer import DocumentIndexer
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, WebScraperBaseTool] = {}
