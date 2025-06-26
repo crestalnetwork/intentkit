@@ -109,14 +109,12 @@
       "title": "API Key Provider",
       "description": "Choose whether to use a platform-provided API key or provide your own CookieFun API key",
       "enum": [
-        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
-        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "platform"
+      "default": "agent_owner"
     }
   },
   "required": [

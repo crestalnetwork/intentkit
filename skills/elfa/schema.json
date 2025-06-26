@@ -7,6 +7,7 @@
   "x-tags": [
     "Data"
   ],
+  "x-nft-requirement": 1,
   "properties": {
     "enabled": {
       "type": "boolean",

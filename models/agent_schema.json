@@ -499,10 +499,6 @@
           "title": "Chainlist RPC Endpoints",
           "$ref": "../skills/chainlist/schema.json"
         },
-        "cookiefun": {
-          "title": "cookie.fun",
-          "$ref": "../skills/cookiefun/schema.json"
-        },
         "dexscreener": {
           "title": "DEX Screener",
           "$ref": "../skills/dexscreener/schema.json"
@@ -546,6 +542,10 @@
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
+        },
+        "cookiefun": {
+          "title": "cookie.fun",
+          "$ref": "../skills/cookiefun/schema.json"
         },
         "cryptocompare": {
           "title": "Cryptocompare",

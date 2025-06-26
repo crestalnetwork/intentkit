@@ -447,10 +447,14 @@ async def execute_agent(
     ):
         if model.supports_search:
             input_message = re.sub(
-                r"\b@search\b", "(search for results)", input_message
+                r"\b@search\b",
+                "(You have native search tool, you can use it to get more recent information)",
+                input_message,
             ).strip()
             input_message = re.sub(
-                r"\b@web\b", "(search for results)", input_message
+                r"\b@web\b",
+                "(You have native search tool, you can use it to get more recent information)",
+                input_message,
             ).strip()
         else:
             input_message = re.sub(r"\b@search\b", "", input_message).strip()
