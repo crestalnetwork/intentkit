@@ -7,6 +7,8 @@ from abstracts.skill import SkillStoreABC
 from skills.base import SkillConfig, SkillOwnerState, SkillState
 from skills.web_scraper.base import WebScraperBaseTool
 from skills.web_scraper.scrape_and_index import QueryIndexedContent, ScrapeAndIndex
+from skills.web_scraper.website_indexer import WebsiteIndexer
+from skills.web_scraper.document_indexer import DocumentIndexer
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, WebScraperBaseTool] = {}
@@ -17,6 +19,8 @@ logger = logging.getLogger(__name__)
 class SkillStates(TypedDict):
     scrape_and_index: SkillOwnerState
     query_indexed_content: SkillState
+    website_indexer: SkillOwnerState
+    document_indexer: SkillOwnerState
 
 
 class Config(SkillConfig):
@@ -81,6 +85,18 @@ def get_web_scraper_skill(
     elif name == "query_indexed_content":
         if name not in _cache:
             _cache[name] = QueryIndexedContent(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "website_indexer":
+        if name not in _cache:
+            _cache[name] = WebsiteIndexer(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "document_indexer":
+        if name not in _cache:
+            _cache[name] = DocumentIndexer(
                 skill_store=store,
             )
         return _cache[name]
