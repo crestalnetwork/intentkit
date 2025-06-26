@@ -43,6 +43,7 @@ dependencies = [
     "goat-sdk-wallet-solana",
     "goat-sdk-wallet-web3",
     "gunicorn>=23.0.0",
+    "httpx>=0.27.0",
     "jsonref>=1.1.0",
     "langchain (>=0.3.25,<0.4.0)",
     "langchain-community>=0.3.19",
