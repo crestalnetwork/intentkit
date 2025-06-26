@@ -216,13 +216,14 @@ Extract the URLs now:"""
 
         return list(set(urls))  # Remove duplicates
 
-    async def _call_ai_model(self, prompt: str) -> str:
+    async def _call_ai_model(self, prompt: str, context) -> str:
         """Call OpenAI GPT-4o-mini to extract URLs from sitemap content."""
         try:
-            # Get OpenAI API key
-            api_key = self.skill_store.get_system_config("openai_api_key")
-            if not api_key:
-                raise ValueError("OpenAI API key not configured")
+            # Get OpenAI API key using the standard pattern
+            from skills.openai.base import OpenAIBaseTool
+
+            temp_tool = OpenAIBaseTool(skill_store=self.skill_store)
+            api_key = temp_tool.get_api_key(context)
 
             # Initialize OpenAI client
             client = openai.AsyncOpenAI(api_key=api_key)
@@ -300,7 +301,7 @@ Extract the URLs now:"""
                 prompt = self._create_ai_extraction_prompt(
                     sitemap_xml, include_patterns, exclude_patterns
                 )
-                ai_response = await self._call_ai_model(prompt)
+                ai_response = await self._call_ai_model(prompt, context)
                 all_urls = self._parse_ai_response(ai_response)
 
                 logger.info(
