@@ -64,6 +64,9 @@ class AgentDataTable(Base):
     api_key = Column(
         String, nullable=True, unique=True, comment="API key for the agent"
     )
+    api_key_public = Column(
+        String, nullable=True, unique=True, comment="Public API key for the agent"
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -195,6 +198,13 @@ class AgentData(BaseModel):
             description="API key for the agent",
         ),
     ]
+    api_key_public: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Public API key for the agent",
+        ),
+    ]
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -234,7 +244,7 @@ class AgentData(BaseModel):
         """Get agent data by API key.
 
         Args:
-            api_key: API key
+            api_key: API key (sk- for private, pk- for public)
 
         Returns:
             AgentData if found, None otherwise
@@ -243,9 +253,22 @@ class AgentData(BaseModel):
             HTTPException: If there are database errors
         """
         async with get_session() as db:
-            result = await db.execute(
-                select(AgentDataTable).where(AgentDataTable.api_key == api_key)
-            )
+            if api_key.startswith("sk-"):
+                # Search in api_key field for private keys
+                result = await db.execute(
+                    select(AgentDataTable).where(AgentDataTable.api_key == api_key)
+                )
+            elif api_key.startswith("pk-"):
+                # Search in api_key_public field for public keys
+                result = await db.execute(
+                    select(AgentDataTable).where(
+                        AgentDataTable.api_key_public == api_key
+                    )
+                )
+            else:
+                # Invalid key format
+                return None
+
             item = result.scalar_one_or_none()
             if item:
                 return cls.model_validate(item)
