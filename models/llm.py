@@ -28,6 +28,18 @@ class LLMProvider(str, Enum):
     REIGENT = "reigent"
     VENICE = "venice"
 
+    def display_name(self) -> str:
+        """Return user-friendly display name for the provider."""
+        display_names = {
+            self.OPENAI: "OpenAI",
+            self.DEEPSEEK: "DeepSeek",
+            self.XAI: "xAI",
+            self.ETERNAL: "Others",
+            self.REIGENT: "Others",
+            self.VENICE: "Others",
+        }
+        return display_names.get(self, self.value)
+
 
 class LLMModelInfoTable(Base):
     """Database table model for LLM model information."""
