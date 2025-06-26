@@ -1,6 +1,7 @@
 {
   "title": "Dune Analytics Skills Configuration",
   "description": "Configuration for Dune Analytics skills to fetch data from Dune Analytics API.",
+  "x-icon": "https://ai.service.crestal.dev/skills/dune/dune.png",
   "type": "object",
   "properties": {
     "enabled": {
