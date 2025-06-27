@@ -87,6 +87,8 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
     start_time = time.time()
     default_value = Decimal("0")
 
+    agent = await Agent.get(agent_id)
+
     async with get_session() as session:
         # Calculate the date 3 days ago from now
         three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
@@ -97,6 +99,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         ).where(
             CreditEventTable.agent_id == agent_id,
             CreditEventTable.created_at >= three_days_ago,
+            CreditEventTable.user_id != agent.owner,
             CreditEventTable.upstream_type == UpstreamType.EXECUTOR,
             CreditEventTable.event_type.in_([EventType.MESSAGE, EventType.SKILL_CALL]),
             CreditEventTable.start_message_id.is_not(None),
