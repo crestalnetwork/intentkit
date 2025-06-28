@@ -286,6 +286,96 @@ def create_streaming_response(content: str, request_id: str, model: str, created
     yield "data: [DONE]\n\n"
 
 
+def create_streaming_response_batched(
+    content_parts: List[str], request_id: str, model: str, created: int
+):
+    """Create a streaming response generator for OpenAI-compatible streaming with batched content.
+
+    Args:
+        content_parts: List of content parts to stream in batches
+        request_id: The request ID
+        model: The model name
+        created: The creation timestamp
+
+    Yields:
+        str: Server-sent events formatted chunks
+    """
+    # First chunk with role
+    first_chunk = OpenAIChatCompletionChunk(
+        id=request_id,
+        object="chat.completion.chunk",
+        created=created,
+        model=model,
+        choices=[
+            OpenAIChoiceDelta(
+                index=0,
+                delta=OpenAIDelta(role="assistant"),
+                finish_reason=None,
+            )
+        ],
+        system_fingerprint=None,
+    )
+    yield f"data: {first_chunk.model_dump_json()}\n\n"
+
+    # Stream each content part as a separate batch
+    for i, content_part in enumerate(content_parts):
+        if content_part:
+            # Add newline between parts (except for the first one)
+            if i > 0:
+                newline_chunk = OpenAIChatCompletionChunk(
+                    id=request_id,
+                    object="chat.completion.chunk",
+                    created=created,
+                    model=model,
+                    choices=[
+                        OpenAIChoiceDelta(
+                            index=0,
+                            delta=OpenAIDelta(content="\n"),
+                            finish_reason=None,
+                        )
+                    ],
+                    system_fingerprint=None,
+                )
+                yield f"data: {newline_chunk.model_dump_json()}\n\n"
+
+            # Stream the content part
+            content_chunk = OpenAIChatCompletionChunk(
+                id=request_id,
+                object="chat.completion.chunk",
+                created=created,
+                model=model,
+                choices=[
+                    OpenAIChoiceDelta(
+                        index=0,
+                        delta=OpenAIDelta(content=content_part),
+                        finish_reason=None,
+                    )
+                ],
+                system_fingerprint=None,
+            )
+            yield f"data: {content_chunk.model_dump_json()}\n\n"
+
+    # Final chunk with finish_reason
+    final_chunk = OpenAIChatCompletionChunk(
+        id=request_id,
+        object="chat.completion.chunk",
+        created=created,
+        model=model,
+        choices=[
+            OpenAIChoiceDelta(
+                index=0,
+                delta=OpenAIDelta(),
+                finish_reason="stop",
+            )
+        ],
+        system_fingerprint=None,
+    )
+    yield f"data: {final_chunk.model_dump_json()}\n\n"
+
+    # End of stream
+    yield "data: [DONE]\n\n"
+
+
 @openai_router.post(
     "/v1/chat/completions",
     tags=["Compatible"],
@@ -341,27 +431,45 @@ async def create_chat_completion(
     # Execute agent
     response_messages = await execute_agent(user_message)
 
-    # Get the last response message (should be from the agent)
+    # Process response messages based on AuthorType
     if not response_messages:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No response from agent",
         )
 
-    agent_response = response_messages[-1]
+    # Convert response messages to content list
+    content_parts = []
+    for msg in response_messages:
+        if msg.author_type == AuthorType.AGENT or msg.author_type == AuthorType.SYSTEM:
+            # For agent and system messages, use the content field
+            if msg.message:
+                content_parts.append(msg.message)
+        elif msg.author_type == AuthorType.SKILL:
+            # For skill messages, show "running skill_name..." for each skill call
+            if msg.skill_calls and len(msg.skill_calls) > 0:
+                for skill_call in msg.skill_calls:
+                    skill_name = skill_call.get("name", "unknown")
+                    content_parts.append(f"running {skill_name}...")
+            else:
+                content_parts.append("running unknown...")
+
+    # Combine all content parts
+    content = "\n".join(content_parts) if content_parts else ""
 
     # Create OpenAI-compatible response
     import time
 
     request_id = f"chatcmpl-{XID()}"
     created = int(time.time())
-    content = agent_response.message or ""
 
     # Check if streaming is requested
     if request.stream:
-        # Return streaming response
+        # Return streaming response with batched content
         return StreamingResponse(
-            create_streaming_response(content, request_id, request.model, created),
+            create_streaming_response_batched(
+                content_parts, request_id, request.model, created
+            ),
             media_type="text/plain",
             headers={
                 "Cache-Control": "no-cache",

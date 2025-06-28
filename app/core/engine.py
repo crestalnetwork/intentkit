@@ -31,7 +31,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.errors import GraphRecursionError
-from langgraph.graph.graph import CompiledGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -95,8 +95,8 @@ async def explain_prompt(message: str) -> str:
 
 
 # Global variable to cache all agent executors
-_agents: dict[str, CompiledGraph] = {}
-_private_agents: dict[str, CompiledGraph] = {}
+_agents: dict[str, CompiledStateGraph] = {}
+_private_agents: dict[str, CompiledStateGraph] = {}
 
 # Global dictionaries to cache agent update times
 _agents_updated: dict[str, datetime] = {}
@@ -263,7 +263,9 @@ async def initialize_agent(aid, is_private=False):
         _agents_updated[aid] = agent.updated_at
 
 
-async def agent_executor(agent_id: str, is_private: bool) -> (CompiledGraph, float):
+async def agent_executor(
+    agent_id: str, is_private: bool
+) -> (CompiledStateGraph, float):
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:
