@@ -31,6 +31,32 @@ from models.skill import Skill
 logger = logging.getLogger(__name__)
 
 
+def _validate_chat_history(
+    messages: Sequence[BaseMessage],
+) -> None:
+    """Validate that all tool calls in AIMessages have a corresponding ToolMessage."""
+    all_tool_calls = [
+        tool_call
+        for message in messages
+        if isinstance(message, AIMessage)
+        for tool_call in message.tool_calls
+    ]
+    tool_call_ids_with_results = {
+        message.tool_call_id for message in messages if isinstance(message, ToolMessage)
+    }
+    tool_calls_without_results = [
+        tool_call
+        for tool_call in all_tool_calls
+        if tool_call["id"] not in tool_call_ids_with_results
+    ]
+    if not tool_calls_without_results:
+        return
+
+    message = "Found AIMessages with tool_calls that do not have a corresponding ToolMessage. "
+    f"Here are the first few of those tool calls: {tool_calls_without_results[:3]}"
+    raise ValueError(message)
+
+
 class PreModelNode(RunnableCallable):
     """LangGraph node that run before the LLM is called."""
 
@@ -53,43 +79,6 @@ class PreModelNode(RunnableCallable):
         self.existing_summary_prompt = DEFAULT_EXISTING_SUMMARY_PROMPT
         self.final_prompt = DEFAULT_FINAL_SUMMARY_PROMPT
         self.func_accepts_config = True
-
-    def _validate_chat_history(
-        self,
-        messages: Sequence[BaseMessage],
-    ) -> Sequence[BaseMessage]:
-        """Validate that all tool calls in AIMessages have a corresponding ToolMessage."""
-        all_tool_calls = [
-            tool_call
-            for message in messages
-            if isinstance(message, AIMessage)
-            for tool_call in message.tool_calls
-        ]
-        tool_call_ids_with_results = {
-            message.tool_call_id
-            for message in messages
-            if isinstance(message, ToolMessage)
-        }
-        tool_calls_without_results = [
-            tool_call
-            for tool_call in all_tool_calls
-            if tool_call["id"] not in tool_call_ids_with_results
-        ]
-
-        # If there are no incomplete tool calls, return empty list
-        if not tool_calls_without_results:
-            return []
-
-        # Collect all message IDs containing incomplete tool calls
-        messages_to_remove = []
-        for message in messages:
-            if isinstance(message, AIMessage) and message.tool_calls:
-                for tool_call in message.tool_calls:
-                    if tool_call["id"] not in tool_call_ids_with_results:
-                        messages_to_remove.append(RemoveMessage(id=message.id))
-                        break  # Once we find an incomplete tool call, add this message and break inner loop
-
-        return messages_to_remove
 
     def _parse_input(
         self, input: AgentState
@@ -124,13 +113,13 @@ class PreModelNode(RunnableCallable):
         config: RunnableConfig,
     ) -> dict[str, Any]:
         messages, context = self._parse_input(input)
-        result = self._validate_chat_history(messages)
-        if result:
-            if config.get("configurable") and config.get("configurable").get("agent"):
-                logger.error(
-                    f"Invalid tool calls removed: {config.get('configurable').get('agent').id}"
-                )
-            return {"messages": result}
+        try:
+            _validate_chat_history(messages)
+        except ValueError as e:
+            logger.error(f"Invalid chat history: {e}")
+            logger.info(input)
+            # delete all messages
+            return {"messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]}
         if self.short_term_memory_strategy == "trim":
             trimmed_messages = trim_messages(
                 messages,
