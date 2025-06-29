@@ -17,8 +17,8 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import select
 
-from app.config.config import config
-from models.credit import (
+from intentkit.config.config import config
+from intentkit.models.credit import (
     CreditAccountTable,
     CreditEventTable,
     CreditTransactionTable,
@@ -26,7 +26,7 @@ from models.credit import (
     EventType,
     TransactionType,
 )
-from models.db import get_session, init_db
+from intentkit.models.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

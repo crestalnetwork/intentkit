@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -6,8 +5,8 @@ from typing import Dict, List, Optional
 
 from sqlalchemy import select, text
 
-from app.config.config import config
-from models.credit import (
+from intentkit.config.config import config
+from intentkit.models.credit import (
     CreditAccount,
     CreditAccountTable,
     CreditEvent,
@@ -15,7 +14,7 @@ from models.credit import (
     CreditTransaction,
     CreditTransactionTable,
 )
-from models.db import get_session, init_db
+from intentkit.models.db import get_session, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -285,9 +284,6 @@ async def check_transaction_balance() -> List[AccountCheckingResult]:
 async def check_orphaned_transactions() -> List[AccountCheckingResult]:
     """Check for orphaned transactions that don't have a corresponding event.
 
-    Args:
-        session: Database session
-
     Returns:
         List of checking results
     """
@@ -343,9 +339,6 @@ async def check_orphaned_transactions() -> List[AccountCheckingResult]:
 
 async def check_orphaned_events() -> List[AccountCheckingResult]:
     """Check for orphaned events that don't have any transactions.
-
-    Args:
-        session: Database session
 
     Returns:
         List of checking results
@@ -414,9 +407,6 @@ async def check_total_credit_balance() -> List[AccountCheckingResult]:
 
     This verifies that the overall credit system is balanced, with all credits accounted for.
 
-    Args:
-        session: Database session
-
     Returns:
         List of checking results
     """
@@ -476,9 +466,6 @@ async def check_transaction_total_balance() -> List[AccountCheckingResult]:
     """Check if the total credit and debit amounts in the CreditTransaction table are balanced.
 
     This verifies that across all transactions in the system, the total credits equal the total debits.
-
-    Args:
-        session: Database session
 
     Returns:
         List of checking results
@@ -571,7 +558,7 @@ async def run_quick_checks() -> Dict[str, List[AccountCheckingResult]]:
         )
 
     # Send summary to Slack
-    from utils.slack_alert import send_slack_message
+    from intentkit.utils.slack_alert import send_slack_message
 
     # Create a summary message with color based on status
     total_checks = sum(len(check_results) for check_results in results.values())
@@ -652,7 +639,7 @@ async def run_slow_checks() -> Dict[str, List[AccountCheckingResult]]:
         )
 
     # Send summary to Slack
-    from utils.slack_alert import send_slack_message
+    from intentkit.utils.slack_alert import send_slack_message
 
     # Create a summary message with color based on status
     total_checks = sum(len(check_results) for check_results in results.values())

@@ -13,7 +13,7 @@ import httpx
 from epyxid import XID
 from openai import OpenAI
 
-from app.config.config import config
+from intentkit.config.config import config
 
 if TYPE_CHECKING:
     from .llm_logger import LLMLogger

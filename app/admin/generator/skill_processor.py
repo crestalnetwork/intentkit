@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from openai import OpenAI
 
-from skills import __all__ as available_skill_categories
+from intentkit.skills import __all__ as available_skill_categories
 
 if TYPE_CHECKING:
     from .llm_logger import LLMLogger
@@ -194,7 +194,7 @@ def get_skill_states(skill_category: str) -> Set[str]:
 
     try:
         # Import the skill category module
-        skill_module = importlib.import_module(f"skills.{skill_category}")
+        skill_module = importlib.import_module(f"intentkit.skills.{skill_category}")
 
         # Look for the SkillStates TypedDict class
         if hasattr(skill_module, "SkillStates"):

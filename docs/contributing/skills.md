@@ -50,8 +50,8 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from abstracts.skill import SkillStoreABC
-from skills.base import IntentKitSkill
+from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.skills.base import IntentKitSkill
 
 
 class CommonBaseTool(IntentKitSkill):
@@ -119,10 +119,10 @@ The `__init__.py` file exports your skills and defines how they are configured:
 ```python
 from typing import TypedDict
 
-from abstracts.skill import SkillStoreABC
-from skills.base import SkillConfig, SkillState
-from skills.common.base import CommonBaseTool
-from skills.common.current_time import CurrentTime
+from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.skills.base import SkillConfig, SkillState
+from intentkit.skills.common.base import CommonBaseTool
+from intentkit.skills.common.current_time import CurrentTime
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, CommonBaseTool] = {}
@@ -139,10 +139,10 @@ class Config(SkillConfig):
 
 
 async def get_skills(
-    config: "Config",
-    is_private: bool,
-    store: SkillStoreABC,
-    **_,
+        config: "Config",
+        is_private: bool,
+        store: SkillStoreABC,
+        **_,
 ) -> list[CommonBaseTool]:
     """Get all common utility skills."""
     available_skills = []
@@ -159,8 +159,8 @@ async def get_skills(
 
 
 def get_common_skill(
-    name: str,
-    store: SkillStoreABC,
+        name: str,
+        store: SkillStoreABC,
 ) -> CommonBaseTool:
     """Get a common utility skill by name."""
     if name == "current_time":

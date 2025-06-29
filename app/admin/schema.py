@@ -10,10 +10,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.config import config
-from models.db import get_db, get_session
-from models.llm import LLMModelInfo
-from models.skill import SkillTable
+from intentkit.config.config import config
+from intentkit.models.db import get_db, get_session
+from intentkit.models.llm import LLMModelInfo
+from intentkit.models.skill import SkillTable
 
 logger = logging.getLogger(__name__)
 

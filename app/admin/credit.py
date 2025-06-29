@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.config import config
-from app.core.credit import (
+from intentkit.config.config import config
+from intentkit.core.credit import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
     list_credit_events,
@@ -20,8 +20,8 @@ from app.core.credit import (
     update_credit_event_note,
     update_daily_quota,
 )
-from models.agent_data import AgentQuota
-from models.credit import (
+from intentkit.models.agent_data import AgentQuota
+from intentkit.models.credit import (
     CreditAccount,
     CreditAccountTable,
     CreditDebit,
@@ -35,8 +35,8 @@ from models.credit import (
     RewardType,
     TransactionType,
 )
-from models.db import get_db
-from utils.middleware import create_jwt_middleware
+from intentkit.models.db import get_db
+from intentkit.utils.middleware import create_jwt_middleware
 
 logger = logging.getLogger(__name__)
 verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)

@@ -28,16 +28,16 @@ from app.admin import (
     user_router,
     user_router_readonly,
 )
-from app.config.config import config
-from app.core.api import core_router
 from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
-from models.agent import AgentTable
-from models.db import get_session, init_db
-from models.redis import init_redis
-from utils.error import (
+from intentkit.config.config import config
+from intentkit.core.api import core_router
+from intentkit.models.agent import AgentTable
+from intentkit.models.db import get_session, init_db
+from intentkit.models.redis import init_redis
+from intentkit.utils.error import (
     IntentKitAPIError,
     http_exception_handler,
     intentkit_api_error_handler,

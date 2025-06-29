@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.services.twitter.oauth2 import oauth2_user_handler
-from models.agent_data import AgentData, AgentDataTable
-from models.db import get_session
+from intentkit.models.agent_data import AgentData, AgentDataTable
+from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ async def refresh_token(agent_data_record: AgentDataTable):
     """Refresh Twitter OAuth2 token for an agent.
 
     Args:
-        agent_data: Agent data record containing refresh token
+        agent_data_record: Agent data record containing refresh token
     """
     try:
         # Get new token using refresh token
