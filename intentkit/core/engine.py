@@ -162,7 +162,7 @@ async def initialize_agent(aid, is_private=False):
             if not v.get("enabled", False):
                 continue
             try:
-                skill_module = importlib.import_module(f"skills.{k}")
+                skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
                     skill_tools = await skill_module.get_skills(
                         v, is_private, skill_store, agent_id=aid

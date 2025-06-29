@@ -790,7 +790,7 @@ async def export_agent(
     for category in skill_categories:
         try:
             # Dynamically import the skill module
-            skill_module = importlib.import_module(f"skills.{category}")
+            skill_module = importlib.import_module(f"intentkit.skills.{category}")
 
             # Check if the module has a Config class and get_skills function
             if hasattr(skill_module, "Config") and hasattr(skill_module, "get_skills"):
