@@ -12,7 +12,7 @@ from intentkit.skills.venice_image.base import VeniceImageBaseTool
 from intentkit.skills.venice_image.image_generation.image_generation_input import (
     VeniceImageGenerationInput,
 )
-from intentkit.utils import store_image_bytes
+from intentkit.utils.s3 import store_image_bytes
 
 logger = logging.getLogger(__name__)
 

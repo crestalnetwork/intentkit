@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Type
 import httpx
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import RateLimitExceeded
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.exception import RateLimitExceeded
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
 
 CRYPTO_COMPARE_BASE_URL = "https://min-api.cryptocompare.com"

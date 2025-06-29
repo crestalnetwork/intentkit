@@ -11,8 +11,8 @@ from pydantic import (
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
 
-from intentkit.abstracts import RateLimitExceeded
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.exception import RateLimitExceeded
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
 

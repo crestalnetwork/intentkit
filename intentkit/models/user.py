@@ -8,9 +8,9 @@ from sqlalchemy import Column, DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.base import Base
-from models.credit import CreditAccount
-from models.db import get_session
+from intentkit.models.base import Base
+from intentkit.models.credit import CreditAccount
+from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 

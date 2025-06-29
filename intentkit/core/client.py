@@ -5,8 +5,8 @@ This module provides client functions for core API endpoints with environment-aw
 
 import httpx
 
-from app.core.engine import execute_agent as local_execute_agent
 from intentkit.config.config import config
+from intentkit.core.engine import execute_agent as local_execute_agent
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
 
 

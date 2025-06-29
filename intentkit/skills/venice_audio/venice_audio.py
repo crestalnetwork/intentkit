@@ -7,10 +7,10 @@ import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
-from intentkit.utils import FileType, store_file_bytes
+from intentkit.utils.s3 import FileType, store_file_bytes
 
 logger = logging.getLogger(__name__)
 

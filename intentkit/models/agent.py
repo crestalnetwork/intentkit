@@ -27,10 +27,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
-from models.agent_data import AgentData
-from models.base import Base
-from models.db import get_session
-from models.llm import LLMModelInfo
+from intentkit.models.agent_data import AgentData
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.llm import LLMModelInfo
 
 logger = logging.getLogger(__name__)
 

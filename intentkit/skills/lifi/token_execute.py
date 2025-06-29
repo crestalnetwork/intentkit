@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from web3 import Web3
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import get_cdp_client
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_quote import TokenQuote

@@ -3,15 +3,21 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool
 from intentkit.skills.cryptocompare.fetch_news import CryptoCompareFetchNews
 from intentkit.skills.cryptocompare.fetch_price import CryptoCompareFetchPrice
-from intentkit.skills.cryptocompare.fetch_top_exchanges import CryptoCompareFetchTopExchanges
-from intentkit.skills.cryptocompare.fetch_top_market_cap import CryptoCompareFetchTopMarketCap
+from intentkit.skills.cryptocompare.fetch_top_exchanges import (
+    CryptoCompareFetchTopExchanges,
+)
+from intentkit.skills.cryptocompare.fetch_top_market_cap import (
+    CryptoCompareFetchTopMarketCap,
+)
 from intentkit.skills.cryptocompare.fetch_top_volume import CryptoCompareFetchTopVolume
-from intentkit.skills.cryptocompare.fetch_trading_signals import CryptoCompareFetchTradingSignals
+from intentkit.skills.cryptocompare.fetch_trading_signals import (
+    CryptoCompareFetchTradingSignals,
+)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, CryptoCompareBaseTool] = {}

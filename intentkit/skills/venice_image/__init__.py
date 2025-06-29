@@ -1,7 +1,7 @@
 import logging
 from typing import NotRequired, Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,

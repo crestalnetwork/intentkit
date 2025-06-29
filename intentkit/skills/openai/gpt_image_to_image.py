@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.openai.base import OpenAIBaseTool
-from intentkit.utils import store_image_bytes
+from intentkit.utils.s3 import store_image_bytes
 
 logger = logging.getLogger(__name__)
 

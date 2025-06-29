@@ -8,7 +8,7 @@ from typing import Any, Dict, Type
 import aiohttp
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill, SkillContext
 from intentkit.skills.portfolio.constants import MORALIS_API_BASE_URL
 

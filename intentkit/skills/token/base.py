@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from langchain_core.runnables import RunnableConfig
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill, SkillContext
 from intentkit.skills.token.constants import MORALIS_API_BASE_URL
 

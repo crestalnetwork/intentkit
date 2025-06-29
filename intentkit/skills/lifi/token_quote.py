@@ -4,7 +4,7 @@ import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.utils import (
     LIFI_API_URL,

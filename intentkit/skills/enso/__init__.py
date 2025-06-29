@@ -3,7 +3,7 @@
 import logging
 from typing import List, NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.enso.base import EnsoBaseTool
 from intentkit.skills.enso.best_yield import EnsoGetBestYield

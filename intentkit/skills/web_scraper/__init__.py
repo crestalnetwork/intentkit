@@ -3,10 +3,13 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillOwnerState, SkillState
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
-from intentkit.skills.web_scraper.scrape_and_index import QueryIndexedContent, ScrapeAndIndex
+from intentkit.skills.web_scraper.scrape_and_index import (
+    QueryIndexedContent,
+    ScrapeAndIndex,
+)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, WebScraperBaseTool] = {}

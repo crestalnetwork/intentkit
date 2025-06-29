@@ -6,7 +6,7 @@ Loads and initializes skills for fetching crypto news and providing market insig
 import logging
 from typing import Dict, List, Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 
 from .base import CryptopanicBaseTool

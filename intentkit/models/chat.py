@@ -21,8 +21,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.base import Base
-from models.db import get_session
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
 
 
 class ChatMessageAttachmentType(str, Enum):

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from openai import OpenAI
 
-from skills import __all__ as available_skill_categories
+from intentkit.skills import __all__ as available_skill_categories
 
 if TYPE_CHECKING:
     from .llm_logger import LLMLogger

@@ -8,7 +8,9 @@ from intentkit.skills.base import ToolException
 from intentkit.skills.venice_image.image_vision.image_vision_base import (
     VeniceImageVisionBaseTool,
 )
-from intentkit.skills.venice_image.image_vision.image_vision_input import VeniceImageVision
+from intentkit.skills.venice_image.image_vision.image_vision_input import (
+    VeniceImageVision,
+)
 from intentkit.skills.venice_image.utils import fetch_image_as_base64
 
 logger = logging.getLogger(__name__)

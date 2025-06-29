@@ -7,9 +7,9 @@ import botocore.session
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 from dotenv import load_dotenv
 
-from intentkit.utils import ChainProvider, QuicknodeChainProvider
+from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
-from intentkit.utils import init_s3
+from intentkit.utils.s3 import init_s3
 from intentkit.utils.slack_alert import init_slack
 
 # Load environment variables from .env file

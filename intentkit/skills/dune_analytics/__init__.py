@@ -6,7 +6,7 @@ Loads and initializes skills for fetching data from Dune Analytics API.
 import logging
 from typing import Dict, List, Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 

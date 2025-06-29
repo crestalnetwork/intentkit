@@ -3,7 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.acolyt.ask import AcolytAskGpt
 from intentkit.skills.acolyt.base import AcolytBaseTool
 from intentkit.skills.base import SkillConfig, SkillState

@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 from intentkit.skills.defillama.coins.fetch_batch_historical_prices import (
@@ -12,16 +12,22 @@ from intentkit.skills.defillama.coins.fetch_batch_historical_prices import (
 from intentkit.skills.defillama.coins.fetch_block import DefiLlamaFetchBlock
 
 # Coins Tools
-from intentkit.skills.defillama.coins.fetch_current_prices import DefiLlamaFetchCurrentPrices
+from intentkit.skills.defillama.coins.fetch_current_prices import (
+    DefiLlamaFetchCurrentPrices,
+)
 from intentkit.skills.defillama.coins.fetch_first_price import DefiLlamaFetchFirstPrice
 from intentkit.skills.defillama.coins.fetch_historical_prices import (
     DefiLlamaFetchHistoricalPrices,
 )
 from intentkit.skills.defillama.coins.fetch_price_chart import DefiLlamaFetchPriceChart
-from intentkit.skills.defillama.coins.fetch_price_percentage import DefiLlamaFetchPricePercentage
+from intentkit.skills.defillama.coins.fetch_price_percentage import (
+    DefiLlamaFetchPricePercentage,
+)
 
 # Fees Tools
-from intentkit.skills.defillama.fees.fetch_fees_overview import DefiLlamaFetchFeesOverview
+from intentkit.skills.defillama.fees.fetch_fees_overview import (
+    DefiLlamaFetchFeesOverview,
+)
 from intentkit.skills.defillama.stablecoins.fetch_stablecoin_chains import (
     DefiLlamaFetchStablecoinChains,
 )
@@ -33,12 +39,16 @@ from intentkit.skills.defillama.stablecoins.fetch_stablecoin_prices import (
 )
 
 # Stablecoins Tools
-from intentkit.skills.defillama.stablecoins.fetch_stablecoins import DefiLlamaFetchStablecoins
+from intentkit.skills.defillama.stablecoins.fetch_stablecoins import (
+    DefiLlamaFetchStablecoins,
+)
 from intentkit.skills.defillama.tvl.fetch_chain_historical_tvl import (
     DefiLlamaFetchChainHistoricalTvl,
 )
 from intentkit.skills.defillama.tvl.fetch_chains import DefiLlamaFetchChains
-from intentkit.skills.defillama.tvl.fetch_historical_tvl import DefiLlamaFetchHistoricalTvl
+from intentkit.skills.defillama.tvl.fetch_historical_tvl import (
+    DefiLlamaFetchHistoricalTvl,
+)
 from intentkit.skills.defillama.tvl.fetch_protocol import DefiLlamaFetchProtocol
 from intentkit.skills.defillama.tvl.fetch_protocol_current_tvl import (
     DefiLlamaFetchProtocolCurrentTvl,
@@ -48,8 +58,12 @@ from intentkit.skills.defillama.tvl.fetch_protocol_current_tvl import (
 from intentkit.skills.defillama.tvl.fetch_protocols import DefiLlamaFetchProtocols
 
 # Volumes Tools
-from intentkit.skills.defillama.volumes.fetch_dex_overview import DefiLlamaFetchDexOverview
-from intentkit.skills.defillama.volumes.fetch_dex_summary import DefiLlamaFetchDexSummary
+from intentkit.skills.defillama.volumes.fetch_dex_overview import (
+    DefiLlamaFetchDexOverview,
+)
+from intentkit.skills.defillama.volumes.fetch_dex_summary import (
+    DefiLlamaFetchDexSummary,
+)
 from intentkit.skills.defillama.volumes.fetch_options_overview import (
     DefiLlamaFetchOptionsOverview,
 )

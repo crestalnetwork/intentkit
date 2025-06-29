@@ -7,7 +7,7 @@ This is separate from LLM logging which tracks technical API calls.
 import logging
 from typing import Any, Dict, List, Optional
 
-from models.conversation import (
+from intentkit.models.conversation import (
     ConversationMessage,
     ConversationMessageCreate,
     ConversationProject,

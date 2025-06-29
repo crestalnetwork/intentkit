@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.common.base import CommonBaseTool
 from intentkit.skills.common.current_time import CurrentTime

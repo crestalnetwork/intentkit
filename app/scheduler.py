@@ -11,9 +11,9 @@ import signal
 import sentry_sdk
 
 from app.admin.scheduler import create_scheduler
-from app.config.config import config
-from models.db import init_db
-from models.redis import clean_heartbeat, get_redis, init_redis
+from intentkit.config.config import config
+from intentkit.models.db import init_db
+from intentkit.models.redis import clean_heartbeat, get_redis, init_redis
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.tavily.base import TavilyBaseTool
 from intentkit.skills.tavily.tavily_extract import TavilyExtract

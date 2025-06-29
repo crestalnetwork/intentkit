@@ -68,25 +68,25 @@ Check out [Documentation](docs/) before you start.
 
 ## Project Structure
 
-- [abstracts/](abstracts/): Abstract classes and interfaces
+- [abstracts/](intentkit/abstracts/): Abstract classes and interfaces
 - [app/](app/): Core application code
-  - [core/](app/core/): Core modules
+  - [core/](intentkit/core/): Core modules
   - [services/](app/services/): Services
   - [entrypoints/](app/entrypoints/): Entrypoints means the way to interact with the agent
   - [admin/](app/admin/): Admin logic
-  - [config/](app/config/): Configurations
+  - [config/](intentkit/config/): Configurations
   - [api.py](app/api.py): REST API server
   - [autonomous.py](app/autonomous.py): Autonomous agent scheduler
   - [singleton.py](app/singleton.py): Singleton agent scheduler
   - [scheduler.py](app/scheduler.py): Scheduler for periodic tasks
   - [readonly.py](app/readonly.py): Readonly entrypoint
   - [telegram.py](app/telegram.py): Telegram listener
-- [clients/](clients/): Clients for external services
+- [clients/](intentkit/clients/): Clients for external services
 - [docs/](docs/): Documentation
-- [models/](models/): Database models
+- [models/](intentkit/models/): Database models
 - [scripts/](scripts/): Scripts for agent management
-- [skills/](skills/): Skill implementations
-- [utils/](utils/): Utility functions
+- [skills/](intentkit/skills/): Skill implementations
+- [utils/](intentkit/utils/): Utility functions
 
 ## Contributing
 

@@ -1,7 +1,7 @@
 import logging
 from typing import List, Literal, Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.carv.base import CarvBaseTool
 from intentkit.skills.carv.fetch_news import FetchNewsTool

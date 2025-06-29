@@ -5,7 +5,7 @@ from typing import Callable
 
 from sqlalchemy import Column, MetaData, inspect, text
 
-from models.base import Base
+from intentkit.models.base import Base
 
 logger = logging.getLogger(__name__)
 

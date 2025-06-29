@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill, SkillContext, ToolException
 
 logger = logging.getLogger(__name__)

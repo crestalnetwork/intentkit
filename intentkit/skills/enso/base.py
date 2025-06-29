@@ -3,10 +3,10 @@ from typing import Optional, Type
 from cdp import Wallet
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import CdpClient, get_cdp_client
 from intentkit.skills.base import IntentKitSkill, SkillContext
-from intentkit.utils import ChainProvider, NetworkId
+from intentkit.utils.chain import ChainProvider, NetworkId
 
 base_url = "https://api.enso.finance"
 default_chain_id = int(NetworkId.BaseMainnet)

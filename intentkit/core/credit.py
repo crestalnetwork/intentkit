@@ -203,7 +203,6 @@ async def reward(
         amount: Amount of reward credits to add
         upstream_tx_id: ID of the upstream transaction
         note: Optional note for the transaction
-        event_type: Type of reward event, defaults to RewardType.REWARD
 
     Returns:
         Updated user credit account
@@ -753,10 +752,7 @@ async def expense_message(
 
     Args:
         session: Async session to use for database operations
-        agent_id: ID of the agent to deduct credits from
         user_id: ID of the user to deduct credits from
-        amount: Amount of credits to deduct
-        upstream_tx_id: ID of the upstream transaction
         message_id: ID of the message that incurred the expense
         start_message_id: ID of the starting message in a conversation
         base_llm_amount: Amount of LLM costs

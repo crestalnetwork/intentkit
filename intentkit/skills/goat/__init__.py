@@ -23,9 +23,9 @@ from goat.classes.plugin_base import PluginBase
 from goat_adapters.langchain import get_on_chain_tools
 from goat_wallets.crossmint import crossmint
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.goat.base import GoatBaseTool
-from intentkit.utils import ChainProvider, Network
+from intentkit.utils.chain import ChainProvider, Network
 
 from .base import CrossmintChainProviderAdapter
 

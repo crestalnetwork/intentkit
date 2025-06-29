@@ -32,7 +32,7 @@ validate_schema() {
 }
 
 # Validate the main agent schema
-if ! validate_schema "models/agent_schema.json"; then
+if ! validate_schema "intentkit/models/agent_schema.json"; then
     exit 1
 fi
 
@@ -41,7 +41,7 @@ echo "Validating schema.json files in skills subdirectories..."
 find_exit_code=0
 
 # Find all schema.json files and store them in a temporary file
-find skills -name "schema.json" > /tmp/schema_files.txt
+find intentkit/skills -name "schema.json" > /tmp/schema_files.txt
 
 # Read each line from the temporary file
 while IFS= read -r schema_file; do

@@ -7,7 +7,7 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from models.db_mig import safe_migrate
+from intentkit.models.db_mig import safe_migrate
 
 engine = None
 _pool = None

@@ -4,7 +4,7 @@ from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
 
 # Chain ID to chain name mapping for EVM chains

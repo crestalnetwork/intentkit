@@ -3,7 +3,12 @@ from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field
 
-from intentkit.skills.base import IntentKitSkill, SkillContext, SkillStoreABC, ToolException
+from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.skills.base import (
+    IntentKitSkill,
+    SkillContext,
+    ToolException,
+)
 from intentkit.skills.venice_image.api import (
     make_venice_api_request,
 )

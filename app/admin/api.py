@@ -27,22 +27,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
-from app.config.config import config
-from app.core.engine import clean_agent_memory
-from clients.twitter import unlink_twitter
-from models.agent import (
+from intentkit.clients.twitter import unlink_twitter
+from intentkit.config.config import config
+from intentkit.core.engine import clean_agent_memory
+from intentkit.models.agent import (
     Agent,
     AgentCreate,
     AgentResponse,
     AgentTable,
     AgentUpdate,
 )
-from models.agent_data import AgentData, AgentDataTable
-from models.db import get_db
-from models.user import User
-from skills import __all__ as skill_categories
-from utils.middleware import create_jwt_middleware
-from utils.slack_alert import send_slack_message
+from intentkit.models.agent_data import AgentData, AgentDataTable
+from intentkit.models.db import get_db
+from intentkit.models.user import User
+from intentkit.skills import __all__ as skill_categories
+from intentkit.utils.middleware import create_jwt_middleware
+from intentkit.utils.slack_alert import send_slack_message
 
 admin_router_readonly = APIRouter()
 admin_router = APIRouter()

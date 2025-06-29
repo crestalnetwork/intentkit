@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import httpx
 
-from intentkit.utils import store_image_bytes
+from intentkit.utils.s3 import store_image_bytes
 
 logger = logging.getLogger(__name__)
 

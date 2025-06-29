@@ -1,7 +1,9 @@
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
-from intentkit.skills.venice_image.image_generation.image_generation_input import STYLE_PRESETS
+from intentkit.skills.venice_image.image_generation.image_generation_input import (
+    STYLE_PRESETS,
+)
 
 
 class ImageGenerationFluxDevUncensored(VeniceImageGenerationBaseTool):

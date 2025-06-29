@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_execute import TokenExecute

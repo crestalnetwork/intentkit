@@ -7,9 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Column, DateTime, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 
-from models.base import Base
-from models.db import get_session
-from models.redis import get_redis
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
 
 
 class AppSettingTable(Base):

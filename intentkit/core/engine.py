@@ -36,12 +36,12 @@ from langgraph.prebuilt import create_react_agent
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core.credit import expense_message, expense_skill
-from app.core.node import PostModelNode, PreModelNode
-from app.core.prompt import agent_prompt
-from app.core.skill import skill_store
 from intentkit.abstracts.graph import AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.core.credit import expense_message, expense_skill
+from intentkit.core.node import PostModelNode, PreModelNode
+from intentkit.core.prompt import agent_prompt
+from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting

@@ -9,7 +9,7 @@ import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.cryptopanic.base import CryptopanicBaseTool
 
 SUPPORTED_CURRENCIES = ["BTC", "ETH"]

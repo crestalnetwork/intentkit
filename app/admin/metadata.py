@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.db import get_db
-from models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
-from models.skill import Skill, SkillTable
+from intentkit.models.db import get_db
+from intentkit.models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
+from intentkit.models.skill import Skill, SkillTable
 
 # Create a readonly router for metadata endpoints
 metadata_router_readonly = APIRouter(tags=["Metadata"])

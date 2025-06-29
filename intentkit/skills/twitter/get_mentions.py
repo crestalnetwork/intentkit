@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 from pydantic import BaseModel
 
-from intentkit.clients import Tweet, get_twitter_client
+from intentkit.clients.twitter import Tweet, get_twitter_client
 
 from .base import TwitterBaseTool
 

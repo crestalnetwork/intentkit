@@ -3,7 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dapplooker.base import DappLookerBaseTool
 from intentkit.skills.dapplooker.dapplooker_token_data import DappLookerTokenData

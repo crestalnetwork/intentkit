@@ -2,10 +2,10 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import AgentStoreABC
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.agent import AgentStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
-from intentkit.utils import ChainConfig, ChainProvider, Network
+from intentkit.utils.chain import ChainConfig, ChainProvider, Network
 
 
 class CrossmintChainConfig:

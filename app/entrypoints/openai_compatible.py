@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.core.engine import execute_agent
-from models.agent import Agent
-from models.agent_data import AgentData
-from models.chat import (
+from intentkit.core.engine import execute_agent
+from intentkit.models.agent import Agent
+from intentkit.models.agent_data import AgentData
+from intentkit.models.chat import (
     AuthorType,
     ChatMessageAttachment,
     ChatMessageAttachmentType,

@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.aixbt.base import AIXBTBaseTool
 from intentkit.skills.aixbt.projects import AIXBTProjects
 from intentkit.skills.base import SkillConfig, SkillState

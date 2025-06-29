@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 
 BASE_URL = "https://api.dune.com/api/v1/query"

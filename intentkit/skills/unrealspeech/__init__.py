@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
 from intentkit.skills.unrealspeech.text_to_speech import TextToSpeech

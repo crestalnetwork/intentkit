@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.token.base import TokenBaseTool
 from intentkit.skills.token.erc20_transfers import ERC20Transfers

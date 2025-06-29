@@ -5,16 +5,18 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from intentkit.skills.moralis import get_skills
+from intentkit.skills.moralis import (
+    FetchChainPortfolio,
+    FetchSolanaPortfolio,
+    FetchWalletPortfolio,
+    get_skills,
+)
 from intentkit.skills.moralis.api import (
     fetch_moralis_data,
     fetch_wallet_balances,
     get_solana_portfolio,
 )
 from intentkit.skills.moralis.base import WalletBaseTool
-from intentkit.skills.moralis import FetchChainPortfolio
-from intentkit.skills.moralis import FetchSolanaPortfolio
-from intentkit.skills.moralis import FetchWalletPortfolio
 
 
 class DummyResponse:

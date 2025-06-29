@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body
 from pydantic import AfterValidator
 
-from app.core.engine import execute_agent
+from intentkit.core.engine import execute_agent
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
 
 core_router = APIRouter(prefix="/core", tags=["Core"])

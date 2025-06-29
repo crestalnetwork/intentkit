@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillOwnerState
 from intentkit.skills.system.base import SystemBaseTool
 from intentkit.skills.system.read_agent_api_key import ReadAgentApiKey

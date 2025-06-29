@@ -3,8 +3,8 @@ import logging
 
 import sentry_sdk
 
-from app.config.config import config
 from app.entrypoints.tg import run_telegram_server
+from intentkit.config.config import config
 
 logger = logging.getLogger(__name__)
 

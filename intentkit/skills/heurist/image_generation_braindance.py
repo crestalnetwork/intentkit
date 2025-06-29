@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.heurist.base import HeuristBaseTool
-from intentkit.utils import store_image
+from intentkit.utils.s3 import store_image
 
 logger = logging.getLogger(__name__)
 

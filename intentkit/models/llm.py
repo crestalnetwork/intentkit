@@ -9,11 +9,11 @@ from langchain_core.language_models import LanguageModelLike
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
 
-from models.app_setting import AppSetting
-from models.base import Base
-from models.db import get_session
-from models.redis import get_redis
-from utils.error import IntentKitLookUpError
+from intentkit.models.app_setting import AppSetting
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
+from intentkit.utils.error import IntentKitLookUpError
 
 logger = logging.getLogger(__name__)
 

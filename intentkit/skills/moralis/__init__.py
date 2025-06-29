@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.moralis.base import WalletBaseTool
 from intentkit.skills.moralis.fetch_chain_portfolio import FetchChainPortfolio

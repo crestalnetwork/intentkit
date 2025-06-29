@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.nation.base import NationBaseTool
 from intentkit.skills.nation.nft_check import NftCheck

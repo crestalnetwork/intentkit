@@ -3,13 +3,21 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.heurist.base import HeuristBaseTool
-from intentkit.skills.heurist.image_generation_animagine_xl import ImageGenerationAnimagineXL
-from intentkit.skills.heurist.image_generation_arthemy_comics import ImageGenerationArthemyComics
-from intentkit.skills.heurist.image_generation_arthemy_real import ImageGenerationArthemyReal
-from intentkit.skills.heurist.image_generation_braindance import ImageGenerationBrainDance
+from intentkit.skills.heurist.image_generation_animagine_xl import (
+    ImageGenerationAnimagineXL,
+)
+from intentkit.skills.heurist.image_generation_arthemy_comics import (
+    ImageGenerationArthemyComics,
+)
+from intentkit.skills.heurist.image_generation_arthemy_real import (
+    ImageGenerationArthemyReal,
+)
+from intentkit.skills.heurist.image_generation_braindance import (
+    ImageGenerationBrainDance,
+)
 from intentkit.skills.heurist.image_generation_cyber_realistic_xl import (
     ImageGenerationCyberRealisticXL,
 )

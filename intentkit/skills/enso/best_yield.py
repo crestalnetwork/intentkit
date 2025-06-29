@@ -10,7 +10,7 @@ from intentkit.skills.enso.base import (
     EnsoBaseTool,
     base_url,
 )
-from intentkit.utils import NetworkId
+from intentkit.utils.chain import NetworkId
 
 # Chain ID for Base Mainnet
 BASE_CHAIN_ID = int(NetworkId.BaseMainnet)

@@ -3,7 +3,7 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.portfolio.base import PortfolioBaseTool
 from intentkit.skills.portfolio.token_balances import TokenBalances
@@ -13,7 +13,9 @@ from intentkit.skills.portfolio.wallet_history import WalletHistory
 from intentkit.skills.portfolio.wallet_net_worth import WalletNetWorth
 from intentkit.skills.portfolio.wallet_nfts import WalletNFTs
 from intentkit.skills.portfolio.wallet_profitability import WalletProfitability
-from intentkit.skills.portfolio.wallet_profitability_summary import WalletProfitabilitySummary
+from intentkit.skills.portfolio.wallet_profitability_summary import (
+    WalletProfitabilitySummary,
+)
 from intentkit.skills.portfolio.wallet_stats import WalletStats
 from intentkit.skills.portfolio.wallet_swaps import WalletSwaps
 

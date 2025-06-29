@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.github.base import GitHubBaseTool
 from intentkit.skills.github.github_search import GitHubSearch

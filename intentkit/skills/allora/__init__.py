@@ -3,7 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.allora.base import AlloraBaseTool
 from intentkit.skills.allora.price import AlloraGetPrice
 from intentkit.skills.base import SkillConfig, SkillState

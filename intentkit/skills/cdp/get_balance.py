@@ -3,7 +3,7 @@ from typing import Type
 from cdp import Wallet
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.cdp.base import CDPBaseTool
 
 

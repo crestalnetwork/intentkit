@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 import httpx
 from pydantic import Field
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)

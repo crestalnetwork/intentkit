@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from epyxid import XID
 from openai import OpenAI
 
-from models.agent import AgentAutonomous
-from skills import __all__ as available_skill_categories
+from intentkit.models.agent import AgentAutonomous
+from intentkit.skills import __all__ as available_skill_categories
 
 if TYPE_CHECKING:
     from .llm_logger import LLMLogger

@@ -20,7 +20,7 @@ from coinbase_agentkit import (
 from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
 from coinbase_agentkit_langchain import get_langchain_tools
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import CdpClient, get_cdp_client
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cdp.base import CDPBaseTool

@@ -3,10 +3,14 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.elfa.base import ElfaBaseTool
-from intentkit.skills.elfa.mention import ElfaGetMentions, ElfaGetTopMentions, ElfaSearchMentions
+from intentkit.skills.elfa.mention import (
+    ElfaGetMentions,
+    ElfaGetTopMentions,
+    ElfaSearchMentions,
+)
 from intentkit.skills.elfa.stats import ElfaGetSmartStats
 from intentkit.skills.elfa.tokens import ElfaGetTrendingTokens
 

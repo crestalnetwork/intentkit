@@ -1,11 +1,13 @@
 from typing import TypedDict
 
-from intentkit.abstracts import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
 from intentkit.skills.cookiefun.get_account_details import GetAccountDetails
 from intentkit.skills.cookiefun.get_account_feed import GetAccountFeed
-from intentkit.skills.cookiefun.get_account_smart_followers import GetAccountSmartFollowers
+from intentkit.skills.cookiefun.get_account_smart_followers import (
+    GetAccountSmartFollowers,
+)
 from intentkit.skills.cookiefun.get_sectors import GetSectors
 from intentkit.skills.cookiefun.search_accounts import SearchAccounts
 
