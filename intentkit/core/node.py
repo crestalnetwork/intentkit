@@ -218,3 +218,6 @@ class PostModelNode(RunnableCallable):
                         )
                         return state_update
         return state_update
+
+
+post_model_node = PostModelNode()

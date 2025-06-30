@@ -38,7 +38,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from intentkit.abstracts.graph import AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.credit import expense_message, expense_skill
-from intentkit.core.node import PostModelNode, PreModelNode
+from intentkit.core.node import PreModelNode, post_model_node
 from intentkit.core.prompt import agent_prompt
 from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
@@ -234,8 +234,6 @@ async def initialize_agent(aid, is_private=False):
         max_tokens=input_token_limit // 2,
         max_summary_tokens=2048,  # later we can let agent to set this
     )
-    # Post model hook
-    post_model_hook = PostModelNode()
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
@@ -243,22 +241,14 @@ async def initialize_agent(aid, is_private=False):
         tools=tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
-        post_model_hook=post_model_hook,
+        post_model_hook=post_model_node if config.payment_enabled else None,
         state_schema=AgentState,
         checkpointer=memory,
         debug=config.debug_checkpoint,
         name=aid,
     )
-    # executor = create_agent(
-    #     aid,
-    #     llm,
-    #     tools=tools,
-    #     checkpointer=memory,
-    #     state_modifier=formatted_prompt,
-    #     debug=config.debug_checkpoint,
-    #     input_token_limit=input_token_limit,
-    # )
 
+    # Cache the agent executor
     if is_private:
         _private_agents[aid] = executor
         _private_agents_updated[aid] = agent.updated_at
