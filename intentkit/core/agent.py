@@ -2,68 +2,16 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict
 
 from sqlalchemy import func, select, text
 
-from intentkit.abstracts.agent import AgentStoreABC
 from intentkit.models.agent import Agent
-from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.credit import CreditEventTable, EventType, UpstreamType
 from intentkit.models.db import get_session
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
-
-
-class AgentStore(AgentStoreABC):
-    """Implementation of agent data storage operations.
-
-    This class provides concrete implementations for storing and retrieving
-    agent-related data.
-
-    Args:
-        agent_id: ID of the agent
-    """
-
-    def __init__(self, agent_id: str) -> None:
-        """Initialize the agent store.
-
-        Args:
-            agent_id: ID of the agent
-        """
-        super().__init__(agent_id)
-
-    async def get_config(self) -> Optional[Agent]:
-        """Get agent configuration.
-
-        Returns:
-            Agent configuration if found, None otherwise
-        """
-        return await Agent.get(self.agent_id)
-
-    async def get_data(self) -> Optional[AgentData]:
-        """Get additional agent data.
-
-        Returns:
-            Agent data if found, None otherwise
-        """
-        return await AgentData.get(self.agent_id)
-
-    async def set_data(self, data: Dict) -> None:
-        """Update agent data.
-
-        Args:
-            data: Dictionary containing fields to update
-        """
-        await AgentData.patch(self.agent_id, data)
-
-    async def get_quota(self) -> Optional[AgentQuota]:
-        """Get agent quota information.
-
-        Returns:
-            Agent quota if found, None otherwise
-        """
-        return await AgentQuota.get(self.agent_id)
 
 
 async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
@@ -88,6 +36,10 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
     default_value = Decimal("0")
 
     agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
+        )
 
     async with get_session() as session:
         # Calculate the date 3 days ago from now

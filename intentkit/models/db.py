@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from intentkit.models.db_mig import safe_migrate
 
 engine = None
-_pool = None
+_langgraph_pg_saver = None
 
 
 async def init_db(
@@ -33,16 +33,17 @@ async def init_db(
         port: Database port (default: 5432)
         auto_migrate: Whether to run migrations automatically (default: True)
     """
-    global engine, _pool
-    # Initialize psycopg pool if not already initialized
-    if _pool is None:
-        _pool = AsyncConnectionPool(
+    global engine, _langgraph_pg_saver
+    # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
+    if _langgraph_pg_saver is None:
+        pool = AsyncConnectionPool(
             conninfo=f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
             min_size=3,
             max_size=20,
             timeout=60,
             max_idle=30 * 60,
         )
+        _langgraph_pg_saver = AsyncPostgresSaver(pool)
     # Initialize SQLAlchemy engine with pool settings
     if engine is None:
         engine = create_async_engine(
@@ -55,10 +56,7 @@ async def init_db(
         )
         if auto_migrate:
             await safe_migrate(engine)
-            async with _pool.connection() as conn:
-                await conn.set_autocommit(True)
-                saver = AsyncPostgresSaver(conn)
-                await saver.setup()
+            await _langgraph_pg_saver.setup()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -100,12 +98,12 @@ def get_engine() -> AsyncEngine:
     return engine
 
 
-def get_pool() -> AsyncConnectionPool:
-    """Get the global psycopg connection pool.
+def get_langgraph_pg_saver() -> AsyncPostgresSaver:
+    """Get the AsyncPostgresSaver instance for langgraph.
 
     Returns:
-        AsyncConnectionPool: The global psycopg connection pool
+        AsyncPostgresSaver: The AsyncPostgresSaver instance
     """
-    if _pool is None:
+    if _langgraph_pg_saver is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
-    return _pool
+    return _langgraph_pg_saver

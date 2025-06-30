@@ -29,7 +29,6 @@ from langchain_core.messages import (
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
@@ -52,7 +51,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import get_pool, get_session
+from intentkit.models.db import get_langgraph_pg_saver, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import AgentSkillData, Skill, ThreadSkillData
 from intentkit.models.user import User
@@ -152,7 +151,7 @@ async def initialize_agent(aid, is_private=False):
     input_token_limit = min(config.input_token_limit, llm_model.info.context_length)
 
     # ==== Store buffered conversation history in memory.
-    memory = AsyncPostgresSaver(get_pool())
+    memory = get_langgraph_pg_saver()
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []
