@@ -107,31 +107,26 @@ _agents_updated: dict[str, datetime] = {}
 _private_agents_updated: dict[str, datetime] = {}
 
 
-async def initialize_agent(aid, is_private=False):
-    """Initialize an AI agent with specified configuration and tools.
+async def create_agent(
+    agent: Agent, is_private: bool = False, has_search: bool = False
+) -> CompiledStateGraph:
+    """Create an AI agent with specified configuration and tools.
 
     This function:
-    1. Loads agent configuration from database
-    2. Initializes LLM with specified model
-    3. Loads and configures requested tools
-    4. Sets up PostgreSQL-based memory
-    5. Creates and caches the agent
+    1. Initializes LLM with specified model
+    2. Loads and configures requested tools
+    3. Sets up PostgreSQL-based memory
+    4. Creates and returns the agent
 
     Args:
-        aid (str): Agent ID to initialize
+        agent (Agent): Agent configuration object
         is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+        has_search (bool, optional): Flag indicating whether to include search tools. Defaults to False.
 
     Returns:
-        Agent: Initialized LangChain agent
-
-    Raises:
-        HTTPException: If agent not found (404) or database error (500)
+        CompiledStateGraph: Initialized LangChain agent
     """
-    # get the agent from the database
-    agent: Optional[Agent] = await Agent.get(aid)
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-    agent_data: Optional[AgentData] = await AgentData.get(aid)
+    agent_data: Optional[AgentData] = await AgentData.get(agent.id)
 
     # ==== Initialize LLM using the LLM abstraction.
     from intentkit.models.llm import create_llm_model
@@ -164,7 +159,7 @@ async def initialize_agent(aid, is_private=False):
                 skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
                     skill_tools = await skill_module.get_skills(
-                        v, is_private, skill_store, agent_id=aid
+                        v, is_private, skill_store, agent_id=agent.id
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)
@@ -176,8 +171,12 @@ async def initialize_agent(aid, is_private=False):
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
 
-    # testing native search
-    if llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search:
+    # Add search tools if requested
+    if (
+        has_search
+        and llm_model.info.provider == LLMProvider.OPENAI
+        and llm_model.info.supports_search
+    ):
         tools.append({"type": "web_search_preview"})
 
     # finally, set up the system prompt
@@ -205,7 +204,6 @@ async def initialize_agent(aid, is_private=False):
     def formatted_prompt(
         state: AgentState, config: RunnableConfig
     ) -> list[BaseMessage]:
-        # logger.debug(f"[{aid}] formatted prompt: {state}")
         entrypoint_prompt = []
         if config.get("configurable") and config["configurable"].get(
             "entrypoint_prompt"
@@ -220,11 +218,11 @@ async def initialize_agent(aid, is_private=False):
 
     # log final prompt and all skills
     logger.debug(
-        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
+        f"[{agent.id}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
     )
     for tool in tools:
         logger.info(
-            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
+            f"[{agent.id}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
 
     # Pre model hook
@@ -245,8 +243,50 @@ async def initialize_agent(aid, is_private=False):
         state_schema=AgentState,
         checkpointer=memory,
         debug=config.debug_checkpoint,
-        name=aid,
+        name=agent.id,
     )
+
+    return executor
+
+
+async def initialize_agent(aid, is_private=False):
+    """Initialize an AI agent with specified configuration and tools.
+
+    This function:
+    1. Loads agent configuration from database
+    2. Uses create_agent to build the agent
+    3. Caches the agent
+
+    Args:
+        aid (str): Agent ID to initialize
+        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+
+    Returns:
+        Agent: Initialized LangChain agent
+
+    Raises:
+        HTTPException: If agent not found (404) or database error (500)
+    """
+    # get the agent from the database
+    agent: Optional[Agent] = await Agent.get(aid)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    # Determine if search should be enabled based on model capabilities
+    from intentkit.models.llm import create_llm_model
+
+    llm_model = await create_llm_model(
+        model_name=agent.model,
+        temperature=agent.temperature,
+        frequency_penalty=agent.frequency_penalty,
+        presence_penalty=agent.presence_penalty,
+    )
+    has_search = (
+        llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search
+    )
+
+    # Create the agent using the new create_agent function
+    executor = await create_agent(agent, is_private, has_search)
 
     # Cache the agent executor
     if is_private:
