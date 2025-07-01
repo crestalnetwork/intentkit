@@ -327,11 +327,9 @@ async def agent_executor(
     return agents[agent_id], cold_start_cost
 
 
-async def execute_agent(
-    message: ChatMessageCreate, debug: bool = False
-) -> list[ChatMessage]:
+async def stream_agent(message: ChatMessageCreate):
     """
-    Execute an agent with the given prompt and return response lines.
+    Stream agent execution results as an async generator.
 
     This function:
     1. Configures execution context with thread ID
@@ -341,13 +339,10 @@ async def execute_agent(
 
     Args:
         message (ChatMessageCreate): The chat message containing agent_id, chat_id, and message content
-        debug (bool): Enable debug mode, will save the skill results
 
-    Returns:
-        list[ChatMessage]: Formatted response lines including timing information
+    Yields:
+        ChatMessage: Individual response messages including timing information
     """
-
-    resp = []
     start = time.perf_counter()
     # make sure reply_to is set
     message.reply_to = message.id
@@ -387,8 +382,8 @@ async def execute_agent(
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
-                resp.append(error_message)
-                return resp
+                yield error_message
+                return
         # payer
         payer = input.user_id
         if input.author_type in [
@@ -425,8 +420,8 @@ async def execute_agent(
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
-                resp.append(error_message)
-                return resp
+                yield error_message
+                return
         # avg cost
         avg_count = 1
         if quota and quota.avg_action_cost > 0:
@@ -445,8 +440,8 @@ async def execute_agent(
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
+            yield error_message
+            return
 
     is_private = False
     if input.user_id == agent.owner:
@@ -649,7 +644,7 @@ async def execute_agent(
                             session
                         )
                         await session.commit()
-                        resp.append(chat_message)
+                        yield chat_message
             elif "tools" in chunk and "messages" in chunk["tools"]:
                 if not cached_tool_step:
                     logger.error(
@@ -764,7 +759,7 @@ async def execute_agent(
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
-                    resp.append(skill_message)
+                    yield skill_message
             elif "pre_model_hook" in chunk:
                 pass
             elif "post_model_hook" in chunk:
@@ -805,7 +800,7 @@ async def execute_agent(
                                 )
                                 cold_start_cost = 0
                             post_model_message = await post_model_message_create.save()
-                            resp.append(post_model_message)
+                            yield post_model_message
                         error_message_create = ChatMessageCreate(
                             id=str(XID()),
                             agent_id=input.agent_id,
@@ -819,7 +814,7 @@ async def execute_agent(
                             time_cost=0,
                         )
                         error_message = await error_message_create.save()
-                        resp.append(error_message)
+                        yield error_message
             else:
                 error_traceback = traceback.format_exc()
                 logger.error(
@@ -845,8 +840,8 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
     except GraphRecursionError as e:
         error_traceback = traceback.format_exc()
         logger.error(
@@ -866,8 +861,8 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
     except Exception as e:
         error_traceback = traceback.format_exc()
         logger.error(
@@ -887,8 +882,30 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
+
+
+async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:
+    """
+    Execute an agent with the given prompt and return response lines.
+
+    This function:
+    1. Configures execution context with thread ID
+    2. Initializes agent if not in cache
+    3. Streams agent execution results
+    4. Formats and times the execution steps
+
+    Args:
+        message (ChatMessageCreate): The chat message containing agent_id, chat_id, and message content
+        debug (bool): Enable debug mode, will save the skill results
+
+    Returns:
+        list[ChatMessage]: Formatted response lines including timing information
+    """
+    resp = []
+    async for chat_message in stream_agent(message):
+        resp.append(chat_message)
     return resp
 
 
