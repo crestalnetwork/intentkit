@@ -5,7 +5,7 @@ from typing import Annotated, Any, List
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Column, DateTime, String, func, select
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -22,7 +22,7 @@ class AppSettingTable(Base):
         primary_key=True,
     )
     value = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=False,
     )
     created_at = Column(

@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     ARRAY,
+    JSON,
     Column,
     DateTime,
     Index,
@@ -746,7 +747,7 @@ class CreditEventTable(Base):
         nullable=False,
     )
     credit_types = Column(
-        ARRAY(String),
+        JSON().with_variant(ARRAY(String), "postgresql"),
         nullable=True,
     )
     balance_after = Column(

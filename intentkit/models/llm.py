@@ -247,6 +247,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4o-mini": LLMModelInfo(
         id="gpt-4o-mini",
@@ -262,6 +264,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1-nano": LLMModelInfo(
         id="gpt-4.1-nano",
@@ -276,6 +280,8 @@ AVAILABLE_MODELS = {
         supports_image_input=False,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1-mini": LLMModelInfo(
         id="gpt-4.1-mini",
@@ -291,6 +297,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1": LLMModelInfo(
         id="gpt-4.1",
@@ -306,6 +314,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "o4-mini": LLMModelInfo(
         id="o4-mini",
@@ -549,6 +559,8 @@ class OpenAILLM(LLMModel):
 
         if info.api_base:
             kwargs["openai_api_base"] = info.api_base
+
+        logger.debug(f"Creating ChatOpenAI instance with kwargs: {kwargs}")
 
         return ChatOpenAI(**kwargs)
 

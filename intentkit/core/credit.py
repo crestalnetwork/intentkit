@@ -906,7 +906,7 @@ async def expense_message(
         model=agent.model,
         total_amount=total_amount,
         credit_type=credit_type,
-        credit_types=details.keys(),
+        credit_types=list(details.keys()),
         balance_after=user_account.credits
         + user_account.free_credits
         + user_account.reward_credits,

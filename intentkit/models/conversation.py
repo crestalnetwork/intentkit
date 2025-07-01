@@ -19,7 +19,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.models.base import Base
@@ -81,7 +81,7 @@ class ConversationMessageTable(Base):
         nullable=False,
     )
     message_metadata = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     created_at = Column(

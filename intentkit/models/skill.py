@@ -15,7 +15,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -30,7 +30,7 @@ class AgentSkillDataTable(Base):
     agent_id = Column(String, primary_key=True)
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
-    data = Column(JSONB, nullable=True)
+    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
     size = Column(Integer, nullable=False, default=0)
     created_at = Column(
         DateTime(timezone=True),
@@ -198,7 +198,7 @@ class ThreadSkillDataTable(Base):
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
     agent_id = Column(String, nullable=False)
-    data = Column(JSONB, nullable=True)
+    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,

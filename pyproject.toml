@@ -7,6 +7,7 @@ requires-python = "==3.12.*"
 readme = "README.md"
 dependencies = [
     "aiogram>=3.17.0",
+    "aiosqlite>=0.21.0",
     "alembic>=1.14.0",
     "anyio>=4.8.0",
     "APScheduler>=3.11.0",

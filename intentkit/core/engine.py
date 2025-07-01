@@ -51,7 +51,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import get_langgraph_pg_saver, get_session
+from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import AgentSkillData, Skill, ThreadSkillData
 from intentkit.models.user import User
@@ -151,7 +151,7 @@ async def initialize_agent(aid, is_private=False):
     input_token_limit = min(config.input_token_limit, llm_model.info.context_length)
 
     # ==== Store buffered conversation history in memory.
-    memory = get_langgraph_pg_saver()
+    memory = get_langgraph_checkpointer()
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []

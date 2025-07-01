@@ -25,7 +25,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 from intentkit.models.agent_data import AgentData
 from intentkit.models.base import Base
@@ -201,9 +201,9 @@ class AgentTable(Base):
         comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
     )
     number = Column(
-        BigInteger,
+        BigInteger(),
         Identity(start=1, increment=1),
-        nullable=False,
+        nullable=True,
         comment="Auto-incrementing number assigned by the system for easy reference",
     )
     name = Column(
@@ -283,7 +283,7 @@ class AgentTable(Base):
         comment="Upstream reference ID for idempotent operations",
     )
     upstream_extra = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Additional data store for upstream use",
     )
@@ -302,7 +302,7 @@ class AgentTable(Base):
     model = Column(
         String,
         nullable=True,
-        default="gpt-4o-mini",
+        default="gpt-4.1-mini",
         comment="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
     )
     prompt = Column(
@@ -341,7 +341,7 @@ class AgentTable(Base):
     )
     # autonomous mode
     autonomous = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Autonomous agent configurations",
     )
@@ -352,13 +352,13 @@ class AgentTable(Base):
         comment="Introduction for example interactions",
     )
     examples = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="List of example interactions for the agent",
     )
     # skills
     skills = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Dict of skills and their corresponding configurations",
     )
@@ -382,16 +382,9 @@ class AgentTable(Base):
         comment="Extra prompt for twitter entrypoint",
     )
     twitter_config = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="You must use your own key for twitter entrypoint, it is separated from twitter skills",
-    )
-    # twitter skills require config, but not require twitter_enabled flag.
-    # As long as twitter_skills is not empty, the corresponding skills will be loaded.
-    twitter_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Twitter-specific skills available to this agent",
     )
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled = Column(
@@ -406,15 +399,9 @@ class AgentTable(Base):
         comment="Extra prompt for telegram entrypoint",
     )
     telegram_config = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Telegram integration configuration settings",
-    )
-    # telegram skills not used for now
-    telegram_skills = Column(
-        ARRAY(String),
-        nullable=True,
-        comment="List of Telegram-specific skills available to this agent",
     )
     # auto timestamp
     created_at = Column(
@@ -645,7 +632,7 @@ class AgentUpdate(BaseModel):
     model: Annotated[
         str,
         PydanticField(
-            default="gpt-4.1-nano",
+            default="gpt-4.1-mini",
             description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent, venice-uncensored",
             json_schema_extra={
                 "x-group": "ai",
@@ -875,16 +862,6 @@ class AgentUpdate(BaseModel):
             json_schema_extra={
                 "x-group": "entrypoint",
             },
-        ),
-    ]
-    # twitter skills require config, but not require twitter_enabled flag.
-    # As long as twitter_skills is not empty, the corresponding skills will be loaded.
-    twitter_skills: Annotated[
-        Optional[List[str]],
-        PydanticField(
-            default=None,
-            deprecated="Please use skills instead",
-            description="List of Twitter-specific skills available to this agent",
         ),
     ]
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
@@ -1140,7 +1117,7 @@ class Agent(AgentCreate):
 
     # auto increment number by db
     number: Annotated[
-        int,
+        Optional[int],
         PydanticField(
             description="Auto-incrementing number assigned by the system for easy reference",
         ),

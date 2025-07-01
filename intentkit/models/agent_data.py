@@ -16,7 +16,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -32,7 +32,9 @@ class AgentDataTable(Base):
     id = Column(String, primary_key=True, comment="Same as Agent.id")
     cdp_wallet_data = Column(String, nullable=True, comment="CDP wallet data")
     crossmint_wallet_data = Column(
-        JSONB, nullable=True, comment="Crossmint wallet information"
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Crossmint wallet information",
     )
     twitter_id = Column(String, nullable=True, comment="Twitter user ID")
     twitter_username = Column(String, nullable=True, comment="Twitter username")
@@ -237,7 +239,7 @@ class AgentData(BaseModel):
             item = await db.get(AgentDataTable, agent_id)
             if item:
                 return cls.model_validate(item)
-            return cls(id=agent_id)
+            return cls.model_construct(id=agent_id)
 
     @classmethod
     async def get_by_api_key(cls, api_key: str) -> Optional["AgentData"]:
@@ -339,7 +341,7 @@ class AgentPluginDataTable(Base):
     agent_id = Column(String, primary_key=True)
     plugin = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
-    data = Column(JSONB, nullable=True)
+    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,

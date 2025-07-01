@@ -18,7 +18,7 @@ from sqlalchemy import (
     select,
     update,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.models.base import Base
@@ -199,11 +199,11 @@ class ChatMessageTable(Base):
         nullable=False,
     )
     attachments = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     skill_calls = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     input_tokens = Column(
