@@ -5,10 +5,9 @@ from typing import TypedDict
 from coinbase_agentkit import (
     AgentKit,
     AgentKitConfig,
-    CdpWalletProvider,
+    CdpEvmServerWalletProvider,
     basename_action_provider,
     cdp_api_action_provider,
-    cdp_wallet_action_provider,
     erc20_action_provider,
     morpho_action_provider,
     pyth_action_provider,
@@ -37,10 +36,7 @@ class SkillStates(TypedDict):
     WalletActionProvider_native_transfer: SkillState
     CdpApiActionProvider_address_reputation: SkillState
     CdpApiActionProvider_request_faucet_funds: SkillState
-    CdpWalletActionProvider_deploy_contract: SkillState
-    CdpWalletActionProvider_deploy_nft: SkillState
-    CdpWalletActionProvider_deploy_token: SkillState
-    CdpWalletActionProvider_trade: SkillState
+    # CdpWalletActionProvider skills are no longer available in AgentKit 0.6.0
     PythActionProvider_fetch_price: SkillState
     PythActionProvider_fetch_price_feed_id: SkillState
     BasenameActionProvider_register_basename: SkillState
@@ -97,7 +93,7 @@ async def get_skills(
 
     # Initialize CDP client
     cdp_client: CdpClient = await get_cdp_client(agent_id, store)
-    cdp_wallet_provider: CdpWalletProvider = await cdp_client.get_wallet_provider()
+    cdp_wallet_provider: CdpEvmServerWalletProvider = await cdp_client.get_wallet_provider()
     cdp_provider_config = await cdp_client.get_provider_config()
     agent_kit = AgentKit(
         AgentKitConfig(
@@ -105,7 +101,6 @@ async def get_skills(
             action_providers=[
                 wallet_action_provider(),
                 cdp_api_action_provider(cdp_provider_config),
-                cdp_wallet_action_provider(cdp_provider_config),
                 pyth_action_provider(),
                 basename_action_provider(),
                 erc20_action_provider(),
@@ -123,7 +118,7 @@ async def get_skills(
         if skill == "get_balance":
             tools.append(
                 GetBalance(
-                    wallet=cdp_wallet_provider._wallet,
+                    wallet_provider=cdp_wallet_provider,
                     agent_id=agent_id,
                     skill_store=store,
                 )
