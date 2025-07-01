@@ -244,7 +244,7 @@ async def debug_chat(
     )
 
     # Execute agent and get response
-    messages = await execute_agent(user_input, debug=debug)
+    messages = await execute_agent(user_input)
 
     resp = f"Agent ID:\t{aid}\n\nChat ID:\t{chat_id}\n\n-------------------\n\n"
     resp += "[ Input: ]\n\n"

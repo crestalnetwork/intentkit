@@ -1,24 +1,25 @@
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator
+from typing import Annotated, AsyncGenerator, Optional
 from urllib.parse import quote_plus
 
+from intentkit.models.db_mig import safe_migrate
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.types import Checkpointer
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from intentkit.models.db_mig import safe_migrate
-
 engine = None
-_pool = None
+_langgraph_checkpointer: Optional[Checkpointer] = None
 
 
 async def init_db(
-    host: str,
-    username: str,
-    password: str,
-    dbname: str,
-    port: Annotated[str, Field(default="5432", description="Database port")],
+    host: Optional[str],
+    username: Optional[str],
+    password: Optional[str],
+    dbname: Optional[str],
+    port: Annotated[Optional[str], Field(default="5432", description="Database port")],
     auto_migrate: Annotated[
         bool, Field(default=True, description="Whether to run migrations automatically")
     ],
@@ -33,32 +34,40 @@ async def init_db(
         port: Database port (default: 5432)
         auto_migrate: Whether to run migrations automatically (default: True)
     """
-    global engine, _pool
-    # Initialize psycopg pool if not already initialized
-    if _pool is None:
-        _pool = AsyncConnectionPool(
-            conninfo=f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
-            min_size=3,
-            max_size=20,
-            timeout=60,
-            max_idle=30 * 60,
-        )
+    global engine, _langgraph_checkpointer
+    # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
+    if _langgraph_checkpointer is None:
+        if host:
+            pool = AsyncConnectionPool(
+                conninfo=f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
+                min_size=3,
+                max_size=20,
+                timeout=60,
+                max_idle=30 * 60,
+            )
+            _langgraph_checkpointer = AsyncPostgresSaver(pool)
+            if auto_migrate:
+                await _langgraph_checkpointer.setup()
+        else:
+            _langgraph_checkpointer = InMemorySaver()
     # Initialize SQLAlchemy engine with pool settings
     if engine is None:
-        engine = create_async_engine(
-            f"postgresql+asyncpg://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
-            pool_size=20,  # Increase pool size
-            max_overflow=30,  # Increase max overflow
-            pool_timeout=60,  # Increase timeout
-            pool_pre_ping=True,  # Enable connection health checks
-            pool_recycle=3600,  # Recycle connections after 1 hour
-        )
+        if host:
+            engine = create_async_engine(
+                f"postgresql+asyncpg://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
+                pool_size=20,  # Increase pool size
+                max_overflow=30,  # Increase max overflow
+                pool_timeout=60,  # Increase timeout
+                pool_pre_ping=True,  # Enable connection health checks
+                pool_recycle=3600,  # Recycle connections after 1 hour
+            )
+        else:
+            engine = create_async_engine(
+                "sqlite+aiosqlite:///:memory:",
+                connect_args={"check_same_thread": False},
+            )
         if auto_migrate:
             await safe_migrate(engine)
-            async with _pool.connection() as conn:
-                await conn.set_autocommit(True)
-                saver = AsyncPostgresSaver(conn)
-                await saver.setup()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -100,12 +109,12 @@ def get_engine() -> AsyncEngine:
     return engine
 
 
-def get_pool() -> AsyncConnectionPool:
-    """Get the global psycopg connection pool.
+def get_langgraph_checkpointer() -> Checkpointer:
+    """Get the AsyncPostgresSaver instance for langgraph.
 
     Returns:
-        AsyncConnectionPool: The global psycopg connection pool
+        AsyncPostgresSaver: The AsyncPostgresSaver instance
     """
-    if _pool is None:
+    if _langgraph_checkpointer is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
-    return _pool
+    return _langgraph_checkpointer

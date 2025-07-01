@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from epyxid import XID
+from intentkit.models.base import Base
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
@@ -19,10 +20,8 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from intentkit.models.base import Base
 
 
 class AgentGenerationLogTable(Base):
@@ -52,11 +51,11 @@ class AgentGenerationLogTable(Base):
         nullable=False,
     )
     generated_agent_schema = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     identified_skills = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     # LLM API response data
@@ -81,11 +80,11 @@ class AgentGenerationLogTable(Base):
         default=0,
     )
     input_tokens_details = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     completion_tokens_details = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     # Performance metrics
@@ -98,7 +97,7 @@ class AgentGenerationLogTable(Base):
         default=0,
     )
     validation_errors = Column(
-        JSONB,
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
     # Status and results

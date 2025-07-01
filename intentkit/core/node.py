@@ -145,23 +145,30 @@ class PreModelNode(RunnableCallable):
             # if last message is not human message, skip summarize
             if not isinstance(messages[-1], HumanMessage):
                 return {}
-            summarization_result = await asummarize_messages(
-                messages,
-                running_summary=context.get("running_summary"),
-                model=self.model,
-                max_tokens=self.max_tokens,
-                max_tokens_before_summary=self.max_tokens_before_summary,
-                max_summary_tokens=self.max_summary_tokens,
-                token_counter=self.token_counter,
-                initial_summary_prompt=self.initial_summary_prompt,
-                existing_summary_prompt=self.existing_summary_prompt,
-                final_prompt=self.final_prompt,
-            )
-            if summarization_result.running_summary:
-                logger.debug(f"Summarization result: {summarization_result}")
-            else:
-                logger.debug("Summarization not run")
-            return self._prepare_state_update(context, summarization_result)
+            # summarization is from outside, sometimes it is not stable, so we need to try-catch it
+            try:
+                summarization_result = await asummarize_messages(
+                    messages,
+                    running_summary=context.get("running_summary"),
+                    model=self.model,
+                    max_tokens=self.max_tokens,
+                    max_tokens_before_summary=self.max_tokens_before_summary,
+                    max_summary_tokens=self.max_summary_tokens,
+                    token_counter=self.token_counter,
+                    initial_summary_prompt=self.initial_summary_prompt,
+                    existing_summary_prompt=self.existing_summary_prompt,
+                    final_prompt=self.final_prompt,
+                )
+                if summarization_result.running_summary:
+                    logger.debug(f"Summarization result: {summarization_result}")
+                else:
+                    logger.debug("Summarization not run")
+                return self._prepare_state_update(context, summarization_result)
+            except ValueError as e:
+                logger.error(f"Invalid chat history: {e}")
+                logger.info(input)
+                # delete all messages
+                return {"messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]}
         raise ValueError(
             f"Invalid short_term_memory_strategy: {self.short_term_memory_strategy}"
         )
@@ -211,3 +218,6 @@ class PostModelNode(RunnableCallable):
                         )
                         return state_update
         return state_update
+
+
+post_model_node = PostModelNode()

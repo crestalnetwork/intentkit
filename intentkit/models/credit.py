@@ -6,9 +6,12 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from epyxid import XID
 from fastapi import HTTPException
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     ARRAY,
+    JSON,
     Column,
     DateTime,
     Index,
@@ -19,9 +22,6 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -746,7 +746,7 @@ class CreditEventTable(Base):
         nullable=False,
     )
     credit_types = Column(
-        ARRAY(String),
+        JSON().with_variant(ARRAY(String), "postgresql"),
         nullable=True,
     )
     balance_after = Column(

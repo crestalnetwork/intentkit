@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
@@ -15,11 +18,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import JSONB
-
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 
 class AgentSkillDataTable(Base):
@@ -30,7 +29,7 @@ class AgentSkillDataTable(Base):
     agent_id = Column(String, primary_key=True)
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
-    data = Column(JSONB, nullable=True)
+    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
     size = Column(Integer, nullable=False, default=0)
     created_at = Column(
         DateTime(timezone=True),
@@ -198,7 +197,7 @@ class ThreadSkillDataTable(Base):
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
     agent_id = Column(String, nullable=False)
-    data = Column(JSONB, nullable=True)
+    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,

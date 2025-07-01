@@ -1,4 +1,5 @@
 import logging
+from typing import Sequence
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
@@ -64,7 +65,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
     )
 
 
-def format_validation_errors(errors: list) -> str:
+def format_validation_errors(errors: Sequence) -> str:
     """Format validation errors into a more readable string."""
     formatted_errors = []
 
@@ -109,7 +110,7 @@ class IntentKitLookUpError(LookupError):
 class AgentError(Exception):
     """Custom exception for agent-related errors."""
 
-    def __init__(self, agent_id: str, message: str = None):
+    def __init__(self, agent_id: str, message: str | None = None):
         self.agent_id = agent_id
         if message is None:
             message = f"Agent error occurred for agent_id: {agent_id}"
@@ -122,7 +123,7 @@ class AgentError(Exception):
 class SkillError(ToolException):
     """Custom exception for skill-related errors."""
 
-    def __init__(self, agent_id: str, skill_name: str, message: str = None):
+    def __init__(self, agent_id: str, skill_name: str, message: str | None = None):
         self.agent_id = agent_id
         self.skill_name = skill_name
         if message is None:

@@ -5,15 +5,14 @@ from decimal import Decimal
 from enum import Enum
 from typing import Annotated, Any, Optional
 
-from langchain_core.language_models import LanguageModelLike
-from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
-
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitLookUpError
+from langchain_core.language_models import LanguageModelLike
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +246,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4o-mini": LLMModelInfo(
         id="gpt-4o-mini",
@@ -262,6 +263,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1-nano": LLMModelInfo(
         id="gpt-4.1-nano",
@@ -276,6 +279,8 @@ AVAILABLE_MODELS = {
         supports_image_input=False,
         supports_skill_calls=True,
         supports_structured_output=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1-mini": LLMModelInfo(
         id="gpt-4.1-mini",
@@ -291,6 +296,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "gpt-4.1": LLMModelInfo(
         id="gpt-4.1",
@@ -306,6 +313,8 @@ AVAILABLE_MODELS = {
         supports_skill_calls=True,
         supports_structured_output=True,
         supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
     ),
     "o4-mini": LLMModelInfo(
         id="o4-mini",
@@ -549,6 +558,8 @@ class OpenAILLM(LLMModel):
 
         if info.api_base:
             kwargs["openai_api_base"] = info.api_base
+
+        logger.debug(f"Creating ChatOpenAI instance with kwargs: {kwargs}")
 
         return ChatOpenAI(**kwargs)
 

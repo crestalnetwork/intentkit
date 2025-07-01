@@ -29,7 +29,6 @@ from langchain_core.messages import (
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
@@ -39,7 +38,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from intentkit.abstracts.graph import AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.credit import expense_message, expense_skill
-from intentkit.core.node import PostModelNode, PreModelNode
+from intentkit.core.node import PreModelNode, post_model_node
 from intentkit.core.prompt import agent_prompt
 from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
@@ -52,7 +51,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import get_pool, get_session
+from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import AgentSkillData, Skill, ThreadSkillData
 from intentkit.models.user import User
@@ -108,31 +107,26 @@ _agents_updated: dict[str, datetime] = {}
 _private_agents_updated: dict[str, datetime] = {}
 
 
-async def initialize_agent(aid, is_private=False):
-    """Initialize an AI agent with specified configuration and tools.
+async def create_agent(
+    agent: Agent, is_private: bool = False, has_search: bool = False
+) -> CompiledStateGraph:
+    """Create an AI agent with specified configuration and tools.
 
     This function:
-    1. Loads agent configuration from database
-    2. Initializes LLM with specified model
-    3. Loads and configures requested tools
-    4. Sets up PostgreSQL-based memory
-    5. Creates and caches the agent
+    1. Initializes LLM with specified model
+    2. Loads and configures requested tools
+    3. Sets up PostgreSQL-based memory
+    4. Creates and returns the agent
 
     Args:
-        aid (str): Agent ID to initialize
+        agent (Agent): Agent configuration object
         is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+        has_search (bool, optional): Flag indicating whether to include search tools. Defaults to False.
 
     Returns:
-        Agent: Initialized LangChain agent
-
-    Raises:
-        HTTPException: If agent not found (404) or database error (500)
+        CompiledStateGraph: Initialized LangChain agent
     """
-    # get the agent from the database
-    agent: Optional[Agent] = await Agent.get(aid)
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-    agent_data: Optional[AgentData] = await AgentData.get(aid)
+    agent_data: Optional[AgentData] = await AgentData.get(agent.id)
 
     # ==== Initialize LLM using the LLM abstraction.
     from intentkit.models.llm import create_llm_model
@@ -152,7 +146,7 @@ async def initialize_agent(aid, is_private=False):
     input_token_limit = min(config.input_token_limit, llm_model.info.context_length)
 
     # ==== Store buffered conversation history in memory.
-    memory = AsyncPostgresSaver(get_pool())
+    memory = get_langgraph_checkpointer()
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []
@@ -165,7 +159,7 @@ async def initialize_agent(aid, is_private=False):
                 skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
                     skill_tools = await skill_module.get_skills(
-                        v, is_private, skill_store, agent_id=aid
+                        v, is_private, skill_store, agent_id=agent.id
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)
@@ -177,8 +171,12 @@ async def initialize_agent(aid, is_private=False):
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
 
-    # testing native search
-    if llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search:
+    # Add search tools if requested
+    if (
+        has_search
+        and llm_model.info.provider == LLMProvider.OPENAI
+        and llm_model.info.supports_search
+    ):
         tools.append({"type": "web_search_preview"})
 
     # finally, set up the system prompt
@@ -206,7 +204,6 @@ async def initialize_agent(aid, is_private=False):
     def formatted_prompt(
         state: AgentState, config: RunnableConfig
     ) -> list[BaseMessage]:
-        # logger.debug(f"[{aid}] formatted prompt: {state}")
         entrypoint_prompt = []
         if config.get("configurable") and config["configurable"].get(
             "entrypoint_prompt"
@@ -221,11 +218,11 @@ async def initialize_agent(aid, is_private=False):
 
     # log final prompt and all skills
     logger.debug(
-        f"[{aid}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
+        f"[{agent.id}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
     )
     for tool in tools:
         logger.info(
-            f"[{aid}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
+            f"[{agent.id}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
 
     # Pre model hook
@@ -235,8 +232,6 @@ async def initialize_agent(aid, is_private=False):
         max_tokens=input_token_limit // 2,
         max_summary_tokens=2048,  # later we can let agent to set this
     )
-    # Post model hook
-    post_model_hook = PostModelNode()
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
@@ -244,22 +239,56 @@ async def initialize_agent(aid, is_private=False):
         tools=tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
-        post_model_hook=post_model_hook,
+        post_model_hook=post_model_node if config.payment_enabled else None,
         state_schema=AgentState,
         checkpointer=memory,
         debug=config.debug_checkpoint,
-        name=aid,
+        name=agent.id,
     )
-    # executor = create_agent(
-    #     aid,
-    #     llm,
-    #     tools=tools,
-    #     checkpointer=memory,
-    #     state_modifier=formatted_prompt,
-    #     debug=config.debug_checkpoint,
-    #     input_token_limit=input_token_limit,
-    # )
 
+    return executor
+
+
+async def initialize_agent(aid, is_private=False):
+    """Initialize an AI agent with specified configuration and tools.
+
+    This function:
+    1. Loads agent configuration from database
+    2. Uses create_agent to build the agent
+    3. Caches the agent
+
+    Args:
+        aid (str): Agent ID to initialize
+        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+
+    Returns:
+        Agent: Initialized LangChain agent
+
+    Raises:
+        HTTPException: If agent not found (404) or database error (500)
+    """
+    # get the agent from the database
+    agent: Optional[Agent] = await Agent.get(aid)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    # Determine if search should be enabled based on model capabilities
+    from intentkit.models.llm import create_llm_model
+
+    llm_model = await create_llm_model(
+        model_name=agent.model,
+        temperature=agent.temperature,
+        frequency_penalty=agent.frequency_penalty,
+        presence_penalty=agent.presence_penalty,
+    )
+    has_search = (
+        llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search
+    )
+
+    # Create the agent using the new create_agent function
+    executor = await create_agent(agent, is_private, has_search)
+
+    # Cache the agent executor
     if is_private:
         _private_agents[aid] = executor
         _private_agents_updated[aid] = agent.updated_at
@@ -298,11 +327,9 @@ async def agent_executor(
     return agents[agent_id], cold_start_cost
 
 
-async def execute_agent(
-    message: ChatMessageCreate, debug: bool = False
-) -> list[ChatMessage]:
+async def stream_agent(message: ChatMessageCreate):
     """
-    Execute an agent with the given prompt and return response lines.
+    Stream agent execution results as an async generator.
 
     This function:
     1. Configures execution context with thread ID
@@ -312,13 +339,10 @@ async def execute_agent(
 
     Args:
         message (ChatMessageCreate): The chat message containing agent_id, chat_id, and message content
-        debug (bool): Enable debug mode, will save the skill results
 
-    Returns:
-        list[ChatMessage]: Formatted response lines including timing information
+    Yields:
+        ChatMessage: Individual response messages including timing information
     """
-
-    resp = []
     start = time.perf_counter()
     # make sure reply_to is set
     message.reply_to = message.id
@@ -358,8 +382,8 @@ async def execute_agent(
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
-                resp.append(error_message)
-                return resp
+                yield error_message
+                return
         # payer
         payer = input.user_id
         if input.author_type in [
@@ -396,8 +420,8 @@ async def execute_agent(
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
-                resp.append(error_message)
-                return resp
+                yield error_message
+                return
         # avg cost
         avg_count = 1
         if quota and quota.avg_action_cost > 0:
@@ -416,8 +440,8 @@ async def execute_agent(
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
-            resp.append(error_message)
-            return resp
+            yield error_message
+            return
 
     is_private = False
     if input.user_id == agent.owner:
@@ -620,7 +644,7 @@ async def execute_agent(
                             session
                         )
                         await session.commit()
-                        resp.append(chat_message)
+                        yield chat_message
             elif "tools" in chunk and "messages" in chunk["tools"]:
                 if not cached_tool_step:
                     logger.error(
@@ -735,7 +759,7 @@ async def execute_agent(
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
-                    resp.append(skill_message)
+                    yield skill_message
             elif "pre_model_hook" in chunk:
                 pass
             elif "post_model_hook" in chunk:
@@ -776,7 +800,7 @@ async def execute_agent(
                                 )
                                 cold_start_cost = 0
                             post_model_message = await post_model_message_create.save()
-                            resp.append(post_model_message)
+                            yield post_model_message
                         error_message_create = ChatMessageCreate(
                             id=str(XID()),
                             agent_id=input.agent_id,
@@ -790,7 +814,7 @@ async def execute_agent(
                             time_cost=0,
                         )
                         error_message = await error_message_create.save()
-                        resp.append(error_message)
+                        yield error_message
             else:
                 error_traceback = traceback.format_exc()
                 logger.error(
@@ -816,8 +840,8 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
     except GraphRecursionError as e:
         error_traceback = traceback.format_exc()
         logger.error(
@@ -837,8 +861,8 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
     except Exception as e:
         error_traceback = traceback.format_exc()
         logger.error(
@@ -858,8 +882,30 @@ async def execute_agent(
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
-        resp.append(error_message)
-        return resp
+        yield error_message
+        return
+
+
+async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:
+    """
+    Execute an agent with the given prompt and return response lines.
+
+    This function:
+    1. Configures execution context with thread ID
+    2. Initializes agent if not in cache
+    3. Streams agent execution results
+    4. Formats and times the execution steps
+
+    Args:
+        message (ChatMessageCreate): The chat message containing agent_id, chat_id, and message content
+        debug (bool): Enable debug mode, will save the skill results
+
+    Returns:
+        list[ChatMessage]: Formatted response lines including timing information
+    """
+    resp = []
+    async for chat_message in stream_agent(message):
+        resp.append(chat_message)
     return resp
 
 

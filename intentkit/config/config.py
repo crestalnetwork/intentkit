@@ -3,8 +3,6 @@ import json
 import logging
 import os
 
-import botocore.session
-from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 from dotenv import load_dotenv
 
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
@@ -19,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 def load_from_aws(name):
+    import botocore.session
+    from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
+
     client = botocore.session.get_session().create_client("secretsmanager")
     cache_config = SecretCacheConfig()
     cache = SecretCache(config=cache_config, client=client)
@@ -56,9 +57,6 @@ class Config:
                 "port": os.getenv("DB_PORT"),
                 "dbname": os.getenv("DB_NAME"),
             }
-        # validate the db config
-        if "host" not in self.db:
-            raise ValueError("db config is not set")
         # ==== this part can be load from env or aws secrets manager
         self.db["auto_migrate"] = self.load("DB_AUTO_MIGRATE", "true") == "true"
         self.debug = self.load("DEBUG") == "true"
