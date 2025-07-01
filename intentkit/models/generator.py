@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from epyxid import XID
+from intentkit.models.base import Base
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
@@ -21,8 +22,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from intentkit.models.base import Base
 
 
 class AgentGenerationLogTable(Base):

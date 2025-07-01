@@ -4,6 +4,8 @@ from enum import Enum
 from typing import Annotated, List, NotRequired, Optional, TypedDict
 
 from epyxid import XID
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Column,
@@ -20,9 +22,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
 
 
 class ChatMessageAttachmentType(str, Enum):

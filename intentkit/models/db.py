@@ -2,14 +2,13 @@ from contextlib import asynccontextmanager
 from typing import Annotated, AsyncGenerator, Optional
 from urllib.parse import quote_plus
 
+from intentkit.models.db_mig import safe_migrate
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.types import Checkpointer
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-
-from intentkit.models.db_mig import safe_migrate
 
 engine = None
 _langgraph_checkpointer: Optional[Checkpointer] = None

@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include intentkit *.py
+recursive-include intentkit *.json
+recursive-include intentkit *.toml
+recursive-include intentkit *.jpg
+recursive-include intentkit *.jpeg
+recursive-include intentkit *.png
+recursive-include intentkit *.webp
+recursive-include intentkit *.md
+recursive-exclude intentkit __pycache__
+recursive-exclude intentkit *.pyc
+recursive-exclude intentkit *.pyo
+recursive-exclude intentkit .DS_Store

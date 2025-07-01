@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
@@ -16,10 +19,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
-
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 
 
 class AgentSkillDataTable(Base):

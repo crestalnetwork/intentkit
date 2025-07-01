@@ -1,0 +1,125 @@
+[project]
+name = "intentkit"
+version = "0.5.0"
+description = "Intent-based AI Agent Platform - Core Package"
+authors = [{ name = "hyacinthus", email = "hyacinthus@gmail.com" }]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["ai", "agent", "intent", "blockchain", "crypto"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "aiogram>=3.17.0",
+    "aiosqlite>=0.21.0",
+    "alembic>=1.14.0",
+    "anyio>=4.8.0",
+    "APScheduler>=3.11.0",
+    "asyncpg>=0.30.0",
+    "aws-secretsmanager-caching>=1.1.3",
+    "beautifulsoup4>=4.13.4",
+    "boto3>=1.37.23,<2.0.0",
+    "botocore>=1.35.97",
+    "coinbase-agentkit==0.4.0",
+    "coinbase-agentkit-langchain==0.3.0",
+    "cron-validator>=1.0.8,<2.0.0",
+    "epyxid>=0.3.3",
+    "faiss-cpu>=1.11.0",
+    "fastapi>=0.115.8",
+    "filetype>=1.2.0,<2.0.0",
+    "goat-sdk>=0.1.4",
+    "goat-sdk-adapter-langchain",
+    "goat-sdk-plugin-1inch",
+    "goat-sdk-plugin-allora",
+    "goat-sdk-plugin-coingecko",
+    "goat-sdk-plugin-dexscreener",
+    "goat-sdk-plugin-erc20",
+    "goat-sdk-plugin-farcaster",
+    "goat-sdk-plugin-jsonrpc",
+    "goat-sdk-plugin-jupiter",
+    "goat-sdk-plugin-nansen",
+    "goat-sdk-plugin-opensea",
+    "goat-sdk-plugin-rugcheck",
+    "goat-sdk-plugin-spl-token",
+    "goat-sdk-plugin-superfluid",
+    "goat-sdk-plugin-uniswap",
+    "goat-sdk-wallet-crossmint",
+    "goat-sdk-wallet-evm",
+    "goat-sdk-wallet-solana",
+    "goat-sdk-wallet-web3",
+    "gunicorn>=23.0.0",
+    "jsonref>=1.1.0",
+    "langchain>=0.3.25,<0.4.0",
+    "langchain-community>=0.3.19",
+    "langchain-core>=0.3.43",
+    "langchain-mcp-adapters>=0.0.11",
+    "langchain-openai>=0.3.8",
+    "langchain-postgres>=0.0.13",
+    "langchain-text-splitters>=0.3.8",
+    "langchain-xai>=0.2.1",
+    "langgraph>=0.4.3",
+    "langgraph-checkpoint>=2.0.18",
+    "langgraph-checkpoint-postgres>=2.0.16",
+    "langgraph-prebuilt>=0.5.1",
+    "langmem>=0.0.27",
+    "mypy-boto3-s3>=1.37.24,<2.0.0",
+    "openai>=1.59.6",
+    "pgvector>=0.3.6",
+    "pillow>=11.1.0,<12.0.0",
+    "psycopg>=3.2.3",
+    "psycopg-pool>=3.2.4",
+    "psycopg2-binary>=2.9.10,<3.0.0",
+    "pydantic>=2.10.6",
+    "pydantic-settings>=2.8.1",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.20",
+    "pytz>=2025.1",
+    "pyyaml>=6.0.2",
+    "redis>=5.2.1,<7.0.0",
+    "requests>=2.32.3",
+    "sentry-sdk[fastapi]>=2.20.0",
+    "slack-sdk>=3.34.0",
+    "sqlalchemy[asyncio]>=2.0.37",
+    "telegramify-markdown>=0.5.0,<0.6.0",
+    "tweepy[async]>=4.15.0",
+    "uvicorn>=0.34.0,<1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/crestal-network/intentkit"
+Repository = "https://github.com/crestal-network/intentkit"
+Documentation = "https://github.com/crestal-network/intentkit/tree/main/docs"
+"Bug Tracker" = "https://github.com/crestal-network/intentkit/issues"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.9,<0.12",
+    "jsonschema>=4.21.1,<5",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["intentkit"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "intentkit/",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml"
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]

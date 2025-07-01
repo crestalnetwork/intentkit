@@ -4,6 +4,8 @@ from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
 from fastapi import HTTPException
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import (
@@ -17,9 +19,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
-
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 

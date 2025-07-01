@@ -3,14 +3,13 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated, Optional
 
+from intentkit.models.base import Base
+from intentkit.models.credit import CreditAccount
+from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Column, DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from intentkit.models.base import Base
-from intentkit.models.credit import CreditAccount
-from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 
