@@ -6,8 +6,7 @@ from typing import Annotated, Optional, TypedDict
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
-from cdp import Wallet
-from cdp.cdp import Cdp
+from cdp import CdpClient
 from fastapi import (
     APIRouter,
     Body,
@@ -110,15 +109,25 @@ async def _process_agent_post_actions(
         and agent.skills.get("cdp")
         and agent.skills["cdp"].get("enabled")
     ):
-        # create the wallet
-        Cdp.configure(
-            api_key_name=config.cdp_api_key_name,
-            private_key=config.cdp_api_key_private_key.replace("\\n", "\n"),
+        # create the wallet using new CDP API
+        client = CdpClient(
+            api_key_id=config.cdp_api_key_name,
+            api_key_secret=config.cdp_api_key_private_key.replace("\\n", "\n"),
         )
         network_id = agent.network_id or agent.cdp_network_id
-        wallet = Wallet.create(network_id=network_id)
-        wallet_data = wallet.export_data().to_dict()
-        wallet_data["default_address_id"] = wallet.default_address.address_id
+        
+        async def create_wallet():
+            async with client as cdp:
+                account = await cdp.evm.create_account(network=network_id)
+                return {
+                    "address": account.address,
+                    "network_id": network_id,
+                }
+        
+        import asyncio
+        wallet_data = asyncio.run(create_wallet())
+        wallet_data["default_address_id"] = wallet_data["address"]
+        
         if not agent_data:
             agent_data = AgentData(id=agent.id, cdp_wallet_data=json.dumps(wallet_data))
         else:

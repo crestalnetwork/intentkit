@@ -1,7 +1,7 @@
 from typing import Type
 
-from cdp import Wallet
 from pydantic import BaseModel, Field
+from coinbase_agentkit import CdpEvmServerWalletProvider
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.cdp.base import CDPBaseTool
@@ -18,7 +18,7 @@ class GetBalanceInput(BaseModel):
 class GetBalance(CDPBaseTool):
     """Tool for getting balance from CDP wallet.
 
-    This tool uses the CDP API to get balance for all addresses in a wallet for a given asset.
+    This tool uses the CDP API to get balance from the wallet address.
 
     Attributes:
         name: The name of the tool.
@@ -28,13 +28,12 @@ class GetBalance(CDPBaseTool):
 
     agent_id: str
     skill_store: SkillStoreABC
-    wallet: Wallet | None = None
+    wallet_provider: CdpEvmServerWalletProvider | None = None
 
     name: str = "cdp_get_balance"
     description: str = (
-        "This tool will get the balance of all the addresses in the wallet for a given asset. It takes the asset ID as input."
-        "Always use 'eth' for the native asset ETH and 'usdc' for USDC. "
-        "Other valid asset IDs are: weth,dai,reth,brett,w,cbeth,axl,iotx,prime,aero,rsr,mog,tbtc,npc,yfi"
+        "This tool will get the balance of the wallet for a given asset. It takes the asset ID as input."
+        "Always use 'eth' for the native asset ETH. For other assets, use their token symbol or contract address."
     )
     args_schema: Type[BaseModel] = GetBalanceInput
 
@@ -48,25 +47,20 @@ class GetBalance(CDPBaseTool):
             str: A message containing the balance information or error message.
         """
         try:
-            if not self.wallet:
-                return "Failed to get wallet."
+            if not self.wallet_provider:
+                from intentkit.clients.cdp import get_cdp_client
+                cdp_client = await get_cdp_client(self.agent_id, self.skill_store)
+                self.wallet_provider = await cdp_client.get_wallet_provider()
 
-            # for each address in the wallet, get the balance for the asset
-            balances = {}
-
-            try:
-                for address in self.wallet.addresses:
-                    balance = address.balance(asset_id)
-                    balances[address.address_id] = balance
-            except Exception as e:
-                return f"Error getting balance for all addresses in the wallet: {e!s}"
-
-            # Format each balance entry on a new line
-            balance_lines = [
-                f"  {addr}: {balance}" for addr, balance in balances.items()
-            ]
-            formatted_balances = "\n".join(balance_lines)
-            return f"Balances for wallet {self.wallet.id}:\n{formatted_balances}"
+            # Get native ETH balance
+            if asset_id.lower() == "eth":
+                balance = self.wallet_provider.get_balance()
+                address = self.wallet_provider.get_address()
+                return f"ETH balance for address {address}: {balance} wei"
+            else:
+                # For other assets, we'd need additional implementation
+                # This is a simplified version focusing on ETH
+                return f"Balance checking for asset '{asset_id}' is not yet implemented in the updated API. Currently only 'eth' is supported."
 
         except Exception as e:
             return f"Error getting balance: {str(e)}"
