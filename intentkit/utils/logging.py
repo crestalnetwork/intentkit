@@ -43,15 +43,15 @@ def setup_logging(env: str, debug: bool = False):
         debug: Debug mode flag
     """
 
-    if env == "local" or debug:
+    if debug:
         # Set up logging configuration for local/debug
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             handlers=[logging.StreamHandler()],
         )
-        # logging.getLogger("openai._base_client").setLevel(logging.INFO)
-        # logging.getLogger("httpcore.http11").setLevel(logging.INFO)
+        logging.getLogger("openai._base_client").setLevel(logging.INFO)
+        logging.getLogger("httpcore.http11").setLevel(logging.INFO)
         # logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
     else:
         # For non-local environments, use JSON format

@@ -11,6 +11,51 @@ on:
     types: [ prereleased, released ]
 
 jobs:
+  publish-package:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${{ github.event.release.tag_name }}
+        VERSION_NO_V=${VERSION#v}
+        echo "version=${VERSION_NO_V}" >> $GITHUB_OUTPUT
+        
+    - name: Update version in pyproject.toml
+      run: |
+        cd intentkit
+        sed -i 's/version = ".*"/version = "${{ steps.version.outputs.version }}"/' pyproject.toml
+        
+    - name: Update version in __init__.py
+      run: |
+        cd intentkit
+        sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.version }}"/' __init__.py
+        
+    - name: Build package
+      run: |
+        cd intentkit
+        uv build
+        
+    - name: Publish to PyPI
+      run: |
+        cd intentkit
+        uv publish --token ${{ secrets.UV_PUBLISH_TOKEN }}
+
   docker:
     runs-on: ubuntu-latest
     permissions:

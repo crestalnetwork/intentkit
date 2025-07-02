@@ -1,6 +1,6 @@
 [project]
 name = "intentkit"
-version = "0.5.0"
+version = "0.0.1"
 description = "Intent-based AI Agent Platform - Core Package"
 authors = [{ name = "hyacinthus", email = "hyacinthus@gmail.com" }]
 requires-python = ">=3.12"
@@ -110,15 +110,30 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["intentkit"]
+[tool.hatch.build.targets.wheel.force-include]
+"__init__.py" = "intentkit/__init__.py"
+"abstracts" = "intentkit/abstracts"
+"clients" = "intentkit/clients"
+"config" = "intentkit/config"
+"core" = "intentkit/core"
+"models" = "intentkit/models"
+"skills" = "intentkit/skills"
+"utils" = "intentkit/utils"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "intentkit/",
+    "__init__.py",
+    "abstracts/",
+    "clients/",
+    "config/",
+    "core/",
+    "models/",
+    "skills/",
+    "utils/",
     "README.md",
     "LICENSE",
-    "pyproject.toml"
+    "pyproject.toml",
+    "MANIFEST.in"
 ]
 
 [tool.ruff.lint]
