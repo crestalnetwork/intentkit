@@ -95,7 +95,6 @@ async def get_skills(
     cdp_wallet_provider: CdpEvmServerWalletProvider = (
         await cdp_client.get_wallet_provider()
     )
-    cdp_provider_config = await cdp_client.get_provider_config()
     agent_kit = AgentKit(
         AgentKitConfig(
             wallet_provider=cdp_wallet_provider,

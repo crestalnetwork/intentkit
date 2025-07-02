@@ -267,17 +267,19 @@ class EnsoRouteShortcut(EnsoBaseTool):
                 if broadcast_requested:
                     # Use the wallet provider to send the transaction
                     wallet_provider = await self.get_wallet_provider(context)
-                    
+
                     # Extract transaction data from the Enso API response
                     tx_data = json_dict.get("tx", {})
                     if tx_data:
                         # Send the transaction using the wallet provider
-                        tx_hash = wallet_provider.send_transaction({
-                            "to": tx_data.get("to"),
-                            "data": tx_data.get("data", "0x"),
-                            "value": tx_data.get("value", 0)
-                        })
-                        
+                        tx_hash = wallet_provider.send_transaction(
+                            {
+                                "to": tx_data.get("to"),
+                                "data": tx_data.get("data", "0x"),
+                                "value": tx_data.get("value", 0),
+                            }
+                        )
+
                         # Wait for transaction confirmation
                         wallet_provider.wait_for_transaction_receipt(tx_hash)
                         res.txHash = tx_hash

@@ -56,26 +56,26 @@ class GetBalance(CDPBaseTool):
             cdp_client = await get_cdp_client(self.agent_id, self.skill_store)
             provider_config = await cdp_client.get_provider_config()
             network_id = provider_config.network_id
-            
+
             # Map network_id to the format expected by the API
             network_mapping = {
-                'base-mainnet': 'base',
-                'base-sepolia': 'base-sepolia',
-                'ethereum': 'ethereum',
-                'ethereum-mainnet': 'ethereum',
+                "base-mainnet": "base",
+                "base-sepolia": "base-sepolia",
+                "ethereum": "ethereum",
+                "ethereum-mainnet": "ethereum",
             }
             api_network = network_mapping.get(network_id, network_id)
 
             # For native ETH balance, use the account's balance directly
-            if asset_id.lower() == 'eth':
+            if asset_id.lower() == "eth":
                 try:
                     # Get native balance using Web3
                     balance_wei = await self.account.get_balance()
-                    balance_eth = balance_wei / (10 ** 18)  # Convert from wei to ETH
+                    balance_eth = balance_wei / (10**18)  # Convert from wei to ETH
                     return f"ETH balance for account {self.account.address}: {balance_eth} ETH"
                 except Exception as e:
                     return f"Error getting ETH balance: {e!s}"
-            
+
             # For other tokens, try the list_token_balances API
             try:
                 # list_token_balances returns all token balances for the account

@@ -35,7 +35,9 @@ class EnsoBaseTool(IntentKitSkill):
         client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
         return await client.get_account()
 
-    async def get_wallet_provider(self, context: SkillContext) -> Optional[CdpEvmServerWalletProvider]:
+    async def get_wallet_provider(
+        self, context: SkillContext
+    ) -> Optional[CdpEvmServerWalletProvider]:
         """Get the wallet provider from the CDP client.
 
         Args:
