@@ -351,6 +351,52 @@ class ChatMessage(ChatMessageCreate):
         resp += self.message
         return resp
 
+    def debug_format(self) -> str:
+        """Format this ChatMessage for debug output.
+
+        Returns:
+            str: Formatted debug string for the message
+        """
+        resp = ""
+
+        if self.cold_start_cost:
+            resp += "[ Agent cold start ... ]\n"
+            resp += f"\n------------------- start cost: {self.cold_start_cost:.3f} seconds\n\n"
+
+        if self.author_type == AuthorType.SKILL:
+            resp += f"[ Skill Calls: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            for skill_call in self.skill_calls:
+                resp += f" {skill_call['name']}: {skill_call['parameters']}\n"
+                if skill_call["success"]:
+                    resp += f"  Success: {skill_call.get('response', '')}\n"
+                else:
+                    resp += f"  Failed: {skill_call.get('error_message', '')}\n"
+            resp += (
+                f"\n------------------- skill cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        elif self.author_type == AuthorType.AGENT:
+            resp += (
+                f"[ Agent: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            )
+            resp += f" {self.message}\n"
+            resp += (
+                f"\n------------------- agent cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        elif self.author_type == AuthorType.SYSTEM:
+            resp += (
+                f"[ System: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            )
+            resp += f" {self.message}\n"
+            resp += (
+                f"\n------------------- system cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        else:
+            resp += f"[ User: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC) by {self.author_id}\n\n"
+            resp += f" {self.message}\n"
+            resp += f"\n------------------- user cost: {self.time_cost:.3f} seconds\n\n"
+
+        return resp
+
     @classmethod
     async def get(cls, chat_id: str) -> Optional["ChatMessage"]:
         async with get_session() as db:
