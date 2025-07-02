@@ -5,14 +5,14 @@ import sys
 
 from sqlalchemy import select
 
-from app.config.config import config
 from app.services.tg.bot import pool
 from app.services.tg.bot.pool import BotPool, bot_by_token
 from app.services.tg.utils.cleanup import clean_token_str
-from models.agent import Agent, AgentTable
-from models.agent_data import AgentData
-from models.db import get_session, init_db
-from models.redis import init_redis
+from intentkit.config.config import config
+from intentkit.models.agent import Agent, AgentTable
+from intentkit.models.agent_data import AgentData
+from intentkit.models.db import get_session, init_db
+from intentkit.models.redis import init_redis
 
 logger = logging.getLogger(__name__)
 

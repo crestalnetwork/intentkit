@@ -1,0 +1,99 @@
+{
+  "title": "Dune Analytics",
+  "description": "Dune Analytics skills to fetch data from Dune Analytics API.",
+  "x-icon": "https://ai.service.crestal.dev/skills/dune_analytics/dune.png",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "title": "Skill States",
+      "type": "object",
+      "properties": {
+        "fetch_nation_metrics": {
+          "type": "string",
+          "title": "Fetch Crestal Nation Metrics",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Fetches Crestal Nation metrics (e.g., total_users, agents/citizens, market_cap) from Dune Analytics API.",
+          "default": "disabled"
+        },
+        "fetch_kol_buys": {
+          "type": "string",
+          "title": "Fetch KOL Memecoin Buys",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API.",
+          "default": "disabled"
+        }
+      }
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key for Dune service",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Owner Provided"
+      ],
+      "default": "agent_owner"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Dune API Key",
+        "description": "API key for Dune Analytics (X-Dune-API-Key).",
+        "x-link": "[Get your API key](https://docs.dune.com/api-reference/overview/authentication)",
+        "x-sensitive": true
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,5 +1,5 @@
 from app.services.tg.utils.cleanup import clean_token_str
-from models.agent import Agent
+from intentkit.models.agent import Agent
 
 
 class BotPoolAgentItem:

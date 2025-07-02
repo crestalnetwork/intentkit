@@ -7,6 +7,7 @@ requires-python = "==3.12.*"
 readme = "README.md"
 dependencies = [
     "aiogram>=3.17.0",
+    "aiosqlite>=0.21.0",
     "alembic>=1.14.0",
     "anyio>=4.8.0",
     "APScheduler>=3.11.0",
@@ -48,14 +49,15 @@ dependencies = [
     "langchain (>=0.3.25,<0.4.0)",
     "langchain-community>=0.3.19",
     "langchain-core>=0.3.43",
-    "langchain-mcp-adapters>=0.0.11,<0.2.0",
+    "langchain-mcp-adapters>=0.0.11",
     "langchain-openai>=0.3.8",
     "langchain-postgres>=0.0.13",
     "langchain-text-splitters>=0.3.8",
     "langchain-xai>=0.2.1",
-    "langgraph>=0.4.3,<0.5.0",
+    "langgraph>=0.4.3",
     "langgraph-checkpoint>=2.0.18",
     "langgraph-checkpoint-postgres>=2.0.16",
+    "langgraph-prebuilt>=0.5.1",
     "langmem>=0.0.27",
     "mypy-boto3-s3 (>=1.37.24,<2.0.0)",
     "openai>=1.59.6",
@@ -77,7 +79,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.37",
     "telegramify-markdown (>=0.5.0,<0.6.0)",
     "tweepy[async]>=4.15.0",
-    "uvicorn>=0.34.0,<0.35.0",
+    "uvicorn>=0.34.0,<1.0.0",
 ]
 
 [dependency-groups]

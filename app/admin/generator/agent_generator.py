@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple
 
 from openai import OpenAI
 
-from app.config.config import config
-from models.agent import AgentUpdate
+from intentkit.config.config import config
+from intentkit.models.agent import AgentUpdate
 
 from .ai_assistant import (
     enhance_agent,

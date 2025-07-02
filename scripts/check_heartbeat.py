@@ -18,8 +18,8 @@ from pathlib import Path
 # Add parent directory to path to allow imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.config.config import config
-from models.redis import check_heartbeat, get_redis, init_redis
+from intentkit.config.config import config
+from intentkit.models.redis import check_heartbeat, get_redis, init_redis
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

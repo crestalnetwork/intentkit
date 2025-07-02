@@ -1,17 +1,36 @@
 # Agent API Key
 
-IntentKit provides system skills for managing agent API keys that enable OpenAI-compatible API access to your agents. These skills allow you to retrieve existing API keys or generate new ones for programmatic access to your agent's capabilities.
+IntentKit provides system skills for managing agent API keys that enable OpenAI-compatible API access to your agents. The system supports two types of API keys with different access levels:
+
+- **Private API Key (sk-)**: Can access all skills (public and owner-only)
+- **Public API Key (pk-)**: Can only access public skills
+
+These skills allow you to retrieve existing API keys or generate new ones for programmatic access to your agent's capabilities.
 
 ## Available Skills
 
 The following agent API key management skills are available:
 
-- **Read Agent API Key** (`read_agent_api_key`): Retrieve the existing API key for the agent, or generate a new one if none exists
-- **Regenerate Agent API Key** (`regenerate_agent_api_key`): Generate a new API key for the agent, revoking any existing key
+- **Read Agent API Key** (`read_agent_api_key`): Retrieve the existing API keys for the agent, or generate new ones if none exist. Returns both private (sk-) and public (pk-) keys.
+- **Regenerate Agent API Key** (`regenerate_agent_api_key`): Generate new API keys for the agent, revoking any existing keys. Creates both private (sk-) and public (pk-) keys.
 
-## How to Use the API Key
+## API Key Types and Access Levels
 
-Once you have obtained an API key using either of the above skills, you can use it to interact with your agent through the OpenAI-compatible API endpoint.
+### Private API Key (sk-)
+- **Prefix**: `sk-` (secret key)
+- **Access Level**: Full access to all agent skills (both public and owner-only)
+- **Use Case**: For trusted applications and personal use
+- **Security**: Keep this key secure and private
+
+### Public API Key (pk-)
+- **Prefix**: `pk-` (public key)
+- **Access Level**: Limited to public skills only
+- **Use Case**: For sharing with third parties or embedding in client-side applications
+- **Security**: Can be shared more freely but still should be protected
+
+## How to Use the API Keys
+
+Once you have obtained API keys using either of the above skills, you can use them to interact with your agent through the OpenAI-compatible API endpoint. Choose the appropriate key based on your access requirements.
 
 ### API Endpoint
 
@@ -25,22 +44,27 @@ Where `{base_url}` is the base URL provided by the skill output.
 
 ### Authentication
 
-The API key should be included in the `Authorization` header as a Bearer token:
+The API key should be included in the `Authorization` header as a Bearer token. Use either your private (sk-) or public (pk-) key depending on your access needs:
 
 ```
 Authorization: Bearer {your_api_key}
 ```
 
+**Examples:**
+- Private key: `Authorization: Bearer sk-1234567890abcdef...`
+- Public key: `Authorization: Bearer pk-1234567890abcdef...`
+
 ## Usage Examples
 
 ### cURL Example
 
-Here's how to make a request using cURL:
+Here's how to make a request using cURL with either key type:
 
+**Using Private Key (full access):**
 ```bash
 curl -X POST "{base_url}/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer {your_api_key}" \
+  -H "Authorization: Bearer sk-your_private_key_here" \
   -d '{
     "model": "agent",
     "messages": [
@@ -52,16 +76,34 @@ curl -X POST "{base_url}/v1/chat/completions" \
   }'
 ```
 
+**Using Public Key (public skills only):**
+```bash
+curl -X POST "{base_url}/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pk-your_public_key_here" \
+  -d '{
+    "model": "agent",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, how can you help me today?"
+      }
+    ]
+  }'
+```
+```
+
 ### OpenAI Python SDK Example
 
 You can use the official OpenAI Python SDK by configuring it to use your IntentKit agent's endpoint:
 
+**Using Private Key (full access):**
 ```python
 from openai import OpenAI
 
-# Initialize the client with your agent's API key and base URL
+# Initialize the client with your agent's private API key and base URL
 client = OpenAI(
-    api_key="{your_api_key}",
+    api_key="sk-your_private_key_here",  # Private key for full access
     base_url="{base_url}/v1"
 )
 
@@ -79,6 +121,30 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
+**Using Public Key (public skills only):**
+```python
+from openai import OpenAI
+
+# Initialize the client with your agent's public API key and base URL
+client = OpenAI(
+    api_key="pk-your_public_key_here",  # Public key for limited access
+    base_url="{base_url}/v1"
+)
+
+# Make a chat completion request (only public skills available)
+response = client.chat.completions.create(
+    model="agent",
+    messages=[
+        {
+            "role": "user",
+            "content": "What public information can you provide?"
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
 ### Using in Cherry Studio
 
 Cherry Studio is a desktop client that supports OpenAI-compatible APIs. To use your IntentKit agent in Cherry Studio:
@@ -88,8 +154,12 @@ Cherry Studio is a desktop client that supports OpenAI-compatible APIs. To use y
 2. **Add a new API provider** with the following configuration:
    - **Provider Name**: IntentKit Agent (or any name you prefer)
    - **API Host**: Use the `base_url` provided by the skill output
-   - **API Key**: Use the `api_key` provided by the skill output
+   - **API Key**: Use either the private (`sk-`) or public (`pk-`) API key depending on your needs
    - **Model**: You can use any model name (e.g., "agent")
+
+   **Key Selection Guidelines:**
+   - Use **private key (sk-)** for personal use or when you need access to all agent capabilities
+   - Use **public key (pk-)** when sharing access or when you only need public skills
 
 3. **Save the configuration** and select your IntentKit Agent as the active provider
 
@@ -110,3 +180,8 @@ The IntentKit agent API is compatible with the OpenAI Chat Completions API forma
 - **Authentication Required**: All requests must include a valid API key in the Authorization header
 - **Agent-Specific**: Each API key is tied to a specific agent and can only access that agent's capabilities
 - **Key Security**: Keep your API keys secure and regenerate them if compromised
+- **Access Control**: 
+  - Private keys (sk-) provide full access to all agent skills
+  - Public keys (pk-) are restricted to public skills only
+  - Choose the appropriate key type based on your security requirements
+- **Key Management**: Both key types are generated and managed together through the system skills

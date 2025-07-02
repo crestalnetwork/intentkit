@@ -1,0 +1,733 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "title": "Agent",
+  "description": "Agent model",
+  "type": "object",
+  "x-groups": [
+    {
+      "id": "basic",
+      "title": "Basic",
+      "order": 1
+    },
+    {
+      "id": "llm",
+      "title": "LLM",
+      "order": 2
+    },
+    {
+      "id": "examples",
+      "title": "Quick Actions",
+      "order": 3
+    },
+    {
+      "id": "onchain",
+      "title": "On-Chain",
+      "order": 4
+    },
+    {
+      "id": "entrypoint",
+      "title": "Communication Channels",
+      "order": 5
+    },
+    {
+      "id": "skills",
+      "title": "Skills",
+      "order": 6
+    },
+    {
+      "id": "autonomous",
+      "title": "Autonomous",
+      "order": 7
+    },
+    {
+      "id": "experimental",
+      "title": "Experimental",
+      "order": 8
+    },
+    {
+      "id": "deprecated",
+      "title": "Deprecated",
+      "order": 9
+    },
+    {
+      "id": "internal",
+      "title": "Internal",
+      "order": 10
+    }
+  ],
+  "required": [
+    "name",
+    "model",
+    "purpose",
+    "personality",
+    "principles"
+  ],
+  "properties": {
+    "name": {
+      "title": "Agent Name",
+      "type": "string",
+      "description": "Display name of the agent",
+      "maxLength": 50,
+      "x-group": "basic",
+      "x-placeholder": "Enter agent name"
+    },
+    "ticker": {
+      "title": "Ticker",
+      "type": "string",
+      "description": "Ticker symbol of the agent",
+      "maxLength": 10,
+      "minLength": 1,
+      "x-group": "basic",
+      "x-placeholder": "Enter agent ticker"
+    },
+    "token_address": {
+      "title": "Token Address",
+      "type": "string",
+      "description": "Token address of the agent",
+      "maxLength": 42,
+      "readOnly": true,
+      "x-group": "internal"
+    },
+    "token_pool": {
+      "title": "Token Pool",
+      "type": "string",
+      "description": "Pool of the agent token",
+      "maxLength": 42,
+      "readOnly": true,
+      "x-group": "internal"
+    },
+    "mode": {
+      "title": "Usage Type",
+      "type": "string",
+      "description": "Mode of the agent, Public App or Personal Assistant",
+      "enum": [
+        "public",
+        "private"
+      ],
+      "x-enum-title": [
+        "Public App",
+        "Personal Assistant"
+      ],
+      "x-group": "deprecated"
+    },
+    "fee_percentage": {
+      "title": "Service Fee",
+      "type": "number",
+      "description": "A CAPs % added to the base cost, paid to the agent for delivering its unique logic and execution.",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "x-step": 1,
+      "x-group": "basic",
+      "x-component": "slider-with-box",
+      "x-nft-extra": 10
+    },
+    "description": {
+      "title": "Description",
+      "type": "string",
+      "description": "Description of the agent, for public view, not contained in prompt",
+      "maxLength": 3000,
+      "x-group": "basic",
+      "x-placeholder": "Introduce your agent"
+    },
+    "external_website": {
+      "title": "External Website",
+      "type": "string",
+      "description": "Link of external website of the agent, if you have one",
+      "format": "uri",
+      "x-group": "basic",
+      "x-placeholder": "Enter agent external website url"
+    },
+    "picture": {
+      "title": "Picture",
+      "type": "string",
+      "description": "Picture of the agent",
+      "x-group": "experimental",
+      "x-placeholder": "Upload a picture of your agent"
+    },
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "description": "Slug of the agent, used for URL generation",
+      "maxLength": 30,
+      "minLength": 2,
+      "readOnly": true,
+      "x-group": "internal"
+    },
+    "owner": {
+      "title": "Owner",
+      "type": "string",
+      "description": "Owner identifier of the agent, used for access control",
+      "readOnly": true,
+      "maxLength": 50,
+      "x-group": "internal"
+    },
+    "upstream_id": {
+      "title": "Upstream ID",
+      "type": "string",
+      "description": "External reference ID for idempotent operations",
+      "readOnly": true,
+      "maxLength": 100,
+      "x-group": "internal"
+    },
+    "model": {
+      "title": "AI Model",
+      "type": "string",
+      "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
+      "default": "gpt-4.1-mini",
+      "enum": [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4.1-nano",
+        "gpt-4.1-mini",
+        "gpt-4.1",
+        "o3",
+        "o4-mini",
+        "deepseek-chat",
+        "deepseek-reasoner",
+        "grok-2",
+        "grok-3",
+        "grok-3-mini",
+        "eternalai",
+        "reigent",
+        "venice-uncensored",
+        "venice-llama-4-maverick-17b"
+      ],
+      "x-component": "category-select",
+      "x-enum-title": [
+        "GPT-4o",
+        "GPT-4o mini",
+        "GPT-4.1 nano",
+        "GPT-4.1 mini",
+        "GPT-4.1",
+        "OpenAI o3",
+        "OpenAI o4-mini",
+        "Deepseek V3 (0324)",
+        "Deepseek R1 (0528)",
+        "Grok 2",
+        "Grok 3",
+        "Grok 3 Mini",
+        "Eternal AI (Llama-3.3-70B)",
+        "REI Network (Rei Core)",
+        "Venice Uncensored",
+        "Venice Llama-4 Maverick 17B"
+      ],
+      "x-enum-category": [
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "OpenAI",
+        "Deepseek",
+        "Deepseek",
+        "Grok",
+        "Grok",
+        "Grok",
+        "Others",
+        "Others",
+        "Venice",
+        "Venice"
+      ],
+      "x-support-skill": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "x-group": "llm"
+    },
+    "purpose": {
+      "title": "Purpose",
+      "type": "string",
+      "description": "Tell the agent what's its purpose and what needs should it serve.",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-group": "llm",
+      "x-str-type": "prompt",
+      "x-placeholder": "Enter agent purpose"
+    },
+    "personality": {
+      "title": "Personality",
+      "type": "string",
+      "description": "Tell the agent what personality it should have and how it should communicate with the users.",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-group": "llm",
+      "x-str-type": "prompt",
+      "x-placeholder": "Enter agent personality"
+    },
+    "principles": {
+      "title": "Principles",
+      "type": "string",
+      "description": "Tell the agents what it should and shouldn't do when it interacts with users or skills.",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-group": "llm",
+      "x-str-type": "prompt",
+      "x-placeholder": "Enter agent principles"
+    },
+    "prompt": {
+      "title": "Knowledge Base",
+      "type": "string",
+      "description": "Give the agent any additional knowledge. Text only.",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-str-type": "prompt",
+      "x-group": "llm"
+    },
+    "prompt_append": {
+      "title": "Advanced",
+      "type": "string",
+      "description": "Additional system prompt that has higher priority than initial system prompt, only some models support this, if not supported, this part will append to the end of initial system prompt",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-str-type": "prompt",
+      "x-group": "llm"
+    },
+    "temperature": {
+      "title": "Temperature",
+      "type": "number",
+      "description": "Controls creativity: higher values are more creative, lower values are more precise. CHANGING THIS SETTING MAY INTRODUCE UNEXPECTED BEHAVIOR. USE WITH CAUTION.",
+      "default": 0.7,
+      "minimum": 0.0,
+      "maximum": 1.5,
+      "x-group": "llm",
+      "x-step": 0.1
+    },
+    "frequency_penalty": {
+      "title": "Frequency Penalty",
+      "type": "number",
+      "description": "Adjusts repetition: higher values encourage new topics, lower values allow repetition.",
+      "default": 0.0,
+      "minimum": -2.0,
+      "maximum": 2.0,
+      "x-group": "llm",
+      "x-step": 0.1
+    },
+    "presence_penalty": {
+      "title": "Presence Penalty",
+      "type": "number",
+      "description": "Controls topic focus: higher values promote diversity, lower values stay closely on topic.",
+      "default": 0.0,
+      "minimum": -2.0,
+      "maximum": 2.0,
+      "x-group": "llm",
+      "x-step": 0.1
+    },
+    "short_term_memory_strategy": {
+      "title": "Short Term Memory Strategy",
+      "type": "string",
+      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+      "default": "trim",
+      "enum": [
+        "trim",
+        "summarize"
+      ],
+      "x-group": "llm"
+    },
+    "telegram_entrypoint_enabled": {
+      "title": "Enable Telegram Communication",
+      "type": "boolean",
+      "description": "Allow agent to respond to Telegram messages",
+      "default": false,
+      "x-group": "entrypoint"
+    },
+    "telegram_entrypoint_prompt": {
+      "title": "Telegram Entry Prompt",
+      "type": "string",
+      "description": "Extra prompt for telegram entrypoint",
+      "maxLength": 10000,
+      "x-str-type": "prompt",
+      "x-group": "entrypoint"
+    },
+    "telegram_config": {
+      "title": "Telegram Configuration",
+      "type": "object",
+      "description": "Configure your Telegram integration settings",
+      "x-group": "entrypoint",
+      "properties": {
+        "token": {
+          "title": "Bot Token",
+          "type": "string",
+          "description": "Telegram bot token obtained from BotFather"
+        },
+        "group_memory_public": {
+          "title": "Group Memory Public",
+          "type": "boolean",
+          "description": "Whether group memory is public"
+        },
+        "whitelist_chat_ids": {
+          "title": "Whitelist Chat IDs",
+          "type": "array",
+          "description": "List of chat IDs that are allowed to interact with the bot",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "greeting_group": {
+          "title": "Group Greeting",
+          "type": "string",
+          "description": "Custom greeting message for groups"
+        },
+        "greeting_user": {
+          "title": "User Greeting",
+          "type": "string",
+          "description": "Custom greeting message for individual users"
+        }
+      }
+    },
+    "twitter_entrypoint_enabled": {
+      "title": "Enable X Communication",
+      "type": "boolean",
+      "description": "Agent replies automatically to all X mentions (use cautiously)",
+      "default": false,
+      "x-group": "deprecated"
+    },
+    "twitter_entrypoint_prompt": {
+      "title": "X Entry Prompt",
+      "type": "string",
+      "description": "Extra prompt for X entrypoint",
+      "maxLength": 10000,
+      "x-str-type": "prompt",
+      "x-group": "deprecated"
+    },
+    "twitter_config": {
+      "title": "Enter your X API key",
+      "type": "object",
+      "description": "You must use your own key for X entrypoint, it is separated from X skills",
+      "x-group": "deprecated",
+      "properties": {
+        "consumer_key": {
+          "type": "string",
+          "title": "X API consumer key",
+          "description": "X API consumer key",
+          "maxLength": 100
+        },
+        "consumer_secret": {
+          "type": "string",
+          "title": "X API consumer secret",
+          "description": "X API consumer secret",
+          "maxLength": 100
+        },
+        "access_token": {
+          "type": "string",
+          "title": "X API access token",
+          "description": "X API access token",
+          "maxLength": 100
+        },
+        "access_token_secret": {
+          "type": "string",
+          "title": "X API access token secret",
+          "description": "X API access token secret",
+          "maxLength": 100
+        }
+      }
+    },
+    "skills": {
+      "title": "Skills",
+      "type": "object",
+      "description": "Dict of skills and their corresponding configurations",
+      "x-group": "skills",
+      "x-inline": true,
+      "properties": {
+        "allora": {
+          "title": "Allora",
+          "$ref": "../skills/allora/schema.json"
+        },
+        "cdp": {
+          "title": "Coinbase Wallet",
+          "$ref": "../skills/cdp/schema.json"
+        },
+        "dapplooker": {
+          "title": "DappLooker",
+          "$ref": "../skills/dapplooker/schema.json"
+        },
+        "elfa": {
+          "title": "Elfa",
+          "$ref": "../skills/elfa/schema.json"
+        },
+        "openai": {
+          "title": "OpenAI",
+          "$ref": "../skills/openai/schema.json"
+        },
+        "portfolio": {
+          "title": "Blockchain Portfolio",
+          "$ref": "../skills/portfolio/schema.json"
+        },
+        "tavily": {
+          "title": "Tavily",
+          "$ref": "../skills/tavily/schema.json"
+        },
+        "token": {
+          "title": "Token Operations",
+          "$ref": "../skills/token/schema.json"
+        },
+        "twitter": {
+          "title": "X",
+          "$ref": "../skills/twitter/schema.json"
+        },
+        "chainlist": {
+          "title": "Chainlist RPC Endpoints",
+          "$ref": "../skills/chainlist/schema.json"
+        },
+        "dexscreener": {
+          "title": "DEX Screener",
+          "$ref": "../skills/dexscreener/schema.json"
+        },
+        "heurist": {
+          "title": "Heurist",
+          "$ref": "../skills/heurist/schema.json"
+        },
+        "nation": {
+          "title": "Nation",
+          "$ref": "../skills/nation/schema.json"
+        },
+        "defillama": {
+          "title": "Defillama",
+          "$ref": "../skills/defillama/schema.json"
+        },
+        "enso": {
+          "title": "Enso",
+          "$ref": "../skills/enso/schema.json"
+        },
+        "common": {
+          "title": "Common",
+          "$ref": "../skills/common/schema.json"
+        },
+        "github": {
+          "title": "GitHub",
+          "$ref": "../skills/github/schema.json"
+        },
+        "moralis": {
+          "title": "Moralis",
+          "$ref": "../skills/moralis/schema.json"
+        },
+        "system": {
+          "title": "System",
+          "$ref": "../skills/system/schema.json"
+        },
+        "web_scraper": {
+          "title": "Web Scraper & Content Indexing",
+          "$ref": "../skills/web_scraper/schema.json"
+        },
+        "aixbt": {
+          "title": "AIXBT",
+          "$ref": "../skills/aixbt/schema.json"
+        },
+        "cookiefun": {
+          "title": "cookie.fun",
+          "$ref": "../skills/cookiefun/schema.json"
+        },
+        "cryptocompare": {
+          "title": "Cryptocompare",
+          "$ref": "../skills/cryptocompare/schema.json"
+        },
+        "cryptopanic": {
+          "title": "CryptoPanic",
+          "$ref": "../skills/cryptopanic/schema.json"
+        },
+        "dune_analytics": {
+          "title": "Dune Analytics",
+          "$ref": "../skills/dune_analytics/schema.json"
+        },
+        "slack": {
+          "title": "Slack",
+          "$ref": "../skills/slack/schema.json"
+        },
+        "venice_audio": {
+          "title": "Venice Audio",
+          "$ref": "../skills/venice_audio/schema.json"
+        },
+        "venice_image": {
+          "title": "Venice Image",
+          "$ref": "../skills/venice_image/schema.json"
+        },
+        "unrealspeech": {
+          "title": "UnrealSpeech",
+          "$ref": "../skills/unrealspeech/schema.json"
+        },
+        "carv": {
+          "title": "Carv",
+          "$ref": "../skills/carv/schema.json"
+        },
+        "lifi": {
+          "title": "LiFi",
+          "$ref": "../skills/lifi/schema.json"
+        }
+      }
+    },
+    "autonomous": {
+      "title": "Autonomous",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "ID",
+            "type": "string",
+            "description": "Unique identifier for the autonomous configuration",
+            "minLength": 1,
+            "maxLength": 20,
+            "pattern": "^[a-z0-9-]+$",
+            "readOnly": true,
+            "x-group": "internal"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name for this automated task",
+            "maxLength": 50,
+            "x-group": "autonomous"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Briefly describe what this automation does",
+            "maxLength": 200,
+            "x-group": "autonomous"
+          },
+          "minutes": {
+            "title": "Frequency in Minutes",
+            "type": "integer",
+            "description": "How often to run (in minutes)",
+            "x-group": "autonomous"
+          },
+          "cron": {
+            "title": "Schedule",
+            "type": "string",
+            "description": "Advanced scheduling (cron format), mutually exclusive with minutes",
+            "x-group": "autonomous"
+          },
+          "prompt": {
+            "title": "Task Prompt",
+            "type": "string",
+            "description": "Prompt the agent will execute on schedule",
+            "maxLength": 20000,
+            "x-str-type": "prompt",
+            "x-group": "autonomous"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean",
+            "description": "Turn automation on/off",
+            "default": false,
+            "x-group": "autonomous"
+          }
+        },
+        "required": [
+          "name",
+          "prompt"
+        ]
+      },
+      "description": "Set automated prompts and schedules for your agent.",
+      "x-group": "autonomous",
+      "x-inline": true
+    },
+    "example_intro": {
+      "title": "Agent Greeting",
+      "type": "string",
+      "description": "This is the first thing users see when they meet your agent. Use it to explain what your agent does, the services it provides and how it fits into the Nation.",
+      "maxLength": 2000,
+      "x-group": "examples"
+    },
+    "examples": {
+      "title": "Quick Action List",
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Action Name",
+            "type": "string",
+            "description": "Quick action will show up on the UI as this name",
+            "maxLength": 50,
+            "x-group": "examples"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Description of what this action does",
+            "maxLength": 200,
+            "x-group": "examples"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string",
+            "description": "When user clicks this action, the agent will execute this prompt",
+            "maxLength": 2000,
+            "x-str-type": "prompt",
+            "x-group": "examples"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "prompt"
+        ]
+      },
+      "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
+      "x-group": "examples"
+    },
+    "wallet_provider": {
+      "title": "Wallet Provider",
+      "type": "string",
+      "description": "Provider of the agent's wallet",
+      "enum": [
+        "cdp"
+      ],
+      "default": "cdp",
+      "x-group": "internal"
+    },
+    "network_id": {
+      "title": "Network ID",
+      "type": "string",
+      "description": "Network identifier",
+      "default": "base-mainnet",
+      "enum": [
+        "ethereum-mainnet",
+        "ethereum-sepolia",
+        "polygon-mainnet",
+        "polygon-mumbai",
+        "base-mainnet",
+        "base-sepolia",
+        "arbitrum-mainnet",
+        "arbitrum-sepolia",
+        "optimism-mainnet",
+        "optimism-sepolia",
+        "solana"
+      ],
+      "x-group": "internal"
+    }
+  },
+  "additionalProperties": false
+}

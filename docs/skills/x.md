@@ -127,7 +127,7 @@ Not released yet.
 
 1. Social Media Manager Bot
    ```python
-   from models.agent import Agent
+   from intentkit.models.agent import Agent
    
    # Create an agent with X skills
    agent = Agent(

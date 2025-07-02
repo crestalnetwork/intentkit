@@ -21,7 +21,7 @@ from app.admin.generator.llm_logger import (
     create_llm_logger,
 )
 from app.admin.generator.utils import generate_tags_from_nation_api
-from models.agent import AgentUpdate
+from intentkit.models.agent import AgentUpdate
 
 logger = logging.getLogger(__name__)
 

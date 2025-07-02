@@ -14,7 +14,7 @@ import jsonschema
 from pydantic import BaseModel, Field, ValidationError
 
 from app.admin.schema import get_agent_schema_with_admin_config
-from models.agent import AgentUpdate
+from intentkit.models.agent import AgentUpdate
 
 logger = logging.getLogger(__name__)
 

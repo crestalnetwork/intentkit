@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "CookieFun Skills",
+  "description": "Access Twitter/X analytics and insights using CookieFun API. Get data about accounts, tweets, followers, and trends across different industry sectors.",
+  "x-icon": "https://ai.service.crestal.dev/skills/cookiefun/cookiefun.png",
+  "x-tags": [
+    "Twitter",
+    "Social Media",
+    "Analytics",
+    "X"
+  ],
+  "x-nft-requirement": 10,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Toggle to enable or disable all CookieFun skills",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "get_sectors": {
+          "type": "string",
+          "title": "Get Sectors",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve a list of all available industry sectors in CookieFun, useful for exploring trending topics and categorization",
+          "default": "disabled"
+        },
+        "get_account_details": {
+          "type": "string",
+          "title": "Get Account Details",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Fetch comprehensive metrics about any Twitter account including followers, engagement rates, impressions, and other analytics",
+          "default": "disabled"
+        },
+        "get_account_smart_followers": {
+          "type": "string",
+          "title": "Get Account Smart Followers",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Identify the most valuable followers of any Twitter account based on influence, engagement, and reach metrics",
+          "default": "disabled"
+        },
+        "search_accounts": {
+          "type": "string",
+          "title": "Search Accounts",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Find Twitter accounts posting about specific topics with filtering by engagement, impressions, and tweet types",
+          "default": "disabled"
+        },
+        "get_account_feed": {
+          "type": "string",
+          "title": "Get Account Feed",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Access a Twitter account's feed with powerful filtering by date range, media content, tweet type, and sorting options",
+          "default": "disabled"
+        }
+      },
+      "description": "Configure access levels for each CookieFun skill - disabled, available to all users, or restricted to agent owner only"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Choose whether to use a platform-provided API key or provide your own CookieFun API key",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Owner Provided"
+      ],
+      "default": "agent_owner"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "CookieFun API Key",
+        "description": "Your personal CookieFun API key, required when using Owner Provided option (sign up at cookie.fun)",
+        "x-sensitive": true,
+        "x-link": "[Get your API key](https://cookie.fun/)"
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

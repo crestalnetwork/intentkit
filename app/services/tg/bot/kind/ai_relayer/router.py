@@ -7,15 +7,15 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from epyxid import XID
 
-from app.core.client import execute_agent
 from app.services.tg.bot import pool
 from app.services.tg.bot.filter.chat_type import GroupOnlyFilter
 from app.services.tg.bot.filter.content_type import TextOnlyFilter
 from app.services.tg.bot.filter.id import WhitelistedChatIDsFilter
 from app.services.tg.bot.filter.no_bot import NoBotFilter
 from app.services.tg.utils.cleanup import remove_bot_name
-from models.chat import AuthorType, ChatMessageCreate
-from utils.slack_alert import send_slack_message
+from intentkit.core.client import execute_agent
+from intentkit.models.chat import AuthorType, ChatMessageCreate
+from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
 

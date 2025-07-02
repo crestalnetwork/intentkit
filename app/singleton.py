@@ -18,12 +18,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.admin.api import admin_router, admin_router_readonly
 from app.admin.health import health_router
 from app.admin.metadata import metadata_router_readonly
-from app.config.config import config
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
-from models.db import init_db
-from models.redis import init_redis
-from utils.error import (
+from intentkit.config.config import config
+from intentkit.models.db import init_db
+from intentkit.models.redis import init_redis
+from intentkit.utils.error import (
     IntentKitAPIError,
     http_exception_handler,
     intentkit_api_error_handler,

@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Elfa",
+  "description": "Integration with Elfa AI API providing data analysis and processing capabilities with secure authentication for advanced data operations",
+  "x-icon": "https://ai.service.crestal.dev/skills/elfa/elfa.jpg",
+  "x-tags": [
+    "Data"
+  ],
+  "x-nft-requirement": 1,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "get_mentions": {
+          "type": "string",
+          "title": "Get Mentions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "This tool uses the Elfa AI API to query hourly-updated tweets from \"smart accounts\" \u2013 accounts identified as influential or relevant \u2013 that have received at least 10 interactions (comments, retweets, quote tweets).",
+          "default": "disabled"
+        },
+        "get_top_mentions": {
+          "type": "string",
+          "title": "Get Top Mentions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "This tool uses the Elfa API to query tweets mentioning a specific stock ticker. The tweets are ranked by view count, providing insight into the most visible and potentially influential discussions surrounding the stock. The results are updated hourly, allowing for real-time monitoring of market sentiment.",
+          "default": "private"
+        },
+        "search_mentions": {
+          "type": "string",
+          "title": "Search Mentions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "This tool uses the Elfa API to search tweets mentioning up to five keywords. It can search within the past 30 days of data, which is updated every 5 minutes, or access up to six months of historical tweet data.",
+          "default": "private"
+        },
+        "get_trending_tokens": {
+          "type": "string",
+          "title": "Get Trending Tokens",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "This tool ranks the most discussed tokens based on smart mentions count for a given period, with updates every 5 minutes via the Elfa API. Smart mentions provide a more sophisticated measure of discussion volume than simple keyword counts.",
+          "default": "disabled"
+        },
+        "get_smart_stats": {
+          "type": "string",
+          "title": "Get Smart Stats",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "This tool uses the Elfa API to retrieve key social media metrics for a given username. These metrics include Smart Following Count, Engagement Score, and Engagement Ratio.",
+          "default": "private"
+        }
+      },
+      "description": "States for each Elfa skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Nation Hosted",
+        "Owner Provided"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Elfa API Key",
+        "x-sensitive": true,
+        "description": "Elfa API key for authentication"
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

@@ -4,13 +4,17 @@ from datetime import datetime, timedelta, timezone
 from epyxid import XID
 from sqlalchemy import select
 
-from app.core.engine import execute_agent
-from app.core.skill import skill_store
-from clients.twitter import get_twitter_client
-from models.agent import Agent, AgentTable
-from models.agent_data import AgentPluginData
-from models.chat import AuthorType, ChatMessageAttachmentType, ChatMessageCreate
-from models.db import get_session
+from intentkit.clients import get_twitter_client
+from intentkit.core.engine import execute_agent
+from intentkit.core.skill import skill_store
+from intentkit.models.agent import Agent, AgentTable
+from intentkit.models.agent_data import AgentPluginData
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessageAttachmentType,
+    ChatMessageCreate,
+)
+from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 

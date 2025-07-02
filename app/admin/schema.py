@@ -10,10 +10,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.config import config
-from models.db import get_db, get_session
-from models.llm import LLMModelInfo
-from models.skill import SkillTable
+from intentkit.config.config import config
+from intentkit.models.db import get_db, get_session
+from intentkit.models.llm import LLMModelInfo
+from intentkit.models.skill import SkillTable
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ schema_router_readonly = APIRouter()
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Path to agent schema
-AGENT_SCHEMA_PATH = PROJECT_ROOT / "models" / "agent_schema.json"
+AGENT_SCHEMA_PATH = PROJECT_ROOT / "intentkit" / "models" / "agent_schema.json"
 
 # Skills that require agent owner to provide API keys (should be excluded from auto-generation)
 AGENT_OWNER_API_KEY_SKILLS = {
@@ -253,7 +253,7 @@ async def get_skill_schema(
     **Raises:**
     * `HTTPException` - If the skill is not found or name is invalid
     """
-    base_path = PROJECT_ROOT / "skills"
+    base_path = PROJECT_ROOT / "intentkit" / "skills"
     schema_path = base_path / skill / "schema.json"
     normalized_path = schema_path.resolve()
 
@@ -299,7 +299,7 @@ async def get_skill_icon(
     **Raises:**
     * `HTTPException` - If the skill or icon is not found or name is invalid
     """
-    base_path = PROJECT_ROOT / "skills"
+    base_path = PROJECT_ROOT / "intentkit" / "skills"
     icon_path = base_path / skill / f"{icon_name}.{ext}"
     normalized_path = icon_path.resolve()
 
@@ -314,6 +314,8 @@ async def get_skill_icon(
         if ext == "svg"
         else "image/png"
         if ext in ["png"]
+        else "image/webp"
+        if ext in ["webp"]
         else "image/jpeg"
     )
     return FileResponse(normalized_path, media_type=content_type)

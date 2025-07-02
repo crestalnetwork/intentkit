@@ -3,9 +3,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 
-from app.config.config import config
-from models.user import User, UserUpdate
-from utils.middleware import create_jwt_middleware
+from intentkit.config.config import config
+from intentkit.models.user import User, UserUpdate
+from intentkit.utils.middleware import create_jwt_middleware
 
 logger = logging.getLogger(__name__)
 verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)

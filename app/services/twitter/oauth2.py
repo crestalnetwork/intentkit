@@ -7,8 +7,8 @@ from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 
-from app.config.config import config
-from utils.middleware import create_jwt_middleware
+from intentkit.config.config import config
+from intentkit.utils.middleware import create_jwt_middleware
 
 # Create JWT middleware with admin config
 verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)

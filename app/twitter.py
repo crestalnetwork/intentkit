@@ -6,10 +6,10 @@ import sys
 import sentry_sdk
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.config.config import config
 from app.entrypoints.twitter import run_twitter_agents
-from models.db import init_db
-from models.redis import init_redis
+from intentkit.config.config import config
+from intentkit.models.db import init_db
+from intentkit.models.redis import init_redis
 
 logger = logging.getLogger(__name__)
 

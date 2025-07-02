@@ -19,7 +19,7 @@ from app.services.tg.bot.types.bot import BotPoolItem
 from app.services.tg.bot.types.kind import Kind
 from app.services.tg.bot.types.router_obj import RouterObj
 from app.services.tg.utils.cleanup import clean_token_str
-from models.agent import Agent
+from intentkit.models.agent import Agent
 
 logger = logging.getLogger(__name__)
 

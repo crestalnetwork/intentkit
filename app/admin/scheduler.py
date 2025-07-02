@@ -8,14 +8,14 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select, update
 
-from app.config.config import config
-from app.core.agent import agent_action_cost
-from app.core.credit import refill_all_free_credits
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
-from models.agent import AgentTable
-from models.agent_data import AgentQuotaTable
-from models.db import get_session
-from models.redis import get_redis, send_heartbeat
+from intentkit.config.config import config
+from intentkit.core.agent import agent_action_cost
+from intentkit.core.credit import refill_all_free_credits
+from intentkit.models.agent import AgentTable
+from intentkit.models.agent_data import AgentQuotaTable
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
 

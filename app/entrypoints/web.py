@@ -23,12 +23,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.config import config
-from app.core.engine import execute_agent, thread_stats
-from app.core.prompt import agent_prompt
-from models.agent import Agent
-from models.agent_data import AgentData
-from models.chat import (
+from intentkit.config.config import config
+from intentkit.core.engine import execute_agent, thread_stats
+from intentkit.core.prompt import agent_prompt
+from intentkit.models.agent import Agent
+from intentkit.models.agent_data import AgentData
+from intentkit.models.chat import (
     AuthorType,
     Chat,
     ChatCreate,
@@ -37,8 +37,8 @@ from models.chat import (
     ChatMessageRequest,
     ChatMessageTable,
 )
-from models.db import get_db
-from utils.middleware import create_jwt_middleware
+from intentkit.models.db import get_db
+from intentkit.utils.middleware import create_jwt_middleware
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_s
 
 # Add credentials checker
 def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    from app.config.config import config
+    from intentkit.config.config import config
 
     if not config.debug_auth_enabled:
         return None
@@ -244,7 +244,7 @@ async def debug_chat(
     )
 
     # Execute agent and get response
-    messages = await execute_agent(user_input, debug=debug)
+    messages = await execute_agent(user_input)
 
     resp = f"Agent ID:\t{aid}\n\nChat ID:\t{chat_id}\n\n-------------------\n\n"
     resp += "[ Input: ]\n\n"

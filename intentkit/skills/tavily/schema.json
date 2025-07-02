@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Tavily Search and Extract",
+  "description": "Web search and content extraction capabilities using Tavily",
+  "x-icon": "https://ai.service.crestal.dev/skills/tavily/tavily.jpg",
+  "x-tags": [
+    "Internet",
+    "Search",
+    "Information",
+    "Content Extraction"
+  ],
+  "x-nft-requirement": 1,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "tavily_search": {
+          "type": "string",
+          "title": "Tavily Search",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Search the web for real-time information and recent content using Tavily",
+          "default": "private"
+        },
+        "tavily_extract": {
+          "type": "string",
+          "title": "Tavily Extract",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Extract full content from web pages using Tavily Extract API",
+          "default": "private"
+        }
+      },
+      "description": "States for each Tavily skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "platform",
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Nation Hosted",
+        "Owner Provided"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "api_key": {
+        "type": "string",
+        "title": "Tavily API Key",
+        "description": "API key for Tavily services",
+        "x-link": "[Get your API key](https://tavily.com/)",
+        "x-sensitive": true
+      },
+      "rate_limit_number": {
+        "type": "integer",
+        "title": "Rate Limit Number",
+        "description": "Number of requests allowed per time window, only valid if api_key is set"
+      },
+      "rate_limit_minutes": {
+        "type": "integer",
+        "title": "Rate Limit Minutes",
+        "description": "Time window in minutes for rate limiting, only valid if api_key is set"
+      }
+    },
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
