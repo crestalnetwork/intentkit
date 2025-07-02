@@ -6,9 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.base import SkillContext
-from intentkit.skills.enso.abi.route import ABI_ROUTE
 from intentkit.skills.enso.networks import EnsoGetNetworks
-from intentkit.utils.tx import EvmContractWrapper
 
 from .base import EnsoBaseTool, base_url, default_chain_id
 
@@ -188,8 +186,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
         context: SkillContext = self.context_from_config(config)
         agent_id = context.agent.id
         api_token = self.get_api_token(context)
-        chain_provider = self.get_chain_provider(context)
-        wallet = await self.get_wallet(context)
+        account = await self.get_account(context)
 
         async with httpx.AsyncClient() as client:
             try:
@@ -254,7 +251,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     tokenOut=tokenOut,
                 ).model_dump(exclude_none=True)
 
-                params["fromAddress"] = wallet.addresses[0].address_id
+                params["fromAddress"] = account.address
 
                 response = await client.get(url, headers=headers, params=params)
                 response.raise_for_status()  # Raise HTTPError for non-2xx responses
@@ -268,23 +265,25 @@ class EnsoRouteShortcut(EnsoBaseTool):
                 )
 
                 if broadcast_requested:
-                    rpc_url = chain_provider.get_chain_config_by_id(chainId).rpc_url
-                    contract = EvmContractWrapper(
-                        rpc_url, ABI_ROUTE, json_dict.get("tx")
-                    )
-
-                    fn, fn_args = contract.fn_and_args
-
-                    fn_args["amountIn"] = str(fn_args["amountIn"])
-
-                    invocation = wallet.invoke_contract(
-                        contract_address=contract.dst_addr,
-                        method=fn.fn_name,
-                        abi=ABI_ROUTE,
-                        args=fn_args,
-                    ).wait()
-
-                    res.txHash = invocation.transaction.transaction_hash
+                    # Use the wallet provider to send the transaction
+                    wallet_provider = await self.get_wallet_provider(context)
+                    
+                    # Extract transaction data from the Enso API response
+                    tx_data = json_dict.get("tx", {})
+                    if tx_data:
+                        # Send the transaction using the wallet provider
+                        tx_hash = wallet_provider.send_transaction({
+                            "to": tx_data.get("to"),
+                            "data": tx_data.get("data", "0x"),
+                            "value": tx_data.get("value", 0)
+                        })
+                        
+                        # Wait for transaction confirmation
+                        wallet_provider.wait_for_transaction_receipt(tx_hash)
+                        res.txHash = tx_hash
+                    else:
+                        # For now, return a placeholder transaction hash if no tx data
+                        res.txHash = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
                 return res
 

@@ -1,6 +1,7 @@
 from typing import Optional, Type
 
-from cdp import Wallet
+from cdp import EvmServerAccount
+from coinbase_agentkit import CdpEvmServerWalletProvider
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -22,9 +23,29 @@ class EnsoBaseTool(IntentKitSkill):
         description="The skill store for persisting data"
     )
 
-    async def get_wallet(self, context: SkillContext) -> Optional[Wallet]:
+    async def get_account(self, context: SkillContext) -> Optional[EvmServerAccount]:
+        """Get the account object from the CDP client.
+
+        Args:
+            context: The skill context containing agent information.
+
+        Returns:
+            Optional[EvmServerAccount]: The account object if available.
+        """
         client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
-        return await client.get_wallet()
+        return await client.get_account()
+
+    async def get_wallet_provider(self, context: SkillContext) -> Optional[CdpEvmServerWalletProvider]:
+        """Get the wallet provider from the CDP client.
+
+        Args:
+            context: The skill context containing agent information.
+
+        Returns:
+            Optional[CdpEvmServerWalletProvider]: The wallet provider if available.
+        """
+        client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
+        return await client.get_wallet_provider()
 
     def get_chain_provider(self, context: SkillContext) -> Optional[ChainProvider]:
         return self.skill_store.get_system_config("chain_provider")

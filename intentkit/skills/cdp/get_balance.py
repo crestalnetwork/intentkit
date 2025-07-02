@@ -1,9 +1,10 @@
 from typing import Type
 
-from cdp import Wallet
+from cdp import EvmServerAccount
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.clients import get_cdp_client
 from intentkit.skills.cdp.base import CDPBaseTool
 
 
@@ -28,7 +29,7 @@ class GetBalance(CDPBaseTool):
 
     agent_id: str
     skill_store: SkillStoreABC
-    wallet: Wallet | None = None
+    account: EvmServerAccount | None = None
 
     name: str = "cdp_get_balance"
     description: str = (
@@ -48,25 +49,52 @@ class GetBalance(CDPBaseTool):
             str: A message containing the balance information or error message.
         """
         try:
-            if not self.wallet:
-                return "Failed to get wallet."
+            if not self.account:
+                return "Failed to get account."
 
-            # for each address in the wallet, get the balance for the asset
-            balances = {}
+            # Get network information from CDP client
+            cdp_client = await get_cdp_client(self.agent_id, self.skill_store)
+            provider_config = await cdp_client.get_provider_config()
+            network_id = provider_config.network_id
+            
+            # Map network_id to the format expected by the API
+            network_mapping = {
+                'base-mainnet': 'base',
+                'base-sepolia': 'base-sepolia',
+                'ethereum': 'ethereum',
+                'ethereum-mainnet': 'ethereum',
+            }
+            api_network = network_mapping.get(network_id, network_id)
 
+            # For native ETH balance, use the account's balance directly
+            if asset_id.lower() == 'eth':
+                try:
+                    # Get native balance using Web3
+                    balance_wei = await self.account.get_balance()
+                    balance_eth = balance_wei / (10 ** 18)  # Convert from wei to ETH
+                    return f"ETH balance for account {self.account.address}: {balance_eth} ETH"
+                except Exception as e:
+                    return f"Error getting ETH balance: {e!s}"
+            
+            # For other tokens, try the list_token_balances API
             try:
-                for address in self.wallet.addresses:
-                    balance = address.balance(asset_id)
-                    balances[address.address_id] = balance
-            except Exception as e:
-                return f"Error getting balance for all addresses in the wallet: {e!s}"
+                # list_token_balances returns all token balances for the account
+                token_balances = await self.account.list_token_balances(api_network)
 
-            # Format each balance entry on a new line
-            balance_lines = [
-                f"  {addr}: {balance}" for addr, balance in balances.items()
-            ]
-            formatted_balances = "\n".join(balance_lines)
-            return f"Balances for wallet {self.wallet.id}:\n{formatted_balances}"
+                # Find the balance for the specific asset
+                target_balance = None
+                for balance in token_balances:
+                    if balance.asset_id.lower() == asset_id.lower():
+                        target_balance = balance
+                        break
+
+                if target_balance:
+                    return f"Balance for {asset_id} in account {self.account.address}: {target_balance.amount} {target_balance.asset_id}"
+                else:
+                    return f"No balance found for asset {asset_id} in account {self.account.address}"
+
+            except Exception as e:
+                return f"Error getting balance for account: {e!s}"
 
         except Exception as e:
             return f"Error getting balance: {str(e)}"
