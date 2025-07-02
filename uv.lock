@@ -2,12 +2,6 @@ version = 1
 revision = 2
 requires-python = "==3.12.*"
 
-[manifest]
-members = [
-    "intentkit",
-    "intentkit-cli-demo",
-]
-
 [[package]]
 name = "aiofiles"
 version = "24.1.0"
@@ -1549,21 +1543,6 @@ requires-dist = [
 dev = [
     { name = "jsonschema", specifier = ">=4.21.1,<5" },
     { name = "ruff", specifier = ">=0.11.9,<0.12" },
-]
-
-[[package]]
-name = "intentkit-cli-demo"
-version = "0.1.0"
-source = { virtual = "examples/cli" }
-dependencies = [
-    { name = "epyxid" },
-    { name = "intentkit" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "epyxid" },
-    { name = "intentkit", virtual = "." },
 ]
 
 [[package]]
