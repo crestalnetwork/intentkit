@@ -82,42 +82,6 @@ def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(securit
     return credentials.username
 
 
-def format_debug_messages(messages: list[ChatMessage]) -> str:
-    resp = ""
-    for message in messages:
-        if message.cold_start_cost:
-            resp += "[ Agent cold start ... ]\n"
-            resp += f"\n------------------- start cost: {message.cold_start_cost:.3f} seconds\n\n"
-        if message.author_type == AuthorType.SKILL:
-            resp += f"[ Skill Calls: ] ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
-            for skill_call in message.skill_calls:
-                resp += f" {skill_call['name']}: {skill_call['parameters']}\n"
-                if skill_call["success"]:
-                    resp += f"  Success: {skill_call.get('response', '')}\n"
-                else:
-                    resp += f"  Failed: {skill_call.get('error_message', '')}\n"
-            resp += (
-                f"\n------------------- skill cost: {message.time_cost:.3f} seconds\n\n"
-            )
-        elif message.author_type == AuthorType.AGENT:
-            resp += f"[ Agent: ] ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
-            resp += f" {message.message}\n"
-            resp += (
-                f"\n------------------- agent cost: {message.time_cost:.3f} seconds\n\n"
-            )
-        elif message.author_type == AuthorType.SYSTEM:
-            resp += f"[ System: ] ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
-            resp += f" {message.message}\n"
-            resp += f"\n------------------- system cost: {message.time_cost:.3f} seconds\n\n"
-        else:
-            resp += f"[ User: ] ({message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC) by {message.author_id}\n\n"
-            resp += f" {message.message}\n"
-            resp += (
-                f"\n------------------- user cost: {message.time_cost:.3f} seconds\n\n"
-            )
-    return resp
-
-
 @chat_router_readonly.get(
     "/debug/{agent_id}/chats/{chat_id}/memory",
     tags=["Debug"],
@@ -159,7 +123,7 @@ async def debug_chat_history(
     resp = f"Agent ID:\t{agent_id}\n\nChat ID:\t{chat_id}\n\n-------------------\n\n"
     messages = await get_chat_history(agent_id, chat_id, user_id=None, db=db)
     if messages:
-        resp += format_debug_messages(messages)
+        resp += "".join(message.debug_format() for message in messages)
     else:
         resp += "No messages\n"
     return resp
@@ -250,7 +214,7 @@ async def debug_chat(
     resp += "[ Input: ]\n\n"
     resp += f" {q} \n\n-------------------\n\n"
 
-    resp += format_debug_messages(messages)
+    resp += "".join(message.debug_format() for message in messages)
 
     resp += "Total time cost: {:.3f} seconds".format(
         sum([message.time_cost + message.cold_start_cost for message in messages])

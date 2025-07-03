@@ -43,7 +43,7 @@ def setup_logging(env: str, debug: bool = False):
         debug: Debug mode flag
     """
 
-    if env == "local" or debug:
+    if debug:
         # Set up logging configuration for local/debug
         logging.basicConfig(
             level=logging.DEBUG,

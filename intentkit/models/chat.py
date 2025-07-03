@@ -8,6 +8,7 @@ from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -101,6 +102,14 @@ class ChatMessageRequest(BaseModel):
             min_length=1,
         ),
     ]
+    app_id: Annotated[
+        Optional[str],
+        Field(
+            None,
+            description="Optional application identifier",
+            examples=["app-789"],
+        ),
+    ]
     user_id: Annotated[
         str,
         Field(
@@ -120,6 +129,20 @@ class ChatMessageRequest(BaseModel):
             max_length=65535,
         ),
     ]
+    search_mode: Annotated[
+        Optional[bool],
+        Field(
+            None,
+            description="Optional flag to enable search mode",
+        ),
+    ]
+    super_mode: Annotated[
+        Optional[bool],
+        Field(
+            None,
+            description="Optional flag to enable super mode",
+        ),
+    ]
     attachments: Annotated[
         Optional[List[ChatMessageAttachment]],
         Field(
@@ -134,8 +157,11 @@ class ChatMessageRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "chat_id": "chat-123",
+                "app_id": "app-789",
                 "user_id": "user-456",
                 "message": "Hello, how can you help me today?",
+                "search_mode": True,
+                "super_mode": False,
                 "attachments": [
                     {
                         "type": "link",
@@ -229,6 +255,18 @@ class ChatMessageTable(Base):
         Float,
         default=0,
     )
+    app_id = Column(
+        String,
+        nullable=True,
+    )
+    search_mode = Column(
+        Boolean,
+        nullable=True,
+    )
+    super_mode = Column(
+        Boolean,
+        nullable=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -302,6 +340,18 @@ class ChatMessageCreate(BaseModel):
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
     ]
+    app_id: Annotated[
+        Optional[str],
+        Field(None, description="Optional application identifier"),
+    ]
+    search_mode: Annotated[
+        Optional[bool],
+        Field(None, description="Optional flag to enable search mode"),
+    ]
+    super_mode: Annotated[
+        Optional[bool],
+        Field(None, description="Optional flag to enable super mode"),
+    ]
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
@@ -349,6 +399,52 @@ class ChatMessage(ChatMessageCreate):
                 resp += f"{call['name']} {call['parameters']}: {call['response'] if call['success'] else call['error_message']}\n"
             resp += "\n"
         resp += self.message
+        return resp
+
+    def debug_format(self) -> str:
+        """Format this ChatMessage for debug output.
+
+        Returns:
+            str: Formatted debug string for the message
+        """
+        resp = ""
+
+        if self.cold_start_cost:
+            resp += "[ Agent cold start ... ]\n"
+            resp += f"\n------------------- start cost: {self.cold_start_cost:.3f} seconds\n\n"
+
+        if self.author_type == AuthorType.SKILL:
+            resp += f"[ Skill Calls: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            for skill_call in self.skill_calls:
+                resp += f" {skill_call['name']}: {skill_call['parameters']}\n"
+                if skill_call["success"]:
+                    resp += f"  Success: {skill_call.get('response', '')}\n"
+                else:
+                    resp += f"  Failed: {skill_call.get('error_message', '')}\n"
+            resp += (
+                f"\n------------------- skill cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        elif self.author_type == AuthorType.AGENT:
+            resp += (
+                f"[ Agent: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            )
+            resp += f" {self.message}\n"
+            resp += (
+                f"\n------------------- agent cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        elif self.author_type == AuthorType.SYSTEM:
+            resp += (
+                f"[ System: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            )
+            resp += f" {self.message}\n"
+            resp += (
+                f"\n------------------- system cost: {self.time_cost:.3f} seconds\n\n"
+            )
+        else:
+            resp += f"[ User: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC) by {self.author_id}\n\n"
+            resp += f" {self.message}\n"
+            resp += f"\n------------------- user cost: {self.time_cost:.3f} seconds\n\n"
+
         return resp
 
     @classmethod
