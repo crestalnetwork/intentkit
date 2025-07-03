@@ -8,6 +8,7 @@ from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -101,6 +102,14 @@ class ChatMessageRequest(BaseModel):
             min_length=1,
         ),
     ]
+    app_id: Annotated[
+        Optional[str],
+        Field(
+            None,
+            description="Optional application identifier",
+            examples=["app-789"],
+        ),
+    ]
     user_id: Annotated[
         str,
         Field(
@@ -120,6 +129,20 @@ class ChatMessageRequest(BaseModel):
             max_length=65535,
         ),
     ]
+    search_mode: Annotated[
+        Optional[bool],
+        Field(
+            None,
+            description="Optional flag to enable search mode",
+        ),
+    ]
+    super_mode: Annotated[
+        Optional[bool],
+        Field(
+            None,
+            description="Optional flag to enable super mode",
+        ),
+    ]
     attachments: Annotated[
         Optional[List[ChatMessageAttachment]],
         Field(
@@ -134,8 +157,11 @@ class ChatMessageRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "chat_id": "chat-123",
+                "app_id": "app-789",
                 "user_id": "user-456",
                 "message": "Hello, how can you help me today?",
+                "search_mode": True,
+                "super_mode": False,
                 "attachments": [
                     {
                         "type": "link",
@@ -229,6 +255,18 @@ class ChatMessageTable(Base):
         Float,
         default=0,
     )
+    app_id = Column(
+        String,
+        nullable=True,
+    )
+    search_mode = Column(
+        Boolean,
+        nullable=True,
+    )
+    super_mode = Column(
+        Boolean,
+        nullable=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -301,6 +339,18 @@ class ChatMessageCreate(BaseModel):
     cold_start_cost: Annotated[
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
+    ]
+    app_id: Annotated[
+        Optional[str],
+        Field(None, description="Optional application identifier"),
+    ]
+    search_mode: Annotated[
+        Optional[bool],
+        Field(None, description="Optional flag to enable search mode"),
+    ]
+    super_mode: Annotated[
+        Optional[bool],
+        Field(None, description="Optional flag to enable super mode"),
     ]
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
