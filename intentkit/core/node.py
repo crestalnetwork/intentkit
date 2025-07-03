@@ -138,9 +138,11 @@ class PreModelNode(RunnableCallable):
                         f"Too few messages after trim: {len(trimmed_messages)}"
                     )
                     return {}
-            return {
-                "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
-            }
+                return {
+                    "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
+                }
+            else:
+                return {}
         if self.short_term_memory_strategy == "summarize":
             # if last message is not human message, skip summarize
             if not isinstance(messages[-1], HumanMessage):

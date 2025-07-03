@@ -187,8 +187,7 @@ async def create_agent(
     if config.admin_llm_skill_control:
         escaped_prompt = await explain_prompt(escaped_prompt)
     prompt_array = [
-        ("system", escaped_prompt),
-        ("placeholder", "{entrypoint_prompt}"),
+        ("placeholder", "{system_prompt}"),
         ("placeholder", "{messages}"),
     ]
     if agent.prompt_append:
@@ -201,18 +200,43 @@ async def create_agent(
 
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
-    def formatted_prompt(
+    async def formatted_prompt(
         state: AgentState, config: RunnableConfig
     ) -> list[BaseMessage]:
-        entrypoint_prompt = []
-        if config.get("configurable") and config["configurable"].get(
-            "entrypoint_prompt"
-        ):
-            entrypoint_prompt = [
-                ("system", config["configurable"]["entrypoint_prompt"])
-            ]
+        final_system_prompt = escaped_prompt
+        if config.get("configurable") and config["configurable"].get("entrypoint"):
+            entrypoint = config["configurable"]["entrypoint"]
+            entrypoint_prompt = None
+            if (
+                agent.twitter_entrypoint_enabled
+                and agent.twitter_entrypoint_prompt
+                and entrypoint == AuthorType.TWITTER.value
+            ):
+                entrypoint_prompt = agent.twitter_entrypoint_prompt
+                logger.debug("twitter entrypoint prompt added")
+            elif (
+                agent.telegram_entrypoint_enabled
+                and agent.telegram_entrypoint_prompt
+                and entrypoint == AuthorType.TELEGRAM.value
+            ):
+                entrypoint_prompt = agent.telegram_entrypoint_prompt
+                logger.debug("telegram entrypoint prompt added")
+            if entrypoint_prompt:
+                entrypoint_prompt = await explain_prompt(entrypoint_prompt)
+                final_system_prompt = f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
+        if config.get("configurable"):
+            final_system_prompt = f"{final_system_prompt}## Internal Info\n\n"
+            "These are for your internal use. You can use them when querying or storing data, "
+            "but please do not directly share this information with users.\n\n"
+            chat_id = config["configurable"].get("chat_id")
+            if chat_id:
+                final_system_prompt = f"{final_system_prompt}chat_id: {chat_id}\n\n"
+            user_id = config["configurable"].get("user_id")
+            if user_id:
+                final_system_prompt = f"{final_system_prompt}user_id: {user_id}\n\n"
+        system_prompt = [("system", final_system_prompt)]
         return prompt_temp.invoke(
-            {"messages": state["messages"], "entrypoint_prompt": entrypoint_prompt},
+            {"messages": state["messages"], "system_prompt": system_prompt},
             config,
         )
 
@@ -518,33 +542,16 @@ async def stream_agent(message: ChatMessageCreate):
         HumanMessage(content=content),
     ]
 
-    entrypoint_prompt = None
-    if (
-        agent.twitter_entrypoint_enabled
-        and agent.twitter_entrypoint_prompt
-        and input.author_type == AuthorType.TWITTER
-    ):
-        entrypoint_prompt = agent.twitter_entrypoint_prompt
-        logger.debug("twitter entrypoint prompt added")
-    elif (
-        agent.telegram_entrypoint_enabled
-        and agent.telegram_entrypoint_prompt
-        and input.author_type == AuthorType.TELEGRAM
-    ):
-        entrypoint_prompt = agent.telegram_entrypoint_prompt
-        logger.debug("telegram entrypoint prompt added")
-    if entrypoint_prompt and config.admin_llm_skill_control:
-        entrypoint_prompt = await explain_prompt(entrypoint_prompt)
-
     # stream config
     thread_id = f"{input.agent_id}-{input.chat_id}"
     stream_config = {
         "configurable": {
             "agent": agent,
             "thread_id": thread_id,
+            "chat_id": input.chat_id,
             "user_id": input.user_id,
+            "app_id": input.app_id,
             "entrypoint": input.author_type,
-            "entrypoint_prompt": entrypoint_prompt,
             "payer": payer if payment_enabled else None,
         },
         "recursion_limit": recursion_limit,
