@@ -1319,7 +1319,7 @@ class AgentResponse(BaseModel):
     ]
     # auto increment number by db
     number: Annotated[
-        int,
+        Optional[int],
         PydanticField(
             description="Auto-incrementing number assigned by the system for easy reference",
         ),
