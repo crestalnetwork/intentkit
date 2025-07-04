@@ -6,9 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.base import SkillContext
-from intentkit.utils.tx import EvmContractWrapper
 
-from .abi.erc20 import ABI_ERC20
 from .base import EnsoBaseTool, base_url, default_chain_id
 
 
@@ -81,14 +79,14 @@ class EnsoGetWalletBalances(EnsoBaseTool):
 
         context: SkillContext = self.context_from_config(config)
         api_token = self.get_api_token(context)
-        wallet = await self.get_wallet(context)
+        account = await self.get_account(context)
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {api_token}",
         }
 
         params = EnsoGetBalancesInput(chainId=chainId).model_dump(exclude_none=True)
-        params["eoaAddress"] = wallet.addresses[0].address_id
+        params["eoaAddress"] = account.address
         params["useEoa"] = True
 
         async with httpx.AsyncClient() as client:
@@ -178,7 +176,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 
         context: SkillContext = self.context_from_config(config)
         api_token = self.get_api_token(context)
-        wallet = await self.get_wallet(context)
+        account = await self.get_account(context)
 
         headers = {
             "accept": "application/json",
@@ -187,7 +185,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 
         params = EnsoGetApprovalsInput(
             chainId=chainId,
-            fromAddress=wallet.addresses[0].address_id,
+            fromAddress=account.address,
         )
 
         if kwargs.get("routingStrategy"):
@@ -318,15 +316,14 @@ class EnsoWalletApprove(EnsoBaseTool):
         url = f"{base_url}/api/v1/wallet/approve"
         context: SkillContext = self.context_from_config(config)
         api_token = self.get_api_token(context)
-        chain_provider = self.get_chain_provider(context)
-        wallet = await self.get_wallet(context)
+        account = await self.get_account(context)
 
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {api_token}",
         }
 
-        from_address = wallet.addresses[0].address_id
+        from_address = account.address
 
         params = EnsoWalletApproveInput(
             tokenAddress=tokenAddress,
@@ -352,20 +349,27 @@ class EnsoWalletApprove(EnsoBaseTool):
                 content = EnsoWalletApproveOutput(**json_dict)
                 artifact = EnsoWalletApproveArtifact(**json_dict)
 
-                rpc_url = chain_provider.get_chain_config_by_id(chainId).rpc_url
-                contract = EvmContractWrapper(rpc_url, ABI_ERC20, artifact.tx)
+                # Use the wallet provider to send the transaction
+                wallet_provider = await self.get_wallet_provider(context)
 
-                fn, fn_args = contract.fn_and_args
-                fn_args["value"] = str(fn_args["value"])
+                # Extract transaction data from the Enso API response
+                tx_data = json_dict.get("tx", {})
+                if tx_data:
+                    # Send the transaction using the wallet provider
+                    tx_hash = wallet_provider.send_transaction(
+                        {
+                            "to": tx_data.get("to"),
+                            "data": tx_data.get("data", "0x"),
+                            "value": tx_data.get("value", 0),
+                        }
+                    )
 
-                invocation = wallet.invoke_contract(
-                    contract_address=contract.dst_addr,
-                    method=fn.fn_name,
-                    abi=ABI_ERC20,
-                    args=fn_args,
-                ).wait()
-
-                artifact.txHash = invocation.transaction.transaction_hash
+                    # Wait for transaction confirmation
+                    wallet_provider.wait_for_transaction_receipt(tx_hash)
+                    artifact.txHash = tx_hash
+                else:
+                    # For now, return without executing the transaction if no tx data
+                    artifact.txHash = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
                 # Return the parsed response
                 return (content, artifact)
