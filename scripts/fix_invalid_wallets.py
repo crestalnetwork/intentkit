@@ -32,7 +32,7 @@ from intentkit.models.agent_data import AgentDataTable
 from intentkit.models.db import get_session, init_db
 
 # Set up logging
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -114,7 +114,7 @@ class WalletFixer:
             exists = await self.check_wallet_exists(wallet_address)
 
             if not exists:
-                print(f"Found invalid wallet: {agent.id} -> {wallet_address}")
+                logger.info(f"Found invalid wallet: {agent.id} -> {wallet_address}")
                 self.stats["invalid_addresses"] += 1
                 invalid_agents.append(
                     {
@@ -142,14 +142,14 @@ class WalletFixer:
                     )
                     await session.commit()
 
-                print(f"Fixed: {agent_id}")
+                logger.info(f"Fixed: {agent_id}")
             else:
-                print(f"[DRY RUN] Would fix: {agent_id}")
+                logger.info(f"[DRY RUN] Would fix: {agent_id}")
 
             return True
 
         except Exception as e:
-            print(f"ERROR fixing {agent_id}: {e}")
+            logger.error(f"ERROR fixing {agent_id}: {e}")
             return False
 
     async def run_fix(self, agent_id: Optional[str] = None):
@@ -159,7 +159,7 @@ class WalletFixer:
         invalid_agents = await self.find_agents_with_invalid_wallets(agent_id)
 
         if not invalid_agents:
-            print("No agents with invalid wallet addresses found")
+            logger.info("No agents with invalid wallet addresses found")
             return
 
         # Fix each agent
@@ -174,13 +174,13 @@ class WalletFixer:
         self.print_summary()
 
     def print_summary(self):
-        """Print fix statistics."""
+        """Log fix statistics."""
 
-        print(
-            f"\nSummary: {self.stats['invalid_addresses']} invalid addresses found, {self.stats['fixed_agents']} fixed"
+        logger.info(
+            f"Summary: {self.stats['invalid_addresses']} invalid addresses found, {self.stats['fixed_agents']} fixed"
         )
         if self.dry_run:
-            print("*** DRY RUN - NO CHANGES MADE ***")
+            logger.info("*** DRY RUN - NO CHANGES MADE ***")
 
 
 async def main():
