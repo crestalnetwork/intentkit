@@ -50,6 +50,34 @@
           ],
           "description": "Search and retrieve relevant information from previously indexed web content using semantic similarity. Perfect for answering questions based on scraped documents.",
           "default": "private"
+        },
+        "website_indexer": {
+          "type": "string",
+          "title": "Complete Website Indexer",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Index entire websites by discovering and scraping all pages using sitemaps. Automatically finds sitemaps from robots.txt, extracts all URLs, and comprehensively indexes website content.",
+          "default": "private"
+        },
+        "document_indexer": {
+          "type": "string",
+          "title": "Document Content Indexer",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Import and index document content directly to the vector database. Perfect for adding content from Google Docs, Notion pages, PDFs, or any other document sources by copy-pasting.",
+          "default": "private"
         }
       },
       "description": "Configure the availability of each web scraper skill (disabled, public, or private)"
