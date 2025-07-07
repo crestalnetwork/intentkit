@@ -91,7 +91,9 @@ class WebsiteIndexer(WebScraperBaseTool):
                 if response.status_code == 200:
                     return response.text
             except Exception as e:
-                logger.warning(f"Primary headers failed for robots.txt from {robots_url}: {e}")
+                logger.warning(
+                    f"Primary headers failed for robots.txt from {robots_url}: {e}"
+                )
 
         # Try with fallback headers
         async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:
@@ -142,7 +144,9 @@ class WebsiteIndexer(WebScraperBaseTool):
                 if response.status_code == 200:
                     return response.text
             except Exception as e:
-                logger.warning(f"Primary headers failed for sitemap from {sitemap_url}: {e}")
+                logger.warning(
+                    f"Primary headers failed for sitemap from {sitemap_url}: {e}"
+                )
 
         # Try with fallback headers
         async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:

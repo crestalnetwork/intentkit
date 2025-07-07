@@ -567,14 +567,18 @@ async def scrape_and_index_urls(
                 documents = await asyncio.to_thread(loader.load)
             except Exception as primary_error:
                 # If primary headers fail, try fallback headers
-                logger.warning(f"[{agent_id}] Primary headers failed for {url}, trying fallback: {primary_error}")
-                
+                logger.warning(
+                    f"[{agent_id}] Primary headers failed for {url}, trying fallback: {primary_error}"
+                )
+
                 loader.requests_kwargs["headers"] = FALLBACK_HEADERS
                 try:
                     documents = await asyncio.to_thread(loader.load)
                     logger.info(f"[{agent_id}] Fallback headers succeeded for {url}")
                 except Exception as fallback_error:
-                    logger.error(f"[{agent_id}] Both header sets failed for {url}: {fallback_error}")
+                    logger.error(
+                        f"[{agent_id}] Both header sets failed for {url}: {fallback_error}"
+                    )
                     raise fallback_error
 
             if not documents:
