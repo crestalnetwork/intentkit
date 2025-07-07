@@ -1,19 +1,18 @@
-import asyncio
-import base64
 import logging
-import os
-import tempfile
 from typing import List, Type
-from urllib.parse import urlparse
 
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.vectorstores import FAISS
 from langchain_core.runnables import RunnableConfig
-from langchain_openai import OpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
+from intentkit.skills.web_scraper.utils import (
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    MetadataManager,
+    ResponseFormatter,
+    VectorStoreManager,
+    scrape_and_index_urls,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +27,13 @@ class ScrapeAndIndexInput(BaseModel):
     )
     chunk_size: int = Field(
         description="Size of text chunks for indexing (default: 1000)",
-        default=1000,
+        default=DEFAULT_CHUNK_SIZE,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
         description="Overlap between chunks (default: 200)",
-        default=200,
+        default=DEFAULT_CHUNK_OVERLAP,
         ge=0,
         le=1000,
     )
@@ -71,151 +70,92 @@ class ScrapeAndIndex(WebScraperBaseTool):
     )
     args_schema: Type[BaseModel] = ScrapeAndIndexInput
 
-    def _validate_urls(self, urls: List[str]) -> List[str]:
-        """Validate and filter URLs."""
-        valid_urls = []
-        for url in urls:
-            try:
-                parsed = urlparse(url)
-                if parsed.scheme in ["http", "https"] and parsed.netloc:
-                    valid_urls.append(url)
-                else:
-                    logger.warning(f"Invalid URL format: {url}")
-            except Exception as e:
-                logger.warning(f"Error parsing URL {url}: {e}")
-        return valid_urls
-
     async def _arun(
         self,
         urls: List[str],
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Scrape URLs and index content into vector store."""
         try:
-            # Validate URLs
-            valid_urls = self._validate_urls(urls)
+            # Get agent context - throw error if not available
+            if not config:
+                raise ValueError("Configuration is required but not provided")
+
+            context = self.context_from_config(config)
+            if not context or not context.agent or not context.agent.id:
+                raise ValueError("Agent ID is required but not found in configuration")
+
+            agent_id = context.agent.id
+
+            logger.info(
+                f"[{agent_id}] Starting scrape and index operation with {len(urls)} URLs"
+            )
+
+            # Use the utility function to scrape and index URLs
+            total_chunks, was_merged, valid_urls = await scrape_and_index_urls(
+                urls, agent_id, self.skill_store, chunk_size, chunk_overlap
+            )
+
+            logger.info(
+                f"[{agent_id}] Scraping completed: {total_chunks} chunks indexed, merged: {was_merged}"
+            )
+
             if not valid_urls:
+                logger.error(f"[{agent_id}] No valid URLs provided")
                 return "Error: No valid URLs provided. URLs must start with http:// or https://"
 
-            # Get agent context for storage
-            context = self.context_from_config(config) if config else None
-            agent_id = context.agent.id if context else "default"
-
-            # Load documents from URLs
-            logger.info(f"Scraping {len(valid_urls)} URLs...")
-            loader = WebBaseLoader(
-                web_paths=valid_urls,
-                requests_per_second=2,  # Be respectful to servers
-                show_progress=True,
-            )
-
-            # Configure loader for better content extraction
-            loader.requests_kwargs = {
-                "verify": True,
-                "timeout": 30,
-            }
-
-            documents = await asyncio.to_thread(loader.load)
-
-            if not documents:
+            if total_chunks == 0:
+                logger.error(f"[{agent_id}] No content extracted from URLs")
                 return "Error: No content could be extracted from the provided URLs."
 
-            # Split documents into chunks
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
-                length_function=len,
+            # Get current storage size for response
+            vs_manager = VectorStoreManager(self.skill_store)
+            current_size = await vs_manager.get_content_size(agent_id)
+            size_limit_reached = len(valid_urls) < len(urls)
+
+            # Update metadata
+            metadata_manager = MetadataManager(self.skill_store)
+            new_metadata = metadata_manager.create_url_metadata(
+                valid_urls, [], "scrape_and_index"
             )
-            split_docs = text_splitter.split_documents(documents)
+            await metadata_manager.update_metadata(agent_id, new_metadata)
 
-            if not split_docs:
-                return "Error: No content could be processed into chunks."
+            logger.info(f"[{agent_id}] Metadata updated successfully")
 
-            # Create embeddings and vector store
-            api_key = self.skill_store.get_system_config("openai_api_key")
-            embeddings = OpenAIEmbeddings(api_key=api_key)
-
-            # Create vector store
-            vector_store = FAISS.from_documents(split_docs, embeddings)
-
-            # Store the vector store for this agent using a temporary directory
-            vector_store_key = f"vector_store_{agent_id}"
-            metadata_key = f"indexed_urls_{agent_id}"
-
-            # Save vector store to temporary directory and encode to base64
-            with tempfile.TemporaryDirectory() as temp_dir:
-                vector_store.save_local(temp_dir)
-
-                # Read and encode all files in the temporary directory
-                encoded_files = {}
-                for filename in os.listdir(temp_dir):
-                    file_path = os.path.join(temp_dir, filename)
-                    if os.path.isfile(file_path):
-                        with open(file_path, "rb") as f:
-                            encoded_files[filename] = base64.b64encode(f.read()).decode(
-                                "utf-8"
-                            )
-
-            # Store vector store data
-            await self.skill_store.save_agent_skill_data(
-                agent_id=agent_id,
-                skill="web_scraper",
-                key=vector_store_key,
-                data={
-                    "faiss_files": encoded_files,
-                    "chunk_size": chunk_size,
-                    "chunk_overlap": chunk_overlap,
-                },
+            # Format response
+            response = ResponseFormatter.format_indexing_response(
+                "scraped and indexed",
+                valid_urls,
+                total_chunks,
+                chunk_size,
+                chunk_overlap,
+                was_merged,
+                current_size_bytes=current_size,
+                size_limit_reached=size_limit_reached,
+                total_requested_urls=len(urls),
             )
 
-            # Store metadata about indexed URLs
-            existing_metadata = (
-                await self.skill_store.get_agent_skill_data(
-                    agent_id, "web_scraper", metadata_key
-                )
-                or {}
+            logger.info(
+                f"[{agent_id}] Scrape and index operation completed successfully"
             )
-            existing_metadata.update(
-                {
-                    url: {
-                        "indexed_at": str(asyncio.get_event_loop().time()),
-                        "chunks": len(
-                            [
-                                doc
-                                for doc in split_docs
-                                if doc.metadata.get("source") == url
-                            ]
-                        ),
-                    }
-                    for url in valid_urls
-                }
-            )
-
-            await self.skill_store.save_agent_skill_data(
-                agent_id=agent_id,
-                skill="web_scraper",
-                key=metadata_key,
-                data=existing_metadata,
-            )
-
-            total_chunks = len(split_docs)
-            successful_urls = len(valid_urls)
-
-            return (
-                f"Successfully scraped and indexed {successful_urls} URLs:\n"
-                f"{'• ' + chr(10) + '• '.join(valid_urls)}\n\n"
-                f"Total chunks created: {total_chunks}\n"
-                f"Chunk size: {chunk_size} characters\n"
-                f"Chunk overlap: {chunk_overlap} characters\n\n"
-                f"The content is now indexed and can be queried using the query_indexed_content tool."
-            )
+            return response
 
         except Exception as e:
-            logger.error(f"Error in scrape_and_index: {e}")
-            return f"Error scraping and indexing URLs: {str(e)}"
+            # Extract agent_id for error logging if possible
+            agent_id = "UNKNOWN"
+            try:
+                if config:
+                    context = self.context_from_config(config)
+                    if context and context.agent and context.agent.id:
+                        agent_id = context.agent.id
+            except Exception:
+                pass
+
+            logger.error(f"[{agent_id}] Error in ScrapeAndIndex: {e}", exc_info=True)
+            raise type(e)(f"[agent:{agent_id}]: {e}") from e
 
 
 class QueryIndexedContent(WebScraperBaseTool):
@@ -242,86 +182,81 @@ class QueryIndexedContent(WebScraperBaseTool):
     ) -> str:
         """Query the indexed content."""
         try:
-            # Get agent context for storage
-            context = self.context_from_config(config) if config else None
-            agent_id = context.agent.id if context else "default"
+            # Get agent context - throw error if not available
+            if not config:
+                raise ValueError("Configuration is required but not provided")
+
+            context = self.context_from_config(config)
+            if not context or not context.agent or not context.agent.id:
+                raise ValueError("Agent ID is required but not found in configuration")
+
+            agent_id = context.agent.id
+
+            logger.info(f"[{agent_id}] Starting query operation: '{query}'")
 
             # Retrieve vector store
             vector_store_key = f"vector_store_{agent_id}"
-            metadata_key = f"indexed_urls_{agent_id}"
+
+            logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
 
             stored_data = await self.skill_store.get_agent_skill_data(
                 agent_id, "web_scraper", vector_store_key
             )
+
+            if not stored_data:
+                logger.warning(f"[{agent_id}] No vector store found")
+                return "No indexed content found. Please use the scrape_and_index tool first to scrape and index some web content before querying."
+
             if not stored_data or "faiss_files" not in stored_data:
-                return (
-                    "No indexed content found. Please use the scrape_and_index tool first "
-                    "to scrape and index some web content before querying."
-                )
+                logger.warning(f"[{agent_id}] Invalid stored data structure")
+                return "No indexed content found. Please use the scrape_and_index tool first to scrape and index some web content before querying."
 
-            # Restore vector store from base64 encoded files
-            api_key = self.skill_store.get_system_config("openai_api_key")
-            embeddings = OpenAIEmbeddings(api_key=api_key)
-
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Decode and write files to temporary directory
-                for filename, encoded_content in stored_data["faiss_files"].items():
-                    file_path = os.path.join(temp_dir, filename)
-                    with open(file_path, "wb") as f:
-                        f.write(base64.b64decode(encoded_content))
-
-                # Load the vector store from the temporary directory
-                vector_store = FAISS.load_local(
-                    temp_dir,
-                    embeddings,
-                    allow_dangerous_deserialization=True,  # Safe since we control the serialization
-                )
-
-                # Perform similarity search
-                relevant_docs = vector_store.similarity_search(query, k=max_results)
-
-            if not relevant_docs:
-                return f"No relevant content found for query: '{query}'"
-
-            # Get metadata about indexed URLs
-            metadata = (
-                await self.skill_store.get_agent_skill_data(
-                    agent_id, "web_scraper", metadata_key
-                )
-                or {}
+            # Create embeddings and decode vector store
+            logger.info(f"[{agent_id}] Decoding vector store")
+            vs_manager = VectorStoreManager(self.skill_store)
+            embeddings = vs_manager.create_embeddings()
+            vector_store = vs_manager.decode_vector_store(
+                stored_data["faiss_files"], embeddings
             )
 
-            # Format response
-            response_parts = [
-                f"Found {len(relevant_docs)} relevant pieces of content for: '{query}'\n",
-                "=" * 50,
-            ]
-
-            for i, doc in enumerate(relevant_docs, 1):
-                source_url = doc.metadata.get("source", "Unknown source")
-                title = doc.metadata.get("title", "No title")
-
-                response_parts.extend(
-                    [
-                        f"\n{i}. Source: {source_url}",
-                        f"   Title: {title}",
-                        f"   Content:\n   {doc.page_content[:500]}{'...' if len(doc.page_content) > 500 else ''}",
-                        "",
-                    ]
-                )
-
-            # Add summary of indexed content
-            response_parts.extend(
-                [
-                    "\n" + "=" * 50,
-                    f"Total indexed URLs: {len(metadata)}",
-                    "Indexed sources:",
-                    *[f"• {url}" for url in metadata.keys()],
-                ]
+            logger.info(
+                f"[{agent_id}] Vector store loaded, index count: {vector_store.index.ntotal}"
             )
 
-            return "\n".join(response_parts)
+            # Perform similarity search
+            docs = vector_store.similarity_search(query, k=max_results)
+            logger.info(f"[{agent_id}] Found {len(docs)} similar documents")
+
+            if not docs:
+                logger.info(f"[{agent_id}] No relevant documents found for query")
+                return f"No relevant information found for your query: '{query}'. The indexed content may not contain information related to your search."
+
+            # Format results
+            results = []
+            for i, doc in enumerate(docs, 1):
+                content = doc.page_content.strip()
+                source = doc.metadata.get("source", "Unknown")
+                results.append(f"**Source {i}:** {source}\n{content}")
+
+            response = "\n\n".join(results)
+            logger.info(
+                f"[{agent_id}] Query completed successfully, returning {len(response)} chars"
+            )
+
+            return response
 
         except Exception as e:
-            logger.error(f"Error in query_indexed_content: {e}")
-            return f"Error querying indexed content: {str(e)}"
+            # Extract agent_id for error logging if possible
+            agent_id = "UNKNOWN"
+            try:
+                if config:
+                    context = self.context_from_config(config)
+                    if context and context.agent and context.agent.id:
+                        agent_id = context.agent.id
+            except Exception:
+                pass
+
+            logger.error(
+                f"[{agent_id}] Error in QueryIndexedContent: {e}", exc_info=True
+            )
+            raise type(e)(f"[agent:{agent_id}]: {e}") from e
