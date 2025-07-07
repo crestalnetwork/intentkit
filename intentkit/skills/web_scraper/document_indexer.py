@@ -4,11 +4,12 @@ from typing import Type
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from skills.web_scraper.base import WebScraperBaseTool
-from skills.web_scraper.utils import (
+from intentkit.skills.web_scraper.base import WebScraperBaseTool
+from intentkit.skills.web_scraper.utils import (
     DocumentProcessor,
     MetadataManager,
     ResponseFormatter,
+    VectorStoreManager,
     index_documents,
 )
 
@@ -109,42 +110,33 @@ class DocumentIndexer(WebScraperBaseTool):
             f"[{agent_id}] Document created, length: {len(document.page_content)} chars"
         )
 
-        # Index the document using the unified workflow
+        # Index the document
         total_chunks, was_merged = await index_documents(
             [document], agent_id, self.skill_store, chunk_size, chunk_overlap
         )
 
-        logger.info(
-            f"[{agent_id}] Document indexed: {total_chunks} chunks, merged: {was_merged}"
-        )
+        # Get current storage size for response
+        vs_manager = VectorStoreManager(self.skill_store)
+        current_size = await vs_manager.get_content_size(agent_id)
 
         # Update metadata
         metadata_manager = MetadataManager(self.skill_store)
         new_metadata = metadata_manager.create_document_metadata(
-            title, source, tags, [], len(document.page_content)
+            title, source, tags, [document], len(text_content)
         )
         await metadata_manager.update_metadata(agent_id, new_metadata)
 
-        logger.info(f"[{agent_id}] Metadata updated successfully")
+        logger.info(f"[{agent_id}] Document indexing completed successfully")
 
         # Format response
-        extra_info = {
-            "Title": title,
-            "Source": source,
-            "Tags": ", ".join([tag.strip() for tag in tags.split(",") if tag.strip()])
-            if tags
-            else "None",
-            "Content length": f"{len(document.page_content):,} characters",
-        }
-
         response = ResponseFormatter.format_indexing_response(
-            "imported and indexed",
-            document.page_content,
+            "indexed",
+            f"Document: {title}",
             total_chunks,
             chunk_size,
             chunk_overlap,
             was_merged,
-            extra_info,
+            current_size_bytes=current_size,
         )
 
         logger.info(f"[{agent_id}] Document indexing completed successfully")

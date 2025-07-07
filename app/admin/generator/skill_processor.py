@@ -37,7 +37,8 @@ def load_skill_schema(skill_name: str) -> Optional[Dict[str, Any]]:
 
     try:
         # Get the skills directory path
-        skills_dir = Path(__file__).parent.parent.parent.parent / "skills"
+        # From intentkit/app/admin/generator/skill_processor.py to intentkit/skills/
+        skills_dir = Path(__file__).parent.parent.parent.parent / "intentkit" / "skills"
         schema_path = skills_dir / skill_name / "schema.json"
 
         if schema_path.exists():
@@ -206,11 +207,30 @@ def get_skill_states(skill_category: str) -> Set[str]:
                 return states
 
         logger.warning(f"Could not find SkillStates for {skill_category}")
-        return set()
 
     except ImportError as e:
         logger.warning(f"Could not import skill category {skill_category}: {e}")
-        return set()
+
+    # Fallback: try to extract states from schema.json
+    try:
+        schema = load_skill_schema(skill_category)
+        if (
+            schema
+            and "properties" in schema
+            and "states" in schema["properties"]
+            and "properties" in schema["properties"]["states"]
+        ):
+            states = set(schema["properties"]["states"]["properties"].keys())
+            logger.info(f"Using schema-based states for {skill_category}: {states}")
+            _skill_states_cache[skill_category] = states
+            return states
+    except Exception as e:
+        logger.warning(
+            f"Could not extract states from schema for {skill_category}: {e}"
+        )
+
+    logger.warning(f"No states found for skill category {skill_category}")
+    return set()
 
 
 def get_all_real_skills() -> Dict[str, Set[str]]:

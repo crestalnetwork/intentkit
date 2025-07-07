@@ -7,12 +7,13 @@ import openai
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from skills.web_scraper.base import WebScraperBaseTool
-from skills.web_scraper.utils import (
+from intentkit.skills.web_scraper.base import WebScraperBaseTool
+from intentkit.skills.web_scraper.utils import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     MetadataManager,
     ResponseFormatter,
+    VectorStoreManager,
     scrape_and_index_urls,
 )
 
@@ -220,7 +221,7 @@ Extract the URLs now:"""
         """Call OpenAI GPT-4o-mini to extract URLs from sitemap content."""
         try:
             # Get OpenAI API key using the standard pattern
-            from skills.openai.base import OpenAIBaseTool
+            from intentkit.skills.openai.base import OpenAIBaseTool
 
             temp_tool = OpenAIBaseTool(skill_store=self.skill_store)
             api_key = temp_tool.get_api_key(context)
@@ -367,6 +368,11 @@ Extract the URLs now:"""
                 )
                 return f"Error: No content could be extracted from the discovered URLs. Found sitemaps: {', '.join(found_sitemaps)}"
 
+            # Get current storage size for response
+            vs_manager = VectorStoreManager(self.skill_store)
+            current_size = await vs_manager.get_content_size(agent_id)
+            size_limit_reached = len(valid_urls) < len(unique_urls)
+
             # Update metadata
             metadata_manager = MetadataManager(self.skill_store)
             new_metadata = metadata_manager.create_url_metadata(
@@ -384,6 +390,9 @@ Extract the URLs now:"""
                 chunk_size,
                 chunk_overlap,
                 was_merged,
+                current_size_bytes=current_size,
+                size_limit_reached=size_limit_reached,
+                total_requested_urls=len(unique_urls),
             )
 
             # Enhance the response with sitemap discovery info
@@ -391,7 +400,8 @@ Extract the URLs now:"""
                 f"WEBSITE INDEXING COMPLETE\n"
                 f"Base URL: {base_url}\n"
                 f"Sitemaps discovered: {len(found_sitemaps)}\n"
-                f"URLs extracted and indexed: {len(unique_urls)}\n"
+                f"URLs extracted: {len(unique_urls)}\n"
+                f"URLs successfully indexed: {len(valid_urls)}\n"
                 f"Include patterns: {', '.join(include_patterns) if include_patterns else 'None (all URLs)'}\n"
                 f"Exclude patterns: {', '.join(exclude_patterns) if exclude_patterns else 'None'}\n\n"
                 f"DISCOVERED SITEMAPS:\n"

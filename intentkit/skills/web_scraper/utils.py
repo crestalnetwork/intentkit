@@ -17,7 +17,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from abstracts.skill import SkillStoreABC
+from intentkit.abstracts.skill import SkillStoreABC
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ DEFAULT_CHUNK_SIZE = 1000
 DEFAULT_CHUNK_OVERLAP = 200
 DEFAULT_REQUEST_TIMEOUT = 30
 DEFAULT_REQUESTS_PER_SECOND = 2
+MAX_CONTENT_SIZE_MB = 10  # 10 MB limit
+MAX_CONTENT_SIZE_BYTES = MAX_CONTENT_SIZE_MB * 1024 * 1024
 
 # Storage keys
 VECTOR_STORE_KEY_PREFIX = "vector_store"
@@ -171,37 +173,42 @@ class VectorStoreManager:
             raise
 
     async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
-        """Load vector store from agent skill data."""
-        vector_store_key, _ = self.get_storage_keys(agent_id)
+        """Load vector store for an agent."""
+        stored_data = await self.get_existing_vector_store(agent_id)
+
+        if not stored_data or "faiss_files" not in stored_data:
+            return None
 
         try:
-            # Get data from storage
-            data = await self.skill_store.get_agent_skill_data(
-                agent_id=agent_id,
-                skill="web_scraper",
-                key=vector_store_key,
-            )
-
-            if not data:
-                return None
-
-            if "faiss_files" not in data:
-                logger.warning(
-                    f"[{agent_id}] Invalid vector store data: missing faiss_files"
-                )
-                return None
-
-            faiss_files = data["faiss_files"]
             embeddings = self.create_embeddings()
-
-            # Decode and load vector store
-            vector_store = self.decode_vector_store(faiss_files, embeddings)
-
-            return vector_store
-
+            return self.decode_vector_store(stored_data["faiss_files"], embeddings)
         except Exception as e:
-            logger.error(f"[{agent_id}] Failed to load vector store: {e}")
+            logger.error(f"Error loading vector store for agent {agent_id}: {e}")
             return None
+
+    async def get_content_size(self, agent_id: str) -> int:
+        """Get the current content size in bytes for an agent."""
+        stored_data = await self.get_existing_vector_store(agent_id)
+        if not stored_data:
+            return 0
+
+        # Calculate size from stored FAISS files
+        total_size = 0
+        if "faiss_files" in stored_data:
+            for encoded_content in stored_data["faiss_files"].values():
+                # Base64 encoded content size (approximate original size)
+                total_size += len(base64.b64decode(encoded_content))
+
+        return total_size
+
+    def format_size(self, size_bytes: int) -> str:
+        """Format size in bytes to human readable format."""
+        if size_bytes < 1024:
+            return f"{size_bytes} B"
+        elif size_bytes < 1024 * 1024:
+            return f"{size_bytes / 1024:.1f} KB"
+        else:
+            return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
 class DocumentProcessor:
@@ -379,13 +386,24 @@ class ResponseFormatter:
         chunk_overlap: int,
         was_merged: bool,
         extra_info: Optional[Dict] = None,
+        current_size_bytes: int = 0,
+        size_limit_reached: bool = False,
+        total_requested_urls: int = 0,
     ) -> str:
         """Format a consistent response for indexing operations."""
 
         # Handle both URL lists and single content
         if isinstance(urls_or_content, list):
             urls = urls_or_content
-            content_summary = f"Successfully {operation_type} {len(urls)} URLs"
+            processed_count = len(urls)
+
+            if size_limit_reached and total_requested_urls > 0:
+                content_summary = f"Processed {processed_count} of {total_requested_urls} URLs (size limit reached)"
+            else:
+                content_summary = (
+                    f"Successfully {operation_type} {processed_count} URLs"
+                )
+
             if len(urls) <= 5:
                 url_list = "\n".join([f"- {url}" for url in urls])
             else:
@@ -412,6 +430,18 @@ class ResponseFormatter:
             ]
         )
 
+        # Add size information
+        if current_size_bytes > 0:
+            vs_manager = VectorStoreManager(None)  # Just for formatting
+            formatted_size = vs_manager.format_size(current_size_bytes)
+            max_size = vs_manager.format_size(MAX_CONTENT_SIZE_BYTES)
+            response_parts.append(
+                f"Current storage size: {formatted_size} / {max_size}"
+            )
+
+        if size_limit_reached:
+            response_parts.append("Size limit reached - some URLs were not processed")
+
         if extra_info:
             for key, value in extra_info.items():
                 response_parts.append(f"{key}: {value}")
@@ -432,7 +462,7 @@ async def scrape_and_index_urls(
     requests_per_second: int = DEFAULT_REQUESTS_PER_SECOND,
 ) -> Tuple[int, bool, List[str]]:
     """
-    Scrape URLs and index their content into vector store.
+    Scrape URLs and index their content into vector store with size limits.
 
     Args:
         urls: List of URLs to scrape
@@ -464,31 +494,100 @@ async def scrape_and_index_urls(
     if not valid_urls:
         return 0, False, []
 
-    # Load documents from URLs
-    logger.info(f"[{agent_id}] Scraping {len(valid_urls)} URLs...")
-    loader = WebBaseLoader(
-        web_paths=valid_urls,
-        requests_per_second=requests_per_second,
-        show_progress=True,
+    # Check existing content size
+    vs_manager = VectorStoreManager(skill_store)
+    current_size = await vs_manager.get_content_size(agent_id)
+
+    logger.info(
+        f"[{agent_id}] Current storage size: {vs_manager.format_size(current_size)}"
     )
 
-    # Configure loader for better content extraction
-    loader.requests_kwargs = {
-        "verify": True,
-        "timeout": DEFAULT_REQUEST_TIMEOUT,
-    }
+    if current_size >= MAX_CONTENT_SIZE_BYTES:
+        logger.warning(
+            f"[{agent_id}] Storage limit already reached: {vs_manager.format_size(current_size)}"
+        )
+        return 0, False, []
 
-    documents = await asyncio.to_thread(loader.load)
+    # Process URLs one by one with size checking
+    processed_urls = []
+    total_chunks = 0
+    was_merged = False
+    size_limit_reached = False
 
-    if not documents:
-        return 0, False, valid_urls
+    for i, url in enumerate(valid_urls):
+        if current_size >= MAX_CONTENT_SIZE_BYTES:
+            size_limit_reached = True
+            logger.warning(f"[{agent_id}] Size limit reached after processing {i} URLs")
+            break
 
-    # Index documents using the unified workflow
-    total_chunks, was_merged = await index_documents(
-        documents, agent_id, skill_store, chunk_size, chunk_overlap
-    )
+        try:
+            logger.info(f"[{agent_id}] Processing URL {i + 1}/{len(valid_urls)}: {url}")
 
-    return total_chunks, was_merged, valid_urls
+            # Load single URL
+            loader = WebBaseLoader(
+                web_paths=[url],
+                requests_per_second=requests_per_second,
+            )
+
+            # Configure loader
+            loader.requests_kwargs = {
+                "verify": True,
+                "timeout": DEFAULT_REQUEST_TIMEOUT,
+            }
+
+            # Scrape the URL
+            documents = await asyncio.to_thread(loader.load)
+
+            if not documents:
+                logger.warning(f"[{agent_id}] No content extracted from {url}")
+                continue
+
+            # Check content size before processing
+            content_size = sum(
+                len(doc.page_content.encode("utf-8")) for doc in documents
+            )
+
+            if current_size + content_size > MAX_CONTENT_SIZE_BYTES:
+                logger.warning(
+                    f"[{agent_id}] Adding {url} would exceed size limit. Skipping."
+                )
+                size_limit_reached = True
+                break
+
+            # Process and index this URL's content
+            chunks, merged = await index_documents(
+                documents, agent_id, skill_store, chunk_size, chunk_overlap
+            )
+
+            if chunks > 0:
+                processed_urls.append(url)
+                total_chunks += chunks
+                was_merged = merged or was_merged
+                current_size += content_size
+
+                logger.info(
+                    f"[{agent_id}] Processed {url}: {chunks} chunks, current size: {vs_manager.format_size(current_size)}"
+                )
+
+            # Add delay for rate limiting
+            if i < len(valid_urls) - 1:  # Don't delay after the last URL
+                await asyncio.sleep(1.0 / requests_per_second)
+
+        except Exception as e:
+            logger.error(f"[{agent_id}] Error processing {url}: {e}")
+            continue
+
+    # Log final results
+    if size_limit_reached:
+        logger.warning(
+            f"[{agent_id}] Size limit reached. Processed {len(processed_urls)}/{len(valid_urls)} URLs"
+        )
+    else:
+        logger.info(
+            f"[{agent_id}] Successfully processed all {len(processed_urls)} URLs"
+        )
+
+    return total_chunks, was_merged, processed_urls
 
 
 # Convenience function that combines all operations

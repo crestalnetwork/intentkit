@@ -4,8 +4,8 @@ from typing import List, Type
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from skills.web_scraper.base import WebScraperBaseTool
-from skills.web_scraper.utils import (
+from intentkit.skills.web_scraper.base import WebScraperBaseTool
+from intentkit.skills.web_scraper.utils import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     MetadataManager,
@@ -111,6 +111,11 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 logger.error(f"[{agent_id}] No content extracted from URLs")
                 return "Error: No content could be extracted from the provided URLs."
 
+            # Get current storage size for response
+            vs_manager = VectorStoreManager(self.skill_store)
+            current_size = await vs_manager.get_content_size(agent_id)
+            size_limit_reached = len(valid_urls) < len(urls)
+
             # Update metadata
             metadata_manager = MetadataManager(self.skill_store)
             new_metadata = metadata_manager.create_url_metadata(
@@ -128,6 +133,9 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 chunk_size,
                 chunk_overlap,
                 was_merged,
+                current_size_bytes=current_size,
+                size_limit_reached=size_limit_reached,
+                total_requested_urls=len(urls),
             )
 
             logger.info(
