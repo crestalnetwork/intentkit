@@ -6,8 +6,7 @@ from typing import Annotated, Optional, TypedDict
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
-from cdp import Wallet
-from cdp.cdp import Cdp
+from cdp import CdpClient, EvmServerAccount
 from fastapi import (
     APIRouter,
     Body,
@@ -110,25 +109,45 @@ async def _process_agent_post_actions(
         and agent.skills.get("cdp")
         and agent.skills["cdp"].get("enabled")
     ):
-        # create the wallet
-        Cdp.configure(
-            api_key_name=config.cdp_api_key_name,
-            private_key=config.cdp_api_key_private_key.replace("\\n", "\n"),
-        )
-        network_id = agent.network_id or agent.cdp_network_id
-        wallet = Wallet.create(network_id=network_id)
-        wallet_data = wallet.export_data().to_dict()
-        wallet_data["default_address_id"] = wallet.default_address.address_id
-        if not agent_data:
-            agent_data = AgentData(id=agent.id, cdp_wallet_data=json.dumps(wallet_data))
-        else:
-            agent_data.cdp_wallet_data = json.dumps(wallet_data)
-        await agent_data.save()
-        logger.info(
-            "Wallet created for agent %s: %s",
-            agent.id,
-            wallet_data["default_address_id"],
-        )
+        # Create account using new CDP SDK API
+        try:
+            network_id = agent.network_id or agent.cdp_network_id
+
+            async with CdpClient(
+                api_key_id=config.cdp_api_key_name,
+                api_key_secret=config.cdp_api_key_private_key.replace("\\n", "\n"),
+            ) as cdp:
+                # Create a new account
+                account: EvmServerAccount = await cdp.evm.create_account()
+
+                # Export account data - use model_dump to get account data
+                account_data = account.model_dump()
+
+                # Create wallet_data structure that's compatible with existing code
+                wallet_data = {
+                    "account_data": account_data,
+                    "default_address_id": account.address,
+                    "network_id": network_id,
+                }
+
+            # Save or update AgentData with the new wallet information
+            if not agent_data:
+                agent_data = AgentData(
+                    id=agent.id, cdp_wallet_data=json.dumps(wallet_data)
+                )
+            else:
+                agent_data.cdp_wallet_data = json.dumps(wallet_data)
+
+            await agent_data.save()
+            logger.info("Account created for agent %s: %s", agent.id, account.address)
+
+        except Exception as e:
+            logger.error("Failed to create CDP account: %s", e)
+            # Set empty wallet_data to prevent error in notification if account creation failed
+            wallet_data = {
+                "default_address_id": "unknown",
+                "network_id": network_id,
+            }
 
     # Send Slack notification
     slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
