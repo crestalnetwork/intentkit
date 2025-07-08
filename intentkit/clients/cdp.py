@@ -32,9 +32,9 @@ class CdpClient:
         logger = logging.getLogger(__name__)
 
         # Get credentials from skill store system config
-        api_key_id = self._skill_store.get_system_config("CDP_API_KEY_ID")
-        api_key_secret = self._skill_store.get_system_config("CDP_API_KEY_SECRET")
-        wallet_secret = self._skill_store.get_system_config("CDP_WALLET_SECRET")
+        api_key_id = self._skill_store.get_system_config("cdp_api_key_id")
+        api_key_secret = self._skill_store.get_system_config("cdp_api_key_secret")
+        wallet_secret = self._skill_store.get_system_config("cdp_wallet_secret")
 
         address = None
 
