@@ -30,8 +30,8 @@ services:
       - DB_NAME=${POSTGRES_DB:-intentkit}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
-      - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
+      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
     ports:
       - "8000:8000"
@@ -52,8 +52,8 @@ services:
       - DB_NAME=${POSTGRES_DB:-intentkit}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
-      - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
+      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
       - INTERNAL_BASE_URL=http://api:8000
     command: python -m app.autonomous
@@ -73,8 +73,9 @@ services:
       - DB_NAME=${POSTGRES_DB:-intentkit}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
-      - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
+      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
+      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
     command: python -m app.scheduler
 
 volumes:

@@ -87,9 +87,6 @@ class Config:
         self.cdp_api_key_id = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret = self.load("CDP_API_KEY_SECRET")
         self.cdp_wallet_secret = self.load("CDP_WALLET_SECRET")
-        # CDP - Legacy 0.4.0 Configuration (fallback for migration)
-        self.cdp_api_key_name = self.load("CDP_API_KEY_NAME")
-        self.cdp_api_key_private_key = self.load("CDP_API_KEY_PRIVATE_KEY")
         # LLM providers
         self.openai_api_key = self.load("OPENAI_API_KEY")
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
