@@ -36,12 +36,6 @@ class CdpClient:
         api_key_secret = self._skill_store.get_system_config("CDP_API_KEY_SECRET")
         wallet_secret = self._skill_store.get_system_config("CDP_WALLET_SECRET")
 
-        # Extract API key ID from legacy format if needed
-        # Legacy format: organizations/.../apiKeys/actual-key-id
-        # New format expects just: actual-key-id
-        if api_key_id and "/apiKeys/" in api_key_id:
-            api_key_id = api_key_id.split("/apiKeys/")[-1]
-
         address = None
 
         # Attempt to override with any wallet-specific secret stored in wallet_data
