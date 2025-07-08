@@ -83,9 +83,10 @@ class Config:
         self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
         # Open API for agent
         self.open_api_base_url = self.load("OPEN_API_BASE_URL", "http://localhost:8000")
-        # CDP
-        self.cdp_api_key_name = self.load("CDP_API_KEY_NAME")
-        self.cdp_api_key_private_key = self.load("CDP_API_KEY_PRIVATE_KEY")
+        # CDP - AgentKit 0.6.0 Configuration
+        self.cdp_api_key_id = self.load("CDP_API_KEY_ID")
+        self.cdp_api_key_secret = self.load("CDP_API_KEY_SECRET")
+        self.cdp_wallet_secret = self.load("CDP_WALLET_SECRET")
         # LLM providers
         self.openai_api_key = self.load("OPENAI_API_KEY")
         self.deepseek_api_key = self.load("DEEPSEEK_API_KEY")
@@ -149,6 +150,7 @@ class Config:
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)
         logger.info("config loaded")
+
         # If the slack alert token exists, init it
         if self.slack_alert_token and self.slack_alert_channel:
             init_slack(self.slack_alert_token, self.slack_alert_channel)

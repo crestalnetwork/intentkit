@@ -114,8 +114,8 @@ async def _process_agent_post_actions(
             network_id = agent.network_id or agent.cdp_network_id
 
             async with CdpClient(
-                api_key_id=config.cdp_api_key_name,
-                api_key_secret=config.cdp_api_key_private_key.replace("\\n", "\n"),
+                api_key_id=config.cdp_api_key_id,
+                api_key_secret=config.cdp_api_key_secret,
             ) as cdp:
                 # Create a new account
                 account: EvmServerAccount = await cdp.evm.create_account()

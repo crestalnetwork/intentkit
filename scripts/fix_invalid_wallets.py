@@ -56,11 +56,11 @@ class WalletFixer:
         try:
             # Try to initialize the wallet provider with the address
             wallet_config = CdpEvmServerWalletProviderConfig(
-                api_key_id=config.cdp_api_key_name,
-                api_key_secret=config.cdp_api_key_private_key,
+                api_key_id=config.cdp_api_key_id,
+                api_key_secret=config.cdp_api_key_secret,
                 network_id=network_id,
                 address=address,
-                wallet_secret=None,  # We don't need the secret just to check if address exists
+                wallet_secret=config.cdp_wallet_secret,
             )
 
             # Try to create the wallet provider - this will fail if address doesn't exist

@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from typing import Dict, Optional
 
 from cdp import EvmServerAccount
@@ -32,22 +31,10 @@ class CdpClient:
 
         logger = logging.getLogger(__name__)
 
-        # Collect credentials from system-config first, then env vars as fallback
-        api_key_id = (
-            self._skill_store.get_system_config("cdp_api_key_name")
-            or os.getenv("CDP_API_KEY_ID")
-            or os.getenv("CDP_API_KEY_NAME")
-        )
-
-        api_key_secret = (
-            self._skill_store.get_system_config("cdp_api_key_private_key")
-            or os.getenv("CDP_API_KEY_SECRET")
-            or os.getenv("CDP_API_KEY_PRIVATE_KEY")
-        )
-
-        wallet_secret = self._skill_store.get_system_config(
-            "cdp_wallet_secret"
-        ) or os.getenv("CDP_WALLET_SECRET")
+        # Get credentials from skill store system config
+        api_key_id = self._skill_store.get_system_config("cdp_api_key_id")
+        api_key_secret = self._skill_store.get_system_config("cdp_api_key_secret")
+        wallet_secret = self._skill_store.get_system_config("cdp_wallet_secret")
 
         address = None
 
