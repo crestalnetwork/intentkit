@@ -160,7 +160,12 @@ class Config:
 
     def load(self, key, default=None):
         """Load a secret from the secrets map or env"""
-        return self.secrets.get(key, os.getenv(key, default))
+        value = self.secrets.get(key, os.getenv(key, default))
+        if value:
+            value = value.replace("\\n", "\n")
+        if value and value.startswith("'") and value.endswith("'"):
+            value = value[1:-1]
+        return value
 
 
 config: Config = Config()

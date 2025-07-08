@@ -4,240 +4,85 @@ This guide provides comprehensive information for Large Language Models (LLMs) w
 
 ## Project Overview
 
-IntentKit is an autonomous agent framework that enables creation and management of AI agents with capabilities including:
-- Blockchain interaction (EVM chains)
-- Social media management (Twitter, Telegram)
-- Extensible skill system
-- Multi-agent support
-- Custom skill integration
+IntentKit is an autonomous agent framework that enables creation and management of AI agents with capabilities.
 
 ## Architecture Understanding
 
-### Core Components
+1. **IntentKit Package** (`intentkit/`)
+   - The intentkit/ folder is published as a pip package.
+   - The core/ folder contains the agent system, driven by LangGraph.
+   - The models/ folder houses the entity models, most of it both have padantic models for memory use and sqlalchemy models for storage.
+   - The config/ folder contains the system level config, like database config, LLM provider api keys and skill provider api keys.
+   - The skills/ folder contains the skills system, driven by LangChain's BaseTool. LLM can call skills to fetch data, perform actions, or interact with the environment.
+   - The utils/ folder contains the utility functions, like logging, formatting, etc.
+   - The abstracts/ folder contains interfaces, for core/ and skills/ use.
 
-1. **Agent System** (`intentkit/core/`)
-   - Agents are autonomous entities with configurable personalities and capabilities
-   - Each agent has purpose, personality, principles, and custom prompts
-   - Agents maintain memory and conversation history
-   - Cost tracking and credit management per agent
+2. **IntentKit App** (`app/`)
+   - The app/ folder contains API server, autonomous runner, and background scheduler.
+   - User can use intentkit package in their own project for customization, or just start the intentkit app for default features.
 
-2. **Skills System** (`intentkit/skills/`)
-   - Modular capabilities that agents can use
-   - Base class: `IntentKitSkill` extends LangChain's `BaseTool`
-   - Skills have states: disabled, public, private
-   - Available skills include: blockchain (CDP), social media (Twitter), search, image processing, etc.
+3. **Operation or Temporary Scripts** (`scripts/`)
+   - Agent management scripts
+   - Manual scripts for potential use
+   - Migration scripts
 
-3. **Entrypoints** (`app/entrypoints/`)
-   - Multiple interfaces: web, Twitter, Telegram, API
-   - OpenAI-compatible API endpoint available
-   - Autonomous operation support
+4. **Integration Tests** (`tests/`)
+   - Core package testing in `tests/core/`
+   - API server testing in `tests/api/`
+   - Skill integration testing in `tests/skills/`
 
-4. **Models and Storage**
-   - PostgreSQL for persistent data
-   - Redis for caching and session management
-   - Agent configurations, credentials, memory, and skill states
+## Technology Stack
+- Package manager: uv, please use native `uv` command, do not use the `uv pip` command.
+- Lint: ruff, run `uv run ruff format & uv run ruff check --fix` after your final edit.
+- API framework: fastapi, Doc in https://fastapi.tiangolo.com/
+- DB ORM: SQLAlchemy 2.0, please check the 2.0 api for use, do not use the legacy way. Doc in https://docs.sqlalchemy.org/en/20/
+- Model: Pydantic V2, Also be careful not to use the obsolete V1 interface. Doc in https://docs.pydantic.dev/latest/
+- Testing Framework: pytest
 
-## Working with Agents
+## Rules
 
-### Agent Configuration Structure
+1. Always use the latest version of the new package.
+2. Always use English for code comments.
+3. Always use English to search.
 
-```yaml
-# Agent configuration fields
-purpose: "Primary objective of the agent"
-personality: "Character traits and behavior patterns"
-principles: "Core rules and ethical guidelines"
-prompt: "Main system prompt"
-prompt_append: "Critical rules emphasized at the end"
-```
+## Dev Guide
 
-### Prompt Composition
+### Skills Development
 
-The system composes prompts as:
-1. **System**: Combined `purpose` + `personality` + `principles` + `prompt`
-2. **Conversation History**: User/Assistant alternating messages
-3. **Current User Input**
-4. **System Append**: `prompt_append` (optional, high priority rules)
+1. Skills are in the `intentkit/skills/` folder. Each folder is a category. Each skill category can contain multiple skills. A category can be a theme or a brand.
+2. To avoid circular dependencies, Skills can only depend on the contents of models, abstracts, utils, and clients.
+3. The necessary elements in a skill category folder are as follows. For the paradigm of each element, you can refer to existing skills, such as skills/twitter
+   - `base.py`: Base class inherit `IntentKitSkill`. If there are functions that are common to this category, they can also be written in BaseClass. A common example is get_api_key
+   - Then every skill can have it's own file, with the same name as the skill. Key points:
+      - The skill class inherit BaseClass created in base.py
+      - The `name` attribute need a same prefix as the category name, such as `twitter_`, for uniqueness in the system.
+      - The `description` attribute is the description of the skill, which will be used in LLM to select the skill.
+      - The `args_schema` attribute is the pydantic model for the skill arguments.
+      - The `_arun` method is the main logic of the skill. There is special parameter `config: RunnableConfig`, which is used to pass the LangChain runnable config. There is function `context_from_config` in IntentKitSkill, can be used to get the context from the runnable config. In the _arun method, if there is any exception, just raise it, and the exception will be handled by the Agent. If the return value is not a string, you can document it in the description attribute.
+   - The `__init__.py` must have the function `async def get_skills( config: "Config", is_private: bool, store: SkillStoreABC, **_,) -> list[OpenAIBaseTool]`
+      - Config is inherit from `SkillConfig`, and the `states` is a dict, key is the skill name, value is the skill state. If the skill category have any other config fields need agent creator to set, they can be added to Config.
+      - If the skill is stateless, you can add a global _cache for it, to avoid re-create the skill object every time.
+   - A square image is needed in the category folder.
+   - Add schema.json file for the config, since the Config inherit from SkillConfig, you can check examples in exists skill category to find out the pattern.
 
-### Best Practices for Prompt Engineering
+## Ops Guide
 
-1. **Purpose**: Clear, specific objective
-2. **Personality**: Consistent character traits
-3. **Principles**: Non-negotiable rules and boundaries
-4. **Prompt**: Detailed instructions and context
-5. **Prompt Append**: Critical rules repeated for emphasis
+### Git Commit
+1. run `uv run ruff format && uv run ruff check --fix` before commit.
+2. When you generate git commit message, always start with one of feat/fix/chore/docs/test/refactor/improve. Title Format: `<type>: <subject>`, subject should start with lowercase. Only one-line needed, do not generate commit message body.
 
-## Skills Development
+### Github Pull Request
+1. If there are uncommited changes, add them and commit them.
+2. Push to remote branch.
+3. Pull origin/main, so you can summarize the changes for pull request title and description.
+4. Create a pull request with MCP tools.
 
-### Skill Structure
-
-```python
-class CustomSkill(IntentKitSkill):
-    name: str = "skill_name"
-    description: str = "What this skill does"
-    
-    def _run(self, **kwargs) -> str:
-        # Implementation
-        pass
-```
-
-### Skill Configuration
-
-```python
-class SkillConfig(TypedDict):
-    enabled: bool
-    states: Dict[str, SkillState]  # disabled, public, private
-    api_key_provider: str  # optional
-```
-
-### Available Skill Categories
-
-- **Blockchain**: CDP (Coinbase Developer Platform), wallet management
-- **Social Media**: Twitter, Telegram integration
-- **Data**: DeFiLlama, Dune Analytics, CryptoCompare
-- **Search**: Tavily, web scraping
-- **Media**: Image processing, audio generation
-- **Development**: GitHub integration
-- **System**: Common utilities
-
-## API Integration
-
-### Entrypoints
-
-1. **Web API** (`app/entrypoints/web.py`)
-2. **OpenAI Compatible** (`app/entrypoints/openai_compatible.py`)
-3. **Social Media**: Twitter, Telegram
-4. **Autonomous**: Self-directed operation
-
-### Authentication & Security
-
-- API key management per skill
-- User-specific configurations
-- Rate limiting and cost controls
-- Secure credential storage
-
-## Development Workflow
-
-### Setup
-
-```bash
-# Install dependencies
-uv sync
-
-# Environment configuration
-cp example.env .env
-# Edit .env with your API keys
-
-# Database setup
-# Configure PostgreSQL and Redis
-```
-
-### Agent Management
-
-```bash
-# Create agent
-cd scripts
-sh create.sh agent_name
-
-# Export configuration
-sh export.sh agent_name
-
-# Edit agent_name.yaml
-
-# Import updated configuration
-sh import.sh agent_name
-```
-
-### Testing
-
-- **Local API**: http://localhost:8000/redoc
-- **Direct API calls**: OpenAI-compatible endpoints
-
-## Error Handling
-
-### Common Issues
-
-1. **Rate Limiting**: `RateLimitExceeded` exception
-2. **Validation Errors**: Pydantic validation failures
-3. **Tool Errors**: Skill execution failures
-4. **Credit Exhaustion**: Insufficient credits for operations
-
-### Error Recovery
-
-- Graceful degradation when skills fail
-- Retry mechanisms for transient failures
-- User-friendly error messages
-- Logging and monitoring
-
-## Performance Considerations
-
-### Cost Management
-
-- Token usage tracking per agent
-- Credit-based billing system
-- Cost metrics: avg, min, max, percentile-based
-- Model selection based on cost/performance trade-offs
-
-### Optimization
-
-- Efficient prompt design
-- Skill state management
-- Memory optimization
-- Caching strategies
-
-## Security Guidelines
-
-1. **API Key Management**: Secure storage, rotation
-2. **Input Validation**: Sanitize all user inputs
-3. **Rate Limiting**: Prevent abuse
-4. **Access Control**: User-specific permissions
-5. **Audit Logging**: Track all operations
-
-## Monitoring and Debugging
-
-### Logging
-
-- Structured logging throughout the system
-- Agent-specific log contexts
-- Skill execution tracking
-- Error reporting and alerting
-
-### Metrics
-
-- Token usage and costs
-- Response times
-- Success/failure rates
-- User engagement metrics
-
-## Contributing
-
-### Adding New Skills
-
-1. Extend `IntentKitSkill` base class
-2. Implement required methods
-3. Add configuration schema
-4. Write tests
-5. Update documentation
-
-### Code Standards
-
-- Follow existing patterns
-- Use type hints
-- Write comprehensive tests
-- Document public APIs
-- Follow security best practices
-
-## Resources
-
-- **Documentation**: `docs/` directory
-- **API Reference**: http://localhost:8000/redoc
-- **Examples**: `scripts/` directory
-- **Skills Reference**: `intentkit/skills/`
-- **Architecture**: `docs/architecture.md`
-
-## Migration Notes
-
-- **Package Manager**: Migrated from Poetry to uv
-- **Environment Setup**: Delete `.venv` and run `uv sync`
-- **Compatibility**: Maintain backward compatibility for existing agents
-
-This guide should help LLMs understand the IntentKit framework structure, integration points, and best practices for working with autonomous agents and skills.
+### Github Release
+1. Please use gh command to do it.
+2. Make a `git pull` first.
+3. The release number rule is: pre-release is vX.X.X-devX, release is vX.X.X.
+4. Find the last version number in release or pre-release using `git tag`, diff origin/main with it, summarize the release note to build/changelog.md for later use. Calculate the version number of this release. Add a diff link to release note too, the from and to should be the version number.
+5. And also insert the release note to the beginning of CHANGELOG.md (This file contains all history release notes, don't use it in gh command)
+6. Made an extra git add, commit, push for new release notes changes.
+7. Construct `gh release create` command, calculate the next version number, use changelog.md as notes file in gh command.
+8. Use gh to do release only, don't create branch, tag, or pull request.
