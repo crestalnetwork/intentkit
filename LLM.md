@@ -68,7 +68,8 @@ IntentKit is an autonomous agent framework that enables creation and management 
 ## Ops Guide
 
 ### Git Commit
-When you generate git commit message, always start with one of feat/fix/chore/docs/test/refactor/improve. Title Format: `<type>: <subject>`, subject should start with lowercase. Only one-line needed, do not generate commit message body.
+1. run `uv run ruff format && uv run ruff check --fix` before commit.
+2. When you generate git commit message, always start with one of feat/fix/chore/docs/test/refactor/improve. Title Format: `<type>: <subject>`, subject should start with lowercase. Only one-line needed, do not generate commit message body.
 
 ### Github Pull Request
 1. If there are uncommited changes, add them and commit them.
