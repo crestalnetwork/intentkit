@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,6 +32,7 @@ services:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
       - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
     ports:
       - "8000:8000"
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000
@@ -53,6 +54,7 @@ services:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - CDP_API_KEY_NAME=${CDP_API_KEY_NAME}
       - CDP_API_KEY_PRIVATE_KEY=${CDP_API_KEY_PRIVATE_KEY}
+      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
       - INTERNAL_BASE_URL=http://api:8000
     command: python -m app.autonomous
 

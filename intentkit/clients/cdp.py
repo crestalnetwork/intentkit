@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from typing import Dict, Optional
 
 from cdp import EvmServerAccount
@@ -10,6 +9,7 @@ from coinbase_agentkit import (
 )
 
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 
@@ -32,22 +32,29 @@ class CdpClient:
 
         logger = logging.getLogger(__name__)
 
-        # Collect credentials from system-config first, then env vars as fallback
+        # Get credentials from config (which handles AWS secrets and env vars)
         api_key_id = (
             self._skill_store.get_system_config("cdp_api_key_name")
-            or os.getenv("CDP_API_KEY_ID")
-            or os.getenv("CDP_API_KEY_NAME")
+            or config.cdp_api_key_id
+            or config.cdp_api_key_name
         )
+
+        # Extract API key ID from legacy format if needed
+        # Legacy format: organizations/.../apiKeys/actual-key-id
+        # New format expects just: actual-key-id
+        if api_key_id and "/apiKeys/" in api_key_id:
+            api_key_id = api_key_id.split("/apiKeys/")[-1]
 
         api_key_secret = (
             self._skill_store.get_system_config("cdp_api_key_private_key")
-            or os.getenv("CDP_API_KEY_SECRET")
-            or os.getenv("CDP_API_KEY_PRIVATE_KEY")
+            or config.cdp_api_key_secret
+            or config.cdp_api_key_private_key
         )
 
-        wallet_secret = self._skill_store.get_system_config(
-            "cdp_wallet_secret"
-        ) or os.getenv("CDP_WALLET_SECRET")
+        wallet_secret = (
+            self._skill_store.get_system_config("cdp_wallet_secret")
+            or config.cdp_wallet_secret
+        )
 
         address = None
 
