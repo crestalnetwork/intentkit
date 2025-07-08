@@ -81,7 +81,22 @@ class WebsiteIndexer(WebScraperBaseTool):
         """Fetch robots.txt content."""
         robots_url = urljoin(base_url, "/robots.txt")
 
-        async with httpx.AsyncClient(timeout=30) as client:
+        # Import headers from utils
+        from intentkit.skills.web_scraper.utils import DEFAULT_HEADERS, FALLBACK_HEADERS
+
+        # Try with primary headers first
+        async with httpx.AsyncClient(timeout=30, headers=DEFAULT_HEADERS) as client:
+            try:
+                response = await client.get(robots_url)
+                if response.status_code == 200:
+                    return response.text
+            except Exception as e:
+                logger.warning(
+                    f"Primary headers failed for robots.txt from {robots_url}: {e}"
+                )
+
+        # Try with fallback headers
+        async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:
             try:
                 response = await client.get(robots_url)
                 if response.status_code == 200:
@@ -119,7 +134,22 @@ class WebsiteIndexer(WebScraperBaseTool):
 
     async def _fetch_sitemap_content(self, sitemap_url: str) -> str:
         """Fetch sitemap XML content."""
-        async with httpx.AsyncClient(timeout=30) as client:
+        # Import headers from utils
+        from intentkit.skills.web_scraper.utils import DEFAULT_HEADERS, FALLBACK_HEADERS
+
+        # Try with primary headers first
+        async with httpx.AsyncClient(timeout=30, headers=DEFAULT_HEADERS) as client:
+            try:
+                response = await client.get(sitemap_url)
+                if response.status_code == 200:
+                    return response.text
+            except Exception as e:
+                logger.warning(
+                    f"Primary headers failed for sitemap from {sitemap_url}: {e}"
+                )
+
+        # Try with fallback headers
+        async with httpx.AsyncClient(timeout=30, headers=FALLBACK_HEADERS) as client:
             try:
                 response = await client.get(sitemap_url)
                 if response.status_code == 200:

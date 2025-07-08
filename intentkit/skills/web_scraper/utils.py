@@ -29,6 +29,31 @@ DEFAULT_REQUESTS_PER_SECOND = 2
 MAX_CONTENT_SIZE_MB = 10  # 10 MB limit
 MAX_CONTENT_SIZE_BYTES = MAX_CONTENT_SIZE_MB * 1024 * 1024
 
+# HTTP Headers to bypass Cloudflare and other bot protection
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
+}
+
+# Alternative headers for fallback when primary headers fail
+FALLBACK_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive",
+}
+
 # Storage keys
 VECTOR_STORE_KEY_PREFIX = "vector_store"
 METADATA_KEY_PREFIX = "indexed_urls"
@@ -523,20 +548,38 @@ async def scrape_and_index_urls(
         try:
             logger.info(f"[{agent_id}] Processing URL {i + 1}/{len(valid_urls)}: {url}")
 
-            # Load single URL
+            # Load single URL with enhanced headers
             loader = WebBaseLoader(
                 web_paths=[url],
                 requests_per_second=requests_per_second,
             )
 
-            # Configure loader
+            # Configure loader with enhanced headers to bypass bot protection
             loader.requests_kwargs = {
                 "verify": True,
                 "timeout": DEFAULT_REQUEST_TIMEOUT,
+                "headers": DEFAULT_HEADERS,
             }
 
-            # Scrape the URL
-            documents = await asyncio.to_thread(loader.load)
+            # Scrape the URL with retry logic
+            documents = None
+            try:
+                documents = await asyncio.to_thread(loader.load)
+            except Exception as primary_error:
+                # If primary headers fail, try fallback headers
+                logger.warning(
+                    f"[{agent_id}] Primary headers failed for {url}, trying fallback: {primary_error}"
+                )
+
+                loader.requests_kwargs["headers"] = FALLBACK_HEADERS
+                try:
+                    documents = await asyncio.to_thread(loader.load)
+                    logger.info(f"[{agent_id}] Fallback headers succeeded for {url}")
+                except Exception as fallback_error:
+                    logger.error(
+                        f"[{agent_id}] Both header sets failed for {url}: {fallback_error}"
+                    )
+                    raise fallback_error
 
             if not documents:
                 logger.warning(f"[{agent_id}] No content extracted from {url}")
