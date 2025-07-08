@@ -9,7 +9,6 @@ from coinbase_agentkit import (
 )
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 
@@ -32,29 +31,16 @@ class CdpClient:
 
         logger = logging.getLogger(__name__)
 
-        # Get credentials from config (which handles AWS secrets and env vars)
-        api_key_id = (
-            self._skill_store.get_system_config("cdp_api_key_name")
-            or config.cdp_api_key_id
-            or config.cdp_api_key_name
-        )
+        # Get credentials from skill store system config
+        api_key_id = self._skill_store.get_system_config("CDP_API_KEY_ID")
+        api_key_secret = self._skill_store.get_system_config("CDP_API_KEY_SECRET")
+        wallet_secret = self._skill_store.get_system_config("CDP_WALLET_SECRET")
 
         # Extract API key ID from legacy format if needed
         # Legacy format: organizations/.../apiKeys/actual-key-id
         # New format expects just: actual-key-id
         if api_key_id and "/apiKeys/" in api_key_id:
             api_key_id = api_key_id.split("/apiKeys/")[-1]
-
-        api_key_secret = (
-            self._skill_store.get_system_config("cdp_api_key_private_key")
-            or config.cdp_api_key_secret
-            or config.cdp_api_key_private_key
-        )
-
-        wallet_secret = (
-            self._skill_store.get_system_config("cdp_wallet_secret")
-            or config.cdp_wallet_secret
-        )
 
         address = None
 

@@ -154,33 +154,12 @@ class Config:
         setup_logging(self.env, self.debug)
         logger.info("config loaded")
 
-        # Set up CDP environment variables for AgentKit 0.6.0
-        # AgentKit expects these as environment variables, so we set them from our config
-        self._setup_cdp_environment_variables()
-
         # If the slack alert token exists, init it
         if self.slack_alert_token and self.slack_alert_channel:
             init_slack(self.slack_alert_token, self.slack_alert_channel)
         # If the AWS S3 bucket and CDN URL exist, init it
         if self.aws_s3_bucket and self.aws_s3_cdn_url:
             init_s3(self.aws_s3_bucket, self.aws_s3_cdn_url, self.env)
-
-    def _setup_cdp_environment_variables(self):
-        """Set up CDP environment variables for AgentKit 0.6.0 compatibility."""
-        # Get the API key ID, extracting from legacy format if needed
-        api_key_id = self.cdp_api_key_id or self.cdp_api_key_name
-        if api_key_id and "/apiKeys/" in api_key_id:
-            api_key_id = api_key_id.split("/apiKeys/")[-1]
-
-        # Set environment variables that AgentKit expects
-        if api_key_id:
-            os.environ["CDP_API_KEY_ID"] = api_key_id
-        if self.cdp_api_key_secret or self.cdp_api_key_private_key:
-            os.environ["CDP_API_KEY_SECRET"] = (
-                self.cdp_api_key_secret or self.cdp_api_key_private_key
-            )
-        if self.cdp_wallet_secret:
-            os.environ["CDP_WALLET_SECRET"] = self.cdp_wallet_secret
 
     def load(self, key, default=None):
         """Load a secret from the secrets map or env"""
