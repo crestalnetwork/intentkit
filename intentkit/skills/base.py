@@ -57,6 +57,7 @@ class SkillContext(BaseModel):
             raise ValueError(
                 f"Skill {self.skill_category} not found in agent {self.agent_id}"
             )
+        return config
 
 
 class IntentKitSkill(BaseTool):
@@ -180,6 +181,8 @@ class IntentKitSkill(BaseTool):
         if "configurable" not in runner_config:
             raise ValueError("configurable not in runner_config")
         configurable = runner_config["configurable"]
+        if not configurable:
+            raise ValueError("configurable in runnable config is empty")
         return SkillContext(
             skill_category=self.category,
             agent_id=configurable.get("agent_id"),

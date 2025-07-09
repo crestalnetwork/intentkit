@@ -140,6 +140,12 @@
       "title": "Supabase Anon Key",
       "description": "Your Supabase project's anon/public key",
       "format": "password"
+    },
+    "public_write_tables": {
+      "type": "string",
+      "title": "Public Write Tables",
+      "description": "Add tables split by comma, when insert,update,upsert,delete enabled in public use, they can only use tables from this list. When skills in owner mode, this list will not limit skills.",
+      "default": ""
     }
   },
   "required": [

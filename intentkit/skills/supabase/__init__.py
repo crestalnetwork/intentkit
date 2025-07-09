@@ -34,6 +34,7 @@ class Config(SkillConfig):
     states: SkillStates
     supabase_url: str
     supabase_key: str
+    public_write_tables: str = ""
 
 
 async def get_skills(

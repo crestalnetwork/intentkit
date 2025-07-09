@@ -1,9 +1,10 @@
 from typing import Type
 
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.base import IntentKitSkill, SkillContext
 
 
 class SupabaseBaseTool(IntentKitSkill):
@@ -41,3 +42,31 @@ class SupabaseBaseTool(IntentKitSkill):
             raise ValueError("supabase_key is required in config")
 
         return supabase_url, supabase_key
+
+    def validate_table_access(self, table: str, context: SkillContext) -> None:
+        """Validate if the table can be accessed for write operations in public mode.
+
+        Args:
+            table: The table name to validate
+            context: The skill context containing configuration and mode info
+
+        Raises:
+            ToolException: If table access is not allowed in public mode
+        """
+        # If in private mode (owner mode), no restrictions apply
+        if context.is_private:
+            return
+
+        # In public mode, check if table is in allowed list
+        public_write_tables = context.config.get("public_write_tables", "")
+        if not public_write_tables:
+            return
+
+        allowed_tables = [
+            t.strip() for t in public_write_tables.split(",") if t.strip()
+        ]
+        if table not in allowed_tables:
+            raise ToolException(
+                f"Table '{table}' is not allowed for public write operations. "
+                f"Allowed tables: {', '.join(allowed_tables)}"
+            )

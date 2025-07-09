@@ -47,6 +47,10 @@ class SupabaseInsertData(SupabaseBaseTool):
     ):
         try:
             context = self.context_from_config(config)
+
+            # Validate table access for public mode
+            self.validate_table_access(table, context)
+
             supabase_url, supabase_key = self.get_supabase_config(context.config)
 
             # Create Supabase client
