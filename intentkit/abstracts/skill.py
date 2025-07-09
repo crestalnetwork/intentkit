@@ -93,6 +93,20 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
+    async def delete_agent_skill_data(
+        agent_id: str, skill: str, key: str
+    ) -> None:
+        """Delete skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
     async def get_thread_skill_data(
         thread_id: str, skill: str, key: str
     ) -> Optional[Dict[str, Any]]:

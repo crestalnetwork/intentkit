@@ -6,6 +6,7 @@ from typing import TypedDict
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
+from intentkit.skills.firecrawl.clear import FirecrawlClearIndexedContent
 from intentkit.skills.firecrawl.crawl import FirecrawlCrawl
 from intentkit.skills.firecrawl.query import FirecrawlQueryIndexedContent
 from intentkit.skills.firecrawl.scrape import FirecrawlScrape
@@ -20,6 +21,7 @@ class SkillStates(TypedDict):
     firecrawl_scrape: SkillState
     firecrawl_crawl: SkillState
     firecrawl_query_indexed_content: SkillState
+    firecrawl_clear_indexed_content: SkillState
 
 
 class Config(SkillConfig):
@@ -92,6 +94,12 @@ def get_firecrawl_skill(
     elif name == "firecrawl_query_indexed_content":
         if name not in _cache:
             _cache[name] = FirecrawlQueryIndexedContent(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "firecrawl_clear_indexed_content":
+        if name not in _cache:
+            _cache[name] = FirecrawlClearIndexedContent(
                 skill_store=store,
             )
         return _cache[name]
