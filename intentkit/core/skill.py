@@ -79,6 +79,17 @@ class SkillStore(SkillStoreABC):
         await skill_data.save()
 
     @staticmethod
+    async def delete_agent_skill_data(agent_id: str, skill: str, key: str) -> None:
+        """Delete skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+        """
+        await AgentSkillData.delete(agent_id, skill, key)
+
+    @staticmethod
     async def get_thread_skill_data(
         thread_id: str, skill: str, key: str
     ) -> Optional[Dict[str, Any]]:

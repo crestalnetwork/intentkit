@@ -37,6 +37,14 @@ Queries previously indexed Firecrawl content using semantic search.
 - `query` (required): The search query
 - `limit` (optional): Maximum number of results to return (1-10, default: 4)
 
+### 4. firecrawl_clear_indexed_content
+Clears all previously indexed Firecrawl content from the vector store.
+
+**Parameters:**
+- `confirm` (required): Must be set to true to confirm the deletion (default: false)
+
+**Note:** This action is permanent and cannot be undone. Use when you want to start fresh with new content.
+
 ## API Key Configuration
 Set your Firecrawl API key as an environment variable:
 ```bash
@@ -53,7 +61,8 @@ export FIRECRAWL_API_KEY=fc-your-api-key-here
      "skills": [
        "firecrawl_scrape",
        "firecrawl_crawl", 
-       "firecrawl_query_indexed_content"
+       "firecrawl_query_indexed_content",
+       "firecrawl_clear_indexed_content"
      ]
    }
    ```
@@ -119,6 +128,30 @@ Prompt: "Use firecrawl_query_indexed_content to search for 'democratize finance'
 - Relevant content retrieved from Firecrawl's independent vector store
 - Results tagged with [Firecrawl Scrape] or [Firecrawl Crawl]
 - Source URLs and metadata included
+
+### Step 7: Test Clear Indexed Content
+
+**Test clearing all indexed content:**
+```
+Prompt: "Use firecrawl_clear_indexed_content with confirm=true to clear all indexed content"
+```
+
+**Expected Result:**
+- All indexed content removed from vector store
+- Confirmation message displayed
+- Subsequent queries return no results
+
+### Step 8: Test Re-indexing After Clear
+
+**Test that content can be re-indexed after clearing:**
+```
+Prompt: "Use firecrawl_scrape to scrape https://example.com and index the content"
+```
+
+**Expected Result:**
+- Content successfully scraped and indexed
+- Fresh vector store created
+- Content available for querying again
 
 ## Common Use Cases
 
