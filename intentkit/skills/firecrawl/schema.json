@@ -68,6 +68,22 @@
           ],
           "description": "Query previously indexed Firecrawl content to find relevant information and answer questions. Use this to search through content that was scraped and indexed using Firecrawl tools.",
           "default": "private"
+        },
+        "firecrawl_clear_indexed_content": {
+          "type": "string",
+          "title": "Clear Indexed Content",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Clear all previously indexed Firecrawl content from the vector store. This will permanently delete all indexed content and cannot be undone. Use this tool when you want to start fresh with new content.",
+          "default": "private"
         }
       },
       "description": "States for each Firecrawl skill (disabled, public, or private)"

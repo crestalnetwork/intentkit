@@ -1,11 +1,9 @@
 """Utilities for Firecrawl skill content indexing and querying."""
 
 import logging
-import pickle
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-import faiss
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -77,46 +75,52 @@ class FirecrawlVectorStoreManager:
             openai_api_key=openai_api_key, model="text-embedding-3-small"
         )
 
-    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, bytes]:
-        """Encode FAISS vector store to bytes for storage."""
+    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, str]:
+        """Encode FAISS vector store to base64 for storage (compatible with web_scraper)."""
+        import base64
+        import os
+        import tempfile
+
         try:
-            # Serialize the index
-            index_bytes = faiss.serialize_index(vector_store.index)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                vector_store.save_local(temp_dir)
 
-            # Serialize the docstore and index_to_docstore_id
-            docstore_bytes = pickle.dumps(vector_store.docstore)
-            index_to_docstore_bytes = pickle.dumps(vector_store.index_to_docstore_id)
+                encoded_files = {}
+                for filename in os.listdir(temp_dir):
+                    file_path = os.path.join(temp_dir, filename)
+                    if os.path.isfile(file_path):
+                        with open(file_path, "rb") as f:
+                            encoded_files[filename] = base64.b64encode(f.read()).decode(
+                                "utf-8"
+                            )
 
-            return {
-                "index": index_bytes,
-                "docstore": docstore_bytes,
-                "index_to_docstore": index_to_docstore_bytes,
-            }
+                return encoded_files
         except Exception as e:
             logger.error(f"Error encoding vector store: {e}")
             raise
 
     def decode_vector_store(
-        self, faiss_data: Dict[str, bytes], embeddings: OpenAIEmbeddings
+        self, encoded_files: Dict[str, str], embeddings: OpenAIEmbeddings
     ) -> FAISS:
-        """Decode FAISS vector store from stored bytes."""
+        """Decode base64 files back to FAISS vector store (compatible with web_scraper)."""
+        import base64
+        import os
+        import tempfile
+
         try:
-            # Deserialize the index
-            index = faiss.deserialize_index(faiss_data["index"])
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Decode and write files
+                for filename, encoded_content in encoded_files.items():
+                    file_path = os.path.join(temp_dir, filename)
+                    with open(file_path, "wb") as f:
+                        f.write(base64.b64decode(encoded_content))
 
-            # Deserialize the docstore and index_to_docstore_id
-            docstore = pickle.loads(faiss_data["docstore"])
-            index_to_docstore_id = pickle.loads(faiss_data["index_to_docstore"])
-
-            # Create FAISS vector store
-            vector_store = FAISS(
-                embedding_function=embeddings,
-                index=index,
-                docstore=docstore,
-                index_to_docstore_id=index_to_docstore_id,
-            )
-
-            return vector_store
+                # Load vector store
+                return FAISS.load_local(
+                    temp_dir,
+                    embeddings,
+                    allow_dangerous_deserialization=True,
+                )
         except Exception as e:
             logger.error(f"Error decoding vector store: {e}")
             raise
@@ -124,9 +128,9 @@ class FirecrawlVectorStoreManager:
     async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
         """Load existing vector store for an agent."""
         try:
-            vector_store_key = f"firecrawl_vector_store_{agent_id}"
+            vector_store_key = f"vector_store_{agent_id}"
             stored_data = await self.skill_store.get_agent_skill_data(
-                agent_id, "firecrawl", vector_store_key
+                agent_id, "web_scraper", vector_store_key
             )
 
             if not stored_data or "faiss_files" not in stored_data:
@@ -139,14 +143,27 @@ class FirecrawlVectorStoreManager:
             logger.error(f"Error loading vector store for agent {agent_id}: {e}")
             return None
 
-    async def save_vector_store(self, agent_id: str, vector_store: FAISS) -> None:
-        """Save vector store for an agent."""
+    async def save_vector_store(
+        self,
+        agent_id: str,
+        vector_store: FAISS,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+    ) -> None:
+        """Save vector store for an agent (compatible with web_scraper format)."""
         try:
-            vector_store_key = f"firecrawl_vector_store_{agent_id}"
-            encoded_data = self.encode_vector_store(vector_store)
+            vector_store_key = f"vector_store_{agent_id}"
+            encoded_files = self.encode_vector_store(vector_store)
+
+            # Use the same data structure as web_scraper
+            storage_data = {
+                "faiss_files": encoded_files,
+                "chunk_size": chunk_size,
+                "chunk_overlap": chunk_overlap,
+            }
 
             await self.skill_store.save_agent_skill_data(
-                agent_id, "firecrawl", vector_store_key, {"faiss_files": encoded_data}
+                agent_id, "web_scraper", vector_store_key, storage_data
             )
 
         except Exception as e:
@@ -176,9 +193,9 @@ class FirecrawlMetadataManager:
     ) -> None:
         """Update metadata for an agent."""
         try:
-            metadata_key = f"firecrawl_metadata_{agent_id}"
+            metadata_key = f"indexed_urls_{agent_id}"
             await self.skill_store.save_agent_skill_data(
-                agent_id, "firecrawl", metadata_key, new_metadata
+                agent_id, "web_scraper", metadata_key, new_metadata
             )
         except Exception as e:
             logger.error(f"Error updating metadata for agent {agent_id}: {e}")
@@ -235,7 +252,9 @@ async def index_documents(
             was_merged = False
 
         # Save the vector store
-        await vs_manager.save_vector_store(agent_id, vector_store)
+        await vs_manager.save_vector_store(
+            agent_id, vector_store, chunk_size, chunk_overlap
+        )
 
         logger.info(
             f"Successfully indexed {len(split_docs)} chunks for agent {agent_id}"

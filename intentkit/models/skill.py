@@ -173,6 +173,25 @@ class AgentSkillData(AgentSkillDataCreate):
             return result.data if result else None
 
     @classmethod
+    async def delete(cls, agent_id: str, skill: str, key: str) -> None:
+        """Delete skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+        """
+        async with get_session() as db:
+            await db.execute(
+                delete(AgentSkillDataTable).where(
+                    AgentSkillDataTable.agent_id == agent_id,
+                    AgentSkillDataTable.skill == skill,
+                    AgentSkillDataTable.key == key,
+                )
+            )
+            await db.commit()
+
+    @classmethod
     async def clean_data(cls, agent_id: str):
         """Clean all skill data for an agent.
 
