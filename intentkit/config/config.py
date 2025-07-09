@@ -121,6 +121,7 @@ class Config:
         self.moralis_api_key = self.load("MORALIS_API_KEY")
         self.tavily_api_key = self.load("TAVILY_API_KEY")
         self.cookiefun_api_key = self.load("COOKIEFUN_API_KEY")
+        self.firecrawl_api_key = self.load("FIRECRAWL_API_KEY")
         # Sentry
         self.sentry_dsn = self.load("SENTRY_DSN")
         self.sentry_sample_rate = float(self.load("SENTRY_SAMPLE_RATE", "0.1"))
