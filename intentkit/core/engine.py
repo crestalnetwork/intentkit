@@ -552,6 +552,7 @@ async def stream_agent(message: ChatMessageCreate):
             "user_id": input.user_id,
             "app_id": input.app_id,
             "entrypoint": input.author_type,
+            "is_private": is_private,
             "payer": payer if payment_enabled else None,
         },
         "recursion_limit": recursion_limit,

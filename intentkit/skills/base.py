@@ -32,8 +32,11 @@ class SkillConfig(TypedDict):
 class SkillContext(BaseModel):
     agent: Agent
     config: Dict[str, Any]
-    user_id: Optional[str]
+    user_id: Optional[str] = None
+    chat_id: Optional[str] = None
+    app_id: Optional[str] = None
     entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
+    is_private: bool
 
 
 class IntentKitSkill(BaseTool):
@@ -156,9 +159,10 @@ class IntentKitSkill(BaseTool):
     def context_from_config(self, runner_config: RunnableConfig) -> SkillContext:
         if "configurable" not in runner_config:
             raise ValueError("configurable not in runner_config")
-        if "agent" not in runner_config["configurable"]:
+        configurable = runner_config["configurable"]
+        if "agent" not in configurable:
             raise ValueError("agent not in runner_config['configurable']")
-        agent: Agent = runner_config["configurable"].get("agent")
+        agent: Agent = configurable.get("agent")
         config = None
         if agent.skills:
             config = agent.skills.get(self.category)
@@ -169,6 +173,9 @@ class IntentKitSkill(BaseTool):
         return SkillContext(
             agent=agent,
             config=config,
-            user_id=runner_config["configurable"].get("user_id"),
-            entrypoint=runner_config["configurable"].get("entrypoint"),
+            user_id=configurable.get("user_id"),
+            app_id=configurable.get("app_id"),
+            chat_id=configurable.get("chat_id"),
+            entrypoint=configurable.get("entrypoint"),
+            is_private=configurable.get("is_private"),
         )
