@@ -539,6 +539,10 @@
           "title": "Web Scraper & Content Indexing",
           "$ref": "../skills/web_scraper/schema.json"
         },
+        "firecrawl": {
+          "title": "Firecrawl Web Scraping",
+          "$ref": "../skills/firecrawl/schema.json"
+        },
         "aixbt": {
           "title": "AIXBT",
           "$ref": "../skills/aixbt/schema.json"
