@@ -129,7 +129,7 @@ class TokenExecute(LiFiBaseTool):
 
             # Get agent context for CDP wallet
             context = self.context_from_config(config)
-            agent_id = context.agent.id
+            agent_id = context.agent_id
 
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"

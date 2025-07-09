@@ -39,7 +39,7 @@ class TwitterLikeTweet(TwitterBaseTool):
         try:
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -48,7 +48,7 @@ class TwitterLikeTweet(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id, max_requests=100, interval=1440
+                    context.agent_id, max_requests=100, interval=1440
                 )
 
             # Like the tweet using tweepy client
@@ -62,4 +62,4 @@ class TwitterLikeTweet(TwitterBaseTool):
 
         except Exception as e:
             logger.error(f"Error liking tweet: {str(e)}")
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

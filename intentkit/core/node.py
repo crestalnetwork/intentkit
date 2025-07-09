@@ -25,6 +25,7 @@ from pydantic import BaseModel
 
 from intentkit.abstracts.graph import AgentError, AgentState
 from intentkit.core.credit import skill_cost
+from intentkit.models.agent import Agent
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.skill import Skill
 
@@ -202,7 +203,8 @@ class PostModelNode(RunnableCallable):
             return state_update
         logger.debug(f"last: {messages[-1]}")
         msg = messages[-1]
-        agent = cfg.get("agent")
+        agent_id = cfg.get("agent_id")
+        agent = await Agent.get(agent_id)
         account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         if hasattr(msg, "tool_calls") and msg.tool_calls:
             for tool_call in msg.tool_calls:

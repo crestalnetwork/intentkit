@@ -109,7 +109,7 @@ class DALLEImageGeneration(OpenAIBaseTool):
             image_url = image_url.strip('"')
 
             # Generate a key with agent ID as prefix
-            image_key = f"{context.agent.id}/dalle/{job_id}"
+            image_key = f"{context.agent_id}/dalle/{job_id}"
 
             # Store the image and get the CDN URL
             stored_url = await store_image(image_url, image_key)

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.0-dev.11
+
+### Documentation
+- Updated LLM integration guide and config documentation
+- Enhanced developer documentation for better clarity
+
+### Chores
+- General maintenance and cleanup
+
 ## v0.5.0
 
 ### Breaking Changes

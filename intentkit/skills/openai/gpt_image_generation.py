@@ -133,7 +133,7 @@ class GPTImageGeneration(OpenAIBaseTool):
             image_bytes = base64.b64decode(base64_image)
 
             # Generate a key with agent ID as prefix
-            image_key = f"{context.agent.id}/gpt-image/{job_id}"
+            image_key = f"{context.agent_id}/gpt-image/{job_id}"
 
             # Store the image bytes and get the CDN URL
             stored_url = await store_image_bytes(image_bytes, image_key, content_type)

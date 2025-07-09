@@ -81,7 +81,7 @@ class TextToSpeech(UnrealSpeechBaseTool):
         # If no API key in config, try to get it from skill store
         if not api_key:
             try:
-                agent_id = context.agent.id if context and context.agent else "default"
+                agent_id = context.agent_id
                 api_key_data = await self.skill_store.get_agent_data(
                     agent_id, "unrealspeech_api_key"
                 )

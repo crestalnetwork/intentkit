@@ -1,10 +1,9 @@
 """Base class for token-related skills."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import aiohttp
-from langchain_core.runnables import RunnableConfig
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill, SkillContext
@@ -41,43 +40,6 @@ class TokenBaseTool(IntentKitSkill):
         if skill_config.get("api_key_provider") == "agent_owner":
             return skill_config.get("api_key")
         return self.skill_store.get_system_config("moralis_api_key")
-
-    def context_from_config(self, config: Optional[RunnableConfig] = None) -> Any:
-        """Extract context from the runnable config."""
-        if not config:
-            logger.error("No config provided to context_from_config")
-            return None
-
-        if "configurable" not in config:
-            logger.error("'configurable' not in config")
-            return None
-
-        if "agent" not in config["configurable"]:
-            logger.error("'agent' not in config['configurable']")
-            return None
-
-        agent = config["configurable"].get("agent")
-        category_config = None
-
-        if agent.skills:
-            category_config = agent.skills.get(self.category)
-
-        if not category_config:
-            category_config = getattr(agent, self.category + "_config", {})
-
-        if not category_config:
-            category_config = {}
-
-        from intentkit.skills.base import SkillContext
-
-        context = SkillContext(
-            agent=agent,
-            config=category_config,
-            user_id=config["configurable"].get("user_id"),
-            entrypoint=config["configurable"].get("entrypoint"),
-        )
-
-        return context
 
     def _prepare_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Convert boolean values to lowercase strings for API compatibility.

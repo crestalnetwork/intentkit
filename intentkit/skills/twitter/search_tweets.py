@@ -41,7 +41,7 @@ class TwitterSearchTweets(TwitterBaseTool):
         try:
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -50,12 +50,12 @@ class TwitterSearchTweets(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id, max_requests=3, interval=60 * 24
+                    context.agent_id, max_requests=3, interval=60 * 24
                 )
 
             # Get since_id from store to avoid duplicate results
             last = await self.skill_store.get_agent_skill_data(
-                context.agent.id, self.name, query
+                context.agent_id, self.name, query
             )
             last = last or {}
             since_id = last.get("since_id")
@@ -105,11 +105,11 @@ class TwitterSearchTweets(TwitterBaseTool):
                 last["since_id"] = tweets["meta"]["newest_id"]
                 last["timestamp"] = datetime.datetime.now().isoformat()
                 await self.skill_store.save_agent_skill_data(
-                    context.agent.id, self.name, query, last
+                    context.agent_id, self.name, query, last
                 )
 
             return tweets
 
         except Exception as e:
             logger.error(f"Error searching tweets: {str(e)}")
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

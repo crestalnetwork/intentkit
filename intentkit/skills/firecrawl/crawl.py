@@ -302,21 +302,13 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                                     "language", ""
                                                 ),
                                                 "source_type": "firecrawl_crawl",
-                                                "indexed_at": str(
-                                                    context.agent.id
-                                                    if context and context.agent
-                                                    else "unknown"
-                                                ),
+                                                "indexed_at": str(context.agent_id),
                                             },
                                         )
                                         documents.append(document)
 
                                 # Get agent ID for indexing
-                                agent_id = (
-                                    context.agent.id
-                                    if context and context.agent
-                                    else None
-                                )
+                                agent_id = context.agent_id
                                 if agent_id and documents:
                                     # Index all documents
                                     total_chunks, was_merged = await index_documents(

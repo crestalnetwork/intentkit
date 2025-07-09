@@ -39,7 +39,7 @@ class TwitterRetweet(TwitterBaseTool):
         try:
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -48,7 +48,7 @@ class TwitterRetweet(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id, max_requests=5, interval=15
+                    context.agent_id, max_requests=5, interval=15
                 )
 
             # Get authenticated user's ID
@@ -73,4 +73,4 @@ class TwitterRetweet(TwitterBaseTool):
 
         except Exception as e:
             logger.error(f"Error retweeting: {str(e)}")
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

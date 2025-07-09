@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Supabase",
+  "description": "Integration with Supabase backend-as-a-service platform enabling database operations and Edge Function invocations",
+  "x-icon": "https://ai.service.crestal.dev/skills/supabase/supabase.png",
+  "x-tags": [
+    "Database",
+    "Backend"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "fetch_data": {
+          "type": "string",
+          "title": "Fetch Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Fetch data from Supabase tables with filtering, ordering, and pagination support",
+          "default": "disabled"
+        },
+        "insert_data": {
+          "type": "string",
+          "title": "Insert Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Insert new records into Supabase tables",
+          "default": "disabled"
+        },
+        "update_data": {
+          "type": "string",
+          "title": "Update Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Update existing records in Supabase tables based on filter conditions",
+          "default": "disabled"
+        },
+        "upsert_data": {
+          "type": "string",
+          "title": "Upsert Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Insert or update records in Supabase tables based on conflict resolution",
+          "default": "disabled"
+        },
+        "delete_data": {
+          "type": "string",
+          "title": "Delete Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Delete records from Supabase tables based on filter conditions",
+          "default": "disabled"
+        },
+        "invoke_function": {
+          "type": "string",
+          "title": "Invoke Edge Function",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Invoke Supabase Edge Functions with optional parameters and headers",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each Supabase skill"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Owner Provided"
+      ],
+      "default": "agent_owner"
+    },
+    "supabase_url": {
+      "type": "string",
+      "title": "Supabase URL",
+      "description": "Your Supabase project URL (e.g., https://your-project.supabase.co)",
+      "format": "uri"
+    },
+    "supabase_key": {
+      "type": "string",
+      "title": "Supabase Anon Key",
+      "description": "Your Supabase project's anon/public key",
+      "format": "password"
+    },
+    "public_write_tables": {
+      "type": "string",
+      "title": "Public Write Tables",
+      "description": "Add tables split by comma, when insert,update,upsert,delete enabled in public use, they can only use tables from this list. When skills in owner mode, this list will not limit skills.",
+      "default": ""
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "supabase_url",
+      "supabase_key"
+    ]
+  }
+}

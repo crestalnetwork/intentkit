@@ -54,7 +54,7 @@ class TwitterPostTweet(TwitterBaseTool):
         try:
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -63,7 +63,7 @@ class TwitterPostTweet(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id, max_requests=24, interval=1440
+                    context.agent_id, max_requests=24, interval=1440
                 )
 
             media_ids = []
@@ -71,7 +71,7 @@ class TwitterPostTweet(TwitterBaseTool):
             # Handle image upload if provided
             if image:
                 # Use the TwitterClient method to upload the image
-                media_ids = await twitter.upload_media(context.agent.id, image)
+                media_ids = await twitter.upload_media(context.agent_id, image)
 
             # Post tweet using tweepy client
             tweet_params = {"text": text, "user_auth": twitter.use_key}
@@ -87,4 +87,4 @@ class TwitterPostTweet(TwitterBaseTool):
 
         except Exception as e:
             logger.error(f"Error posting tweet: {str(e)}")
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

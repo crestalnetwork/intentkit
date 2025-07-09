@@ -73,7 +73,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
             context = self.context_from_config(config)
 
             # Check rate limit
-            await self.check_rate_limit(context.agent.id, max_requests=5, interval=60)
+            await self.check_rate_limit(context.agent_id, max_requests=5, interval=60)
 
             # Get API key from context
             api_key = context.config.get("api_key")
@@ -110,4 +110,4 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
 
         except Exception as e:
             logger.error("Error fetching top exchanges: %s", str(e))
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

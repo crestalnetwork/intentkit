@@ -32,7 +32,7 @@ class EnsoBaseTool(IntentKitSkill):
         Returns:
             Optional[EvmServerAccount]: The account object if available.
         """
-        client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
+        client: CdpClient = await get_cdp_client(context.agent_id, self.skill_store)
         return await client.get_account()
 
     async def get_wallet_provider(
@@ -46,7 +46,7 @@ class EnsoBaseTool(IntentKitSkill):
         Returns:
             Optional[CdpEvmServerWalletProvider]: The wallet provider if available.
         """
-        client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
+        client: CdpClient = await get_cdp_client(context.agent_id, self.skill_store)
         return await client.get_wallet_provider()
 
     def get_chain_provider(self, context: SkillContext) -> Optional[ChainProvider]:

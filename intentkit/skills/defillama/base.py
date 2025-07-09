@@ -52,7 +52,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
             Rate limit status and error message if limited
         """
         rate_limit = await self.skill_store.get_agent_skill_data(
-            context.agent.id, self.name, "rate_limit"
+            context.agent_id, self.name, "rate_limit"
         )
         current_time = datetime.now(tz=timezone.utc)
 
@@ -67,7 +67,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
 
             rate_limit["count"] += 1
             await self.skill_store.save_agent_skill_data(
-                context.agent.id, self.name, "rate_limit", rate_limit
+                context.agent_id, self.name, "rate_limit", rate_limit
             )
             return False, None
 
@@ -76,7 +76,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
             "reset_time": (current_time + timedelta(minutes=interval)).isoformat(),
         }
         await self.skill_store.save_agent_skill_data(
-            context.agent.id, self.name, "rate_limit", new_rate_limit
+            context.agent_id, self.name, "rate_limit", new_rate_limit
         )
         return False, None
 
