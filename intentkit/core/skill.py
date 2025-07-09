@@ -79,9 +79,7 @@ class SkillStore(SkillStoreABC):
         await skill_data.save()
 
     @staticmethod
-    async def delete_agent_skill_data(
-        agent_id: str, skill: str, key: str
-    ) -> None:
+    async def delete_agent_skill_data(agent_id: str, skill: str, key: str) -> None:
         """Delete skill data for an agent.
 
         Args:

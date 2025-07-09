@@ -5,7 +5,6 @@ from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
-from intentkit.skills.firecrawl.utils import FirecrawlVectorStoreManager, FirecrawlMetadataManager
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +57,11 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
         if not confirm:
             return "Error: You must set confirm=true to clear all indexed content."
 
-        logger.info(f"firecrawl_clear: Starting clear indexed content operation for agent {agent_id}")
+        logger.info(
+            f"firecrawl_clear: Starting clear indexed content operation for agent {agent_id}"
+        )
 
         try:
-            # Initialize managers
-            vs_manager = FirecrawlVectorStoreManager(self.skill_store)
-            metadata_manager = FirecrawlMetadataManager(self.skill_store)
-
             # Delete vector store data (using web_scraper storage format for compatibility)
             vector_store_key = f"vector_store_{agent_id}"
             await self.skill_store.delete_agent_skill_data(
@@ -77,9 +74,14 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
                 agent_id, "web_scraper", metadata_key
             )
 
-            logger.info(f"firecrawl_clear: Successfully cleared all indexed content for agent {agent_id}")
+            logger.info(
+                f"firecrawl_clear: Successfully cleared all indexed content for agent {agent_id}"
+            )
             return "Successfully cleared all Firecrawl indexed content. The vector store is now empty and ready for new content."
 
         except Exception as e:
-            logger.error(f"firecrawl_clear: Error clearing indexed content for agent {agent_id}: {e}", exc_info=True)
-            return f"Error clearing indexed content: {str(e)}" 
+            logger.error(
+                f"firecrawl_clear: Error clearing indexed content for agent {agent_id}: {e}",
+                exc_info=True,
+            )
+            return f"Error clearing indexed content: {str(e)}"

@@ -80,7 +80,7 @@ class FirecrawlVectorStoreManager:
         import base64
         import os
         import tempfile
-        
+
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 vector_store.save_local(temp_dir)
@@ -90,7 +90,9 @@ class FirecrawlVectorStoreManager:
                     file_path = os.path.join(temp_dir, filename)
                     if os.path.isfile(file_path):
                         with open(file_path, "rb") as f:
-                            encoded_files[filename] = base64.b64encode(f.read()).decode("utf-8")
+                            encoded_files[filename] = base64.b64encode(f.read()).decode(
+                                "utf-8"
+                            )
 
                 return encoded_files
         except Exception as e:
@@ -104,7 +106,7 @@ class FirecrawlVectorStoreManager:
         import base64
         import os
         import tempfile
-        
+
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Decode and write files
@@ -141,7 +143,13 @@ class FirecrawlVectorStoreManager:
             logger.error(f"Error loading vector store for agent {agent_id}: {e}")
             return None
 
-    async def save_vector_store(self, agent_id: str, vector_store: FAISS, chunk_size: int = 1000, chunk_overlap: int = 200) -> None:
+    async def save_vector_store(
+        self,
+        agent_id: str,
+        vector_store: FAISS,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+    ) -> None:
         """Save vector store for an agent (compatible with web_scraper format)."""
         try:
             vector_store_key = f"vector_store_{agent_id}"
@@ -244,7 +252,9 @@ async def index_documents(
             was_merged = False
 
         # Save the vector store
-        await vs_manager.save_vector_store(agent_id, vector_store, chunk_size, chunk_overlap)
+        await vs_manager.save_vector_store(
+            agent_id, vector_store, chunk_size, chunk_overlap
+        )
 
         logger.info(
             f"Successfully indexed {len(split_docs)} chunks for agent {agent_id}"
