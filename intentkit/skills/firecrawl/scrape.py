@@ -240,9 +240,9 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 # Index content if requested
                 if index_content and result_data.get("markdown"):
                     try:
-                        # Import indexing utilities from web_scraper
-                        from intentkit.skills.web_scraper.utils import (
-                            MetadataManager,
+                        # Import indexing utilities from firecrawl utils
+                        from intentkit.skills.firecrawl.utils import (
+                            FirecrawlMetadataManager,
                             index_documents,
                         )
 
@@ -278,7 +278,9 @@ class FirecrawlScrape(FirecrawlBaseTool):
                             )
 
                             # Update metadata
-                            metadata_manager = MetadataManager(self.skill_store)
+                            metadata_manager = FirecrawlMetadataManager(
+                                self.skill_store
+                            )
                             new_metadata = metadata_manager.create_url_metadata(
                                 [url], [document], "firecrawl_scrape"
                             )
@@ -294,7 +296,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
                             formatted_result += f"- Chunk size: {chunk_size}\n"
                             formatted_result += f"- Chunk overlap: {chunk_overlap}\n"
                             formatted_result += f"- Content merged with existing: {'Yes' if was_merged else 'No'}\n"
-                            formatted_result += "Use the 'query_indexed_content' skill to search this content.\n"
+                            formatted_result += "Use the 'firecrawl_query_indexed_content' skill to search this content.\n"
 
                             logger.info(
                                 f"firecrawl_scrape: Successfully indexed {url} with {total_chunks} chunks"

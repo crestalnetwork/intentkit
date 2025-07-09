@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import List, Optional, Type
 
@@ -276,9 +277,9 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                         # Index content if requested
                         if index_content and pages_data:
                             try:
-                                # Import indexing utilities from web_scraper
-                                from intentkit.skills.web_scraper.utils import (
-                                    MetadataManager,
+                                # Import indexing utilities from firecrawl utils
+                                from intentkit.skills.firecrawl.utils import (
+                                    FirecrawlMetadataManager,
                                     index_documents,
                                 )
 
@@ -327,7 +328,9 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                     )
 
                                     # Update metadata
-                                    metadata_manager = MetadataManager(self.skill_store)
+                                    metadata_manager = FirecrawlMetadataManager(
+                                        self.skill_store
+                                    )
                                     urls = [doc.metadata["source"] for doc in documents]
                                     new_metadata = metadata_manager.create_url_metadata(
                                         urls, documents, "firecrawl_crawl"
@@ -349,7 +352,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                         f"- Chunk overlap: {chunk_overlap}\n"
                                     )
                                     formatted_result += f"- Content merged with existing: {'Yes' if was_merged else 'No'}\n"
-                                    formatted_result += "Use the 'query_indexed_content' skill to search this content.\n"
+                                    formatted_result += "Use the 'firecrawl_query_indexed_content' skill to search this content.\n"
 
                                     logger.info(
                                         f"firecrawl_crawl: Successfully indexed {len(documents)} pages with {total_chunks} total chunks"
@@ -380,8 +383,6 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                         )
 
                         # Wait 5 seconds before next poll
-                        import asyncio
-
                         await asyncio.sleep(5)
                         poll_count += 1
 
@@ -390,8 +391,6 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                         logger.warning(
                             f"firecrawl_crawl: Unknown crawl status: {status}"
                         )
-                        import asyncio
-
                         await asyncio.sleep(5)
                         poll_count += 1
 

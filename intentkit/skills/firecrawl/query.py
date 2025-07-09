@@ -61,44 +61,16 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
 
             logger.info(f"[{agent_id}] Starting Firecrawl query operation: '{query}'")
 
-            # Use the same vector store as web_scraper since we're indexing to the same store
-            vector_store_key = f"vector_store_{agent_id}"
-
-            logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
-
-            stored_data = await self.skill_store.get_agent_skill_data(
-                agent_id, "web_scraper", vector_store_key
+            # Import query utilities from firecrawl utils
+            from intentkit.skills.firecrawl.utils import (
+                FirecrawlDocumentProcessor,
+                query_indexed_content,
             )
 
-            if not stored_data:
-                logger.warning(f"[{agent_id}] No vector store found")
-                return "No indexed content found. Please use the firecrawl_scrape or firecrawl_crawl tools first to scrape and index some web content before querying."
-
-            if not stored_data or "faiss_files" not in stored_data:
-                logger.warning(f"[{agent_id}] Invalid stored data structure")
-                return "No indexed content found. Please use the firecrawl_scrape or firecrawl_crawl tools first to scrape and index some web content before querying."
-
-            # Import vector store utilities from web_scraper
-            from intentkit.skills.web_scraper.utils import (
-                DocumentProcessor,
-                VectorStoreManager,
+            # Query the indexed content
+            docs = await query_indexed_content(
+                query, agent_id, self.skill_store, max_results
             )
-
-            # Create embeddings and decode vector store
-            logger.info(f"[{agent_id}] Decoding vector store")
-            vs_manager = VectorStoreManager(self.skill_store)
-            embeddings = vs_manager.create_embeddings()
-            vector_store = vs_manager.decode_vector_store(
-                stored_data["faiss_files"], embeddings
-            )
-
-            logger.info(
-                f"[{agent_id}] Vector store loaded, index count: {vector_store.index.ntotal}"
-            )
-
-            # Perform similarity search
-            docs = vector_store.similarity_search(query, k=max_results)
-            logger.info(f"[{agent_id}] Found {len(docs)} similar documents")
 
             if not docs:
                 logger.info(f"[{agent_id}] No relevant documents found for query")
@@ -108,7 +80,7 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
             results = []
             for i, doc in enumerate(docs, 1):
                 # Sanitize content to prevent database storage errors
-                content = DocumentProcessor.sanitize_for_database(
+                content = FirecrawlDocumentProcessor.sanitize_for_database(
                     doc.page_content.strip()
                 )
                 source = doc.metadata.get("source", "Unknown")

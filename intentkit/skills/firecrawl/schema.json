@@ -81,7 +81,7 @@
         "agent_owner"
       ],
       "x-enum-title": [
-        "Nation Hosted",
+        "Platform Hosted",
         "Owner Provided"
       ],
       "default": "platform"

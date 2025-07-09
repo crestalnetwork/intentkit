@@ -108,16 +108,17 @@ Prompt: "Use firecrawl_scrape to scrape https://docs.joincommonwealth.xyz/all-st
 - Only specified HTML tags included
 - Content indexed for querying
 
-### Step 6: Test Cross-Skill Querying
+### Step 6: Test Multiple Queries
 
-**Test querying with web_scraper skill:**
+**Test different query types:**
 ```
-Prompt: "Use web_scraper_query_indexed_content to search for 'democratize finance' - this should also find Firecrawl indexed content"
+Prompt: "Use firecrawl_query_indexed_content to search for 'democratize finance' in the indexed content"
 ```
 
 **Expected Result:**
-- Unified search across both Firecrawl and web_scraper indexed content
-- Results from both sources if available
+- Relevant content retrieved from Firecrawl's independent vector store
+- Results tagged with [Firecrawl Scrape] or [Firecrawl Crawl]
+- Source URLs and metadata included
 
 ## Common Use Cases
 
@@ -170,7 +171,7 @@ Prompt: "Use web_scraper_query_indexed_content to search for 'democratize financ
 - **JavaScript Rendering**: Handles SPAs and dynamic content
 - **PDF Support**: Can scrape and index PDF documents
 - **Intelligent Chunking**: Optimized text splitting for better search
-- **Unified Storage**: Integrates with existing web_scraper vector store
+- **Independent Storage**: Uses its own dedicated vector store for Firecrawl content
 - **Metadata Rich**: Includes source URLs, timestamps, and content types
 - **Semantic Search**: Uses OpenAI embeddings for intelligent querying
 - **Batch Processing**: Efficient handling of multiple pages
