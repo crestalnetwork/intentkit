@@ -77,65 +77,41 @@
       "title": "API Key Provider",
       "description": "Provider of the API key",
       "enum": [
-        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
-        "Platform Hosted",
         "Owner Provided"
       ],
-      "default": "platform"
+      "default": "agent_owner"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Firecrawl API Key",
+      "description": "API key for Firecrawl services",
+      "x-link": "[Get your API key](https://firecrawl.dev/)",
+      "x-sensitive": true
+    },
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 60
     }
   },
   "required": [
     "states",
-    "enabled"
+    "enabled",
+    "api_key"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "Firecrawl API Key",
-        "description": "API key for Firecrawl services",
-        "x-link": "[Get your API key](https://firecrawl.dev/)",
-        "x-sensitive": true
-      },
-      "rate_limit_number": {
-        "type": "integer",
-        "title": "Rate Limit Number",
-        "description": "Number of requests allowed per time window, only valid if api_key is set",
-        "minimum": 1,
-        "maximum": 1000,
-        "default": 100
-      },
-      "rate_limit_minutes": {
-        "type": "integer",
-        "title": "Rate Limit Minutes",
-        "description": "Time window in minutes for rate limiting, only valid if api_key is set",
-        "minimum": 1,
-        "maximum": 1440,
-        "default": 60
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true
 } 

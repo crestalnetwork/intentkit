@@ -26,7 +26,7 @@ class Config(SkillConfig):
     """Configuration for Firecrawl skills."""
 
     states: SkillStates
-    api_key: str = ""
+    api_key: str
 
 
 async def get_skills(
