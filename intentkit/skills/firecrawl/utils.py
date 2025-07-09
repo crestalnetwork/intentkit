@@ -145,7 +145,7 @@ class FirecrawlVectorStoreManager:
             vector_store_key = f"firecrawl_vector_store_{agent_id}"
             encoded_data = self.encode_vector_store(vector_store)
 
-            await self.skill_store.set_agent_skill_data(
+            await self.skill_store.save_agent_skill_data(
                 agent_id, "firecrawl", vector_store_key, {"faiss_files": encoded_data}
             )
 
@@ -177,7 +177,7 @@ class FirecrawlMetadataManager:
         """Update metadata for an agent."""
         try:
             metadata_key = f"firecrawl_metadata_{agent_id}"
-            await self.skill_store.set_agent_skill_data(
+            await self.skill_store.save_agent_skill_data(
                 agent_id, "firecrawl", metadata_key, new_metadata
             )
         except Exception as e:
