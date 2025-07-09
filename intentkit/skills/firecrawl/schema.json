@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Firecrawl Web Scraping and Crawling",
+  "description": "AI-powered web scraping and crawling capabilities using Firecrawl",
+  "x-icon": "https://ai.service.crestal.dev/skills/firecrawl/firecrawl.png",
+  "x-tags": [
+    "Web Scraping",
+    "Crawling",
+    "Content Extraction",
+    "Data Mining",
+    "Website Analysis"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "firecrawl_scrape": {
+          "type": "string",
+          "title": "Firecrawl Scrape",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Scrape single web pages and extract content in various formats (markdown, HTML, JSON, etc.). Handles JavaScript-rendered content, PDFs, and dynamic websites.",
+          "default": "private"
+        },
+        "firecrawl_crawl": {
+          "type": "string",
+          "title": "Firecrawl Crawl",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Crawl entire websites and extract content from multiple pages. Can follow links, handle JavaScript-rendered content, and extract structured data from entire websites.",
+          "default": "private"
+        },
+        "firecrawl_query_indexed_content": {
+          "type": "string",
+          "title": "Query Indexed Content",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Query previously indexed Firecrawl content to find relevant information and answer questions. Use this to search through content that was scraped and indexed using Firecrawl tools.",
+          "default": "private"
+        }
+      },
+      "description": "States for each Firecrawl skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Provider of the API key",
+      "enum": [
+        "agent_owner"
+      ],
+      "x-enum-title": [
+        "Owner Provided"
+      ],
+      "default": "agent_owner"
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Firecrawl API Key",
+      "description": "API key for Firecrawl services",
+      "x-link": "[Get your API key](https://firecrawl.dev/)",
+      "x-sensitive": true
+    },
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 60
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
+  "additionalProperties": true
+} 
