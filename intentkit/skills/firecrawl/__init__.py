@@ -26,7 +26,10 @@ class Config(SkillConfig):
     """Configuration for Firecrawl skills."""
 
     states: SkillStates
-    api_key: str
+    api_key: str = ""
+    api_key_provider: str = "agent_owner"
+    rate_limit_number: int = 100
+    rate_limit_minutes: int = 60
 
 
 async def get_skills(

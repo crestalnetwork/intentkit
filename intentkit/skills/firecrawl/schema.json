@@ -110,8 +110,28 @@
   },
   "required": [
     "states",
-    "enabled",
-    "api_key"
+    "enabled"
   ],
+  "if": {
+    "properties": {
+      "api_key_provider": {
+        "const": "agent_owner"
+      }
+    }
+  },
+  "then": {
+    "if": {
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "api_key"
+      ]
+    }
+  },
   "additionalProperties": true
 } 
