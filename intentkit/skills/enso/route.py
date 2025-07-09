@@ -184,7 +184,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
         """
 
         context: SkillContext = self.context_from_config(config)
-        agent_id = context.agent.id
+        agent_id = context.agent_id
         api_token = self.get_api_token(context)
         account = await self.get_account(context)
 

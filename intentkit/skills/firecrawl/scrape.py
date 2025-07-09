@@ -255,18 +255,12 @@ class FirecrawlScrape(FirecrawlBaseTool):
                                 "description": metadata.get("description", ""),
                                 "language": metadata.get("language", ""),
                                 "source_type": "firecrawl_scrape",
-                                "indexed_at": str(
-                                    context.agent.id
-                                    if context and context.agent
-                                    else "unknown"
-                                ),
+                                "indexed_at": str(context.agent_id),
                             },
                         )
 
                         # Get agent ID for indexing
-                        agent_id = (
-                            context.agent.id if context and context.agent else None
-                        )
+                        agent_id = context.agent_id
                         if agent_id:
                             # Index the document
                             total_chunks, was_merged = await index_documents(

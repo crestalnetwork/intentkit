@@ -85,10 +85,10 @@ class DocumentIndexer(WebScraperBaseTool):
             raise ValueError("Configuration is required but not provided")
 
         context = self.context_from_config(config)
-        if not context or not context.agent or not context.agent.id:
+        if not context or not context.agent_id:
             raise ValueError("Agent ID is required but not found in configuration")
 
-        agent_id = context.agent.id
+        agent_id = context.agent_id
 
         logger.info(f"[{agent_id}] Starting document indexing for title: '{title}'")
 

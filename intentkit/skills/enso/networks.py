@@ -86,7 +86,7 @@ class EnsoGetNetworks(EnsoBaseTool):
                     )
 
                 await self.skill_store.save_agent_skill_data(
-                    context.agent.id,
+                    context.agent_id,
                     "enso_get_networks",
                     "networks",
                     networks_memory,

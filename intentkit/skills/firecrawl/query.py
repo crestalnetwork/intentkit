@@ -54,10 +54,10 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
                 raise ValueError("Configuration is required but not provided")
 
             context = self.context_from_config(config)
-            if not context or not context.agent or not context.agent.id:
+            if not context or not context.agent_id:
                 raise ValueError("Agent ID is required but not found in configuration")
 
-            agent_id = context.agent.id
+            agent_id = context.agent_id
 
             logger.info(f"[{agent_id}] Starting Firecrawl query operation: '{query}'")
 
@@ -111,8 +111,8 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
             try:
                 if config:
                     context = self.context_from_config(config)
-                    if context and context.agent and context.agent.id:
-                        agent_id = context.agent.id
+                    if context and context.agent_id:
+                        agent_id = context.agent_id
             except Exception:
                 pass
 

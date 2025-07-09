@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
 
@@ -30,13 +31,32 @@ class SkillConfig(TypedDict):
 
 
 class SkillContext(BaseModel):
-    agent: Agent
-    config: Dict[str, Any]
+    skill_category: str
+    agent_id: str
     user_id: Optional[str] = None
     chat_id: Optional[str] = None
     app_id: Optional[str] = None
     entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
     is_private: bool
+    payer: Optional[str] = None
+    _agent: Optional[Agent] = None
+
+    @property
+    def agent(self) -> Agent:
+        if self._agent is None:
+            self._agent = asyncio.run(Agent.get(self.agent_id))
+        return self._agent
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        agent = self.agent
+        config = None
+        if agent.skills:
+            config = agent.skills.get(self.skill_category)
+        if not config:
+            raise ValueError(
+                f"Skill {self.skill_category} not found in agent {self.agent_id}"
+            )
 
 
 class IntentKitSkill(BaseTool):
@@ -160,19 +180,9 @@ class IntentKitSkill(BaseTool):
         if "configurable" not in runner_config:
             raise ValueError("configurable not in runner_config")
         configurable = runner_config["configurable"]
-        if "agent" not in configurable:
-            raise ValueError("agent not in runner_config['configurable']")
-        agent: Agent = configurable.get("agent")
-        config = None
-        if agent.skills:
-            config = agent.skills.get(self.category)
-        if not config:
-            config = getattr(agent, self.category + "_config", {})
-        if not config:
-            config = {}
         return SkillContext(
-            agent=agent,
-            config=config,
+            skill_category=self.category,
+            agent_id=configurable.get("agent_id"),
             user_id=configurable.get("user_id"),
             app_id=configurable.get("app_id"),
             chat_id=configurable.get("chat_id"),

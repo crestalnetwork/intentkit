@@ -44,7 +44,7 @@ class TwitterGetTimeline(TwitterBaseTool):
 
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -53,12 +53,12 @@ class TwitterGetTimeline(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id, max_requests=3, interval=60 * 24
+                    context.agent_id, max_requests=3, interval=60 * 24
                 )
 
             # get since id from store
             last = await self.skill_store.get_agent_skill_data(
-                context.agent.id, self.name, "last"
+                context.agent_id, self.name, "last"
             )
             last = last or {}
             since_id = last.get("since_id")
@@ -101,11 +101,11 @@ class TwitterGetTimeline(TwitterBaseTool):
             if timeline.get("meta") and timeline["meta"].get("newest_id"):
                 last["since_id"] = timeline["meta"]["newest_id"]
                 await self.skill_store.save_agent_skill_data(
-                    context.agent.id, self.name, "last", last
+                    context.agent_id, self.name, "last", last
                 )
 
             return timeline
 
         except Exception as e:
             logger.error("Error getting timeline: %s", str(e))
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

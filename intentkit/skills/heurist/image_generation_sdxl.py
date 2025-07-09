@@ -136,7 +136,7 @@ class ImageGenerationSDXL(HeuristBaseTool):
             # Store the image URL
             image_url = response.text.strip('"')
             # Generate a key with agent ID as prefix
-            image_key = f"{context.agent.id}/heurist/{job_id}"
+            image_key = f"{context.agent_id}/heurist/{job_id}"
             # Store the image and get the CDN URL
             stored_url = await store_image(image_url, image_key)
 

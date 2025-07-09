@@ -49,7 +49,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
             str: Confirmation message
         """
         context = self.context_from_config(config)
-        agent_id = context.agent.id if context and context.agent else None
+        agent_id = context.agent_id
 
         if not agent_id:
             return "Error: Agent ID not available for clearing content."

@@ -40,7 +40,7 @@ class ReadAgentApiKey(SystemBaseTool):
         """Retrieve or generate an API key for the agent."""
         # Get context from runnable config to access agent.id
         context = self.context_from_config(config)
-        agent_id = context.agent.id
+        agent_id = context.agent_id
 
         # Get agent data from skill store
         agent_data = await self.skill_store.get_agent_data(agent_id)

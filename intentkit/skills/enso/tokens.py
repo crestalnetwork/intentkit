@@ -158,7 +158,7 @@ class EnsoGetTokens(EnsoBaseTool):
         url = f"{base_url}/api/v1/tokens"
 
         context: SkillContext = self.context_from_config(config)
-        agent_id = context.agent.id
+        agent_id = context.agent_id
         api_token = self.get_api_token(context)
         main_tokens = self.get_main_tokens(context)
         headers = {

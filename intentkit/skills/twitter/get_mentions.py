@@ -45,7 +45,7 @@ class TwitterGetMentions(TwitterBaseTool):
         try:
             context = self.context_from_config(config)
             twitter = get_twitter_client(
-                agent_id=context.agent.id,
+                agent_id=context.agent_id,
                 skill_store=self.skill_store,
                 config=context.config,
             )
@@ -56,14 +56,14 @@ class TwitterGetMentions(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent.id,
+                    context.agent_id,
                     max_requests=1,
                     interval=59,  # TODO: tmp to 59, back to 240 later
                 )
 
             # get since id from store
             last = await self.skill_store.get_agent_skill_data(
-                context.agent.id, self.name, "last"
+                context.agent_id, self.name, "last"
             )
             last = last or {}
             max_results = 10
@@ -114,11 +114,11 @@ class TwitterGetMentions(TwitterBaseTool):
             if mentions.get("meta") and mentions["meta"].get("newest_id"):
                 last["since_id"] = mentions["meta"].get("newest_id")
                 await self.skill_store.save_agent_skill_data(
-                    context.agent.id, self.name, "last", last
+                    context.agent_id, self.name, "last", last
                 )
 
             return mentions
 
         except Exception as e:
-            logger.error(f"[agent:{context.agent.id}]: {e}")
-            raise type(e)(f"[agent:{context.agent.id}]: {e}") from e
+            logger.error(f"[agent:{context.agent_id}]: {e}")
+            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

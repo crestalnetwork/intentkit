@@ -262,7 +262,7 @@ class YourSkill(TwitterBaseTool):
     async def _arun(self, config: RunnableConfig, **kwargs) -> str:
         context = self.context_from_config(config)
         print(context)
-        return f"I'm running in agent {context.agent.id}"
+        return f"I'm running in agent {context.agent_id}"
 ```
 
 Here is the context definition:
