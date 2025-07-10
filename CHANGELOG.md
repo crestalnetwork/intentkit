@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.0-dev.17
+
+### Changes
+- Merge pull request #699 from crestalnetwork/hyacinthus
+- refactor: cdp wallet
+
+### What's Changed
+- Refactored CDP wallet functionality to improve code organization and maintainability
+- Enhanced CDP client implementation with better error handling and structure
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.16...v0.6.0-dev.17
+
 ## v0.6.0-dev.16
 
 ### Features
