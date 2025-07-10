@@ -1,8 +1,7 @@
-
-from mnemonic import Mnemonic
 from bip32 import BIP32
 from eth_keys.datatypes import PrivateKey
 from eth_utils import to_checksum_address
+
 
 def bip39_seed_to_eth_keys(seed_hex):
     """
@@ -32,6 +31,7 @@ def bip39_seed_to_eth_keys(seed_hex):
         "address": to_checksum_address(address),
     }
 
+
 if __name__ == "__main__":
     # Your testing seed
     seed_hex = "ad915af6edcb5818c5eeebbdb081106fbfda38a46fd92693aab4b21d4616d24310f5827564528594eca0fd059147a70d6a4ff599fac1a7772442e074a1caf3bf"
@@ -45,4 +45,3 @@ if __name__ == "__main__":
     # Verification
     expected_address = "0x2E31f87E0f5Ac1B887fe4BdB131c605F903aDA96"
     print(f"\nVerification successful: {keys['address'] == expected_address}")
-
