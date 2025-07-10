@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.6.0-dev.16
+
+### Features
+- Updated LLM integration guide and skill schema configurations
+- Improved HTTP skill schema configuration
+- Enhanced Supabase skill schema configuration
+
+### Documentation
+- Enhanced LLM.md with better integration guidelines
+- Updated skill configuration documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.15...v0.6.0-dev.16
+
 ## v0.6.0-dev.15
 
 ### New Features
