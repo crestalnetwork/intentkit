@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.6.0-dev.15
+
+### New Features
+- **HTTP Skills**: Added comprehensive HTTP client skills for making web requests including GET, POST, PUT, DELETE operations
+- **Major Framework Upgrades**: Merged comprehensive improvements from hyacinthus branch including:
+  - AgentKit upgrade from 0.4.0 to 0.6.0
+  - LangGraph upgrade to 0.5 with refactored core components
+  - IntentKit package prepared for publishing
+
+### Improvements
+- **Web Scraper**: Enhanced capability to scrape whole sites in one prompt
+- **Memory Optimization**: Use SQLite for testing environments
+- **Stream Executor**: Refactored for better performance
+- **Infrastructure**: Refactored IntentKit core architecture
+- **Admin Schema**: Updated with correct skills path and WebP support
+
+### Bug Fixes
+- Fixed import bugs in core modules
+- Fixed action cost calculation to exclude owner
+- Fixed chat history validation with proper exception handling
+- Fixed debug flag logic and logging
+- Fixed Dune Analytics description and image issues
+- Fixed summarize functionality bugs
+
+### Development
+- Fixed various lint issues across the codebase
+- Updated dependencies with `uv sync`
+- Improved testing infrastructure
+- Added comprehensive LLM integration documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.14...v0.6.0-dev.15
+
 ## v0.6.0-dev.14
 
 ### Features
