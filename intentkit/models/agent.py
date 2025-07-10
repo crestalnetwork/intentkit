@@ -1564,7 +1564,6 @@ class AgentResponse(BaseModel):
             str: ETag value for the agent
         """
         import hashlib
-        import json
 
         # Generate hash from the entire object data using json mode to handle datetime objects
         # Sort keys to ensure consistent ordering of dictionary keys
@@ -1622,13 +1621,7 @@ class AgentResponse(BaseModel):
             data["skills"] = filtered_skills
 
         # Process CDP wallet address
-        cdp_wallet_address = None
-        if agent_data and agent_data.cdp_wallet_data:
-            try:
-                wallet_data = json.loads(agent_data.cdp_wallet_data)
-                cdp_wallet_address = wallet_data.get("default_address_id")
-            except (json.JSONDecodeError, AttributeError):
-                pass
+        cdp_wallet_address = agent_data.evm_wallet_address if agent_data else None
 
         # Process Twitter linked status
         has_twitter_linked = False

@@ -32,7 +32,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
    - Skill integration testing in `tests/skills/`
 
 ## Technology Stack
-- Package manager: uv, please use native `uv` command, do not use the `uv pip` command.
+- Package manager: uv, please use native `uv` command, do not use the `uv pip` command. If you want run or test python script, use `uv run` command, don't directly using python command.
 - Lint: ruff, run `uv run ruff format & uv run ruff check --fix` after your final edit.
 - API framework: fastapi, Doc in https://fastapi.tiangolo.com/
 - DB ORM: SQLAlchemy 2.0, please check the 2.0 api for use, do not use the legacy way. Doc in https://docs.sqlalchemy.org/en/20/

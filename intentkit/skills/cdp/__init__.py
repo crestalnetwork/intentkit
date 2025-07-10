@@ -25,9 +25,6 @@ from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cdp.base import CDPBaseTool
 from intentkit.skills.cdp.get_balance import GetBalance
 
-# Cache skills at the system level, because they are stateless
-_cache: dict[str, CDPBaseTool] = {}
-
 
 class SkillStates(TypedDict):
     get_balance: SkillState

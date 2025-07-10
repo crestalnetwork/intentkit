@@ -1,5 +1,3 @@
-import json
-
 from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -34,10 +32,11 @@ def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
         if agent_data.telegram_name:
             prompt += f"Your telegram bot name is {agent_data.telegram_name}.\n"
         # CDP
-        if agent_data.cdp_wallet_data:
-            network_id = agent.network_id or agent.cdp_network_id
-            wallet_data = json.loads(agent_data.cdp_wallet_data)
-            prompt += f"Your wallet address in {network_id} is {wallet_data['default_address_id']} .\n"
+        network_id = agent.network_id or agent.cdp_network_id
+        if agent_data.evm_wallet_address and network_id != "solana":
+            prompt += f"Your wallet address in {network_id} is {agent_data.evm_wallet_address} .\n"
+        if agent_data.solana_wallet_address and network_id == "solana":
+            prompt += f"Your wallet address in {network_id} is {agent_data.solana_wallet_address} .\n"
     prompt += "\n"
     if agent.purpose:
         prompt += f"## Purpose\n\n{agent.purpose}\n\n"

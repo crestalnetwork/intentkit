@@ -81,6 +81,11 @@ dependencies = [
     "telegramify-markdown (>=0.5.0,<0.6.0)",
     "tweepy[async]>=4.15.0",
     "uvicorn>=0.34.0,<1.0.0",
+    "mnemonic>=0.20",
+    "bip32>=2.0.0",
+    "eth-keys>=0.4.0",
+    "eth-utils>=2.1.0",
+    "eth-hash[pycryptodome]>=0.5.1",
 ]
 
 [dependency-groups]
