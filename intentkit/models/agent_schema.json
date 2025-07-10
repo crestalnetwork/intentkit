@@ -535,6 +535,10 @@
           "title": "System",
           "$ref": "../skills/system/schema.json"
         },
+        "http": {
+          "title": "HTTP Client",
+          "$ref": "../skills/http/schema.json"
+        },
         "web_scraper": {
           "title": "Web Scraper & Content Indexing",
           "$ref": "../skills/web_scraper/schema.json"
@@ -566,6 +570,10 @@
         "slack": {
           "title": "Slack",
           "$ref": "../skills/slack/schema.json"
+        },
+        "supabase": {
+          "title": "Supabase",
+          "$ref": "../skills/supabase/schema.json"
         },
         "venice_audio": {
           "title": "Venice Audio",

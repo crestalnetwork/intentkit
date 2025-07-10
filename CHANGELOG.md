@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.6.0-dev.14
+
+### Features
+- Enhanced Supabase skills with improved data operations and error handling
+- Added more fields to runnable config and skill context
+- Added comprehensive Supabase skill category with conditional schema validation
+
+### Improvements
+- Better error handling across all Supabase data operations
+- Improved data validation and type checking
+- Enhanced base skill functionality for better reusability
+- Updated core node functionality for better skill integration
+
+### Technical Details
+- Updated schema definitions for better data integrity
+- Refined insert, update, upsert, and delete operations
+- Improved token base skill implementation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.13...v0.6.0-dev.14
+
 ## v0.6.0-dev.11
 
 ### Documentation
