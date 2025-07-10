@@ -3,7 +3,7 @@
   "type": "object",
   "title": "HTTP Client",
   "description": "HTTP client skills for making web requests",
-  "x-icon": "https://ai.service.crestal.dev/skills/http/http.jpg",
+  "x-icon": "https://ai.service.crestal.dev/skills/http/http.svg",
   "x-tags": [
     "HTTP",
     "Web",
@@ -15,7 +15,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -70,18 +70,6 @@
         }
       },
       "description": "States for each HTTP client skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
-      "default": "platform"
     }
   },
   "required": [
