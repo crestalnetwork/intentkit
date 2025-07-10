@@ -29,6 +29,10 @@ class AgentDataTable(Base):
     __tablename__ = "agent_data"
 
     id = Column(String, primary_key=True, comment="Same as Agent.id")
+    evm_wallet_address = Column(String, nullable=True, comment="EVM wallet address")
+    solana_wallet_address = Column(
+        String, nullable=True, comment="Solana wallet address"
+    )
     cdp_wallet_data = Column(String, nullable=True, comment="CDP wallet data")
     crossmint_wallet_data = Column(
         JSON().with_variant(JSONB(), "postgresql"),
@@ -92,6 +96,20 @@ class AgentData(BaseModel):
         str,
         PydanticField(
             description="Same as Agent.id",
+        ),
+    ]
+    evm_wallet_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="EVM wallet address",
+        ),
+    ]
+    solana_wallet_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Solana wallet address",
         ),
     ]
     cdp_wallet_data: Annotated[

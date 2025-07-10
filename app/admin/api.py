@@ -1,12 +1,10 @@
 import importlib
-import json
 import logging
 from typing import Annotated, Optional, TypedDict
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
-from cdp import CdpClient, EvmServerAccount
 from fastapi import (
     APIRouter,
     Body,
@@ -91,68 +89,16 @@ async def _process_agent_post_actions(
     Returns:
         AgentData: The processed agent data
     """
-    has_wallet = False
     agent_data = None
 
     if not is_new:
         # Get agent data
         agent_data = await AgentData.get(agent.id)
-        if agent_data and agent_data.cdp_wallet_data:
-            has_wallet = True
-            wallet_data = json.loads(agent_data.cdp_wallet_data)
-        # Run clean_agent_memory in background
-        # asyncio.create_task(clean_agent_memory(agent.id, clean_agent=True))
-
-    if (
-        not has_wallet
-        and agent.skills
-        and agent.skills.get("cdp")
-        and agent.skills["cdp"].get("enabled")
-    ):
-        # Create account using new CDP SDK API
-        try:
-            network_id = agent.network_id or agent.cdp_network_id
-
-            async with CdpClient(
-                api_key_id=config.cdp_api_key_id,
-                api_key_secret=config.cdp_api_key_secret,
-            ) as cdp:
-                # Create a new account
-                account: EvmServerAccount = await cdp.evm.create_account()
-
-                # Export account data - use model_dump to get account data
-                account_data = account.model_dump()
-
-                # Create wallet_data structure that's compatible with existing code
-                wallet_data = {
-                    "account_data": account_data,
-                    "default_address_id": account.address,
-                    "network_id": network_id,
-                }
-
-            # Save or update AgentData with the new wallet information
-            if not agent_data:
-                agent_data = AgentData(
-                    id=agent.id, cdp_wallet_data=json.dumps(wallet_data)
-                )
-            else:
-                agent_data.cdp_wallet_data = json.dumps(wallet_data)
-
-            await agent_data.save()
-            logger.info("Account created for agent %s: %s", agent.id, account.address)
-
-        except Exception as e:
-            logger.error("Failed to create CDP account: %s", e)
-            # Set empty wallet_data to prevent error in notification if account creation failed
-            wallet_data = {
-                "default_address_id": "unknown",
-                "network_id": network_id,
-            }
 
     # Send Slack notification
     slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
     try:
-        _send_agent_notification(agent, agent_data, wallet_data, slack_message)
+        _send_agent_notification(agent, agent_data, slack_message)
     except Exception as e:
         logger.error("Failed to send Slack notification: %s", e)
 
@@ -215,15 +161,12 @@ async def _process_telegram_config(
         return agent_data
 
 
-def _send_agent_notification(
-    agent: Agent, agent_data: AgentData, wallet_data: dict, message: str
-) -> None:
+def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -> None:
     """Send a notification about agent creation or update.
 
     Args:
         agent: The agent that was created or updated
         agent_data: The agent data to update
-        wallet_data: The agent's wallet data
         message: The notification message
     """
     # Format autonomous configurations - show only enabled ones with their id, name, and schedule
@@ -309,7 +252,7 @@ def _send_agent_notification(
                     },
                     {
                         "title": "Wallet Address",
-                        "value": wallet_data.get("default_address_id"),
+                        "value": agent_data.evm_wallet_address,
                     },
                     {
                         "title": "Autonomous",

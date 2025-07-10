@@ -2,17 +2,58 @@ import json
 import logging
 from typing import Dict, Optional
 
+from bip32 import BIP32
+from cdp import CdpClient as OriginCdpClient
 from cdp import EvmServerAccount
 from coinbase_agentkit import (
     CdpEvmServerWalletProvider,
     CdpEvmServerWalletProviderConfig,
 )
+from eth_keys.datatypes import PrivateKey
+from eth_utils import to_checksum_address
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 
 _clients: Dict[str, "CdpClient"] = {}
+
+logger = logging.getLogger(__name__)
+
+
+def bip39_seed_to_eth_keys(seed_hex: str) -> Dict[str, str]:
+    """
+    Converts a BIP39 seed to an Ethereum private key, public key, and address.
+
+    Args:
+        seed_hex: The BIP39 seed in hexadecimal format
+
+    Returns:
+        Dict containing private_key, public_key, and address
+    """
+    # Convert the hex seed to bytes
+    seed_bytes = bytes.fromhex(seed_hex)
+
+    # Derive the master key from the seed
+    bip32 = BIP32.from_seed(seed_bytes)
+
+    # Derive the Ethereum address using the standard derivation path
+    private_key_bytes = bip32.get_privkey_from_path("m/44'/60'/0'/0/0")
+
+    # Create a private key object
+    private_key = PrivateKey(private_key_bytes)
+
+    # Get the public key
+    public_key = private_key.public_key
+
+    # Get the Ethereum address
+    address = public_key.to_address()
+
+    return {
+        "private_key": private_key.to_hex(),
+        "public_key": public_key.to_hex(),
+        "address": to_checksum_address(address),
+    }
 
 
 class CdpClient:
@@ -29,37 +70,55 @@ class CdpClient:
         agent_data: AgentData = await self._skill_store.get_agent_data(self._agent_id)
         network_id = agent.network_id or agent.cdp_network_id
 
-        logger = logging.getLogger(__name__)
-
         # Get credentials from skill store system config
         api_key_id = self._skill_store.get_system_config("cdp_api_key_id")
         api_key_secret = self._skill_store.get_system_config("cdp_api_key_secret")
         wallet_secret = self._skill_store.get_system_config("cdp_wallet_secret")
 
-        address = None
+        # already have address
+        address = agent_data.evm_wallet_address
 
-        # Attempt to override with any wallet-specific secret stored in wallet_data
-        if agent_data.cdp_wallet_data:
-            try:
+        # new agent or address not migrated yet
+        if not address:
+            # create cdp client for later use
+            cdp_client = OriginCdpClient(
+                api_key_id=api_key_id,
+                api_key_secret=api_key_secret,
+                wallet_secret=wallet_secret,
+            )
+            # try migrating from v1 cdp_wallet_data
+            if agent_data.cdp_wallet_data:
                 wallet_data = json.loads(agent_data.cdp_wallet_data)
-                # Try to get address from the new format or fallback to old format
-                if "default_address_id" in wallet_data:
-                    address = wallet_data["default_address_id"]
-
-                # Prefer wallet_secret stored alongside the wallet data if present
-                if "wallet_secret" in wallet_data:
-                    wallet_secret = wallet_data["wallet_secret"]
-                elif "account_data" in wallet_data and wallet_data["account_data"]:
-                    # Some versions may nest the secret inside account_data
-                    wallet_secret = (
-                        wallet_data["account_data"].get("wallet_secret")
-                        or wallet_secret
+                if not isinstance(wallet_data, dict):
+                    raise ValueError("Invalid wallet data format")
+                if wallet_data.get("default_address_id") and wallet_data.get("seed"):
+                    # verify seed and convert to pk
+                    keys = bip39_seed_to_eth_keys(wallet_data["seed"])
+                    if keys["address"] != wallet_data["default_address_id"]:
+                        raise ValueError(
+                            "Bad wallet data, seed does not match default_address_id"
+                        )
+                    # try to import wallet to v2
+                    logger.info("Migrating wallet data to v2...")
+                    await cdp_client.evm.import_account(
+                        name=agent.id,
+                        private_key=keys["private_key"],
                     )
-            except json.JSONDecodeError:
-                logger.warning(
-                    "Invalid JSON in cdp_wallet_data for agent %s", self._agent_id
+                    address = keys["address"]
+                    logger.info("Migrated wallet data to v2 successfully: %s", address)
+            # still not address
+            if not address:
+                logger.info("Creating new wallet...")
+                new_account = await cdp_client.evm.create_account(
+                    name=agent.id,
                 )
+                address = new_account.address
+                logger.info("Created new wallet: %s", address)
+            # now it should be created or migrated, store it
+            agent_data.evm_wallet_address = address
+            await agent_data.save()
 
+        # it must have v2 account now, load agentkit wallet provider
         self._wallet_provider_config = CdpEvmServerWalletProviderConfig(
             api_key_id=api_key_id,
             api_key_secret=api_key_secret,
