@@ -91,7 +91,7 @@ class CdpClient:
                 wallet_data = json.loads(agent_data.cdp_wallet_data)
                 if not isinstance(wallet_data, dict):
                     raise ValueError("Invalid wallet data format")
-                if wallet_data.get("default_addresses") and wallet_data.get("seed"):
+                if wallet_data.get("default_address_id") and wallet_data.get("seed"):
                     # verify seed and convert to pk
                     keys = bip39_seed_to_eth_keys(wallet_data["seed"])
                     if keys["address"] != wallet_data["default_address_id"]:
@@ -99,17 +99,21 @@ class CdpClient:
                             "Bad wallet data, seed does not match default_address_id"
                         )
                     # try to import wallet to v2
+                    logger.info("Migrating wallet data to v2...")
                     await cdp_client.evm.import_account(
                         name=agent.id,
                         private_key=keys["private_key"],
                     )
                     address = keys["address"]
+                    logger.info("Migrated wallet data to v2 successfully: %s", address)
             # still not address
             if not address:
+                logger.info("Creating new wallet...")
                 new_account = await cdp_client.evm.create_account(
                     name=agent.id,
                 )
                 address = new_account.address
+                logger.info("Created new wallet: %s", address)
             # now it should be created or migrated, store it
             agent_data.evm_wallet_address = address
             await agent_data.save()
