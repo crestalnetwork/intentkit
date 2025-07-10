@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "HTTP Client",
+  "description": "HTTP client skills for making web requests",
+  "x-icon": "https://ai.service.crestal.dev/skills/http/http.jpg",
+  "x-tags": [
+    "HTTP",
+    "Web",
+    "API",
+    "Client"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "http_get": {
+          "type": "string",
+          "title": "HTTP GET",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Make HTTP GET requests to fetch data from web APIs and websites",
+          "default": "private"
+        },
+        "http_post": {
+          "type": "string",
+          "title": "HTTP POST",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Make HTTP POST requests to send data to web APIs and submit forms",
+          "default": "private"
+        },
+        "http_put": {
+          "type": "string",
+          "title": "HTTP PUT",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Make HTTP PUT requests to update or replace data on web APIs",
+          "default": "private"
+        }
+      },
+      "description": "States for each HTTP client skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
