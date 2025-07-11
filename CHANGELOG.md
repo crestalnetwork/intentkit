@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.6.0
+
+### 🚀 Features
+- **IntentKit Package Publishing**: The intentkit package is now published and available for installation
+- **Web Scraper Skills**: Added comprehensive web scraping capabilities to scrape entire sites in one prompt
+- **Firecrawl Integration**: New Firecrawl skill for advanced web content extraction
+- **Supabase Skills**: Complete Supabase integration with data operations and error handling
+- **HTTP Skills**: Generic HTTP request capabilities for external API interactions
+- **Enhanced Skill Context**: More contextual information available to skills during execution
+
+### 🔧 Improvements
+- **Core Refactoring**: Major refactoring of the intentkit core system for better performance
+- **Stream Executor**: Improved streaming capabilities for real-time responses
+- **Agent Creation**: Streamlined agent creation process
+- **Memory Management**: Better memory handling with SQLite support for testing
+- **CDP Wallet Integration**: Enhanced CDP wallet functionality with automatic wallet creation
+- **Skill Schema Updates**: Improved skill schemas with conditional validation
+- **LangGraph Integration**: Better PostgreSQL saver initialization for LangGraph
+
+### 🐛 Bug Fixes
+- Fixed import issues in core modules
+- Corrected skills path and added webp support in admin schema
+- Fixed CDP balance retrieval functionality
+- Resolved wallet creation issues during agent initialization
+- Various lint and formatting fixes
+
+### 📚 Documentation
+- Updated LLM integration guide
+- Enhanced skill development documentation
+- Improved changelog maintenance
+
+### Breaking Changes
+- Core intentkit package structure has been refactored
+- Some skill interfaces may have changed due to enhanced context support
+
+### Migration Guide
+- Update your intentkit package installation to use the new published version
+- Review skill implementations if using custom skills
+- Check agent creation code for any compatibility issues
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.5.9...v0.6.0
+
 ## v0.6.0-dev.18
 
 ### Bug Fixes

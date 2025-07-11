@@ -114,6 +114,9 @@ class CdpClient:
                 )
                 address = new_account.address
                 logger.info("Created new wallet: %s", address)
+
+            # close client
+            await cdp_client.close()
             # now it should be created or migrated, store it
             agent_data.evm_wallet_address = address
             await agent_data.save()
