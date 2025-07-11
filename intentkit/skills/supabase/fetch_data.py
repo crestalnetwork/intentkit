@@ -62,7 +62,9 @@ class SupabaseFetchData(SupabaseBaseTool):
     ):
         try:
             context = self.context_from_config(config)
-            supabase_url, supabase_key = self.get_supabase_config(context.config)
+            supabase_url, supabase_key = self.get_supabase_config(
+                context.config, context
+            )
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)
