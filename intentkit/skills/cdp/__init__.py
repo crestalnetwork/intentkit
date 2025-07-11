@@ -114,10 +114,8 @@ async def get_skills(
     for skill in available_skills:
         if skill == "get_balance":
             # Get the account object for the custom GetBalance skill
-            account = await cdp_client.get_account()
             tools.append(
                 GetBalance(
-                    account=account,
                     agent_id=agent_id,
                     skill_store=store,
                 )
