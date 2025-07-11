@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.0-dev.18
+
+### Bug Fixes
+- **CDP Wallet**: Fixed wallet creation during agent creation process
+- **CDP Balance**: Fixed CDP get balance functionality
+
+### Documentation
+- Updated changelog
+
+### Pull Requests
+- Merged PR #700: Improve CDP wallet functionality and agent creation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.17...v0.6.0-dev.18
+
 ## v0.6.0-dev.17
 
 ### Changes
