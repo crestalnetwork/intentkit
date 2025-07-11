@@ -16,7 +16,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -150,4 +150,4 @@
     }
   },
   "additionalProperties": true
-} 
+}

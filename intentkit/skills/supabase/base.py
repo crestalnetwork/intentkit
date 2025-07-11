@@ -21,11 +21,14 @@ class SupabaseBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "supabase"
 
-    def get_supabase_config(self, config: dict) -> tuple[str, str]:
+    def get_supabase_config(
+        self, config: dict, context: SkillContext
+    ) -> tuple[str, str]:
         """Get Supabase URL and key from config.
 
         Args:
             config: The agent configuration
+            context: The skill context containing configuration and mode info
 
         Returns:
             Tuple of (supabase_url, supabase_key)
@@ -34,7 +37,13 @@ class SupabaseBaseTool(IntentKitSkill):
             ValueError: If required config is missing
         """
         supabase_url = config.get("supabase_url")
-        supabase_key = config.get("supabase_key")
+
+        # Use public_key for public operations if available, otherwise fall back to supabase_key
+        if context.is_private:
+            supabase_key = config.get("supabase_key")
+        else:
+            # Try public_key first, fall back to supabase_key if public_key doesn't exist
+            supabase_key = config.get("public_key") or config.get("supabase_key")
 
         if not supabase_url:
             raise ValueError("supabase_url is required in config")

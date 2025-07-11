@@ -1,6 +1,5 @@
 from typing import Optional, Type
 
-from cdp import EvmServerAccount
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -49,85 +48,63 @@ class GetBalance(CDPBaseTool):
         Returns:
             str: A message containing the balance information or error message.
         """
-        try:
-            # Get network information from CDP client
-            cdp_client = await get_cdp_client(self.agent_id, self.skill_store)
-            provider = await cdp_client.get_wallet_provider()
-            account: EvmServerAccount = provider._account
-            provider_config = await cdp_client.get_provider_config()
-            network_id = provider_config.network_id
+        # Get network information from CDP client
+        cdp_client = await get_cdp_client(self.agent_id, self.skill_store)
+        provider = await cdp_client.get_wallet_provider()
+        provider_config = await cdp_client.get_provider_config()
+        network_id = provider_config.network_id
 
-            # Map network_id to the format expected by the API
-            network_mapping = {
-                "base-mainnet": "base",
-                "ethereum-mainnet": "ethereum",
-            }
-            api_network = network_mapping.get(network_id, network_id)
+        # Map network_id to the format expected by the API
+        network_mapping = {
+            "base-mainnet": "base",
+            "ethereum-mainnet": "ethereum",
+        }
+        api_network = network_mapping.get(network_id, network_id)
 
+        # For native ETH balance, use the account's balance directly
+        if asset_id and asset_id.lower() == "eth":
+            try:
+                # Get native balance using Web3
+                balance_wei = provider.get_balance()
+                balance_eth = balance_wei / (10**18)  # Convert from wei to ETH
+                return f"ETH balance: {balance_eth} ETH"
+            except Exception as e:
+                return f"Error getting ETH balance: {e!s}"
+
+        client = provider.get_client()
+        async with client:
+            account = await client.evm.get_account(provider.get_address())
             # If no asset_id provided, return all token balances
             if asset_id is None:
-                try:
-                    # Get native ETH balance
-                    balance_wei = provider.get_balance()
-                    balance_eth = balance_wei / (10**18)  # Convert from wei to ETH
+                # Get native ETH balance
+                balance_wei = provider.get_balance()
+                balance_eth = balance_wei / (10**18)  # Convert from wei to ETH
 
-                    # Get all token balances
-                    token_balances = await account.list_token_balances(api_network)
-
-                    result = [f"ETH balance: {balance_eth} ETH"]
-
-                    for balance in token_balances.balances:
-                        result.append(
-                            f"{balance.token.symbol} balance: {balance.amount.decimals} {balance.token.name}"
-                        )
-
-                    return f"All balances for account {account.address}:\n" + "\n".join(
-                        result
-                    )
-
-                except Exception as e:
-                    return f"Error getting all balances: {e!s}"
-
-            # For native ETH balance, use the account's balance directly
-            if asset_id.lower() == "eth":
-                try:
-                    # Get native balance using Web3
-                    balance_wei = provider.get_balance()
-                    balance_eth = balance_wei / (10**18)  # Convert from wei to ETH
-                    return (
-                        f"ETH balance for account {account.address}: {balance_eth} ETH"
-                    )
-                except Exception as e:
-                    return f"Error getting ETH balance: {e!s}"
-
-            # For other tokens, try the list_token_balances API
-            try:
-                # list_token_balances returns all token balances for the account
+                # Get all token balances
                 token_balances = await account.list_token_balances(api_network)
 
-                # Find the balance for the specific asset
-                target_balance = None
+                result = [f"ETH balance: {balance_eth} ETH"]
+
                 for balance in token_balances.balances:
-                    if balance.token.symbol.lower() == asset_id.lower():
-                        target_balance = balance
-                        break
+                    result.append(
+                        f"{balance.token.symbol} balance: {balance.amount.decimals} {balance.token.name}"
+                    )
 
-                if target_balance:
-                    return f"Balance for {asset_id} in account {account.address}: {target_balance.amount.decimals} {target_balance.token.name}"
-                else:
-                    return f"No balance found for asset {asset_id} in account {account.address}"
+                return f"All balances for account {account.address}:\n" + "\n".join(
+                    result
+                )
 
-            except Exception as e:
-                return f"Error getting balance for account: {e!s}"
+            # For other tokens, try the list_token_balances API
+            token_balances = await account.list_token_balances(api_network)
 
-        except Exception as e:
-            return f"Error getting balance: {str(e)}"
+            # Find the balance for the specific asset
+            target_balance = None
+            for balance in token_balances.balances:
+                if balance.token.symbol.lower() == asset_id.lower():
+                    target_balance = balance
+                    break
 
-    def _run(self, asset_id: Optional[str] = None) -> str:
-        """Sync implementation of the tool.
-
-        This method is deprecated since we now have native async implementation in _arun.
-        """
-        raise NotImplementedError(
-            "Use _arun instead, which is the async implementation"
-        )
+            if target_balance:
+                return f"Balance for {asset_id} in account {account.address}: {target_balance.amount.decimals} {target_balance.token.name}"
+            else:
+                return f"No balance found for asset {asset_id} in account {account.address}"

@@ -135,9 +135,7 @@ class PreModelNode(RunnableCallable):
                     f"Trimmed messages: {len(messages)} -> {len(trimmed_messages)}"
                 )
                 if len(trimmed_messages) <= 3:
-                    logger.error(
-                        f"Too few messages after trim: {len(trimmed_messages)}"
-                    )
+                    logger.info(f"Too few messages after trim: {len(trimmed_messages)}")
                     return {}
                 return {
                     "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,

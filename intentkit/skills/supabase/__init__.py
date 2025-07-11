@@ -1,7 +1,7 @@
 """Supabase skills."""
 
 import logging
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
@@ -34,7 +34,8 @@ class Config(SkillConfig):
     states: SkillStates
     supabase_url: str
     supabase_key: str
-    public_write_tables: str = ""
+    public_write_tables: NotRequired[str]
+    public_key: NotRequired[str]
 
 
 async def get_skills(

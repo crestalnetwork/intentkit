@@ -56,7 +56,9 @@ class SupabaseUpsertData(SupabaseBaseTool):
             # Validate table access for public mode
             self.validate_table_access(table, context)
 
-            supabase_url, supabase_key = self.get_supabase_config(context.config)
+            supabase_url, supabase_key = self.get_supabase_config(
+                context.config, context
+            )
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)
