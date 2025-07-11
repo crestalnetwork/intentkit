@@ -24,9 +24,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
+from intentkit.clients.cdp import get_cdp_client
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.config import config
 from intentkit.core.engine import clean_agent_memory
+from intentkit.core.skill import skill_store
 from intentkit.models.agent import (
     Agent,
     AgentCreate,
@@ -91,9 +93,12 @@ async def _process_agent_post_actions(
     """
     agent_data = None
 
-    if not is_new:
-        # Get agent data
-        agent_data = await AgentData.get(agent.id)
+    if config.cdp_api_key_id:
+        cdp_client = await get_cdp_client(agent.id, skill_store)
+        await cdp_client.get_wallet_provider()
+
+    # Get new agent data
+    agent_data = await AgentData.get(agent.id)
 
     # Send Slack notification
     slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
