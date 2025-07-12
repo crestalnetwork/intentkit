@@ -68,25 +68,32 @@ Check out [Documentation](docs/) before you start.
 
 ## Project Structure
 
-- [abstracts/](intentkit/abstracts/): Abstract classes and interfaces
-- [app/](app/): Core application code
-  - [core/](intentkit/core/): Core modules
-  - [services/](app/services/): Services
-  - [entrypoints/](app/entrypoints/): Entrypoints means the way to interact with the agent
-  - [admin/](app/admin/): Admin logic
-  - [config/](intentkit/config/): Configurations
+The project is divided into the core package and the application:
+
+- **[intentkit/](intentkit/)**: The IntentKit package (published as a pip package)
+  - [abstracts/](intentkit/abstracts/): Abstract classes and interfaces for core and skills
+  - [clients/](intentkit/clients/): Clients for external services
+  - [config/](intentkit/config/): System level configurations
+  - [core/](intentkit/core/): Core agent system, driven by LangGraph
+  - [models/](intentkit/models/): Entity models using Pydantic and SQLAlchemy
+  - [skills/](intentkit/skills/): Extensible skills system, based on LangChain tools
+  - [utils/](intentkit/utils/): Utility functions
+
+- **[app/](app/)**: The IntentKit app (API server, autonomous runner, and background scheduler)
+  - [admin/](app/admin/): Admin APIs, agent generators, and related functionality
+  - [entrypoints/](app/entrypoints/): Entrypoints for interacting with agents (web, Telegram, Twitter, etc.)
+  - [services/](app/services/): Service implementations for Telegram, Twitter, etc.
   - [api.py](app/api.py): REST API server
-  - [autonomous.py](app/autonomous.py): Autonomous agent scheduler
-  - [singleton.py](app/singleton.py): Singleton agent scheduler
-  - [scheduler.py](app/scheduler.py): Scheduler for periodic tasks
+  - [autonomous.py](app/autonomous.py): Autonomous agent runner
+  - [checker.py](app/checker.py): Health and credit checking logic
   - [readonly.py](app/readonly.py): Readonly entrypoint
-  - [telegram.py](app/telegram.py): Telegram listener
-- [clients/](intentkit/clients/): Clients for external services
+  - [scheduler.py](app/scheduler.py): Background task scheduler
+  - [singleton.py](app/singleton.py): Singleton agent manager
+  - [telegram.py](app/telegram.py): Telegram integration
+  - [twitter.py](app/twitter.py): Twitter integration
+
 - [docs/](docs/): Documentation
-- [models/](intentkit/models/): Database models
-- [scripts/](scripts/): Scripts for agent management
-- [skills/](intentkit/skills/): Skill implementations
-- [utils/](intentkit/utils/): Utility functions
+- [scripts/](scripts/): Operation and temporary scripts for management and migrations
 
 ## Contributing
 
