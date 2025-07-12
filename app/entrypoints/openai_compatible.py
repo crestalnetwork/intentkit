@@ -2,13 +2,13 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from epyxid import XID
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.auth import verify_agent_token
 from intentkit.core.engine import execute_agent
 from intentkit.models.agent import Agent
-from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import (
     AuthorType,
     ChatMessageAttachment,
@@ -140,46 +140,6 @@ class OpenAIChatCompletionResponse(BaseModel):
         ..., description="Usage statistics for the completion request"
     )
     system_fingerprint: Optional[str] = Field(None, description="System fingerprint")
-
-
-# Dependency to verify token and get agent
-async def verify_token(
-    authorization: str = Header(..., alias="Authorization"),
-) -> Agent:
-    """Verify the API token and return the associated agent.
-
-    Args:
-        authorization: The Authorization header containing the Bearer token
-
-    Returns:
-        Agent: The agent associated with the token
-
-    Raises:
-        HTTPException: If token is invalid or agent not found
-    """
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header format. Expected 'Bearer <token>'",
-        )
-
-    token = authorization[7:]  # Remove "Bearer " prefix
-
-    # Find agent data by api_key
-    agent_data = await AgentData.get_by_api_key(token)
-    if not agent_data:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API token"
-        )
-
-    # Get the agent
-    agent = await Agent.get(agent_data.id)
-    if not agent:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
-        )
-
-    return agent
 
 
 def extract_text_and_images(
@@ -383,7 +343,7 @@ def create_streaming_response_batched(
     summary="Create chat completion",
 )
 async def create_chat_completion(
-    request: OpenAIChatCompletionRequest, agent: Agent = Depends(verify_token)
+    request: OpenAIChatCompletionRequest, agent: Agent = Depends(verify_agent_token)
 ):
     """Create a chat completion using OpenAI-compatible API.
 

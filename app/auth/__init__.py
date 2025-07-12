@@ -2,10 +2,11 @@ import logging
 from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from intentkit.config.config import config
+from intentkit.models.agent import Agent, AgentData
 
 logger = logging.getLogger(__name__)
 
@@ -48,3 +49,39 @@ async def verify_admin_jwt(
         return payload.get("sub", "")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+
+agent_security = HTTPBearer()
+
+
+async def verify_agent_token(
+    credentials: HTTPAuthorizationCredentials = Depends(agent_security),
+) -> Agent:
+    """Verify the API token and return the associated agent.
+
+    Args:
+        credentials: The Bearer token credentials from HTTPBearer
+
+    Returns:
+        Agent: The agent associated with the token
+
+    Raises:
+        HTTPException: If token is invalid or agent not found
+    """
+    token = credentials.credentials
+
+    # Find agent data by api_key
+    agent_data = await AgentData.get_by_api_key(token)
+    if not agent_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API token"
+        )
+
+    # Get the agent
+    agent = await Agent.get(agent_data.id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+        )
+
+    return agent
