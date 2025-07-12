@@ -448,9 +448,9 @@ class ChatMessage(ChatMessageCreate):
         return resp
 
     @classmethod
-    async def get(cls, chat_id: str) -> Optional["ChatMessage"]:
+    async def get(cls, message_id: str) -> Optional["ChatMessage"]:
         async with get_session() as db:
-            raw = await db.get(ChatMessageTable, chat_id)
+            raw = await db.get(ChatMessageTable, message_id)
             if raw:
                 return ChatMessage.model_validate(raw)
             return None
