@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import verify_admin_jwt
 from intentkit.config.config import config
 from intentkit.core.engine import execute_agent, thread_stats
 from intentkit.core.prompt import agent_prompt
@@ -38,7 +39,6 @@ from intentkit.models.chat import (
     ChatMessageTable,
 )
 from intentkit.models.db import get_db
-from intentkit.utils.middleware import create_jwt_middleware
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -48,9 +48,6 @@ chat_router_readonly = APIRouter()
 
 # Add security scheme
 security = HTTPBasic()
-
-# Create JWT middleware with admin config
-verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 
 # Add credentials checker
@@ -252,7 +249,7 @@ async def debug_agent_prompt(
 @chat_router_readonly.get(
     "/agents/{aid}/chat/history",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=List[ChatMessage],
     operation_id="get_chat_history",
     summary="Chat History",
@@ -310,7 +307,7 @@ async def get_chat_history(
 @chat_router.get(
     "/agents/{aid}/chat/retry",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="retry_chat_deprecated",
     deprecated=True,
@@ -387,7 +384,7 @@ async def retry_chat_deprecated(
 @chat_router.put(
     "/agents/{aid}/chat/retry/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="retry_chat_put_deprecated",
     summary="Retry Chat",
@@ -396,7 +393,7 @@ async def retry_chat_deprecated(
 @chat_router.post(
     "/agents/{aid}/chat/retry/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="retry_chat",
     summary="Retry Chat",
@@ -471,7 +468,7 @@ async def retry_chat(
 @chat_router.post(
     "/agents/{aid}/chat",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="create_chat_deprecated",
     deprecated=True,
@@ -548,7 +545,7 @@ async def create_chat_deprecated(
 @chat_router.post(
     "/agents/{aid}/chat/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="chat",
     summary="Chat",
@@ -766,7 +763,7 @@ async def delete_chat(
 @chat_router_readonly.get(
     "/agents/{aid}/skill/history",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=List[ChatMessage],
     operation_id="get_skill_history",
     summary="Skill History",
@@ -812,7 +809,7 @@ async def get_skill_history(
 @chat_router_readonly.get(
     "/messages/{message_id}",
     tags=["Chat"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="get_chat_message",
     summary="Get Chat Message",

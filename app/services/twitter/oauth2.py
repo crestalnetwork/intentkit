@@ -7,11 +7,8 @@ from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 
+from app.auth import verify_admin_jwt
 from intentkit.config.config import config
-from intentkit.utils.middleware import create_jwt_middleware
-
-# Create JWT middleware with admin config
-verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 
 # this class is forked from:
@@ -100,7 +97,7 @@ router = APIRouter(tags=["Auth"])
 @router.get(
     "/auth/twitter",
     response_model=TwitterAuthResponse,
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_twitter_auth_url(agent_id: str, redirect_uri: str) -> TwitterAuthResponse:
     """Get Twitter OAuth2 authorization URL.

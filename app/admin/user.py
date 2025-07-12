@@ -3,12 +3,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 
-from intentkit.config.config import config
+from app.auth import verify_admin_jwt
 from intentkit.models.user import User, UserUpdate
-from intentkit.utils.middleware import create_jwt_middleware
 
 logger = logging.getLogger(__name__)
-verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 user_router = APIRouter(prefix="/users", tags=["User"])
 user_router_readonly = APIRouter(prefix="/users", tags=["User"])
@@ -19,7 +17,7 @@ user_router_readonly = APIRouter(prefix="/users", tags=["User"])
     response_model=User,
     operation_id="get_user",
     summary="Get User",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_user(
     user_id: Annotated[str, Path(description="ID of the user")],
@@ -43,7 +41,7 @@ async def get_user(
     response_model=User,
     operation_id="put_user",
     summary="Replace User",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def put_user(
     user_id: Annotated[str, Path(description="ID of the user")],
@@ -66,7 +64,7 @@ async def put_user(
     response_model=User,
     operation_id="patch_user",
     summary="Update User",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def patch_user(
     user_id: Annotated[str, Path(description="ID of the user")],

@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
+from app.auth import verify_admin_jwt
 from intentkit.clients.cdp import get_cdp_client
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.config import config
@@ -40,14 +41,10 @@ from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_db
 from intentkit.models.user import User
 from intentkit.skills import __all__ as skill_categories
-from intentkit.utils.middleware import create_jwt_middleware
 from intentkit.utils.slack_alert import send_slack_message
 
 admin_router_readonly = APIRouter()
 admin_router = APIRouter()
-
-# Create JWT middleware with admin config
-verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +279,7 @@ def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) 
 )
 async def create_or_update_agent(
     agent: AgentCreate = Body(AgentCreate, description="Agent configuration"),
-    subject: str = Depends(verify_jwt),
+    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Create or update an agent.
 
@@ -416,7 +413,7 @@ async def validate_agent_update(
 )
 async def create_agent(
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
-    subject: str = Depends(verify_jwt),
+    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Create a new agent.
 
@@ -468,7 +465,7 @@ async def create_agent(
 async def update_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
-    subject: str = Depends(verify_jwt),
+    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Update an existing agent.
 
@@ -521,7 +518,7 @@ async def update_agent(
 async def override_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
-    subject: str = Depends(verify_jwt),
+    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Override an existing agent.
 
@@ -576,7 +573,7 @@ async def override_agent(
 @admin_router_readonly.get(
     "/agents",
     tags=["Agent"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     operation_id="get_agents",
 )
 async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
@@ -610,7 +607,7 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
 @admin_router_readonly.get(
     "/agents/{agent_id}",
     tags=["Agent"],
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     operation_id="get_agent",
 )
 async def get_agent(
@@ -665,14 +662,14 @@ class MemCleanRequest(BaseModel):
     "/agent/clean-memory",
     tags=["Agent"],
     status_code=204,
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     operation_id="clean_agent_memory",
 )
 @admin_router.post(
     "/agents/clean-memory",
     tags=["Agent"],
     status_code=201,
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     operation_id="clean_agent_memory_deprecated",
     deprecated=True,
 )
@@ -729,7 +726,7 @@ async def clean_memory(
     "/agents/{agent_id}/export",
     tags=["Agent"],
     operation_id="export_agent",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def export_agent(
     agent_id: str = Path(..., description="ID of the agent to export"),
@@ -846,7 +843,7 @@ async def import_agent(
     file: UploadFile = File(
         ..., description="YAML file containing agent configuration"
     ),
-    subject: str = Depends(verify_jwt),
+    subject: str = Depends(verify_admin_jwt),
 ) -> str:
     """Import agent configuration from YAML file.
     Only updates existing agents, will not create new ones.
@@ -901,7 +898,7 @@ async def import_agent(
     "/agents/{agent_id}/twitter/unlink",
     tags=["Agent"],
     operation_id="unlink_twitter",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     response_class=Response,
 )
 async def unlink_twitter_endpoint(
