@@ -133,7 +133,7 @@
       "type": "string",
       "title": "Supabase URL",
       "description": "Your Supabase project URL (e.g., https://your-project.supabase.co). You can find it in Project Settings -> Data API",
-      "x-link": "https://supabase.com/",
+      "x-link": "[Create Your DB](https://supabase.com/)",
       "format": "uri"
     },
     "supabase_key": {
@@ -153,7 +153,7 @@
     "public_write_tables": {
       "type": "string",
       "title": "Public Write Tables",
-      "description": "Add tables separated by commas. When insert, update, upsert, or delete operations are enabled for public use, only tables from this list can be used. This list does not restrict the skills executed by the owner or in autonomous chat."
+      "description": "Add tables separated by commas. When insert, update, upsert, or delete operations are enabled for public use, only tables from this list can be used. This list does not restrict the skills executed by the owner or in autonomous chat. You can use either this option or public_key to secure your public access."
     }
   },
   "required": [

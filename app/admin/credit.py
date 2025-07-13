@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.config.config import config
+from app.auth import verify_admin_jwt
 from intentkit.core.credit import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
@@ -36,10 +36,8 @@ from intentkit.models.credit import (
     TransactionType,
 )
 from intentkit.models.db import get_db
-from intentkit.utils.middleware import create_jwt_middleware
 
 logger = logging.getLogger(__name__)
-verify_jwt = create_jwt_middleware(config.admin_auth_enabled, config.admin_jwt_secret)
 
 credit_router = APIRouter(prefix="/credit", tags=["Credit"])
 credit_router_readonly = APIRouter(prefix="/credit", tags=["Credit"])
@@ -160,7 +158,7 @@ class UpdateEventNoteRequest(BaseModel):
     response_model=CreditAccount,
     operation_id="get_account",
     summary="Get Account",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_account(owner_type: OwnerType, owner_id: str) -> CreditAccount:
     """Get a credit account by owner type and ID. It will create a new account if it does not exist.
@@ -183,7 +181,7 @@ async def get_account(owner_type: OwnerType, owner_id: str) -> CreditAccount:
     status_code=status.HTTP_201_CREATED,
     operation_id="recharge_account",
     summary="Recharge",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def recharge_user_account(
     request: RechargeRequest,
@@ -208,7 +206,7 @@ async def recharge_user_account(
     status_code=status.HTTP_201_CREATED,
     operation_id="reward_account",
     summary="Reward",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def reward_user_account(
     request: RewardRequest,
@@ -239,7 +237,7 @@ async def reward_user_account(
 #     status_code=status.HTTP_201_CREATED,
 #     operation_id="adjust_account",
 #     summary="Adjust",
-#     dependencies=[Depends(verify_jwt)],
+#     dependencies=[Depends(verify_admin_jwt)],
 # )
 # async def adjust_user_account(
 #     request: AdjustmentRequest,
@@ -270,7 +268,7 @@ async def reward_user_account(
     status_code=status.HTTP_200_OK,
     operation_id="update_account_free_quota",
     summary="Update Daily Quota and Refill Amount",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def update_account_free_quota(
     user_id: str, request: UpdateDailyQuotaRequest, db: AsyncSession = Depends(get_db)
@@ -327,7 +325,7 @@ class AgentStatisticsResponse(BaseModel):
     response_model=AgentStatisticsResponse,
     operation_id="get_agent_statistics",
     summary="Get Agent Statistics",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_agent_statistics(
     agent_id: Annotated[str, Path(description="ID of the agent")],
@@ -423,7 +421,7 @@ async def get_agent_statistics(
     response_model=CreditEventsResponse,
     operation_id="list_user_events",
     summary="List User Events",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def list_user_events(
     user_id: str,
@@ -466,7 +464,7 @@ async def list_user_events(
     response_model=CreditEvent,
     operation_id="update_event_note",
     summary="Update Event Note",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def update_event_note(
     event_id: Annotated[str, Path(description="ID of the event to update")],
@@ -498,7 +496,7 @@ async def update_event_note(
     response_model=CreditEventsResponse,
     operation_id="list_user_expense_events",
     summary="List User Expense",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def list_user_expense_events(
     user_id: str,
@@ -539,7 +537,7 @@ async def list_user_expense_events(
     response_model=CreditTransactionsResponse,
     operation_id="list_transactions",
     summary="List Transactions",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def list_transactions(
     user_id: Annotated[str, Query(description="ID of the user")],
@@ -663,7 +661,7 @@ async def list_transactions(
     response_model=CreditEventsResponse,
     operation_id="list_user_income_events",
     summary="List User Income",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def list_user_income_events(
     user_id: str,
@@ -707,7 +705,7 @@ async def list_user_income_events(
     response_model=CreditEventsResponse,
     operation_id="list_agent_income_events",
     summary="List Agent Income",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def list_agent_income_events(
     agent_id: str,
@@ -747,7 +745,7 @@ async def list_agent_income_events(
     response_model=CreditEvent,
     operation_id="fetch_credit_event_by_upstream_tx_id",
     summary="Credit Event by Upstream ID",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
 )
 async def fetch_credit_event(
     upstream_tx_id: Annotated[str, Query(description="Upstream transaction ID")],
@@ -773,7 +771,7 @@ async def fetch_credit_event(
     response_model=CreditEvent,
     operation_id="fetch_credit_event_by_id",
     summary="Credit Event by ID",
-    dependencies=[Depends(verify_jwt)],
+    dependencies=[Depends(verify_admin_jwt)],
     responses={
         200: {"description": "Credit event found and returned successfully"},
         403: {
