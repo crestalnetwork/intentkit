@@ -28,6 +28,8 @@ from app.admin import (
     user_router,
     user_router_readonly,
 )
+from app.entrypoints.agent_api import router_ro as agent_api_ro
+from app.entrypoints.agent_api import router_rw as agent_api_rw
 from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router, chat_router_readonly
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
@@ -58,6 +60,42 @@ if config.sentry_dsn:
         release=config.release,
         server_name="intent-api",
     )
+
+# Create Agent API sub-application
+agent_app = FastAPI(
+    title="IntentKit Agent API",
+    summary="Agent API with OpenAI-compatible endpoints",
+    version=config.release,
+    contact={
+        "name": "IntentKit Team",
+        "url": "https://github.com/crestalnetwork/intentkit",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+)
+
+# Add exception handlers to the Agent API sub-application
+agent_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+agent_app.exception_handler(RequestValidationError)(
+    request_validation_exception_handler
+)
+agent_app.exception_handler(StarletteHTTPException)(http_exception_handler)
+agent_app.exception_handler(Exception)(intentkit_other_error_handler)
+
+# Add CORS middleware to the Agent API sub-application
+agent_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Add routers to the Agent API sub-application
+agent_app.include_router(agent_api_rw)
+agent_app.include_router(agent_api_ro)
+agent_app.include_router(openai_router)
 
 
 @asynccontextmanager
@@ -120,9 +158,11 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Mount the Agent API sub-application
+app.mount("/v1", agent_app)
+
 app.include_router(chat_router)
 app.include_router(chat_router_readonly)
-app.include_router(openai_router)
 app.include_router(admin_router)
 app.include_router(admin_router_readonly)
 app.include_router(metadata_router_readonly)

@@ -35,8 +35,8 @@ from intentkit.models.db import get_db
 
 logger = logging.getLogger(__name__)
 
-router_rw = APIRouter(prefix="/v1", tags=["Chat"])
-router_ro = APIRouter(prefix="/v1", tags=["Chat"])
+router_rw = APIRouter()
+router_ro = APIRouter()
 
 
 def get_real_user_id(
@@ -173,6 +173,7 @@ class ChatMessageRequest(BaseModel):
     operation_id="list_chats",
     summary="List chat threads",
     description="Retrieve all chat threads for the current user.",
+    tags=["Thread"],
 )
 async def get_chats(
     user_id: Optional[str] = Query(None, description="User ID (optional)"),
@@ -194,6 +195,7 @@ async def get_chats(
     operation_id="create_chat_thread",
     summary="Create a new chat thread",
     description="Create a new chat thread for a specific user.",
+    tags=["Thread"],
 )
 async def create_chat(
     user_id: Optional[str] = Query(None, description="User ID (optional)"),
@@ -225,6 +227,7 @@ async def create_chat(
     operation_id="get_chat_thread_by_id",
     summary="Get chat thread by ID",
     description="Retrieve a specific chat thread by its ID for the current user. Returns 404 if not found or not owned by the user.",
+    tags=["Thread"],
 )
 async def get_chat(
     chat_id: str = Path(..., description="Chat ID"),
@@ -252,6 +255,7 @@ async def get_chat(
     operation_id="update_chat_thread",
     summary="Update a chat thread",
     description="Update details of a specific chat thread. Currently only supports updating the summary.",
+    tags=["Thread"],
 )
 async def update_chat(
     request: ChatUpdateRequest,
@@ -277,6 +281,7 @@ async def update_chat(
     operation_id="delete_chat_thread",
     summary="Delete a chat thread",
     description="Delete a specific chat thread for the current user. Returns 404 if not found or not owned by the user.",
+    tags=["Thread"],
 )
 async def delete_chat(
     chat_id: str = Path(..., description="Chat ID"),
@@ -298,6 +303,7 @@ async def delete_chat(
     operation_id="list_messages_in_chat",
     summary="List messages in a chat thread",
     description="Retrieve the message history for a specific chat thread with cursor-based pagination.",
+    tags=["Message"],
 )
 async def get_messages(
     chat_id: str = Path(..., description="Chat ID"),
@@ -348,6 +354,7 @@ async def get_messages(
     operation_id="send_message_to_chat",
     summary="Send a message to a chat thread",
     description="Send a new message to a specific chat thread. Supports streaming responses if requested.",
+    tags=["Message"],
 )
 async def send_message(
     request: ChatMessageRequest,
@@ -420,6 +427,7 @@ async def send_message(
     operation_id="retry_message_in_chat",
     summary="Retry a message in a chat thread",
     description="Retry sending the last message in a specific chat thread. If the last message is from the system, returns all messages after the last user message. If the last message is from a user, generates a new response. Only works with non-streaming mode.",
+    tags=["Message"],
 )
 async def retry_message(
     chat_id: str = Path(..., description="Chat ID"),
@@ -566,6 +574,7 @@ async def retry_message(
     operation_id="get_message_by_id",
     summary="Get message by ID",
     description="Retrieve a specific chat message by its ID for the current user. Returns 404 if not found or not owned by the user.",
+    tags=["Message"],
 )
 async def get_message(
     message_id: str = Path(..., description="Message ID"),

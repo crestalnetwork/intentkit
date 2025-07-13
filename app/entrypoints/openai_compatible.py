@@ -165,13 +165,11 @@ def extract_text_and_images(
         elif part.get("type") == "image_url":
             image_url = part.get("image_url", {}).get("url", "")
             if image_url:
-                attachments.append(
-                    {
-                        "type": ChatMessageAttachmentType.IMAGE,
-                        "url": image_url,
-                        "name": "image",
-                    }
-                )
+                attachments.append({
+                    "type": ChatMessageAttachmentType.IMAGE,
+                    "url": image_url,
+                    "name": "image",
+                })
 
     return " ".join(text_parts), attachments
 
@@ -337,7 +335,7 @@ def create_streaming_response_batched(
 
 
 @openai_router.post(
-    "/v1/chat/completions",
+    "/chat/completions",
     tags=["OpenAI"],
     operation_id="create_chat_completion",
     summary="Create chat completion",
