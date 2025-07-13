@@ -16,6 +16,7 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import verify_agent_token
@@ -28,6 +29,7 @@ from intentkit.models.chat import (
     ChatMessage,
     ChatMessageAttachment,
     ChatMessageCreate,
+    ChatMessageTable,
 )
 from intentkit.models.db import get_db
 
@@ -37,9 +39,14 @@ router_rw = APIRouter(prefix="/v1", tags=["Chat"])
 router_ro = APIRouter(prefix="/v1", tags=["Chat"])
 
 
-def get_real_user_id(agent_id: str, user_id: str) -> str:
-    """Generate real user_id with agent_id prefix."""
-    return f"{agent_id}_{user_id}"
+def get_real_user_id(
+    agent_id: str, user_id: Optional[str], agent_owner: Optional[str]
+) -> str:
+    """Generate real user_id with agent_id prefix or use agent owner."""
+    if user_id:
+        return f"{agent_id}_{user_id}"
+    else:
+        return agent_owner or agent_id
 
 
 class ChatMessagesResponse(BaseModel):
@@ -60,14 +67,6 @@ class ChatMessagesResponse(BaseModel):
 class ChatUpdateRequest(BaseModel):
     """Request model for updating a chat thread."""
 
-    user_id: Annotated[
-        str,
-        Field(
-            ...,
-            description="User ID",
-            examples=["user-123"],
-        ),
-    ]
     summary: Annotated[
         str,
         Field(
@@ -79,9 +78,7 @@ class ChatUpdateRequest(BaseModel):
     ]
 
     model_config = ConfigDict(
-        json_schema_extra={
-            "example": {"user_id": "user-123", "summary": "Updated chat summary"}
-        },
+        json_schema_extra={"example": {"summary": "Updated chat summary"}},
     )
 
 
@@ -90,15 +87,15 @@ class ChatMessageRequest(BaseModel):
 
     This model represents the request body for creating a new chat message.
     It contains the necessary fields to identify the chat context and message
-    content, along with optional attachments. The user ID is provided as a
-    parameter and combined with internal ID for storage.
+    content, along with optional attachments. The user ID is optional and
+    combined with internal ID for storage if provided.
     """
 
     user_id: Annotated[
-        str,
+        Optional[str],
         Field(
-            ...,
-            description="User ID",
+            None,
+            description="User ID (optional)",
             examples=["user-123"],
         ),
     ]
@@ -178,11 +175,16 @@ class ChatMessageRequest(BaseModel):
     description="Retrieve all chat threads for the current user.",
 )
 async def get_chats(
-    user_id: str = Query(..., description="User ID"),
+    user_id: Optional[str] = Query(None, description="User ID (optional)"),
     agent_id: str = Depends(verify_agent_token),
 ):
     """Get a list of chat threads."""
-    real_user_id = get_real_user_id(agent_id, user_id)
+    # Get agent to access owner
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+
+    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
     return await Chat.get_by_agent_user(agent_id, real_user_id)
 
 
@@ -194,7 +196,7 @@ async def get_chats(
     description="Create a new chat thread for a specific user.",
 )
 async def create_chat(
-    user_id: str = Query(..., description="User ID"),
+    user_id: Optional[str] = Query(None, description="User ID (optional)"),
     agent_id: str = Depends(verify_agent_token),
 ):
     """Create a new chat thread."""
@@ -203,7 +205,7 @@ async def create_chat(
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id)
+    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
     chat = ChatCreate(
         id=str(XID()),
         agent_id=agent_id,
@@ -226,11 +228,16 @@ async def create_chat(
 )
 async def get_chat(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: str = Query(..., description="User ID"),
+    user_id: Optional[str] = Query(None, description="User ID (optional)"),
     agent_id: str = Depends(verify_agent_token),
 ):
     """Get a specific chat thread."""
-    real_user_id = get_real_user_id(agent_id, user_id)
+    # Get agent to access owner
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+
+    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
         raise HTTPException(
@@ -252,18 +259,15 @@ async def update_chat(
     agent_id: str = Depends(verify_agent_token),
 ):
     """Update a chat thread."""
-    real_user_id = get_real_user_id(agent_id, request.user_id)
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
+    if not chat or chat.agent_id != agent_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
         )
 
     # Update the summary field
-    await chat.update_summary(request.summary)
+    updated_chat = await chat.update_summary(request.summary)
 
-    # Retrieve the updated chat to return the latest state
-    updated_chat = await Chat.get(chat_id)
     return updated_chat
 
 
@@ -276,13 +280,11 @@ async def update_chat(
 )
 async def delete_chat(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: str = Query(..., description="User ID"),
     agent_id: str = Depends(verify_agent_token),
 ):
     """Delete a chat thread."""
-    real_user_id = get_real_user_id(agent_id, user_id)
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
+    if not chat or chat.agent_id != agent_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
         )
@@ -299,7 +301,6 @@ async def delete_chat(
 )
 async def get_messages(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: str = Query(..., description="User ID"),
     agent_id: str = Depends(verify_agent_token),
     db: AsyncSession = Depends(get_db),
     cursor: Optional[str] = Query(
@@ -310,15 +311,11 @@ async def get_messages(
     ),
 ) -> ChatMessagesResponse:
     """Get the message history for a chat thread with cursor-based pagination."""
-    real_user_id = get_real_user_id(agent_id, user_id)
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
+    if not chat or chat.agent_id != agent_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
         )
-    from sqlalchemy import desc, select
-
-    from intentkit.models.chat import ChatMessageTable
 
     stmt = (
         select(ChatMessageTable)
@@ -362,7 +359,7 @@ async def send_message(
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, request.user_id)
+    real_user_id = get_real_user_id(agent_id, request.user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
@@ -426,7 +423,7 @@ async def send_message(
 )
 async def retry_message(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: str = Query(..., description="User ID"),
+    user_id: Optional[str] = Query(None, description="User ID (optional)"),
     agent_id: str = Depends(verify_agent_token),
     db: AsyncSession = Depends(get_db),
 ):
@@ -441,18 +438,13 @@ async def retry_message(
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id)
+    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
         )
-
-    # Get last message
-    from sqlalchemy import desc, select
-
-    from intentkit.models.chat import ChatMessageTable
 
     last = await db.scalar(
         select(ChatMessageTable)
@@ -577,11 +569,16 @@ async def retry_message(
 )
 async def get_message(
     message_id: str = Path(..., description="Message ID"),
-    user_id: str = Query(..., description="User ID"),
+    user_id: Optional[str] = Query(None, description="User ID (optional)"),
     agent_id: str = Depends(verify_agent_token),
 ):
     """Get a specific message."""
-    real_user_id = get_real_user_id(agent_id, user_id)
+    # Get agent to access owner
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+
+    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
     message = await ChatMessage.get(message_id)
     if not message or message.user_id != real_user_id:
         raise HTTPException(

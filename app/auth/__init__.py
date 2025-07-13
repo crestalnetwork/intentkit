@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from intentkit.config.config import config
-from intentkit.models.agent import Agent, AgentData
+from intentkit.models.agent import AgentData
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +77,4 @@ async def verify_agent_token(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API token"
         )
 
-    # Get the agent
-    agent = await Agent.get(agent_data.id)
-    if not agent:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
-        )
-
-    return agent.id
+    return agent_data.id
