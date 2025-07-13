@@ -56,14 +56,14 @@ agent_security = HTTPBearer()
 
 async def verify_agent_token(
     credentials: HTTPAuthorizationCredentials = Depends(agent_security),
-) -> Agent:
-    """Verify the API token and return the associated agent.
+) -> str:
+    """Verify the API token and return the associated agent ID.
 
     Args:
         credentials: The Bearer token credentials from HTTPBearer
 
     Returns:
-        Agent: The agent associated with the token
+        str: The agent ID associated with the token
 
     Raises:
         HTTPException: If token is invalid or agent not found
@@ -84,4 +84,4 @@ async def verify_agent_token(
             status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
         )
 
-    return agent
+    return agent.id

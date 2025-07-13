@@ -197,7 +197,7 @@ def create_streaming_response(content: str, request_id: str, model: str, created
         choices=[
             OpenAIChoiceDelta(
                 index=0,
-                delta=OpenAIDelta(role="assistant"),
+                delta=OpenAIDelta(role="assistant", content=None),
                 finish_reason=None,
             )
         ],
@@ -217,7 +217,7 @@ def create_streaming_response(content: str, request_id: str, model: str, created
             choices=[
                 OpenAIChoiceDelta(
                     index=0,
-                    delta=OpenAIDelta(content=chunk_content),
+                    delta=OpenAIDelta(role=None, content=chunk_content),
                     finish_reason=None,
                 )
             ],
@@ -234,7 +234,7 @@ def create_streaming_response(content: str, request_id: str, model: str, created
         choices=[
             OpenAIChoiceDelta(
                 index=0,
-                delta=OpenAIDelta(),
+                delta=OpenAIDelta(role=None, content=None),
                 finish_reason="stop",
             )
         ],
@@ -269,7 +269,7 @@ def create_streaming_response_batched(
         choices=[
             OpenAIChoiceDelta(
                 index=0,
-                delta=OpenAIDelta(role="assistant"),
+                delta=OpenAIDelta(role="assistant", content=None),
                 finish_reason=None,
             )
         ],
@@ -290,7 +290,7 @@ def create_streaming_response_batched(
                     choices=[
                         OpenAIChoiceDelta(
                             index=0,
-                            delta=OpenAIDelta(content="\n"),
+                            delta=OpenAIDelta(role=None, content="\n"),
                             finish_reason=None,
                         )
                     ],
@@ -307,7 +307,7 @@ def create_streaming_response_batched(
                 choices=[
                     OpenAIChoiceDelta(
                         index=0,
-                        delta=OpenAIDelta(content=content_part),
+                        delta=OpenAIDelta(role=None, content=content_part),
                         finish_reason=None,
                     )
                 ],
@@ -324,7 +324,7 @@ def create_streaming_response_batched(
         choices=[
             OpenAIChoiceDelta(
                 index=0,
-                delta=OpenAIDelta(),
+                delta=OpenAIDelta(role=None, content=None),
                 finish_reason="stop",
             )
         ],
@@ -338,12 +338,12 @@ def create_streaming_response_batched(
 
 @openai_router.post(
     "/v1/chat/completions",
-    tags=["Compatible"],
+    tags=["OpenAI"],
     operation_id="create_chat_completion",
     summary="Create chat completion",
 )
 async def create_chat_completion(
-    request: OpenAIChatCompletionRequest, agent: Agent = Depends(verify_agent_token)
+    request: OpenAIChatCompletionRequest, agent_id: str = Depends(verify_agent_token)
 ):
     """Create a chat completion using OpenAI-compatible API.
 
@@ -352,7 +352,7 @@ async def create_chat_completion(
 
     Args:
         request: OpenAI chat completion request
-        agent: The authenticated agent (from token verification)
+        agent_id: The authenticated agent ID (from token verification)
 
     Returns:
         OpenAIChatCompletionResponse: OpenAI-compatible response
@@ -375,17 +375,37 @@ async def create_chat_completion(
             detail="Message content cannot be empty",
         )
 
+    # Get the agent to access its owner
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    # Use agent owner or fallback to agent_id if owner is None
+    user_id = agent.owner or agent_id
+
     # Create user message with fixed chat_id "api" and user_id as agent.owner
     user_message = ChatMessageCreate(
         id=str(XID()),
-        agent_id=agent.id,
+        agent_id=agent_id,
         chat_id="api",
-        user_id=agent.owner,
-        author_id=agent.owner,
+        user_id=user_id,
+        author_id=user_id,
         author_type=AuthorType.API,
         thread_type=AuthorType.API,
         message=text_content,
         attachments=attachments if attachments else None,
+        model=None,
+        reply_to=None,
+        skill_calls=None,
+        input_tokens=0,
+        output_tokens=0,
+        time_cost=0.0,
+        credit_event_id=None,
+        credit_cost=None,
+        cold_start_cost=0.0,
+        app_id=None,
+        search_mode=None,
+        super_mode=None,
     )
 
     # Execute agent
