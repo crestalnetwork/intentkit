@@ -6,7 +6,7 @@ This guide teaches LLMs how to interact with IntentKit agent APIs when building 
 
 All API endpoints are prefixed with `/v1/` and require authentication using a Bearer token.
 
-**Base URL:** `http://localhost:8000/v1/`
+**Base URL:** `http://localhost:8000/v1/` when local development. For production, you will get it when you get the key.
 
 **Authentication:** Include the agent token in the Authorization header:
 ```

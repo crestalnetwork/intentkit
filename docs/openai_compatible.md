@@ -1,4 +1,4 @@
-# Agent API Key
+# OpenAI Compatible API
 
 IntentKit provides system skills for managing agent API keys that enable OpenAI-compatible API access to your agents. The system supports two types of API keys with different access levels:
 
