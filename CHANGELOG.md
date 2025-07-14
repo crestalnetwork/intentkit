@@ -21,6 +21,36 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.1-dev1...v0.6.2-dev1
 
+## v0.6.1
+
+### Features
+- feat: add public key to supabase
+
+### Bug Fixes
+- fix: node log level
+- fix: cdp get balance bug
+- fix: close some default skills
+
+### Documentation
+- doc: changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0...v0.6.1
+
+## v0.6.1-dev1
+
+### Features
+- feat: add public key to supabase
+
+### Bug Fixes
+- fix: node log level
+- fix: cdp get balance bug
+- fix: close some default skills
+
+### Documentation
+- doc: changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.18...v0.6.1-dev1
+
 ## v0.6.0
 
 ### 🚀 Features

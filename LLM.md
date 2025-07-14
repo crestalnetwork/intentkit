@@ -65,6 +65,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
       - If the skill is stateless, you can add a global _cache for it, to avoid re-create the skill object every time.
    - A square image is needed in the category folder.
    - Add schema.json file for the config, since the Config inherit from SkillConfig, you can check examples in exists skill category to find out the pattern.
+   - There is no need to catch exceptions in skills, because the agent has a dedicated module to catch skill exceptions. If you need to add more information to the exception, you can catch it and re-throw the appropriate exception.
 
 ## Ops Guide
 
