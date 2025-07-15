@@ -5,29 +5,6 @@ IntentKit provides system skills for managing agent API keys that enable OpenAI-
 - **Private API Key (sk-)**: Can access all skills (public and owner-only)
 - **Public API Key (pk-)**: Can only access public skills
 
-These skills allow you to retrieve existing API keys or generate new ones for programmatic access to your agent's capabilities.
-
-## Available Skills
-
-The following agent API key management skills are available:
-
-- **Read Agent API Key** (`read_agent_api_key`): Retrieve the existing API keys for the agent, or generate new ones if none exist. Returns both private (sk-) and public (pk-) keys.
-- **Regenerate Agent API Key** (`regenerate_agent_api_key`): Generate new API keys for the agent, revoking any existing keys. Creates both private (sk-) and public (pk-) keys.
-
-## API Key Types and Access Levels
-
-### Private API Key (sk-)
-- **Prefix**: `sk-` (secret key)
-- **Access Level**: Full access to all agent skills (both public and owner-only)
-- **Use Case**: For trusted applications and personal use
-- **Security**: Keep this key secure and private
-
-### Public API Key (pk-)
-- **Prefix**: `pk-` (public key)
-- **Access Level**: Limited to public skills only
-- **Use Case**: For sharing with third parties or embedding in client-side applications
-- **Security**: Can be shared more freely but still should be protected
-
 ## How to Use the API Keys
 
 Once you have obtained API keys using either of the above skills, you can use them to interact with your agent through the OpenAI-compatible API endpoint. Choose the appropriate key based on your access requirements.
