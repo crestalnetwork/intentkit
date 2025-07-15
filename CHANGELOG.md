@@ -1,5 +1,56 @@
 # Changelog
 
+## v0.6.2-dev1
+
+### 🚀 Features
+- **Agent API Sub-application**: Added dedicated agent API sub-application with CORS and error handling
+- **Flexible User ID**: Made user_id optional in chat API with agent.owner fallback for better usability
+
+### 🔧 Improvements
+- **Text Extraction**: Improved formatting in extract_text_and_images function
+- **Authentication**: Updated agent API endpoints to use token-based authentication
+- **Admin Auth**: Refactored admin authentication system
+- **Agent Auth**: Refactored agent authentication system
+
+### 🐛 Bug Fixes
+- **Chat Message**: Fixed typo in chat message handling
+- **Supabase Link**: Fixed Supabase link issue
+
+### 📚 Documentation
+- **README**: Updated documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.1-dev1...v0.6.2-dev1
+
+## v0.6.1
+
+### Features
+- feat: add public key to supabase
+
+### Bug Fixes
+- fix: node log level
+- fix: cdp get balance bug
+- fix: close some default skills
+
+### Documentation
+- doc: changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0...v0.6.1
+
+## v0.6.1-dev1
+
+### Features
+- feat: add public key to supabase
+
+### Bug Fixes
+- fix: node log level
+- fix: cdp get balance bug
+- fix: close some default skills
+
+### Documentation
+- doc: changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.18...v0.6.1-dev1
+
 ## v0.6.0
 
 ### 🚀 Features

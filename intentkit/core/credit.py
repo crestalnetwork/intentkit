@@ -10,6 +10,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.models.agent import Agent
+from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.credit import (
     DEFAULT_PLATFORM_ACCOUNT_ADJUSTMENT,
@@ -150,6 +151,7 @@ async def recharge(
         permanent_amount=amount,  # Set permanent_amount since this is a permanent credit
         free_amount=Decimal("0"),  # No free credits involved
         reward_amount=Decimal("0"),  # No reward credits involved
+        agent_wallet_address=None,  # No agent involved in recharge
         note=note,
     )
     session.add(event)
@@ -258,6 +260,7 @@ async def reward(
         reward_amount=amount,  # Set reward_amount since this is a reward credit
         free_amount=Decimal("0"),  # No free credits involved
         permanent_amount=Decimal("0"),  # No permanent credits involved
+        agent_wallet_address=None,  # No agent involved in reward
         note=note,
     )
     session.add(event)
@@ -412,6 +415,7 @@ async def adjustment(
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
+        agent_wallet_address=None,  # No agent involved in adjustment
         note=note,
     )
     session.add(event)
@@ -892,6 +896,10 @@ async def expense_message(
             fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # Get agent wallet address
+    agent_data = await AgentData.get(agent.id)
+    agent_wallet_address = agent_data.evm_wallet_address if agent_data else None
+
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -925,6 +933,7 @@ async def expense_message(
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
+        agent_wallet_address=agent_wallet_address,
     )
     session.add(event)
     await session.flush()
@@ -1268,6 +1277,10 @@ async def expense_skill(
             skill_cost_info.fee_dev_amount - fee_dev_free_amount - fee_dev_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # Get agent wallet address
+    agent_data = await AgentData.get(agent.id)
+    agent_wallet_address = agent_data.evm_wallet_address if agent_data else None
+
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -1309,6 +1322,7 @@ async def expense_skill(
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
+        agent_wallet_address=agent_wallet_address,
     )
     session.add(event)
     await session.flush()
@@ -1452,6 +1466,7 @@ async def refill_free_credits_for_account(
         free_amount=amount_to_add,  # Set free_amount since this is a free credit refill
         reward_amount=Decimal("0"),  # No reward credits involved
         permanent_amount=Decimal("0"),  # No permanent credits involved
+        agent_wallet_address=None,  # No agent involved in refill
         note=f"Hourly free credits refill of {amount_to_add}",
     )
     session.add(event)
@@ -1675,6 +1690,10 @@ async def expense_summarize(
             fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # Get agent wallet address
+    agent_data = await AgentData.get(agent.id)
+    agent_wallet_address = agent_data.evm_wallet_address if agent_data else None
+
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -1707,6 +1726,7 @@ async def expense_summarize(
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
+        agent_wallet_address=agent_wallet_address,
     )
     session.add(event)
 

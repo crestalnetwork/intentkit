@@ -508,6 +508,7 @@ class CreditAccount(BaseModel):
                 free_amount=free_quota,  # Set free_amount since this is a free credit refill
                 reward_amount=Decimal("0"),  # No reward credits involved
                 permanent_amount=Decimal("0"),  # No permanent credits involved
+                agent_wallet_address=None,  # No agent involved in initial refill
                 note="Initial refill",
             )
             session.add(event)
@@ -712,6 +713,10 @@ class CreditEventTable(Base):
         String,
         nullable=True,
     )
+    agent_wallet_address = Column(
+        String,
+        nullable=True,
+    )
     start_message_id = Column(
         String,
         nullable=True,
@@ -895,6 +900,10 @@ class CreditEvent(BaseModel):
     upstream_tx_id: Annotated[str, Field(description="Upstream transaction ID if any")]
     agent_id: Annotated[
         Optional[str], Field(None, description="ID of the agent if applicable")
+    ]
+    agent_wallet_address: Annotated[
+        Optional[str],
+        Field(None, description="Wallet address of the agent if applicable"),
     ]
     start_message_id: Annotated[
         Optional[str],
