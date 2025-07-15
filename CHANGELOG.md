@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.2-dev2
+
+### 🚀 Features
+- **Credit Event Tracking**: Added agent_wallet_address field to credit event tracking
+- **Agent API Enhancement**: Enhanced agent API and authentication with improved documentation
+
+### 🐛 Bug Fixes
+- **API Key Skill**: Better get API key skill description
+
+### 🔧 Improvements
+- **Twitter Service**: Refactored twitter service for better performance
+
+### 📚 Documentation
+- **API Documentation**: Updated API documentation and restructured files
+- **Change Log**: Updated change log documentation
+
+### 🧹 Maintenance
+- **Dependencies**: UV sync updates
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2-dev1...v0.6.2-dev2
+
 ## v0.6.2-dev1
 
 ### 🚀 Features
