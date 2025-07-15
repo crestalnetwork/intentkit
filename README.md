@@ -95,6 +95,12 @@ The project is divided into the core package and the application:
 - [docs/](docs/): Documentation
 - [scripts/](scripts/): Operation and temporary scripts for management and migrations
 
+## Agent API
+
+IntentKit provides a comprehensive REST API for programmatic access to your agents. Build applications, integrate with existing systems, or create custom interfaces using our Agent API.
+
+**Get Started:** [Agent API Documentation](docs/agent_api.md)
+
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.

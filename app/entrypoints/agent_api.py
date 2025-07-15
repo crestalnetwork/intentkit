@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import verify_agent_token
+from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.agent import Agent
 from intentkit.models.chat import (
@@ -40,13 +40,28 @@ router_ro = APIRouter()
 
 
 def get_real_user_id(
-    agent_id: str, user_id: Optional[str], agent_owner: Optional[str]
+    agent_token: AgentToken, user_id: Optional[str], agent_owner: Optional[str]
 ) -> str:
-    """Generate real user_id with agent_id prefix or use agent owner."""
+    """Generate real user_id based on agent token and user_id.
+
+    Args:
+        agent_token: Agent token containing agent_id and is_public flag
+        user_id: Optional user ID
+        agent_owner: Agent owner ID
+
+    Returns:
+        Real user ID string
+
+    Raises:
+        HTTPException: If user_id is provided for a private agent
+    """
     if user_id:
-        return f"{agent_id}_{user_id}"
+        return f"{agent_token.agent_id}_{user_id}"
     else:
-        return agent_owner or agent_id
+        if agent_token.is_public:
+            return f"{agent_token.agent_id}_anonymous"
+        else:
+            return agent_owner or agent_token.agent_id
 
 
 class ChatMessagesResponse(BaseModel):
@@ -95,7 +110,7 @@ class ChatMessageRequest(BaseModel):
         Optional[str],
         Field(
             None,
-            description="User ID (optional)",
+            description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
             examples=["user-123"],
         ),
     ]
@@ -176,16 +191,20 @@ class ChatMessageRequest(BaseModel):
     tags=["Thread"],
 )
 async def get_chats(
-    user_id: Optional[str] = Query(None, description="User ID (optional)"),
-    agent_id: str = Depends(verify_agent_token),
+    user_id: Optional[str] = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Get a list of chat threads."""
+    agent_id = agent_token.agent_id
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     return await Chat.get_by_agent_user(agent_id, real_user_id)
 
 
@@ -198,16 +217,20 @@ async def get_chats(
     tags=["Thread"],
 )
 async def create_chat(
-    user_id: Optional[str] = Query(None, description="User ID (optional)"),
-    agent_id: str = Depends(verify_agent_token),
+    user_id: Optional[str] = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Create a new chat thread."""
+    agent_id = agent_token.agent_id
     # Verify that the entity exists
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = ChatCreate(
         id=str(XID()),
         agent_id=agent_id,
@@ -231,16 +254,20 @@ async def create_chat(
 )
 async def get_chat(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: Optional[str] = Query(None, description="User ID (optional)"),
-    agent_id: str = Depends(verify_agent_token),
+    user_id: Optional[str] = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Get a specific chat thread."""
+    agent_id = agent_token.agent_id
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
         raise HTTPException(
@@ -260,9 +287,10 @@ async def get_chat(
 async def update_chat(
     request: ChatUpdateRequest,
     chat_id: str = Path(..., description="Chat ID"),
-    agent_id: str = Depends(verify_agent_token),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Update a chat thread."""
+    agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
         raise HTTPException(
@@ -285,9 +313,10 @@ async def update_chat(
 )
 async def delete_chat(
     chat_id: str = Path(..., description="Chat ID"),
-    agent_id: str = Depends(verify_agent_token),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Delete a chat thread."""
+    agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
         raise HTTPException(
@@ -307,7 +336,7 @@ async def delete_chat(
 )
 async def get_messages(
     chat_id: str = Path(..., description="Chat ID"),
-    agent_id: str = Depends(verify_agent_token),
+    agent_token: AgentToken = Depends(verify_agent_token),
     db: AsyncSession = Depends(get_db),
     cursor: Optional[str] = Query(
         None, description="Cursor for pagination (message id)"
@@ -317,6 +346,7 @@ async def get_messages(
     ),
 ) -> ChatMessagesResponse:
     """Get the message history for a chat thread with cursor-based pagination."""
+    agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
         raise HTTPException(
@@ -359,14 +389,15 @@ async def get_messages(
 async def send_message(
     request: ChatMessageRequest,
     chat_id: str = Path(..., description="Chat ID"),
-    agent_id: str = Depends(verify_agent_token),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Send a new message."""
+    agent_id = agent_token.agent_id
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, request.user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, request.user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
@@ -431,8 +462,11 @@ async def send_message(
 )
 async def retry_message(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: Optional[str] = Query(None, description="User ID (optional)"),
-    agent_id: str = Depends(verify_agent_token),
+    user_id: Optional[str] = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
+    agent_token: AgentToken = Depends(verify_agent_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Retry the last message in a chat thread.
@@ -441,12 +475,13 @@ async def retry_message(
     If the last message is from a user, generate a new response.
     Note: Retry only works in non-streaming mode.
     """
+    agent_id = agent_token.agent_id
     # Get entity and check if exists
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
@@ -578,16 +613,20 @@ async def retry_message(
 )
 async def get_message(
     message_id: str = Path(..., description="Message ID"),
-    user_id: Optional[str] = Query(None, description="User ID (optional)"),
-    agent_id: str = Depends(verify_agent_token),
+    user_id: Optional[str] = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Get a specific message."""
+    agent_id = agent_token.agent_id
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
 
-    real_user_id = get_real_user_id(agent_id, user_id, agent.owner)
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     message = await ChatMessage.get(message_id)
     if not message or message.user_id != real_user_id:
         raise HTTPException(

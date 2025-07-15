@@ -4,6 +4,7 @@ from typing import Optional
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 from intentkit.config.config import config
 from intentkit.models.agent import AgentData
@@ -11,6 +12,13 @@ from intentkit.models.agent import AgentData
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
+
+
+class AgentToken(BaseModel):
+    """Agent token information."""
+
+    agent_id: str
+    is_public: bool
 
 
 async def verify_admin_jwt(
@@ -56,14 +64,14 @@ agent_security = HTTPBearer()
 
 async def verify_agent_token(
     credentials: HTTPAuthorizationCredentials = Depends(agent_security),
-) -> str:
-    """Verify the API token and return the associated agent ID.
+) -> AgentToken:
+    """Verify the API token and return the associated agent token information.
 
     Args:
         credentials: The Bearer token credentials from HTTPBearer
 
     Returns:
-        str: The agent ID associated with the token
+        AgentToken: The agent token information containing agent_id and is_public
 
     Raises:
         HTTPException: If token is invalid or agent not found
@@ -77,4 +85,7 @@ async def verify_agent_token(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API token"
         )
 
-    return agent_data.id
+    # Check if token is public (starts with 'pk-')
+    is_public = token.startswith("pk-")
+
+    return AgentToken(agent_id=agent_data.id, is_public=is_public)

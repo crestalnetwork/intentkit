@@ -12,6 +12,12 @@ All API endpoints are prefixed with `/v1/` and require authentication using a Be
 ```
 Authorization: Bearer <your_agent_token>
 ```
+## How to Get the API Key
+
+IntentKit provides system skills for managing agent API keys. Active the skills in agent, and let it give you the API Keys. You can get two types of API keys with different access levels:
+
+- **Private API Key (sk-)**: Can access all skills (public and owner-only)
+- **Public API Key (pk-)**: Can only access public skills
 
 ## Quick Start Example
 
@@ -274,11 +280,11 @@ Include links, images, or files in messages:
 
 ```json
 {
-  "message": "Analyze this website",
+  "message": "Convert the image to Cyberpunk style",
   "attachments": [
     {
-      "type": "link",
-      "url": "https://example.com"
+      "type": "image",
+      "url": "https://your.image.url"
     }
   ]
 }
@@ -321,9 +327,39 @@ Example error response:
 4. **Respect rate limits:** Implement appropriate delays between requests
 5. **Use streaming for long responses:** Enable streaming for better user experience
 
+## OpenAI Compatible API
+
+IntentKit also provides an OpenAI-compatible API endpoint that allows you to use your agent with any OpenAI-compatible client or SDK. This is particularly useful for integrating with existing applications that already use the OpenAI API format.
+
+### Key Features
+- Compatible with OpenAI Chat Completions API format
+- Supports both private (sk-) and public (pk-) API keys
+- Works with OpenAI Python SDK, Cherry Studio, and other OpenAI-compatible clients
+- Supports streaming responses
+- Handles image attachments
+
+### Quick Example
+
+```bash
+curl -X POST "{base_url}/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your_private_key_here" \
+  -d '{
+    "model": "agent",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, how can you help me today?"
+      }
+    ]
+  }'
+```
+
+For detailed information about API key management, authentication, and usage examples, see the [OpenAI Compatible API Documentation](openai_compatible.md).
+
 ## API Documentation
 
 For complete API documentation with interactive examples, visit:
-**http://localhost:8000/v1/redoc**
+**https://open.service.crestal.network/v1/redoc**
 
-This provides a comprehensive OpenAPI specification with all endpoints, parameters, and response schemas. 
+This provides a comprehensive OpenAPI specification with all endpoints, parameters, and response schemas.

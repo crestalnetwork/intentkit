@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.auth import verify_agent_token
+from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent
 from intentkit.models.agent import Agent
 from intentkit.models.chat import (
@@ -343,7 +343,8 @@ def create_streaming_response_batched(
     summary="Create chat completion",
 )
 async def create_chat_completion(
-    request: OpenAIChatCompletionRequest, agent_id: str = Depends(verify_agent_token)
+    request: OpenAIChatCompletionRequest,
+    agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Create a chat completion using OpenAI-compatible API.
 
@@ -352,11 +353,12 @@ async def create_chat_completion(
 
     Args:
         request: OpenAI chat completion request
-        agent_id: The authenticated agent ID (from token verification)
+        agent_token: The authenticated agent token information
 
     Returns:
         OpenAIChatCompletionResponse: OpenAI-compatible response
     """
+    agent_id = agent_token.agent_id
     if not request.messages:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -381,7 +383,10 @@ async def create_chat_completion(
         raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
 
     # Use agent owner or fallback to agent_id if owner is None
-    user_id = agent.owner or agent_id
+    if not agent_token.is_public and agent.owner:
+        user_id = agent.owner
+    else:
+        user_id = agent_id + "_openai"
 
     # Create user message with fixed chat_id "api" and user_id as agent.owner
     user_message = ChatMessageCreate(
