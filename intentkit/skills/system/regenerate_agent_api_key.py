@@ -34,7 +34,7 @@ class RegenerateAgentApiKey(SystemBaseTool):
         "Make sure to tell the user the base URL and endpoint.  "
         "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
         "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
-        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/skills/agent_api_key.md "
+        "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
     args_schema = RegenerateAgentApiKeyInput
 
