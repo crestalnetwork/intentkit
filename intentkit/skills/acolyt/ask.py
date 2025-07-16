@@ -1,10 +1,9 @@
 import logging
-from typing import Dict, Type
+from typing import Dict, Literal, Type
 
 import httpx
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
-from typing_extensions import Literal
 
 from intentkit.skills.acolyt.base import AcolytBaseTool
 
