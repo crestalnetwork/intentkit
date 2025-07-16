@@ -63,6 +63,9 @@ dependencies = [
     "supabase>=2.16.0",
     "tenacity>=9.1.2",
     "requests-oauthlib>=2.0.0",
+    "asyncpg>=0.30.0",
+    "aiosqlite>=0.21.0",
+    "psycopg>=3.2.9",
 ]
 
 [project.urls]
