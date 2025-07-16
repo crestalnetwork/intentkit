@@ -24,10 +24,12 @@ from intentkit.clients import CdpClient, get_cdp_client
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cdp.base import CDPBaseTool
 from intentkit.skills.cdp.get_balance import GetBalance
+from intentkit.skills.cdp.swap import Swap
 
 
 class SkillStates(TypedDict):
     get_balance: SkillState
+    swap: SkillState
     WalletActionProvider_get_balance: SkillState
     WalletActionProvider_get_wallet_details: SkillState
     WalletActionProvider_native_transfer: SkillState
@@ -116,6 +118,15 @@ async def get_skills(
             # Get the account object for the custom GetBalance skill
             tools.append(
                 GetBalance(
+                    agent_id=agent_id,
+                    skill_store=store,
+                )
+            )
+            continue
+        elif skill == "swap" or skill.endswith("_trade"):
+            # Add the custom Swap skill, "trade" is backword compatible
+            tools.append(
+                Swap(
                     agent_id=agent_id,
                     skill_store=store,
                 )

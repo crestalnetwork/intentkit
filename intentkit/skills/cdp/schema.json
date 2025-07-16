@@ -33,6 +33,22 @@
           "description": "Use coinbase API to get wallet balance, float result.",
           "default": "private"
         },
+        "swap": {
+          "type": "string",
+          "title": "CDP Wallet Swap",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Use coinbase API to swap.",
+          "default": "disabled"
+        },
         "WalletActionProvider_get_balance": {
           "type": "string",
           "title": "Normal Get Balance",
