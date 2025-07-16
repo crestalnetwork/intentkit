@@ -21,7 +21,7 @@ class SwapInput(BaseModel):
     )
     slippage_bps: Optional[int] = Field(
         default=100,
-        description="Maximum slippage in basis points (100 = 1%). Defaults to 100 (1%)"
+        description="Maximum slippage in basis points (100 = 1%). Defaults to 100 (1%)",
     )
 
 
@@ -114,7 +114,7 @@ class Swap(CDPBaseTool):
                     f"Swapped from {from_token} to {to_token}\n"
                     f"Amount: {from_amount} (smallest units)\n"
                     f"Network: {api_network}\n"
-                    f"Slippage tolerance: {slippage_bps} basis points ({slippage_bps/100}%)"
+                    f"Slippage tolerance: {slippage_bps} basis points ({slippage_bps / 100}%)"
                 )
 
         except Exception as e:
