@@ -114,7 +114,7 @@ class Swap(CDPBaseTool):
                     f"Swapped from {from_token} to {to_token}\n"
                     f"Amount: {from_amount} (smallest units)\n"
                     f"Network: {api_network}\n"
-                    f"Slippage tolerance: {slippage_bps} basis points ({slippage_bps / 100}%)"
+                    f"Slippage tolerance: {slippage_bps} basis points ({slippage_bps / 100 if slippage_bps else 0}%)"
                 )
 
         except Exception as e:
