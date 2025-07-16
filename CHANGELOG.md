@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.6.3-dev1
+
+### Features
+- feat: add cdp swap skill for token swapping functionality (9a3ff94)
+
+### Bug Fixes
+- fix: lint error (9c6cfa5)
+- fix: a type error (41f9f9a)
+
+### Chores
+- chore: update changelog (ef36cb6)
+- chore: package versions (297c55d)
+- chore: fix dependency error (453d3a1)
+
+### Documentation
+- doc: changelog (88bba96)
+
+### Other
+- tmp: now working (31385d3)
+- Merge branch 'main' into hyacinthus (28b0b73)
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2-dev2...v0.6.3-dev1
+
 ## v0.6.2
 
 ### 🚀 Features
