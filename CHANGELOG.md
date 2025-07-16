@@ -1,5 +1,54 @@
 # Changelog
 
+## v0.6.2
+
+### 🚀 Features
+- **Agent API Enhancement**: Added comprehensive agent API sub-application with CORS support and improved error handling
+- **Authentication Improvements**: Implemented token-based authentication for agent API endpoints
+- **Credit Tracking**: Enhanced credit event tracking with agent_wallet_address field for better monitoring
+- **Chat API Flexibility**: Made user_id optional in chat API with automatic fallback to agent.owner
+- **Documentation Updates**: Restructured and updated API documentation for better clarity
+
+### 🔧 Improvements
+- **Twitter Service**: Refactored twitter service for better maintainability
+- **Text Processing**: Improved formatting in extract_text_and_images function
+- **Agent Authentication**: Streamlined agent and admin authentication systems
+- **Supabase Integration**: Fixed supabase link issues
+- **API Key Skills**: Enhanced description for get API key skills
+
+### 📚 Documentation
+- Updated README with latest information
+- Restructured API documentation files
+- Added comprehensive agent API documentation
+
+### 🛠️ Technical Changes
+- Updated dependencies with uv sync
+- Various code refactoring for better code quality
+- Fixed typos in chat message handling
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.1...v0.6.2
+
+## v0.6.2-dev2
+
+### 🚀 Features
+- **Credit Event Tracking**: Added agent_wallet_address field to credit event tracking
+- **Agent API Enhancement**: Enhanced agent API and authentication with improved documentation
+
+### 🐛 Bug Fixes
+- **API Key Skill**: Better get API key skill description
+
+### 🔧 Improvements
+- **Twitter Service**: Refactored twitter service for better performance
+
+### 📚 Documentation
+- **API Documentation**: Updated API documentation and restructured files
+- **Change Log**: Updated change log documentation
+
+### 🧹 Maintenance
+- **Dependencies**: UV sync updates
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2-dev1...v0.6.2-dev2
+
 ## v0.6.2-dev1
 
 ### 🚀 Features

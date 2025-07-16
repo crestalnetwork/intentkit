@@ -23,26 +23,6 @@ dependencies = [
     "faiss-cpu>=1.11.0",
     "fastapi>=0.115.8",
     "filetype (>=1.2.0,<2.0.0)",
-    "goat-sdk>=0.1.4",
-    "goat-sdk-adapter-langchain",
-    "goat-sdk-plugin-1inch",
-    "goat-sdk-plugin-allora",
-    "goat-sdk-plugin-coingecko",
-    "goat-sdk-plugin-dexscreener",
-    "goat-sdk-plugin-erc20",
-    "goat-sdk-plugin-farcaster",
-    "goat-sdk-plugin-jsonrpc",
-    "goat-sdk-plugin-jupiter",
-    "goat-sdk-plugin-nansen",
-    "goat-sdk-plugin-opensea",
-    "goat-sdk-plugin-rugcheck",
-    "goat-sdk-plugin-spl-token",
-    "goat-sdk-plugin-superfluid",
-    "goat-sdk-plugin-uniswap",
-    "goat-sdk-wallet-crossmint",
-    "goat-sdk-wallet-evm",
-    "goat-sdk-wallet-solana",
-    "goat-sdk-wallet-web3",
     "gunicorn>=23.0.0",
     "httpx>=0.27.0",
     "jsonref>=1.1.0",
@@ -81,17 +61,24 @@ dependencies = [
     "telegramify-markdown (>=0.5.0,<0.6.0)",
     "tweepy[async]>=4.15.0",
     "uvicorn>=0.34.0,<1.0.0",
-    "mnemonic>=0.20",
     "bip32>=2.0.0",
     "eth-keys>=0.4.0",
     "eth-utils>=2.1.0",
-    "eth-hash[pycryptodome]>=0.5.1",
+    "jsonschema>=4.24.0",
+    "starlette>=0.47.1",
+    "aiohttp>=3.11.16",
+    "requests-oauthlib>=2.0.0",
+    "tenacity>=9.1.2",
+    "web3>=7.10.0",
+    "cdp-sdk>=1.22.0",
+    "pyjwt>=2.10.1",
 ]
 
 [dependency-groups]
 dev = [
     "ruff>=0.11.9,<0.12",
     "jsonschema>=4.21.1,<5",
+    "deptry>=0.23.0",
 ]
 
 [tool.uv]
@@ -103,3 +90,6 @@ build-backend = "hatchling.build"
 
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.deptry]
+known_first_party = ["intentkit"]
