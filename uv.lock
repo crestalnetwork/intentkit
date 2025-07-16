@@ -1178,7 +1178,6 @@ dependencies = [
     { name = "httpx" },
     { name = "jsonref" },
     { name = "jsonschema" },
-    { name = "jwt" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-core" },
@@ -1201,6 +1200,7 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyjwt" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "pytz" },
@@ -1255,7 +1255,6 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "jsonref", specifier = ">=1.1.0" },
     { name = "jsonschema", specifier = ">=4.24.0" },
-    { name = "jwt", specifier = ">=1.4.0" },
     { name = "langchain", specifier = ">=0.3.25,<0.4.0" },
     { name = "langchain-community", specifier = ">=0.3.19" },
     { name = "langchain-core", specifier = ">=0.3.43" },
@@ -1278,6 +1277,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.10,<3.0.0" },
     { name = "pydantic", specifier = ">=2.10.0,<2.11.0" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
+    { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "pytz", specifier = ">=2025.1" },
@@ -1397,18 +1397,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bf/ce/46fbd9c8119cfc3581ee5643ea49464d168028cfb5caff5fc0596d0cf914/jsonschema_specifications-2025.4.1.tar.gz", hash = "sha256:630159c9f4dbea161a6a2205c3011cc4f18ff381b189fff48bb39b9bf26ae608", size = 15513, upload-time = "2025-04-23T12:34:07.418Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/0e/b27cdbaccf30b890c40ed1da9fd4a3593a5cf94dae54fb34f8a4b74fcd3f/jsonschema_specifications-2025.4.1-py3-none-any.whl", hash = "sha256:4653bffbd6584f7de83a67e0d620ef16900b390ddc7939d56684d6c81e33f1af", size = 18437, upload-time = "2025-04-23T12:34:05.422Z" },
-]
-
-[[package]]
-name = "jwt"
-version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cryptography" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/20/21254c9e601e6c29445d1e8854c2a81bdb554e07a82fb1f9846137a6965c/jwt-1.4.0.tar.gz", hash = "sha256:f6f789128ac247142c79ee10f3dba6e366ec4e77c9920d18c1592e28aa0a7952", size = 24911, upload-time = "2025-06-23T13:28:38.289Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/80/34e3fae850adb0b7b8b9b1cf02b2d975fcb68e0e8eb7d56d6b4fc23f7433/jwt-1.4.0-py3-none-any.whl", hash = "sha256:7560a7f1de4f90de94ac645ee0303ac60c95b9e08e058fb69f6c330f71d71b11", size = 18248, upload-time = "2025-06-23T13:28:37.012Z" },
 ]
 
 [[package]]
