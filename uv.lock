@@ -383,30 +383,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.39.6"
+version = "1.39.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/47/aa/7eb200f3037ba2887d711171b9b55f56935bb820dc43b54cecf110159ac7/boto3-1.39.6.tar.gz", hash = "sha256:e75bfcd444e199767642f28ef8dc4f972846dc3118e48a7e09f9c458dae2021e", size = 111835, upload-time = "2025-07-16T01:46:28.154Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/43/81ae62386917fa163f1d3bc59e77da56924f9824b5100fd2807e74a675fc/boto3-1.39.7.tar.gz", hash = "sha256:28daeb005e3381808e0e12995056ee8951056ddd43506c07482a15b40ae785b0", size = 111820, upload-time = "2025-07-16T16:29:52.858Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/c2/4add264ee1c960de599db830eb4be7e5f48fe1dc146416acd29158e8c850/boto3-1.39.6-py3-none-any.whl", hash = "sha256:db965dc9019df7b1d20e8d8ab7a653956f275865175a8652419ebfd03de03d83", size = 139881, upload-time = "2025-07-16T01:46:26.354Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/60/1d2d708f5bc125fe6fe262ea767c82020ea6deeda113e989cff5ab89a9f9/boto3-1.39.7-py3-none-any.whl", hash = "sha256:c8c0e11fff7bb85f903b860b6bfd4f509a4d749decf38bb6a409ffe5d6eb0c91", size = 139882, upload-time = "2025-07-16T16:29:51.176Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.39.6"
+version = "1.39.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/67/a2/2774e34ddac5667a7be3953ffa49e17e22f255a06c86f3486e9d23093372/botocore-1.39.6.tar.gz", hash = "sha256:d3a6c207d233ddee3289c1d56646047bef18b21a1faebb3d83a6fca149fd0f59", size = 14158426, upload-time = "2025-07-16T01:46:17.409Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/9d/73f300c841a3c47d2baf4bf6ecb9d6de476edf91de8c3c26ceed5044e666/botocore-1.39.7.tar.gz", hash = "sha256:431e342ef97ecb387cea9df1ae8c4e0edc1b0c9c50d2e121cca77699f24f8dc1", size = 14201331, upload-time = "2025-07-16T16:29:43.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/74/164490fc26788842821ab665786eb4fdcc8553131e009e23a5ea13ac164d/botocore-1.39.6-py3-none-any.whl", hash = "sha256:9c002724e9b97cec610dbbb3bb019b3248ff6bf58407835621f0461e740af90b", size = 13819020, upload-time = "2025-07-16T01:46:11.686Z" },
+    { url = "https://files.pythonhosted.org/packages/30/20/ab70de7441cbc4b8ffc5d6d9a8e02e4c703cc07accb7441ce54020e20950/botocore-1.39.7-py3-none-any.whl", hash = "sha256:1d11ba9f3cb46856bb541ed010db160093201a224d21ef854249513ae3af7e77", size = 13864168, upload-time = "2025-07-16T16:29:37.114Z" },
 ]
 
 [[package]]
@@ -420,7 +420,7 @@ wheels = [
 
 [[package]]
 name = "cdp-sdk"
-version = "1.22.0"
+version = "1.23.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -436,9 +436,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "web3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/87/bdd7d776b5a9ba7e6d0b843e804a45ecb66d3c9b85ad66e1c7e9c9d1c0c8/cdp_sdk-1.22.0.tar.gz", hash = "sha256:437ea6f46839ec8af16c4b4022884004c5a5593b6a511e8b8f6014937ffbcb7e", size = 234722, upload-time = "2025-07-10T21:00:37.058Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/25/d8df9494dfeda749ac6180969cbcdcbf46f97c1153f38b690ab023626145/cdp_sdk-1.23.0.tar.gz", hash = "sha256:7cc5dd13ec74ffa0332245261aaa5f23af9448300ab65932cc4dbcaddf34f055", size = 237257, upload-time = "2025-07-16T14:21:59.632Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/e7/517b442022655ffa2655340bec6210077c7cb1cbc58e08b9f29d6f6be553/cdp_sdk-1.22.0-py3-none-any.whl", hash = "sha256:6af976a39ae2cec20b0c907a4a439c57e99b151c815d191b7b965a76f5b9b767", size = 565200, upload-time = "2025-07-10T21:00:35.623Z" },
+    { url = "https://files.pythonhosted.org/packages/84/4c/1acfbde011cf259720f4df44898f3d75f636bbc43631659994bbe6b1d05e/cdp_sdk-1.23.0-py3-none-any.whl", hash = "sha256:40d59853f1be7ef90029220966055686ab328e973c728703a6de7527ebdd1947", size = 567985, upload-time = "2025-07-16T14:21:58.13Z" },
 ]
 
 [[package]]
@@ -1252,7 +1252,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.8" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "jsonref", specifier = ">=1.1.0" },
     { name = "jsonschema", specifier = ">=4.24.0" },
     { name = "langchain", specifier = ">=0.3.25,<0.4.0" },
@@ -1263,7 +1263,7 @@ requires-dist = [
     { name = "langchain-postgres", specifier = ">=0.0.13" },
     { name = "langchain-text-splitters", specifier = ">=0.3.8" },
     { name = "langchain-xai", specifier = ">=0.2.1" },
-    { name = "langgraph", specifier = ">=0.3.0" },
+    { name = "langgraph", specifier = ">=0.4.3" },
     { name = "langgraph-checkpoint", specifier = ">=2.0.18" },
     { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.16" },
     { name = "langgraph-prebuilt", specifier = ">=0.5.1" },
@@ -1272,10 +1272,10 @@ requires-dist = [
     { name = "openai", specifier = ">=1.59.6" },
     { name = "pgvector", specifier = ">=0.3.6" },
     { name = "pillow", specifier = ">=11.1.0,<12.0.0" },
-    { name = "psycopg", specifier = ">=3.2.3" },
+    { name = "psycopg", specifier = ">=3.2.9" },
     { name = "psycopg-pool", specifier = ">=3.2.4" },
     { name = "psycopg2-binary", specifier = ">=2.9.10,<3.0.0" },
-    { name = "pydantic", specifier = ">=2.10.0,<2.11.0" },
+    { name = "pydantic", specifier = ">=2.10.6,<2.11.0" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
@@ -1289,7 +1289,7 @@ requires-dist = [
     { name = "slack-sdk", specifier = ">=3.34.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.37" },
     { name = "starlette", specifier = ">=0.47.1" },
-    { name = "supabase", specifier = ">=2.10.0" },
+    { name = "supabase", specifier = ">=2.16.0" },
     { name = "telegramify-markdown", specifier = ">=0.5.0,<0.6.0" },
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "tweepy", extras = ["async"], specifier = ">=4.15.0" },
@@ -1841,7 +1841,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.96.1"
+version = "1.97.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1853,9 +1853,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/b5/18fd5e1b6b6c7dca52d60307b3637f9e9e3206a8041a9c8028985dbc6260/openai-1.96.1.tar.gz", hash = "sha256:6d505b5cc550e036bfa3fe99d6cff565b11491d12378d4c353f92ef72b0a408a", size = 489065, upload-time = "2025-07-15T21:39:37.215Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/c6/b8d66e4f3b95493a8957065b24533333c927dc23817abe397f13fe589c6e/openai-1.97.0.tar.gz", hash = "sha256:0be349569ccaa4fb54f97bb808423fd29ccaeb1246ee1be762e0c81a47bae0aa", size = 493850, upload-time = "2025-07-16T16:37:35.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4f/57/325bbdbdc27b47309be35cb4e0eb8980b0c1bc997194c797c3691d88ae41/openai-1.96.1-py3-none-any.whl", hash = "sha256:0afaab2019bae8e145e7a1baf6953167084f019dd15042c65edd117398c1eb1c", size = 757454, upload-time = "2025-07-15T21:39:34.517Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/91/1f1cf577f745e956b276a8b1d3d76fa7a6ee0c2b05db3b001b900f2c71db/openai-1.97.0-py3-none-any.whl", hash = "sha256:a1c24d96f4609f3f7f51c9e1c2606d97cc6e334833438659cfd687e9c972c610", size = 764953, upload-time = "2025-07-16T16:37:33.135Z" },
 ]
 
 [[package]]
