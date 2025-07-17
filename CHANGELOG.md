@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.6.3
+
+### 🚀 Features
+- **CDP Swap Skill**: Added CDP swap skill for token swapping functionality
+
+### 🐛 Bug Fixes
+- Fixed lint error
+- Fixed a type error
+
+### 🔧 Maintenance
+- Updated dependencies in pyproject.toml
+- Fixed dependency error
+- Updated package versions
+- Documentation changelog updates
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2...v0.6.3
+
 ## v0.6.3-dev2
 
 ### Chores
