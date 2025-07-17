@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.6.3-dev2
+
+### Chores
+- Updated dependencies in pyproject.toml:
+  - Updated `supabase` from `>=2.10.0` to `>=2.16.0`
+  - Updated `openai` from `1.96.1` to `1.97.0`
+  - Updated lock file accordingly
+
+### Documentation
+- Updated changelog
+
+### Pull Requests
+- Merged PR #705: chore: update dependencies in pyproject.toml
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.3-dev1...v0.6.3-dev2
+
 ## v0.6.3-dev1
 
 ### Features
