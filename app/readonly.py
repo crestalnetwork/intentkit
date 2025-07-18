@@ -51,6 +51,7 @@ async def lifespan(app: FastAPI):
         await init_redis(
             host=config.redis_host,
             port=config.redis_port,
+            db=config.redis_db,
         )
 
     logger.info("Readonly API server starting")

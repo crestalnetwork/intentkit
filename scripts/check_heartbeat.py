@@ -42,6 +42,7 @@ async def main():
             await init_redis(
                 host=config.redis_host,
                 port=config.redis_port,
+                db=config.redis_db,
             )
         else:
             logger.error("Redis host not configured")
