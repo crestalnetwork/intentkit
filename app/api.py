@@ -61,10 +61,32 @@ if config.sentry_dsn:
         server_name="intent-api",
     )
 
+
+# Read agent API documentation from file
+def _load_agent_api_docs() -> str:
+    """Load agent API documentation from docs/agent_api.md file."""
+    try:
+        import os
+
+        docs_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "docs", "agent_api.md"
+        )
+        with open(docs_path, "r", encoding="utf-8") as f:
+            doc_str = f.read()
+            if config.open_api_base_url:
+                doc_str = doc_str.replace(
+                    "http://localhost:8000",
+                    config.open_api_base_url,
+                )
+            return doc_str
+    except Exception:
+        return "Agent API"
+
+
 # Create Agent API sub-application
 agent_app = FastAPI(
     title="IntentKit Agent API",
-    summary="Agent API with OpenAI-compatible endpoints",
+    description=_load_agent_api_docs(),
     version=config.release,
     contact={
         "name": "IntentKit Team",
