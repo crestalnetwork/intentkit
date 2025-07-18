@@ -18,12 +18,10 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     Column,
     DateTime,
     Float,
-    Identity,
     Numeric,
     String,
     func,
@@ -198,12 +196,6 @@ class AgentTable(Base):
         String,
         primary_key=True,
         comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-    )
-    number = Column(
-        BigInteger(),
-        Identity(start=1, increment=1),
-        nullable=True,
-        comment="Auto-incrementing number assigned by the system for easy reference",
     )
     name = Column(
         String,
@@ -1114,13 +1106,6 @@ class Agent(AgentCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
-    # auto increment number by db
-    number: Annotated[
-        Optional[int],
-        PydanticField(
-            description="Auto-incrementing number assigned by the system for easy reference",
-        ),
-    ]
     # auto timestamp
     created_at: Annotated[
         datetime,
@@ -1315,13 +1300,6 @@ class AgentResponse(BaseModel):
         str,
         PydanticField(
             description="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-        ),
-    ]
-    # auto increment number by db
-    number: Annotated[
-        Optional[int],
-        PydanticField(
-            description="Auto-incrementing number assigned by the system for easy reference",
         ),
     ]
     # auto timestamp

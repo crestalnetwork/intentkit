@@ -228,7 +228,6 @@ def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) 
             {
                 "color": "good",
                 "fields": [
-                    {"title": "Number", "short": True, "value": agent.number},
                     {"title": "ID", "short": True, "value": agent.id},
                     {"title": "Name", "short": True, "value": agent.name},
                     {"title": "Model", "short": True, "value": agent.model},
