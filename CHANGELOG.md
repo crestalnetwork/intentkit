@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.5-dev2
+
+### 🐛 Bug Fixes
+- **Database Connection**: Use separate connection for langgraph migration setup
+
+### 📚 Documentation
+- Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev1...v0.6.5-dev2
+
 ## v0.6.5-dev1
 
 ### 🚀 Features
