@@ -153,6 +153,7 @@ def create_scheduler():
         jobstores["default"] = RedisJobStore(
             host=config.redis_host,
             port=config.redis_port,
+            db=config.redis_db,
             jobs_key="intentkit:scheduler:jobs",
             run_times_key="intentkit:scheduler:run_times",
         )

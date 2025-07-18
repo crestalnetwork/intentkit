@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.6.4
+
+### 🔧 Maintenance
+- **Dependency Management**: Rollback langgraph-checkpoint-postgres version for stability
+- **Package Updates**: Update dependencies in pyproject.toml
+- **Documentation**: Documentation improvements
+
+### 🐛 Bug Fixes
+- **Compatibility**: Fixed dependency compatibility issues
+
+### 🚀 Improvements
+- **Stability**: Enhanced system stability with dependency rollbacks
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.3...v0.6.4
+
 ## v0.6.3
 
 ### 🚀 Features

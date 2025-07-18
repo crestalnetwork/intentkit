@@ -118,6 +118,7 @@ async def lifespan(app: FastAPI):
         await init_redis(
             host=config.redis_host,
             port=config.redis_port,
+            db=config.redis_db,
         )
 
     # Create example agent if no agents exist

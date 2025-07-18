@@ -35,6 +35,7 @@ if __name__ == "__main__":
             await init_redis(
                 host=config.redis_host,
                 port=config.redis_port,
+                db=config.redis_db,
             )
 
         # Create scheduler

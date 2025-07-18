@@ -95,6 +95,7 @@ async def run_telegram_server() -> None:
         await init_redis(
             host=config.redis_host,
             port=config.redis_port,
+            db=config.redis_db,
         )
 
     # Signal handler for graceful shutdown

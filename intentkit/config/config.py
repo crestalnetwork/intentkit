@@ -51,11 +51,11 @@ class Config:
             }
         else:
             self.db = {
-                "username": os.getenv("DB_USERNAME"),
-                "password": os.getenv("DB_PASSWORD"),
-                "host": os.getenv("DB_HOST"),
-                "port": os.getenv("DB_PORT"),
-                "dbname": os.getenv("DB_NAME"),
+                "username": self.load("DB_USERNAME"),
+                "password": self.load("DB_PASSWORD"),
+                "host": self.load("DB_HOST"),
+                "port": self.load("DB_PORT"),
+                "dbname": self.load("DB_NAME"),
             }
         # ==== this part can be load from env or aws secrets manager
         self.db["auto_migrate"] = self.load("DB_AUTO_MIGRATE", "true") == "true"
@@ -66,6 +66,7 @@ class Config:
         # Redis
         self.redis_host = self.load("REDIS_HOST")
         self.redis_port = int(self.load("REDIS_PORT", "6379"))
+        self.redis_db = int(self.load("REDIS_DB", "0"))
         # AWS
         self.aws_s3_bucket = self.load("AWS_S3_BUCKET")
         self.aws_s3_cdn_url = self.load("AWS_S3_CDN_URL")
