@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.5-dev3
+
+### 📚 Documentation
+- Better agent documentation
+- Updated changelog
+
+### 🐛 Bug Fixes
+- Remove number field in agent
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev2...v0.6.5-dev3
+
 ## v0.6.5-dev2
 
 ### 🐛 Bug Fixes
