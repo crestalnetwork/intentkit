@@ -38,8 +38,11 @@ async def init_db(
     # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
     if _langgraph_checkpointer is None:
         if host:
+            conn_string = (
+                f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}"
+            )
             pool = AsyncConnectionPool(
-                conninfo=f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
+                conninfo=conn_string,
                 min_size=3,
                 max_size=20,
                 timeout=60,
@@ -47,7 +50,9 @@ async def init_db(
             )
             _langgraph_checkpointer = AsyncPostgresSaver(pool)
             if auto_migrate:
-                await _langgraph_checkpointer.setup()
+                # Migrate can not use pool, so we start from scratch
+                async with AsyncPostgresSaver.from_conn_string(conn_string) as saver:
+                    await saver.setup()
         else:
             _langgraph_checkpointer = InMemorySaver()
     # Initialize SQLAlchemy engine with pool settings
