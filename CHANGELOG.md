@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.5-dev1
+
+### 🚀 Features
+- **Redis Database Configuration**: Added redis_db parameter to all redis connections for better database isolation and configuration flexibility
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.4...v0.6.5-dev1
+
 ## v0.6.4
 
 ### 🔧 Maintenance
