@@ -1586,7 +1586,9 @@ class AgentResponse(BaseModel):
                     if skill_config.get("enabled") is True:
                         filtered_config = {"enabled": True}
                         # Only keep states with public or private values
-                        if "states" in skill_config:
+                        if "states" in skill_config and isinstance(
+                            skill_config["states"], dict
+                        ):
                             filtered_states = {}
                             for state_key, state_value in skill_config[
                                 "states"

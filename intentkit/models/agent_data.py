@@ -34,11 +34,6 @@ class AgentDataTable(Base):
         String, nullable=True, comment="Solana wallet address"
     )
     cdp_wallet_data = Column(String, nullable=True, comment="CDP wallet data")
-    crossmint_wallet_data = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="Crossmint wallet information",
-    )
     twitter_id = Column(String, nullable=True, comment="Twitter user ID")
     twitter_username = Column(String, nullable=True, comment="Twitter username")
     twitter_name = Column(String, nullable=True, comment="Twitter display name")
@@ -104,126 +99,119 @@ class AgentData(BaseModel):
             default=None,
             description="EVM wallet address",
         ),
-    ]
+    ] = None
     solana_wallet_address: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Solana wallet address",
         ),
-    ]
+    ] = None
     cdp_wallet_data: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="CDP wallet data",
         ),
-    ]
-    crossmint_wallet_data: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            description="Crossmint wallet information",
-        ),
-    ]
+    ] = None
     twitter_id: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Twitter user ID",
         ),
-    ]
+    ] = None
     twitter_username: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Twitter username",
         ),
-    ]
+    ] = None
     twitter_name: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Twitter display name",
         ),
-    ]
+    ] = None
     twitter_access_token: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Twitter access token",
         ),
-    ]
+    ] = None
     twitter_access_token_expires_at: Annotated[
         Optional[datetime],
         PydanticField(
             default=None,
             description="Twitter access token expiration time",
         ),
-    ]
+    ] = None
     twitter_refresh_token: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Twitter refresh token",
         ),
-    ]
+    ] = None
     twitter_self_key_refreshed_at: Annotated[
         Optional[datetime],
         PydanticField(
             default=None,
             description="Twitter self-key userinfo last refresh time",
         ),
-    ]
+    ] = None
     twitter_is_verified: Annotated[
         bool,
         PydanticField(
             default=False,
             description="Whether the Twitter account is verified",
         ),
-    ]
+    ] = None
     telegram_id: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Telegram user ID",
         ),
-    ]
+    ] = None
     telegram_username: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Telegram username",
         ),
-    ]
+    ] = None
     telegram_name: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Telegram display name",
         ),
-    ]
+    ] = None
     error_message: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Last error message",
         ),
-    ]
+    ] = None
     api_key: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="API key for the agent",
         ),
-    ]
+    ] = None
     api_key_public: Annotated[
         Optional[str],
         PydanticField(
             default=None,
             description="Public API key for the agent",
         ),
-    ]
+    ] = None
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -240,7 +228,7 @@ class AgentData(BaseModel):
     ]
 
     @classmethod
-    async def get(cls, agent_id: str) -> Optional["AgentData"]:
+    async def get(cls, agent_id: str) -> "AgentData":
         """Get agent data by ID.
 
         Args:

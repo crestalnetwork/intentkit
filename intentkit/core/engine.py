@@ -126,7 +126,7 @@ async def create_agent(
     Returns:
         CompiledStateGraph: Initialized LangChain agent
     """
-    agent_data: Optional[AgentData] = await AgentData.get(agent.id)
+    agent_data = await AgentData.get(agent.id)
 
     # ==== Initialize LLM using the LLM abstraction.
     from intentkit.models.llm import create_llm_model
