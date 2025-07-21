@@ -77,8 +77,6 @@ async def twitter_oauth_callback(
             raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
 
         agent_data = await AgentData.get(agent_id)
-        if not agent_data:
-            agent_data = AgentData(id=agent_id)
 
         # Exchange code for tokens
         authorization_response = (

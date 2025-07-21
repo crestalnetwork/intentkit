@@ -31,15 +31,15 @@ class SkillStore(SkillStoreABC):
         return await Agent.get(agent_id)
 
     @staticmethod
-    async def get_agent_data(agent_id: str) -> Optional[AgentData]:
+    async def get_agent_data(agent_id: str) -> AgentData:
         return await AgentData.get(agent_id)
 
     @staticmethod
-    async def set_agent_data(agent_id: str, data: Dict) -> None:
+    async def set_agent_data(agent_id: str, data: Dict) -> AgentData:
         return await AgentData.patch(agent_id, data)
 
     @staticmethod
-    async def get_agent_quota(agent_id: str) -> Optional[AgentQuota]:
+    async def get_agent_quota(agent_id: str) -> AgentQuota:
         return await AgentQuota.get(agent_id)
 
     @staticmethod

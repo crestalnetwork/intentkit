@@ -78,27 +78,6 @@ class TextToSpeech(UnrealSpeechBaseTool):
             context.config.get("api_key", None) if context and context.config else None
         )
 
-        # If no API key in config, try to get it from skill store
-        if not api_key:
-            try:
-                agent_id = context.agent_id
-                api_key_data = await self.skill_store.get_agent_data(
-                    agent_id, "unrealspeech_api_key"
-                )
-                api_key = api_key_data.get("api_key") if api_key_data else None
-            except Exception as e:
-                logger.warning(f"Failed to get API key from skill store: {e}")
-
-        # If still no API key, check environment variables (handled by UnrealSpeech client)
-        if not api_key:
-            env_key = self.get_env_var("UNREALSPEECH_API_KEY")
-            if not env_key:
-                return {
-                    "success": False,
-                    "error": "No UnrealSpeech API key found. Please set the UNREALSPEECH_API_KEY environment variable or provide it in the agent configuration.",
-                }
-            api_key = env_key
-
         # Clean up and validate input
         if not text:
             return {"success": False, "error": "Text cannot be empty."}

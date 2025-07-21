@@ -51,8 +51,6 @@ class AgentScheduler:
                         bot_info = await bot.bot.get_me()
                         # after bot init, refresh its info to agent data
                         agent_data = await AgentData.get(agent.id)
-                        if not agent_data:
-                            agent_data = AgentData(id=agent.id)
                         agent_data.telegram_id = str(bot_info.id)
                         agent_data.telegram_username = bot_info.username
                         agent_data.telegram_name = bot_info.first_name

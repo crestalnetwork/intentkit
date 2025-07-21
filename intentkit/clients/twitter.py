@@ -103,8 +103,6 @@ class TwitterClient(TwitterABC):
         """
         if not self._agent_data:
             self._agent_data = await self._skill_store.get_agent_data(self.agent_id)
-            if not self._agent_data:
-                raise Exception(f"[{self.agent_id}] Agent data not found")
         if not self._client:
             # Check if we have API keys in config
             if self.use_key:
@@ -351,7 +349,7 @@ class TwitterClient(TwitterABC):
         """
         # Get agent data to access the token
         agent_data = await self._skill_store.get_agent_data(agent_id)
-        if not agent_data or not agent_data.twitter_access_token:
+        if not agent_data.twitter_access_token:
             raise ValueError("Only linked X account can post media")
 
         media_ids = []

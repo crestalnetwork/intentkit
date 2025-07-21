@@ -49,9 +49,6 @@ class RegenerateAgentApiKey(SystemBaseTool):
         # Get agent data from skill store
         agent_data = await self.skill_store.get_agent_data(agent_id)
 
-        if not agent_data:
-            raise ValueError(f"Agent data not found for agent_id: {agent_id}")
-
         # Get API base URL from system config
         open_api_base_url = self.skill_store.get_system_config("open_api_base_url")
         api_endpoint = f"{open_api_base_url}/v1/chat/completions"
