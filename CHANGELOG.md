@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.5-dev4
+
+### 🐛 Bug Fixes
+- Fixed agent data types
+- Fixed bug in agent schema
+
+### 🔄 Merged Pull Requests
+- Merge pull request #711 from crestalnetwork/hyacinthus
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev3...v0.6.5-dev4
+
 ## v0.6.5-dev3
 
 ### 📚 Documentation
