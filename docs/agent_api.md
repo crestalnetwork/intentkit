@@ -51,8 +51,7 @@ curl -X POST "http://localhost:8000/v1/chats/chat_123456/messages" \
   -H "Authorization: Bearer <your_agent_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Hello, how can you help me today?",
-    "user_id": "user123"
+    "message": "Hello, how can you help me today?"
   }'
 ```
 
@@ -68,67 +67,24 @@ curl -X POST "http://localhost:8000/v1/chats/chat_123456/messages" \
     "author_type": "API",
     "message": "Hello, how can you help me today?",
     "created_at": "2024-01-01T12:00:01Z"
-  },
-  {
-    "id": "msg_agent_001",
-    "agent_id": "agent_789",
-    "chat_id": "chat_123456",
-    "user_id": "agent_789_user123",
-    "author_id": "agent_789",
-    "author_type": "AGENT",
-    "message": "Hello! I'm an AI assistant. I can help you with various tasks...",
-    "created_at": "2024-01-01T12:00:02Z"
   }
 ]
 ```
 
-### 3. List Messages
-
-```bash
-curl -X GET "http://localhost:8000/v1/chats/chat_123456/messages" \
-  -H "Authorization: Bearer <your_agent_token>"
-```
-
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": "msg_agent_001",
-      "agent_id": "agent_789",
-      "chat_id": "chat_123456",
-      "message": "Hello! I'm an AI assistant. I can help you with various tasks...",
-      "author_type": "AGENT",
-      "created_at": "2024-01-01T12:00:02Z"
-    },
-    {
-      "id": "msg_user_001",
-      "agent_id": "agent_789",
-      "chat_id": "chat_123456",
-      "message": "Hello, how can you help me today?",
-      "author_type": "API",
-      "created_at": "2024-01-01T12:00:01Z"
-    }
-  ],
-  "has_more": false,
-  "next_cursor": null
-}
-```
-
 ## Advanced Features
 
-### Streaming Responses
-Set `stream: true` in the message request to receive streaming responses:
+### About User ID
+All user_id parameter in the Agent API is optional. If not provided, the API will use owner role. 
+When you include the user_id in the request, the API will use the public role, and the user can have 
+it's own chat threads. You can use the user_id of your own system to identify the user. 
+If the app is anonymous, you can use javascript library `fingerprintjs` to generate the user_id.
 
-```json
-{
-  "message": "Tell me a story",
-  "stream": true
-}
-```
+### Streaming Responses
+Set `stream: true` in the message request to receive streaming responses, 
+your client need to support HTTP2 server push.
 
 ### Attachments
-Include links, images, or files in messages:
+Include images, or files in messages:
 
 ```json
 {
@@ -143,15 +99,8 @@ Include links, images, or files in messages:
 ```
 
 ### Search and Super Mode
-Enable enhanced capabilities:
-
-```json
-{
-  "message": "Find the latest news about AI",
-  "search_mode": true,
-  "super_mode": false
-}
-```
+Search mode will active the model native search, only supported by the model with search ability, like gpt and grok. 
+Super mode will give the agent more step limit, to handle complex task.
 
 ## Error Handling
 
