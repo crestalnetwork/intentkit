@@ -447,6 +447,32 @@ class ChatMessage(ChatMessageCreate):
 
         return resp
 
+    def sanitize_privacy(self) -> "ChatMessage":
+        """Remove sensitive information from the chat message.
+
+        This method clears the message content and removes parameters and response
+        from skill calls while preserving the structure and metadata.
+
+        Returns:
+            ChatMessage: A new ChatMessage instance with sensitive data removed
+        """
+        # Create a copy of the current message
+        sanitized_data = self.model_dump()
+
+        # Clear the message content
+        sanitized_data["message"] = ""
+
+        # Clear sensitive data from skill calls
+        if sanitized_data.get("skill_calls"):
+            for skill_call in sanitized_data["skill_calls"]:
+                # Clear parameters and response while keeping structure
+                skill_call["parameters"] = {}
+                if "response" in skill_call:
+                    skill_call["response"] = ""
+
+        # Return a new ChatMessage instance with sanitized data
+        return ChatMessage.model_validate(sanitized_data)
+
     @classmethod
     async def get(cls, message_id: str) -> Optional["ChatMessage"]:
         async with get_session() as db:
