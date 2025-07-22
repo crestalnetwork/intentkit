@@ -10,8 +10,8 @@ from intentkit.skills.twitter.base import TwitterBaseTool
 
 NAME = "twitter_reply_tweet"
 PROMPT = (
-    "Reply to an existing tweet on Twitter. If you want to post image, "
-    "you must provide image url in parameters, do not add image link in text."
+    "Reply to an existing tweet on Twitter. Do not reply to your own tweet."
+    "If you want to post image, you must provide image url in parameters, do not add image link in text."
 )
 
 logger = logging.getLogger(__name__)
