@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.5-dev6
+
+### 🚀 Features
+- Add sanitize_privacy method to ChatMessage model
+
+### 📚 Documentation
+- Update changelog for v0.6.5-dev4
+- Change log updates
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev5...v0.6.5-dev6
+
 ## v0.6.5-dev5
 
 ### 📚 Documentation
