@@ -6,6 +6,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from epyxid import XID
 from fastapi import HTTPException
+from intentkit.models.app_setting import AppSetting
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -437,8 +438,8 @@ class CreditAccount(BaseModel):
         session: AsyncSession,
         owner_type: OwnerType,
         owner_id: str,
-        free_quota: Decimal = Decimal("480.0"),
-        refill_amount: Decimal = Decimal("20.0"),
+        free_quota: Optional[Decimal] = None,
+        refill_amount: Optional[Decimal] = None,
     ) -> "CreditAccount":
         """Get an existing credit account or create a new one if it doesn't exist.
 
@@ -448,15 +449,24 @@ class CreditAccount(BaseModel):
             session: Async session to use for database queries
             owner_type: Type of the owner
             owner_id: ID of the owner
-            free_quota: Daily quota for a new account if created
+            free_quota: Daily quota for a new account if created (if None, reads from payment settings)
+            refill_amount: Hourly refill amount (if None, reads from payment settings)
 
         Returns:
             CreditAccount: The existing or newly created credit account
         """
+        # Get payment settings if values not provided
+        if free_quota is None or refill_amount is None:
+            payment_settings = await AppSetting.payment()
+            if free_quota is None:
+                free_quota = payment_settings.free_quota
+            if refill_amount is None:
+                refill_amount = payment_settings.refill_amount
+
         if owner_type != OwnerType.USER:
             # only users have daily quota
-            free_quota = 0.0
-            refill_amount = 0.0
+            free_quota = Decimal("0.0")
+            refill_amount = Decimal("0.0")
         # Create event_id at the beginning for consistency
         event_id = str(XID())
 

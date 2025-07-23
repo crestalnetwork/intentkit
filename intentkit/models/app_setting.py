@@ -46,6 +46,8 @@ class PaymentSettings(BaseModel):
                 "credit_per_usdc": 1000,
                 "fee_platform_percentage": 100,
                 "fee_dev_percentage": 20,
+                "free_quota": 480,
+                "refill_amount": 20,
                 "agent_whitelist_enabled": False,
                 "agent_whitelist": [],
             }
@@ -68,6 +70,22 @@ class PaymentSettings(BaseModel):
             default=Decimal("20"), description="Developer fee percentage", ge=0, le=100
         ),
     ]
+    free_quota: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("480"),
+            description="Daily free credit quota for new users",
+            ge=0,
+        ),
+    ]
+    refill_amount: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("20"),
+            description="Hourly refill amount for free credits",
+            ge=0,
+        ),
+    ]
     agent_whitelist_enabled: Annotated[
         bool,
         Field(default=False, description="Whether agent whitelist is enabled"),
@@ -77,7 +95,13 @@ class PaymentSettings(BaseModel):
         Field(default_factory=list, description="List of whitelisted agent IDs"),
     ]
 
-    @field_validator("credit_per_usdc", "fee_platform_percentage", "fee_dev_percentage")
+    @field_validator(
+        "credit_per_usdc",
+        "fee_platform_percentage",
+        "fee_dev_percentage",
+        "free_quota",
+        "refill_amount",
+    )
     @classmethod
     def round_decimal(cls, v: Any) -> Decimal:
         """Round decimal values to 4 decimal places."""
