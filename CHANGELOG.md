@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.6.6
+
+### 🚀 Features
+- **Twitter Timeline Enhancement**: Exclude replies from twitter timeline by default to improve content quality and relevance
+
+### 🔧 Technical Details
+- Modified twitter timeline skill to filter out reply tweets by default
+- This change improves the signal-to-noise ratio when fetching timeline data
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5...v0.6.6
+
+## v0.6.5-dev8
+
+### 🚀 Features
+- **Twitter Timeline Enhancement**: Exclude replies from twitter timeline by default to improve content quality and relevance
+
+### 🔧 Technical Details
+- Modified twitter timeline skill to filter out reply tweets by default
+- This change improves the signal-to-noise ratio when fetching timeline content
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev7...v0.6.5-dev8
+
 ## v0.6.5
 
 ### 🚀 Features
