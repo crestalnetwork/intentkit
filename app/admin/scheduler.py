@@ -1,20 +1,16 @@
 """Scheduler for periodic tasks."""
 
 import logging
-import time
 
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy import select, update
 
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 from intentkit.config.config import config
-from intentkit.core.agent import agent_action_cost
+from intentkit.core.agent import update_agent_action_cost
 from intentkit.core.credit import refill_all_free_credits
-from intentkit.models.agent import AgentTable
-from intentkit.models.agent_data import AgentQuota, AgentQuotaTable
-from intentkit.models.db import get_session
+from intentkit.models.agent_data import AgentQuota
 from intentkit.models.redis import get_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
@@ -33,90 +29,6 @@ async def send_scheduler_heartbeat():
         logger.info("Sent scheduler heartbeat successfully")
     except Exception as e:
         logger.error(f"Error sending scheduler heartbeat: {e}")
-
-
-async def update_agent_action_cost():
-    """
-    Update action costs for all agents.
-
-    This function processes agents in batches of 100 to avoid memory issues.
-    For each agent, it calculates various action cost metrics:
-    - avg_action_cost: average cost per action
-    - min_action_cost: minimum cost per action
-    - max_action_cost: maximum cost per action
-    - low_action_cost: average cost of the lowest 20% of actions
-    - medium_action_cost: average cost of the middle 60% of actions
-    - high_action_cost: average cost of the highest 20% of actions
-
-    It then updates the corresponding record in the agent_quotas table.
-    """
-    logger.info("Starting update of agent average action costs")
-    start_time = time.time()
-    batch_size = 100
-    last_id = None
-    total_updated = 0
-
-    while True:
-        # Get a batch of agent IDs ordered by ID
-        async with get_session() as session:
-            query = select(AgentTable.id).order_by(AgentTable.id)
-
-            # Apply pagination if we have a last_id from previous batch
-            if last_id:
-                query = query.where(AgentTable.id > last_id)
-
-            query = query.limit(batch_size)
-            result = await session.execute(query)
-            agent_ids = [row[0] for row in result]
-
-            # If no more agents, we're done
-            if not agent_ids:
-                break
-
-            # Update last_id for next batch
-            last_id = agent_ids[-1]
-
-        # Process this batch of agents
-        logger.info(
-            f"Processing batch of {len(agent_ids)} agents starting with ID {agent_ids[0]}"
-        )
-        batch_start_time = time.time()
-
-        for agent_id in agent_ids:
-            try:
-                # Calculate action costs for this agent
-                costs = await agent_action_cost(agent_id)
-
-                # Update the agent's quota record
-                async with get_session() as session:
-                    update_stmt = (
-                        update(AgentQuotaTable)
-                        .where(AgentQuotaTable.id == agent_id)
-                        .values(
-                            avg_action_cost=costs["avg_action_cost"],
-                            min_action_cost=costs["min_action_cost"],
-                            max_action_cost=costs["max_action_cost"],
-                            low_action_cost=costs["low_action_cost"],
-                            medium_action_cost=costs["medium_action_cost"],
-                            high_action_cost=costs["high_action_cost"],
-                        )
-                    )
-                    await session.execute(update_stmt)
-                    await session.commit()
-
-                total_updated += 1
-            except Exception as e:
-                logger.error(
-                    f"Error updating action costs for agent {agent_id}: {str(e)}"
-                )
-
-        batch_time = time.time() - batch_start_time
-        logger.info(f"Completed batch in {batch_time:.3f}s")
-
-    total_time = time.time() - start_time
-    logger.info(
-        f"Finished updating action costs for {total_updated} agents in {total_time:.3f}s"
-    )
 
 
 def create_scheduler():
