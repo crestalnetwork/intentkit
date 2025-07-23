@@ -814,3 +814,33 @@ class AgentQuota(BaseModel):
                 # Update this instance
                 await db.refresh(quota_record)
                 self.model_validate(quota_record)
+
+    @staticmethod
+    async def reset_daily_quotas():
+        """Reset daily quotas for all agents at UTC 00:00.
+        Resets message_count_daily and twitter_count_daily to 0.
+        """
+        from sqlalchemy import update
+
+        async with get_session() as session:
+            stmt = update(AgentQuotaTable).values(
+                message_count_daily=0,
+                twitter_count_daily=0,
+                free_income_daily=0,
+            )
+            await session.execute(stmt)
+            await session.commit()
+
+    @staticmethod
+    async def reset_monthly_quotas():
+        """Reset monthly quotas for all agents at the start of each month.
+        Resets message_count_monthly and autonomous_count_monthly to 0.
+        """
+        from sqlalchemy import update
+
+        async with get_session() as session:
+            stmt = update(AgentQuotaTable).values(
+                message_count_monthly=0, autonomous_count_monthly=0
+            )
+            await session.execute(stmt)
+            await session.commit()

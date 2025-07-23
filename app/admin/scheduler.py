@@ -13,37 +13,11 @@ from intentkit.config.config import config
 from intentkit.core.agent import agent_action_cost
 from intentkit.core.credit import refill_all_free_credits
 from intentkit.models.agent import AgentTable
-from intentkit.models.agent_data import AgentQuotaTable
+from intentkit.models.agent_data import AgentQuota, AgentQuotaTable
 from intentkit.models.db import get_session
 from intentkit.models.redis import get_redis, send_heartbeat
 
 logger = logging.getLogger(__name__)
-
-
-async def reset_daily_quotas():
-    """Reset daily quotas for all agents at UTC 00:00.
-    Resets message_count_daily and twitter_count_daily to 0.
-    """
-    async with get_session() as session:
-        stmt = update(AgentQuotaTable).values(
-            message_count_daily=0,
-            twitter_count_daily=0,
-            free_income_daily=0,
-        )
-        await session.execute(stmt)
-        await session.commit()
-
-
-async def reset_monthly_quotas():
-    """Reset monthly quotas for all agents at the start of each month.
-    Resets message_count_monthly and autonomous_count_monthly to 0.
-    """
-    async with get_session() as session:
-        stmt = update(AgentQuotaTable).values(
-            message_count_monthly=0, autonomous_count_monthly=0
-        )
-        await session.execute(stmt)
-        await session.commit()
 
 
 async def send_scheduler_heartbeat():
@@ -163,7 +137,7 @@ def create_scheduler():
 
     # Reset daily quotas at UTC 00:00
     scheduler.add_job(
-        reset_daily_quotas,
+        AgentQuota.reset_daily_quotas,
         trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
         id="reset_daily_quotas",
         name="Reset daily quotas",
@@ -172,7 +146,7 @@ def create_scheduler():
 
     # Reset monthly quotas at UTC 00:00 on the first day of each month
     scheduler.add_job(
-        reset_monthly_quotas,
+        AgentQuota.reset_monthly_quotas,
         trigger=CronTrigger(day=1, hour=0, minute=0, timezone="UTC"),
         id="reset_monthly_quotas",
         name="Reset monthly quotas",
