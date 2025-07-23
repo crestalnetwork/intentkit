@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.6.5
+
+### 🚀 Features
+- Add sanitize_privacy method to ChatMessage model for better privacy handling
+- Add redis_db parameter to all redis connections for improved database management
+
+### 🔧 Improvements
+- Prevent twitter reply skill from replying to own tweets to avoid self-loops
+- Better agent API documentation with improved clarity and examples
+- Enhanced agent documentation with clearer explanations
+
+### 🐛 Bug Fixes
+- Fix agent data types for better type safety
+- Fix bug in agent schema validation
+- Remove number field in agent model to simplify structure
+- Use separate connection for langgraph migration setup to prevent conflicts
+- Fix typo in documentation
+
+### 📚 Documentation
+- Improved agent API documentation
+- Updated changelog entries
+- Better agent documentation structure
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.4...v0.6.5
+
+## v0.6.5-dev7
+
+### 📚 Documentation
+- Better agent API documentation improvements
+
+### 🐛 Bug Fixes
+- Fixed typo in codebase
+
+### 🔧 Improvements
+- Prevent twitter reply skill from replying to own tweets
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev6...v0.6.5-dev7
+
 ## v0.6.5-dev6
 
 ### 🚀 Features

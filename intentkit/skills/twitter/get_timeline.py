@@ -71,6 +71,7 @@ class TwitterGetTimeline(TwitterBaseTool):
                 user_auth=twitter.use_key,
                 max_results=max_results,
                 since_id=since_id,
+                exclude=["replies"],
                 expansions=[
                     "referenced_tweets.id",
                     "referenced_tweets.id.attachments.media_keys",
