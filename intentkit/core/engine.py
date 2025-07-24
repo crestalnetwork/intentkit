@@ -1012,15 +1012,3 @@ async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
         return snap.values["messages"]
     else:
         return []
-
-
-async def is_payment_required(input: ChatMessageCreate, agent: Agent) -> bool:
-    if not config.payment_enabled:
-        return False
-    payment_settings = await AppSetting.payment()
-    if payment_settings.agent_whitelist_enabled:
-        if agent.id not in payment_settings.agent_whitelist:
-            return False
-    if input.user_id and agent.owner:
-        return True
-    return False
