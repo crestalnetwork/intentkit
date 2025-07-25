@@ -25,9 +25,6 @@ class AddAutonomousTaskInput(BaseModel):
         description="Cron expression for scheduling operations, mutually exclusive with minutes",
     )
     prompt: str = Field(description="Special prompt used during autonomous operation")
-    enabled: Optional[bool] = Field(
-        default=False, description="Whether the autonomous configuration is enabled"
-    )
 
 
 class AddAutonomousTaskOutput(BaseModel):
@@ -48,7 +45,7 @@ class AddAutonomousTask(SystemBaseTool):
         "The minutes and cron fields are mutually exclusive. But you must provide one of them. "
         "If user want to add a condition task, you can add a 5 minutes task to check the condition. "
         "If the user does not explicitly state that the condition task should be executed continuously, "
-        "then add in the task prompt that it will delete itself after successful execution."
+        "then add in the task prompt that it will delete itself after successful execution. "
     )
     args_schema = AddAutonomousTaskInput
 
@@ -59,7 +56,6 @@ class AddAutonomousTask(SystemBaseTool):
         minutes: Optional[int] = None,
         cron: Optional[str] = None,
         prompt: str = "",
-        enabled: Optional[bool] = False,
         config: RunnableConfig = None,
         **kwargs,
     ) -> AddAutonomousTaskOutput:
@@ -71,7 +67,6 @@ class AddAutonomousTask(SystemBaseTool):
             minutes: Interval in minutes (mutually exclusive with cron)
             cron: Cron expression (mutually exclusive with minutes)
             prompt: Special prompt for autonomous operation
-            enabled: Whether the task is enabled
             config: Runtime configuration containing agent context
 
         Returns:
@@ -86,7 +81,7 @@ class AddAutonomousTask(SystemBaseTool):
             minutes=minutes,
             cron=cron,
             prompt=prompt,
-            enabled=enabled,
+            enabled=True,
         )
 
         created_task = await self.skill_store.add_autonomous_task(agent_id, task)
