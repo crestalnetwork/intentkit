@@ -1,8 +1,17 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.config.config import config
-from intentkit.models.agent import Agent
+from intentkit.core.agent import (
+    add_autonomous_task as _add_autonomous_task,
+)
+from intentkit.core.agent import (
+    delete_autonomous_task as _delete_autonomous_task,
+)
+from intentkit.core.agent import (
+    list_autonomous_tasks as _list_autonomous_tasks,
+)
+from intentkit.models.agent import Agent, AgentAutonomous
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.skill import (
     AgentSkillData,
@@ -130,6 +139,43 @@ class SkillStore(SkillStoreABC):
             data=data,
         )
         await skill_data.save()
+
+    @staticmethod
+    async def list_autonomous_tasks(agent_id: str) -> List[AgentAutonomous]:
+        """List all autonomous tasks for an agent.
+
+        Args:
+            agent_id: ID of the agent
+
+        Returns:
+            List[AgentAutonomous]: List of autonomous task configurations
+        """
+        return await _list_autonomous_tasks(agent_id)
+
+    @staticmethod
+    async def add_autonomous_task(
+        agent_id: str, task: AgentAutonomous
+    ) -> AgentAutonomous:
+        """Add a new autonomous task to an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task: Autonomous task configuration
+
+        Returns:
+            AgentAutonomous: The created task
+        """
+        return await _add_autonomous_task(agent_id, task)
+
+    @staticmethod
+    async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
+        """Delete an autonomous task from an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to delete
+        """
+        await _delete_autonomous_task(agent_id, task_id)
 
 
 skill_store = SkillStore()

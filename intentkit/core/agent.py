@@ -2,11 +2,11 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, List
 
 from sqlalchemy import func, select, text, update
 
-from intentkit.models.agent import Agent, AgentTable
+from intentkit.models.agent import Agent, AgentAutonomous, AgentTable
 from intentkit.models.agent_data import AgentQuotaTable
 from intentkit.models.credit import CreditEventTable, EventType, UpstreamType
 from intentkit.models.db import get_session
@@ -274,3 +274,119 @@ async def update_agent_action_cost():
     logger.info(
         f"Finished updating action costs for {total_updated} agents in {total_time:.3f}s"
     )
+
+
+async def list_autonomous_tasks(agent_id: str) -> List[AgentAutonomous]:
+    """
+    List all autonomous tasks for an agent.
+
+    Args:
+        agent_id: ID of the agent
+
+    Returns:
+        List[AgentAutonomous]: List of autonomous task configurations
+
+    Raises:
+        IntentKitAPIError: If agent is not found
+    """
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
+        )
+
+    if not agent.autonomous:
+        return []
+
+    return agent.autonomous
+
+
+async def add_autonomous_task(agent_id: str, task: AgentAutonomous) -> AgentAutonomous:
+    """
+    Add a new autonomous task to an agent.
+
+    Args:
+        agent_id: ID of the agent
+        task: Autonomous task configuration (id will be generated if not provided)
+
+    Returns:
+        AgentAutonomous: The created task with generated ID
+
+    Raises:
+        IntentKitAPIError: If agent is not found
+    """
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
+        )
+
+    # Get current autonomous tasks
+    current_tasks = agent.autonomous or []
+    if not isinstance(current_tasks, list):
+        current_tasks = []
+
+    # Add the new task
+    current_tasks.append(task)
+
+    # Update the agent in the database
+    async with get_session() as session:
+        update_stmt = (
+            update(AgentTable)
+            .where(AgentTable.id == agent_id)
+            .values(autonomous=current_tasks)
+        )
+        await session.execute(update_stmt)
+        await session.commit()
+
+    logger.info(f"Added autonomous task {task.id} to agent {agent_id}")
+    return task
+
+
+async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
+    """
+    Delete an autonomous task from an agent.
+
+    Args:
+        agent_id: ID of the agent
+        task_id: ID of the task to delete
+
+    Raises:
+        IntentKitAPIError: If agent is not found or task is not found
+    """
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
+        )
+
+    # Get current autonomous tasks
+    current_tasks = agent.autonomous or []
+    if not isinstance(current_tasks, list):
+        current_tasks = []
+
+    # Find and remove the task
+    task_found = False
+    updated_tasks = []
+    for task_data in current_tasks:
+        if isinstance(task_data, dict) and task_data.get("id") == task_id:
+            task_found = True
+            continue
+        updated_tasks.append(task_data)
+
+    if not task_found:
+        raise IntentKitAPIError(
+            404, "TaskNotFound", f"Autonomous task with ID {task_id} not found."
+        )
+
+    # Update the agent in the database
+    async with get_session() as session:
+        update_stmt = (
+            update(AgentTable)
+            .where(AgentTable.id == agent_id)
+            .values(autonomous=updated_tasks)
+        )
+        await session.execute(update_stmt)
+        await session.commit()
+
+    logger.info(f"Deleted autonomous task {task_id} from agent {agent_id}")
