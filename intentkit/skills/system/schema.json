@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve the API key for the agent. If no API key exists, generates and sets a new one.",
-          "default": "private"
+          "default": "disabled"
         },
         "regenerate_agent_api_key": {
           "type": "string",
@@ -45,7 +45,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate a new API key for the agent, replacing any existing key.",
-          "default": "private"
+          "default": "disabled"
         },
         "list_autonomous_tasks": {
           "type": "string",
@@ -59,7 +59,7 @@
             "Agent Owner Only"
           ],
           "description": "List all autonomous task configurations for the agent.",
-          "default": "private"
+          "default": "disabled"
         },
         "add_autonomous_task": {
           "type": "string",
@@ -73,7 +73,7 @@
             "Agent Owner Only"
           ],
           "description": "Add a new autonomous task configuration to the agent.",
-          "default": "private"
+          "default": "disabled"
         },
         "delete_autonomous_task": {
           "type": "string",
@@ -87,7 +87,7 @@
             "Agent Owner Only"
           ],
           "description": "Delete an autonomous task configuration from the agent.",
-          "default": "private"
+          "default": "disabled"
         }
       }
     }

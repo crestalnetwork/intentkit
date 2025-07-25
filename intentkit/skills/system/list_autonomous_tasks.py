@@ -45,7 +45,7 @@ class ListAutonomousTasks(SystemBaseTool):
             ListAutonomousTasksOutput: List of autonomous tasks
         """
         context = self.context_from_config(config)
-        agent_id = context["agent_id"]
+        agent_id = context.agent_id
 
         tasks = await self.skill_store.list_autonomous_tasks(agent_id)
 

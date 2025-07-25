@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.6.7-dev2
+
+### 🚀 Features
+
+#### Autonomous Task Management System
+- **feat: add autonomous task management system skills** - Added comprehensive system skills for managing autonomous tasks within agents
+  - `system_add_autonomous_task` - Create new autonomous task configurations with custom prompts and scheduling
+  - `system_delete_autonomous_task` - Remove existing autonomous task configurations  
+  - `system_list_autonomous_tasks` - View all configured autonomous tasks for an agent
+  - Enhanced core agent and skill systems to support autonomous task operations
+  - Updated skill abstracts to provide better context handling for system operations
+
+### 🐛 Bug Fixes
+- **fix: format** - Code formatting improvements
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev1...v0.6.7-dev2
+
 ## v0.6.6
 
 ### 🚀 Features
