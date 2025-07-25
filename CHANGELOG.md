@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.7-dev3
+
+### 🚀 Features
+- **feat: add autonomous task info in entrypoint rules system prompt** - Enhanced autonomous task execution with better context information including task ID, name, description, and scheduling details
+
+### 🐛 Bug Fixes
+- **fix: autonomous skill bug** - Fixed issues related to autonomous skill execution
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev2...v0.6.7-dev3
+
 ## v0.6.7-dev2
 
 ### 🚀 Features
