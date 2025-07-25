@@ -221,6 +221,45 @@ async def create_agent(
             ):
                 entrypoint_prompt = agent.telegram_entrypoint_prompt
                 logger.debug("telegram entrypoint prompt added")
+            elif entrypoint == AuthorType.TRIGGER.value:
+                task_id = (
+                    config["configurable"]
+                    .get("chat_id", "")
+                    .removeprefix("autonomous-")
+                )
+                # Find the autonomous task by task_id
+                autonomous_task = None
+                if agent.autonomous:
+                    for task in agent.autonomous:
+                        if task.id == task_id:
+                            autonomous_task = task
+                            break
+
+                if autonomous_task:
+                    # Build detailed task info - always include task_id
+                    if autonomous_task.name:
+                        task_info = f"You are running an autonomous task '{autonomous_task.name}' (ID: {task_id})"
+                    else:
+                        task_info = (
+                            f"You are running an autonomous task (ID: {task_id})"
+                        )
+
+                    # Add description if available
+                    if autonomous_task.description:
+                        task_info += f": {autonomous_task.description}"
+
+                    # Add cycle info
+                    if autonomous_task.minutes:
+                        task_info += f". This task runs every {autonomous_task.minutes} minute(s)"
+                    elif autonomous_task.cron:
+                        task_info += (
+                            f". This task runs on schedule: {autonomous_task.cron}"
+                        )
+
+                    entrypoint_prompt = f"{task_info}. "
+                else:
+                    # Fallback if task not found
+                    entrypoint_prompt = f"You are running an autonomous task. The task id is {task_id}. "
             if entrypoint_prompt:
                 entrypoint_prompt = await explain_prompt(entrypoint_prompt)
                 final_system_prompt = f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
