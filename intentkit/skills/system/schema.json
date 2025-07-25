@@ -46,6 +46,48 @@
           ],
           "description": "Generate a new API key for the agent, replacing any existing key.",
           "default": "private"
+        },
+        "list_autonomous_tasks": {
+          "type": "string",
+          "title": "List Autonomous Tasks",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "List all autonomous task configurations for the agent.",
+          "default": "private"
+        },
+        "add_autonomous_task": {
+          "type": "string",
+          "title": "Add Autonomous Task",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Add a new autonomous task configuration to the agent.",
+          "default": "private"
+        },
+        "delete_autonomous_task": {
+          "type": "string",
+          "title": "Delete Autonomous Task",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Delete an autonomous task configuration from the agent.",
+          "default": "private"
         }
       }
     }

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentAutonomous
 from intentkit.models.agent_data import AgentData, AgentQuota
 
 
@@ -137,5 +137,45 @@ class SkillStoreABC(ABC):
             skill: Name of the skill
             key: Data key
             data: JSON data to store
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    async def list_autonomous_tasks(agent_id: str) -> List[AgentAutonomous]:
+        """List all autonomous tasks for an agent.
+
+        Args:
+            agent_id: ID of the agent
+
+        Returns:
+            List[AgentAutonomous]: List of autonomous task configurations
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    async def add_autonomous_task(
+        agent_id: str, task: AgentAutonomous
+    ) -> AgentAutonomous:
+        """Add a new autonomous task to an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task: Autonomous task configuration
+
+        Returns:
+            AgentAutonomous: The created task
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
+        """Delete an autonomous task from an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to delete
         """
         pass
