@@ -329,12 +329,15 @@ async def add_autonomous_task(agent_id: str, task: AgentAutonomous) -> AgentAuto
     # Add the new task
     current_tasks.append(task)
 
+    # Convert all AgentAutonomous objects to dictionaries for JSON serialization
+    serializable_tasks = [task_item.model_dump() for task_item in current_tasks]
+
     # Update the agent in the database
     async with get_session() as session:
         update_stmt = (
             update(AgentTable)
             .where(AgentTable.id == agent_id)
-            .values(autonomous=current_tasks)
+            .values(autonomous=serializable_tasks)
         )
         await session.execute(update_stmt)
         await session.commit()
@@ -369,7 +372,7 @@ async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
     task_found = False
     updated_tasks = []
     for task_data in current_tasks:
-        if isinstance(task_data, dict) and task_data.get("id") == task_id:
+        if task_data.id == task_id:
             task_found = True
             continue
         updated_tasks.append(task_data)
@@ -379,12 +382,15 @@ async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
             404, "TaskNotFound", f"Autonomous task with ID {task_id} not found."
         )
 
+    # Convert remaining AgentAutonomous objects to dictionaries for JSON serialization
+    serializable_tasks = [task_item.model_dump() for task_item in updated_tasks]
+
     # Update the agent in the database
     async with get_session() as session:
         update_stmt = (
             update(AgentTable)
             .where(AgentTable.id == agent_id)
-            .values(autonomous=updated_tasks)
+            .values(autonomous=serializable_tasks)
         )
         await session.execute(update_stmt)
         await session.commit()
