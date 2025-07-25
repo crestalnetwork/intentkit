@@ -47,7 +47,7 @@ class DeleteAutonomousTask(SystemBaseTool):
             DeleteAutonomousTaskOutput: Confirmation of deletion
         """
         context = self.context_from_config(config)
-        agent_id = context["agent_id"]
+        agent_id = context.agent_id
 
         await self.skill_store.delete_autonomous_task(agent_id, task_id)
 

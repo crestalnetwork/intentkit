@@ -45,7 +45,10 @@ class AddAutonomousTask(SystemBaseTool):
     description: str = (
         "Add a new autonomous task configuration to the agent. "
         "Allows setting up scheduled operations with custom prompts and intervals. "
-        "The minutes and cron fields are mutually exclusive. But you must provide one of them."
+        "The minutes and cron fields are mutually exclusive. But you must provide one of them. "
+        "If user want to add a condition task, you can add a 5 minutes task to check the condition. "
+        "If the user does not explicitly state that the condition task should be executed continuously, "
+        "then add in the task prompt that it will delete itself after successful execution."
     )
     args_schema = AddAutonomousTaskInput
 
@@ -75,7 +78,7 @@ class AddAutonomousTask(SystemBaseTool):
             AddAutonomousTaskOutput: The created task
         """
         context = self.context_from_config(config)
-        agent_id = context["agent_id"]
+        agent_id = context.agent_id
 
         task = AgentAutonomous(
             name=name,
