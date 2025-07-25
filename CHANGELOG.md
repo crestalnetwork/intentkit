@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.7-dev4
+
+### 🐛 Bug Fixes
+- **fix: ensure proper serialization of autonomous tasks in agent operations** - Fixed serialization issues in autonomous task operations to ensure proper data handling
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev3...v0.6.7-dev4
+
 ## v0.6.7-dev3
 
 ### 🚀 Features
