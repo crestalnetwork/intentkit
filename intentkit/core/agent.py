@@ -396,3 +396,71 @@ async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
         await session.commit()
 
     logger.info(f"Deleted autonomous task {task_id} from agent {agent_id}")
+
+
+async def update_autonomous_task(
+    agent_id: str, task_id: str, task_updates: dict
+) -> AgentAutonomous:
+    """
+    Update an autonomous task for an agent.
+
+    Args:
+        agent_id: ID of the agent
+        task_id: ID of the task to update
+        task_updates: Dictionary containing fields to update
+
+    Returns:
+        AgentAutonomous: The updated task
+
+    Raises:
+        IntentKitAPIError: If agent is not found or task is not found
+    """
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
+        )
+
+    # Get current autonomous tasks
+    current_tasks = agent.autonomous or []
+    if not isinstance(current_tasks, list):
+        current_tasks = []
+
+    # Find and update the task
+    task_found = False
+    updated_tasks = []
+    updated_task = None
+
+    for task_data in current_tasks:
+        if task_data.id == task_id:
+            task_found = True
+            # Create a dictionary with current task data
+            task_dict = task_data.model_dump()
+            # Update with provided fields
+            task_dict.update(task_updates)
+            # Create new AgentAutonomous instance
+            updated_task = AgentAutonomous.model_validate(task_dict)
+            updated_tasks.append(updated_task)
+        else:
+            updated_tasks.append(task_data)
+
+    if not task_found:
+        raise IntentKitAPIError(
+            404, "TaskNotFound", f"Autonomous task with ID {task_id} not found."
+        )
+
+    # Convert all AgentAutonomous objects to dictionaries for JSON serialization
+    serializable_tasks = [task_item.model_dump() for task_item in updated_tasks]
+
+    # Update the agent in the database
+    async with get_session() as session:
+        update_stmt = (
+            update(AgentTable)
+            .where(AgentTable.id == agent_id)
+            .values(autonomous=serializable_tasks)
+        )
+        await session.execute(update_stmt)
+        await session.commit()
+
+    logger.info(f"Updated autonomous task {task_id} for agent {agent_id}")
+    return updated_task
