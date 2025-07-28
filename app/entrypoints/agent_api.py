@@ -21,7 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent, stream_agent
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentResponse
+from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -637,3 +638,41 @@ async def get_message(
             status_code=status.HTTP_404_NOT_FOUND, detail="Message not found"
         )
     return message
+
+
+@router_ro.get(
+    "/agent",
+    response_model=AgentResponse,
+    operation_id="get_current_agent",
+    summary="Get current agent information",
+    description="Retrieve the current agent's public information from the token.",
+    tags=["Agent"],
+)
+async def get_current_agent(
+    agent_token: AgentToken = Depends(verify_agent_token),
+) -> Response:
+    """Get the current agent from JWT token.
+
+    **Returns:**
+    * `AgentResponse` - Agent configuration with additional processed data
+
+    **Raises:**
+    * `HTTPException`:
+        - 404: Agent not found
+    """
+    agent_id = agent_token.agent_id
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    # Get agent data
+    agent_data = await AgentData.get(agent_id)
+
+    agent_response = await AgentResponse.from_agent(agent, agent_data)
+
+    # Return Response with ETag header
+    return Response(
+        content=agent_response.model_dump_json(),
+        media_type="application/json",
+        headers={"ETag": agent_response.etag()},
+    )
