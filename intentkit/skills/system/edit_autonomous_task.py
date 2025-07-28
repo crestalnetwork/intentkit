@@ -55,8 +55,7 @@ class EditAutonomousTask(SystemBaseTool):
         "Edit an existing autonomous task configuration for the agent. "
         "Allows updating the name, description, schedule (minutes or cron), prompt, and enabled status. "
         "Only provided fields will be updated; omitted fields will keep their current values. "
-        "The minutes and cron fields are mutually exclusive. "
-        "The enabled field controls whether the task runs automatically."
+        "The minutes and cron fields are mutually exclusive. Do not provide both of them. "
     )
     args_schema = EditAutonomousTaskInput
 
@@ -90,6 +89,9 @@ class EditAutonomousTask(SystemBaseTool):
         context = self.context_from_config(config)
         agent_id = context.agent_id
 
+        if minutes is not None and cron is not None:
+            raise ValueError("minutes and cron are mutually exclusive")
+
         # Build the updates dictionary with only provided fields
         task_updates = {}
         if name is not None:
@@ -98,8 +100,10 @@ class EditAutonomousTask(SystemBaseTool):
             task_updates["description"] = description
         if minutes is not None:
             task_updates["minutes"] = minutes
+            task_updates["cron"] = None
         if cron is not None:
             task_updates["cron"] = cron
+            task_updates["minutes"] = None
         if prompt is not None:
             task_updates["prompt"] = prompt
         if enabled is not None:

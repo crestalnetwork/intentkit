@@ -422,13 +422,11 @@ async def update_autonomous_task(
         )
 
     # Get current autonomous tasks
-    current_tasks = agent.autonomous or []
-    if not isinstance(current_tasks, list):
-        current_tasks = []
+    current_tasks: List[AgentAutonomous] = agent.autonomous or []
 
     # Find and update the task
     task_found = False
-    updated_tasks = []
+    updated_tasks: List[AgentAutonomous] = []
     updated_task = None
 
     for task_data in current_tasks:
