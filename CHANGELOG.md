@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.6.7
+
+### 🚀 Features
+- **Autonomous Task Management System**: Added comprehensive autonomous task management capabilities with new skills for creating, updating, and managing autonomous tasks
+- **Agent Information Endpoint**: New endpoint to retrieve current agent information including EVM and Solana wallet addresses
+- **Enhanced Agent Model**: Added EVM and Solana wallet address fields to AgentResponse model
+- **Configurable Payment Settings**: Added configurable free_quota and refill_amount to payment settings
+
+### 🔧 Improvements
+- **Simplified Autonomous Tasks**: Removed enabled parameter from add_autonomous_task skill - tasks are now always enabled by default
+- **Better Task Integration**: Autonomous task information is now included in entrypoint rules system prompt
+- **Code Organization**: Refactored quota reset functions to AgentQuota class and moved update_agent_action_cost function to agent module
+
+### 🐛 Bug Fixes
+- Fixed autonomous skill bugs and ensured proper serialization of autonomous tasks in agent operations
+- Improved code formatting and removed unused files
+
+### 📚 Documentation
+- Updated changelog with comprehensive release notes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.6...v0.6.7
+
 ## v0.6.7-dev6
 
 ### 🚀 Features
