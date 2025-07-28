@@ -1487,6 +1487,12 @@ class AgentResponse(BaseModel):
     cdp_wallet_address: Annotated[
         Optional[str], PydanticField(description="CDP wallet address for the agent")
     ]
+    evm_wallet_address: Annotated[
+        Optional[str], PydanticField(description="EVM wallet address for the agent")
+    ]
+    solana_wallet_address: Annotated[
+        Optional[str], PydanticField(description="Solana wallet address for the agent")
+    ]
     has_twitter_linked: Annotated[
         bool,
         PydanticField(description="Whether the agent has linked their Twitter account"),
@@ -1602,6 +1608,8 @@ class AgentResponse(BaseModel):
 
         # Process CDP wallet address
         cdp_wallet_address = agent_data.evm_wallet_address if agent_data else None
+        evm_wallet_address = agent_data.evm_wallet_address if agent_data else None
+        solana_wallet_address = agent_data.solana_wallet_address if agent_data else None
 
         # Process Twitter linked status
         has_twitter_linked = False
@@ -1644,19 +1652,19 @@ class AgentResponse(BaseModel):
         )
 
         # Add processed fields to response
-        data.update(
-            {
-                "cdp_wallet_address": cdp_wallet_address,
-                "has_twitter_linked": has_twitter_linked,
-                "linked_twitter_username": linked_twitter_username,
-                "linked_twitter_name": linked_twitter_name,
-                "has_twitter_self_key": has_twitter_self_key,
-                "has_telegram_self_key": has_telegram_self_key,
-                "linked_telegram_username": linked_telegram_username,
-                "linked_telegram_name": linked_telegram_name,
-                "accept_image_input": accept_image_input,
-                "accept_image_input_private": accept_image_input_private,
-            }
-        )
+        data.update({
+            "cdp_wallet_address": cdp_wallet_address,
+            "evm_wallet_address": evm_wallet_address,
+            "solana_wallet_address": solana_wallet_address,
+            "has_twitter_linked": has_twitter_linked,
+            "linked_twitter_username": linked_twitter_username,
+            "linked_twitter_name": linked_twitter_name,
+            "has_twitter_self_key": has_twitter_self_key,
+            "has_telegram_self_key": has_telegram_self_key,
+            "linked_telegram_username": linked_telegram_username,
+            "linked_telegram_name": linked_telegram_name,
+            "accept_image_input": accept_image_input,
+            "accept_image_input_private": accept_image_input_private,
+        })
 
         return cls.model_validate(data)
