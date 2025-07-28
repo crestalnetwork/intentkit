@@ -179,3 +179,20 @@ class SkillStoreABC(ABC):
             task_id: ID of the task to delete
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    async def update_autonomous_task(
+        agent_id: str, task_id: str, task_updates: dict
+    ) -> AgentAutonomous:
+        """Update an autonomous task for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to update
+            task_updates: Dictionary containing fields to update
+
+        Returns:
+            AgentAutonomous: The updated task
+        """
+        pass

@@ -11,6 +11,9 @@ from intentkit.core.agent import (
 from intentkit.core.agent import (
     list_autonomous_tasks as _list_autonomous_tasks,
 )
+from intentkit.core.agent import (
+    update_autonomous_task as _update_autonomous_task,
+)
 from intentkit.models.agent import Agent, AgentAutonomous
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.skill import (
@@ -176,6 +179,22 @@ class SkillStore(SkillStoreABC):
             task_id: ID of the task to delete
         """
         await _delete_autonomous_task(agent_id, task_id)
+
+    @staticmethod
+    async def update_autonomous_task(
+        agent_id: str, task_id: str, task_updates: dict
+    ) -> AgentAutonomous:
+        """Update an autonomous task for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to update
+            task_updates: Dictionary containing fields to update
+
+        Returns:
+            AgentAutonomous: The updated task
+        """
+        return await _update_autonomous_task(agent_id, task_id, task_updates)
 
 
 skill_store = SkillStore()

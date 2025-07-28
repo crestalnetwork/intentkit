@@ -11,10 +11,14 @@ class AddAutonomousTaskInput(BaseModel):
     """Input model for add_autonomous_task skill."""
 
     name: Optional[str] = Field(
-        default=None, description="Display name of the autonomous task configuration"
+        default=None,
+        description="Display name of the autonomous task configuration",
+        max_length=50,
     )
     description: Optional[str] = Field(
-        default=None, description="Description of the autonomous task configuration"
+        default=None,
+        description="Description of the autonomous task configuration",
+        max_length=200,
     )
     minutes: Optional[int] = Field(
         default=None,

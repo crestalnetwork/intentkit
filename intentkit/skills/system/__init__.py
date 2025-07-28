@@ -8,6 +8,7 @@ from intentkit.skills.base import SkillConfig, SkillOwnerState
 from intentkit.skills.system.add_autonomous_task import AddAutonomousTask
 from intentkit.skills.system.base import SystemBaseTool
 from intentkit.skills.system.delete_autonomous_task import DeleteAutonomousTask
+from intentkit.skills.system.edit_autonomous_task import EditAutonomousTask
 from intentkit.skills.system.list_autonomous_tasks import ListAutonomousTasks
 from intentkit.skills.system.read_agent_api_key import ReadAgentApiKey
 from intentkit.skills.system.regenerate_agent_api_key import RegenerateAgentApiKey
@@ -24,6 +25,7 @@ class SkillStates(TypedDict):
     list_autonomous_tasks: SkillOwnerState
     add_autonomous_task: SkillOwnerState
     delete_autonomous_task: SkillOwnerState
+    edit_autonomous_task: SkillOwnerState
 
 
 class Config(SkillConfig):
@@ -106,6 +108,12 @@ def get_system_skill(
     elif name == "delete_autonomous_task":
         if name not in _cache:
             _cache[name] = DeleteAutonomousTask(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "edit_autonomous_task":
+        if name not in _cache:
+            _cache[name] = EditAutonomousTask(
                 skill_store=store,
             )
         return _cache[name]

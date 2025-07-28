@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.7-dev6
+
+### 🚀 Features
+- **feat: add endpoint to retrieve current agent information** - Added new API endpoint to get current agent configuration
+- **feat: add EVM and Solana wallet address fields to AgentResponse model** - Enhanced agent response model with blockchain wallet address support
+
+### 🔧 Maintenance
+- **chore: code formatting improvements in agent model response data** - Code style improvements for better maintainability
+
+### 📖 Documentation
+- **doc: changelog** - Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev5...v0.6.7-dev6
+
 ## v0.6.7-dev5
 
 ### 🚀 Improvements
