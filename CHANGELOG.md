@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.7-dev5
+
+### 🚀 Improvements
+- **improve: remove enabled parameter from add_autonomous_task skill** - Autonomous tasks are now always enabled by default for better user experience
+
+### 📖 Documentation
+- **doc: changelog** - Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev4...v0.6.7-dev5
+
 ## v0.6.7-dev4
 
 ### 🐛 Bug Fixes
