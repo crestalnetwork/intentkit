@@ -88,6 +88,20 @@
           ],
           "description": "Delete an autonomous task configuration from the agent.",
           "default": "disabled"
+        },
+        "edit_autonomous_task": {
+          "type": "string",
+          "title": "Edit Autonomous Task",
+          "enum": [
+            "disabled",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner Only"
+          ],
+          "description": "Edit an existing autonomous task configuration for the agent.",
+          "default": "disabled"
         }
       }
     }
