@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill, SkillContext
 
-base_url = "https://api.elfa.ai"
+base_url = "https://api.elfa.ai/v2"
 
 
 class ElfaBaseTool(IntentKitSkill):
