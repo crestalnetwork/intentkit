@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.7-dev8
+
+### 🐛 Bug Fixes
+- **Twitter**: Fixed rate limit handling
+
+### 🔧 Chores
+- **Elfa**: Migrated to v2 API
+- **Documentation**: Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev7...v0.6.7-dev8
+
 ## v0.6.7
 
 ### 🚀 Features

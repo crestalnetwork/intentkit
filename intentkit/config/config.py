@@ -59,6 +59,7 @@ class Config:
             }
         # ==== this part can be load from env or aws secrets manager
         self.db["auto_migrate"] = self.load("DB_AUTO_MIGRATE", "true") == "true"
+        self.db["pool_size"] = int(self.load("DB_POOL_SIZE", "3"))
         self.debug = self.load("DEBUG") == "true"
         self.debug_checkpoint = (
             self.load("DEBUG_CHECKPOINT", "false") == "true"
