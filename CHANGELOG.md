@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.7-dev9
+
+### 🔧 Improvements
+
+- **Database Connection Pooling**: Enhanced database connection pooling configuration with new parameters for better performance and resource management
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev8...v0.6.7-dev9
+
 ## v0.6.7-dev8
 
 ### 🐛 Bug Fixes
