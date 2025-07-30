@@ -58,7 +58,7 @@ class TwitterGetMentions(TwitterBaseTool):
                 await self.check_rate_limit(
                     context.agent_id,
                     max_requests=1,
-                    interval=59,  # TODO: tmp to 59, back to 240 later
+                    interval=15,
                 )
 
             # get since id from store

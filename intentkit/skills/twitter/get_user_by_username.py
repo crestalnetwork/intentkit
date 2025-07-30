@@ -51,7 +51,7 @@ class TwitterGetUserByUsername(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent_id, max_requests=3, interval=60 * 24
+                    context.agent_id, max_requests=5, interval=60 * 24
                 )
 
             user_data = await client.get_user(
