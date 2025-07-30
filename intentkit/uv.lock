@@ -1275,8 +1275,8 @@ requires-dist = [
     { name = "bip32", specifier = ">=2.0.0" },
     { name = "boto3", specifier = ">=1.37.23,<2.0.0" },
     { name = "botocore", specifier = ">=1.35.97" },
-    { name = "cdp-sdk", specifier = ">=1.6.1,<2" },
-    { name = "coinbase-agentkit", specifier = ">=0.6.0" },
+    { name = "cdp-sdk", specifier = ">=1.22.0" },
+    { name = "coinbase-agentkit", specifier = ">=0.6.0,<0.7.0" },
     { name = "coinbase-agentkit-langchain", specifier = ">=0.5.0" },
     { name = "cron-validator", specifier = ">=1.0.8,<2.0.0" },
     { name = "epyxid", specifier = ">=0.3.3" },
@@ -1294,7 +1294,7 @@ requires-dist = [
     { name = "langchain-xai", specifier = ">=0.2.1" },
     { name = "langgraph", specifier = ">=0.4.3" },
     { name = "langgraph-checkpoint", specifier = ">=2.0.18" },
-    { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.16" },
+    { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.16,<2.0.23" },
     { name = "langgraph-prebuilt", specifier = ">=0.5.1" },
     { name = "langmem", specifier = ">=0.0.27" },
     { name = "mypy-boto3-s3", specifier = ">=1.37.24,<2.0.0" },
@@ -1302,7 +1302,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.1.0,<12.0.0" },
     { name = "psycopg", specifier = ">=3.2.9" },
     { name = "psycopg-pool", specifier = ">=3.2.4" },
-    { name = "pydantic", specifier = ">=2.10.6" },
+    { name = "pydantic", specifier = ">=2.10.6,<2.11.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "pytz", specifier = ">=2025.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
@@ -1609,7 +1609,7 @@ wheels = [
 
 [[package]]
 name = "langgraph-checkpoint-postgres"
-version = "2.0.23"
+version = "2.0.22"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langgraph-checkpoint" },
@@ -1617,9 +1617,9 @@ dependencies = [
     { name = "psycopg" },
     { name = "psycopg-pool" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/35/40a005d01582c3e57c3bd6614a601010b5e8a3c02169d2337ebf948a3f76/langgraph_checkpoint_postgres-2.0.23.tar.gz", hash = "sha256:0962daa924eaa564380429742df217287ac579b377aae6c1abad9f1c2cfbee53", size = 118214, upload-time = "2025-07-16T10:05:19.073Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/10/bfab9d031c0eeff9785e28ebcb79107b0a4c57ad3e0f21935679935f77ee/langgraph_checkpoint_postgres-2.0.22.tar.gz", hash = "sha256:4b58346f9d7d44994fc8141310bbd3429fe0e17a18c4a606bf3d7ff673325391", size = 118024, upload-time = "2025-07-10T22:45:24.941Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/cb/df2b4b9b99c73c2622fc91af08c23b0aad4194afbe484cd836ad2bd12a0a/langgraph_checkpoint_postgres-2.0.23-py3-none-any.whl", hash = "sha256:d85b53c2efbd8d36d7bb8ca3491ed5601fddaf4f37b0e6eb961639a8edb33873", size = 40674, upload-time = "2025-07-16T10:05:17.825Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/26/9594505e5698f40e9a76d66c06f412c48a119c3ca41493c432d66f7e1e44/langgraph_checkpoint_postgres-2.0.22-py3-none-any.whl", hash = "sha256:81623697050ea755abd3cab936e60ae0203c0c492675b16d4d4608da8b586bd5", size = 40339, upload-time = "2025-07-10T22:45:23.737Z" },
 ]
 
 [[package]]
