@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.8-dev2
+
+### Changes
+- **chore**: update fastapi and dependencies
+- **chore**: convert .cursorrules to symlink to LLM.md
+- **docs**: update llm integration guide
+- **docs**: update changelog and llm guide
+
+### Diff
+[Compare v0.6.8-dev1...v0.6.8-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.8-dev1...v0.6.8-dev2)
+
 ## v0.6.7-dev9
 
 ### 🔧 Improvements
