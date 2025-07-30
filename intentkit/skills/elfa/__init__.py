@@ -7,7 +7,6 @@ from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.elfa.base import ElfaBaseTool
 from intentkit.skills.elfa.mention import (
-    ElfaGetMentions,
     ElfaGetTopMentions,
     ElfaSearchMentions,
 )
@@ -21,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class SkillStates(TypedDict):
-    get_mentions: SkillState
     get_top_mentions: SkillState
     search_mentions: SkillState
     get_trending_tokens: SkillState
@@ -83,14 +81,7 @@ def get_elfa_skill(
         The requested Elfa skill
     """
 
-    if name == "get_mentions":
-        if name not in _cache:
-            _cache[name] = ElfaGetMentions(
-                skill_store=store,
-            )
-        return _cache[name]
-
-    elif name == "get_top_mentions":
+    if name == "get_top_mentions":
         if name not in _cache:
             _cache[name] = ElfaGetTopMentions(
                 skill_store=store,

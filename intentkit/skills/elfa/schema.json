@@ -18,22 +18,6 @@
     "states": {
       "type": "object",
       "properties": {
-        "get_mentions": {
-          "type": "string",
-          "title": "Get Mentions",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "This tool uses the Elfa AI API to query hourly-updated tweets from \"smart accounts\" \u2013 accounts identified as influential or relevant \u2013 that have received at least 10 interactions (comments, retweets, quote tweets).",
-          "default": "disabled"
-        },
         "get_top_mentions": {
           "type": "string",
           "title": "Get Top Mentions",
@@ -63,7 +47,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "This tool uses the Elfa API to search tweets mentioning up to five keywords. It can search within the past 30 days of data, which is updated every 5 minutes, or access up to six months of historical tweet data.",
+          "description": "This tool uses the Elfa API to search tweets mentioning up to five keywords or from specific accounts. It can search within the past 30 days of data, which is updated every 5 minutes, or access up to six months of historical tweet data.",
           "default": "private"
         },
         "get_trending_tokens": {

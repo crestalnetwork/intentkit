@@ -1,126 +1,122 @@
-from typing import Type
+"""Trending tokens skill for Elfa AI API."""
 
-import httpx
-from langchain.tools.base import ToolException
+from typing import Any, Dict, List, Optional, Type
+
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from .base import ElfaBaseTool, base_url
+from .base import ElfaBaseTool
+from .utils import make_elfa_request
 
 
 class ElfaGetTrendingTokensInput(BaseModel):
-    timeWindow: str | None = Field(
-        "24h", description="Time window for trending analysis"
+    """Input parameters for trending tokens."""
+
+    timeWindow: Optional[str] = Field(
+        "7d",
+        description="Time window for trending analysis (e.g., '30m', '1h', '4h', '24h', '7d', '30d')",
     )
-    minMentions: int | None = Field(
+    page: Optional[int] = Field(1, description="Page number for pagination")
+    pageSize: Optional[int] = Field(50, description="Number of items per page")
+    minMentions: Optional[int] = Field(
         5, description="Minimum number of mentions required"
     )
 
 
-class Trends(BaseModel):
-    change_percent: int | None = Field(description="change percentage of token trend")
-    previous_count: int | None = Field(description="previous count")
-    current_count: int | None = Field(description="current count")
-    token: str | None = Field(description="token")
+class TrendingToken(BaseModel):
+    """Individual trending token data."""
 
-
-class TrendsData(BaseModel):
-    data: list[Trends] | None = Field(None, description="trending tokens")
+    token: Optional[str] = Field(None, description="Token symbol")
+    current_count: Optional[int] = Field(None, description="Current mention count")
+    previous_count: Optional[int] = Field(None, description="Previous mention count")
+    change_percent: Optional[float] = Field(None, description="Change percentage")
 
 
 class ElfaGetTrendingTokensOutput(BaseModel):
+    """Output structure for trending tokens response."""
+
     success: bool
-    data: TrendsData | None = Field(None, description="The result")
+    data: Optional[List[TrendingToken]] = Field(
+        None, description="List of trending tokens"
+    )
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
 
 
 class ElfaGetTrendingTokens(ElfaBaseTool):
     """
-    This tool ranks the most discussed tokens based on smart mentions count for a given period, with updates every 5 minutes via the Elfa API.  Smart mentions provide a more sophisticated measure of discussion volume than simple keyword counts.
+    Get trending tokens based on smart mentions count.
 
-    **Use Cases:**
+    This tool ranks the most discussed tokens based on smart mentions count for a given period,
+    with updates every 5 minutes via the Elfa API. Smart mentions provide a more sophisticated
+    measure of discussion volume than simple keyword counts.
 
-    * Identify trending tokens: Quickly see which tokens are gaining traction in online discussions.
-    * Gauge market sentiment:  Track changes in smart mention counts to understand shifts in market opinion.
-    * Research potential investments: Use the ranking as a starting point for further due diligence.
-
-    **Example Usage:**
-
-    To use this tool, you would typically specify a time window (e.g., the last hour, the last 24 hours). The tool will then return a ranked list of tokens, along with their corresponding smart mention counts.
-
-    Attributes:
-        name (str): Name of the tool, specifically "elfa_get_trending_tokens".
-        description (str): Comprehensive description of the tool's purpose and functionality.
-        args_schema (Type[BaseModel]): Schema for input arguments, specifying expected parameters.
+    Use Cases:
+    - Identify trending tokens: Quickly see which tokens are gaining traction in online discussions
+    - Gauge market sentiment: Track changes in smart mention counts to understand shifts in market opinion
+    - Research potential investments: Use the ranking as a starting point for further due diligence
     """
 
     name: str = "elfa_get_trending_tokens"
-    description: str = """This tool ranks the most discussed tokens based on smart mentions count for a given period, with updates every 5 minutes via the Elfa API.  Smart mentions provide a more sophisticated measure of discussion volume than simple keyword counts.
-
-        **Use Cases:**
-
-        * Identify trending tokens: Quickly see which tokens are gaining traction in online discussions.
-        * Gauge market sentiment:  Track changes in smart mention counts to understand shifts in market opinion.
-        * Research potential investments: Use the ranking as a starting point for further due diligence.
-
-        **Example Usage:**
-
-        To use this tool, you would typically specify a time window (e.g., the last hour, the last 24 hours). The tool will then return a ranked list of tokens, along with their corresponding smart mention counts."""
+    description: str = """Get trending tokens ranked by smart mentions count for a given time period. 
+    Updated every 5 minutes. Smart mentions provide sophisticated discussion volume measurement beyond simple keyword counts.
+    
+    Use this to identify tokens gaining traction, gauge market sentiment, and research potential investments."""
     args_schema: Type[BaseModel] = ElfaGetTrendingTokensInput
 
     async def _arun(
         self,
-        timeWindow: str = "24h",
+        timeWindow: str = "7d",
+        page: int = 1,
+        pageSize: int = 50,
         minMentions: int = 5,
         config: RunnableConfig = None,
         **kwargs,
     ) -> ElfaGetTrendingTokensOutput:
-        """Run the tool to ranks the most discussed tokens by smart mentions count for a given period, updated every 5 minutes via the Elfa API.
+        """
+        Execute the trending tokens request.
 
         Args:
-            timeWindow: Time window for trending tokens (e.g., '1h', '24h', '7d').
-            minMentions: Minimum number of mentions for a token.
-            config: The configuration for the runnable, containing agent context.
-            **kwargs: Additional parameters.
+            timeWindow: Time window for analysis (default: 7d)
+            page: Page number for pagination (default: 1)
+            pageSize: Items per page (default: 50)
+            minMentions: Minimum mentions required (default: 5)
+            config: LangChain runnable configuration
+            **kwargs: Additional parameters
 
         Returns:
-            ElfaGetMentionsOutput: A structured output containing output of Elfa get mentions API.
+            ElfaGetTrendingTokensOutput: Structured response with trending tokens
 
         Raises:
-            Exception: If there's an error accessing the Elfa API.
+            ValueError: If API key is not found
+            ToolException: If there's an error with the API request
         """
         context = self.context_from_config(config)
         api_key = self.get_api_key(context)
-        if not api_key:
-            raise ValueError("Elfa API key not found")
 
-        url = f"{base_url}/v1/trending-tokens"
-        headers = {
-            "accept": "application/json",
-            "x-elfa-api-key": api_key,
+        # Prepare parameters according to API spec
+        params = {
+            "timeWindow": timeWindow,
+            "page": page,
+            "pageSize": pageSize,
+            "minMentions": minMentions,
         }
 
-        params = ElfaGetTrendingTokensInput(
-            timeWindow=timeWindow, page=1, pageSize=50, minMentions=minMentions
-        ).model_dump(exclude_none=True)
+        # Make API request using shared utility
+        response = await make_elfa_request(
+            endpoint="aggregations/trending-tokens", api_key=api_key, params=params
+        )
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    url, headers=headers, timeout=30, params=params
-                )
-                response.raise_for_status()
-                json_dict = response.json()
+        # Parse response data into TrendingToken objects
+        trending_tokens = []
+        if response.data:
+            if isinstance(response.data, list):
+                trending_tokens = [TrendingToken(**item) for item in response.data]
+            elif isinstance(response.data, dict) and "data" in response.data:
+                # Handle nested data structure if present
+                trending_tokens = [
+                    TrendingToken(**item) for item in response.data["data"]
+                ]
 
-                res = ElfaGetTrendingTokensOutput(**json_dict)
-
-                return res
-            except httpx.RequestError as req_err:
-                raise ToolException(
-                    f"request error from Elfa API: {req_err}"
-                ) from req_err
-            except httpx.HTTPStatusError as http_err:
-                raise ToolException(
-                    f"http error from Elfa API: {http_err}"
-                ) from http_err
-            except Exception as e:
-                raise ToolException(f"error from Elfa API: {e}") from e
+        return ElfaGetTrendingTokensOutput(
+            success=response.success, data=trending_tokens, metadata=response.metadata
+        )
