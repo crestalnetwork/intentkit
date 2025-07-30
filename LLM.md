@@ -82,8 +82,8 @@ IntentKit is an autonomous agent framework that enables creation and management 
 ### Github Release
 1. Please use gh command to do it.
 2. Make a `git pull` first.
-3. The release number rule is: pre-release is vX.X.X-devX, release is vX.X.X.
-4. Find the last version number in release or pre-release using `git tag --sort=-version:refname | head -10`, diff origin/main with it, summarize the release note to build/changelog.md for later use. Calculate the version number of this release, for dev version, if v0.0.1 production release exist, start from v0.0.2-dev1. Add a diff link to release note too, the from and to should be the version number.
+3. The release number rule is: pre-release is `vX.X.X-devX`, release is `vX.X.X`. When you calculate the next version number, release number should be the last release number + 1, dev number should check both last release and last pre-release, should greater than both. For example, v0.1.2 is greater than v0.1.2-dev1, if v0.1.2 release exist, v0.1.3-dev1 should be the next pre-release version number.
+4. Find the last version number in release or pre-release using `git tag --sort=-version:refname | head -15`, diff origin/main with it, summarize the release note to build/changelog.md for later use. Add a diff link to release note too, the from and to should be the version number.
 5. And also insert the release note to the beginning of CHANGELOG.md (This file contains all history release notes, don't use it in gh command), leave this changed CHANGELOG.md in local, don't commit and push it, we will commit it together with next changes.
 6. Construct `gh release create` command, use changelog.md as notes file in gh command.
 7. Use gh to do release only, don't create branch, tag, or pull request.
