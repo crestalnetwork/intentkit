@@ -53,7 +53,7 @@ class TwitterGetTimeline(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent_id, max_requests=3, interval=60 * 24
+                    context.agent_id, max_requests=1, interval=15
                 )
 
             # get since id from store
