@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.6.8
+
+### 🚀 Features & Improvements
+
+#### 🔧 Dependency Updates
+- **LangGraph SDK & LangMem**: Updated to latest versions for improved performance
+- **FastAPI**: Updated core dependencies for better stability
+
+#### 📚 Documentation
+- **LLM Integration Guide**: Enhanced guide with better examples and updated instructions
+- **Cursor Rules**: Converted to symlink for better maintainability
+
+#### 💾 Database
+- **Connection Pooling**: Enhanced database connection pooling configuration with new parameters for better performance and resource management
+
+### 🐛 Bug Fixes
+- **Twitter**: Fixed rate limit handling for improved reliability
+
+### 🔧 Maintenance
+- **Elfa**: Migrated to v2 API for better functionality
+- **Documentation**: Various changelog and documentation updates
+
+### Diff
+[Compare v0.6.7...v0.6.8](https://github.com/crestalnetwork/intentkit/compare/v0.6.7...v0.6.8)
+
 ## v0.6.8-dev2
 
 ### Changes
