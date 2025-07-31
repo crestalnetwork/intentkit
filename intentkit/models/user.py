@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Type, TypeVar
 
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
@@ -12,6 +12,47 @@ from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+
+# TypeVar for User model constraint
+UserModelType = TypeVar("UserModelType", bound="User")
+UserTableType = TypeVar("UserTableType", bound="UserTable")
+
+
+class UserRegistry:
+    """Registry for extended model classes."""
+
+    def __init__(self):
+        self._user_table_class: Optional[Type[UserTableType]] = None
+        self._user_model_class: Optional[Type[UserModelType]] = None
+
+    def register_user_table(self, user_table_class: Type[UserTableType]) -> None:
+        """Register extended UserTable class.
+
+        Args:
+            user_table_class: A class that inherits from UserTable
+        """
+        self._user_table_class = user_table_class
+
+    def get_user_table_class(self) -> Type[UserTableType]:
+        """Get registered UserTable class or default."""
+        return self._user_table_class or UserTable
+
+    def register_user_model(self, user_model_class: Type[UserModelType]) -> None:
+        """Register extended UserModel class.
+
+        Args:
+            user_model_class: A class that inherits from User
+        """
+        self._user_model_class = user_model_class
+
+    def get_user_model_class(self) -> Type[UserModelType]:
+        """Get registered UserModel class or default."""
+        return self._user_model_class or User
+
+
+# Global registry instance
+user_model_registry = UserRegistry()
 
 
 class UserTable(Base):
@@ -135,13 +176,15 @@ class UserUpdate(BaseModel):
         Returns:
             Updated or newly created User model
         """
+        user_model_class = user_model_registry.get_user_model_class()
+        user_table_class = user_model_registry.get_user_table_class()
         async with get_session() as db:
-            db_user = await db.get(UserTable, id)
+            db_user = await db.get(user_table_class, id)
             old_nft_count = 0  # Default for new users
 
             if not db_user:
                 # Create new user if it doesn't exist
-                db_user = UserTable(id=id)
+                db_user = user_table_class(id=id)
                 db.add(db_user)
             else:
                 old_nft_count = db_user.nft_count
@@ -158,7 +201,7 @@ class UserUpdate(BaseModel):
             await db.commit()
             await db.refresh(db_user)
 
-            return User.model_validate(db_user)
+            return user_model_class.model_validate(db_user)
 
     async def put(self, id: str) -> "User":
         """Replace all fields of a user in the database with the provided values.
@@ -171,13 +214,15 @@ class UserUpdate(BaseModel):
         Returns:
             Updated or newly created User model
         """
+        user_model_class = user_model_registry.get_user_model_class()
+        user_table_class = user_model_registry.get_user_table_class()
         async with get_session() as db:
-            db_user = await db.get(UserTable, id)
+            db_user = await db.get(user_table_class, id)
             old_nft_count = 0  # Default for new users
 
             if not db_user:
                 # Create new user if it doesn't exist
-                db_user = UserTable(id=id)
+                db_user = user_table_class(id=id)
                 db.add(db_user)
             else:
                 old_nft_count = db_user.nft_count
@@ -193,7 +238,7 @@ class UserUpdate(BaseModel):
             await db.commit()
             await db.refresh(db_user)
 
-            return User.model_validate(db_user)
+            return user_model_class.model_validate(db_user)
 
 
 class User(UserUpdate):
@@ -236,7 +281,10 @@ class User(UserUpdate):
         Returns:
             User model or None if not found
         """
-        result = await session.execute(select(UserTable).where(UserTable.id == user_id))
+        user_table_class = user_model_registry.get_user_table_class()
+        result = await session.execute(
+            select(user_table_class).where(user_table_class.id == user_id)
+        )
         user = result.scalars().first()
         if user is None:
             return None

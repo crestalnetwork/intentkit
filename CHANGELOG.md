@@ -25,6 +25,14 @@
 ### Diff
 [Compare v0.6.7...v0.6.8](https://github.com/crestalnetwork/intentkit/compare/v0.6.7...v0.6.8)
 
+## v0.6.8-dev3
+
+### Changes
+- **chore**: update dependencies langgraph-sdk and langmem versions
+
+### Diff
+[Compare v0.6.8-dev2...v0.6.8-dev3](https://github.com/crestalnetwork/intentkit/compare/v0.6.8-dev2...v0.6.8-dev3)
+
 ## v0.6.8-dev2
 
 ### Changes
