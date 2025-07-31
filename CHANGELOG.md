@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.9-dev1
+
+### 📚 Documentation
+- **Changelog**: Updated changelog documentation with comprehensive release notes
+
+### 🔧 Maintenance
+- **Branch Management**: Merged latest changes from main branch
+
+### Diff
+[Compare v0.6.8...v0.6.9-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.8...v0.6.9-dev1)
+
 ## v0.6.8
 
 ### 🚀 Features & Improvements
