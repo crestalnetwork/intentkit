@@ -88,6 +88,12 @@ agent_app = FastAPI(
     title="IntentKit Agent API",
     description=_load_agent_api_docs(),
     version=config.release,
+    servers=[
+        {
+            "url": f"{config.open_api_base_url}/v1",
+            "description": "IntentKit Agent API Server",
+        }
+    ],
     contact={
         "name": "IntentKit Team",
         "url": "https://github.com/crestalnetwork/intentkit",
