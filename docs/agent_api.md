@@ -129,9 +129,9 @@ For detailed, see the [OpenAI Compatible API Documentation](openai_compatible.md
 ## API Reference
 
 For complete API documentation with interactive examples, visit:
-**https://open.service.crestal.network/v1/redoc**
+**http://localhost:8000/v1/redoc**
 
 If you are using LLM to generate code, providing it with this raw OpenAPI specification link is sufficient:
 ```
-https://open.service.crestal.network/v1/openapi.json
+http://localhost:8000/v1/openapi.json
 ```

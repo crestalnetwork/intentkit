@@ -54,8 +54,8 @@ if config.sentry_dsn:
     sentry_sdk.init(
         dsn=config.sentry_dsn,
         sample_rate=config.sentry_sample_rate,
-        traces_sample_rate=config.sentry_traces_sample_rate,
-        profiles_sample_rate=config.sentry_profiles_sample_rate,
+        # traces_sample_rate=config.sentry_traces_sample_rate,
+        # profiles_sample_rate=config.sentry_profiles_sample_rate,
         environment=config.env,
         release=config.release,
         server_name="intent-api",
@@ -88,6 +88,12 @@ agent_app = FastAPI(
     title="IntentKit Agent API",
     description=_load_agent_api_docs(),
     version=config.release,
+    servers=[
+        {
+            "url": f"{config.open_api_base_url}/v1",
+            "description": "IntentKit Agent API Server",
+        }
+    ],
     contact={
         "name": "IntentKit Team",
         "url": "https://github.com/crestalnetwork/intentkit",
