@@ -1285,6 +1285,9 @@ class Agent(AgentCreate):
                 return None
             return cls.model_validate(item)
 
+    def skill_config(self, category: str) -> Dict[str, Any]:
+        return self.skills.get(category, {}) if self.skills else {}
+
 
 class AgentResponse(BaseModel):
     """Response model for Agent API."""

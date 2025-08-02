@@ -1,7 +1,11 @@
+import asyncio
 from enum import Enum
-from typing import Any, Callable, Dict, NotRequired
+from typing import Any, Dict, Literal, NotRequired, Optional
 
 from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
+from pydantic import BaseModel
+
+from intentkit.models.agent import Agent
 
 
 class AgentError(str, Enum):
@@ -22,4 +26,15 @@ class AgentState(BaseAgentState):
     __extra__: NotRequired[Dict[str, Any]]
 
 
-MemoryManager = Callable[[AgentState], AgentState]
+class AgentContext(BaseModel):
+    agent_id: str
+    chat_id: str
+    user_id: Optional[str] = None
+    app_id: Optional[str] = None
+    entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
+    is_private: bool
+    payer: Optional[str] = None
+
+    @property
+    def agent(self) -> Agent:
+        return asyncio.run(Agent.get(self.agent_id))
