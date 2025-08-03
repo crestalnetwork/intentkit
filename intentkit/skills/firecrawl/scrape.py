@@ -129,7 +129,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 )
 
         # Get the API key from the agent's configuration
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return "Error: No Firecrawl API key provided in the configuration."
 

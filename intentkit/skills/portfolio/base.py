@@ -9,7 +9,7 @@ import aiohttp
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext
+from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.portfolio.constants import MORALIS_API_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -25,8 +25,9 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
         description="The skill store for persisting data"
     )
 
-    def get_api_key(self, context: SkillContext) -> str:
-        skill_config = context.config
+    def get_api_key(self) -> str:
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         if skill_config.get("api_key_provider") == "agent_owner":
             return skill_config.get("api_key")
         return self.skill_store.get_system_config("moralis_api_key")

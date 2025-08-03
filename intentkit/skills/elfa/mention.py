@@ -74,8 +74,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
             ValueError: If API key is not found
             ToolException: If there's an error with the API request
         """
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         # Prepare parameters according to API spec
         params = {
@@ -183,8 +182,7 @@ class ElfaSearchMentions(ElfaBaseTool):
             ValueError: If API key is not found or neither keywords nor accountName provided
             ToolException: If there's an error with the API request
         """
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         # Validate that at least one search criteria is provided
         if not keywords and not accountName:

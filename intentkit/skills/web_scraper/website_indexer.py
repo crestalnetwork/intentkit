@@ -253,7 +253,7 @@ Extract the URLs now:"""
             from intentkit.skills.openai.base import OpenAIBaseTool
 
             temp_tool = OpenAIBaseTool(skill_store=self.skill_store)
-            api_key = temp_tool.get_api_key(context)
+            api_key = temp_tool.get_api_key()
 
             # Initialize OpenAI client
             client = openai.AsyncOpenAI(api_key=api_key)

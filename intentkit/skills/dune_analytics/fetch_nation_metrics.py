@@ -171,8 +171,7 @@ class FetchNationMetrics(DuneBaseTool):
         import logging
 
         logger = logging.getLogger(__name__)
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         metric = self.normalize_metric(metric)
         metric = QUERY_ALIASES.get(metric, metric)

@@ -101,8 +101,7 @@ class FetchKOLBuys(DuneBaseTool):
         import logging
 
         logger = logging.getLogger(__name__)
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         try:
             data = await self.fetch_data(KOL_BUYS_QUERY_ID, api_key, limit)

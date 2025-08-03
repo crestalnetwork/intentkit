@@ -78,11 +78,7 @@ class AcolytAskGpt(AcolytBaseTool):
         Raises:
             Exception: If there's an error accessing the Acolyt API.
         """
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        api_key = skill_config.get("api_key") or self.skill_store.get_system_config(
-            "acolyt_api_key"
-        )
+        api_key = self.get_api_key()
         if not api_key:
             raise ValueError("Acolyt API key not found")
 

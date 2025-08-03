@@ -76,7 +76,7 @@ class DappLookerTokenData(DappLookerBaseTool):
         )
 
         # Get the API key from the agent's configuration or environment variable
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return "Error: No DappLooker API key provided in the configuration or environment."
 

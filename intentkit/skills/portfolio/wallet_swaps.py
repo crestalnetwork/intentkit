@@ -105,7 +105,7 @@ class WalletSwaps(PortfolioBaseTool):
         logger.debug(f"wallet_swaps.py: Fetching wallet swaps with context {context}")
 
         # Get the API key from the agent's configuration
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return {"error": "No Moralis API key provided in the configuration."}
 

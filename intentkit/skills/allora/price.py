@@ -97,8 +97,7 @@ class AlloraGetPrice(AlloraBaseTool):
         Raises:
             Exception: If there's an error accessing the Allora API.
         """
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             raise ValueError("Allora API key not found")
 

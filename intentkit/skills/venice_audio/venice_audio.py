@@ -57,7 +57,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
 
         try:
             # --- Setup Checks ---
-            api_key = self.get_api_key(context)
+            api_key = self.get_api_key()
 
             _, error_info = self.validate_voice_model(context, voice_model)
             if error_info:

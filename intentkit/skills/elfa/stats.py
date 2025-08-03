@@ -61,8 +61,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
             ValueError: If API key is not found
             ToolException: If there's an error with the API request
         """
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         # Prepare parameters according to API spec
         params = {"username": username}

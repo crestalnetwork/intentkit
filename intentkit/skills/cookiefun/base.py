@@ -1,6 +1,7 @@
 import logging
-from typing import Optional, Type
+from typing import Type
 
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -23,18 +24,26 @@ class CookieFunBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "cookiefun"
 
-    def get_api_key(self) -> Optional[str]:
+    def get_api_key(self) -> str:
         """
         Get the API key from configuration.
 
-        Args:
-            None
-
         Returns:
-            The API key or None if not configured
+            The API key
+
+        Raises:
+            ToolException: If the API key is not found or provider is invalid.
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        if skill_config.get("api_key_provider") == "agent_owner":
-            return skill_config.get("api_key")
-        return self.skill_store.get_system_config("cookiefun_api_key")
+        api_key_provider = skill_config.get("api_key_provider")
+        if api_key_provider == "agent_owner":
+            api_key = skill_config.get("api_key")
+            if api_key:
+                return api_key
+            else:
+                raise ToolException("No api_key found in agent_owner configuration")
+        else:
+            raise ToolException(
+                f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for CookieFun."
+            )

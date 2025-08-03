@@ -21,6 +21,7 @@ from intentkit.models.redis import get_redis
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
+APIKeyProviderValue = Literal["platform", "agent_owner"]
 
 
 class SkillConfig(TypedDict):
@@ -28,7 +29,7 @@ class SkillConfig(TypedDict):
 
     enabled: bool
     states: Dict[str, SkillState | SkillOwnerState]
-    api_key_provider: NotRequired[str]
+    api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[Dict[str, Any]]
 
 

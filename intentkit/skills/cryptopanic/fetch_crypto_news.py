@@ -121,8 +121,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
         if currency not in SUPPORTED_CURRENCIES:
             currency = "BTC"
 
-        context = self.get_context()
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         news_items = await self.fetch_news(currency, api_key)
 

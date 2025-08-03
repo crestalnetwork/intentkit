@@ -57,7 +57,7 @@ class TokenAnalytics(TokenBaseTool):
             }
 
         # Get the API key
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         if not api_key:
             logger.error("No Moralis API key available")
