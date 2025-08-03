@@ -1,7 +1,6 @@
 import logging
 from typing import Literal, Optional
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import HttpUrl
 
 from intentkit.skills.base import ToolException
@@ -34,7 +33,6 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
         image_url: HttpUrl,
         scale: Literal[2, 4],
         replication: Optional[float] = 0.35,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> dict:
         """
@@ -55,7 +53,7 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
         """
 
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
 
             await self.apply_venice_rate_limit(context)
 

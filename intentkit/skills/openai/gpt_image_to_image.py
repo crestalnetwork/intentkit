@@ -8,7 +8,6 @@ from typing import Literal, Type
 import httpx
 import openai
 from epyxid import XID
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.openai.base import OpenAIBaseTool
@@ -64,7 +63,6 @@ class GPTImageToImage(OpenAIBaseTool):
         prompt: str,
         size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = "auto",
         quality: Literal["high", "medium", "low", "auto"] = "auto",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the tool to edit images using OpenAI's GPT-Image-1 model.
@@ -74,7 +72,7 @@ class GPTImageToImage(OpenAIBaseTool):
             prompt: Text prompt describing the desired edits to the image.
             size: Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto
             quality: Quality of the generated image. Options: high, medium, low, auto
-            config: Configuration for the runnable.
+
 
         Returns:
             str: URL of the edited image.
@@ -82,10 +80,13 @@ class GPTImageToImage(OpenAIBaseTool):
         Raises:
             Exception: If the image editing fails.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
 
         # Get the OpenAI API key from the skill store
-        api_key = self.get_api_key(context)
+        api_key = skill_config.get("api_key") or self.skill_store.get_system_config(
+            "openai_api_key"
+        )
 
         # Generate a unique job ID
         job_id = str(XID())

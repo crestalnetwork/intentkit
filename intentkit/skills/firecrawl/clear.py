@@ -1,7 +1,6 @@
 import logging
 from typing import Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -36,7 +35,6 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
     async def _arun(
         self,
         confirm: bool = False,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Clear all indexed Firecrawl content for the agent.
@@ -48,7 +46,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
         Returns:
             str: Confirmation message
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         if not agent_id:

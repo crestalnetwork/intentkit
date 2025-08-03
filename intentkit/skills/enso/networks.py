@@ -3,10 +3,7 @@ from typing import Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
-
-from intentkit.skills.base import SkillContext
 
 from .base import EnsoBaseTool, base_url
 
@@ -50,7 +47,7 @@ class EnsoGetNetworks(EnsoBaseTool):
     description: str = "Retrieve networks supported by the Enso API"
     args_schema: Type[BaseModel] = EnsoGetNetworksInput
 
-    async def _arun(self, config: RunnableConfig, **kwargs) -> EnsoGetNetworksOutput:
+    async def _arun(self, **kwargs) -> EnsoGetNetworksOutput:
         """
         Function to request the list of supported networks and their chain id and name.
 
@@ -59,7 +56,7 @@ class EnsoGetNetworks(EnsoBaseTool):
         """
         url = f"{base_url}/api/v1/networks"
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
         logger.debug(f"api_token: {api_token}")
         headers = {

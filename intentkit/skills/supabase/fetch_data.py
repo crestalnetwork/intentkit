@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
@@ -57,14 +56,12 @@ class SupabaseFetchData(SupabaseBaseTool):
         ascending: bool = True,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ):
         try:
-            context = self.context_from_config(config)
-            supabase_url, supabase_key = self.get_supabase_config(
-                context.config, context
-            )
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
+            supabase_url, supabase_key = self.get_supabase_config(skill_config, context)
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)

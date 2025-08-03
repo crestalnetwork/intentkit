@@ -3,7 +3,6 @@
 import logging
 from typing import List, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoNews
@@ -38,7 +37,6 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
     async def _arun(
         self,
         token: str,
-        config: RunnableConfig,
         **kwargs,
     ) -> List[CryptoNews]:
         """Async implementation of the tool to fetch cryptocurrency news.
@@ -54,13 +52,14 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
             Exception: If there's an error accessing the CryptoCompare API.
         """
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
 
             # Check rate limit
             await self.check_rate_limit(context.agent_id, max_requests=5, interval=60)
 
             # Get API key from context
-            api_key = context.config.get("api_key")
+            api_key = skill_config.get("api_key")
             if not api_key:
                 raise ValueError("CryptoCompare API key not found in configuration")
 

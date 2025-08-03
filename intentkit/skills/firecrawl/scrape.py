@@ -3,7 +3,6 @@ from typing import List, Optional, Type
 
 import httpx
 from langchain_core.documents import Document
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -95,7 +94,6 @@ class FirecrawlScrape(FirecrawlBaseTool):
         index_content: bool = True,
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the Firecrawl scrape tool.
@@ -116,17 +114,18 @@ class FirecrawlScrape(FirecrawlBaseTool):
         Returns:
             str: Formatted scraped content based on the requested formats.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         logger.debug(f"firecrawl_scrape: Running scrape with context {context}")
 
-        if context.config.get("api_key_provider") == "agent_owner":
-            if context.config.get("rate_limit_number") and context.config.get(
+        if skill_config.get("api_key_provider") == "agent_owner":
+            if skill_config.get("rate_limit_number") and skill_config.get(
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
                     context.user_id,
-                    context.config["rate_limit_number"],
-                    context.config["rate_limit_minutes"],
+                    skill_config["rate_limit_number"],
+                    skill_config["rate_limit_minutes"],
                 )
 
         # Get the API key from the agent's configuration

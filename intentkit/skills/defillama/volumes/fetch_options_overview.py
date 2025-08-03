@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_options_overview
@@ -104,7 +103,7 @@ class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
 
     args_schema: Type[BaseModel] = EmptyArgsSchema
 
-    async def _arun(self, config: RunnableConfig) -> FetchOptionsOverviewResponse:
+    async def _arun(self, **kwargs) -> FetchOptionsOverviewResponse:
         """Fetch overview data for all options protocols.
 
         Returns:
@@ -112,7 +111,7 @@ class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchOptionsOverviewResponse(error=error_msg)

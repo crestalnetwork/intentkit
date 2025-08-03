@@ -2,7 +2,6 @@
 
 from typing import List, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_tvl
@@ -62,7 +61,7 @@ class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):
     description: str = FETCH_TOTAL_HISTORICAL_TVL_PROMPT
     args_schema: Type[BaseModel] = FetchHistoricalTVLInput
 
-    async def _arun(self, config: RunnableConfig) -> FetchHistoricalTVLResponse:
+    async def _arun(self, **kwargs) -> FetchHistoricalTVLResponse:
         """Fetch historical TVL data across all chains.
 
         Returns:
@@ -70,7 +69,7 @@ class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchHistoricalTVLResponse(error=error_msg)

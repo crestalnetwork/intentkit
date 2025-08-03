@@ -2,10 +2,7 @@ from typing import Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
-
-from intentkit.skills.base import SkillContext
 
 from .base import EnsoBaseTool, base_url, default_chain_id
 
@@ -46,7 +43,6 @@ class EnsoGetPrices(EnsoBaseTool):
     async def _arun(
         self,
         address: str,
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         **kwargs,
     ) -> EnsoGetPricesOutput:
@@ -62,7 +58,7 @@ class EnsoGetPrices(EnsoBaseTool):
         """
         url = f"{base_url}/api/v1/prices/{str(chainId)}/{address}"
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
 
         headers = {

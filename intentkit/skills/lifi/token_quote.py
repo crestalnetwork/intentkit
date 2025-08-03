@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -74,7 +73,6 @@ class TokenQuote(LiFiBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         from_chain: str,
         to_chain: str,
         from_token: str,

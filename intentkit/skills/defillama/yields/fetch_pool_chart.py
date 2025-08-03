@@ -2,7 +2,6 @@
 
 from typing import List, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pool_chart
@@ -68,9 +67,7 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
     description: str = FETCH_POOL_CHART_PROMPT
     args_schema: Type[BaseModel] = FetchPoolChartInput
 
-    async def _arun(
-        self, config: RunnableConfig, pool_id: str
-    ) -> FetchPoolChartResponse:
+    async def _arun(self, pool_id: str) -> FetchPoolChartResponse:
         """Fetch historical chart data for the given pool.
 
         Args:
@@ -81,7 +78,7 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchPoolChartResponse(error=error_msg)

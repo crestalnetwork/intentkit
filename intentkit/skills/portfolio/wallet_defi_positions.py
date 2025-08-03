@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -38,7 +37,6 @@ class WalletDefiPositions(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet DeFi positions from Moralis.
@@ -51,13 +49,14 @@ class WalletDefiPositions(PortfolioBaseTool):
         Returns:
             Dict containing DeFi positions data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         logger.debug(
             f"wallet_defi_positions.py: Fetching wallet DeFi positions with context {context}"
         )
 
         # Get the API key from the agent's configuration
-        api_key = context.config.get("api_key")
+        api_key = skill_config.get("api_key")
         if not api_key:
             return {"error": "No Moralis API key provided in the configuration."}
 

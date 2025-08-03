@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Dict, List, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -99,7 +98,6 @@ class TokenExecute(LiFiBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         from_chain: str,
         to_chain: str,
         from_token: str,
@@ -128,7 +126,7 @@ class TokenExecute(LiFiBaseTool):
                 return validation_error
 
             # Get agent context for CDP wallet
-            context = self.context_from_config(config)
+            context = self.get_context()
             agent_id = context.agent_id
 
             self.logger.info(

@@ -1,7 +1,6 @@
 import logging
 from typing import Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
@@ -76,15 +75,14 @@ class DocumentIndexer(WebScraperBaseTool):
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
         tags: str = "",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Add text content to the vector database."""
         # Get agent context - throw error if not available
-        if not config:
-            raise ValueError("Configuration is required but not provided")
+        # Configuration is always available in new runtime
+        pass
 
-        context = self.context_from_config(config)
+        context = self.get_context()
         if not context or not context.agent_id:
             raise ValueError("Agent ID is required but not found in configuration")
 

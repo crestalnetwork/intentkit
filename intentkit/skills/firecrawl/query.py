@@ -1,7 +1,6 @@
 import logging
 from typing import Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -44,16 +43,15 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
         self,
         query: str,
         max_results: int = 4,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Query the indexed Firecrawl content."""
         try:
             # Get agent context - throw error if not available
-            if not config:
-                raise ValueError("Configuration is required but not provided")
+            # Configuration is always available in new runtime
+            pass
 
-            context = self.context_from_config(config)
+            context = self.get_context()
             if not context or not context.agent_id:
                 raise ValueError("Agent ID is required but not found in configuration")
 
@@ -109,10 +107,10 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
             # Extract agent_id for error logging if possible
             agent_id = "UNKNOWN"
             try:
-                if config:
-                    context = self.context_from_config(config)
-                    if context and context.agent_id:
-                        agent_id = context.agent_id
+                # TODO: Fix config reference
+                context = self.get_context()
+                if context and context.agent_id:
+                    agent_id = context.agent_id
             except Exception:
                 pass
 

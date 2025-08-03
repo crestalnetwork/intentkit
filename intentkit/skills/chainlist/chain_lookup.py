@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, List, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.chainlist.base import ChainlistBaseTool
@@ -160,7 +159,7 @@ class ChainLookup(ChainlistBaseTool):
         chain_id: Optional[int] = None,
         no_tracking: Optional[bool] = False,
         limit: Optional[int] = 5,
-        config: Optional[RunnableConfig] = None,
+        config: Optional[Any] = None,
         **kwargs,
     ) -> Dict:
         """Lookup blockchain RPC endpoints from Chainlist."""

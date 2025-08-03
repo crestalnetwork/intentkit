@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Type
 
 import pytz
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.common.base import CommonBaseTool
@@ -39,7 +38,7 @@ class CurrentTime(CommonBaseTool):
     )
     args_schema: Type[BaseModel] = CurrentTimeInput
 
-    async def _arun(self, timezone: str, config: RunnableConfig, **kwargs) -> str:
+    async def _arun(self, timezone: str, **kwargs) -> str:
         """Implementation of the tool to get the current time.
 
         Args:

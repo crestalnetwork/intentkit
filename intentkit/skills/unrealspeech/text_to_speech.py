@@ -4,7 +4,6 @@ from typing import Any, Dict, Literal, Optional, Type
 
 import httpx
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
@@ -66,16 +65,17 @@ class TextToSpeech(UnrealSpeechBaseTool):
         bitrate: str = "192k",
         speed: float = 0.0,
         timestamp_type: Optional[Literal["word", "sentence"]] = "word",
-        config: Optional[RunnableConfig] = None,
+        config: Optional[Any] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Run the tool to convert text to speech."""
 
         # Get the API key from context config if available
-        context = self.context_from_config(config) if config else None
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category) if config else None
         api_key = (
-            context.config.get("api_key", None) if context and context.config else None
+            skill_config.get("api_key", None) if context and skill_config else None
         )
 
         # Clean up and validate input

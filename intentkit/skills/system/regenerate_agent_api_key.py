@@ -1,4 +1,3 @@
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.system.base import SystemBaseTool
@@ -38,12 +37,10 @@ class RegenerateAgentApiKey(SystemBaseTool):
     )
     args_schema = RegenerateAgentApiKeyInput
 
-    async def _arun(
-        self, config: RunnableConfig, **kwargs
-    ) -> RegenerateAgentApiKeyOutput:
+    async def _arun(self, **kwargs) -> RegenerateAgentApiKeyOutput:
         """Generate and set a new API key for the agent."""
         # Get context from runnable config to access agent.id
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         # Get agent data from skill store

@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -55,7 +54,6 @@ class ElfaGetTopMentions(ElfaBaseTool):
         timeWindow: str = "1h",
         page: int = 1,
         pageSize: int = 10,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> ElfaGetTopMentionsOutput:
         """
@@ -76,7 +74,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
             ValueError: If API key is not found
             ToolException: If there's an error with the API request
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         api_key = self.get_api_key(context)
 
         # Prepare parameters according to API spec
@@ -163,7 +161,6 @@ class ElfaSearchMentions(ElfaBaseTool):
         limit: int = 20,
         searchType: str = "or",
         cursor: Optional[str] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> ElfaSearchMentionsOutput:
         """
@@ -186,7 +183,7 @@ class ElfaSearchMentions(ElfaBaseTool):
             ValueError: If API key is not found or neither keywords nor accountName provided
             ToolException: If there's an error with the API request
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         api_key = self.get_api_key(context)
 
         # Validate that at least one search criteria is provided

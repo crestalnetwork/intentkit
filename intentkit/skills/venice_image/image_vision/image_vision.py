@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, HttpUrl
 
 from intentkit.skills.base import ToolException
@@ -34,11 +33,10 @@ class ImageVision(VeniceImageVisionBaseTool):
     async def _arun(
         self,
         image_url: HttpUrl,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> dict[str, Any]:
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
 
             await self.apply_venice_rate_limit(context)
 

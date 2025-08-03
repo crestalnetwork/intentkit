@@ -2,7 +2,6 @@ from typing import Literal, Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.allora.base import AlloraBaseTool
@@ -84,7 +83,7 @@ class AlloraGetPrice(AlloraBaseTool):
         raise NotImplementedError("Use _arun instead")
 
     async def _arun(
-        self, token: str, time_frame: str, config: RunnableConfig, **kwargs
+        self, token: str, time_frame: str, **kwargs
     ) -> AlloraGetPriceOutput:
         """Run the tool to get the token price prediction from Allora API.
         Args:
@@ -98,7 +97,7 @@ class AlloraGetPrice(AlloraBaseTool):
         Raises:
             Exception: If there's an error accessing the Allora API.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         api_key = self.get_api_key(context)
         if not api_key:
             raise ValueError("Allora API key not found")

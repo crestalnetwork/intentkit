@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_prices
@@ -54,7 +53,7 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
     description: str = FETCH_STABLECOIN_PRICES_PROMPT
     args_schema: None = None  # No input parameters needed
 
-    async def _arun(self, config: RunnableConfig) -> FetchStablecoinPricesResponse:
+    async def _arun(self, **kwargs) -> FetchStablecoinPricesResponse:
         """Fetch stablecoin price data.
 
         Returns:
@@ -62,7 +61,7 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchStablecoinPricesResponse(error=error_msg)

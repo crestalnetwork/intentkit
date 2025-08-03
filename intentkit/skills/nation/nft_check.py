@@ -3,7 +3,6 @@ from typing import Optional, Type
 
 import httpx
 from eth_utils import is_address
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from .base import NationBaseTool
@@ -22,9 +21,7 @@ class NftCheck(NationBaseTool):
     description: str = "Check user nation pass NFTs stats in nation, including usage status and linked agents.By default, it will use the user_id as the wallet address. If you want to check other wallet address, please pass the nation_wallet_address parameter."
     args_schema: Type[BaseModel] = NftCheckInput
 
-    async def _arun(
-        self, nation_wallet_address: Optional[str] = None, config: RunnableConfig = None
-    ) -> str:
+    async def _arun(self, nation_wallet_address: Optional[str] = None) -> str:
         """Implementation of the NFT Check tool.
 
         Args:
@@ -35,7 +32,7 @@ class NftCheck(NationBaseTool):
             str: Formatted NFT check results based on the nation wallet address.
         """
 
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(f"nft_check.py: Running NFT check with context {context}")
 
         # Use the provided nation_wallet_address or fetch it from the context

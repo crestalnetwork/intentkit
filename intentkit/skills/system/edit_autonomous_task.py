@@ -1,6 +1,5 @@
 from typing import Optional
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -68,7 +67,6 @@ class EditAutonomousTask(SystemBaseTool):
         cron: Optional[str] = None,
         prompt: Optional[str] = None,
         enabled: Optional[bool] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> EditAutonomousTaskOutput:
         """Edit an autonomous task for the agent.
@@ -86,7 +84,7 @@ class EditAutonomousTask(SystemBaseTool):
         Returns:
             EditAutonomousTaskOutput: The updated task
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         if minutes is not None and cron is not None:

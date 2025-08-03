@@ -2,7 +2,6 @@
 
 from typing import List, Optional
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_chains
@@ -73,7 +72,7 @@ class DefiLlamaFetchStablecoinChains(DefiLlamaBaseTool):
     description: str = FETCH_STABLECOIN_CHAINS_PROMPT
     args_schema: None = None  # No input parameters needed
 
-    async def _arun(self, config: RunnableConfig) -> FetchStablecoinChainsResponse:
+    async def _arun(self, **kwargs) -> FetchStablecoinChainsResponse:
         """Fetch stablecoin distribution data across chains.
 
         Returns:
@@ -81,7 +80,7 @@ class DefiLlamaFetchStablecoinChains(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchStablecoinChainsResponse(error=error_msg)

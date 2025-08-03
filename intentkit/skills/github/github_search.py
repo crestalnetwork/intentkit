@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.github.base import GitHubBaseTool
@@ -62,7 +61,6 @@ class GitHubSearch(GitHubBaseTool):
         query: str,
         search_type: SearchType = SearchType.REPOSITORIES,
         max_results: int = 5,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the GitHub search tool.
@@ -76,7 +74,7 @@ class GitHubSearch(GitHubBaseTool):
         Returns:
             str: Formatted search results based on the search type.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(f"github_search.py: Running GitHub search with context {context}")
 
         # Limit max_results to a reasonable range

@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -45,7 +44,6 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
         address: str,
         chain: str = DEFAULT_CHAIN,
         days: Optional[str] = "all",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet profitability summary from Moralis.
@@ -59,7 +57,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
         Returns:
             Dict containing wallet profitability summary data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(
             f"wallet_profitability_summary.py: Fetching profitability summary with context {context}"
         )

@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.http.base import HttpBaseTool
@@ -55,7 +54,6 @@ class HttpGet(HttpBaseTool):
         headers: Optional[Dict[str, str]] = None,
         params: Optional[Dict[str, Any]] = None,
         timeout: float = 30.0,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the HTTP GET request.

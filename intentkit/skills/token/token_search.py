@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -53,7 +52,6 @@ class TokenSearch(TokenBaseTool):
         chains: Optional[List[str]] = None,
         limit: Optional[int] = None,
         is_verified_contract: Optional[bool] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Search for tokens using Moralis.
@@ -69,7 +67,7 @@ class TokenSearch(TokenBaseTool):
             Dict containing token search results
         """
         # Extract context from config
-        context = self.context_from_config(config)
+        context = self.get_context()
         if context is None:
             logger.error("Context is None, cannot retrieve API key")
             return {

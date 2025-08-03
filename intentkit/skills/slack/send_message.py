@@ -1,6 +1,5 @@
 from typing import Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackMessage
@@ -30,7 +29,6 @@ class SlackSendMessage(SlackBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         channel_id: str,
         text: str,
         thread_ts: Optional[str] = None,
@@ -49,8 +47,9 @@ class SlackSendMessage(SlackBaseTool):
         Raises:
             Exception: If an error occurs sending the message
         """
-        context = self.context_from_config(config)
-        client = self.get_client(context.config.get("slack_bot_token"))
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        client = self.get_client(skill_config.get("slack_bot_token"))
 
         try:
             # Prepare message parameters

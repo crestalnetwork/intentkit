@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -38,7 +37,6 @@ class WalletStats(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet stats from Moralis.
@@ -51,7 +49,7 @@ class WalletStats(PortfolioBaseTool):
         Returns:
             Dict containing wallet stats data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(f"wallet_stats.py: Fetching wallet stats with context {context}")
 
         # Get the API key from the agent's configuration

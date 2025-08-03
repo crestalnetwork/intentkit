@@ -2,7 +2,6 @@ import logging
 from typing import Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.tavily.base import TavilyBaseTool
@@ -50,7 +49,6 @@ class TavilyExtract(TavilyBaseTool):
         urls: str,
         include_images: bool = False,
         extract_depth: str = "basic",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the Tavily extract tool.
@@ -64,19 +62,20 @@ class TavilyExtract(TavilyBaseTool):
         Returns:
             str: Formatted extraction results with content from the URL.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         logger.debug(
             f"tavily_extract.py: Running web extraction with context {context}"
         )
 
-        if context.config.get("api_key_provider") == "agent_owner":
-            if context.config.get("rate_limit_number") and context.config.get(
+        if skill_config.get("api_key_provider") == "agent_owner":
+            if skill_config.get("rate_limit_number") and skill_config.get(
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
                     context.user_id,
-                    context.config["rate_limit_number"],
-                    context.config["rate_limit_minutes"],
+                    skill_config["rate_limit_number"],
+                    skill_config["rate_limit_minutes"],
                 )
 
         # Get the API key from the agent's configuration

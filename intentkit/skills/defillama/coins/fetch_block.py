@@ -2,7 +2,6 @@
 
 from typing import Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_block
@@ -58,7 +57,7 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
     description: str = FETCH_BLOCK_PROMPT
     args_schema: Type[BaseModel] = FetchBlockInput
 
-    async def _arun(self, config: RunnableConfig, chain: str) -> FetchBlockResponse:
+    async def _arun(self, chain: str) -> FetchBlockResponse:
         """Fetch current block data for the given chain.
 
         Args:
@@ -75,7 +74,7 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
                 return FetchBlockResponse(chain=chain, error=f"Invalid chain: {chain}")
 
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchBlockResponse(chain=normalized_chain, error=error_msg)

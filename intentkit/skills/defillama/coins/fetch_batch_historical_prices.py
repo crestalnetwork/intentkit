@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_batch_historical_prices
@@ -82,7 +81,7 @@ class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
     args_schema: Type[BaseModel] = FetchBatchHistoricalPricesInput
 
     async def _arun(
-        self, config: RunnableConfig, coins_timestamps: Dict[str, List[int]]
+        self, coins_timestamps: Dict[str, List[int]]
     ) -> FetchBatchHistoricalPricesResponse:
         """Fetch historical prices for the given tokens at specified timestamps.
 
@@ -95,7 +94,7 @@ class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchBatchHistoricalPricesResponse(error=error_msg)

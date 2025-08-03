@@ -4,7 +4,6 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 import openai
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
@@ -287,7 +286,6 @@ Extract the URLs now:"""
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         include_patterns: List[str] = None,
         exclude_patterns: List[str] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Discover website sitemaps, extract URLs with AI, and delegate to scrape_and_index."""
@@ -302,11 +300,11 @@ Extract the URLs now:"""
             if not parsed_url.netloc:
                 return "Error: Invalid base URL provided. Please provide a valid URL (e.g., https://example.com)"
 
-            # Get agent context - throw error if not available
-            if not config:
+                # Get agent context - throw error if not available
+                # TODO: Fix config reference
                 raise ValueError("Configuration is required but not provided")
 
-            context = self.context_from_config(config)
+            context = self.get_context()
             if not context or not context.agent_id:
                 raise ValueError("Agent ID is required but not found in configuration")
 
@@ -445,10 +443,10 @@ Extract the URLs now:"""
             # Extract agent_id for error logging if possible
             agent_id = "UNKNOWN"
             try:
-                if config:
-                    context = self.context_from_config(config)
-                    if context and context.agent_id:
-                        agent_id = context.agent_id
+                # TODO: Fix config reference
+                context = self.get_context()
+                if context and context.agent_id:
+                    agent_id = context.agent_id
             except Exception:
                 pass
 
