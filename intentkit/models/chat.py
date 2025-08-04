@@ -31,6 +31,7 @@ class ChatMessageAttachmentType(str, Enum):
     LINK = "link"
     IMAGE = "image"
     FILE = "file"
+    XMTP = "xmtp"
 
 
 class AuthorType(str, Enum):
@@ -61,11 +62,18 @@ class ChatMessageAttachment(TypedDict):
         ),
     ]
     url: Annotated[
-        str,
+        Optional[str],
         Field(
             ...,
             description="URL of the attachment",
             examples=["https://example.com/image.jpg"],
+        ),
+    ]
+    json: Annotated[
+        Optional[dict],
+        Field(
+            None,
+            description="JSON data of the attachment",
         ),
     ]
 
