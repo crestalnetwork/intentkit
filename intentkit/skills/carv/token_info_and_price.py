@@ -2,7 +2,6 @@ import logging
 import re
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -45,8 +44,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         self,
         ticker: str,
         token_name: str,
-        amount: Optional[float] = 1,
-        config: RunnableConfig = None,  # type: ignore
+        amount: Optional[float] = 1,  # type: ignore
         **kwargs: Any,
     ) -> Dict[str, Any]:
         if not ticker:
@@ -56,7 +54,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
                 "suggestion": "ask the user for the specific ticker, and fill the `ticker` field when calling this tool",
             }
 
-        context = self.context_from_config(config)
+        context = self.get_context()
         params = {"ticker": ticker}
         path = "/ai-agent-backend/token_info"
         method = "GET"

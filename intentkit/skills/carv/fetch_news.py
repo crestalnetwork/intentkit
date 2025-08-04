@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -33,8 +32,7 @@ class FetchNewsTool(CarvBaseTool):
     args_schema: Type[BaseModel] = CarvNewsInput
 
     async def _arun(
-        self,
-        config: RunnableConfig = None,  # type: ignore
+        self,  # type: ignore
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
@@ -43,7 +41,7 @@ class FetchNewsTool(CarvBaseTool):
         which holds a list of news articles.
         Example: {"infos": [{"title": "...", "url": "...", "card_text": "..."}, ...]}
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
 
         try:
             await self.apply_rate_limit(context)

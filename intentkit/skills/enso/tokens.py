@@ -2,10 +2,8 @@ from typing import Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import SkillContext
 from intentkit.skills.enso.base import (
     EnsoBaseTool,
     base_url,
@@ -140,7 +138,6 @@ class EnsoGetTokens(EnsoBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         protocolSlug: str | None = None,
         **kwargs,
@@ -157,7 +154,7 @@ class EnsoGetTokens(EnsoBaseTool):
         """
         url = f"{base_url}/api/v1/tokens"
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
         api_token = self.get_api_token(context)
         main_tokens = self.get_main_tokens(context)

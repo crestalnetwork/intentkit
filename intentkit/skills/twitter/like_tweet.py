@@ -1,7 +1,6 @@
 import logging
 from typing import Type
 
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
@@ -35,13 +34,14 @@ class TwitterLikeTweet(TwitterBaseTool):
     description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterLikeTweetInput
 
-    async def _arun(self, tweet_id: str, config: RunnableConfig, **kwargs):
+    async def _arun(self, tweet_id: str, **kwargs):
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
                 skill_store=self.skill_store,
-                config=context.config,
+                config=skill_config,
             )
             client = await twitter.get_client()
 

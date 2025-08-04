@@ -2,7 +2,6 @@ import logging
 from typing import Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.tavily.base import TavilyBaseTool
@@ -58,7 +57,6 @@ class TavilySearch(TavilyBaseTool):
         max_results: int = 5,
         include_images: bool = False,
         include_raw_content: bool = False,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the Tavily search tool.
@@ -68,26 +66,30 @@ class TavilySearch(TavilyBaseTool):
             max_results: Maximum number of search results to return (1-10).
             include_images: Whether to include image URLs in the results.
             include_raw_content: Whether to include raw HTML content in the results.
-            config: The configuration for the tool call.
+
 
         Returns:
             str: Formatted search results with titles, snippets, and URLs.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         logger.debug(f"tavily.py: Running web search with context {context}")
 
-        if context.config.get("api_key_provider") == "agent_owner":
-            if context.config.get("rate_limit_number") and context.config.get(
+        if skill_config.get("api_key_provider") == "agent_owner":
+            if skill_config.get("rate_limit_number") and skill_config.get(
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
                     context.user_id,
-                    context.config["rate_limit_number"],
-                    context.config["rate_limit_minutes"],
+                    skill_config["rate_limit_number"],
+                    skill_config["rate_limit_minutes"],
                 )
 
         # Get the API key from the agent's configuration
-        api_key = self.get_api_key(context)
+        if skill_config.get("api_key_provider") == "agent_owner":
+            api_key = skill_config.get("api_key")
+        else:
+            api_key = self.skill_store.get_system_config("tavily_api_key")
         if not api_key:
             return "Error: No Tavily API key provided in the configuration."
 

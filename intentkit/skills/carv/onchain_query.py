@@ -2,7 +2,6 @@ import logging
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, Literal, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -64,14 +63,13 @@ class OnchainQueryTool(CarvBaseTool):
     async def _arun(
         self,
         question: str,
-        chain: str,
-        config: RunnableConfig = None,  # type: ignore
+        chain: str,  # type: ignore
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Queries the CARV SQL Query API and returns the response.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         try:
             await self.apply_rate_limit(context)
 

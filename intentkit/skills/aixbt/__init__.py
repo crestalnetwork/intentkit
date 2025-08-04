@@ -48,7 +48,6 @@ async def get_skills(
         get_aixbt_skill(
             name=name,
             store=store,
-            api_key=config.get("api_key", ""),
         )
         for name in available_skills
     ]
@@ -57,17 +56,14 @@ async def get_skills(
 def get_aixbt_skill(
     name: str,
     store: SkillStoreABC,
-    api_key: str = "",
 ) -> AIXBTBaseTool:
     """Get an AIXBT API skill by name."""
-    cache_key = f"{name}:{api_key}"
 
     if name == "aixbt_projects":
-        if cache_key not in _cache:
-            _cache[cache_key] = AIXBTProjects(
+        if name not in _cache:
+            _cache[name] = AIXBTProjects(
                 skill_store=store,
-                api_key=api_key,
             )
-        return _cache[cache_key]
+        return _cache[name]
     else:
         raise ValueError(f"Unknown AIXBT skill: {name}")

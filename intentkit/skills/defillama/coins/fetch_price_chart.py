@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_price_chart
@@ -76,9 +75,7 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
     description: str = FETCH_PRICE_CHART_PROMPT
     args_schema: Type[BaseModel] = FetchPriceChartInput
 
-    async def _arun(
-        self, config: RunnableConfig, coins: List[str]
-    ) -> FetchPriceChartResponse:
+    async def _arun(self, coins: List[str]) -> FetchPriceChartResponse:
         """Fetch price charts for the given tokens.
 
         Args:
@@ -90,7 +87,7 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchPriceChartResponse(error=error_msg)

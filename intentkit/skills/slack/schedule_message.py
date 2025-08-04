@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool
@@ -34,7 +33,6 @@ class SlackScheduleMessage(SlackBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         channel_id: str,
         text: str,
         post_at: str,
@@ -55,8 +53,9 @@ class SlackScheduleMessage(SlackBaseTool):
         Raises:
             Exception: If an error occurs scheduling the message
         """
-        context = self.context_from_config(config)
-        client = self.get_client(context.config.get("slack_bot_token"))
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        client = self.get_client(skill_config.get("slack_bot_token"))
 
         try:
             # Convert ISO datetime string to Unix timestamp

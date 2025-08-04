@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -89,7 +88,6 @@ class WalletHistory(PortfolioBaseTool):
         include_internal_transactions: Optional[bool] = None,
         nft_metadata: Optional[bool] = None,
         order: Optional[str] = DEFAULT_ORDER,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet transaction history from Moralis.
@@ -111,13 +109,13 @@ class WalletHistory(PortfolioBaseTool):
         Returns:
             Dict containing transaction history data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(
             f"wallet_history.py: Fetching wallet history with context {context}"
         )
 
         # Get the API key from the agent's configuration
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return {"error": "No Moralis API key provided in the configuration."}
 

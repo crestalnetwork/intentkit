@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
@@ -50,15 +49,15 @@ class TwitterReplyTweet(TwitterBaseTool):
         tweet_id: str,
         text: str,
         image: Optional[str] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ):
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
                 skill_store=self.skill_store,
-                config=context.config,
+                config=skill_config,
             )
             client = await twitter.get_client()
 

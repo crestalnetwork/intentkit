@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -23,7 +22,7 @@ class GetSectors(CookieFunBaseTool):
     )
     args_schema: Type[BaseModel] = GetSectorsInput
 
-    async def _arun(self, config: RunnableConfig, **kwargs) -> List[Dict[str, Any]]:
+    async def _arun(self, **kwargs) -> List[Dict[str, Any]]:
         """
         Get all available sectors from the CookieFun API.
 
@@ -33,7 +32,7 @@ class GetSectors(CookieFunBaseTool):
         logger.info("Getting sectors from CookieFun API")
         try:
             # Get API key
-            api_key = self.get_api_key(config)
+            api_key = self.get_api_key()
 
             if not api_key:
                 logger.error("No API key provided for CookieFun API")

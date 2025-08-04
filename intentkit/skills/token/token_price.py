@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -65,7 +64,6 @@ class TokenPrice(TokenBaseTool):
         to_block: Optional[int] = None,
         max_token_inactivity: Optional[int] = None,
         min_pair_side_liquidity_usd: Optional[int] = None,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch token price from Moralis.
@@ -84,7 +82,7 @@ class TokenPrice(TokenBaseTool):
             Dict containing token price data
         """
         # Extract context from config
-        context = self.context_from_config(config)
+        context = self.get_context()
 
         if context is None:
             logger.error("Context is None, cannot retrieve API key")
@@ -93,7 +91,7 @@ class TokenPrice(TokenBaseTool):
             }
 
         # Get the API key
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         if not api_key:
             logger.error("No Moralis API key available")

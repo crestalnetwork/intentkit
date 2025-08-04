@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -51,7 +50,6 @@ class WalletApprovals(PortfolioBaseTool):
         chain: str = DEFAULT_CHAIN,
         cursor: Optional[str] = None,
         limit: Optional[int] = DEFAULT_LIMIT,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet token approvals from Moralis.
@@ -66,13 +64,13 @@ class WalletApprovals(PortfolioBaseTool):
         Returns:
             Dict containing wallet approvals data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(
             f"wallet_approvals.py: Fetching wallet approvals with context {context}"
         )
 
         # Get the API key from the agent's configuration
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return {"error": "No Moralis API key provided in the configuration."}
 

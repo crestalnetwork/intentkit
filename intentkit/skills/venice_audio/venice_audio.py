@@ -4,7 +4,6 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -43,7 +42,6 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         self,
         input: str,
         voice_model: str,
-        config: RunnableConfig,
         speed: Optional[float] = 1.0,
         response_format: Optional[AllowedAudioFormat] = "mp3",
         **kwargs,  # type: ignore
@@ -53,13 +51,13 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         Stores the resulting audio using store_file_bytes.
         Returns a dictionary containing audio details on success, or API error details on failure.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         final_response_format = response_format if response_format else "mp3"
         tts_model_id = "tts-kokoro"  # API model used
 
         try:
             # --- Setup Checks ---
-            api_key = self.get_api_key(context)
+            api_key = self.get_api_key()
 
             _, error_info = self.validate_voice_model(context, voice_model)
             if error_info:

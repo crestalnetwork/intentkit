@@ -1,7 +1,6 @@
 import logging
 from typing import Optional
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import HttpUrl
 
 from intentkit.skills.base import ToolException
@@ -33,7 +32,6 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
         enhancePrompt: str,
         replication: Optional[float] = 0.35,
         enhanceCreativity: Optional[float] = 0.5,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> dict:
         """
@@ -41,7 +39,7 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
         """
 
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
 
             await self.apply_venice_rate_limit(context)
 

@@ -6,7 +6,6 @@ Uses query ID 4832844 to retrieve a list of KOL buy transactions.
 from typing import Any, Dict, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -87,7 +86,6 @@ class FetchKOLBuys(DuneBaseTool):
     async def _arun(
         self,
         limit: int = 10,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Fetch KOL memecoin buys asynchronously and return formatted output.
@@ -103,8 +101,7 @@ class FetchKOLBuys(DuneBaseTool):
         import logging
 
         logger = logging.getLogger(__name__)
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         try:
             data = await self.fetch_data(KOL_BUYS_QUERY_ID, api_key, limit)

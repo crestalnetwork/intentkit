@@ -2,7 +2,6 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Type, Union
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -64,7 +63,6 @@ class SearchAccounts(CookieFunBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         searchQuery: str,
         type: Optional[int] = None,
         sortBy: Optional[int] = None,
@@ -97,7 +95,7 @@ class SearchAccounts(CookieFunBaseTool):
 
         try:
             # Get context to retrieve API key
-            api_key = self.get_api_key(config)
+            api_key = self.get_api_key()
 
             if not api_key:
                 logger.error("No API key provided for CookieFun API")

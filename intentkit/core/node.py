@@ -11,8 +11,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
-from langchain_core.runnables import RunnableConfig
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import get_runtime
 from langgraph.utils.runnable import RunnableCallable
 from langmem.short_term.summarization import (
     DEFAULT_EXISTING_SUMMARY_PROMPT,
@@ -21,9 +21,8 @@ from langmem.short_term.summarization import (
     SummarizationResult,
     asummarize_messages,
 )
-from pydantic import BaseModel
 
-from intentkit.abstracts.graph import AgentError, AgentState
+from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.core.credit import skill_cost
 from intentkit.models.agent import Agent
 from intentkit.models.credit import CreditAccount, OwnerType
@@ -108,11 +107,7 @@ class PreModelNode(RunnableCallable):
     def _func(self, AgentState) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
-    async def _afunc(
-        self,
-        input: AgentState,
-        config: RunnableConfig,
-    ) -> dict[str, Any]:
+    async def _afunc(self, input: AgentState) -> dict[str, Any]:
         messages, context = self._parse_input(input)
         try:
             _validate_chat_history(messages)
@@ -180,28 +175,23 @@ class PostModelNode(RunnableCallable):
         super().__init__(self._func, self._afunc, name="post_model_node", trace=False)
         self.func_accepts_config = True
 
-    def _func(self, input: dict[str, Any] | BaseModel) -> dict[str, Any]:
+    def _func(self, input: AgentState) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
-    async def _afunc(
-        self,
-        input: AgentState,
-        config: RunnableConfig,
-    ) -> dict[str, Any]:
-        logger.debug(f"Running PostModelNode, input: {input}, config: {config}")
+    async def _afunc(self, input: AgentState) -> dict[str, Any]:
+        runtime = get_runtime(AgentContext)
+        context = runtime.context
+        logger.debug(f"Running PostModelNode, input: {input}, context: {context}")
         state_update = {}
         messages = input.get("messages")
         if messages is None or not isinstance(messages, list) or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
-        cfg = config.get("configurable")
-        if not config:
-            raise ValueError("Missing required field `configurable` in the config.")
-        payer = cfg.get("payer")
+        payer = context.payer
         if not payer:
             return state_update
         logger.debug(f"last: {messages[-1]}")
         msg = messages[-1]
-        agent_id = cfg.get("agent_id")
+        agent_id = context.agent_id
         agent = await Agent.get(agent_id)
         account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         if hasattr(msg, "tool_calls") and msg.tool_calls:

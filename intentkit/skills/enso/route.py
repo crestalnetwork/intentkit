@@ -2,10 +2,8 @@ from typing import Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import SkillContext
 from intentkit.skills.enso.networks import EnsoGetNetworks
 
 from .base import EnsoBaseTool, base_url, default_chain_id
@@ -164,7 +162,6 @@ class EnsoRouteShortcut(EnsoBaseTool):
         amountIn: list[int],
         tokenIn: list[str],
         tokenOut: list[str],
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         broadcast_requested: bool = False,
         **kwargs,
@@ -183,7 +180,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
             EnsoRouteShortcutOutput: The response containing route shortcut information.
         """
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
         api_token = self.get_api_token(context)
         account = await self.get_account(context)
@@ -204,7 +201,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
                 if network_name is None:
                     networks = await EnsoGetNetworks(
                         skill_store=self.skill_store,
-                    ).arun(config)
+                    ).arun()
 
                     for network in networks.res:
                         if network.id == chainId:

@@ -1,14 +1,11 @@
 import logging
 from typing import Any, Dict, Optional, Tuple
 
+from langchain.tools.base import ToolException
 from pydantic import Field
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import (
-    IntentKitSkill,
-    SkillContext,
-    ToolException,
-)
+from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.venice_image.api import (
     make_venice_api_request,
 )
@@ -47,7 +44,7 @@ class VeniceImageBaseTool(IntentKitSkill):
         description="The skill store for persisting data and configs."
     )
 
-    def getSkillConfig(self, context: SkillContext) -> VeniceImageConfig:
+    def getSkillConfig(self, context) -> VeniceImageConfig:
         """
         Creates a VeniceImageConfig instance from a dictionary of configuration values.
 
@@ -58,19 +55,20 @@ class VeniceImageBaseTool(IntentKitSkill):
             A VeniceImageConfig object.
         """
 
+        skill_config = context.agent.skill_config(self.category)
         return VeniceImageConfig(
-            api_key_provider=context.config.get("api_key_provider", "agent_owner"),
-            safe_mode=context.config.get("safe_mode", True),
-            hide_watermark=context.config.get("hide_watermark", True),
-            embed_exif_metadata=context.config.get("embed_exif_metadata", False),
-            negative_prompt=context.config.get(
+            api_key_provider=skill_config.get("api_key_provider", "agent_owner"),
+            safe_mode=skill_config.get("safe_mode", True),
+            hide_watermark=skill_config.get("hide_watermark", True),
+            embed_exif_metadata=skill_config.get("embed_exif_metadata", False),
+            negative_prompt=skill_config.get(
                 "negative_prompt", "(worst quality: 1.4), bad quality, nsfw"
             ),
-            rate_limit_number=context.config.get("rate_limit_number"),
-            rate_limit_minutes=context.config.get("rate_limit_minutes"),
+            rate_limit_number=skill_config.get("rate_limit_number"),
+            rate_limit_minutes=skill_config.get("rate_limit_minutes"),
         )
 
-    def get_api_key(self, context: SkillContext) -> str:
+    def get_api_key(self) -> str:
         """
         Retrieves the Venice AI API key based on the api_key_provider setting.
 
@@ -81,9 +79,11 @@ class VeniceImageBaseTool(IntentKitSkill):
             ToolException: If the API key is not found or provider is invalid.
         """
         try:
+            context = self.get_context()
             skillConfig = self.getSkillConfig(context=context)
             if skillConfig.api_key_provider == "agent_owner":
-                agent_api_key = context.config.get("api_key")
+                skill_config = context.agent.skill_config(self.category)
+                agent_api_key = skill_config.get("api_key")
                 if agent_api_key:
                     logger.debug(
                         f"Using agent-specific Venice API key for skill {self.name} in category {self.category}"
@@ -112,7 +112,7 @@ class VeniceImageBaseTool(IntentKitSkill):
         except Exception as e:
             raise ToolException(f"Failed to retrieve Venice API key: {str(e)}") from e
 
-    async def apply_venice_rate_limit(self, context: SkillContext) -> None:
+    async def apply_venice_rate_limit(self, context) -> None:
         """
         Applies rate limiting to prevent exceeding the Venice AI API's rate limits.
 
@@ -121,7 +121,7 @@ class VeniceImageBaseTool(IntentKitSkill):
             - 'platform': uses system-wide configuration.
         """
         try:
-            user_id = context.user_id
+            # Get user_id from the agent context (venice_image only supports agent_owner)
             skillConfig = self.getSkillConfig(context=context)
 
             if skillConfig.api_key_provider == "agent_owner":
@@ -129,6 +129,8 @@ class VeniceImageBaseTool(IntentKitSkill):
                 limit_min = skillConfig.rate_limit_minutes
 
                 if limit_num and limit_min:
+                    # For agent_owner, use agent.id as user_id for rate limiting
+                    user_id = context.agent.id
                     logger.debug(
                         f"Applying Agent rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
                     )
@@ -145,6 +147,8 @@ class VeniceImageBaseTool(IntentKitSkill):
                 )
 
                 if system_limit_num and system_limit_min:
+                    # For platform, use agent.id as user_id for rate limiting
+                    user_id = context.agent.id
                     logger.debug(
                         f"Applying System rate limit ({system_limit_num}/{system_limit_min} min) for user {user_id} on {self.name}"
                     )
@@ -158,7 +162,7 @@ class VeniceImageBaseTool(IntentKitSkill):
             raise ToolException(f"Failed to apply Venice rate limit: {str(e)}") from e
 
     async def post(
-        self, path: str, payload: Dict[str, Any], context: SkillContext
+        self, path: str, payload: Dict[str, Any], context
     ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         """
         Makes a POST request to the Venice AI API using the `make_venice_api_request`
@@ -181,7 +185,7 @@ class VeniceImageBaseTool(IntentKitSkill):
             - If successful, success contains the JSON response from the API.
             - If an error occurs, success is an empty dictionary, and error contains error details.
         """
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         return await make_venice_api_request(
             api_key, path, payload, self.category, self.name

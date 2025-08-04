@@ -6,7 +6,7 @@ from typing import Any, Dict
 import aiohttp
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext
+from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.token.constants import MORALIS_API_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -27,16 +27,14 @@ class TokenBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "token"
 
-    def get_api_key(self, context: SkillContext) -> str:
+    def get_api_key(self) -> str:
         """Get API key from agent config or system config.
-
-        Args:
-            context: The skill context containing the agent config
 
         Returns:
             The API key to use for API requests
         """
-        skill_config = context.config
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         if skill_config.get("api_key_provider") == "agent_owner":
             return skill_config.get("api_key")
         return self.skill_store.get_system_config("moralis_api_key")

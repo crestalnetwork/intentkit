@@ -1,7 +1,6 @@
 import logging
 from typing import Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
@@ -38,13 +37,14 @@ class TwitterGetUserByUsername(TwitterBaseTool):
     description: str = PROMPT
     args_schema: Type[BaseModel] = TwitterGetUserByUsernameInput
 
-    async def _arun(self, username: str, config: RunnableConfig, **kwargs):
+    async def _arun(self, username: str, **kwargs):
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
                 skill_store=self.skill_store,
-                config=context.config,
+                config=skill_config,
             )
             client = await twitter.get_client()
 

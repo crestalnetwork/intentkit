@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -38,7 +37,6 @@ class TokenAnalytics(TokenBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch token analytics from Moralis.
@@ -51,7 +49,7 @@ class TokenAnalytics(TokenBaseTool):
         Returns:
             Dict containing token analytics data
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         if context is None:
             logger.error("Context is None, cannot retrieve API key")
             return {
@@ -59,7 +57,7 @@ class TokenAnalytics(TokenBaseTool):
             }
 
         # Get the API key
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         if not api_key:
             logger.error("No Moralis API key available")

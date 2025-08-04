@@ -2,10 +2,7 @@ from typing import Literal, Tuple, Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
-
-from intentkit.skills.base import SkillContext
 
 from .base import EnsoBaseTool, base_url, default_chain_id
 
@@ -62,7 +59,6 @@ class EnsoGetWalletBalances(EnsoBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         **kwargs,
     ) -> EnsoGetBalancesOutput:
@@ -77,7 +73,7 @@ class EnsoGetWalletBalances(EnsoBaseTool):
         """
         url = f"{base_url}/api/v1/wallet/balances"
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
         account = await self.get_account(context)
         headers = {
@@ -158,7 +154,6 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         **kwargs,
     ) -> EnsoGetApprovalsOutput:
@@ -174,7 +169,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
         """
         url = f"{base_url}/api/v1/wallet/approvals"
 
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
         account = await self.get_account(context)
 
@@ -297,7 +292,6 @@ class EnsoWalletApprove(EnsoBaseTool):
         self,
         tokenAddress: str,
         amount: int,
-        config: RunnableConfig,
         chainId: int = default_chain_id,
         **kwargs,
     ) -> Tuple[EnsoWalletApproveOutput, EnsoWalletApproveArtifact]:
@@ -314,7 +308,7 @@ class EnsoWalletApprove(EnsoBaseTool):
             Tuple[EnsoBroadcastWalletApproveOutput, EnsoBroadcastWalletApproveArtifact]: The list of approve transaction output or an error message.
         """
         url = f"{base_url}/api/v1/wallet/approve"
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
         account = await self.get_account(context)
 

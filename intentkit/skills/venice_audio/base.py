@@ -1,10 +1,11 @@
 import logging
 from typing import Dict, List, Optional, Tuple, Type
 
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext, ToolException
+from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
         return "venice_audio"
 
     def validate_voice_model(
-        self, context: SkillContext, voice_model: str
+        self, context, voice_model: str
     ) -> Tuple[bool, Optional[Dict[str, object]]]:
         config = context.config
 
@@ -47,7 +48,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
 
         return True, None
 
-    def get_api_key(self, context: SkillContext) -> str:
+    def get_api_key(self) -> str:
         """
         Retrieves the Venice AI API key based on the api_key_provider setting.
 
@@ -58,10 +59,11 @@ class VeniceAudioBaseTool(IntentKitSkill):
             ToolException: If the API key is not found or provider is invalid.
         """
         try:
-            skillConfig = context.config
-            api_key_provider = skillConfig.get("api_key_provider")
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
+            api_key_provider = skill_config.get("api_key_provider")
             if api_key_provider == "agent_owner":
-                agent_api_key = context.config.get("api_key")
+                agent_api_key = skill_config.get("api_key")
                 if agent_api_key:
                     logger.debug(
                         f"Using agent-specific Venice API key for skill {self.name} in category {self.category}"
@@ -90,15 +92,15 @@ class VeniceAudioBaseTool(IntentKitSkill):
         except Exception as e:
             raise ToolException(f"Failed to retrieve Venice API key: {str(e)}") from e
 
-    async def apply_rate_limit(self, context: SkillContext) -> None:
+    async def apply_rate_limit(self, context) -> None:
         """
         Applies rate limiting ONLY if specified in the agent's config ('skill_config').
         Checks for 'rate_limit_number' and 'rate_limit_minutes'.
         If not configured, NO rate limiting is applied.
         Raises ConnectionAbortedError if the configured limit is exceeded.
         """
-        skill_config = context.config
-        user_id = context.user_id
+        skill_config = context.agent.skill_config(self.category)
+        user_id = context.agent.id
 
         # Get agent-specific limits safely
         limit_num = skill_config.get("rate_limit_number")

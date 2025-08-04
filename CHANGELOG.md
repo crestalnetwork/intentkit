@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.6.9
+
+### 📚 Documentation
+- **API Documentation**: Updated API documentation URLs to use localhost for development
+
+### 🔧 Maintenance  
+- **Sentry Configuration**: Updated sentry configuration settings
+
+### Diff
+[Compare v0.6.8...v0.6.9](https://github.com/crestalnetwork/intentkit/compare/v0.6.8...v0.6.9)
+
+## v0.6.9-dev2
+
+### 📚 Documentation
+- **API Documentation**: Updated API documentation URLs to use localhost for development
+
+### 🔧 Maintenance  
+- **Sentry Configuration**: Updated sentry configuration settings
+- **Documentation**: General changelog updates
+
+### Diff
+[Compare v0.6.9-dev1...v0.6.9-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.9-dev1...v0.6.9-dev2)
+
 ## v0.6.9-dev1
 
 ### 📚 Documentation

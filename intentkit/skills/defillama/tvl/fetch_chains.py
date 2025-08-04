@@ -2,7 +2,6 @@
 
 from typing import List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_chains
@@ -75,7 +74,7 @@ class DefiLlamaFetchChains(DefiLlamaBaseTool):
     description: str = FETCH_CHAINS_PROMPT
     args_schema: Type[BaseModel] = FetchChainsInput
 
-    async def _arun(self, config: RunnableConfig) -> FetchChainsResponse:
+    async def _arun(self, **kwargs) -> FetchChainsResponse:
         """Fetch TVL data for all chains.
 
         Returns:
@@ -83,7 +82,7 @@ class DefiLlamaFetchChains(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchChainsResponse(chains=[], total_tvl=0, error=error_msg)

@@ -2,7 +2,6 @@ import logging
 from typing import Dict, Literal, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.acolyt.base import AcolytBaseTool
@@ -67,12 +66,11 @@ class AcolytAskGpt(AcolytBaseTool):
         """
     args_schema: Type[BaseModel] = AcolytAskGptInput
 
-    async def _arun(self, question: str, config: RunnableConfig, **kwargs) -> Dict:
+    async def _arun(self, question: str, **kwargs) -> Dict:
         """Run the tool to get answer from Acolyt GPT.
 
         Args:
             question (str): The question body from user.
-            config (RunnableConfig): The configuration for the runnable, containing agent context.
 
         Returns:
             Dict: The response from the API with message content.
@@ -80,8 +78,7 @@ class AcolytAskGpt(AcolytBaseTool):
         Raises:
             Exception: If there's an error accessing the Acolyt API.
         """
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             raise ValueError("Acolyt API key not found")
 

@@ -45,6 +45,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 2. Always use English for code comments.
 3. Always use English to search.
 4. Unless I specifically ask you to do so, do not git commit after coding.
+5. Always place imports at the beginning of the file in your new code.
 
 ## Dev Guide
 

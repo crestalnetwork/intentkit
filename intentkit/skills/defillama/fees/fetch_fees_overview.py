@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_fees_overview
@@ -103,7 +102,7 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
 
     args_schema: Type[BaseModel] = EmptyArgsSchema
 
-    async def _arun(self, config: RunnableConfig) -> FetchFeesOverviewResponse:
+    async def _arun(self, **kwargs) -> FetchFeesOverviewResponse:
         """Fetch overview data for protocol fees.
 
         Returns:
@@ -111,7 +110,7 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchFeesOverviewResponse(error=error_msg)

@@ -2,7 +2,6 @@
 
 from typing import List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_charts
@@ -85,7 +84,7 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
     args_schema: Type[BaseModel] = FetchStablecoinChartsInput
 
     async def _arun(
-        self, config: RunnableConfig, stablecoin_id: str, chain: Optional[str] = None
+        self, stablecoin_id: str, chain: Optional[str] = None
     ) -> FetchStablecoinChartsResponse:
         """Fetch historical chart data for the given stablecoin.
 
@@ -108,7 +107,7 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
                 chain = normalized_chain
 
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchStablecoinChartsResponse(error=error_msg)

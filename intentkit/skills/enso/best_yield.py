@@ -2,10 +2,8 @@ from typing import List, Optional, Type
 
 import httpx
 from langchain.tools.base import ToolException
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import SkillContext
 from intentkit.skills.enso.base import (
     EnsoBaseTool,
     base_url,
@@ -81,7 +79,6 @@ class EnsoGetBestYield(EnsoBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         token_symbol: str = "USDC",
         chain_id: int = BASE_CHAIN_ID,
         top_n: int = 5,
@@ -101,7 +98,7 @@ class EnsoGetBestYield(EnsoBaseTool):
         Raises:
             ToolException: If there's an error accessing the Enso API.
         """
-        context: SkillContext = self.context_from_config(config)
+        context = self.get_context()
         api_token = self.get_api_token(context)
 
         if not api_token:

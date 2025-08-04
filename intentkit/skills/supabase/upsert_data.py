@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, List, Type, Union
 
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
@@ -47,18 +46,16 @@ class SupabaseUpsertData(SupabaseBaseTool):
         data: Union[Dict[str, Any], List[Dict[str, Any]]],
         on_conflict: str,
         returning: str = "*",
-        config: RunnableConfig = None,
         **kwargs,
     ):
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
 
             # Validate table access for public mode
             self.validate_table_access(table, context)
 
-            supabase_url, supabase_key = self.get_supabase_config(
-                context.config, context
-            )
+            supabase_url, supabase_key = self.get_supabase_config(skill_config, context)
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)

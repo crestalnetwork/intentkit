@@ -3,7 +3,6 @@ import hashlib
 import logging
 from typing import Any, Dict, Literal, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 # Import the generic base
@@ -46,11 +45,10 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
         format: Literal["png", "jpeg", "webp"] = "png",
         cfg_scale: Optional[float] = 7.5,
         style_preset: Optional[str] = "Photographic",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> Dict[str, Any]:
         try:
-            context = self.context_from_config(config)
+            context = self.get_context()
             skillConfig = self.getSkillConfig(context)
             await self.apply_venice_rate_limit(context)
 

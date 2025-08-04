@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Type
 
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.exception import RateLimitExceeded
@@ -17,6 +18,46 @@ class TwitterBaseTool(IntentKitSkill):
     skill_store: SkillStoreABC = Field(
         description="The skill store for persisting data"
     )
+
+    def get_api_key(self) -> dict:
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        api_key_provider = skill_config.get("api_key_provider")
+        if api_key_provider == "platform":
+            # Return platform keys (these need to be added to config.py)
+            return {
+                "consumer_key": self.skill_store.get_system_config(
+                    "twitter_consumer_key"
+                ),
+                "consumer_secret": self.skill_store.get_system_config(
+                    "twitter_consumer_secret"
+                ),
+                "access_token": self.skill_store.get_system_config(
+                    "twitter_access_token"
+                ),
+                "access_token_secret": self.skill_store.get_system_config(
+                    "twitter_access_token_secret"
+                ),
+            }
+        # for backward compatibility or agent_owner provider
+        elif api_key_provider == "agent_owner":
+            required_keys = [
+                "consumer_key",
+                "consumer_secret",
+                "access_token",
+                "access_token_secret",
+            ]
+            api_keys = {}
+            for key in required_keys:
+                if skill_config.get(key):
+                    api_keys[key] = skill_config.get(key)
+                else:
+                    raise ToolException(
+                        f"Missing required {key} in agent_owner configuration"
+                    )
+            return api_keys
+        else:
+            raise ToolException(f"Invalid API key provider: {api_key_provider}")
 
     @property
     def category(self) -> str:

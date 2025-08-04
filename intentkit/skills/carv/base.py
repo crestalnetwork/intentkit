@@ -2,10 +2,11 @@ import logging
 from typing import Any, Dict, Optional, Tuple, Type
 
 import httpx  # Ensure httpx is installed: pip install httpx
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext, ToolException
+from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class CarvBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "carv"
 
-    def get_api_key(self, context: SkillContext) -> str:
+    def get_api_key(self) -> str:
         """
         Retrieves the CARV API key based on the api_key_provider setting.
 
@@ -35,10 +36,11 @@ class CarvBaseTool(IntentKitSkill):
             ToolException: If the API key is not found or provider is invalid.
         """
         try:
-            skillConfig = context.config
-            api_key_provider = skillConfig.get("api_key_provider")
+            context = self.get_context()
+            skill_config = context.agent.skill_config(self.category)
+            api_key_provider = skill_config.get("api_key_provider")
             if api_key_provider == "agent_owner":
-                agent_api_key: Optional[str] = context.config.get("api_key")
+                agent_api_key: Optional[str] = skill_config.get("api_key")
                 if agent_api_key:
                     logger.debug(
                         f"Using agent-specific CARV API key for skill {self.name} in category {self.category}"
@@ -70,15 +72,15 @@ class CarvBaseTool(IntentKitSkill):
                 raise
             raise ToolException(f"Failed to retrieve CARV API key: {str(e)}") from e
 
-    async def apply_rate_limit(self, context: SkillContext) -> None:
+    async def apply_rate_limit(self, context) -> None:
         """
         Applies rate limiting ONLY if specified in the agent's config ('skill_config').
         Checks for 'rate_limit_number' and 'rate_limit_minutes'.
         If not configured, NO rate limiting is applied.
         Raises ConnectionAbortedError if the configured limit is exceeded.
         """
-        skill_config = context.config
-        user_id = context.user_id
+        skill_config = context.agent.skill_config(self.category)
+        user_id = context.agent.id
 
         limit_num = skill_config.get("rate_limit_number")
         limit_min = skill_config.get("rate_limit_minutes")
@@ -98,7 +100,7 @@ class CarvBaseTool(IntentKitSkill):
 
     async def _call_carv_api(
         self,
-        context: SkillContext,
+        context,
         endpoint: str,
         method: str = "GET",
         params: Optional[Dict[str, Any]] = None,
@@ -122,7 +124,7 @@ class CarvBaseTool(IntentKitSkill):
         url = f"{CARV_API_BASE_URL}{endpoint}"
 
         try:
-            api_key = self.get_api_key(context)
+            api_key = self.get_api_key()
 
             headers = {
                 "Authorization": api_key,

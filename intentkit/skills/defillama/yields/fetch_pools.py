@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pools
@@ -99,7 +98,7 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
     description: str = FETCH_POOLS_PROMPT
     args_schema: None = None  # No input parameters needed
 
-    async def _arun(self, config: RunnableConfig) -> FetchPoolsResponse:
+    async def _arun(self, **kwargs) -> FetchPoolsResponse:
         """Fetch pool data.
 
         Returns:
@@ -107,7 +106,7 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchPoolsResponse(error=error_msg)

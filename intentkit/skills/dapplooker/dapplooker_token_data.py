@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, List, Optional, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.dapplooker.base import DappLookerBaseTool
@@ -58,7 +57,6 @@ class DappLookerTokenData(DappLookerBaseTool):
         token_tickers: Optional[str] = None,
         token_addresses: Optional[str] = None,
         chain: str = "base",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the DappLooker token data tool.
@@ -72,13 +70,13 @@ class DappLookerTokenData(DappLookerBaseTool):
         Returns:
             str: Formatted token data with market metrics and analytics.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         logger.debug(
             f"dapplooker_token_data.py: Fetching token data with context {context}"
         )
 
         # Get the API key from the agent's configuration or environment variable
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
         if not api_key:
             return "Error: No DappLooker API key provided in the configuration or environment."
 

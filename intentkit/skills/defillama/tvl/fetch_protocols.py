@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type, Union
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocols
@@ -146,7 +145,7 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
 
     args_schema: Type[BaseModel] = EmptyArgsSchema
 
-    async def _arun(self, config: RunnableConfig) -> DefiLlamaProtocolsOutput:
+    async def _arun(self, **kwargs) -> DefiLlamaProtocolsOutput:
         """Fetch information about all protocols.
 
         Returns:
@@ -154,7 +153,7 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return DefiLlamaProtocolsOutput(error=error_msg)

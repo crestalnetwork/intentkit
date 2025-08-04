@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_current_prices
@@ -72,9 +71,7 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
     description: str = FETCH_PRICES_PROMPT
     args_schema: Type[BaseModel] = FetchCurrentPricesInput
 
-    async def _arun(
-        self, config: RunnableConfig, coins: List[str]
-    ) -> FetchCurrentPricesResponse:
+    async def _arun(self, coins: List[str]) -> FetchCurrentPricesResponse:
         """Fetch current prices for the given tokens.
 
         Args:
@@ -86,7 +83,7 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchCurrentPricesResponse(error=error_msg)

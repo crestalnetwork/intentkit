@@ -8,7 +8,6 @@ import re
 from typing import Any, Dict, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -156,7 +155,6 @@ class FetchNationMetrics(DuneBaseTool):
         self,
         metric: str = "",
         limit: int = 1000,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> NationMetricsOutput:
         """Fetch Crestal Nation metrics asynchronously.
@@ -173,8 +171,7 @@ class FetchNationMetrics(DuneBaseTool):
         import logging
 
         logger = logging.getLogger(__name__)
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         metric = self.normalize_metric(metric)
         metric = QUERY_ALIASES.get(metric, metric)

@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackChannel
@@ -28,7 +27,6 @@ class SlackGetChannel(SlackBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         channel_id: Optional[str] = None,
         channel_name: Optional[str] = None,
         **kwargs,
@@ -46,8 +44,9 @@ class SlackGetChannel(SlackBaseTool):
             ValueError: If neither channel_id nor channel_name is provided
             Exception: If an error occurs getting the channel information
         """
-        context = self.context_from_config(config)
-        client = self.get_client(context.config.get("slack_bot_token"))
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        client = self.get_client(skill_config.get("slack_bot_token"))
 
         try:
             # If no channel specified, return a dict of all channels

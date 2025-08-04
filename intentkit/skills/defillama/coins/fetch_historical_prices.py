@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional, Type
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_prices
@@ -77,7 +76,7 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
     args_schema: Type[BaseModel] = FetchHistoricalPricesInput
 
     async def _arun(
-        self, config: RunnableConfig, timestamp: int, coins: List[str]
+        self, timestamp: int, coins: List[str]
     ) -> FetchHistoricalPricesResponse:
         """Fetch historical prices for the given tokens at the specified time.
 
@@ -91,7 +90,7 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchHistoricalPricesResponse(error=error_msg)

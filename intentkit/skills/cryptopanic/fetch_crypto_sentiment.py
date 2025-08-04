@@ -2,7 +2,6 @@
 
 from typing import ClassVar, List, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -65,7 +64,6 @@ Conclude with a short-term outlook for {currency}. Provide a concise, profession
     async def _arun(
         self,
         currency: str = "BTC",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> CryptopanicSentimentOutput:
         """Generate AI-driven market insights asynchronously.
@@ -98,7 +96,6 @@ Conclude with a short-term outlook for {currency}. Provide a concise, profession
             news_output: CryptopanicNewsOutput = await news_skill._arun(
                 query=f"insights for {currency}",
                 currency=currency,
-                config=config,
             )
         except Exception as e:
             raise ToolException(f"Failed to fetch news for analysis: {e}")

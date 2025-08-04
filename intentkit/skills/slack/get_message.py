@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackMessage
@@ -35,7 +34,6 @@ class SlackGetMessage(SlackBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         channel_id: str,
         ts: Optional[str] = None,
         thread_ts: Optional[str] = None,
@@ -56,8 +54,9 @@ class SlackGetMessage(SlackBaseTool):
         Raises:
             Exception: If an error occurs getting the messages
         """
-        context = self.context_from_config(config)
-        client = self.get_client(context.config.get("slack_bot_token"))
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        client = self.get_client(skill_config.get("slack_bot_token"))
 
         try:
             # Ensure limit is within bounds

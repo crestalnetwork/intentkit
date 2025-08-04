@@ -3,7 +3,6 @@ from typing import Optional, Type
 
 import httpx
 from epyxid import XID
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.heurist.base import HeuristBaseTool
@@ -61,7 +60,6 @@ class ImageGenerationAnimagineXL(HeuristBaseTool):
         neg_prompt: Optional[str] = "(worst quality: 1.4), bad quality, nsfw",
         width: Optional[int] = 1024,
         height: Optional[int] = 680,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> str:
         """Implementation of the tool to generate Japanese anime-style images using Heurist AI's AnimagineXL model.
@@ -77,8 +75,9 @@ class ImageGenerationAnimagineXL(HeuristBaseTool):
         Returns:
             str: URL of the generated image.
         """
-        context = self.context_from_config(config)
-        skill_config = context.config
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
+        skill_config = skill_config
 
         # Get the Heurist API key from the skill store
         if "api_key" in skill_config and skill_config["api_key"]:

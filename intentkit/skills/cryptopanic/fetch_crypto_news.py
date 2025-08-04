@@ -6,7 +6,6 @@ Fetches all news posts for BTC or ETH, sorted by publication date (newest first)
 from typing import List, Type
 
 import httpx
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -101,7 +100,6 @@ class FetchCryptoNews(CryptopanicBaseTool):
         self,
         query: str = "",
         currency: str = "BTC",
-        config: RunnableConfig = None,
         **kwargs,
     ) -> CryptopanicNewsOutput:
         """Fetch the latest crypto news asynchronously.
@@ -123,8 +121,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
         if currency not in SUPPORTED_CURRENCIES:
             currency = "BTC"
 
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         news_items = await self.fetch_news(currency, api_key)
 

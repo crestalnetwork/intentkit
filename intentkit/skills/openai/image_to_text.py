@@ -4,7 +4,6 @@ from typing import Type
 
 import aiohttp
 import openai
-from langchain_core.runnables import RunnableConfig
 from PIL import Image
 from pydantic import BaseModel, Field
 
@@ -49,9 +48,7 @@ class ImageToText(OpenAIBaseTool):
     )
     args_schema: Type[BaseModel] = ImageToTextInput
 
-    async def _arun(
-        self, image: str, config: RunnableConfig, **kwargs
-    ) -> ImageToTextOutput:
+    async def _arun(self, image: str, **kwargs) -> ImageToTextOutput:
         """Implementation of the tool to convert images to text.
 
         Args:
@@ -60,11 +57,14 @@ class ImageToText(OpenAIBaseTool):
         Returns:
             ImageToTextOutput: Object containing the text description and image dimensions.
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
+        skill_config = context.agent.skill_config(self.category)
         logger.debug(f"context: {context}")
 
         # Get the OpenAI client from the skill store
-        api_key = self.get_api_key(context)
+        api_key = skill_config.get("api_key") or self.skill_store.get_system_config(
+            "openai_api_key"
+        )
         client = openai.AsyncOpenAI(api_key=api_key)
 
         try:

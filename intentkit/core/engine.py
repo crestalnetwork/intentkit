@@ -27,15 +27,15 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
+from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from intentkit.abstracts.graph import AgentError, AgentState
+from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
@@ -201,11 +201,13 @@ async def create_agent(
     prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
 
     async def formatted_prompt(
-        state: AgentState, config: RunnableConfig
+        state: AgentState, runtime: Runtime[AgentContext]
     ) -> list[BaseMessage]:
         final_system_prompt = escaped_prompt
-        if config.get("configurable") and config["configurable"].get("entrypoint"):
-            entrypoint = config["configurable"]["entrypoint"]
+        context = runtime.context
+        logger.debug(f"formatted_prompt, context: {context}")
+        if context.entrypoint:
+            entrypoint = context.entrypoint
             entrypoint_prompt = None
             if (
                 agent.twitter_entrypoint_enabled
@@ -222,11 +224,7 @@ async def create_agent(
                 entrypoint_prompt = agent.telegram_entrypoint_prompt
                 logger.debug("telegram entrypoint prompt added")
             elif entrypoint == AuthorType.TRIGGER.value:
-                task_id = (
-                    config["configurable"]
-                    .get("chat_id", "")
-                    .removeprefix("autonomous-")
-                )
+                task_id = context.chat_id.removeprefix("autonomous-")
                 # Find the autonomous task by task_id
                 autonomous_task = None
                 if agent.autonomous:
@@ -263,20 +261,15 @@ async def create_agent(
             if entrypoint_prompt:
                 entrypoint_prompt = await explain_prompt(entrypoint_prompt)
                 final_system_prompt = f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
-        if config.get("configurable"):
-            final_system_prompt = f"{final_system_prompt}## Internal Info\n\n"
-            "These are for your internal use. You can use them when querying or storing data, "
-            "but please do not directly share this information with users.\n\n"
-            chat_id = config["configurable"].get("chat_id")
-            if chat_id:
-                final_system_prompt = f"{final_system_prompt}chat_id: {chat_id}\n\n"
-            user_id = config["configurable"].get("user_id")
-            if user_id:
-                final_system_prompt = f"{final_system_prompt}user_id: {user_id}\n\n"
+        final_system_prompt = f"{final_system_prompt}## Internal Info\n\n"
+        "These are for your internal use. You can use them when querying or storing data, "
+        "but please do not directly share this information with users.\n\n"
+        final_system_prompt = f"{final_system_prompt}chat_id: {context.chat_id}\n\n"
+        if context.user_id:
+            final_system_prompt = f"{final_system_prompt}user_id: {context.user_id}\n\n"
         system_prompt = [("system", final_system_prompt)]
         return prompt_temp.invoke(
-            {"messages": state["messages"], "system_prompt": system_prompt},
-            config,
+            {"messages": state["messages"], "system_prompt": system_prompt}
         )
 
     # log final prompt and all skills
@@ -304,6 +297,7 @@ async def create_agent(
         pre_model_hook=pre_model_hook,
         post_model_hook=post_model_node if config.payment_enabled else None,
         state_schema=AgentState,
+        context_schema=AgentContext,
         checkpointer=memory,
         debug=config.debug_checkpoint,
         name=agent.id,
@@ -585,22 +579,27 @@ async def stream_agent(message: ChatMessageCreate):
     thread_id = f"{input.agent_id}-{input.chat_id}"
     stream_config = {
         "configurable": {
-            "agent_id": agent.id,
             "thread_id": thread_id,
-            "chat_id": input.chat_id,
-            "user_id": input.user_id,
-            "app_id": input.app_id,
-            "entrypoint": input.author_type,
-            "is_private": is_private,
-            "payer": payer if payment_enabled else None,
         },
         "recursion_limit": recursion_limit,
     }
 
+    context = AgentContext(
+        agent_id=input.agent_id,
+        chat_id=input.chat_id,
+        user_id=input.user_id,
+        app_id=input.app_id,
+        entrypoint=input.author_type,
+        is_private=is_private,
+        payer=payer if payment_enabled else None,
+    )
+
     # run
     cached_tool_step = None
     try:
-        async for chunk in executor.astream({"messages": messages}, stream_config):
+        async for chunk in executor.astream(
+            {"messages": messages}, context=context, config=stream_config
+        ):
             this_time = time.perf_counter()
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
             if "agent" in chunk and "messages" in chunk["agent"]:

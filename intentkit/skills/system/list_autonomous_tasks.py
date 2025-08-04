@@ -1,6 +1,5 @@
 from typing import List
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -33,7 +32,6 @@ class ListAutonomousTasks(SystemBaseTool):
 
     async def _arun(
         self,
-        config: RunnableConfig,
         **kwargs,
     ) -> ListAutonomousTasksOutput:
         """List autonomous tasks for the agent.
@@ -44,7 +42,7 @@ class ListAutonomousTasks(SystemBaseTool):
         Returns:
             ListAutonomousTasksOutput: List of autonomous tasks
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         tasks = await self.skill_store.list_autonomous_tasks(agent_id)

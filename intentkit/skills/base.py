@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDic
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
+from langgraph.runtime import get_runtime
 from pydantic import (
     BaseModel,
     ValidationError,
@@ -13,12 +14,14 @@ from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
 
 from intentkit.abstracts.exception import RateLimitExceeded
+from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
+APIKeyProviderValue = Literal["platform", "agent_owner"]
 
 
 class SkillConfig(TypedDict):
@@ -26,7 +29,7 @@ class SkillConfig(TypedDict):
 
     enabled: bool
     states: Dict[str, SkillState | SkillOwnerState]
-    api_key_provider: NotRequired[str]
+    api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[Dict[str, Any]]
 
 
@@ -192,3 +195,7 @@ class IntentKitSkill(BaseTool):
             entrypoint=configurable.get("entrypoint"),
             is_private=configurable.get("is_private"),
         )
+
+    def get_context(self) -> AgentContext:
+        runtime = get_runtime(AgentContext)
+        return runtime.context

@@ -1,4 +1,3 @@
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.system.base import SystemBaseTool
@@ -36,10 +35,10 @@ class ReadAgentApiKey(SystemBaseTool):
     )
     args_schema = ReadAgentApiKeyInput
 
-    async def _arun(self, config: RunnableConfig, **kwargs) -> ReadAgentApiKeyOutput:
+    async def _arun(self, **kwargs) -> ReadAgentApiKeyOutput:
         """Retrieve or generate an API key for the agent."""
         # Get context from runnable config to access agent.id
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         # Get agent data from skill store

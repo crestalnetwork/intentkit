@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "XMTP",
+    "description": "XMTP protocol skills for creating blockchain transaction requests that can be sent to users for signing",
+    "x-icon": "https://ai.service.crestal.dev/skills/xmtp/xmtp.svg",
+    "x-tags": [
+        "XMTP",
+        "Blockchain",
+        "Transactions",
+        "Web3",
+        "Base"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether this skill is enabled",
+            "default": false
+        },
+        "states": {
+            "type": "object",
+            "properties": {
+                "xmtp_transfer": {
+                    "type": "string",
+                    "title": "XMTP Transfer",
+                    "enum": [
+                        "disabled",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Create XMTP transaction requests for transferring ETH or ERC20 tokens on Base mainnet. Supports both native ETH transfers and ERC20 token transfers. Generates wallet_sendCalls transaction data that users can sign.",
+                    "default": "disabled"
+                }
+            }
+        }
+    }
+}

@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -46,9 +45,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
     and social media performance audits."""
     args_schema: Type[BaseModel] = ElfaGetSmartStatsInput
 
-    async def _arun(
-        self, username: str, config: RunnableConfig = None, **kwargs
-    ) -> ElfaGetSmartStatsOutput:
+    async def _arun(self, username: str, **kwargs) -> ElfaGetSmartStatsOutput:
         """
         Execute the smart stats request.
 
@@ -64,8 +61,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
             ValueError: If API key is not found
             ToolException: If there's an error with the API request
         """
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         # Prepare parameters according to API spec
         params = {"username": username}

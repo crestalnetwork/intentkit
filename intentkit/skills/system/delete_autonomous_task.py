@@ -1,4 +1,3 @@
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.system.base import SystemBaseTool
@@ -34,7 +33,6 @@ class DeleteAutonomousTask(SystemBaseTool):
     async def _arun(
         self,
         task_id: str,
-        config: RunnableConfig,
         **kwargs,
     ) -> DeleteAutonomousTaskOutput:
         """Delete an autonomous task from the agent.
@@ -46,7 +44,7 @@ class DeleteAutonomousTask(SystemBaseTool):
         Returns:
             DeleteAutonomousTaskOutput: Confirmation of deletion
         """
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent_id = context.agent_id
 
         await self.skill_store.delete_autonomous_task(agent_id, task_id)

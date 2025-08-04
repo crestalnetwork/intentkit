@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Optional
 
-from langchain.schema.runnable import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_overview
@@ -130,7 +129,7 @@ class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):
     description: str = FETCH_DEX_OVERVIEW_PROMPT
     args_schema: None = None  # No input parameters needed
 
-    async def _arun(self, config: RunnableConfig) -> FetchDexOverviewResponse:
+    async def _arun(self, **kwargs) -> FetchDexOverviewResponse:
         """Fetch DEX overview data.
 
         Returns:
@@ -138,7 +137,7 @@ class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):
         """
         try:
             # Check rate limiting
-            context = self.context_from_config(config)
+            context = self.get_context()
             is_rate_limited, error_msg = await self.check_rate_limit(context)
             if is_rate_limited:
                 return FetchDexOverviewResponse(error=error_msg)

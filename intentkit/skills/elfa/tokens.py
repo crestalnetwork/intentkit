@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -69,7 +68,6 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
         page: int = 1,
         pageSize: int = 50,
         minMentions: int = 5,
-        config: RunnableConfig = None,
         **kwargs,
     ) -> ElfaGetTrendingTokensOutput:
         """
@@ -90,8 +88,7 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
             ValueError: If API key is not found
             ToolException: If there's an error with the API request
         """
-        context = self.context_from_config(config)
-        api_key = self.get_api_key(context)
+        api_key = self.get_api_key()
 
         # Prepare parameters according to API spec
         params = {
