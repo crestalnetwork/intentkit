@@ -1,6 +1,5 @@
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple, Type
 
-from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
@@ -38,7 +37,7 @@ class XmtpTransfer(XmtpBaseTool):
     
     Only supports Base mainnet network.
     """
-    args_schema = TransferInput
+    args_schema: Type[BaseModel] = TransferInput
 
     async def _arun(
         self,
@@ -48,8 +47,6 @@ class XmtpTransfer(XmtpBaseTool):
         decimals: int,
         currency: str,
         token_contract_address: Optional[str],
-        config: RunnableConfig,
-        **kwargs: Any,
     ) -> Tuple[str, List[ChatMessageAttachment]]:
         """Create an XMTP transfer transaction request.
 
@@ -66,7 +63,7 @@ class XmtpTransfer(XmtpBaseTool):
             Tuple of (content_message, list_of_attachments)
         """
         # Get context and check network
-        context = self.context_from_config(config)
+        context = self.get_context()
         agent = context.agent
 
         # Check if agent is on base mainnet
@@ -74,18 +71,6 @@ class XmtpTransfer(XmtpBaseTool):
             raise ValueError(
                 f"XMTP transfer only supports base-mainnet or base-sepolia network. "
                 f"Current agent network: {agent.network_id}"
-            )
-
-        # Check if agent has EVM wallet address
-        if not agent.evm_wallet_address:
-            raise ValueError(
-                "Agent must have an EVM wallet address to create XMTP transactions"
-            )
-
-        # Validate from_address matches agent's wallet
-        if from_address.lower() != agent.evm_wallet_address.lower():
-            raise ValueError(
-                f"from_address must match agent's EVM wallet address: {agent.evm_wallet_address}"
             )
 
         # Calculate amount in smallest unit (wei for ETH, token units for ERC20)

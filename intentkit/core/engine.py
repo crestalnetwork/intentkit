@@ -727,6 +727,26 @@ async def stream_agent(message: ChatMessageCreate):
                                     skill_call["response"] = textwrap.shorten(
                                         str(msg.content), width=1000, placeholder="..."
                                     )
+                                if msg.artifact:
+                                    artifact_message_create = ChatMessageCreate(
+                                        id=str(XID()),
+                                        agent_id=input.agent_id,
+                                        chat_id=input.chat_id,
+                                        user_id=input.user_id,
+                                        author_id=input.agent_id,
+                                        author_type=AuthorType.SKILL,
+                                        model=agent.model,
+                                        thread_type=input.author_type,
+                                        reply_to=input.id,
+                                        message="",
+                                        attachments=msg.artifact,
+                                        time_cost=this_time - last,
+                                    )
+                                    artifact_message = (
+                                        await artifact_message_create.save()
+                                    )
+                                    yield artifact_message
+                                    last = this_time
                             skill_calls.append(skill_call)
                             break
                 skill_message_create = ChatMessageCreate(
