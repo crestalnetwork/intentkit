@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.10-dev1
+
+### ✨ New Features
+- **XMTP Integration**: Added new XMTP message transfer skill with attachment support
+- **LangGraph 6.0 Upgrade**: Updated to LangGraph 6.0 for improved agent capabilities
+
+### 🔧 Improvements
+- **API Key Management**: Standardized API key retrieval across all skills for better consistency
+- **Skill Context**: Refactored skill context handling for improved performance and maintainability
+- **Skill Architecture**: Enhanced base skill classes with better API key management patterns
+
+### 🛠️ Technical Changes
+- Updated 169 files with comprehensive refactoring
+- Added XMTP skill category with transfer capabilities
+- Improved skill base classes across all categories
+- Enhanced context handling in core engine and nodes
+- Updated dependencies and lock files
+
+### Diff
+[Compare v0.6.9-dev2...v0.6.10-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.9-dev2...v0.6.10-dev1)
+
 ## v0.6.9
 
 ### 📚 Documentation
