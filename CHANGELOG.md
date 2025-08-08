@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.10-dev2
+
+### ✨ New Features
+- **Enhanced XMTP Integration**: Improved XMTP transfer functionality with better error handling and stability
+- **Core Engine Optimizations**: Enhanced engine functionality for better performance and reliability
+
+### 🔧 Improvements  
+- **XMTP Transfer Skills**: Enhanced transfer capabilities with improved validation and error handling
+- **Engine Stability**: Core engine improvements for better agent execution
+
+### 🛠️ Technical Changes
+- Updated XMTP base and transfer modules
+- Core engine enhancements and optimizations
+- Improved error handling and logging
+
+### Diff
+[Compare v0.6.10-dev1...v0.6.10-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev1...v0.6.10-dev2)
+
 ## v0.6.10-dev1
 
 ### ✨ New Features

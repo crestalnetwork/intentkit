@@ -13,8 +13,8 @@ from typing import Any, Dict, List
 import jsonschema
 from pydantic import BaseModel, Field, ValidationError
 
-from app.admin.schema import get_agent_schema_with_admin_config
-from intentkit.models.agent import AgentUpdate
+from intentkit.config.config import config
+from intentkit.models.agent import Agent, AgentUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,10 @@ async def validate_schema(data: Dict[str, Any]) -> ValidationResult:
         ValidationResult with validation status and errors
     """
     # Use the shared schema function with admin configuration
-    schema = await get_agent_schema_with_admin_config(filter_owner_api_skills=True)
+    schema = await Agent.get_json_schema(
+        filter_owner_api_skills=True,
+        admin_llm_skill_control=config.admin_llm_skill_control,
+    )
     return await validate_schema_against_json_schema(data, schema)
 
 

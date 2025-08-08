@@ -4,8 +4,10 @@ import re
 import textwrap
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
+import jsonref
 import yaml
 from cron_validator import CronValidator
 from epyxid import XID
@@ -13,7 +15,8 @@ from fastapi import HTTPException
 from intentkit.models.agent_data import AgentData
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
-from intentkit.models.llm import LLMModelInfo
+from intentkit.models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
+from intentkit.models.skill import SkillTable
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
@@ -28,6 +31,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -293,7 +297,7 @@ class AgentTable(Base):
     model = Column(
         String,
         nullable=True,
-        default="gpt-4.1-mini",
+        default="gpt-5-mini",
         comment="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
     )
     prompt = Column(
@@ -623,7 +627,7 @@ class AgentUpdate(BaseModel):
     model: Annotated[
         str,
         PydanticField(
-            default="gpt-4.1-mini",
+            default="gpt-5-mini",
             description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent, venice-uncensored",
             json_schema_extra={
                 "x-group": "ai",
@@ -914,38 +918,38 @@ class AgentUpdate(BaseModel):
         if not self.autonomous:
             return
 
-        for config in self.autonomous:
+        for autonomous_config in self.autonomous:
             # Check that exactly one scheduling method is provided
-            if not config.minutes and not config.cron:
+            if not autonomous_config.minutes and not autonomous_config.cron:
                 raise HTTPException(
                     status_code=400, detail="either minutes or cron must have a value"
                 )
 
-            if config.minutes and config.cron:
+            if autonomous_config.minutes and autonomous_config.cron:
                 raise HTTPException(
                     status_code=400, detail="only one of minutes or cron can be set"
                 )
 
             # Validate minimum interval of 5 minutes
-            if config.minutes and config.minutes < 5:
+            if autonomous_config.minutes and autonomous_config.minutes < 5:
                 raise HTTPException(
                     status_code=400,
                     detail="The shortest execution interval is 5 minutes",
                 )
 
             # Validate cron expression to ensure interval is at least 5 minutes
-            if config.cron:
+            if autonomous_config.cron:
                 # First validate the cron expression format using cron-validator
 
                 try:
-                    CronValidator.parse(config.cron)
+                    CronValidator.parse(autonomous_config.cron)
                 except ValueError:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Invalid cron expression format: {config.cron}",
+                        detail=f"Invalid cron expression format: {autonomous_config.cron}",
                     )
 
-                parts = config.cron.split()
+                parts = autonomous_config.cron.split()
                 if len(parts) < 5:
                     raise HTTPException(
                         status_code=400, detail="Invalid cron expression format"
@@ -1287,6 +1291,203 @@ class Agent(AgentCreate):
 
     def skill_config(self, category: str) -> Dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}
+
+    @staticmethod
+    def _is_agent_owner_only_skill(skill_schema: Dict[str, Any]) -> bool:
+        """Check if a skill requires agent owner API keys only based on its resolved schema."""
+        if (
+            skill_schema
+            and "properties" in skill_schema
+            and "api_key_provider" in skill_schema["properties"]
+        ):
+            api_key_provider = skill_schema["properties"]["api_key_provider"]
+            if "enum" in api_key_provider and api_key_provider["enum"] == [
+                "agent_owner"
+            ]:
+                return True
+        return False
+
+    @classmethod
+    async def get_json_schema(
+        cls,
+        db: AsyncSession = None,
+        filter_owner_api_skills: bool = False,
+        admin_llm_skill_control: bool = True,
+    ) -> Dict:
+        """Get the JSON schema for Agent model with all $ref references resolved.
+
+        This is the shared function that handles admin configuration filtering
+        for both the API endpoint and agent generation.
+
+        Args:
+            db: Database session (optional, will create if not provided)
+            filter_owner_api_skills: Whether to filter out skills that require agent owner API keys
+            admin_llm_skill_control: Whether to enable admin LLM and skill control features
+
+        Returns:
+            Dict containing the complete JSON schema for the Agent model
+        """
+        # Get database session if not provided
+        if db is None:
+            async with get_session() as session:
+                return await cls.get_json_schema(
+                    session, filter_owner_api_skills, admin_llm_skill_control
+                )
+
+        # Get the schema file path relative to this file
+        current_dir = Path(__file__).parent
+        agent_schema_path = current_dir / "agent_schema.json"
+
+        base_uri = f"file://{agent_schema_path}"
+        with open(agent_schema_path) as f:
+            schema = jsonref.load(f, base_uri=base_uri, proxies=False, lazy_load=False)
+
+            # Get the model property from the schema
+            model_property = schema.get("properties", {}).get("model", {})
+
+            if admin_llm_skill_control:
+                # Process model property - use LLMModelInfo as primary source
+                if model_property:
+                    # Query all LLM models from the database
+                    stmt = select(LLMModelInfoTable).where(LLMModelInfoTable.enabled)
+                    result = await db.execute(stmt)
+                    models = result.scalars().all()
+
+                    # Create new lists based on LLMModelInfo
+                    new_enum = []
+                    new_enum_title = []
+                    new_enum_category = []
+                    new_enum_support_skill = []
+
+                    # Process each model from database
+                    for model in models:
+                        model_info = LLMModelInfo.model_validate(model)
+
+                        # Add model ID to enum
+                        new_enum.append(model_info.id)
+
+                        # Add model name as title
+                        new_enum_title.append(model_info.name)
+
+                        # Add provider display name as category
+                        provider = (
+                            LLMProvider(model_info.provider)
+                            if isinstance(model_info.provider, str)
+                            else model_info.provider
+                        )
+                        new_enum_category.append(provider.display_name())
+
+                        # Add skill support information
+                        new_enum_support_skill.append(model_info.supports_skill_calls)
+
+                    # Update the schema with the new lists constructed from LLMModelInfo
+                    model_property["enum"] = new_enum
+                    model_property["x-enum-title"] = new_enum_title
+                    model_property["x-enum-category"] = new_enum_category
+                    model_property["x-support-skill"] = new_enum_support_skill
+
+                    # If the default model is not in the new enum, update it if possible
+                    if (
+                        "default" in model_property
+                        and model_property["default"] not in new_enum
+                        and new_enum
+                    ):
+                        model_property["default"] = new_enum[0]
+
+                # Process skills property
+                skills_property = schema.get("properties", {}).get("skills", {})
+                skills_properties = skills_property.get("properties", {})
+
+                if skills_properties:
+                    # Load all skills from the database
+                    # Query all skills grouped by category with enabled status
+                    stmt = select(
+                        SkillTable.category,
+                        func.bool_or(SkillTable.enabled).label("any_enabled"),
+                    ).group_by(SkillTable.category)
+                    result = await db.execute(stmt)
+                    category_status = {row.category: row.any_enabled for row in result}
+
+                    # Query all skills with their price levels for adding x-price-level fields
+                    skills_stmt = select(
+                        SkillTable.category,
+                        SkillTable.config_name,
+                        SkillTable.price_level,
+                        SkillTable.enabled,
+                    ).where(SkillTable.enabled)
+                    skills_result = await db.execute(skills_stmt)
+                    skills_data = {}
+                    category_price_levels = {}
+
+                    for row in skills_result:
+                        if row.category not in skills_data:
+                            skills_data[row.category] = {}
+                            category_price_levels[row.category] = []
+
+                        if row.config_name:
+                            skills_data[row.category][row.config_name] = row.price_level
+
+                        if row.price_level is not None:
+                            category_price_levels[row.category].append(row.price_level)
+
+                    # Calculate average price levels for categories
+                    category_avg_price_levels = {}
+                    for category, price_levels in category_price_levels.items():
+                        if price_levels:
+                            avg_price_level = int(sum(price_levels) / len(price_levels))
+                            category_avg_price_levels[category] = avg_price_level
+
+                    # Create a copy of keys to avoid modifying during iteration
+                    skill_keys = list(skills_properties.keys())
+
+                    # Process each skill in the schema
+                    for skill_category in skill_keys:
+                        if skill_category not in category_status:
+                            # If category not found in database, remove it from schema
+                            skills_properties.pop(skill_category, None)
+                        elif not category_status[skill_category]:
+                            # If category exists but all skills are disabled, remove it
+                            skills_properties.pop(skill_category, None)
+                        elif filter_owner_api_skills and cls._is_agent_owner_only_skill(
+                            skills_properties[skill_category]
+                        ):
+                            # If filtering owner API skills and this skill requires it, remove it
+                            skills_properties.pop(skill_category, None)
+                            logger.info(
+                                f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
+                            )
+                        else:
+                            # Add x-avg-price-level to category level
+                            if skill_category in category_avg_price_levels:
+                                skills_properties[skill_category][
+                                    "x-avg-price-level"
+                                ] = category_avg_price_levels[skill_category]
+
+                            # Add x-price-level to individual skill states
+                            if skill_category in skills_data:
+                                skill_states = (
+                                    skills_properties[skill_category]
+                                    .get("properties", {})
+                                    .get("states", {})
+                                    .get("properties", {})
+                                )
+                                for state_name, state_config in skill_states.items():
+                                    if (
+                                        state_name in skills_data[skill_category]
+                                        and skills_data[skill_category][state_name]
+                                        is not None
+                                    ):
+                                        state_config["x-price-level"] = skills_data[
+                                            skill_category
+                                        ][state_name]
+
+            # Log the changes for debugging
+            logger.debug(
+                f"Schema processed with LLM and skill controls enabled: {admin_llm_skill_control}, "
+                f"filtered owner API skills: {filter_owner_api_skills}"
+            )
+
+            return schema
 
 
 class AgentResponse(BaseModel):
