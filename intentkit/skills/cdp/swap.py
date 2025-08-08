@@ -78,8 +78,12 @@ class Swap(CDPBaseTool):
 
             # Map network_id to the format expected by the swap API
             network_mapping = {
+                "base": "base",
                 "base-mainnet": "base",
+                "base-sepolia": "base-sepolia",
+                "ethereum": "ethereum",
                 "ethereum-mainnet": "ethereum",
+                "ethereum-sepolia": "ethereum-sepolia"
             }
             api_network = network_mapping.get(network_id, network_id)
 
