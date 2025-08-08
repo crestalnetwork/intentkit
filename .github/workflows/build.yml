@@ -148,6 +148,7 @@ jobs:
         kubectl set image -n testnet-dev deployment/intent-scheduler intent-scheduler=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-dev deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-dev deployment/sandbox-operator sandbox-operator=crestal/intentkit:${VERSION_NO_V}
      
     - name: Deploy to Amazon EKS Prod
       if: ${{ github.event_name == 'release' && github.event.action == 'released' }}
@@ -163,6 +164,7 @@ jobs:
         kubectl set image -n testnet-prod deployment/intent-scheduler intent-scheduler=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
         kubectl set image -n testnet-prod deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
+        kubectl set image -n testnet-prod deployment/sandbox-operator sandbox-operator=crestal/intentkit:${VERSION_NO_V}
      
     - name: Build Success
       if: ${{ success() }}

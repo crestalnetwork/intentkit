@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.6.10-dev3
+
+### ✨ New Features
+- **Agent & LLM Model Validation**: Enhanced agent and LLM models with improved validation capabilities and error handling
+
+### 🔧 Improvements  
+- **Model Validation**: Improved validation logic across agent and LLM model systems
+- **Error Handling**: Enhanced error handling and validation feedback
+
+### 🛠️ Technical Changes
+- Updated agent and LLM model validation mechanisms
+- Improved model structure and validation rules
+
+### Diff
+[Compare v0.6.10-dev2...v0.6.10-dev3](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev2...v0.6.10-dev3)
+
 ## v0.6.10-dev2
 
 ### ✨ New Features
