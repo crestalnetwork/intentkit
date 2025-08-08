@@ -266,6 +266,56 @@ AVAILABLE_MODELS = {
         supports_frequency_penalty=False,
         supports_presence_penalty=False,
     ),
+    "gpt-5-nano": LLMModelInfo(
+        id="gpt-5-nano",
+        name="GPT-5 Nano",
+        provider=LLMProvider.OPENAI,
+        input_price=Decimal("0.05"),  # per 1M input tokens
+        output_price=Decimal("0.4"),  # per 1M output tokens
+        context_length=128000,
+        output_length=4096,
+        intelligence=3,
+        speed=5,
+        supports_image_input=False,
+        supports_skill_calls=True,
+        supports_structured_output=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
+    ),
+    "gpt-5-mini": LLMModelInfo(
+        id="gpt-5-mini",
+        name="GPT-5 Mini",
+        provider=LLMProvider.OPENAI,
+        input_price=Decimal("0.25"),  # per 1M input tokens
+        output_price=Decimal("2"),  # per 1M output tokens
+        context_length=128000,
+        output_length=4096,
+        intelligence=4,
+        speed=4,
+        supports_image_input=False,
+        supports_skill_calls=True,
+        supports_structured_output=True,
+        supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
+    ),
+    "gpt-5": LLMModelInfo(
+        id="gpt-5",
+        name="GPT-5",
+        provider=LLMProvider.OPENAI,
+        input_price=Decimal("1.25"),  # per 1M input tokens
+        output_price=Decimal("10.00"),  # per 1M output tokens
+        context_length=128000,
+        output_length=4096,
+        intelligence=5,
+        speed=3,
+        supports_image_input=True,
+        supports_skill_calls=True,
+        supports_structured_output=True,
+        supports_search=True,
+        supports_frequency_penalty=False,
+        supports_presence_penalty=False,
+    ),
     "gpt-4.1-nano": LLMModelInfo(
         id="gpt-4.1-nano",
         name="GPT-4.1 Nano",
