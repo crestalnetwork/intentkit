@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.10-dev6
+
+### 🔧 Improvements
+- **XMTP Skill**: Updated XMTP skill image format and schema configuration
+
+### 🛠️ Technical Changes
+- Enhanced XMTP skill metadata and configuration files
+- Updated skill image format for better compatibility
+
+### Diff
+[Compare v0.6.10-dev5...v0.6.10-dev6](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev5...v0.6.10-dev6)
+
 ## v0.6.10-dev5
 
 ### 🔧 Improvements
