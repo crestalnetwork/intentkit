@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.10-dev5
+
+### 🔧 Improvements
+- **Dependencies**: Added jsonref dependency for JSON reference handling
+- **Build Workflow**: Updated GitHub Actions build workflow configuration
+
+### 🛠️ Technical Changes
+- Updated `intentkit/pyproject.toml` with jsonref dependency
+- Enhanced `.github/workflows/build.yml` configuration
+- Updated `intentkit/uv.lock` with new dependency
+
+### Diff
+[Compare v0.6.10-dev4...v0.6.10-dev5](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev4...v0.6.10-dev5)
+
 ## v0.6.10-dev4
 
 ### 🐛 Bug Fixes

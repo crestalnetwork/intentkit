@@ -2,8 +2,8 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "XMTP",
-    "description": "XMTP protocol skills for creating blockchain transaction requests that can be sent to users for signing",
-    "x-icon": "https://ai.service.crestal.dev/skills/xmtp/xmtp.svg",
+    "description": "Use this skill only if you want make an XMTP Agent. XMTP protocol skills for creating blockchain transaction requests that can be sent to users for signing",
+    "x-icon": "https://ai.service.crestal.dev/skills/xmtp/xmtp.png",
     "x-tags": [
         "XMTP",
         "Blockchain",

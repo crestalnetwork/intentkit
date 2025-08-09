@@ -491,6 +491,10 @@
           "title": "X",
           "$ref": "../skills/twitter/schema.json"
         },
+        "xmtp": {
+          "title": "XMTP",
+          "$ref": "../skills/xmtp/schema.json"
+        },
         "chainlist": {
           "title": "Chainlist RPC Endpoints",
           "$ref": "../skills/chainlist/schema.json"
