@@ -4,7 +4,7 @@ import logging
 from typing import TypedDict
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import SkillConfig, SkillOwnerState
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.xmtp.base import XmtpBaseTool
 from intentkit.skills.xmtp.transfer import XmtpTransfer
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class SkillStates(TypedDict):
-    xmtp_transfer: SkillOwnerState
+    xmtp_transfer: SkillState
 
 
 class Config(SkillConfig):
