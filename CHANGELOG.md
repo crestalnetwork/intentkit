@@ -1,3 +1,14 @@
+## v0.6.10-dev7
+
+### 🐛 Bug Fixes
+- XMTP Skill: Align state typing and schema enum/titles for public/private options
+
+### 📚 Documentation
+- Update changelog entries
+
+### Diff
+[Compare v0.6.10-dev6...v0.6.10-dev7](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev6...v0.6.10-dev7)
+
 # Changelog
 
 ## v0.6.10-dev6
