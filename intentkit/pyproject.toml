@@ -66,6 +66,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "aiosqlite>=0.21.0",
     "psycopg>=3.2.9",
+    "jsonref>=1.1.0",
 ]
 
 [project.urls]

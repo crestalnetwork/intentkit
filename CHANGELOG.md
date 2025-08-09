@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.6.10-dev4
+
+### 🐛 Bug Fixes
+- **GPT-5 Features**: Fixed GPT-5 model features and capabilities implementation
+- **CI Improvements**: Fixed continuous integration workflow issues
+
+### 📚 Documentation
+- **Changelog**: Updated changelog documentation with comprehensive release notes
+
+### 🔧 Infrastructure  
+- **GitHub Actions**: Enhanced build workflow configuration
+
+### 🛠️ Technical Changes
+- Updated `.github/workflows/build.yml` with build workflow improvements
+- Enhanced `intentkit/models/llm.py` with GPT-5 features fixes
+- Updated `CHANGELOG.md` with recent changes
+
+### Diff
+[Compare v0.6.10-dev3...v0.6.10-dev4](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev3...v0.6.10-dev4)
+
 ## v0.6.10-dev3
 
 ### ✨ New Features
