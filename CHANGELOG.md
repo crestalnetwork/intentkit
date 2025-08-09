@@ -1,3 +1,52 @@
+## v0.6.10
+
+### ✨ New Features
+- **XMTP Integration**: Added new XMTP message transfer skill with attachment support
+- **LangGraph 6.0 Upgrade**: Updated to LangGraph 6.0 for improved agent capabilities
+
+### 🔧 Improvements
+- **API Key Management**: Standardized API key retrieval across all skills for better consistency
+- **Skill Context**: Refactored skill context handling for improved performance and maintainability
+- **Skill Architecture**: Enhanced base skill classes with better API key management patterns
+- **XMTP Skill**: Updated XMTP skill image format and schema configuration
+- **Dependencies**: Added jsonref dependency for JSON reference handling
+- **Build Workflow**: Updated GitHub Actions build workflow configuration
+
+### 🐛 Bug Fixes
+- **XMTP Skill**: Align state typing and schema enum/titles for public/private options
+- **GPT-5 Features**: Fixed GPT-5 model features and capabilities implementation
+- **CI Improvements**: Fixed continuous integration workflow issues
+- **Agent & LLM Model Validation**: Enhanced agent and LLM models with improved validation capabilities and error handling
+
+### 🛠️ Technical Changes
+- Updated 169 files with comprehensive refactoring
+- Added XMTP skill category with transfer capabilities
+- Improved skill base classes across all categories
+- Enhanced context handling in core engine and nodes
+- Updated dependencies and lock files
+- Enhanced XMTP skill metadata and configuration files
+- Updated skill image format for better compatibility
+- Updated `intentkit/pyproject.toml` with jsonref dependency
+- Enhanced `.github/workflows/build.yml` configuration
+- Updated `intentkit/uv.lock` with new dependency
+
+### 📚 Documentation
+- **Changelog**: Updated changelog documentation with comprehensive release notes
+
+### Diff
+[Compare v0.6.9...v0.6.10](https://github.com/crestalnetwork/intentkit/compare/v0.6.9...v0.6.10)
+
+## v0.6.10-dev7
+
+### 🐛 Bug Fixes
+- XMTP Skill: Align state typing and schema enum/titles for public/private options
+
+### 📚 Documentation
+- Update changelog entries
+
+### Diff
+[Compare v0.6.10-dev6...v0.6.10-dev7](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev6...v0.6.10-dev7)
+
 # Changelog
 
 ## v0.6.10-dev6
