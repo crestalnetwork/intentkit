@@ -26,10 +26,12 @@
                     "title": "XMTP Transfer",
                     "enum": [
                         "disabled",
+                        "public",
                         "private"
                     ],
                     "x-enum-title": [
                         "Disabled",
+                        "Agent Owner + All Users",
                         "Agent Owner Only"
                     ],
                     "description": "Create XMTP transaction requests for transferring ETH or ERC20 tokens on Base mainnet. Supports both native ETH transfers and ERC20 token transfers. Generates wallet_sendCalls transaction data that users can sign.",
