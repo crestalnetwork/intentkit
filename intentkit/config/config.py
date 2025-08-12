@@ -184,7 +184,7 @@ class Config:
             return int(value)
         except (ValueError, TypeError):
             logger.warning(
-                f"Invalid integer value for {key}: '{value}', using default: {default}"
+                f"Invalid integer value for {key}, using default: {default}"
             )
             return default
 
