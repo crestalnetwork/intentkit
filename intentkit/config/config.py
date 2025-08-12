@@ -51,11 +51,11 @@ class Config:
             }
         else:
             self.db = {
-                "username": self.load("DB_USERNAME"),
-                "password": self.load("DB_PASSWORD"),
-                "host": self.load("DB_HOST"),
-                "port": self.load("DB_PORT"),
-                "dbname": self.load("DB_NAME"),
+                "username": self.load("DB_USERNAME", ""),
+                "password": self.load("DB_PASSWORD", ""),
+                "host": self.load("DB_HOST", ""),
+                "port": self.load("DB_PORT", "5432"),
+                "dbname": self.load("DB_NAME", ""),
             }
         # ==== this part can be load from env or aws secrets manager
         self.db["auto_migrate"] = self.load("DB_AUTO_MIGRATE", "true") == "true"
