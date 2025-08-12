@@ -38,6 +38,7 @@ from intentkit.models.credit import (
 )
 from intentkit.models.db import get_session
 from intentkit.models.skill import Skill
+from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +186,19 @@ async def recharge(
     # Commit all changes
     await session.commit()
 
+    # Send Slack notification for recharge
+    try:
+        send_slack_message(
+            f"💰 **Credit Recharge**\n"
+            f"• User ID: `{user_id}`\n"
+            f"• Amount: `{amount}` credits\n"
+            f"• Transaction ID: `{upstream_tx_id}`\n"
+            f"• New Balance: `{user_account.credits + user_account.free_credits + user_account.reward_credits}` credits\n"
+            f"• Note: {note or 'N/A'}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to send Slack notification for recharge: {str(e)}")
+
     return user_account
 
 
@@ -293,6 +307,21 @@ async def reward(
 
     # Commit all changes
     await session.commit()
+
+    # Send Slack notification for reward
+    try:
+        reward_type_name = reward_type.value if reward_type else "REWARD"
+        send_slack_message(
+            f"🎁 **Credit Reward**\n"
+            f"• User ID: `{user_id}`\n"
+            f"• Amount: `{amount}` reward credits\n"
+            f"• Transaction ID: `{upstream_tx_id}`\n"
+            f"• Reward Type: `{reward_type_name}`\n"
+            f"• New Balance: `{user_account.credits + user_account.free_credits + user_account.reward_credits}` credits\n"
+            f"• Note: {note or 'N/A'}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to send Slack notification for reward: {str(e)}")
 
     return user_account
 
