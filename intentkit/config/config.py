@@ -183,9 +183,7 @@ class Config:
         try:
             return int(value)
         except (ValueError, TypeError):
-            logger.warning(
-                f"Invalid integer value for {key}, using default: {default}"
-            )
+            logger.warning(f"Invalid integer value for {key}, using default: {default}")
             return default
 
     def load_float(self, key, default=0.0):
@@ -196,9 +194,7 @@ class Config:
         try:
             return float(value)
         except (ValueError, TypeError):
-            logger.warning(
-                f"Invalid float value for {key}, using default: {default}"
-            )
+            logger.warning(f"Invalid float value for {key}, using default: {default}")
             return default
 
 
