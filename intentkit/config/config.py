@@ -197,7 +197,7 @@ class Config:
             return float(value)
         except (ValueError, TypeError):
             logger.warning(
-                f"Invalid float value for {key}: '{value}', using default: {default}"
+                f"Invalid float value for {key}, using default: {default}"
             )
             return default
 
