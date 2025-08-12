@@ -1,3 +1,20 @@
+# v0.6.11-dev1
+
+## Changes
+
+### Fixes
+- fix: update github workflow build configuration
+
+### Documentation
+- doc: changelog updates
+
+### Other Changes
+- Merge pull request #741 from crestalnetwork/hyacinthus
+
+## Full Diff
+
+[Compare v0.6.10-dev7...v0.6.11-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev7...v0.6.11-dev1)
+
 ## v0.6.10
 
 ### ✨ New Features
