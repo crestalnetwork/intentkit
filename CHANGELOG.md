@@ -1,3 +1,19 @@
+# v0.6.11-dev3
+
+## Changes
+
+### Features/Improvements
+- Refactored the prompt building logic for clarity and maintainability.
+- Added user wallet information to the system prompt.
+
+### Dependency Updates
+- Added `langchain-deepseek`
+- Updated various other dependencies.
+
+## Full Diff
+
+[Compare v0.6.11-dev2...main](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev2...main)
+
 # v0.6.11-dev2
 
 ## Changes
@@ -5,33 +21,6 @@
 ### Features/Improvements
 - Added `load_int` and `load_float` methods to `Config` class for more robust environment variable loading with default values and type conversion.
 - Implemented Slack notifications for credit recharge and reward.
-
-### Dependency Updates
-- `anthropic` updated from `0.60.0` to `0.62.0`
-- `anyio` updated from `4.9.0` to `4.10.0`
-- `bitarray` updated from `3.6.0` to `3.6.1`
-- `boto3` updated from `1.40.1` to `1.40.7`
-- `botocore` updated from `1.40.1` to `1.40.7`
-- `cdp-sdk` updated from `1.26.0` to `1.29.1`
-- `cryptography` updated from `45.0.5` to `45.0.6`
-- `gotrue` updated from `2.12.3` to `2.12.4`
-- `greenlet` updated from `3.2.3` to `3.2.4`
-- `langchain-core` updated from `0.3.72` to `0.3.74`
-- `langchain-openai` updated from `0.3.28` to `0.3.29`
-- `langgraph` updated from `0.6.2` to `0.6.4`
-- `langgraph-prebuilt` updated from `0.6.2` to `0.6.4`
-- `langsmith` updated from `0.4.10` to `0.4.13`
-- `mcp` updated from `1.12.3` to `1.12.4`
-- `multidict` updated from `6.6.3` to `6.6.4`
-- `openai` updated from `1.98.0` to `1.99.9`
-- `redis` updated from `6.2.0` to `6.4.0`
-- `rpds-py` updated from `0.26.0` to `0.27.0`
-- `solana` updated from `0.36.7` to `0.36.9`
-- `sqlalchemy` updated from `2.0.42` to `2.0.43`
-- `storage3` updated from `0.12.0` to `0.12.1`
-- `supafunc` updated from `0.10.1` to `0.10.2`
-- `tiktoken` updated from `0.9.0` to `0.11.0`
-- `types-requests` updated from `2.32.4.20250611` to `2.32.4.20250809`
 
 ## Full Diff
 
