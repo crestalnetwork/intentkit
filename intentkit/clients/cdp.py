@@ -17,6 +17,7 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 
 _clients: Dict[str, "CdpClient"] = {}
+_origin_cdp_client: Optional[OriginCdpClient] = None
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,24 @@ def bip39_seed_to_eth_keys(seed_hex: str) -> Dict[str, str]:
     }
 
 
+def get_origin_cdp_client(skill_store: SkillStoreABC) -> OriginCdpClient:
+    global _origin_cdp_client
+    if _origin_cdp_client:
+        return _origin_cdp_client
+
+    # Get credentials from skill store system config
+    api_key_id = skill_store.get_system_config("cdp_api_key_id")
+    api_key_secret = skill_store.get_system_config("cdp_api_key_secret")
+    wallet_secret = skill_store.get_system_config("cdp_wallet_secret")
+
+    _origin_cdp_client = OriginCdpClient(
+        api_key_id=api_key_id,
+        api_key_secret=api_key_secret,
+        wallet_secret=wallet_secret,
+    )
+    return _origin_cdp_client
+
+
 class CdpClient:
     def __init__(self, agent_id: str, skill_store: SkillStoreABC) -> None:
         self._agent_id = agent_id
@@ -81,11 +100,7 @@ class CdpClient:
         # new agent or address not migrated yet
         if not address:
             # create cdp client for later use
-            cdp_client = OriginCdpClient(
-                api_key_id=api_key_id,
-                api_key_secret=api_key_secret,
-                wallet_secret=wallet_secret,
-            )
+            cdp_client = get_origin_cdp_client(self._skill_store)
             # try migrating from v1 cdp_wallet_data
             if agent_data.cdp_wallet_data:
                 wallet_data = json.loads(agent_data.cdp_wallet_data)
@@ -115,8 +130,7 @@ class CdpClient:
                 address = new_account.address
                 logger.info("Created new wallet: %s", address)
 
-            # close client
-            await cdp_client.close()
+            # do not close cached global client
             # now it should be created or migrated, store it
             agent_data.evm_wallet_address = address
             await agent_data.save()
