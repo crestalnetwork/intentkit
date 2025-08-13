@@ -1,3 +1,18 @@
+# v0.6.11-dev4
+
+## Changes
+
+### Features/Improvements
+- Removed the XMTP swap and price skills.
+- Refactored the CDP client for better maintainability.
+
+### Dependency Updates
+- Updated various other dependencies.
+
+## Full Diff
+
+[Compare v0.6.11-dev3...main](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev3...main)
+
 # v0.6.11-dev3
 
 ## Changes
