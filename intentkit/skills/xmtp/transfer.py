@@ -66,12 +66,19 @@ class XmtpTransfer(XmtpBaseTool):
         context = self.get_context()
         agent = context.agent
 
-        # Check if agent is on base mainnet
-        if agent.network_id != "base-mainnet" and agent.network_id != "base-sepolia":
+        # ChainId mapping for XMTP wallet_sendCalls
+        chain_id_hex_by_network = {
+            "base-mainnet": "0x2105",  # 8453
+            "base-sepolia": "0x14A34",  # 84532
+        }
+
+        if agent.network_id not in chain_id_hex_by_network:
             raise ValueError(
                 f"XMTP transfer only supports base-mainnet or base-sepolia network. "
                 f"Current agent network: {agent.network_id}"
             )
+
+        chain_id_hex = chain_id_hex_by_network[agent.network_id]
 
         # Calculate amount in smallest unit (wei for ETH, token units for ERC20)
         amount_int = int(float(amount) * (10**decimals))
@@ -127,7 +134,7 @@ class XmtpTransfer(XmtpBaseTool):
         wallet_send_calls = {
             "version": "1.0",
             "from": from_address,
-            "chainId": "0x2105",  # Base mainnet chain ID (8453 in hex)
+            "chainId": chain_id_hex,
             "calls": [
                 {
                     "to": transaction_to,
@@ -147,8 +154,12 @@ class XmtpTransfer(XmtpBaseTool):
 
         # Create user message
         content_message = (
-            f"I have created a transaction request for transferring {amount} {currency} "
-            f"to {to_address} on Base mainnet. "
+            f"💸 Transfer transaction ready!\n\n"
+            f"**Details:**\n"
+            f"• Amount: {amount} {currency}\n"
+            f"• To: {to_address}\n"
+            f"• Network: {agent.network_id}\n"
+            f"• Type: {'ERC20 Token' if token_contract_address else 'Native ETH'}\n\n"
             f"Please review the transaction details and sign to execute the transfer."
         )
 

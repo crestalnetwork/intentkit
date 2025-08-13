@@ -52,6 +52,37 @@ class XmtpSwap(XmtpBaseTool):
         from_amount: str,
         slippage_bps: int = 100,
     ) -> Tuple[str, List[ChatMessageAttachment]]:
+        # Input validation
+        if (
+            not from_address
+            or not from_address.startswith("0x")
+            or len(from_address) != 42
+        ):
+            raise ValueError("from_address must be a valid Ethereum address")
+
+        if not from_token or not from_token.startswith("0x") or len(from_token) != 42:
+            raise ValueError("from_token must be a valid token contract address")
+
+        if not to_token or not to_token.startswith("0x") or len(to_token) != 42:
+            raise ValueError("to_token must be a valid token contract address")
+
+        if from_token.lower() == to_token.lower():
+            raise ValueError("from_token and to_token cannot be the same")
+
+        try:
+            amount_int = int(from_amount)
+            if amount_int <= 0:
+                raise ValueError("from_amount must be a positive integer")
+        except ValueError as e:
+            raise ValueError(f"from_amount must be a valid positive integer: {e}")
+
+        if (
+            not isinstance(slippage_bps, int)
+            or slippage_bps < 0
+            or slippage_bps > 10000
+        ):
+            raise ValueError("slippage_bps must be between 0 and 10000 (0% to 100%)")
+
         # Resolve agent context and target network
         context = self.get_context()
         agent = context.agent
@@ -98,87 +129,55 @@ class XmtpSwap(XmtpBaseTool):
         except Exception as e:  # pragma: no cover - defensive
             raise ValueError(f"Failed to create swap quote via CDP: {e!s}")
 
-        # Extract approval and swap calls if present (prefer QuoteSwapResult canonical fields)
+        # Extract transaction data from QuoteSwapResult
+        # CDP returns a single transaction object with all necessary data
         calls: list[dict] = []
 
-        def to_xmtp_call(call_like, description: str) -> dict | None:
-            if not call_like:
-                return None
-            # Attributes on QuoteSwapResult call-like objects
-            to_value = getattr(call_like, "to", None) or getattr(
-                call_like, "target", None
-            )
-            data_value = getattr(call_like, "data", None) or getattr(
-                call_like, "calldata", None
-            )
-            value_value = getattr(call_like, "value", None)
-            # Dict fallback
-            if isinstance(call_like, dict):
-                to_value = to_value or call_like.get("to") or call_like.get("target")
-                data_value = (
-                    data_value or call_like.get("data") or call_like.get("calldata")
-                )
-                value_value = value_value or call_like.get("value")
-            if not to_value or not data_value:
-                return None
-            value_hex = (
-                value_value
-                if isinstance(value_value, str) and value_value.startswith("0x")
-                else (hex(int(value_value)) if value_value is not None else "0x0")
-            )
-            data_hex = (
-                data_value if str(data_value).startswith("0x") else f"0x{data_value}"
-            )
-            return {
-                "to": to_value,
-                "value": value_hex,
-                "data": data_hex,
-                "metadata": {
-                    "description": description,
-                    "transactionType": "swap_step",
-                    "fromToken": from_token,
-                    "toToken": to_token,
-                    "amountIn": from_amount,
-                    "slippageBps": slippage_bps,
-                },
-            }
-
-        # Heuristics for various response shapes
-        approval = (
-            getattr(quote, "approval", None)
-            or getattr(quote, "approval_call_data", None)
-            or (quote.get("approval") if isinstance(quote, dict) else None)
-            or (quote.get("approval_call_data") if isinstance(quote, dict) else None)
-        )
-        approval_xmtp = to_xmtp_call(approval, "Approve token spending if required")
-        if approval_xmtp:
-            calls.append(approval_xmtp)
-
-        swap_call = (
-            getattr(quote, "swap", None)
-            or getattr(quote, "swap_call_data", None)
-            or (quote.get("swap") if isinstance(quote, dict) else None)
-            or (quote.get("swap_call_data") if isinstance(quote, dict) else None)
-        )
-        swap_xmtp = to_xmtp_call(swap_call, "Execute token swap")
-        if swap_xmtp:
-            calls.append(swap_xmtp)
-
-        if not calls:
-            # As a final fallback, some responses may provide a generic 'calls' list
-            raw_calls = getattr(quote, "calls", None) or (
-                quote.get("calls") if isinstance(quote, dict) else None
-            )
-            if isinstance(raw_calls, list):
-                for idx, c in enumerate(raw_calls):
-                    x = to_xmtp_call(c, f"Swap step {idx + 1}")
-                    if x:
-                        calls.append(x)
-
-        if not calls:
+        # Validate that we have the required fields from CDP
+        if not hasattr(quote, "to") or not hasattr(quote, "data"):
             raise ValueError(
-                "CDP swap quote did not return callable steps compatible with wallet_sendCalls"
+                "CDP swap quote missing required transaction fields (to, data)"
             )
+
+        # Format value field - ensure it's a hex string
+        value_hex = "0x0"
+        if hasattr(quote, "value") and quote.value:
+            if isinstance(quote.value, str) and quote.value.startswith("0x"):
+                value_hex = quote.value
+            else:
+                value_hex = hex(int(quote.value)) if quote.value != "0" else "0x0"
+
+        # Format data field - ensure it has 0x prefix
+        data_hex = quote.data if quote.data.startswith("0x") else f"0x{quote.data}"
+
+        # Get expected output amount for metadata
+        to_amount = getattr(quote, "to_amount", None) or "unknown"
+        min_to_amount = getattr(quote, "min_to_amount", None) or "unknown"
+
+        # Create the swap call following XMTP wallet_sendCalls format
+        swap_call = {
+            "to": quote.to,
+            "value": value_hex,
+            "data": data_hex,
+            "metadata": {
+                "description": f"Swap {from_amount} units of {from_token} for {to_token} (expected: {to_amount}, min: {min_to_amount})",
+                "transactionType": "swap",
+                "currency": from_token,
+                "amount": int(from_amount),
+                "toAddress": quote.to,
+                "fromToken": from_token,
+                "toToken": to_token,
+                "expectedOutput": to_amount,
+                "minimumOutput": min_to_amount,
+                "slippageBps": slippage_bps,
+                "network": agent.network_id,
+            },
+        }
+
+        calls.append(swap_call)
+
+        # Note: CDP's create_swap_quote already includes any necessary approvals
+        # in the single transaction if needed, or handles them via Permit2 signatures
 
         # Build XMTP wallet_sendCalls payload
         wallet_send_calls = {
@@ -195,10 +194,20 @@ class XmtpSwap(XmtpBaseTool):
             "json": wallet_send_calls,
         }
 
-        # Human-friendly message
+        # Human-friendly message with more details
+        expected_output = getattr(quote, "to_amount", "unknown")
+        min_output = getattr(quote, "min_to_amount", "unknown")
+
         content_message = (
-            f"I created a swap transaction request to exchange {from_amount} units of {from_token} "
-            f"for {to_token} on {agent.network_id}. Review and sign to execute."
+            f"🔄 Swap transaction ready!\n\n"
+            f"**Details:**\n"
+            f"• From: {from_amount} units of {from_token}\n"
+            f"• To: {to_token}\n"
+            f"• Expected output: {expected_output} units\n"
+            f"• Minimum output: {min_output} units\n"
+            f"• Network: {agent.network_id}\n"
+            f"• Slippage: {slippage_bps / 100:.1f}%\n\n"
+            f"Please review the transaction details and sign to execute the swap."
         )
 
         return content_message, [attachment]
