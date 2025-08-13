@@ -1,3 +1,17 @@
+## v0.6.11-dev6
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev5...v0.6.11-dev6
+
+**Commits:**
+
+*   a9246e6: Merge pull request #747 from crestalnetwork/hyacinthus
+*   c71fd40: fix: temp disable search for gpt-5
+
+**Changes:**
+
+*   Merged PR #747
+*   Temporarily disabled search for gpt-5
+
 # v0.6.11-dev4
 
 ## Changes
