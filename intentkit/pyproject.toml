@@ -67,6 +67,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "psycopg>=3.2.9",
     "jsonref>=1.1.0",
+    "langchain-deepseek>=0.1.4",
 ]
 
 [project.urls]

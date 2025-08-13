@@ -26,12 +26,10 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
-from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -39,7 +37,10 @@ from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
-from intentkit.core.prompt import agent_prompt
+from intentkit.core.prompt import (
+    create_formatted_prompt_function,
+    explain_prompt,
+)
 from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
@@ -53,49 +54,11 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
-from intentkit.models.skill import AgentSkillData, Skill, ThreadSkillData
+from intentkit.models.skill import AgentSkillData, ThreadSkillData
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
-
-
-async def explain_prompt(message: str) -> str:
-    """
-    Process message to replace @skill:*:* patterns with (call skill xxxxx) format.
-
-    Args:
-        message (str): The input message to process
-
-    Returns:
-        str: The processed message with @skill patterns replaced
-    """
-    # Pattern to match @skill:category:config_name with word boundaries
-    pattern = r"\b@skill:([^:]+):([^\s]+)\b"
-
-    async def replace_skill_pattern(match):
-        category = match.group(1)
-        config_name = match.group(2)
-
-        # Get skill by category and config_name
-        skill = await Skill.get_by_config_name(category, config_name)
-
-        if skill:
-            return f"(call skill {skill.name})"
-        else:
-            # If skill not found, keep original pattern
-            return match.group(0)
-
-    # Find all matches
-    matches = list(re.finditer(pattern, message))
-
-    # Process matches in reverse order to maintain string positions
-    result = message
-    for match in reversed(matches):
-        replacement = await replace_skill_pattern(match)
-        result = result[: match.start()] + replacement + result[match.end() :]
-
-    return result
 
 
 # Global variable to cache all agent executors
@@ -176,106 +139,15 @@ async def create_agent(
         has_search
         and llm_model.info.provider == LLMProvider.OPENAI
         and llm_model.info.supports_search
+        and not agent.model.contains(
+            "gpt-5"
+        )  # tmp disable gpt-5 search since package bugs
     ):
         tools.append({"type": "web_search_preview"})
 
-    # finally, set up the system prompt
-    prompt = agent_prompt(agent, agent_data)
-    # Escape curly braces in the prompt
-    escaped_prompt = prompt.replace("{", "{{").replace("}", "}}")
-    # Process message to handle @skill patterns
-    if config.admin_llm_skill_control:
-        escaped_prompt = await explain_prompt(escaped_prompt)
-    prompt_array = [
-        ("placeholder", "{system_prompt}"),
-        ("placeholder", "{messages}"),
-    ]
-    if agent.prompt_append:
-        # Escape any curly braces in prompt_append
-        escaped_append = agent.prompt_append.replace("{", "{{").replace("}", "}}")
-        # Process message to handle @skill patterns
-        if config.admin_llm_skill_control:
-            escaped_append = await explain_prompt(escaped_append)
-        prompt_array.append(("system", escaped_append))
+    # Create the formatted_prompt function using the refactored prompt module
+    formatted_prompt = create_formatted_prompt_function(agent, agent_data)
 
-    prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
-
-    async def formatted_prompt(
-        state: AgentState, runtime: Runtime[AgentContext]
-    ) -> list[BaseMessage]:
-        final_system_prompt = escaped_prompt
-        context = runtime.context
-        logger.debug(f"formatted_prompt, context: {context}")
-        if context.entrypoint:
-            entrypoint = context.entrypoint
-            entrypoint_prompt = None
-            if (
-                agent.twitter_entrypoint_enabled
-                and agent.twitter_entrypoint_prompt
-                and entrypoint == AuthorType.TWITTER.value
-            ):
-                entrypoint_prompt = agent.twitter_entrypoint_prompt
-                logger.debug("twitter entrypoint prompt added")
-            elif (
-                agent.telegram_entrypoint_enabled
-                and agent.telegram_entrypoint_prompt
-                and entrypoint == AuthorType.TELEGRAM.value
-            ):
-                entrypoint_prompt = agent.telegram_entrypoint_prompt
-                logger.debug("telegram entrypoint prompt added")
-            elif entrypoint == AuthorType.TRIGGER.value:
-                task_id = context.chat_id.removeprefix("autonomous-")
-                # Find the autonomous task by task_id
-                autonomous_task = None
-                if agent.autonomous:
-                    for task in agent.autonomous:
-                        if task.id == task_id:
-                            autonomous_task = task
-                            break
-
-                if autonomous_task:
-                    # Build detailed task info - always include task_id
-                    if autonomous_task.name:
-                        task_info = f"You are running an autonomous task '{autonomous_task.name}' (ID: {task_id})"
-                    else:
-                        task_info = (
-                            f"You are running an autonomous task (ID: {task_id})"
-                        )
-
-                    # Add description if available
-                    if autonomous_task.description:
-                        task_info += f": {autonomous_task.description}"
-
-                    # Add cycle info
-                    if autonomous_task.minutes:
-                        task_info += f". This task runs every {autonomous_task.minutes} minute(s)"
-                    elif autonomous_task.cron:
-                        task_info += (
-                            f". This task runs on schedule: {autonomous_task.cron}"
-                        )
-
-                    entrypoint_prompt = f"{task_info}. "
-                else:
-                    # Fallback if task not found
-                    entrypoint_prompt = f"You are running an autonomous task. The task id is {task_id}. "
-            if entrypoint_prompt:
-                entrypoint_prompt = await explain_prompt(entrypoint_prompt)
-                final_system_prompt = f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
-        final_system_prompt = f"{final_system_prompt}## Internal Info\n\n"
-        "These are for your internal use. You can use them when querying or storing data, "
-        "but please do not directly share this information with users.\n\n"
-        final_system_prompt = f"{final_system_prompt}chat_id: {context.chat_id}\n\n"
-        if context.user_id:
-            final_system_prompt = f"{final_system_prompt}user_id: {context.user_id}\n\n"
-        system_prompt = [("system", final_system_prompt)]
-        return prompt_temp.invoke(
-            {"messages": state["messages"], "system_prompt": system_prompt}
-        )
-
-    # log final prompt and all skills
-    logger.debug(
-        f"[{agent.id}{'-private' if is_private else ''}] init prompt: {escaped_prompt}"
-    )
     for tool in tools:
         logger.info(
             f"[{agent.id}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
