@@ -139,7 +139,7 @@ async def create_agent(
         has_search
         and llm_model.info.provider == LLMProvider.OPENAI
         and llm_model.info.supports_search
-        and not agent.model.contains(
+        and not agent.model.startswith(
             "gpt-5"
         )  # tmp disable gpt-5 search since package bugs
     ):
