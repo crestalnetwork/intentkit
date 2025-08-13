@@ -1,6 +1,7 @@
 import re
 from typing import Callable, Optional
 
+from eth_utils import is_address
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.runtime import Runtime
@@ -114,6 +115,22 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
         )
 
     return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
+
+
+def _build_user_info_section(context: AgentContext) -> str:
+    """Build user information section when user_id is a valid EVM wallet address."""
+    if not context.user_id:
+        return ""
+
+    # Check if user_id is a valid EVM wallet address
+    try:
+        if is_address(context.user_id):
+            return f"## User Info\n\nThe person you are talking to has wallet address: {context.user_id}\n\n"
+    except Exception:
+        # If validation fails, don't include the section
+        pass
+
+    return ""
 
 
 def _build_agent_characteristics_section(agent: Agent) -> str:
@@ -391,6 +408,11 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
             final_system_prompt = (
                 f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
             )
+
+        # Add user info if user_id is a valid EVM wallet address
+        user_info = _build_user_info_section(context)
+        if user_info:
+            final_system_prompt = f"{final_system_prompt}{user_info}"
 
         # Add internal info
         internal_info = build_internal_info_prompt(context)
