@@ -6,6 +6,8 @@ from typing import TypedDict
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.xmtp.base import XmtpBaseTool
+from intentkit.skills.xmtp.price import XmtpGetSwapPrice
+from intentkit.skills.xmtp.swap import XmtpSwap
 from intentkit.skills.xmtp.transfer import XmtpTransfer
 
 # Cache skills at the module level, because they are stateless
@@ -16,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 class SkillStates(TypedDict):
     xmtp_transfer: SkillState
+    xmtp_swap: SkillState
+    xmtp_get_swap_price: SkillState
 
 
 class Config(SkillConfig):
@@ -74,6 +78,18 @@ def get_xmtp_skill(
     if name == "xmtp_transfer":
         if name not in _cache:
             _cache[name] = XmtpTransfer(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "xmtp_swap":
+        if name not in _cache:
+            _cache[name] = XmtpSwap(
+                skill_store=store,
+            )
+        return _cache[name]
+    elif name == "xmtp_get_swap_price":
+        if name not in _cache:
+            _cache[name] = XmtpGetSwapPrice(
                 skill_store=store,
             )
         return _cache[name]
