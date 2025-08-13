@@ -36,6 +36,38 @@
                     ],
                     "description": "Create XMTP transaction requests for transferring ETH or ERC20 tokens on Base mainnet. Supports both native ETH transfers and ERC20 token transfers. Generates wallet_sendCalls transaction data that users can sign.",
                     "default": "disabled"
+                },
+                "xmtp_swap": {
+                    "type": "string",
+                    "title": "XMTP Swap",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Create XMTP transaction requests for swapping tokens on Base using CDP swap quote. Returns a wallet_sendCalls payload that can include an optional approval call and the swap call. Only supports base-mainnet and base-sepolia.",
+                    "default": "disabled"
+                },
+                "xmtp_get_swap_price": {
+                    "type": "string",
+                    "title": "XMTP Get Swap Price",
+                    "enum": [
+                        "disabled",
+                        "public",
+                        "private"
+                    ],
+                    "x-enum-title": [
+                        "Disabled",
+                        "Agent Owner + All Users",
+                        "Agent Owner Only"
+                    ],
+                    "description": "Get an indicative swap price/quote for token pair and amount on Base networks using CDP. Provides estimated output amounts for token swaps without creating transactions.",
+                    "default": "disabled"
                 }
             }
         }
