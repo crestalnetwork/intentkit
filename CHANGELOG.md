@@ -1,12 +1,31 @@
-## v0.6.11-dev8
+=======
+## v0.6.11
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev7...v0.6.11-dev8
+### ✨ New Features
+- **XMTP Integration**: Added new XMTP features including swap and price skills
+- **User Wallet Info**: Enhanced user wallet information display
+- **DeepSeek Integration**: Updated DeepSeek integration with improved functionality
 
-### Features
-- feat: support new xmtp features
+### 🐛 Bug Fixes
+- **Search Functionality**: Temporarily disabled search for GPT-5 to resolve issues
+- **Configuration**: Better handling of integer config loading and number type validation
+- **Fee Agent Account**: Fixed fee_agent_account assignment in expense_summarize function
+- **Security**: Fixed clear-text logging of sensitive information (CodeQL alerts #31, #32)
+- **XMTP Schema**: Added missing XMTP schema files
+- **DeepSeek Bug**: Resolved DeepSeek-related bugs
 
-### Other Changes
-- doc: changelog
+### 🔧 Improvements
+- **Prompt System**: Refactored prompt system for better performance
+- **Code Quality**: Improved formatting and code organization
+- **Build Configuration**: Updated GitHub workflow build configuration
+- **Dependencies**: Updated uv sync and dependency management
+
+### 📚 Documentation
+- Updated changelog entries throughout development cycle
+- Enhanced documentation for new features
+
+### Diff
+[Compare v0.6.10...v0.6.11](https://github.com/crestalnetwork/intentkit/compare/v0.6.10...v0.6.11)
 
 ## v0.6.11-dev6
 
