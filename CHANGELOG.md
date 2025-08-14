@@ -1,11 +1,11 @@
-## v0.6.12-dev1
+## v0.6.12
 
-### Changes
-- refactor: consolidate artifact attachments into skill messages
-- doc: changelog updates
+### 🔧 Improvements
+- **Skill Messages**: Consolidated artifact attachments into skill messages for better organization
+- **Documentation**: Updated changelog entries
 
-### Full Changelog
-[v0.6.11-dev8...v0.6.12-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev8...v0.6.12-dev1)
+### Diff
+[Compare v0.6.11...v0.6.12](https://github.com/crestalnetwork/intentkit/compare/v0.6.11...v0.6.12)
 
 ## v0.6.11
 
