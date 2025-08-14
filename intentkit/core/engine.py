@@ -571,6 +571,7 @@ async def stream_agent(message: ChatMessageCreate):
                     )
                     continue
                 skill_calls = []
+                cached_attachments = []
                 have_first_call_in_cache = False  # tool node emit every tool call
                 for msg in chunk["tools"]["messages"]:
                     if not hasattr(msg, "tool_call_id"):
@@ -600,25 +601,7 @@ async def stream_agent(message: ChatMessageCreate):
                                         str(msg.content), width=1000, placeholder="..."
                                     )
                                 if msg.artifact:
-                                    artifact_message_create = ChatMessageCreate(
-                                        id=str(XID()),
-                                        agent_id=input.agent_id,
-                                        chat_id=input.chat_id,
-                                        user_id=input.user_id,
-                                        author_id=input.agent_id,
-                                        author_type=AuthorType.SKILL,
-                                        model=agent.model,
-                                        thread_type=input.author_type,
-                                        reply_to=input.id,
-                                        message="",
-                                        attachments=msg.artifact,
-                                        time_cost=this_time - last,
-                                    )
-                                    artifact_message = (
-                                        await artifact_message_create.save()
-                                    )
-                                    yield artifact_message
-                                    last = this_time
+                                    cached_attachments.extend(msg.artifact)
                             skill_calls.append(skill_call)
                             break
                 skill_message_create = ChatMessageCreate(
@@ -633,6 +616,7 @@ async def stream_agent(message: ChatMessageCreate):
                     reply_to=input.id,
                     message="",
                     skill_calls=skill_calls,
+                    attachments=cached_attachments,
                     input_tokens=(
                         cached_tool_step.usage_metadata.get("input_tokens", 0)
                         if hasattr(cached_tool_step, "usage_metadata")
