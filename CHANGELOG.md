@@ -1,3 +1,13 @@
+## v0.6.11-dev8
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev7...v0.6.11-dev8
+
+### Features
+- feat: support new xmtp features
+
+### Other Changes
+- doc: changelog
+
 ## v0.6.11-dev6
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev5...v0.6.11-dev6
