@@ -96,9 +96,13 @@ class Config:
         self.eternal_api_key = self.load("ETERNAL_API_KEY")
         self.reigent_api_key = self.load("REIGENT_API_KEY")
         self.venice_api_key = self.load("VENICE_API_KEY")
+        # LLM Config
         self.system_prompt = self.load("SYSTEM_PROMPT")
         self.input_token_limit = self.load_int("INPUT_TOKEN_LIMIT", 60000)
+        # XMTP
+        self.xmtp_system_prompt = self.load("XMTP_SYSTEM_PROMPT")
         # Telegram server settings
+        self.tg_system_prompt = self.load("TG_SYSTEM_PROMPT")
         self.tg_base_url = self.load("TG_BASE_URL")
         self.tg_server_host = self.load("TG_SERVER_HOST", "127.0.0.1")
         self.tg_server_port = self.load("TG_SERVER_PORT", "8081")
