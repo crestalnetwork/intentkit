@@ -45,6 +45,7 @@ class AuthorType(str, Enum):
     WEB = "web"
     SYSTEM = "system"
     API = "api"
+    XMTP = "xmtp"
 
 
 class ChatMessageAttachment(TypedDict):

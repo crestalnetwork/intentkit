@@ -100,7 +100,10 @@ class Config:
         self.system_prompt = self.load("SYSTEM_PROMPT")
         self.input_token_limit = self.load_int("INPUT_TOKEN_LIMIT", 60000)
         # XMTP
-        self.xmtp_system_prompt = self.load("XMTP_SYSTEM_PROMPT")
+        self.xmtp_system_prompt = self.load(
+            "XMTP_SYSTEM_PROMPT",
+            "You are assisting a user who uses an XMTP client that only displays plain-text messages, so do not use Markdown formatting.",
+        )
         # Telegram server settings
         self.tg_system_prompt = self.load("TG_SYSTEM_PROMPT")
         self.tg_base_url = self.load("TG_BASE_URL")

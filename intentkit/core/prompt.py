@@ -252,23 +252,6 @@ def escape_prompt(prompt: str) -> str:
 # ============================================================================
 
 
-def _build_social_entrypoint_prompt(agent: Agent, entrypoint: str) -> Optional[str]:
-    """Build prompt for social media entrypoints (Twitter, Telegram)."""
-    if (
-        agent.twitter_entrypoint_enabled
-        and agent.twitter_entrypoint_prompt
-        and entrypoint == AuthorType.TWITTER.value
-    ):
-        return agent.twitter_entrypoint_prompt
-    elif (
-        agent.telegram_entrypoint_enabled
-        and agent.telegram_entrypoint_prompt
-        and entrypoint == AuthorType.TELEGRAM.value
-    ):
-        return agent.telegram_entrypoint_prompt
-    return None
-
-
 def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
     """Build prompt for autonomous task entrypoint."""
     task_id = context.chat_id.removeprefix("autonomous-")
@@ -327,11 +310,21 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Option
     entrypoint_prompt = None
 
     # Handle social media entrypoints
-    entrypoint_prompt = _build_social_entrypoint_prompt(agent, entrypoint)
-
-    # Handle autonomous task entrypoint
-    if not entrypoint_prompt and entrypoint == AuthorType.TRIGGER.value:
-        entrypoint_prompt = _build_autonomous_task_prompt(agent, context)
+    if entrypoint == AuthorType.TWITTER.value:
+        if agent.twitter_entrypoint_prompt:
+            entrypoint_prompt = "\n\n" + agent.twitter_entrypoint_prompt
+    elif entrypoint == AuthorType.TELEGRAM.value:
+        if config.tg_system_prompt:
+            entrypoint_prompt = "\n\n" + config.tg_system_prompt
+        if agent.telegram_entrypoint_prompt:
+            entrypoint_prompt = "\n\n" + agent.telegram_entrypoint_prompt
+    elif entrypoint == AuthorType.XMTP.value:
+        if config.xmtp_system_prompt:
+            entrypoint_prompt = "\n\n" + config.xmtp_system_prompt
+        if agent.xmtp_entrypoint_prompt:
+            entrypoint_prompt = "\n\n" + agent.xmtp_entrypoint_prompt
+    elif entrypoint == AuthorType.TRIGGER.value:
+        entrypoint_prompt = "\n\n" + _build_autonomous_task_prompt(agent, context)
 
     # Process with admin LLM skill control if enabled
     if entrypoint_prompt and config.admin_llm_skill_control:
@@ -406,7 +399,7 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
         entrypoint_prompt = await build_entrypoint_prompt(agent, context)
         if entrypoint_prompt:
             final_system_prompt = (
-                f"{final_system_prompt}## Entrypoint rules\n\n{entrypoint_prompt}\n\n"
+                f"{final_system_prompt}## Entrypoint rules{entrypoint_prompt}\n\n"
             )
 
         # Add user info if user_id is a valid EVM wallet address
