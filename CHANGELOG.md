@@ -1,3 +1,12 @@
+## v0.6.12
+
+### 🔧 Improvements
+- **Skill Messages**: Consolidated artifact attachments into skill messages for better organization
+- **Documentation**: Updated changelog entries
+
+### Diff
+[Compare v0.6.11...v0.6.12](https://github.com/crestalnetwork/intentkit/compare/v0.6.11...v0.6.12)
+
 ## v0.6.11
 
 ### ✨ New Features
@@ -25,80 +34,6 @@
 
 ### Diff
 [Compare v0.6.10...v0.6.11](https://github.com/crestalnetwork/intentkit/compare/v0.6.10...v0.6.11)
-
-## v0.6.11-dev6
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev5...v0.6.11-dev6
-
-**Commits:**
-
-*   a9246e6: Merge pull request #747 from crestalnetwork/hyacinthus
-*   c71fd40: fix: temp disable search for gpt-5
-
-**Changes:**
-
-*   Merged PR #747
-*   Temporarily disabled search for gpt-5
-
-# v0.6.11-dev4
-
-## Changes
-
-### Features/Improvements
-- Removed the XMTP swap and price skills.
-- Refactored the CDP client for better maintainability.
-
-### Dependency Updates
-- Updated various other dependencies.
-
-## Full Diff
-
-[Compare v0.6.11-dev3...main](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev3...main)
-
-# v0.6.11-dev3
-
-## Changes
-
-### Features/Improvements
-- Refactored the prompt building logic for clarity and maintainability.
-- Added user wallet information to the system prompt.
-
-### Dependency Updates
-- Added `langchain-deepseek`
-- Updated various other dependencies.
-
-## Full Diff
-
-[Compare v0.6.11-dev2...main](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev2...main)
-
-# v0.6.11-dev2
-
-## Changes
-
-### Features/Improvements
-- Added `load_int` and `load_float` methods to `Config` class for more robust environment variable loading with default values and type conversion.
-- Implemented Slack notifications for credit recharge and reward.
-
-## Full Diff
-
-[Compare v0.6.11-dev1...main](https://github.com/crestalnetwork/intentkit/compare/v0.6.11-dev1...main)
-
-# v0.6.11-dev1
-
-## Changes
-
-### Fixes
-- fix: update github workflow build configuration
-
-### Documentation
-- doc: changelog updates
-
-### Other Changes
-- Merge pull request #741 from crestalnetwork/hyacinthus
-
-## Full Diff
-
-[Compare v0.6.10-dev7...v0.6.11-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev7...v0.6.11-dev1)
 
 ## v0.6.10
 
@@ -138,120 +73,6 @@
 ### Diff
 [Compare v0.6.9...v0.6.10](https://github.com/crestalnetwork/intentkit/compare/v0.6.9...v0.6.10)
 
-## v0.6.10-dev7
-
-### 🐛 Bug Fixes
-- XMTP Skill: Align state typing and schema enum/titles for public/private options
-
-### 📚 Documentation
-- Update changelog entries
-
-### Diff
-[Compare v0.6.10-dev6...v0.6.10-dev7](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev6...v0.6.10-dev7)
-
-# Changelog
-
-## v0.6.10-dev6
-
-### 🔧 Improvements
-- **XMTP Skill**: Updated XMTP skill image format and schema configuration
-
-### 🛠️ Technical Changes
-- Enhanced XMTP skill metadata and configuration files
-- Updated skill image format for better compatibility
-
-### Diff
-[Compare v0.6.10-dev5...v0.6.10-dev6](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev5...v0.6.10-dev6)
-
-## v0.6.10-dev5
-
-### 🔧 Improvements
-- **Dependencies**: Added jsonref dependency for JSON reference handling
-- **Build Workflow**: Updated GitHub Actions build workflow configuration
-
-### 🛠️ Technical Changes
-- Updated `intentkit/pyproject.toml` with jsonref dependency
-- Enhanced `.github/workflows/build.yml` configuration
-- Updated `intentkit/uv.lock` with new dependency
-
-### Diff
-[Compare v0.6.10-dev4...v0.6.10-dev5](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev4...v0.6.10-dev5)
-
-## v0.6.10-dev4
-
-### 🐛 Bug Fixes
-- **GPT-5 Features**: Fixed GPT-5 model features and capabilities implementation
-- **CI Improvements**: Fixed continuous integration workflow issues
-
-### 📚 Documentation
-- **Changelog**: Updated changelog documentation with comprehensive release notes
-
-### 🔧 Infrastructure  
-- **GitHub Actions**: Enhanced build workflow configuration
-
-### 🛠️ Technical Changes
-- Updated `.github/workflows/build.yml` with build workflow improvements
-- Enhanced `intentkit/models/llm.py` with GPT-5 features fixes
-- Updated `CHANGELOG.md` with recent changes
-
-### Diff
-[Compare v0.6.10-dev3...v0.6.10-dev4](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev3...v0.6.10-dev4)
-
-## v0.6.10-dev3
-
-### ✨ New Features
-- **Agent & LLM Model Validation**: Enhanced agent and LLM models with improved validation capabilities and error handling
-
-### 🔧 Improvements  
-- **Model Validation**: Improved validation logic across agent and LLM model systems
-- **Error Handling**: Enhanced error handling and validation feedback
-
-### 🛠️ Technical Changes
-- Updated agent and LLM model validation mechanisms
-- Improved model structure and validation rules
-
-### Diff
-[Compare v0.6.10-dev2...v0.6.10-dev3](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev2...v0.6.10-dev3)
-
-## v0.6.10-dev2
-
-### ✨ New Features
-- **Enhanced XMTP Integration**: Improved XMTP transfer functionality with better error handling and stability
-- **Core Engine Optimizations**: Enhanced engine functionality for better performance and reliability
-
-### 🔧 Improvements  
-- **XMTP Transfer Skills**: Enhanced transfer capabilities with improved validation and error handling
-- **Engine Stability**: Core engine improvements for better agent execution
-
-### 🛠️ Technical Changes
-- Updated XMTP base and transfer modules
-- Core engine enhancements and optimizations
-- Improved error handling and logging
-
-### Diff
-[Compare v0.6.10-dev1...v0.6.10-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.10-dev1...v0.6.10-dev2)
-
-## v0.6.10-dev1
-
-### ✨ New Features
-- **XMTP Integration**: Added new XMTP message transfer skill with attachment support
-- **LangGraph 6.0 Upgrade**: Updated to LangGraph 6.0 for improved agent capabilities
-
-### 🔧 Improvements
-- **API Key Management**: Standardized API key retrieval across all skills for better consistency
-- **Skill Context**: Refactored skill context handling for improved performance and maintainability
-- **Skill Architecture**: Enhanced base skill classes with better API key management patterns
-
-### 🛠️ Technical Changes
-- Updated 169 files with comprehensive refactoring
-- Added XMTP skill category with transfer capabilities
-- Improved skill base classes across all categories
-- Enhanced context handling in core engine and nodes
-- Updated dependencies and lock files
-
-### Diff
-[Compare v0.6.9-dev2...v0.6.10-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.9-dev2...v0.6.10-dev1)
-
 ## v0.6.9
 
 ### 📚 Documentation
@@ -262,29 +83,6 @@
 
 ### Diff
 [Compare v0.6.8...v0.6.9](https://github.com/crestalnetwork/intentkit/compare/v0.6.8...v0.6.9)
-
-## v0.6.9-dev2
-
-### 📚 Documentation
-- **API Documentation**: Updated API documentation URLs to use localhost for development
-
-### 🔧 Maintenance  
-- **Sentry Configuration**: Updated sentry configuration settings
-- **Documentation**: General changelog updates
-
-### Diff
-[Compare v0.6.9-dev1...v0.6.9-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.9-dev1...v0.6.9-dev2)
-
-## v0.6.9-dev1
-
-### 📚 Documentation
-- **Changelog**: Updated changelog documentation with comprehensive release notes
-
-### 🔧 Maintenance
-- **Branch Management**: Merged latest changes from main branch
-
-### Diff
-[Compare v0.6.8...v0.6.9-dev1](https://github.com/crestalnetwork/intentkit/compare/v0.6.8...v0.6.9-dev1)
 
 ## v0.6.8
 
@@ -311,44 +109,6 @@
 ### Diff
 [Compare v0.6.7...v0.6.8](https://github.com/crestalnetwork/intentkit/compare/v0.6.7...v0.6.8)
 
-## v0.6.8-dev3
-
-### Changes
-- **chore**: update dependencies langgraph-sdk and langmem versions
-
-### Diff
-[Compare v0.6.8-dev2...v0.6.8-dev3](https://github.com/crestalnetwork/intentkit/compare/v0.6.8-dev2...v0.6.8-dev3)
-
-## v0.6.8-dev2
-
-### Changes
-- **chore**: update fastapi and dependencies
-- **chore**: convert .cursorrules to symlink to LLM.md
-- **docs**: update llm integration guide
-- **docs**: update changelog and llm guide
-
-### Diff
-[Compare v0.6.8-dev1...v0.6.8-dev2](https://github.com/crestalnetwork/intentkit/compare/v0.6.8-dev1...v0.6.8-dev2)
-
-## v0.6.7-dev9
-
-### 🔧 Improvements
-
-- **Database Connection Pooling**: Enhanced database connection pooling configuration with new parameters for better performance and resource management
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev8...v0.6.7-dev9
-
-## v0.6.7-dev8
-
-### 🐛 Bug Fixes
-- **Twitter**: Fixed rate limit handling
-
-### 🔧 Chores
-- **Elfa**: Migrated to v2 API
-- **Documentation**: Updated changelog
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev7...v0.6.7-dev8
-
 ## v0.6.7
 
 ### 🚀 Features
@@ -371,64 +131,6 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.6...v0.6.7
 
-## v0.6.7-dev6
-
-### 🚀 Features
-- **feat: add endpoint to retrieve current agent information** - Added new API endpoint to get current agent configuration
-- **feat: add EVM and Solana wallet address fields to AgentResponse model** - Enhanced agent response model with blockchain wallet address support
-
-### 🔧 Maintenance
-- **chore: code formatting improvements in agent model response data** - Code style improvements for better maintainability
-
-### 📖 Documentation
-- **doc: changelog** - Updated changelog documentation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev5...v0.6.7-dev6
-
-## v0.6.7-dev5
-
-### 🚀 Improvements
-- **improve: remove enabled parameter from add_autonomous_task skill** - Autonomous tasks are now always enabled by default for better user experience
-
-### 📖 Documentation
-- **doc: changelog** - Updated changelog documentation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev4...v0.6.7-dev5
-
-## v0.6.7-dev4
-
-### 🐛 Bug Fixes
-- **fix: ensure proper serialization of autonomous tasks in agent operations** - Fixed serialization issues in autonomous task operations to ensure proper data handling
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev3...v0.6.7-dev4
-
-## v0.6.7-dev3
-
-### 🚀 Features
-- **feat: add autonomous task info in entrypoint rules system prompt** - Enhanced autonomous task execution with better context information including task ID, name, description, and scheduling details
-
-### 🐛 Bug Fixes
-- **fix: autonomous skill bug** - Fixed issues related to autonomous skill execution
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev2...v0.6.7-dev3
-
-## v0.6.7-dev2
-
-### 🚀 Features
-
-#### Autonomous Task Management System
-- **feat: add autonomous task management system skills** - Added comprehensive system skills for managing autonomous tasks within agents
-  - `system_add_autonomous_task` - Create new autonomous task configurations with custom prompts and scheduling
-  - `system_delete_autonomous_task` - Remove existing autonomous task configurations  
-  - `system_list_autonomous_tasks` - View all configured autonomous tasks for an agent
-  - Enhanced core agent and skill systems to support autonomous task operations
-  - Updated skill abstracts to provide better context handling for system operations
-
-### 🐛 Bug Fixes
-- **fix: format** - Code formatting improvements
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.7-dev1...v0.6.7-dev2
-
 ## v0.6.6
 
 ### 🚀 Features
@@ -439,17 +141,6 @@
 - This change improves the signal-to-noise ratio when fetching timeline data
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5...v0.6.6
-
-## v0.6.5-dev8
-
-### 🚀 Features
-- **Twitter Timeline Enhancement**: Exclude replies from twitter timeline by default to improve content quality and relevance
-
-### 🔧 Technical Details
-- Modified twitter timeline skill to filter out reply tweets by default
-- This change improves the signal-to-noise ratio when fetching timeline content
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev7...v0.6.5-dev8
 
 ## v0.6.5
 
@@ -475,76 +166,6 @@
 - Better agent documentation structure
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.4...v0.6.5
-
-## v0.6.5-dev7
-
-### 📚 Documentation
-- Better agent API documentation improvements
-
-### 🐛 Bug Fixes
-- Fixed typo in codebase
-
-### 🔧 Improvements
-- Prevent twitter reply skill from replying to own tweets
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev6...v0.6.5-dev7
-
-## v0.6.5-dev6
-
-### 🚀 Features
-- Add sanitize_privacy method to ChatMessage model
-
-### 📚 Documentation
-- Update changelog for v0.6.5-dev4
-- Change log updates
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev5...v0.6.5-dev6
-
-## v0.6.5-dev5
-
-### 📚 Documentation
-- Update changelog for v0.6.5-dev4
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev4...v0.6.5-dev5
-
-## v0.6.5-dev4
-
-### 🐛 Bug Fixes
-- Fixed agent data types
-- Fixed bug in agent schema
-
-### 🔄 Merged Pull Requests
-- Merge pull request #711 from crestalnetwork/hyacinthus
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev3...v0.6.5-dev4
-
-## v0.6.5-dev3
-
-### 📚 Documentation
-- Better agent documentation
-- Updated changelog
-
-### 🐛 Bug Fixes
-- Remove number field in agent
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev2...v0.6.5-dev3
-
-## v0.6.5-dev2
-
-### 🐛 Bug Fixes
-- **Database Connection**: Use separate connection for langgraph migration setup
-
-### 📚 Documentation
-- Updated changelog
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.5-dev1...v0.6.5-dev2
-
-## v0.6.5-dev1
-
-### 🚀 Features
-- **Redis Database Configuration**: Added redis_db parameter to all redis connections for better database isolation and configuration flexibility
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.4...v0.6.5-dev1
 
 ## v0.6.4
 
@@ -578,45 +199,6 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2...v0.6.3
 
-## v0.6.3-dev2
-
-### Chores
-- Updated dependencies in pyproject.toml:
-  - Updated `supabase` from `>=2.10.0` to `>=2.16.0`
-  - Updated `openai` from `1.96.1` to `1.97.0`
-  - Updated lock file accordingly
-
-### Documentation
-- Updated changelog
-
-### Pull Requests
-- Merged PR #705: chore: update dependencies in pyproject.toml
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.3-dev1...v0.6.3-dev2
-
-## v0.6.3-dev1
-
-### Features
-- feat: add cdp swap skill for token swapping functionality (9a3ff94)
-
-### Bug Fixes
-- fix: lint error (9c6cfa5)
-- fix: a type error (41f9f9a)
-
-### Chores
-- chore: update changelog (ef36cb6)
-- chore: package versions (297c55d)
-- chore: fix dependency error (453d3a1)
-
-### Documentation
-- doc: changelog (88bba96)
-
-### Other
-- tmp: now working (31385d3)
-- Merge branch 'main' into hyacinthus (28b0b73)
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2-dev2...v0.6.3-dev1
-
 ## v0.6.2
 
 ### 🚀 Features
@@ -645,48 +227,6 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.1...v0.6.2
 
-## v0.6.2-dev2
-
-### 🚀 Features
-- **Credit Event Tracking**: Added agent_wallet_address field to credit event tracking
-- **Agent API Enhancement**: Enhanced agent API and authentication with improved documentation
-
-### 🐛 Bug Fixes
-- **API Key Skill**: Better get API key skill description
-
-### 🔧 Improvements
-- **Twitter Service**: Refactored twitter service for better performance
-
-### 📚 Documentation
-- **API Documentation**: Updated API documentation and restructured files
-- **Change Log**: Updated change log documentation
-
-### 🧹 Maintenance
-- **Dependencies**: UV sync updates
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.2-dev1...v0.6.2-dev2
-
-## v0.6.2-dev1
-
-### 🚀 Features
-- **Agent API Sub-application**: Added dedicated agent API sub-application with CORS and error handling
-- **Flexible User ID**: Made user_id optional in chat API with agent.owner fallback for better usability
-
-### 🔧 Improvements
-- **Text Extraction**: Improved formatting in extract_text_and_images function
-- **Authentication**: Updated agent API endpoints to use token-based authentication
-- **Admin Auth**: Refactored admin authentication system
-- **Agent Auth**: Refactored agent authentication system
-
-### 🐛 Bug Fixes
-- **Chat Message**: Fixed typo in chat message handling
-- **Supabase Link**: Fixed Supabase link issue
-
-### 📚 Documentation
-- **README**: Updated documentation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.1-dev1...v0.6.2-dev1
-
 ## v0.6.1
 
 ### Features
@@ -701,21 +241,6 @@
 - doc: changelog
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0...v0.6.1
-
-## v0.6.1-dev1
-
-### Features
-- feat: add public key to supabase
-
-### Bug Fixes
-- fix: node log level
-- fix: cdp get balance bug
-- fix: close some default skills
-
-### Documentation
-- doc: changelog
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.18...v0.6.1-dev1
 
 ## v0.6.0
 
@@ -759,106 +284,6 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.5.9...v0.6.0
 
-## v0.6.0-dev.18
-
-### Bug Fixes
-- **CDP Wallet**: Fixed wallet creation during agent creation process
-- **CDP Balance**: Fixed CDP get balance functionality
-
-### Documentation
-- Updated changelog
-
-### Pull Requests
-- Merged PR #700: Improve CDP wallet functionality and agent creation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.17...v0.6.0-dev.18
-
-## v0.6.0-dev.17
-
-### Changes
-- Merge pull request #699 from crestalnetwork/hyacinthus
-- refactor: cdp wallet
-
-### What's Changed
-- Refactored CDP wallet functionality to improve code organization and maintainability
-- Enhanced CDP client implementation with better error handling and structure
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.16...v0.6.0-dev.17
-
-## v0.6.0-dev.16
-
-### Features
-- Updated LLM integration guide and skill schema configurations
-- Improved HTTP skill schema configuration
-- Enhanced Supabase skill schema configuration
-
-### Documentation
-- Enhanced LLM.md with better integration guidelines
-- Updated skill configuration documentation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.15...v0.6.0-dev.16
-
-## v0.6.0-dev.15
-
-### New Features
-- **HTTP Skills**: Added comprehensive HTTP client skills for making web requests including GET, POST, PUT, DELETE operations
-- **Major Framework Upgrades**: Merged comprehensive improvements from hyacinthus branch including:
-  - AgentKit upgrade from 0.4.0 to 0.6.0
-  - LangGraph upgrade to 0.5 with refactored core components
-  - IntentKit package prepared for publishing
-
-### Improvements
-- **Web Scraper**: Enhanced capability to scrape whole sites in one prompt
-- **Memory Optimization**: Use SQLite for testing environments
-- **Stream Executor**: Refactored for better performance
-- **Infrastructure**: Refactored IntentKit core architecture
-- **Admin Schema**: Updated with correct skills path and WebP support
-
-### Bug Fixes
-- Fixed import bugs in core modules
-- Fixed action cost calculation to exclude owner
-- Fixed chat history validation with proper exception handling
-- Fixed debug flag logic and logging
-- Fixed Dune Analytics description and image issues
-- Fixed summarize functionality bugs
-
-### Development
-- Fixed various lint issues across the codebase
-- Updated dependencies with `uv sync`
-- Improved testing infrastructure
-- Added comprehensive LLM integration documentation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.14...v0.6.0-dev.15
-
-## v0.6.0-dev.14
-
-### Features
-- Enhanced Supabase skills with improved data operations and error handling
-- Added more fields to runnable config and skill context
-- Added comprehensive Supabase skill category with conditional schema validation
-
-### Improvements
-- Better error handling across all Supabase data operations
-- Improved data validation and type checking
-- Enhanced base skill functionality for better reusability
-- Updated core node functionality for better skill integration
-
-### Technical Details
-- Updated schema definitions for better data integrity
-- Refined insert, update, upsert, and delete operations
-- Improved token base skill implementation
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.0-dev.13...v0.6.0-dev.14
-
-## v0.6.0-dev.11
-
-### Documentation
-- Updated LLM integration guide and config documentation
-- Enhanced developer documentation for better clarity
-
-### Chores
-- General maintenance and cleanup
-
 ## v0.5.0
 
 ### Breaking Changes
@@ -884,6 +309,7 @@
 ### New Features
 - Add input token limit to config
 - Auto clean memory after agent update
+
 ## 2025-02-23
 
 ### New Features
