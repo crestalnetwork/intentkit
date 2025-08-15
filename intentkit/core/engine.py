@@ -436,12 +436,10 @@ async def stream_agent(message: ChatMessageCreate):
             ]
         else:
             # anyway, pass it directly to LLM
-            content.extend(
-                [
-                    {"type": "image_url", "image_url": {"url": image_url}}
-                    for image_url in image_urls
-                ]
-            )
+            content.extend([
+                {"type": "image_url", "image_url": {"url": image_url}}
+                for image_url in image_urls
+            ])
 
     messages = [
         HumanMessage(content=content),
@@ -758,7 +756,7 @@ async def stream_agent(message: ChatMessageCreate):
             author_type=AuthorType.SYSTEM,
             thread_type=input.author_type,
             reply_to=input.id,
-            message="IntentKit Internal Error",
+            message="Agent Internal Error",
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
@@ -800,7 +798,7 @@ async def stream_agent(message: ChatMessageCreate):
             author_type=AuthorType.SYSTEM,
             thread_type=input.author_type,
             reply_to=input.id,
-            message="Internal Agent Error",
+            message="Agent Internal Error",
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
