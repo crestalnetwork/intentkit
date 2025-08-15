@@ -398,6 +398,11 @@ class AgentTable(Base):
         nullable=True,
         comment="Telegram integration configuration settings",
     )
+    xmtp_entrypoint_prompt = Column(
+        String,
+        nullable=True,
+        comment="Extra prompt for xmtp entrypoint",
+    )
     # auto timestamp
     created_at = Column(
         DateTime(timezone=True),
@@ -886,6 +891,17 @@ class AgentUpdate(BaseModel):
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
+            json_schema_extra={
+                "x-group": "entrypoint",
+            },
+        ),
+    ]
+    xmtp_entrypoint_prompt: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Extra prompt for xmtp entrypoint, xmtp support is in beta",
+            max_length=10000,
             json_schema_extra={
                 "x-group": "entrypoint",
             },
