@@ -24,13 +24,22 @@ async def execute(
         description="The chat message containing agent_id, chat_id and message content",
     ),
 ) -> list[ChatMessage]:
-    """Execute an agent with the given input and return response lines.
+    """Execute an agent with the provided message and return all results.
+
+    This endpoint executes an agent with the provided message and returns all
+    generated messages as a complete list after execution finishes.
 
     **Request Body:**
     * `message` - The chat message containing agent_id, chat_id and message content
 
+    **Response:**
+    Returns a list of ChatMessage objects containing:
+    * Skill call results (including tool executions)
+    * Agent reasoning and responses
+    * System messages or error notifications
+
     **Returns:**
-    * `list[ChatMessage]` - Formatted response lines from agent execution
+    * `list[ChatMessage]` - Complete list of response messages
 
     **Raises:**
     * `HTTPException`:
@@ -52,11 +61,26 @@ async def stream(
 ) -> StreamingResponse:
     """Stream agent execution results in real-time using Server-Sent Events.
 
+    This endpoint executes an agent with the provided message and streams the results
+    in real-time using the SSE (Server-Sent Events) standard format.
+
     **Request Body:**
     * `message` - The chat message containing agent_id, chat_id and message content
 
+    **Stream Format:**
+    The response uses Server-Sent Events with the following format:
+    * Event type: `message`
+    * Data: ChatMessage object as JSON
+    * Format: `event: message\\ndata: {ChatMessage JSON}\\n\\n`
+
+    **Response Content:**
+    Each streamed message can be:
+    * Skill call results (including tool executions)
+    * Agent reasoning and responses
+    * System messages or error notifications
+
     **Returns:**
-    * `StreamingResponse` - Server-Sent Events stream with ChatMessage objects
+    * `StreamingResponse` - SSE stream with real-time ChatMessage objects
 
     **Raises:**
     * `HTTPException`:
