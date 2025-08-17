@@ -310,10 +310,7 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Option
     entrypoint_prompt = None
 
     # Handle social media entrypoints
-    if entrypoint == AuthorType.TWITTER.value:
-        if agent.twitter_entrypoint_prompt:
-            entrypoint_prompt = "\n\n" + agent.twitter_entrypoint_prompt
-    elif entrypoint == AuthorType.TELEGRAM.value:
+    if entrypoint == AuthorType.TELEGRAM.value:
         if config.tg_system_prompt:
             entrypoint_prompt = "\n\n" + config.tg_system_prompt
         if agent.telegram_entrypoint_prompt:
@@ -421,11 +418,9 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
                     break
 
         system_prompt = [("system", final_system_prompt)]
-        return prompt_temp.invoke(
-            {
-                "messages": state["messages"],
-                "system_prompt": system_prompt,
-            }
-        )
+        return prompt_temp.invoke({
+            "messages": state["messages"],
+            "system_prompt": system_prompt,
+        })
 
     return formatted_prompt
