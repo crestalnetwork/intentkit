@@ -785,6 +785,13 @@ class AgentUpdate(BaseModel):
             },
         ),
     ]
+    readonly_wallet_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
+        ),
+    ]
     network_id: Annotated[
         Optional[
             Literal[

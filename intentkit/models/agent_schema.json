@@ -715,10 +715,11 @@
       "type": "string",
       "description": "Provider of the agent's wallet",
       "enum": [
-        "cdp"
+        "cdp",
+        "readonly"
       ],
       "default": "cdp",
-      "x-group": "internal"
+      "x-group": "onchain"
     },
     "network_id": {
       "title": "Network ID",
