@@ -88,14 +88,21 @@ async def _process_agent_post_actions(
     Returns:
         AgentData: The processed agent data
     """
-    agent_data = None
-
     if config.cdp_api_key_id and agent.wallet_provider == "cdp":
         cdp_client = await get_cdp_client(agent.id, skill_store)
         await cdp_client.get_wallet_provider()
 
     # Get new agent data
-    agent_data = await AgentData.get(agent.id)
+    # FIXME: refuse to change wallet provider
+    if agent.wallet_provider == "readonly":
+        agent_data = await AgentData.patch(
+            agent.id,
+            {
+                "evm_wallet_address": agent.readonly_wallet_address,
+            },
+        )
+    else:
+        agent_data = await AgentData.get(agent.id)
 
     # Send Slack notification
     slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
