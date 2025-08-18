@@ -1,11 +1,12 @@
 import asyncio
 from enum import Enum
-from typing import Any, Dict, Literal, NotRequired, Optional
+from typing import Any, Dict, NotRequired, Optional
 
 from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
 from pydantic import BaseModel
 
 from intentkit.models.agent import Agent
+from intentkit.models.chat import AuthorType
 
 
 class AgentError(str, Enum):
@@ -31,7 +32,7 @@ class AgentContext(BaseModel):
     chat_id: str
     user_id: Optional[str] = None
     app_id: Optional[str] = None
-    entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
+    entrypoint: AuthorType
     is_private: bool
     payer: Optional[str] = None
 
