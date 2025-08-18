@@ -715,10 +715,11 @@
       "type": "string",
       "description": "Provider of the agent's wallet",
       "enum": [
-        "cdp"
+        "cdp",
+        "readonly"
       ],
       "default": "cdp",
-      "x-group": "internal"
+      "x-group": "onchain"
     },
     "network_id": {
       "title": "Network ID",
@@ -741,5 +742,26 @@
       "x-group": "internal"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "wallet_provider": {
+        "const": "readonly"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "readonly_wallet_address": {
+        "title": "Readonly Wallet Address",
+        "type": "string",
+        "description": "Wallet address for readonly wallet provider",
+        "maxLength": 100,
+        "x-group": "onchain"
+      }
+    },
+    "required": [
+      "readonly_wallet_address"
+    ]
+  }
 }

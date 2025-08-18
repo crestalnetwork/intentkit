@@ -633,7 +633,7 @@ class AgentUpdate(BaseModel):
         str,
         PydanticField(
             default="gpt-5-mini",
-            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent, venice-uncensored",
+            description="AI model identifier to be used by this agent for processing requests.",
             json_schema_extra={
                 "x-group": "ai",
             },
@@ -776,13 +776,20 @@ class AgentUpdate(BaseModel):
         ),
     ]
     wallet_provider: Annotated[
-        Optional[Literal["cdp"]],
+        Optional[Literal["cdp", "readonly"]],
         PydanticField(
             default="cdp",
             description="Provider of the agent's wallet",
             json_schema_extra={
                 "x-group": "onchain",
             },
+        ),
+    ]
+    readonly_wallet_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     network_id: Annotated[
@@ -829,38 +836,6 @@ class AgentUpdate(BaseModel):
             description="Network identifier for CDP integration",
             json_schema_extra={
                 "x-group": "deprecated",
-            },
-        ),
-    ]
-    # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
-    twitter_entrypoint_enabled: Annotated[
-        Optional[bool],
-        PydanticField(
-            default=False,
-            description="Dangerous, reply all mentions from x.com",
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
-        ),
-    ]
-    twitter_entrypoint_prompt: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Extra prompt for twitter entrypoint",
-            max_length=10000,
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
-        ),
-    ]
-    twitter_config: Annotated[
-        Optional[dict],
-        PydanticField(
-            default=None,
-            description="You must use your own key for twitter entrypoint, it is separated from twitter skills",
-            json_schema_extra={
-                "x-group": "entrypoint",
             },
         ),
     ]
