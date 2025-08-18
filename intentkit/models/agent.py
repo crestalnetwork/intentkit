@@ -1649,7 +1649,7 @@ class AgentResponse(BaseModel):
         ),
     ]
     wallet_provider: Annotated[
-        Optional[Literal["cdp"]],
+        Optional[Literal["cdp", "readonly"]],
         PydanticField(
             default="cdp",
             description="Provider of the agent's wallet",
