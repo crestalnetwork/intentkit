@@ -90,7 +90,7 @@ async def _process_agent_post_actions(
     """
     agent_data = None
 
-    if config.cdp_api_key_id:
+    if config.cdp_api_key_id and agent.wallet_provider == "cdp":
         cdp_client = await get_cdp_client(agent.id, skill_store)
         await cdp_client.get_wallet_provider()
 
