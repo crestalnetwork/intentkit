@@ -1,3 +1,15 @@
+## v0.6.16
+
+### 🐛 Bug Fixes
+- **Agent Generator**: Fixed missing wallet_provider default configuration in agent schema generation
+- **Schema Updates**: Updated agent schema JSON to reflect latest configuration requirements
+
+### 🔧 Improvements
+- Enhanced agent generator to include CDP wallet provider as default
+- Improved agent configuration consistency
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.15...v0.6.16
+
 ## v0.6.15
 
 ### 🔧 Improvements
