@@ -287,6 +287,11 @@ class AgentTable(Base):
         nullable=True,
         comment="Provider of the agent's wallet",
     )
+    readonly_wallet_address = Column(
+        String,
+        nullable=True,
+        comment="Readonly wallet address of the agent",
+    )
     network_id = Column(
         String,
         nullable=True,
