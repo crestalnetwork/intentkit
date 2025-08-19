@@ -1,3 +1,13 @@
+## v0.6.14
+
+### 🐛 Bug Fixes
+- **Readonly Wallet Address**: Fixed readonly_wallet_address issue
+
+### 🔧 Changes
+- Fixed readonly wallet address handling
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.13...v0.6.14
+
 ## v0.6.12
 
 ### 🔧 Improvements
