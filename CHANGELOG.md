@@ -1,3 +1,14 @@
+## v0.6.15
+
+### 🔧 Improvements
+- **Validation Logging**: Enhanced error logging in schema validation for better debugging
+- **Documentation**: Updated changelog with v0.6.14 release notes
+
+### 🐛 Bug Fixes
+- Improved error handling and logging in generator validation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.14...v0.6.15
+
 ## v0.6.14
 
 ### 🐛 Bug Fixes
