@@ -45,9 +45,11 @@ async def validate_schema_against_json_schema(
     except jsonschema.exceptions.ValidationError as e:
         result.valid = False
         result.errors.append(_format_validation_error(e))
+        logger.error(f"Schema validation failed: {data}")
     except Exception as e:
         result.valid = False
         result.errors.append(f"Schema validation failed: {str(e)}")
+        logger.error(f"Schema validation failed: {data}")
 
     return result
 
