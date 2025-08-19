@@ -149,6 +149,7 @@ async def _generate_new_agent_schema(
         "skills": skills_config,
         "model": "gpt-4.1-nano",  # Default model
         "temperature": 0.7,
+        "wallet_provider": "cdp",
     }
 
     # Add autonomous configuration if detected

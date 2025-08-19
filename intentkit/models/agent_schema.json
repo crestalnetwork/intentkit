@@ -710,17 +710,6 @@
       "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
       "x-group": "examples"
     },
-    "wallet_provider": {
-      "title": "Wallet Provider",
-      "type": "string",
-      "description": "Provider of the agent's wallet",
-      "enum": [
-        "cdp",
-        "readonly"
-      ],
-      "default": "cdp",
-      "x-group": "onchain"
-    },
     "network_id": {
       "title": "Network ID",
       "type": "string",
@@ -740,9 +729,19 @@
         "solana"
       ],
       "x-group": "internal"
+    },
+    "wallet_provider": {
+      "title": "Wallet Provider",
+      "type": "string",
+      "description": "Provider of the agent's wallet, choose cdp if you want the agent to have it's own wallet.",
+      "enum": [
+        "cdp",
+        "readonly"
+      ],
+      "default": "cdp",
+      "x-group": "basic"
     }
   },
-  "additionalProperties": false,
   "if": {
     "properties": {
       "wallet_provider": {
@@ -757,11 +756,12 @@
         "type": "string",
         "description": "Wallet address for readonly wallet provider",
         "maxLength": 100,
-        "x-group": "onchain"
+        "x-group": "basic"
       }
     },
     "required": [
       "readonly_wallet_address"
     ]
-  }
+  },
+  "additionalProperties": true
 }
