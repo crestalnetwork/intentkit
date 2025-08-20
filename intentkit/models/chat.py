@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Annotated, List, NotRequired, Optional, TypedDict
 
 from epyxid import XID
+from intentkit.models.app_setting import AppSetting, SystemMessageType
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from pydantic import BaseModel, ConfigDict, Field
@@ -384,6 +385,40 @@ class ChatMessageCreate(BaseModel):
             resp = await self.save_in_session(db)
             await db.commit()
             return resp
+
+    @classmethod
+    async def from_system_message(
+        cls,
+        message_type: SystemMessageType,
+        agent_id: str,
+        chat_id: str,
+        user_id: str,
+        author_id: str,
+        thread_type: AuthorType,
+        reply_to: str,
+        time_cost: float = 0.0,
+    ) -> "ChatMessageCreate":
+        """Create a system message.
+
+        Returns:
+            ChatMessageCreate: The created system message
+        """
+
+        # Get error message (configured or default)
+        message = await AppSetting.error_message(message_type)
+
+        return cls(
+            id=str(XID()),
+            agent_id=agent_id,
+            chat_id=chat_id,
+            user_id=user_id,
+            author_id=author_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=thread_type,
+            reply_to=reply_to,
+            message=message,
+            time_cost=time_cost,
+        )
 
 
 class ChatMessage(ChatMessageCreate):

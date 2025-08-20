@@ -1,14 +1,40 @@
-import json
+import time
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, Any, List
+from enum import Enum
+from typing import Annotated, Any, Dict, List
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Column, DateTime, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+
+class SystemMessageType(str, Enum):
+    """Type of system message."""
+
+    SERVICE_FEE_ERROR = "service_fee_error"
+    DAILY_USAGE_LIMIT_EXCEEDED = "daily_usage_limit_exceeded"
+    INSUFFICIENT_BALANCE = "insufficient_balance"
+    AGENT_INTERNAL_ERROR = "agent_internal_error"
+    STEP_LIMIT_EXCEEDED = "step_limit_exceeded"
+    SKILL_INTERRUPTED = "skill_interrupted"
+
+
+# Default system messages
+DEFAULT_SYSTEM_MESSAGES = {
+    "service_fee_error": "Please lower this Agent's service fee to meet the allowed maximum.",
+    "daily_usage_limit_exceeded": "This Agent has reached its free daily usage limit. Add credits to continue, or wait until tomorrow.",
+    "insufficient_balance": "You don't have enough credits to complete this action.",
+    "agent_internal_error": "Something went wrong. Please try again.",
+    "step_limit_exceeded": "This Agent tried to process too many steps. Try again with @super for higher step limit.",
+    "skill_interrupted": "You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
+}
+
+# In-memory cache for app settings
+_cache: Dict[str, Dict[str, Any]] = {}
+_cache_ttl = 180  # 3 minutes in seconds
 
 
 class AppSettingTable(Base):
@@ -133,31 +159,23 @@ class AppSetting(BaseModel):
 
     @staticmethod
     async def payment() -> PaymentSettings:
-        """Get payment settings from the database with Redis caching.
+        """Get payment settings from the database with in-memory caching.
 
-        The settings are cached in Redis for 3 minutes.
+        The settings are cached in memory for 3 minutes.
 
         Returns:
             PaymentSettings: Payment settings
         """
-        # Redis cache key for payment settings
-        cache_key = "intentkit:app:settings:payment"
-        cache_ttl = 180  # 3 minutes in seconds
+        cache_key = "payment"
+        current_time = time.time()
 
-        # Try to get from Redis cache first
-        redis = get_redis()
-        cached_data = await redis.get(cache_key)
+        # Check if we have cached data and it's still valid
+        if cache_key in _cache:
+            cache_entry = _cache[cache_key]
+            if current_time - cache_entry["timestamp"] < _cache_ttl:
+                return PaymentSettings(**cache_entry["data"])
 
-        if cached_data:
-            # If found in cache, deserialize and return
-            try:
-                payment_data = json.loads(cached_data)
-                return PaymentSettings(**payment_data)
-            except (json.JSONDecodeError, TypeError):
-                # If cache is corrupted, invalidate it
-                await redis.delete(cache_key)
-
-        # If not in cache or cache is invalid, get from database
+        # If not in cache or cache is expired, get from database
         async with get_session() as session:
             # Query the database for the payment settings
             stmt = select(AppSettingTable).where(AppSettingTable.key == "payment")
@@ -170,11 +188,56 @@ class AppSetting(BaseModel):
                 # Convert the JSON value to PaymentSettings
                 payment_settings = PaymentSettings(**setting.value)
 
-            # Cache the settings in Redis
-            await redis.set(
-                cache_key,
-                json.dumps(payment_settings.model_dump(mode="json")),
-                ex=cache_ttl,
-            )
+            # Cache the settings in memory
+            _cache[cache_key] = {
+                "data": payment_settings.model_dump(mode="json"),
+                "timestamp": current_time,
+            }
 
             return payment_settings
+
+    @staticmethod
+    async def error_message(message_type: SystemMessageType) -> str:
+        """Get error message from the database with in-memory caching, fallback to default.
+
+        The settings are cached in memory for 3 minutes.
+
+        Args:
+            message_type: The SystemMessageType enum
+
+        Returns:
+            str: Error message from config or default message
+        """
+        cache_key = "errors"
+        current_time = time.time()
+        message_key = message_type.value
+
+        # Check if we have cached data and it's still valid
+        if cache_key in _cache:
+            cache_entry = _cache[cache_key]
+            if current_time - cache_entry["timestamp"] < _cache_ttl:
+                errors_data = cache_entry["data"]
+                if errors_data and message_key in errors_data:
+                    return errors_data[message_key]
+                # Return default message if not found in config
+                return DEFAULT_SYSTEM_MESSAGES[message_key]
+
+        # If not in cache or cache is expired, get from database
+        async with get_session() as session:
+            # Query the database for the errors settings
+            stmt = select(AppSettingTable).where(AppSettingTable.key == "errors")
+            setting = await session.scalar(stmt)
+
+            # If settings don't exist, cache None
+            errors_data = setting.value if setting else None
+
+            # Cache the settings in memory
+            _cache[cache_key] = {
+                "data": errors_data,
+                "timestamp": current_time,
+            }
+
+            # Return configured message if exists, otherwise return default
+            if errors_data and message_key in errors_data:
+                return errors_data[message_key]
+            return DEFAULT_SYSTEM_MESSAGES[message_key]

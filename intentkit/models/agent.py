@@ -369,23 +369,6 @@ class AgentTable(Base):
         default="base-mainnet",
         comment="Network identifier for CDP integration",
     )
-    # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
-    twitter_entrypoint_enabled = Column(
-        Boolean,
-        nullable=True,
-        default=False,
-        comment="Dangerous, reply all mentions from x.com",
-    )
-    twitter_entrypoint_prompt = Column(
-        String,
-        nullable=True,
-        comment="Extra prompt for twitter entrypoint",
-    )
-    twitter_config = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="You must use your own key for twitter entrypoint, it is separated from twitter skills",
-    )
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled = Column(
         Boolean,

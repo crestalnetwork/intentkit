@@ -13,11 +13,11 @@ from pydantic import (
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
 
-from intentkit.abstracts.exception import RateLimitExceeded
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
+from intentkit.utils.error import RateLimitExceeded
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]

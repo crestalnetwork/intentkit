@@ -23,6 +23,7 @@ from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.agent import Agent, AgentResponse
 from intentkit.models.agent_data import AgentData
+from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -557,30 +558,17 @@ async def retry_message(
 
     # If last message is from skill, provide warning message
     if last_message.author_type == AuthorType.SKILL:
-        error_message = ChatMessageCreate(
-            id=str(XID()),
+        error_message_create = await ChatMessageCreate.from_system_message(
+            SystemMessageType.SKILL_INTERRUPTED,
             agent_id=agent_id,
             chat_id=chat_id,
             user_id=real_user_id,
             author_id=agent_id,
-            author_type=AuthorType.SYSTEM,
-            thread_type=last_message.author_type,
-            reply_to=last_message.reply_to,
-            message="You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
-            attachments=None,
-            model=None,
-            skill_calls=None,
-            input_tokens=0,
-            output_tokens=0,
+            thread_type=last_message.thread_type,
+            reply_to=last_message.id,
             time_cost=0.0,
-            credit_event_id=None,
-            credit_cost=None,
-            cold_start_cost=0.0,
-            app_id=last_message.app_id,
-            search_mode=None,
-            super_mode=None,
         )
-        await error_message.save()
+        error_message = await error_message_create.save()
         return [last_message, error_message]
 
     # If last message is from user, generate a new response
