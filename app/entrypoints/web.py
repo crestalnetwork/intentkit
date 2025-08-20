@@ -37,6 +37,7 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageRequest,
     ChatMessageTable,
+    SystemMessageType,
 )
 from intentkit.models.db import get_db
 
@@ -362,19 +363,16 @@ async def retry_chat_deprecated(
         return last_message
 
     if last_message.author_type == AuthorType.SKILL:
-        error_message = ChatMessageCreate(
-            id=str(XID()),
+        error_message_create = ChatMessageCreate.from_system_message(
+            SystemMessageType.SKILL_INTERRUPTED,
             agent_id=aid,
             chat_id=chat_id,
             user_id=last_message.user_id,
             author_id=aid,
-            author_type=AuthorType.SYSTEM,
-            thread_type=last_message.author_type,
-            reply_to=last_message.reply_to,
-            message="You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
-            attachments=None,
+            thread_type=last_message.thread_type,
+            reply_to=last_message.id,
         )
-        await error_message.save()
+        error_message = await error_message_create.save()
         return error_message
 
     # If last message is from user, generate a new agent response
@@ -446,19 +444,16 @@ async def retry_chat(
         return [last_message]
 
     if last_message.author_type == AuthorType.SKILL:
-        error_message = ChatMessageCreate(
-            id=str(XID()),
+        error_message_create = ChatMessageCreate.from_system_message(
+            SystemMessageType.SKILL_INTERRUPTED,
             agent_id=aid,
             chat_id=chat_id,
             user_id=last_message.user_id,
             author_id=aid,
-            author_type=AuthorType.SYSTEM,
-            thread_type=last_message.author_type,
-            reply_to=last_message.reply_to,
-            message="You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
-            attachments=None,
+            thread_type=last_message.thread_type,
+            reply_to=last_message.id,
         )
-        await error_message.save()
+        error_message = await error_message_create.save()
         return [last_message, error_message]
 
     # If last message is from user, generate a new agent response

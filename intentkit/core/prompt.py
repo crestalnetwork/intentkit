@@ -417,9 +417,11 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
                     break
 
         system_prompt = [("system", final_system_prompt)]
-        return prompt_temp.invoke({
-            "messages": state["messages"],
-            "system_prompt": system_prompt,
-        })
+        return prompt_temp.invoke(
+            {
+                "messages": state["messages"],
+                "system_prompt": system_prompt,
+            }
+        )
 
     return formatted_prompt

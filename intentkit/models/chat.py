@@ -25,6 +25,27 @@ from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+class SystemMessageType(str, Enum):
+    """Type of system message."""
+
+    SERVICE_FEE_ERROR = "service_fee_error"
+    DAILY_USAGE_LIMIT_EXCEEDED = "daily_usage_limit_exceeded"
+    INSUFFICIENT_BALANCE = "insufficient_balance"
+    AGENT_INTERNAL_ERROR = "agent_internal_error"
+    STEP_LIMIT_EXCEEDED = "step_limit_exceeded"
+    SKILL_INTERRUPTED = "skill_interrupted"
+
+
+default_system_messages = {
+    SystemMessageType.SERVICE_FEE_ERROR: "Please lower this Agent's service fee to meet the allowed maximum.",
+    SystemMessageType.DAILY_USAGE_LIMIT_EXCEEDED: "This Agent has reached its free daily usage limit. Add credits to continue, or wait until tomorrow.",
+    SystemMessageType.INSUFFICIENT_BALANCE: "You don't have enough credits to complete this action.",
+    SystemMessageType.AGENT_INTERNAL_ERROR: "Something went wrong. Please try again.",
+    SystemMessageType.STEP_LIMIT_EXCEEDED: "This Agent tried to process too many steps. Try again with @super for higher step limit.",
+    SystemMessageType.SKILL_INTERRUPTED: "You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
+}
+
+
 class ChatMessageAttachmentType(str, Enum):
     """Type of chat message attachment."""
 
@@ -384,6 +405,37 @@ class ChatMessageCreate(BaseModel):
             resp = await self.save_in_session(db)
             await db.commit()
             return resp
+
+    @classmethod
+    def from_system_message(
+        cls,
+        message_type: SystemMessageType,
+        agent_id: str,
+        chat_id: str,
+        user_id: str,
+        author_id: str,
+        thread_type: AuthorType,
+        reply_to: str,
+        time_cost: float = 0.0,
+    ) -> "ChatMessageCreate":
+        """Create a system message.
+
+        Returns:
+            ChatMessageCreate: The created system message
+        """
+        message = default_system_messages[message_type]
+        return cls(
+            id=str(XID()),
+            agent_id=agent_id,
+            chat_id=chat_id,
+            user_id=user_id,
+            author_id=author_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=thread_type,
+            reply_to=reply_to,
+            message=message,
+            time_cost=time_cost,
+        )
 
 
 class ChatMessage(ChatMessageCreate):

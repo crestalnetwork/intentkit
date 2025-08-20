@@ -11,6 +11,8 @@ from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 
 logger = logging.getLogger(__name__)
 
+# error messages in agent system message response
+
 
 class RateLimitExceeded(Exception):
     """Rate limit exceeded"""
