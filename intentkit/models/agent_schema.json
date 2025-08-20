@@ -15,13 +15,13 @@
       "order": 2
     },
     {
-      "id": "examples",
-      "title": "Quick Actions",
+      "id": "onchain",
+      "title": "On-Chain",
       "order": 3
     },
     {
-      "id": "onchain",
-      "title": "On-Chain",
+      "id": "examples",
+      "title": "Quick Actions",
       "order": 4
     },
     {
@@ -73,7 +73,7 @@
       "description": "Ticker symbol of the agent",
       "maxLength": 10,
       "minLength": 1,
-      "x-group": "basic",
+      "x-group": "internal",
       "x-placeholder": "Enter agent ticker"
     },
     "token_address": {
@@ -401,53 +401,6 @@
         }
       }
     },
-    "twitter_entrypoint_enabled": {
-      "title": "Enable X Communication",
-      "type": "boolean",
-      "description": "Agent replies automatically to all X mentions (use cautiously)",
-      "default": false,
-      "x-group": "deprecated"
-    },
-    "twitter_entrypoint_prompt": {
-      "title": "X Entry Prompt",
-      "type": "string",
-      "description": "Extra prompt for X entrypoint",
-      "maxLength": 10000,
-      "x-str-type": "prompt",
-      "x-group": "deprecated"
-    },
-    "twitter_config": {
-      "title": "Enter your X API key",
-      "type": "object",
-      "description": "You must use your own key for X entrypoint, it is separated from X skills",
-      "x-group": "deprecated",
-      "properties": {
-        "consumer_key": {
-          "type": "string",
-          "title": "X API consumer key",
-          "description": "X API consumer key",
-          "maxLength": 100
-        },
-        "consumer_secret": {
-          "type": "string",
-          "title": "X API consumer secret",
-          "description": "X API consumer secret",
-          "maxLength": 100
-        },
-        "access_token": {
-          "type": "string",
-          "title": "X API access token",
-          "description": "X API access token",
-          "maxLength": 100
-        },
-        "access_token_secret": {
-          "type": "string",
-          "title": "X API access token secret",
-          "description": "X API access token secret",
-          "maxLength": 100
-        }
-      }
-    },
     "skills": {
       "title": "Skills",
       "type": "object",
@@ -710,10 +663,25 @@
       "description": "Quick clickable actions users can use with the agent without having to type any text instructions.",
       "x-group": "examples"
     },
-    "network_id": {
-      "title": "Network ID",
+    "wallet_provider": {
+      "title": "Wallet Provider",
       "type": "string",
-      "description": "Network identifier",
+      "description": "Provider of the agent's wallet, choose cdp if you want the agent to have it's own wallet.",
+      "enum": [
+        "cdp",
+        "readonly"
+      ],
+      "x-enum-title": [
+        "Coinbase Server Wallet V2",
+        "Readonly Wallet"
+      ],
+      "default": "cdp",
+      "x-group": "onchain"
+    },
+    "network_id": {
+      "title": "Default Network",
+      "type": "string",
+      "description": "Default Network",
       "default": "base-mainnet",
       "enum": [
         "ethereum-mainnet",
@@ -728,18 +696,7 @@
         "optimism-sepolia",
         "solana"
       ],
-      "x-group": "internal"
-    },
-    "wallet_provider": {
-      "title": "Wallet Provider",
-      "type": "string",
-      "description": "Provider of the agent's wallet, choose cdp if you want the agent to have it's own wallet.",
-      "enum": [
-        "cdp",
-        "readonly"
-      ],
-      "default": "cdp",
-      "x-group": "basic"
+      "x-group": "onchain"
     }
   },
   "if": {
@@ -756,7 +713,7 @@
         "type": "string",
         "description": "Wallet address for readonly wallet provider",
         "maxLength": 100,
-        "x-group": "basic"
+        "x-group": "onchain"
       }
     },
     "required": [

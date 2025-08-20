@@ -292,7 +292,6 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Option
     Build entrypoint-specific prompt based on context.
 
     Supports different entrypoint types:
-    - Twitter: Uses agent.twitter_entrypoint_prompt
     - Telegram: Uses agent.telegram_entrypoint_prompt
     - Autonomous tasks: Builds task-specific prompt with scheduling info
 
@@ -418,11 +417,9 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
                     break
 
         system_prompt = [("system", final_system_prompt)]
-        return prompt_temp.invoke(
-            {
-                "messages": state["messages"],
-                "system_prompt": system_prompt,
-            }
-        )
+        return prompt_temp.invoke({
+            "messages": state["messages"],
+            "system_prompt": system_prompt,
+        })
 
     return formatted_prompt

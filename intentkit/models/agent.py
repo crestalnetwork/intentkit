@@ -369,23 +369,6 @@ class AgentTable(Base):
         default="base-mainnet",
         comment="Network identifier for CDP integration",
     )
-    # if twitter_enabled, the twitter_entrypoint will be enabled, twitter_config will be checked
-    twitter_entrypoint_enabled = Column(
-        Boolean,
-        nullable=True,
-        default=False,
-        comment="Dangerous, reply all mentions from x.com",
-    )
-    twitter_entrypoint_prompt = Column(
-        String,
-        nullable=True,
-        comment="Extra prompt for twitter entrypoint",
-    )
-    twitter_config = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="You must use your own key for twitter entrypoint, it is separated from twitter skills",
-    )
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled = Column(
         Boolean,
@@ -1852,21 +1835,19 @@ class AgentResponse(BaseModel):
         )
 
         # Add processed fields to response
-        data.update(
-            {
-                "cdp_wallet_address": cdp_wallet_address,
-                "evm_wallet_address": evm_wallet_address,
-                "solana_wallet_address": solana_wallet_address,
-                "has_twitter_linked": has_twitter_linked,
-                "linked_twitter_username": linked_twitter_username,
-                "linked_twitter_name": linked_twitter_name,
-                "has_twitter_self_key": has_twitter_self_key,
-                "has_telegram_self_key": has_telegram_self_key,
-                "linked_telegram_username": linked_telegram_username,
-                "linked_telegram_name": linked_telegram_name,
-                "accept_image_input": accept_image_input,
-                "accept_image_input_private": accept_image_input_private,
-            }
-        )
+        data.update({
+            "cdp_wallet_address": cdp_wallet_address,
+            "evm_wallet_address": evm_wallet_address,
+            "solana_wallet_address": solana_wallet_address,
+            "has_twitter_linked": has_twitter_linked,
+            "linked_twitter_username": linked_twitter_username,
+            "linked_twitter_name": linked_twitter_name,
+            "has_twitter_self_key": has_twitter_self_key,
+            "has_telegram_self_key": has_telegram_self_key,
+            "linked_telegram_username": linked_telegram_username,
+            "linked_telegram_name": linked_telegram_name,
+            "accept_image_input": accept_image_input,
+            "accept_image_input_private": accept_image_input_private,
+        })
 
         return cls.model_validate(data)
