@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence
+from typing import Optional, Sequence
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
@@ -10,6 +10,14 @@ from starlette.responses import JSONResponse, Response
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 
 logger = logging.getLogger(__name__)
+
+
+class RateLimitExceeded(Exception):
+    """Rate limit exceeded"""
+
+    def __init__(self, message: Optional[str] = "Rate limit exceeded"):
+        self.message = message
+        super().__init__(self.message)
 
 
 class IntentKitAPIError(Exception):
