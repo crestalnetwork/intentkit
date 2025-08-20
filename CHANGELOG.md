@@ -31,6 +31,26 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.13...v0.6.14
 
+## v0.6.13
+
+### ✨ New Features
+- **Readonly Wallet Support**: Added readonly wallet provider and functionality
+- **Agent API Streaming**: Implemented SSE (Server-Sent Events) for chat stream mode in agent API
+- **Internal Stream Client**: Added internal streaming client capabilities
+- **Entrypoint System Prompts**: Added system prompt support for entrypoints, including XMTP entrypoint prompts
+- **Agent Model Configuration**: Updated agent model configuration system
+
+### 🔧 Improvements
+- **Documentation**: Updated changelog and LLM documentation
+- **Twitter Entrypoint**: Removed deprecated Twitter entrypoint
+
+### 🐛 Bug Fixes
+- **Agent Context Type**: Fixed agent context type issues
+- **Error Messages**: Improved error message handling
+
+### Diff
+[Compare v0.6.12...v0.6.13](https://github.com/crestalnetwork/intentkit/compare/v0.6.12...v0.6.13)
+
 ## v0.6.12
 
 ### 🔧 Improvements
