@@ -430,10 +430,12 @@ async def stream_agent(message: ChatMessageCreate):
             ]
         else:
             # anyway, pass it directly to LLM
-            content.extend([
-                {"type": "image_url", "image_url": {"url": image_url}}
-                for image_url in image_urls
-            ])
+            content.extend(
+                [
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                    for image_url in image_urls
+                ]
+            )
 
     messages = [
         HumanMessage(content=content),
