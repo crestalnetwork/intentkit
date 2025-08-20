@@ -29,6 +29,7 @@ from intentkit.core.engine import execute_agent, thread_stats
 from intentkit.core.prompt import agent_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
+from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -37,7 +38,6 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageRequest,
     ChatMessageTable,
-    SystemMessageType,
 )
 from intentkit.models.db import get_db
 
@@ -363,7 +363,7 @@ async def retry_chat_deprecated(
         return last_message
 
     if last_message.author_type == AuthorType.SKILL:
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.SKILL_INTERRUPTED,
             agent_id=aid,
             chat_id=chat_id,
@@ -444,7 +444,7 @@ async def retry_chat(
         return [last_message]
 
     if last_message.author_type == AuthorType.SKILL:
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.SKILL_INTERRUPTED,
             agent_id=aid,
             chat_id=chat_id,

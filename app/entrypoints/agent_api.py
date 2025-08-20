@@ -23,6 +23,7 @@ from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.agent import Agent, AgentResponse
 from intentkit.models.agent_data import AgentData
+from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -31,7 +32,6 @@ from intentkit.models.chat import (
     ChatMessageAttachment,
     ChatMessageCreate,
     ChatMessageTable,
-    SystemMessageType,
 )
 from intentkit.models.db import get_db
 
@@ -558,7 +558,7 @@ async def retry_message(
 
     # If last message is from skill, provide warning message
     if last_message.author_type == AuthorType.SKILL:
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.SKILL_INTERRUPTED,
             agent_id=agent_id,
             chat_id=chat_id,

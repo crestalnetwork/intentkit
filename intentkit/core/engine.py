@@ -44,13 +44,12 @@ from intentkit.core.prompt import (
 from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
-from intentkit.models.app_setting import AppSetting
+from intentkit.models.app_setting import AppSetting, SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     ChatMessage,
     ChatMessageCreate,
     ChatMessageSkillCall,
-    SystemMessageType,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
@@ -299,7 +298,7 @@ async def stream_agent(message: ChatMessageCreate):
         if agent.fee_percentage and agent.fee_percentage > 100:
             owner = await User.get(agent.owner)
             if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
-                error_message_create = ChatMessageCreate.from_system_message(
+                error_message_create = await ChatMessageCreate.from_system_message(
                     SystemMessageType.SERVICE_FEE_ERROR,
                     agent_id=input.agent_id,
                     chat_id=input.chat_id,
@@ -335,7 +334,7 @@ async def stream_agent(message: ChatMessageCreate):
             abuse_check = False
         if abuse_check and payer != agent.owner and user_account.free_credits > 0:
             if quota and quota.free_income_daily > 24000:
-                error_message_create = ChatMessageCreate.from_system_message(
+                error_message_create = await ChatMessageCreate.from_system_message(
                     SystemMessageType.DAILY_USAGE_LIMIT_EXCEEDED,
                     agent_id=input.agent_id,
                     chat_id=input.chat_id,
@@ -353,7 +352,7 @@ async def stream_agent(message: ChatMessageCreate):
         if quota and quota.avg_action_cost > 0:
             avg_count = quota.avg_action_cost
         if not user_account.has_sufficient_credits(avg_count):
-            error_message_create = ChatMessageCreate.from_system_message(
+            error_message_create = await ChatMessageCreate.from_system_message(
                 SystemMessageType.INSUFFICIENT_BALANCE,
                 agent_id=input.agent_id,
                 chat_id=input.chat_id,
@@ -431,12 +430,10 @@ async def stream_agent(message: ChatMessageCreate):
             ]
         else:
             # anyway, pass it directly to LLM
-            content.extend(
-                [
-                    {"type": "image_url", "image_url": {"url": image_url}}
-                    for image_url in image_urls
-                ]
-            )
+            content.extend([
+                {"type": "image_url", "image_url": {"url": image_url}}
+                for image_url in image_urls
+            ])
 
     messages = [
         HumanMessage(content=content),
@@ -718,15 +715,17 @@ async def stream_agent(message: ChatMessageCreate):
                                 cold_start_cost = 0
                             post_model_message = await post_model_message_create.save()
                             yield post_model_message
-                        error_message_create = ChatMessageCreate.from_system_message(
-                            SystemMessageType.INSUFFICIENT_BALANCE,
-                            agent_id=input.agent_id,
-                            chat_id=input.chat_id,
-                            user_id=input.user_id,
-                            author_id=input.agent_id,
-                            thread_type=input.author_type,
-                            reply_to=input.id,
-                            time_cost=0,
+                        error_message_create = (
+                            await ChatMessageCreate.from_system_message(
+                                SystemMessageType.INSUFFICIENT_BALANCE,
+                                agent_id=input.agent_id,
+                                chat_id=input.chat_id,
+                                user_id=input.user_id,
+                                author_id=input.agent_id,
+                                thread_type=input.author_type,
+                                reply_to=input.id,
+                                time_cost=0,
+                            )
                         )
                         error_message = await error_message_create.save()
                         yield error_message
@@ -742,7 +741,7 @@ async def stream_agent(message: ChatMessageCreate):
             f"failed to execute agent: {str(e)}\n{error_traceback}",
             extra={"thread_id": thread_id},
         )
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.AGENT_INTERNAL_ERROR,
             agent_id=input.agent_id,
             chat_id=input.chat_id,
@@ -761,7 +760,7 @@ async def stream_agent(message: ChatMessageCreate):
             f"reached recursion limit: {str(e)}\n{error_traceback}",
             extra={"thread_id": thread_id, "agent_id": input.agent_id},
         )
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.STEP_LIMIT_EXCEEDED,
             agent_id=input.agent_id,
             chat_id=input.chat_id,
@@ -780,7 +779,7 @@ async def stream_agent(message: ChatMessageCreate):
             f"failed to execute agent: {str(e)}\n{error_traceback}",
             extra={"thread_id": thread_id, "agent_id": input.agent_id},
         )
-        error_message_create = ChatMessageCreate.from_system_message(
+        error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.AGENT_INTERNAL_ERROR,
             agent_id=input.agent_id,
             chat_id=input.chat_id,
