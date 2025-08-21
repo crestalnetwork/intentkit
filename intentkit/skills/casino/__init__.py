@@ -6,8 +6,8 @@ from typing import TypedDict
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.casino.base import CasinoBaseTool
-from intentkit.skills.casino.deck_shuffle import CasinoDeckShuffle
 from intentkit.skills.casino.deck_draw import CasinoDeckDraw
+from intentkit.skills.casino.deck_shuffle import CasinoDeckShuffle
 from intentkit.skills.casino.dice_roll import CasinoDiceRoll
 
 # Cache skills at the system level, because they are stateless
@@ -35,12 +35,12 @@ async def get_skills(
     **_,
 ) -> list[CasinoBaseTool]:
     """Get all Casino skills.
-    
+
     Args:
         config: The configuration for Casino skills.
         is_private: Whether to include private skills.
         store: The skill store for persisting data.
-        
+
     Returns:
         A list of Casino skills.
     """

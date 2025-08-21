@@ -40,56 +40,61 @@ MIN_CARDS_DRAW = 1
 MAX_DICE_COUNT = 10
 MIN_DICE_COUNT = 1
 
+
 def get_dice_visual(dice_results: list[int]) -> list[str]:
     """Convert dice numbers to emoji representation.
-    
+
     Args:
         dice_results: List of dice roll results (1-6)
-        
+
     Returns:
         List of dice emoji strings
     """
     return [DICE_EMOJI[result - 1] for result in dice_results if 1 <= result <= 6]
 
+
 def validate_deck_count(count: int) -> int:
     """Validate and normalize deck count.
-    
+
     Args:
         count: Requested deck count
-        
+
     Returns:
         Normalized deck count within valid range
     """
     return max(MIN_DECK_COUNT, min(MAX_DECK_COUNT, count))
 
+
 def validate_card_count(count: int) -> int:
     """Validate and normalize card draw count.
-    
+
     Args:
         count: Requested card count
-        
+
     Returns:
         Normalized card count within valid range
     """
     return max(MIN_CARDS_DRAW, min(MAX_CARDS_DRAW, count))
 
+
 def validate_dice_count(count: int) -> int:
     """Validate and normalize dice count.
-    
+
     Args:
         count: Requested dice count
-        
+
     Returns:
         Normalized dice count within valid range
     """
     return max(MIN_DICE_COUNT, min(MAX_DICE_COUNT, count))
 
+
 def format_card_info(card: dict) -> dict:
     """Format card information for consistent output.
-    
+
     Args:
         card: Raw card data from Deck of Cards API
-        
+
     Returns:
         Formatted card information
     """
@@ -98,5 +103,5 @@ def format_card_info(card: dict) -> dict:
         "suit": card["suit"],
         "code": card["code"],
         "image": card["image"],
-        "svg_image": card["images"]["svg"]
+        "svg_image": card["images"]["svg"],
     }
