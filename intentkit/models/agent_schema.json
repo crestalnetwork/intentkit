@@ -547,6 +547,10 @@
         "lifi": {
           "title": "LiFi",
           "$ref": "../skills/lifi/schema.json"
+        },
+        "casino": {
+          "title": "Casino",
+          "$ref": "../skills/casino/schema.json"
         }
       }
     },

@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Casino",
+  "description": "Casino gaming skills including card decks and quantum dice rolling for interactive games with users",
+  "x-icon": "https://ai.service.crestal.dev/skills/casino/casino.png",
+  "x-tags": [
+    "Gaming",
+    "Entertainment"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "deck_shuffle": {
+          "type": "string",
+          "title": "Shuffle Card Deck",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Create and shuffle new card decks with customizable options",
+          "default": "disabled"
+        },
+        "deck_draw": {
+          "type": "string",
+          "title": "Draw Cards",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Draw cards from the current deck with detailed card information and images",
+          "default": "disabled"
+        },
+        "dice_roll": {
+          "type": "string",
+          "title": "Roll Quantum Dice",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Roll dice using quantum random number generation for true randomness",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each Casino skill"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
