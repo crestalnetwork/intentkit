@@ -1,3 +1,15 @@
+## v0.6.18
+
+### New Features
+- **Casino Skills**: Added comprehensive gambling and gaming skill set for interactive agent entertainment
+    - **Deck Shuffling**: Multi-deck support with customizable jokers for Blackjack and card games
+    - **Card Drawing**: Visual card display with PNG/SVG images for interactive gameplay
+    - **Quantum Dice Rolling**: True quantum randomness using QRandom API for authentic dice games
+    - **State Management**: Persistent game sessions with deck tracking and rate limiting
+    - **Gaming APIs**: Integration with Deck of Cards API and QRandom quantum random number generator
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.17...v0.6.18
+
 ## v0.6.17
 
 ### ✨ New Features

@@ -168,9 +168,7 @@ cython_debug/
 # IDE
 .idea
 .vscode
-.trae
 .cursor
-.windsurfrules
 
 # web3
 wallet_data.txt
