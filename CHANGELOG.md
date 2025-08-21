@@ -1,3 +1,22 @@
+## v0.6.17
+
+### ✨ New Features
+- **Error Tracking**: Add error_type field to chat message model for better error tracking
+
+### 🔧 Improvements
+- **Core Engine**: Refactor core engine and update models for better performance
+- **System Messages**: Refactor system messages handling
+- **Error Handling**: Refactor error handling system
+
+### 🐛 Bug Fixes
+- **Wallet Provider**: Fix wallet provider JSON configuration
+- **Linting**: Fix linting issues
+
+### 📚 Documentation
+- Update changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.16...v0.6.17
+
 ## v0.6.16
 
 ### 🐛 Bug Fixes
