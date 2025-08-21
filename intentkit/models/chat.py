@@ -277,6 +277,10 @@ class ChatMessageTable(Base):
         Boolean,
         nullable=True,
     )
+    error_type = Column(
+        String,
+        nullable=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -362,6 +366,10 @@ class ChatMessageCreate(BaseModel):
         Optional[bool],
         Field(None, description="Optional flag to enable super mode"),
     ]
+    error_type: Annotated[
+        Optional[SystemMessageType],
+        Field(None, description="Optional error type, used when author_type is system"),
+    ]
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
@@ -418,6 +426,7 @@ class ChatMessageCreate(BaseModel):
             reply_to=reply_to,
             message=message,
             time_cost=time_cost,
+            error_type=message_type,
         )
 
 
