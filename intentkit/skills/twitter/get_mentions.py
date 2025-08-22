@@ -41,8 +41,8 @@ class TwitterGetMentions(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterGetMentionsInput
 
     async def _arun(self, **kwargs) -> list[Tweet]:
+        context = self.get_context()
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,

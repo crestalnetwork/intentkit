@@ -35,8 +35,8 @@ class TwitterLikeTweet(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterLikeTweetInput
 
     async def _arun(self, tweet_id: str, **kwargs):
+        context = self.get_context()
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,

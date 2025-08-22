@@ -44,6 +44,7 @@ class TwitterGetUserTweets(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterGetUserTweetsInput
 
     async def _arun(self, **kwargs):
+        context = self.get_context()
         try:
             user_id = kwargs.get("user_id")
             if not user_id:
@@ -55,7 +56,6 @@ class TwitterGetUserTweets(TwitterBaseTool):
             # Get exclude parameter with default
             exclude = kwargs.get("exclude", ["replies", "retweets"])
 
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,

@@ -36,9 +36,9 @@ class TwitterSearchTweets(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterSearchTweetsInput
 
     async def _arun(self, query: str, **kwargs):
+        context = self.get_context()
         max_results = 10
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
