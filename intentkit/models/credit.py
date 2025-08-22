@@ -404,19 +404,24 @@ class CreditAccount(BaseModel):
         session: AsyncSession,
         owner_type: OwnerType,
         owner_id: str,
-        amount: Decimal,
-        credit_type: CreditType,
+        amount_details: Dict[CreditType, Decimal],
         event_id: Optional[str] = None,
     ) -> "CreditAccount":
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
         # income
         values_dict = {
-            credit_type.value: getattr(CreditAccountTable, credit_type.value) + amount,
             "income_at": datetime.now(timezone.utc),
         }
         if event_id:
             values_dict["last_event_id"] = event_id
+
+        # Add credit type values based on amount_details
+        for credit_type, amount in amount_details.items():
+            if amount > 0:
+                values_dict[credit_type.value] = (
+                    getattr(CreditAccountTable, credit_type.value) + amount
+                )
 
         stmt = (
             update(CreditAccountTable)
@@ -534,6 +539,9 @@ class CreditAccount(BaseModel):
                 credit_debit=CreditDebit.CREDIT,
                 change_amount=free_quota,
                 credit_type=CreditType.FREE,
+                free_amount=free_quota,
+                reward_amount=Decimal("0"),
+                permanent_amount=Decimal("0"),
             )
             session.add(user_tx)
 
@@ -546,6 +554,9 @@ class CreditAccount(BaseModel):
                 credit_debit=CreditDebit.DEBIT,
                 change_amount=free_quota,
                 credit_type=CreditType.FREE,
+                free_amount=free_quota,
+                reward_amount=Decimal("0"),
+                permanent_amount=Decimal("0"),
             )
             session.add(platform_tx)
 
@@ -1183,6 +1194,21 @@ class CreditTransactionTable(Base):
         default=0,
         nullable=False,
     )
+    free_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    reward_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    permanent_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
     credit_type = Column(
         String,
         nullable=False,
@@ -1223,8 +1249,22 @@ class CreditTransaction(BaseModel):
     change_amount: Annotated[
         Decimal, Field(default=Decimal("0"), description="Amount of credits changed")
     ]
+    free_amount: Annotated[
+        Decimal,
+        Field(default=Decimal("0"), description="Amount of free credits changed"),
+    ]
+    reward_amount: Annotated[
+        Decimal,
+        Field(default=Decimal("0"), description="Amount of reward credits changed"),
+    ]
+    permanent_amount: Annotated[
+        Decimal,
+        Field(default=Decimal("0"), description="Amount of permanent credits changed"),
+    ]
 
-    @field_validator("change_amount")
+    @field_validator(
+        "change_amount", "free_amount", "reward_amount", "permanent_amount"
+    )
     @classmethod
     def round_decimal(cls, v: Any) -> Decimal:
         """Round decimal values to 4 decimal places."""
