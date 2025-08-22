@@ -2,7 +2,6 @@ import asyncio
 import logging
 from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
 
-from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
@@ -180,22 +179,9 @@ class IntentKitSkill(BaseTool):
             "Use _arun instead, IntentKit only supports synchronous skill calls"
         )
 
-    def context_from_config(self, runner_config: RunnableConfig) -> SkillContext:
-        if "configurable" not in runner_config:
-            raise ValueError("configurable not in runner_config")
-        configurable = runner_config["configurable"]
-        if not configurable:
-            raise ValueError("configurable in runnable config is empty")
-        return SkillContext(
-            skill_category=self.category,
-            agent_id=configurable.get("agent_id"),
-            user_id=configurable.get("user_id"),
-            app_id=configurable.get("app_id"),
-            chat_id=configurable.get("chat_id"),
-            entrypoint=configurable.get("entrypoint"),
-            is_private=configurable.get("is_private"),
-        )
-
-    def get_context(self) -> AgentContext:
+    @staticmethod
+    def get_context() -> AgentContext:
         runtime = get_runtime(AgentContext)
+        if runtime.context is None or not isinstance(runtime.context, AgentContext):
+            raise ValueError("No AgentContext found")
         return runtime.context

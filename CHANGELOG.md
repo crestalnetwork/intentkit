@@ -1,12 +1,31 @@
-## v0.6.17
+## v0.6.18
 
 ### New Features
 - **Casino Skills**: Added comprehensive gambling and gaming skill set for interactive agent entertainment
-  - **Deck Shuffling**: Multi-deck support with customizable jokers for Blackjack and card games
-  - **Card Drawing**: Visual card display with PNG/SVG images for interactive gameplay
-  - **Quantum Dice Rolling**: True quantum randomness using QRandom API for authentic dice games
-  - **State Management**: Persistent game sessions with deck tracking and rate limiting
-  - **Gaming APIs**: Integration with Deck of Cards API and QRandom quantum random number generator
+    - **Deck Shuffling**: Multi-deck support with customizable jokers for Blackjack and card games
+    - **Card Drawing**: Visual card display with PNG/SVG images for interactive gameplay
+    - **Quantum Dice Rolling**: True quantum randomness using QRandom API for authentic dice games
+    - **State Management**: Persistent game sessions with deck tracking and rate limiting
+    - **Gaming APIs**: Integration with Deck of Cards API and QRandom quantum random number generator
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.17...v0.6.18
+
+## v0.6.17
+
+### ✨ New Features
+- **Error Tracking**: Add error_type field to chat message model for better error tracking
+
+### 🔧 Improvements
+- **Core Engine**: Refactor core engine and update models for better performance
+- **System Messages**: Refactor system messages handling
+- **Error Handling**: Refactor error handling system
+
+### 🐛 Bug Fixes
+- **Wallet Provider**: Fix wallet provider JSON configuration
+- **Linting**: Fix linting issues
+
+### 📚 Documentation
+- Update changelog documentation
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.16...v0.6.17
 

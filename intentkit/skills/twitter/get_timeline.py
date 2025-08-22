@@ -37,11 +37,11 @@ class TwitterGetTimeline(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterGetTimelineInput
 
     async def _arun(self, **kwargs):
+        context = self.get_context()
         try:
             # Ensure max_results is an integer
             max_results = 10
 
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,

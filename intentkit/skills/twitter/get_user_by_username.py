@@ -38,8 +38,8 @@ class TwitterGetUserByUsername(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterGetUserByUsernameInput
 
     async def _arun(self, username: str, **kwargs):
+        context = self.get_context()
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,

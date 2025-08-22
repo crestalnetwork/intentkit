@@ -51,8 +51,8 @@ class TwitterReplyTweet(TwitterBaseTool):
         image: Optional[str] = None,
         **kwargs,
     ):
+        context = self.get_context()
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
@@ -68,11 +68,23 @@ class TwitterReplyTweet(TwitterBaseTool):
                 )
 
             media_ids = []
+            image_warning = ""
 
             # Handle image upload if provided
             if image:
-                # Use the TwitterClient method to upload the image
-                media_ids = await twitter.upload_media(context.agent_id, image)
+                # Validate image URL - must be from system's S3 CDN
+                aws_s3_cdn_url = await self.skill_store.get_system_config(
+                    "aws_s3_cdn_url"
+                )
+                if aws_s3_cdn_url and image.startswith(aws_s3_cdn_url):
+                    # Use the TwitterClient method to upload the image
+                    media_ids = await twitter.upload_media(context.agent_id, image)
+                else:
+                    # Image is not from system's S3 CDN, skip upload but warn
+                    image_warning = "Warning: The provided image URL is not from the system's S3 CDN and has been ignored. "
+                    logger.warning(
+                        f"Image URL validation failed for agent {context.agent_id}: {image}"
+                    )
 
             # Post reply tweet using tweepy client
             tweet_params = {
@@ -87,7 +99,9 @@ class TwitterReplyTweet(TwitterBaseTool):
             response = await client.create_tweet(**tweet_params)
 
             if "data" in response and "id" in response["data"]:
-                return response
+                # Return response with warning if image was ignored
+                result = f"{image_warning}Reply tweet posted successfully. Response: {response}"
+                return result
             else:
                 logger.error(f"Error replying to tweet: {str(response)}")
                 raise ToolException("Failed to post reply tweet.")

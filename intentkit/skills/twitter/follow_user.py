@@ -37,8 +37,8 @@ class TwitterFollowUser(TwitterBaseTool):
     args_schema: Type[BaseModel] = TwitterFollowUserInput
 
     async def _arun(self, user_id: str, **kwargs) -> bool:
+        context = self.get_context()
         try:
-            context = self.get_context()
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
