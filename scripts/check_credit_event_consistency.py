@@ -34,15 +34,20 @@ class CreditEventConsistencyChecker:
         self.total_records = 0
         self.consistent_records = 0
         self.inconsistent_records = 0
-        self.inconsistent_details: List[Dict] = []
+        self.zero_sum_inconsistent_count = (
+            0  # Cases where detail sum is 0 but total is not 0
+        )
+        self.non_zero_sum_inconsistent_details: List[
+            Dict
+        ] = []  # Unexpected errors where details are non-zero but still unequal
 
     def check_record_consistency(
         self, record: CreditEventTable
-    ) -> Tuple[bool, List[str]]:
+    ) -> Tuple[bool, List[str], bool]:
         """Check if a single record is consistent.
 
         Returns:
-            Tuple of (is_consistent, list_of_errors)
+            Tuple of (is_consistent, list_of_errors, is_zero_sum_error)
         """
         errors = []
 
@@ -100,7 +105,19 @@ class CreditEventConsistencyChecker:
                 f"Total amount mismatch: {free_amount} + {reward_amount} + {permanent_amount} = {total_sum} != {total_amount}"
             )
 
-        return len(errors) == 0, errors
+        # Check if all errors are cases where detail sum is 0
+        is_zero_sum_error = False
+        if errors:
+            # Check if all errors are cases where detail sum is 0 but total is not 0
+            zero_sum_patterns = [
+                "0 + 0 + 0 = 0 !=",  # Pattern for zero sum details
+            ]
+            is_zero_sum_error = all(
+                any(pattern in error for pattern in zero_sum_patterns)
+                for error in errors
+            )
+
+        return len(errors) == 0, errors, is_zero_sum_error
 
     async def check_all_records(self, session: AsyncSession, batch_size: int = 1000):
         """Check all credit event records in batches."""
@@ -136,20 +153,27 @@ class CreditEventConsistencyChecker:
                 record = record_tuple[0]  # Extract the actual record from tuple
                 self.total_records += 1
 
-                is_consistent, errors = self.check_record_consistency(record)
+                is_consistent, errors, is_zero_sum_error = (
+                    self.check_record_consistency(record)
+                )
 
                 if is_consistent:
                     self.consistent_records += 1
                 else:
                     self.inconsistent_records += 1
-                    self.inconsistent_details.append(
-                        {
-                            "id": record.id,
-                            "created_at": record.created_at,
-                            "event_type": record.event_type,
-                            "errors": errors,
-                        }
-                    )
+                    if is_zero_sum_error:
+                        # Cases where detail sum is 0, only count the number
+                        self.zero_sum_inconsistent_count += 1
+                    else:
+                        # Unexpected errors where details are non-zero but still unequal, need detailed records
+                        self.non_zero_sum_inconsistent_details.append(
+                            {
+                                "id": record.id,
+                                "created_at": record.created_at,
+                                "event_type": record.event_type,
+                                "errors": errors,
+                            }
+                        )
 
             offset += batch_size
 
@@ -163,18 +187,25 @@ class CreditEventConsistencyChecker:
         print(f"Total records checked: {self.total_records}")
         print(f"Consistent records: {self.consistent_records}")
         print(f"Inconsistent records: {self.inconsistent_records}")
+        print(
+            f"  - Zero-sum inconsistent (details sum to 0 but total is not 0): {self.zero_sum_inconsistent_count}"
+        )
+        print(
+            f"  - Non-zero-sum inconsistent (unexpected errors): {len(self.non_zero_sum_inconsistent_details)}"
+        )
 
         if self.total_records > 0:
             consistency_rate = (self.consistent_records / self.total_records) * 100
             print(f"Consistency rate: {consistency_rate:.2f}%")
 
-        if self.inconsistent_records > 0:
+        # Only show details for unexpected errors
+        if self.non_zero_sum_inconsistent_details:
             print("\n" + "-" * 40)
-            print("INCONSISTENT RECORDS DETAILS")
+            print("NON-ZERO-SUM INCONSISTENT RECORDS (Unexpected Errors)")
             print("-" * 40)
 
-            # Show first 10 inconsistent records
-            for i, detail in enumerate(self.inconsistent_details[:10]):
+            # Show first 10 non-zero-sum inconsistent records
+            for i, detail in enumerate(self.non_zero_sum_inconsistent_details[:10]):
                 print(f"\n{i + 1}. Record ID: {detail['id']}")
                 print(f"   Created at: {detail['created_at']}")
                 print(f"   Event type: {detail['event_type']}")
@@ -182,9 +213,9 @@ class CreditEventConsistencyChecker:
                 for error in detail["errors"]:
                     print(f"     - {error}")
 
-            if len(self.inconsistent_details) > 10:
+            if len(self.non_zero_sum_inconsistent_details) > 10:
                 print(
-                    f"\n... and {len(self.inconsistent_details) - 10} more inconsistent records."
+                    f"\n... and {len(self.non_zero_sum_inconsistent_details) - 10} more non-zero-sum inconsistent records."
                 )
 
         print("\n" + "=" * 60)
