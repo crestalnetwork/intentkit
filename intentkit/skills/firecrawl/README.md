@@ -37,7 +37,24 @@ Queries previously indexed Firecrawl content using semantic search.
 - `query` (required): The search query
 - `limit` (optional): Maximum number of results to return (1-10, default: 4)
 
-### 4. firecrawl_clear_indexed_content
+### 4. firecrawl_replace_scrape
+Scrapes a single webpage and REPLACES any existing indexed content for that URL, preventing duplicates.
+
+**Parameters:**
+- `url` (required): The URL to scrape
+- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, json (default: ["markdown"])
+- `only_main_content` (optional): Extract only main content (default: true)
+- `include_tags` (optional): HTML tags to include (e.g., ["h1", "h2", "p"])
+- `exclude_tags` (optional): HTML tags to exclude
+- `wait_for` (optional): Wait time in milliseconds before scraping
+- `timeout` (optional): Maximum timeout in milliseconds (default: 30000)
+- `index_content` (optional): Whether to index content for querying (default: true)
+- `chunk_size` (optional): Size of text chunks for indexing (default: 1000)
+- `chunk_overlap` (optional): Overlap between chunks (default: 200)
+
+**Use Case:** Use this when you want to refresh/update content from a URL that was previously scraped, ensuring no duplicate or stale content remains.
+
+### 5. firecrawl_clear_indexed_content
 Clears all previously indexed Firecrawl content from the vector store.
 
 **Parameters:**
@@ -60,6 +77,7 @@ export FIRECRAWL_API_KEY=fc-your-api-key-here
    {
      "skills": [
        "firecrawl_scrape",
+       "firecrawl_replace_scrape",
        "firecrawl_crawl", 
        "firecrawl_query_indexed_content",
        "firecrawl_clear_indexed_content"
@@ -141,7 +159,20 @@ Prompt: "Use firecrawl_clear_indexed_content with confirm=true to clear all inde
 - Confirmation message displayed
 - Subsequent queries return no results
 
-### Step 8: Test Re-indexing After Clear
+### Step 8: Test Replace Scrape Functionality
+
+**Test replacing existing content for a URL:**
+```
+Prompt: "Use firecrawl_replace_scrape to scrape https://docs.joincommonwealth.xyz/ and replace any existing content for this URL"
+```
+
+**Expected Result:**
+- Old content for the URL removed
+- New content scraped and indexed
+- Content from other URLs preserved
+- Confirmation of replacement operation
+
+### Step 9: Test Re-indexing After Clear
 
 **Test that content can be re-indexed after clearing:**
 ```
@@ -158,8 +189,9 @@ Prompt: "Use firecrawl_scrape to scrape https://example.com and index the conten
 ### Documentation Indexing
 ```
 1. Scrape main documentation page
-2. Crawl related documentation sections
-3. Query for specific technical information
+2. Crawl related documentation sections  
+3. Use replace_scrape to update changed pages
+4. Query for specific technical information
 ```
 
 ### Competitive Analysis
@@ -205,6 +237,7 @@ Prompt: "Use firecrawl_scrape to scrape https://example.com and index the conten
 - **PDF Support**: Can scrape and index PDF documents
 - **Intelligent Chunking**: Optimized text splitting for better search
 - **Independent Storage**: Uses its own dedicated vector store for Firecrawl content
+- **Content Replacement**: Replace mode prevents duplicate/stale content
 - **Metadata Rich**: Includes source URLs, timestamps, and content types
 - **Semantic Search**: Uses OpenAI embeddings for intelligent querying
 - **Batch Processing**: Efficient handling of multiple pages
