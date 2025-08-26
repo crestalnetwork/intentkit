@@ -288,15 +288,21 @@ class FirecrawlReplaceScrape(FirecrawlBaseTool):
                                 # Get all existing documents and filter out those from the same URL
                                 try:
                                     # Try to access documents directly if available
-                                    if hasattr(existing_vector_store, 'docstore') and hasattr(existing_vector_store.docstore, '_dict'):
+                                    if hasattr(
+                                        existing_vector_store, "docstore"
+                                    ) and hasattr(
+                                        existing_vector_store.docstore, "_dict"
+                                    ):
                                         # Access FAISS documents directly
-                                        all_docs = list(existing_vector_store.docstore._dict.values())
+                                        all_docs = list(
+                                            existing_vector_store.docstore._dict.values()
+                                        )
                                     else:
                                         # Fallback: use a reasonable k value for similarity search
                                         # Use a dummy query to retrieve documents
                                         all_docs = existing_vector_store.similarity_search(
                                             "dummy",  # Use a dummy query instead of empty string
-                                            k=1000,   # Use reasonable upper bound
+                                            k=1000,  # Use reasonable upper bound
                                         )
 
                                     # Filter out documents from the same URL
@@ -320,7 +326,12 @@ class FirecrawlReplaceScrape(FirecrawlBaseTool):
                                         )
                                         formatted_result += "\n## Content Replacement\n"
                                         formatted_result += f"Replaced existing content for URL: {url}\n"
-                                        num_preserved_urls = len(set(doc.metadata.get('source', '') for doc in preserved_docs))
+                                        num_preserved_urls = len(
+                                            set(
+                                                doc.metadata.get("source", "")
+                                                for doc in preserved_docs
+                                            )
+                                        )
                                         formatted_result += f"Preserved content from {num_preserved_urls} other URLs\n"
                                     else:
                                         # No other documents to preserve, just create from new docs
