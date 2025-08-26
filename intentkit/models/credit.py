@@ -520,6 +520,7 @@ class CreditAccount(BaseModel):
                 balance_after=free_quota,
                 base_amount=free_quota,
                 base_original_amount=free_quota,
+                base_free_amount=free_quota,
                 free_amount=free_quota,  # Set free_amount since this is a free credit refill
                 reward_amount=Decimal("0"),  # No reward credits involved
                 permanent_amount=Decimal("0"),  # No permanent credits involved
@@ -805,6 +806,21 @@ class CreditEventTable(Base):
         default=0,
         nullable=True,
     )
+    base_free_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
+    base_reward_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
+    base_permanent_amount = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
     fee_platform_amount = Column(
         Numeric(22, 4),
         default=0,
@@ -979,6 +995,18 @@ class CreditEvent(BaseModel):
         Optional[Decimal],
         Field(default=Decimal("0"), description="Base skill cost amount"),
     ]
+    base_free_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Base free credit amount"),
+    ]
+    base_reward_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Base reward credit amount"),
+    ]
+    base_permanent_amount: Annotated[
+        Optional[Decimal],
+        Field(default=Decimal("0"), description="Base permanent credit amount"),
+    ]
     fee_platform_amount: Annotated[
         Optional[Decimal],
         Field(default=Decimal("0"), description="Platform fee amount"),
@@ -1073,6 +1101,9 @@ class CreditEvent(BaseModel):
         "base_original_amount",
         "base_llm_amount",
         "base_skill_amount",
+        "base_free_amount",
+        "base_reward_amount",
+        "base_permanent_amount",
         "fee_platform_amount",
         "fee_platform_free_amount",
         "fee_platform_reward_amount",

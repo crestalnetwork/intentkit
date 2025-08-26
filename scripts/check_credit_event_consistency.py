@@ -9,15 +9,11 @@ for platform fees, dev fees, agent fees, and total amounts.
 
 import asyncio
 import logging
-import sys
 from decimal import Decimal
 from typing import Dict, List, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-# Add the parent directory to the Python path
-sys.path.append("/Users/muninn/crestal/intentkit")
 
 from intentkit.config.config import config
 from intentkit.models.credit import CreditEventTable

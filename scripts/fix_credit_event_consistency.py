@@ -14,15 +14,11 @@ The 12 fields that will be recalculated and updated are:
 
 import asyncio
 import logging
-import sys
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Tuple
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
-# Add the parent directory to the Python path
-sys.path.append("/Users/muninn/crestal/intentkit")
 
 from intentkit.config.config import config
 from intentkit.models.credit import CreditEventTable
