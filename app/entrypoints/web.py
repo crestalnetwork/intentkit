@@ -302,6 +302,9 @@ async def get_chat_history(
     # Reverse messages to get chronological order
     messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
 
+    # Sanitize privacy for all messages
+    messages = [message.sanitize_privacy() for message in messages]
+
     return messages
 
 
@@ -360,7 +363,7 @@ async def retry_chat_deprecated(
         last_message.author_type == AuthorType.AGENT
         or last_message.author_type == AuthorType.SYSTEM
     ):
-        return last_message
+        return last_message.sanitize_privacy()
 
     if last_message.author_type == AuthorType.SKILL:
         error_message_create = await ChatMessageCreate.from_system_message(
@@ -373,7 +376,7 @@ async def retry_chat_deprecated(
             reply_to=last_message.id,
         )
         error_message = await error_message_create.save()
-        return error_message
+        return error_message.sanitize_privacy()
 
     # If last message is from user, generate a new agent response
     return await create_chat_deprecated()
@@ -441,7 +444,7 @@ async def retry_chat(
         last_message.author_type == AuthorType.AGENT
         or last_message.author_type == AuthorType.SYSTEM
     ):
-        return [last_message]
+        return [last_message.sanitize_privacy()]
 
     if last_message.author_type == AuthorType.SKILL:
         error_message_create = await ChatMessageCreate.from_system_message(
@@ -454,7 +457,7 @@ async def retry_chat(
             reply_to=last_message.id,
         )
         error_message = await error_message_create.save()
-        return [last_message, error_message]
+        return [last_message.sanitize_privacy(), error_message.sanitize_privacy()]
 
     # If last message is from user, generate a new agent response
     return await create_chat()
@@ -534,7 +537,9 @@ async def create_chat_deprecated(
         )
         await chat.save()
 
-    return response_messages[-1]
+    # Sanitize privacy for all messages
+    sanitized_messages = [message.sanitize_privacy() for message in response_messages]
+    return sanitized_messages[-1]
 
 
 @chat_router.post(
@@ -610,7 +615,8 @@ async def create_chat(
         )
         await chat.save()
 
-    return response_messages
+    # Sanitize privacy for all messages
+    return [message.sanitize_privacy() for message in response_messages]
 
 
 @chat_router_readonly.get(
@@ -798,6 +804,9 @@ async def get_skill_history(
     # Reverse messages to get chronological order
     messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
 
+    # Sanitize privacy for all messages
+    messages = [message.sanitize_privacy() for message in messages]
+
     return messages
 
 
@@ -854,4 +863,4 @@ async def get_chat_message(
             detail="You don't have permission to access this message",
         )
 
-    return message
+    return message.sanitize_privacy()

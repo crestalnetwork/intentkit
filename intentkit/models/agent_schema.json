@@ -685,7 +685,7 @@
     "network_id": {
       "title": "Default Network",
       "type": "string",
-      "description": "Default Network",
+      "description": "Default Network, please note that some CDP Wallet native skills like swap only support the base network.",
       "default": "base-mainnet",
       "enum": [
         "ethereum-mainnet",
@@ -697,8 +697,7 @@
         "arbitrum-mainnet",
         "arbitrum-sepolia",
         "optimism-mainnet",
-        "optimism-sepolia",
-        "solana"
+        "optimism-sepolia"
       ],
       "x-group": "onchain"
     }
@@ -715,7 +714,7 @@
       "readonly_wallet_address": {
         "title": "Readonly Wallet Address",
         "type": "string",
-        "description": "Wallet address for readonly wallet provider",
+        "description": "Set the wallet address as agent wallet, then it can only be analyzed by the agent.",
         "maxLength": 100,
         "x-group": "onchain"
       }

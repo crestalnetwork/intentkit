@@ -150,6 +150,9 @@ async def recharge(
         + user_account.reward_credits,
         base_amount=amount,
         base_original_amount=amount,
+        base_free_amount=Decimal("0"),  # No free credits involved in base amount
+        base_reward_amount=Decimal("0"),  # No reward credits involved in base amount
+        base_permanent_amount=amount,  # All base amount is permanent for recharge
         permanent_amount=amount,  # Set permanent_amount since this is a permanent credit
         free_amount=Decimal("0"),  # No free credits involved
         reward_amount=Decimal("0"),  # No reward credits involved
@@ -277,6 +280,11 @@ async def reward(
         + user_account.reward_credits,
         base_amount=amount,
         base_original_amount=amount,
+        base_free_amount=Decimal("0"),  # No free credits involved in base amount
+        base_reward_amount=amount,  # All base amount is reward for reward events
+        base_permanent_amount=Decimal(
+            "0"
+        ),  # No permanent credits involved in base amount
         reward_amount=amount,  # Set reward_amount since this is a reward credit
         free_amount=Decimal("0"),  # No free credits involved
         permanent_amount=Decimal("0"),  # No permanent credits involved
@@ -451,6 +459,9 @@ async def adjustment(
         + user_account.reward_credits,
         base_amount=abs_amount,
         base_original_amount=abs_amount,
+        base_free_amount=free_amount,
+        base_reward_amount=reward_amount,
+        base_permanent_amount=permanent_amount,
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
@@ -984,6 +995,9 @@ async def expense_message(
         + user_account.reward_credits,
         base_amount=base_amount,
         base_original_amount=base_original_amount,
+        base_free_amount=base_free_amount,
+        base_reward_amount=base_reward_amount,
+        base_permanent_amount=base_permanent_amount,
         base_llm_amount=base_llm_amount,
         fee_platform_amount=fee_platform_amount,
         fee_platform_free_amount=fee_platform_free_amount,
@@ -1415,6 +1429,9 @@ async def expense_skill(
         base_amount=skill_cost_info.base_amount,
         base_original_amount=skill_cost_info.base_original_amount,
         base_skill_amount=skill_cost_info.base_skill_amount,
+        base_free_amount=base_free_amount,
+        base_reward_amount=base_reward_amount,
+        base_permanent_amount=base_permanent_amount,
         fee_platform_amount=skill_cost_info.fee_platform_amount,
         fee_platform_free_amount=fee_platform_free_amount,
         fee_platform_reward_amount=fee_platform_reward_amount,
@@ -1589,6 +1606,9 @@ async def refill_free_credits_for_account(
         + updated_account.reward_credits,
         base_amount=amount_to_add,
         base_original_amount=amount_to_add,
+        base_free_amount=amount_to_add,
+        base_reward_amount=Decimal("0"),
+        base_permanent_amount=Decimal("0"),
         free_amount=amount_to_add,  # Set free_amount since this is a free credit refill
         reward_amount=Decimal("0"),  # No reward credits involved
         permanent_amount=Decimal("0"),  # No permanent credits involved
@@ -1864,6 +1884,9 @@ async def expense_summarize(
         base_amount=base_amount,
         base_original_amount=base_original_amount,
         base_llm_amount=base_llm_amount,
+        base_free_amount=base_free_amount,
+        base_reward_amount=base_reward_amount,
+        base_permanent_amount=base_permanent_amount,
         fee_platform_amount=fee_platform_amount,
         fee_platform_free_amount=fee_platform_free_amount,
         fee_platform_reward_amount=fee_platform_reward_amount,

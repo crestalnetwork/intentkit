@@ -144,6 +144,17 @@ class CdpClient:
             wallet_secret=wallet_secret,
         )
         self._wallet_provider = CdpEvmServerWalletProvider(self._wallet_provider_config)
+        # hack for cdp bug
+        if network_id == "base-mainnet":
+            self._wallet_provider._network.network_id = "base"
+        elif network_id == "arbitrum-mainnet":
+            self._wallet_provider._network.network_id = "arbitrum"
+        elif network_id == "optimism-mainnet":
+            self._wallet_provider._network.network_id = "optimism"
+        elif network_id == "polygon-mainnet":
+            self._wallet_provider._network.network_id = "polygon"
+        elif network_id == "ethereum-mainnet":
+            self._wallet_provider._network.network_id = "ethereum"
         return self._wallet_provider
 
     async def get_account(self) -> EvmServerAccount:
