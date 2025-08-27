@@ -34,22 +34,6 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Scrape single web pages and extract content in various formats (markdown, HTML, JSON, etc.). Handles JavaScript-rendered content, PDFs, and dynamic websites. APPENDS new content to existing indexed content.",
-          "default": "private"
-        },
-        "firecrawl_replace_scrape": {
-          "type": "string",
-          "title": "Firecrawl Replace Scrape",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
           "description": "Scrape single web pages and REPLACE any existing indexed content for that URL. Unlike regular scrape, this prevents duplicate content when re-scraping the same page. Use this to refresh/update content from a previously scraped URL.",
           "default": "private"
         },

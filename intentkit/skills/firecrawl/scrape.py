@@ -62,10 +62,11 @@ class FirecrawlScrapeInput(BaseModel):
 
 
 class FirecrawlScrape(FirecrawlBaseTool):
-    """Tool for scraping web pages using Firecrawl.
+    """Tool for scraping web pages using Firecrawl with REPLACE behavior.
 
-    This tool uses Firecrawl's API to scrape web pages and convert them into clean,
-    LLM-ready formats like markdown, HTML, or structured JSON data.
+    This tool uses Firecrawl's API to scrape web pages and REPLACES any existing
+    indexed content for the same URL instead of appending to it. This prevents
+    duplicate content when re-scraping the same page.
 
     Attributes:
         name: The name of the tool.
@@ -75,10 +76,10 @@ class FirecrawlScrape(FirecrawlBaseTool):
 
     name: str = "firecrawl_scrape"
     description: str = (
-        "Scrape a single web page and extract its content in various formats (markdown, HTML, JSON, etc.). "
+        "Scrape a single web page and REPLACE any existing indexed content for that URL. "
+        "Unlike regular scrape, this tool removes old content before adding new content, preventing duplicates. "
         "This tool can handle JavaScript-rendered content, PDFs, and dynamic websites. "
-        "Optionally indexes the content for later querying using the firecrawl_query_indexed_content tool. "
-        "Use this when you need to extract clean, structured content from a specific URL."
+        "Use this when you want to refresh/update content from a URL that was previously scraped."
     )
     args_schema: Type[BaseModel] = FirecrawlScrapeInput
 
@@ -187,7 +188,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 result_data = data.get("data", {})
 
                 # Format the results based on requested formats
-                formatted_result = f"Successfully scraped: {url}\n\n"
+                formatted_result = f"Successfully scraped (REPLACE mode): {url}\n\n"
 
                 if "markdown" in formats and result_data.get("markdown"):
                     formatted_result += "## Markdown Content\n"
@@ -236,13 +237,16 @@ class FirecrawlScrape(FirecrawlBaseTool):
                         formatted_result += f"Language: {metadata['language']}\n"
                     formatted_result += "\n"
 
-                # Index content if requested
+                # Index content if requested - REPLACE MODE
                 if index_content and result_data.get("markdown"):
                     try:
-                        # Import indexing utilities from firecrawl utils
+                        # Import indexing utilities
+                        from langchain_community.vectorstores import FAISS
+
                         from intentkit.skills.firecrawl.utils import (
+                            FirecrawlDocumentProcessor,
                             FirecrawlMetadataManager,
-                            index_documents,
+                            FirecrawlVectorStoreManager,
                         )
 
                         # Create document from scraped content
@@ -261,38 +265,149 @@ class FirecrawlScrape(FirecrawlBaseTool):
                         # Get agent ID for indexing
                         agent_id = context.agent_id
                         if agent_id:
-                            # Index the document
-                            total_chunks, was_merged = await index_documents(
-                                [document],
-                                agent_id,
-                                self.skill_store,
-                                chunk_size,
-                                chunk_overlap,
-                            )
-
-                            # Update metadata
+                            # Initialize managers
+                            vs_manager = FirecrawlVectorStoreManager(self.skill_store)
                             metadata_manager = FirecrawlMetadataManager(
                                 self.skill_store
                             )
-                            new_metadata = metadata_manager.create_url_metadata(
-                                [url], [document], "firecrawl_scrape"
-                            )
-                            await metadata_manager.update_metadata(
-                                agent_id, new_metadata
+
+                            # Load existing vector store
+                            existing_vector_store = await vs_manager.load_vector_store(
+                                agent_id
                             )
 
-                            formatted_result += "\n## Content Indexing\n"
-                            formatted_result += (
-                                "Successfully indexed content into vector store:\n"
+                            # Split the new document into chunks
+                            split_docs = FirecrawlDocumentProcessor.split_documents(
+                                [document], chunk_size, chunk_overlap
                             )
-                            formatted_result += f"- Chunks created: {total_chunks}\n"
+
+                            # Create embeddings
+                            embeddings = vs_manager.create_embeddings()
+
+                            if existing_vector_store:
+                                # Get all existing documents and filter out those from the same URL
+                                try:
+                                    # Try to access documents directly if available
+                                    if hasattr(
+                                        existing_vector_store, "docstore"
+                                    ) and hasattr(
+                                        existing_vector_store.docstore, "_dict"
+                                    ):
+                                        # Access FAISS documents directly
+                                        all_docs = list(
+                                            existing_vector_store.docstore._dict.values()
+                                        )
+                                    else:
+                                        # Fallback: use a reasonable k value for similarity search
+                                        # Use a dummy query to retrieve documents
+                                        all_docs = existing_vector_store.similarity_search(
+                                            "dummy",  # Use a dummy query instead of empty string
+                                            k=1000,  # Use reasonable upper bound
+                                        )
+
+                                    # Filter out documents from the same URL
+                                    preserved_docs = [
+                                        doc
+                                        for doc in all_docs
+                                        if doc.metadata.get("source") != url
+                                    ]
+
+                                    logger.info(
+                                        f"firecrawl_scrape: Preserving {len(preserved_docs)} docs from other URLs, "
+                                        f"replacing content from {url}"
+                                    )
+
+                                    # Create new vector store with preserved docs + new docs
+                                    if preserved_docs:
+                                        # Combine preserved and new documents
+                                        all_documents = preserved_docs + split_docs
+                                        new_vector_store = FAISS.from_documents(
+                                            all_documents, embeddings
+                                        )
+                                        formatted_result += "\n## Content Replacement\n"
+                                        formatted_result += f"Replaced existing content for URL: {url}\n"
+                                        num_preserved_urls = len(
+                                            set(
+                                                doc.metadata.get("source", "")
+                                                for doc in preserved_docs
+                                            )
+                                        )
+                                        formatted_result += f"Preserved content from {num_preserved_urls} other URLs\n"
+                                    else:
+                                        # No other documents to preserve, just create from new docs
+                                        new_vector_store = FAISS.from_documents(
+                                            split_docs, embeddings
+                                        )
+                                        formatted_result += "\n## Content Replacement\n"
+                                        formatted_result += f"Created new index with content from: {url}\n"
+                                except Exception as e:
+                                    logger.warning(
+                                        f"Could not preserve other URLs, creating fresh index: {e}"
+                                    )
+                                    # Fallback: create new store with just the new documents
+                                    new_vector_store = FAISS.from_documents(
+                                        split_docs, embeddings
+                                    )
+                                    formatted_result += "\n## Content Replacement\n"
+                                    formatted_result += f"Created fresh index with content from: {url}\n"
+                            else:
+                                # No existing store, create new one
+                                new_vector_store = FAISS.from_documents(
+                                    split_docs, embeddings
+                                )
+                                formatted_result += "\n## Content Indexing\n"
+                                formatted_result += (
+                                    f"Created new index with content from: {url}\n"
+                                )
+
+                            # Save the new vector store
+                            await vs_manager.save_vector_store(
+                                agent_id, new_vector_store, chunk_size, chunk_overlap
+                            )
+
+                            # Update metadata to track all URLs
+                            # Get existing metadata to preserve other URLs
+                            metadata_key = f"indexed_urls_{agent_id}"
+                            existing_metadata = (
+                                await self.skill_store.get_agent_skill_data(
+                                    agent_id, "firecrawl", metadata_key
+                                )
+                            )
+
+                            if existing_metadata and existing_metadata.get("urls"):
+                                # Remove the current URL and add it back (to update timestamp)
+                                existing_urls = [
+                                    u for u in existing_metadata["urls"] if u != url
+                                ]
+                                existing_urls.append(url)
+                                updated_metadata = {
+                                    "urls": existing_urls,
+                                    "document_count": len(existing_urls),
+                                    "source_type": "firecrawl_mixed",
+                                    "indexed_at": str(len(existing_urls)),
+                                }
+                            else:
+                                # Create new metadata
+                                updated_metadata = metadata_manager.create_url_metadata(
+                                    [url], [document], "firecrawl_scrape"
+                                )
+
+                            await metadata_manager.update_metadata(
+                                agent_id, updated_metadata
+                            )
+
+                            formatted_result += "\n## Content Indexing (REPLACE MODE)\n"
+                            formatted_result += "Successfully REPLACED indexed content in vector store:\n"
+                            formatted_result += f"- Chunks created: {len(split_docs)}\n"
                             formatted_result += f"- Chunk size: {chunk_size}\n"
                             formatted_result += f"- Chunk overlap: {chunk_overlap}\n"
-                            formatted_result += f"- Content merged with existing: {'Yes' if was_merged else 'No'}\n"
+                            formatted_result += (
+                                "- Previous content for this URL: REPLACED\n"
+                            )
                             formatted_result += "Use the 'firecrawl_query_indexed_content' skill to search this content.\n"
 
                             logger.info(
-                                f"firecrawl_scrape: Successfully indexed {url} with {total_chunks} chunks"
+                                f"firecrawl_scrape: Successfully replaced content for {url} with {len(split_docs)} chunks"
                             )
                         else:
                             formatted_result += "\n## Content Indexing\n"
@@ -313,5 +428,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 f"Timeout error: The request to scrape {url} took too long to complete."
             )
         except Exception as e:
-            logger.error(f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True)
+            logger.error(
+                f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True
+            )
             return f"An error occurred while scraping the URL: {str(e)}"

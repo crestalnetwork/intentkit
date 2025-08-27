@@ -9,7 +9,6 @@ from intentkit.skills.firecrawl.base import FirecrawlBaseTool
 from intentkit.skills.firecrawl.clear import FirecrawlClearIndexedContent
 from intentkit.skills.firecrawl.crawl import FirecrawlCrawl
 from intentkit.skills.firecrawl.query import FirecrawlQueryIndexedContent
-from intentkit.skills.firecrawl.replace_scrape import FirecrawlReplaceScrape
 from intentkit.skills.firecrawl.scrape import FirecrawlScrape
 
 # Cache skills at the system level, because they are stateless
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 class SkillStates(TypedDict):
     firecrawl_scrape: SkillState
-    firecrawl_replace_scrape: SkillState
     firecrawl_crawl: SkillState
     firecrawl_query_indexed_content: SkillState
     firecrawl_clear_indexed_content: SkillState
@@ -84,12 +82,6 @@ def get_firecrawl_skill(
     if name == "firecrawl_scrape":
         if name not in _cache:
             _cache[name] = FirecrawlScrape(
-                skill_store=store,
-            )
-        return _cache[name]
-    elif name == "firecrawl_replace_scrape":
-        if name not in _cache:
-            _cache[name] = FirecrawlReplaceScrape(
                 skill_store=store,
             )
         return _cache[name]

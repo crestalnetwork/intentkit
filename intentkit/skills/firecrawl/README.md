@@ -5,17 +5,21 @@ The Firecrawl skills provide advanced web scraping and content indexing capabili
 ## Skills Overview
 
 ### 1. firecrawl_scrape
-Scrapes a single webpage and optionally indexes the content for future querying.
+Scrapes a single webpage and REPLACES any existing indexed content for that URL, preventing duplicates.
 
 **Parameters:**
 - `url` (required): The URL to scrape
-- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, extract (default: ["markdown"])
+- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, json (default: ["markdown"])
+- `only_main_content` (optional): Extract only main content (default: true)
 - `include_tags` (optional): HTML tags to include (e.g., ["h1", "h2", "p"])
 - `exclude_tags` (optional): HTML tags to exclude
-- `only_main_content` (optional): Extract only main content (default: true)
+- `wait_for` (optional): Wait time in milliseconds before scraping
+- `timeout` (optional): Maximum timeout in milliseconds (default: 30000)
 - `index_content` (optional): Whether to index content for querying (default: true)
 - `chunk_size` (optional): Size of text chunks for indexing (default: 1000)
 - `chunk_overlap` (optional): Overlap between chunks (default: 200)
+
+**Use Case:** Use this when you want to refresh/update content from a URL that was previously scraped, ensuring no duplicate or stale content remains.
 
 ### 2. firecrawl_crawl
 Crawls multiple pages from a website and indexes all content.
@@ -37,24 +41,7 @@ Queries previously indexed Firecrawl content using semantic search.
 - `query` (required): The search query
 - `limit` (optional): Maximum number of results to return (1-10, default: 4)
 
-### 4. firecrawl_replace_scrape
-Scrapes a single webpage and REPLACES any existing indexed content for that URL, preventing duplicates.
-
-**Parameters:**
-- `url` (required): The URL to scrape
-- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, json (default: ["markdown"])
-- `only_main_content` (optional): Extract only main content (default: true)
-- `include_tags` (optional): HTML tags to include (e.g., ["h1", "h2", "p"])
-- `exclude_tags` (optional): HTML tags to exclude
-- `wait_for` (optional): Wait time in milliseconds before scraping
-- `timeout` (optional): Maximum timeout in milliseconds (default: 30000)
-- `index_content` (optional): Whether to index content for querying (default: true)
-- `chunk_size` (optional): Size of text chunks for indexing (default: 1000)
-- `chunk_overlap` (optional): Overlap between chunks (default: 200)
-
-**Use Case:** Use this when you want to refresh/update content from a URL that was previously scraped, ensuring no duplicate or stale content remains.
-
-### 5. firecrawl_clear_indexed_content
+### 4. firecrawl_clear_indexed_content
 Clears all previously indexed Firecrawl content from the vector store.
 
 **Parameters:**
@@ -77,7 +64,6 @@ export FIRECRAWL_API_KEY=fc-your-api-key-here
    {
      "skills": [
        "firecrawl_scrape",
-       "firecrawl_replace_scrape",
        "firecrawl_crawl", 
        "firecrawl_query_indexed_content",
        "firecrawl_clear_indexed_content"
@@ -159,20 +145,7 @@ Prompt: "Use firecrawl_clear_indexed_content with confirm=true to clear all inde
 - Confirmation message displayed
 - Subsequent queries return no results
 
-### Step 8: Test Replace Scrape Functionality
-
-**Test replacing existing content for a URL:**
-```
-Prompt: "Use firecrawl_replace_scrape to scrape https://docs.joincommonwealth.xyz/ and replace any existing content for this URL"
-```
-
-**Expected Result:**
-- Old content for the URL removed
-- New content scraped and indexed
-- Content from other URLs preserved
-- Confirmation of replacement operation
-
-### Step 9: Test Re-indexing After Clear
+### Step 8: Test Re-indexing After Clear
 
 **Test that content can be re-indexed after clearing:**
 ```
@@ -190,7 +163,7 @@ Prompt: "Use firecrawl_scrape to scrape https://example.com and index the conten
 ```
 1. Scrape main documentation page
 2. Crawl related documentation sections  
-3. Use replace_scrape to update changed pages
+3. Use scrape again to update changed pages (replaces old content)
 4. Query for specific technical information
 ```
 
