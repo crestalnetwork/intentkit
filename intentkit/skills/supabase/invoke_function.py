@@ -44,8 +44,7 @@ class SupabaseInvokeFunction(SupabaseBaseTool):
     ):
         try:
             context = self.get_context()
-            skill_config = context.agent.skill_config(self.category)
-            supabase_url, supabase_key = self.get_supabase_config(skill_config, context)
+            supabase_url, supabase_key = self.get_supabase_config(context)
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)
