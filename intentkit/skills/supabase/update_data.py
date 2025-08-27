@@ -48,12 +48,11 @@ class SupabaseUpdateData(SupabaseBaseTool):
     ):
         try:
             context = self.get_context()
-            skill_config = context.agent.skill_config(self.category)
 
             # Validate table access for public mode
             self.validate_table_access(table, context)
 
-            supabase_url, supabase_key = self.get_supabase_config(skill_config, context)
+            supabase_url, supabase_key = self.get_supabase_config(context)
 
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)

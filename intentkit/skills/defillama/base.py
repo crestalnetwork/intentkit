@@ -5,8 +5,9 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext
+from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.defillama.config.chains import (
     get_chain_from_alias,
 )
@@ -39,7 +40,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
         return "defillama"
 
     async def check_rate_limit(
-        self, context: SkillContext, max_requests: int = 30, interval: int = 5
+        self, context: AgentContext, max_requests: int = 30, interval: int = 5
     ) -> tuple[bool, str | None]:
         """Check if the rate limit has been exceeded.
 

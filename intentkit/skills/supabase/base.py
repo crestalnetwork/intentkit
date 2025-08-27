@@ -3,8 +3,9 @@ from typing import Type
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.skills.base import IntentKitSkill, SkillContext
+from intentkit.skills.base import IntentKitSkill
 
 
 class SupabaseBaseTool(IntentKitSkill):
@@ -21,9 +22,7 @@ class SupabaseBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "supabase"
 
-    def get_supabase_config(
-        self, config: dict, context: SkillContext
-    ) -> tuple[str, str]:
+    def get_supabase_config(self, context: AgentContext) -> tuple[str, str]:
         """Get Supabase URL and key from config.
 
         Args:
@@ -36,6 +35,7 @@ class SupabaseBaseTool(IntentKitSkill):
         Raises:
             ValueError: If required config is missing
         """
+        config = context.agent.skill_config(self.category)
         supabase_url = config.get("supabase_url")
 
         # Use public_key for public operations if available, otherwise fall back to supabase_key
@@ -52,7 +52,7 @@ class SupabaseBaseTool(IntentKitSkill):
 
         return supabase_url, supabase_key
 
-    def validate_table_access(self, table: str, context: SkillContext) -> None:
+    def validate_table_access(self, table: str, context: AgentContext) -> None:
         """Validate if the table can be accessed for write operations in public mode.
 
         Args:
@@ -66,8 +66,10 @@ class SupabaseBaseTool(IntentKitSkill):
         if context.is_private:
             return
 
+        config = context.agent.skill_config(self.category)
+
         # In public mode, check if table is in allowed list
-        public_write_tables = context.config.get("public_write_tables", "")
+        public_write_tables = config.get("public_write_tables", "")
         if not public_write_tables:
             return
 

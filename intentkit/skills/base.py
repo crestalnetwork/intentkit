@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
 
@@ -6,17 +5,20 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import (
-    BaseModel,
     ValidationError,
 )
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
+from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
+from intentkit.utils.chain import ChainProvider
 from intentkit.utils.error import RateLimitExceeded
+
+# Global cache for Web3 clients by network_id
+_web3_client_cache: Dict[str, Web3] = {}
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
@@ -30,36 +32,6 @@ class SkillConfig(TypedDict):
     states: Dict[str, SkillState | SkillOwnerState]
     api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[Dict[str, Any]]
-
-
-class SkillContext(BaseModel):
-    skill_category: str
-    agent_id: str
-    user_id: Optional[str] = None
-    chat_id: Optional[str] = None
-    app_id: Optional[str] = None
-    entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
-    is_private: bool
-    payer: Optional[str] = None
-    _agent: Optional[Agent] = None
-
-    @property
-    def agent(self) -> Agent:
-        if self._agent is None:
-            self._agent = asyncio.run(Agent.get(self.agent_id))
-        return self._agent
-
-    @property
-    def config(self) -> Dict[str, Any]:
-        agent = self.agent
-        config = None
-        if agent.skills:
-            config = agent.skills.get(self.skill_category)
-        if not config:
-            raise ValueError(
-                f"Skill {self.skill_category} not found in agent {self.agent_id}"
-            )
-        return config
 
 
 class IntentKitSkill(BaseTool):
@@ -185,3 +157,23 @@ class IntentKitSkill(BaseTool):
         if runtime.context is None or not isinstance(runtime.context, AgentContext):
             raise ValueError("No AgentContext found")
         return runtime.context
+
+    def web3_client(self) -> Web3:
+        """Get a Web3 client for the skill."""
+        context = self.get_context()
+        agent = context.agent
+        network_id = agent.network_id
+
+        # Check global cache first
+        if network_id in _web3_client_cache:
+            return _web3_client_cache[network_id]
+
+        # Create new Web3 client and cache it
+        chain_provider: ChainProvider = self.skill_store.get_system_config(
+            "chain_provider"
+        )
+        chain = chain_provider.get_chain_config(network_id)
+        web3_client = Web3(Web3.HTTPProvider(chain.rpc_url))
+        _web3_client_cache[network_id] = web3_client
+
+        return web3_client

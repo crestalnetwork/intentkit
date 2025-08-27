@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple, Type
 
 from pydantic import BaseModel, Field
+from web3.exceptions import ContractLogicError
 
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 from intentkit.skills.xmtp.base import XmtpBaseTool
@@ -13,9 +14,6 @@ class TransferInput(BaseModel):
     to_address: str = Field(description="The recipient address for the transfer")
     amount: str = Field(
         description="The amount to transfer (as string to handle large numbers)"
-    )
-    decimals: int = Field(
-        description="Number of decimal places for the token (18 for ETH, varies for ERC20 tokens)"
     )
     currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC', 'DAI')")
     token_contract_address: Optional[str] = Field(
@@ -44,7 +42,6 @@ class XmtpTransfer(XmtpBaseTool):
         from_address: str,
         to_address: str,
         amount: str,
-        decimals: int,
         currency: str,
         token_contract_address: Optional[str],
     ) -> Tuple[str, List[ChatMessageAttachment]]:
@@ -54,10 +51,8 @@ class XmtpTransfer(XmtpBaseTool):
             from_address: The sender address
             to_address: The recipient address
             amount: Amount to transfer
-            decimals: Token decimals
             currency: Currency symbol
             token_contract_address: Token contract address (None for ETH)
-            config: LangChain runnable config
 
         Returns:
             Tuple of (content_message, list_of_attachments)
@@ -79,6 +74,65 @@ class XmtpTransfer(XmtpBaseTool):
             )
 
         chain_id_hex = chain_id_hex_by_network[agent.network_id]
+
+        # Validate token contract and get decimals
+        if token_contract_address:
+            # Validate ERC20 contract and get token info
+            web3 = self.web3_client()
+
+            # ERC20 ABI for symbol() and decimals() functions
+            erc20_abi = [
+                {
+                    "constant": True,
+                    "inputs": [],
+                    "name": "symbol",
+                    "outputs": [{"name": "", "type": "string"}],
+                    "type": "function",
+                },
+                {
+                    "constant": True,
+                    "inputs": [],
+                    "name": "decimals",
+                    "outputs": [{"name": "", "type": "uint8"}],
+                    "type": "function",
+                },
+            ]
+
+            try:
+                # Create contract instance
+                contract = web3.eth.contract(
+                    address=web3.to_checksum_address(token_contract_address),
+                    abi=erc20_abi,
+                )
+
+                # Get token symbol and decimals
+                token_symbol = contract.functions.symbol().call()
+                decimals = contract.functions.decimals().call()
+
+                # Validate symbol matches currency (case insensitive)
+                if token_symbol.upper() != currency.upper():
+                    raise ValueError(
+                        f"Token symbol mismatch: contract symbol is '{token_symbol}', "
+                        f"but currency parameter is '{currency}'"
+                    )
+
+            except ContractLogicError:
+                raise ValueError(
+                    f"Invalid ERC20 contract address: {token_contract_address}. "
+                    "The address does not point to a valid ERC20 token contract."
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to validate ERC20 contract {token_contract_address}: {str(e)}"
+                )
+        else:
+            # For ETH transfers, use 18 decimals
+            decimals = 18
+            # Validate currency is ETH for native transfers
+            if currency.upper() != "ETH":
+                raise ValueError(
+                    f"For native transfers, currency must be 'ETH', got '{currency}'"
+                )
 
         # Calculate amount in smallest unit (wei for ETH, token units for ERC20)
         amount_int = int(float(amount) * (10**decimals))
