@@ -5,17 +5,21 @@ The Firecrawl skills provide advanced web scraping and content indexing capabili
 ## Skills Overview
 
 ### 1. firecrawl_scrape
-Scrapes a single webpage and optionally indexes the content for future querying.
+Scrapes a single webpage and REPLACES any existing indexed content for that URL, preventing duplicates.
 
 **Parameters:**
 - `url` (required): The URL to scrape
-- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, extract (default: ["markdown"])
+- `formats` (optional): Output formats - markdown, html, rawHtml, screenshot, links, json (default: ["markdown"])
+- `only_main_content` (optional): Extract only main content (default: true)
 - `include_tags` (optional): HTML tags to include (e.g., ["h1", "h2", "p"])
 - `exclude_tags` (optional): HTML tags to exclude
-- `only_main_content` (optional): Extract only main content (default: true)
+- `wait_for` (optional): Wait time in milliseconds before scraping
+- `timeout` (optional): Maximum timeout in milliseconds (default: 30000)
 - `index_content` (optional): Whether to index content for querying (default: true)
 - `chunk_size` (optional): Size of text chunks for indexing (default: 1000)
 - `chunk_overlap` (optional): Overlap between chunks (default: 200)
+
+**Use Case:** Use this when you want to refresh/update content from a URL that was previously scraped, ensuring no duplicate or stale content remains.
 
 ### 2. firecrawl_crawl
 Crawls multiple pages from a website and indexes all content.
@@ -158,8 +162,9 @@ Prompt: "Use firecrawl_scrape to scrape https://example.com and index the conten
 ### Documentation Indexing
 ```
 1. Scrape main documentation page
-2. Crawl related documentation sections
-3. Query for specific technical information
+2. Crawl related documentation sections  
+3. Use scrape again to update changed pages (replaces old content)
+4. Query for specific technical information
 ```
 
 ### Competitive Analysis
@@ -205,6 +210,7 @@ Prompt: "Use firecrawl_scrape to scrape https://example.com and index the conten
 - **PDF Support**: Can scrape and index PDF documents
 - **Intelligent Chunking**: Optimized text splitting for better search
 - **Independent Storage**: Uses its own dedicated vector store for Firecrawl content
+- **Content Replacement**: Replace mode prevents duplicate/stale content
 - **Metadata Rich**: Includes source URLs, timestamps, and content types
 - **Semantic Search**: Uses OpenAI embeddings for intelligent querying
 - **Batch Processing**: Efficient handling of multiple pages
