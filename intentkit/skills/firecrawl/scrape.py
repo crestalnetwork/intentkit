@@ -428,7 +428,5 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 f"Timeout error: The request to scrape {url} took too long to complete."
             )
         except Exception as e:
-            logger.error(
-                f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True
-            )
+            logger.error(f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True)
             return f"An error occurred while scraping the URL: {str(e)}"
