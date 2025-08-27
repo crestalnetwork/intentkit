@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
 
@@ -6,7 +5,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import (
-    BaseModel,
     ValidationError,
 )
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -14,7 +12,6 @@ from redis.exceptions import RedisError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
 from intentkit.utils.error import RateLimitExceeded
 
@@ -30,36 +27,6 @@ class SkillConfig(TypedDict):
     states: Dict[str, SkillState | SkillOwnerState]
     api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[Dict[str, Any]]
-
-
-class SkillContext(BaseModel):
-    skill_category: str
-    agent_id: str
-    user_id: Optional[str] = None
-    chat_id: Optional[str] = None
-    app_id: Optional[str] = None
-    entrypoint: Literal["web", "twitter", "telegram", "trigger", "api"]
-    is_private: bool
-    payer: Optional[str] = None
-    _agent: Optional[Agent] = None
-
-    @property
-    def agent(self) -> Agent:
-        if self._agent is None:
-            self._agent = asyncio.run(Agent.get(self.agent_id))
-        return self._agent
-
-    @property
-    def config(self) -> Dict[str, Any]:
-        agent = self.agent
-        config = None
-        if agent.skills:
-            config = agent.skills.get(self.skill_category)
-        if not config:
-            raise ValueError(
-                f"Skill {self.skill_category} not found in agent {self.agent_id}"
-            )
-        return config
 
 
 class IntentKitSkill(BaseTool):
