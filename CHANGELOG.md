@@ -1,3 +1,23 @@
+## v0.6.19
+
+### Features
+- **Credit System**: Add base credit type amount fields and migration script
+- **Credit Events**: Enhance consistency checker and add fixer script
+- **Event System**: Add event check functionality
+- **Transaction Details**: Add fee detail in event and tx
+
+### Bug Fixes
+- **CDP Networks**: Add network id mapping hack for cdp mainnet networks
+- **UI**: Always hide skill details
+- **Onchain Options**: Better onchain options description
+
+### Technical Improvements
+- Enhanced credit event consistency checking and fixing capabilities
+- Improved network compatibility for CDP mainnet operations
+- Better transaction fee tracking and reporting
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.18...v0.6.19
+
 ## v0.6.18
 
 ### New Features
