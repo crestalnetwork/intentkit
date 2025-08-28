@@ -1,3 +1,25 @@
+## v0.6.20
+
+### Features
+- **Firecrawl Integration**: Enhanced firecrawl scraping capabilities by consolidating logic into a single `firecrawl_scrape` skill, removing the redundant `firecrawl_replace_scrape` skill
+- **Web3 Client**: Added web3 client support to skills for better blockchain integration
+- **XMTP Transfer**: Improved XMTP transfer validation and checking mechanisms
+
+### Bug Fixes
+- Fixed Supabase integration bugs
+- Better XMTP transfer validation and error handling
+- Removed deprecated skill context to improve performance
+
+### Documentation
+- Updated Firecrawl skill documentation
+- Enhanced changelog maintenance
+
+### Technical Improvements
+- Code quality improvements and lint fixes
+- Minor performance optimizations
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.19...v0.6.20
+
 ## v0.6.19
 
 ### Features
