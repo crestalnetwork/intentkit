@@ -71,10 +71,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/crestal-network/intentkit"
-Repository = "https://github.com/crestal-network/intentkit"
-Documentation = "https://github.com/crestal-network/intentkit/tree/main/docs"
-"Bug Tracker" = "https://github.com/crestal-network/intentkit/issues"
+Homepage = "https://github.com/crestalnetwork/intentkit"
+Repository = "https://github.com/crestalnetwork/intentkit"
+Documentation = "https://github.com/crestalnetwork/intentkit/tree/main/docs"
+"Bug Tracker" = "https://github.com/crestalnetwork/intentkit/issues"
 
 [dependency-groups]
 dev = [

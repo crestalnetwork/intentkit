@@ -682,7 +682,7 @@
       "description": "Ticker symbol of the agent",
       "maxLength": 10,
       "minLength": 1,
-      "x-group": "internal",
+      "x-group": "onchain",
       "x-placeholder": "Enter agent ticker"
     },
     "token_address": {
@@ -690,16 +690,14 @@
       "type": "string",
       "description": "Token address of the agent, if it already has one",
       "maxLength": 42,
-      "readOnly": true,
-      "x-group": "internal"
+      "x-group": "onchain"
     },
     "token_pool": {
       "title": "Token Pool",
       "type": "string",
       "description": "Pool of the agent token, if it has one",
       "maxLength": 42,
-      "readOnly": true,
-      "x-group": "internal"
+      "x-group": "onchain"
     }
   },
   "if": {
