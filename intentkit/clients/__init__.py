@@ -4,6 +4,7 @@ from intentkit.clients.twitter import (
     TwitterClientConfig,
     get_twitter_client,
 )
+from intentkit.clients.web3 import get_web3_client
 
 __all__ = [
     "TwitterClient",
@@ -11,4 +12,5 @@ __all__ = [
     "get_twitter_client",
     "CdpClient",
     "get_cdp_client",
+    "get_web3_client",
 ]

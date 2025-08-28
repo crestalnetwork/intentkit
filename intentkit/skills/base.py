@@ -13,12 +13,9 @@ from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
-from intentkit.utils.chain import ChainProvider
 from intentkit.utils.error import RateLimitExceeded
-
-# Global cache for Web3 clients by network_id
-_web3_client_cache: Dict[str, Web3] = {}
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
@@ -164,16 +161,4 @@ class IntentKitSkill(BaseTool):
         agent = context.agent
         network_id = agent.network_id
 
-        # Check global cache first
-        if network_id in _web3_client_cache:
-            return _web3_client_cache[network_id]
-
-        # Create new Web3 client and cache it
-        chain_provider: ChainProvider = self.skill_store.get_system_config(
-            "chain_provider"
-        )
-        chain = chain_provider.get_chain_config(network_id)
-        web3_client = Web3(Web3.HTTPProvider(chain.rpc_url))
-        _web3_client_cache[network_id] = web3_client
-
-        return web3_client
+        return get_web3_client(network_id, self.skill_store)
