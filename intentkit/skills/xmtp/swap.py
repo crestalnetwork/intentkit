@@ -33,14 +33,14 @@ class XmtpSwap(XmtpBaseTool):
 
     Generates a wallet_sendCalls transaction request to perform a token swap.
     May include an ERC20 approval call followed by the router swap call.
-    Supports Base mainnet and Base Sepolia testnet.
+    Supports Ethereum, Polygon, Base, Arbitrum, and Optimism networks (both mainnet and testnet).
     """
 
     name: str = "xmtp_swap"
     description: str = (
-        "Create an XMTP transaction request for swapping tokens on Base using CDP swap quote. "
+        "Create an XMTP transaction request for swapping tokens using CDP swap quote. "
         "Returns a wallet_sendCalls payload that can include an optional approval call and the swap call. "
-        "Only supports base-mainnet and base-sepolia."
+        "Supports Ethereum, Base, Arbitrum, and Optimism mainnet networks."
     )
     args_schema: Type[BaseModel] = SwapInput
 
@@ -87,26 +87,25 @@ class XmtpSwap(XmtpBaseTool):
         context = self.get_context()
         agent = context.agent
 
-        # ChainId mapping for XMTP wallet_sendCalls
-        chain_id_hex_by_network = {
-            "base-mainnet": "0x2105",  # 8453
-            "base-sepolia": "0x14A34",  # 84532
-        }
-
-        if agent.network_id not in chain_id_hex_by_network:
+        # Only support mainnet networks for swap
+        supported_networks = [
+            "ethereum-mainnet",
+            "base-mainnet",
+            "arbitrum-mainnet",
+            "optimism-mainnet",
+        ]
+        if agent.network_id not in supported_networks:
             raise ValueError(
-                f"XMTP swap only supports base-mainnet or base-sepolia. Current agent network: {agent.network_id}"
+                f"Swap only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
             )
 
-        chain_id_hex = chain_id_hex_by_network[agent.network_id]
+        # Validate network and get chain ID
+        chain_id_hex = self.validate_network_and_get_chain_id(agent.network_id, "swap")
 
-        # CDP network mapping for swap quote API
+        # Get CDP network name
         # Reference: CDP SDK examples for swap quote and price
         # https://github.com/coinbase/cdp-sdk/blob/main/examples/python/evm/swaps/create_swap_quote.py
-        network_for_cdp = {
-            "base-mainnet": "base",
-            "base-sepolia": "base-sepolia",
-        }[agent.network_id]
+        network_for_cdp = self.get_cdp_network(agent.network_id)
 
         # Get CDP client from global origin helper (server-side credentials)
         cdp_client = get_origin_cdp_client(self.skill_store)

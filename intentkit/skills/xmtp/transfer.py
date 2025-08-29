@@ -13,9 +13,9 @@ class TransferInput(BaseModel):
     from_address: str = Field(description="The sender address for the transfer")
     to_address: str = Field(description="The recipient address for the transfer")
     amount: str = Field(
-        description="The amount to transfer (as string to handle large numbers)"
+        description="The amount to transfer in human-readable format (e.g., '1.5' for 1.5 ETH, '100' for 100 USDC). Do NOT multiply by token decimals."
     )
-    currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC', 'DAI')")
+    currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC', 'NATION')")
     token_contract_address: Optional[str] = Field(
         default=None,
         description="Token contract address for ERC20 transfers. Leave empty for ETH transfers.",
@@ -26,14 +26,10 @@ class XmtpTransfer(XmtpBaseTool):
     """Skill for creating XMTP transfer transactions."""
 
     name: str = "xmtp_transfer"
-    description: str = """Create an XMTP transaction request for transferring ETH or ERC20 tokens on Base mainnet.
-    
+    description: str = """Create an XMTP transaction request for transferring ETH or ERC20 tokens.
     This skill generates a wallet_sendCalls transaction request according to XMTP protocol 
-    that can be sent to users for signing. The transaction can transfer:
-    - ETH (when token_contract_address is not provided)
-    - ERC20 tokens (when token_contract_address is provided)
-    
-    Only supports Base mainnet network.
+    that can be sent to users for signing. 
+    Supports Ethereum, Polygon, Base, Arbitrum, and Optimism networks (both mainnet and testnet).
     """
     args_schema: Type[BaseModel] = TransferInput
 
@@ -61,19 +57,10 @@ class XmtpTransfer(XmtpBaseTool):
         context = self.get_context()
         agent = context.agent
 
-        # ChainId mapping for XMTP wallet_sendCalls
-        chain_id_hex_by_network = {
-            "base-mainnet": "0x2105",  # 8453
-            "base-sepolia": "0x14A34",  # 84532
-        }
-
-        if agent.network_id not in chain_id_hex_by_network:
-            raise ValueError(
-                f"XMTP transfer only supports base-mainnet or base-sepolia network. "
-                f"Current agent network: {agent.network_id}"
-            )
-
-        chain_id_hex = chain_id_hex_by_network[agent.network_id]
+        # Validate network and get chain ID
+        chain_id_hex = self.validate_network_and_get_chain_id(
+            agent.network_id, "transfer"
+        )
 
         # Validate token contract and get decimals
         if token_contract_address:
