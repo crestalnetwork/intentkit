@@ -21,7 +21,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
     """Skill for fetching indicative swap price using CDP SDK."""
 
     name: str = "xmtp_get_swap_price"
-    description: str = "Get an indicative swap price/quote for token pair and amount on Base networks using CDP."
+    description: str = "Get an indicative swap price/quote for token pair and amount on Ethereum, Base, Arbitrum, and Optimism mainnet networks using CDP."
     response_format: Literal["content", "content_and_artifact"] = "content"
     args_schema: Type[BaseModel] = SwapPriceInput
 
@@ -35,15 +35,19 @@ class XmtpGetSwapPrice(XmtpBaseTool):
         context = self.get_context()
         agent = context.agent
 
-        if agent.network_id not in ("base-mainnet", "base-sepolia"):
+        # Only support mainnet networks for price and swap
+        supported_networks = [
+            "ethereum-mainnet",
+            "base-mainnet",
+            "arbitrum-mainnet",
+            "optimism-mainnet",
+        ]
+        if agent.network_id not in supported_networks:
             raise ValueError(
-                f"Swap price only supported on base-mainnet or base-sepolia. Current: {agent.network_id}"
+                f"Swap price only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
             )
 
-        network_for_cdp = {
-            "base-mainnet": "base",
-            "base-sepolia": "base-sepolia",
-        }[agent.network_id]
+        network_for_cdp = self.get_cdp_network(agent.network_id)
 
         cdp_client = get_origin_cdp_client(self.skill_store)
         # Note: Don't use async with context manager as get_origin_cdp_client returns a managed global client

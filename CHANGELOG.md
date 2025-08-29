@@ -1,3 +1,21 @@
+## v0.6.21
+
+### Features
+- Added agent onchain fields support
+- Added web3 client and updated skill base class
+- Added clean thread memory functionality
+
+### Improvements
+- Package upgrade and maintenance
+
+### Bug Fixes
+- Fixed typo in intentkit package info
+
+### Documentation
+- Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.20...v0.6.21
+
 ## v0.6.20
 
 ### Features
