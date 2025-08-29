@@ -7,12 +7,9 @@ from pydantic import Field
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.dexscreener.utils import DEXSCREENER_BASE_URL
 
 logger = logging.getLogger(__name__)
-
-DEXSCREENER_BASE_URL = "https://api.dexscreener.com"
-
-# Removed DexScreenerApiError as it won't be raised by _get anymore
 
 # ApiResult still represents (success_data, error_data)
 ApiResult = Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]

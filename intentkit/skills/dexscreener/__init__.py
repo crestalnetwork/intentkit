@@ -4,6 +4,9 @@ from typing import Optional, TypedDict
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
+from intentkit.skills.dexscreener.get_pair_info import GetPairInfo
+from intentkit.skills.dexscreener.get_token_pairs import GetTokenPairs
+from intentkit.skills.dexscreener.get_tokens_info import GetTokensInfo
 from intentkit.skills.dexscreener.search_token import SearchToken
 
 # Cache skills at the system level, because they are stateless
@@ -14,10 +17,16 @@ logger = logging.getLogger(__name__)
 
 class SkillStates(TypedDict):
     search_token: SkillState
+    get_pair_info: SkillState
+    get_token_pairs: SkillState
+    get_tokens_info: SkillState
 
 
 _SKILL_NAME_TO_CLASS_MAP: dict[str, type[DexScreenerBaseTool]] = {
     "search_token": SearchToken,
+    "get_pair_info": GetPairInfo,
+    "get_token_pairs": GetTokenPairs,
+    "get_tokens_info": GetTokensInfo,
 }
 
 
