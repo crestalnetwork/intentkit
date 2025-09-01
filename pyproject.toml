@@ -78,7 +78,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.11.9,<0.12",
+    "ruff>=0.11.9,<0.13",
     "jsonschema>=4.21.1,<5",
     "deptry>=0.23.0",
 ]
