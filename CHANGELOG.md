@@ -1,3 +1,13 @@
+## v0.6.23
+
+### Features
+- Add reasoning_effort parameter for gpt-5 models
+
+### Documentation
+- Update changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.22...v0.6.23
+
 ## v0.6.22
 
 ### Features

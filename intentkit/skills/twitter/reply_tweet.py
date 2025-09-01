@@ -73,9 +73,7 @@ class TwitterReplyTweet(TwitterBaseTool):
             # Handle image upload if provided
             if image:
                 # Validate image URL - must be from system's S3 CDN
-                aws_s3_cdn_url = await self.skill_store.get_system_config(
-                    "aws_s3_cdn_url"
-                )
+                aws_s3_cdn_url = self.skill_store.get_system_config("aws_s3_cdn_url")
                 if aws_s3_cdn_url and image.startswith(aws_s3_cdn_url):
                     # Use the TwitterClient method to upload the image
                     media_ids = await twitter.upload_media(context.agent_id, image)
