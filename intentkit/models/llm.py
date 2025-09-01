@@ -612,6 +612,9 @@ class OpenAILLM(LLMModel):
         if info.api_base:
             kwargs["openai_api_base"] = info.api_base
 
+        if self.model_name.startswith("gpt-5"):
+            kwargs["reasoning_effort"] = "minimal"
+
         logger.debug(f"Creating ChatOpenAI instance with kwargs: {kwargs}")
 
         return ChatOpenAI(**kwargs)

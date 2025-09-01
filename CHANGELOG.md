@@ -1,3 +1,24 @@
+## v0.6.22
+
+### Features
+- **XMTP Skills Enhancement**: Expanded XMTP skills to support multiple networks, improving cross-chain communication capabilities
+- **DexScreener Integration**: Added comprehensive DexScreener skills for enhanced token and pair information retrieval
+  - New `get_pair_info` skill for detailed trading pair data
+  - New `get_token_pairs` skill for token pair discovery
+  - New `get_tokens_info` skill for comprehensive token information
+  - Enhanced search functionality with improved utilities
+
+### Technical Improvements
+- Added new Web3 client utilities for better blockchain interaction
+- Enhanced chat functionality in core system
+- Updated agent schema with improved configuration options
+- Improved skill base classes with better error handling
+
+### Dependencies
+- Updated project dependencies for better compatibility and security
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.21...v0.6.22
+
 ## v0.6.21
 
 ### Features
