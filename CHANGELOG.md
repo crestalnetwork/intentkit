@@ -1,3 +1,17 @@
+## v0.6.25
+
+### Refactoring
+- Simplified Dockerfile dependency installation process
+- Removed unnecessary await from sync get_system_config calls in Twitter module
+
+### Build & Configuration
+- Updated project name and added workspace configuration
+
+### Documentation
+- Updated changelog for v0.6.23 release
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.23...v0.6.25
+
 ## v0.6.23
 
 ### Features

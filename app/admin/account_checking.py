@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -693,7 +694,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    import asyncio
-
     # Run the main function
     asyncio.run(main())
