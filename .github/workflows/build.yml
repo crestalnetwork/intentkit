@@ -53,8 +53,7 @@ jobs:
         
     - name: Publish to PyPI
       run: |
-        cd intentkit
-        uv publish --token ${{ secrets.UV_PUBLISH_TOKEN }}
+        uv publish --token ${{ secrets.UV_PUBLISH_TOKEN }} dist/*
 
   docker:
     runs-on: ubuntu-latest

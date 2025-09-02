@@ -1,3 +1,10 @@
+## v0.6.26
+
+### Refactoring
+- Move asyncio import to top of file in account_checking.py
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.25...v0.6.26
+
 ## v0.6.25
 
 ### Refactoring
