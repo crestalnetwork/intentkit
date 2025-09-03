@@ -33,6 +33,9 @@ class CreditEventConsistencyChecker:
         self.zero_sum_inconsistent_count = (
             0  # Cases where detail sum is 0 but total is not 0
         )
+        self.zero_sum_inconsistent_details: List[
+            Dict
+        ] = []  # Cases where detail sum is 0 but total is not 0
         self.non_zero_sum_inconsistent_details: List[
             Dict
         ] = []  # Unexpected errors where details are non-zero but still unequal
@@ -158,8 +161,16 @@ class CreditEventConsistencyChecker:
                 else:
                     self.inconsistent_records += 1
                     if is_zero_sum_error:
-                        # Cases where detail sum is 0, only count the number
+                        # Cases where detail sum is 0, count and store details
                         self.zero_sum_inconsistent_count += 1
+                        self.zero_sum_inconsistent_details.append(
+                            {
+                                "id": record.id,
+                                "created_at": record.created_at,
+                                "event_type": record.event_type,
+                                "errors": errors,
+                            }
+                        )
                     else:
                         # Unexpected errors where details are non-zero but still unequal, need detailed records
                         self.non_zero_sum_inconsistent_details.append(
@@ -194,7 +205,27 @@ class CreditEventConsistencyChecker:
             consistency_rate = (self.consistent_records / self.total_records) * 100
             print(f"Consistency rate: {consistency_rate:.2f}%")
 
-        # Only show details for unexpected errors
+        # Show details for zero-sum inconsistent records
+        if self.zero_sum_inconsistent_details:
+            print("\n" + "-" * 40)
+            print("ZERO-SUM INCONSISTENT RECORDS (Details sum to 0 but total is not 0)")
+            print("-" * 40)
+
+            # Show first 10 zero-sum inconsistent records
+            for i, detail in enumerate(self.zero_sum_inconsistent_details[:10]):
+                print(f"\n{i + 1}. Record ID: {detail['id']}")
+                print(f"   Created at: {detail['created_at']}")
+                print(f"   Event type: {detail['event_type']}")
+                print("   Errors:")
+                for error in detail["errors"]:
+                    print(f"     - {error}")
+
+            if len(self.zero_sum_inconsistent_details) > 10:
+                print(
+                    f"\n... and {len(self.zero_sum_inconsistent_details) - 10} more zero-sum inconsistent records."
+                )
+
+        # Show details for unexpected errors
         if self.non_zero_sum_inconsistent_details:
             print("\n" + "-" * 40)
             print("NON-ZERO-SUM INCONSISTENT RECORDS (Unexpected Errors)")
