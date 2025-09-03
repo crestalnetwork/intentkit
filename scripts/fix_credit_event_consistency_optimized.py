@@ -146,21 +146,26 @@ class OptimizedCreditEventConsistencyFixer:
         free_amount = to_decimal(record.free_amount)
         reward_amount = to_decimal(record.reward_amount)
         permanent_amount = to_decimal(record.permanent_amount)
-        
+
         # Special handling for records where credit type amounts are 0
         # but total_amount is non-zero - distribute total_amount based on credit_type
-        if (total_amount > Decimal("0") and 
-            free_amount == Decimal("0") and 
-            reward_amount == Decimal("0") and 
-            permanent_amount == Decimal("0")):
-            
+        if (
+            total_amount > Decimal("0")
+            and free_amount == Decimal("0")
+            and reward_amount == Decimal("0")
+            and permanent_amount == Decimal("0")
+        ):
             # Determine which credit type to use for distribution
             credit_type = None
-            if hasattr(record, 'credit_type') and record.credit_type:
+            if hasattr(record, "credit_type") and record.credit_type:
                 credit_type = record.credit_type
-            elif hasattr(record, 'credit_types') and record.credit_types and len(record.credit_types) > 0:
+            elif (
+                hasattr(record, "credit_types")
+                and record.credit_types
+                and len(record.credit_types) > 0
+            ):
                 credit_type = record.credit_types[0]
-            
+
             # Distribute total_amount to the appropriate credit type field using CreditType enum values
             if credit_type == "free_credits":  # CreditType.FREE
                 free_amount = total_amount
@@ -169,7 +174,9 @@ class OptimizedCreditEventConsistencyFixer:
             elif credit_type == "credits":  # CreditType.PERMANENT
                 permanent_amount = total_amount
             else:
-                raise ValueError(f"Unknown or missing credit_type: {credit_type} for record {record.id} with total_amount > 0 but all credit fields are 0")
+                raise ValueError(
+                    f"Unknown or missing credit_type: {credit_type} for record {record.id} with total_amount > 0 but all credit fields are 0"
+                )
 
         # Calculate fee_platform amounts by credit type
         fee_platform_free_amount = Decimal("0")
