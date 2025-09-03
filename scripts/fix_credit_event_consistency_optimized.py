@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import select, text, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
@@ -344,43 +344,41 @@ class OptimizedCreditEventConsistencyFixer:
 
         return successful, failed
 
-    async def get_total_count(self, session: AsyncSession) -> int:
-        """Get total count of records efficiently."""
-        stmt = select(text("COUNT(*)")).select_from(CreditEventTable)
-        result = await session.execute(stmt)
-        return result.scalar()
-
-    async def stream_records(self, session: AsyncSession, offset: int, limit: int):
-        """Stream records in pages to avoid loading all into memory."""
+    async def stream_records(self, session: AsyncSession, last_id: str, limit: int):
+        """Stream records using cursor-based pagination to avoid batch drift."""
         stmt = (
             select(CreditEventTable)
-            .order_by(CreditEventTable.created_at)
-            .offset(offset)
+            .where(CreditEventTable.id > last_id if last_id else True)
+            .order_by(CreditEventTable.id)
             .limit(limit)
         )
         result = await session.execute(stmt)
         return result.scalars().all()
 
     async def find_and_fix_inconsistent_records(self, session: AsyncSession):
-        """Find all inconsistent records and fix them using optimized approach."""
-        # Get total count first
-        self.total_records = await self.get_total_count(session)
-        logger.info(f"Total records to check: {self.total_records}")
+        """Find all inconsistent records and fix them using optimized approach with cursor-based pagination."""
+        logger.info(
+            "Starting credit event consistency fixing with cursor-based pagination..."
+        )
 
-        offset = 0
+        last_id = ""
         batch_number = 1
         pending_updates = []
 
-        while offset < self.total_records:
-            # Stream records in pages
-            records = await self.stream_records(session, offset, PAGE_SIZE)
+        while True:
+            # Stream records using cursor-based pagination
+            records = await self.stream_records(session, last_id, PAGE_SIZE)
 
             if not records:
                 break
 
             logger.info(
-                f"Processing batch {batch_number}, records {offset + 1}-{min(offset + PAGE_SIZE, self.total_records)}"
+                f"Processing batch {batch_number}, records starting from ID {records[0].id}"
             )
+
+            # Update cursor to the last processed record's ID
+            last_id = records[-1].id
+            self.total_records += len(records)
 
             # Process batch concurrently
             updates, fixed_count, failed_count = await self.process_records_batch(
@@ -415,7 +413,6 @@ class OptimizedCreditEventConsistencyFixer:
                     f"Batch {batch_number} completed: {fixed_count} to fix, {failed_count} failed"
                 )
 
-            offset += PAGE_SIZE
             batch_number += 1
             self.processed_batches += 1
 

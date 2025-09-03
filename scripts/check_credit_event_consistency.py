@@ -119,23 +119,19 @@ class CreditEventConsistencyChecker:
         return len(errors) == 0, errors, is_zero_sum_error
 
     async def check_all_records(self, session: AsyncSession, batch_size: int = 1000):
-        """Check all credit event records in batches."""
+        """Check all credit event records in batches using cursor-based pagination."""
         logger.info("Starting credit event consistency check...")
 
-        # Get total count first
-        count_query = select(CreditEventTable.id).select_from(CreditEventTable)
-        result = await session.execute(count_query)
-        total_count = len(result.fetchall())
-        logger.info(f"Total records to check: {total_count}")
+        # Use cursor-based pagination to avoid batch drift
+        last_id = ""
+        batch_number = 1
 
-        # Process records in batches
-        offset = 0
         while True:
             query = (
                 select(CreditEventTable)
-                .offset(offset)
+                .where(CreditEventTable.id > last_id if last_id else True)
+                .order_by(CreditEventTable.id)
                 .limit(batch_size)
-                .order_by(CreditEventTable.created_at)
             )
 
             result = await session.execute(query)
@@ -145,8 +141,11 @@ class CreditEventConsistencyChecker:
                 break
 
             logger.info(
-                f"Processing batch {offset // batch_size + 1}, records {offset + 1}-{offset + len(records)}"
+                f"Processing batch {batch_number}, records starting from ID {records[0][0].id}"
             )
+
+            # Update cursor to the last processed record's ID
+            last_id = records[-1][0].id
 
             for record_tuple in records:
                 record = record_tuple[0]  # Extract the actual record from tuple
@@ -182,7 +181,7 @@ class CreditEventConsistencyChecker:
                             }
                         )
 
-            offset += batch_size
+            batch_number += 1
 
         logger.info("Consistency check completed.")
 
