@@ -234,7 +234,6 @@ class CreditEventConsistencyFixer:
             )
             await session.execute(stmt)
 
-            logger.info(f"Fixed record {record.id}")
             return True
 
         except Exception as e:
@@ -258,6 +257,9 @@ class CreditEventConsistencyFixer:
                 f"Processing batch {i // batch_size + 1}, records {i + 1}-{min(i + batch_size, len(records))}"
             )
 
+            batch_fixed_count = 0
+            batch_failed_count = 0
+            
             for record in batch:
                 is_consistent, errors = self.check_record_consistency(record)
 
@@ -276,8 +278,13 @@ class CreditEventConsistencyFixer:
                     # Try to fix the record
                     if await self.fix_inconsistent_record(session, record):
                         self.fixed_records += 1
+                        batch_fixed_count += 1
                     else:
                         self.failed_fixes += 1
+                        batch_failed_count += 1
+            
+            if batch_fixed_count > 0 or batch_failed_count > 0:
+                logger.info(f"Batch {i // batch_size + 1} completed: {batch_fixed_count} fixed, {batch_failed_count} failed")
 
         # Commit all changes
         await session.commit()
