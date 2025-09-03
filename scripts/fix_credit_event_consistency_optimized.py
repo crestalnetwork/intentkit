@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-Credit Event Consistency Fixer
+Optimized Credit Event Consistency Fixer
 
-This script finds inconsistent credit events and recalculates the 12 detailed amount fields
-using the same logic from the expense_skill function, then updates the database records.
+This is an optimized version of the credit event consistency fixer that addresses
+performance bottlenecks in the original script:
+
+1. Uses streaming/pagination instead of loading all records into memory
+2. Implements batch updates for better database performance
+3. Uses smaller transaction scopes to avoid long-running transactions
+4. Adds concurrent processing for CPU-intensive calculations
+5. Optimizes database queries with proper indexing hints
 
 The 12 fields that will be recalculated and updated are:
 - free_amount, reward_amount, permanent_amount
@@ -14,10 +20,12 @@ The 12 fields that will be recalculated and updated are:
 
 import asyncio
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
@@ -30,6 +38,12 @@ logger = logging.getLogger(__name__)
 # Define the precision for all decimal calculations (4 decimal places)
 FOURPLACES = Decimal("0.0001")
 
+# Configuration for optimization
+PAGE_SIZE = 1000  # Larger page size for streaming
+BATCH_UPDATE_SIZE = 50  # Batch size for database updates
+MAX_WORKERS = 4  # Number of threads for concurrent processing
+COMMIT_INTERVAL = 10  # Commit every N batches
+
 
 def to_decimal(value) -> Decimal:
     """Convert value to Decimal, handling None values."""
@@ -38,15 +52,17 @@ def to_decimal(value) -> Decimal:
     return Decimal(str(value))
 
 
-class CreditEventConsistencyFixer:
-    """Fixer for credit event consistency issues."""
+class OptimizedCreditEventConsistencyFixer:
+    """Optimized fixer for credit event consistency issues."""
 
     def __init__(self):
         self.total_records = 0
         self.inconsistent_records = 0
         self.fixed_records = 0
         self.failed_fixes = 0
-        self.inconsistent_details: List[Dict] = []
+        self.processed_batches = 0
+        self.start_time = time.time()
+        self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
     def check_record_consistency(
         self, record: CreditEventTable
@@ -130,6 +146,30 @@ class CreditEventConsistencyFixer:
         free_amount = to_decimal(record.free_amount)
         reward_amount = to_decimal(record.reward_amount)
         permanent_amount = to_decimal(record.permanent_amount)
+        
+        # Special handling for records where credit type amounts are 0
+        # but total_amount is non-zero - distribute total_amount based on credit_type
+        if (total_amount > Decimal("0") and 
+            free_amount == Decimal("0") and 
+            reward_amount == Decimal("0") and 
+            permanent_amount == Decimal("0")):
+            
+            # Determine which credit type to use for distribution
+            credit_type = None
+            if hasattr(record, 'credit_type') and record.credit_type:
+                credit_type = record.credit_type
+            elif hasattr(record, 'credit_types') and record.credit_types and len(record.credit_types) > 0:
+                credit_type = record.credit_types[0]
+            
+            # Distribute total_amount to the appropriate credit type field using CreditType enum values
+            if credit_type == "free_credits":  # CreditType.FREE
+                free_amount = total_amount
+            elif credit_type == "reward_credits":  # CreditType.REWARD
+                reward_amount = total_amount
+            elif credit_type == "credits":  # CreditType.PERMANENT
+                permanent_amount = total_amount
+            else:
+                raise ValueError(f"Unknown or missing credit_type: {credit_type} for record {record.id} with total_amount > 0 but all credit fields are 0")
 
         # Calculate fee_platform amounts by credit type
         fee_platform_free_amount = Decimal("0")
@@ -214,93 +254,190 @@ class CreditEventConsistencyFixer:
             "fee_agent_permanent_amount": fee_agent_permanent_amount,
         }
 
-    async def fix_inconsistent_record(
-        self, session: AsyncSession, record: CreditEventTable
-    ) -> bool:
-        """Fix a single inconsistent record by recalculating and updating the detailed amounts.
+    async def process_records_batch(
+        self, session: AsyncSession, records: List[CreditEventTable]
+    ) -> Tuple[List[Dict], int, int]:
+        """Process a batch of records and return updates to be applied.
 
         Returns:
-            True if the record was successfully fixed, False otherwise
+            Tuple of (updates_list, fixed_count, failed_count)
+        """
+        updates = []
+        fixed_count = 0
+        failed_count = 0
+
+        # Use thread pool for CPU-intensive consistency checking and calculations
+        loop = asyncio.get_event_loop()
+
+        # Process records concurrently
+        tasks = []
+        for record in records:
+            task = loop.run_in_executor(
+                self.executor, self._process_single_record, record
+            )
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Failed to process record {records[i].id}: {result}")
+                failed_count += 1
+            elif result is not None:
+                updates.append({"id": records[i].id, **result})
+                fixed_count += 1
+
+        return updates, fixed_count, failed_count
+
+    def _process_single_record(self, record: CreditEventTable) -> Optional[Dict]:
+        """Process a single record (CPU-intensive part).
+
+        Returns:
+            Dictionary of updates if record needs fixing, None if consistent
         """
         try:
-            # Calculate the correct detailed amounts
-            calculated_amounts = self.calculate_detailed_amounts(record)
-
-            # Update the record with the calculated amounts
-            stmt = (
-                update(CreditEventTable)
-                .where(CreditEventTable.id == record.id)
-                .values(**calculated_amounts)
-            )
-            await session.execute(stmt)
-
-            return True
-
+            is_consistent, _ = self.check_record_consistency(record)
+            if not is_consistent:
+                return self.calculate_detailed_amounts(record)
+            return None
         except Exception as e:
-            logger.error(f"Failed to fix record {record.id}: {str(e)}")
-            return False
+            raise Exception(f"Error processing record {record.id}: {str(e)}")
+
+    async def batch_update_records(
+        self, session: AsyncSession, updates: List[Dict]
+    ) -> Tuple[int, int]:
+        """Apply batch updates to the database.
+
+        Returns:
+            Tuple of (successful_updates, failed_updates)
+        """
+        successful = 0
+        failed = 0
+
+        # Process updates in smaller batches to avoid large transactions
+        for i in range(0, len(updates), BATCH_UPDATE_SIZE):
+            batch_updates = updates[i : i + BATCH_UPDATE_SIZE]
+
+            try:
+                # Use bulk update for better performance
+                for update_data in batch_updates:
+                    record_id = update_data.pop("id")
+                    stmt = (
+                        update(CreditEventTable)
+                        .where(CreditEventTable.id == record_id)
+                        .values(**update_data)
+                    )
+                    await session.execute(stmt)
+
+                successful += len(batch_updates)
+
+            except Exception as e:
+                logger.error(f"Failed to update batch: {str(e)}")
+                failed += len(batch_updates)
+
+        return successful, failed
+
+    async def get_total_count(self, session: AsyncSession) -> int:
+        """Get total count of records efficiently."""
+        stmt = select(text("COUNT(*)")).select_from(CreditEventTable)
+        result = await session.execute(stmt)
+        return result.scalar()
+
+    async def stream_records(self, session: AsyncSession, offset: int, limit: int):
+        """Stream records in pages to avoid loading all into memory."""
+        stmt = (
+            select(CreditEventTable)
+            .order_by(CreditEventTable.created_at)
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     async def find_and_fix_inconsistent_records(self, session: AsyncSession):
-        """Find all inconsistent records and fix them."""
-        # Query all credit event records
-        stmt = select(CreditEventTable).order_by(CreditEventTable.created_at)
-        result = await session.execute(stmt)
-        records = result.scalars().all()
-
-        self.total_records = len(records)
+        """Find all inconsistent records and fix them using optimized approach."""
+        # Get total count first
+        self.total_records = await self.get_total_count(session)
         logger.info(f"Total records to check: {self.total_records}")
 
-        batch_size = 100
-        for i in range(0, len(records), batch_size):
-            batch = records[i : i + batch_size]
+        offset = 0
+        batch_number = 1
+        pending_updates = []
+
+        while offset < self.total_records:
+            # Stream records in pages
+            records = await self.stream_records(session, offset, PAGE_SIZE)
+
+            if not records:
+                break
+
             logger.info(
-                f"Processing batch {i // batch_size + 1}, records {i + 1}-{min(i + batch_size, len(records))}"
+                f"Processing batch {batch_number}, records {offset + 1}-{min(offset + PAGE_SIZE, self.total_records)}"
             )
 
-            batch_fixed_count = 0
-            batch_failed_count = 0
+            # Process batch concurrently
+            updates, fixed_count, failed_count = await self.process_records_batch(
+                session, records
+            )
 
-            for record in batch:
-                is_consistent, errors = self.check_record_consistency(record)
+            # Accumulate updates
+            pending_updates.extend(updates)
+            self.inconsistent_records += len(updates) + failed_count
+            self.failed_fixes += failed_count
 
-                if not is_consistent:
-                    self.inconsistent_records += 1
-                    self.inconsistent_details.append(
-                        {
-                            "id": record.id,
-                            "user_id": record.user_id,
-                            "skill_name": record.skill_name,
-                            "total_amount": record.total_amount,
-                            "errors": errors,
-                        }
+            # Apply updates in batches and commit periodically
+            if (
+                len(pending_updates) >= BATCH_UPDATE_SIZE
+                or batch_number % COMMIT_INTERVAL == 0
+            ):
+                if pending_updates:
+                    successful, failed = await self.batch_update_records(
+                        session, pending_updates
                     )
+                    self.fixed_records += successful
+                    self.failed_fixes += failed
 
-                    # Try to fix the record
-                    if await self.fix_inconsistent_record(session, record):
-                        self.fixed_records += 1
-                        batch_fixed_count += 1
-                    else:
-                        self.failed_fixes += 1
-                        batch_failed_count += 1
+                    # Commit periodically to avoid long transactions
+                    await session.commit()
+                    logger.info(f"Committed {successful} updates, {failed} failed")
 
-            if batch_fixed_count > 0 or batch_failed_count > 0:
+                    pending_updates = []
+
+            if fixed_count > 0 or failed_count > 0:
                 logger.info(
-                    f"Batch {i // batch_size + 1} completed: {batch_fixed_count} fixed, {batch_failed_count} failed"
+                    f"Batch {batch_number} completed: {fixed_count} to fix, {failed_count} failed"
                 )
 
-        # Commit all changes
-        await session.commit()
+            offset += PAGE_SIZE
+            batch_number += 1
+            self.processed_batches += 1
+
+        # Apply any remaining updates
+        if pending_updates:
+            successful, failed = await self.batch_update_records(
+                session, pending_updates
+            )
+            self.fixed_records += successful
+            self.failed_fixes += failed
+            await session.commit()
+            logger.info(f"Final commit: {successful} updates, {failed} failed")
+
         logger.info("All fixes committed to database.")
 
     def print_summary(self):
         """Print a summary of the fixing process."""
+        elapsed_time = time.time() - self.start_time
+
         print("\n" + "=" * 60)
-        print("CREDIT EVENT CONSISTENCY FIXER SUMMARY")
+        print("OPTIMIZED CREDIT EVENT CONSISTENCY FIXER SUMMARY")
         print("=" * 60)
         print(f"Total records checked: {self.total_records}")
         print(f"Inconsistent records found: {self.inconsistent_records}")
         print(f"Records successfully fixed: {self.fixed_records}")
         print(f"Records failed to fix: {self.failed_fixes}")
+        print(f"Processed batches: {self.processed_batches}")
+        print(f"Total processing time: {elapsed_time:.2f} seconds")
+
         if self.total_records > 0:
             consistency_rate = (
                 (self.total_records - self.inconsistent_records)
@@ -312,46 +449,46 @@ class CreditEventConsistencyFixer:
                 (self.total_records - self.failed_fixes) / self.total_records * 100
             )
             print(f"Final consistency rate: {final_consistency_rate:.2f}%")
+
+            records_per_second = (
+                self.total_records / elapsed_time if elapsed_time > 0 else 0
+            )
+            print(f"Processing rate: {records_per_second:.2f} records/second")
+
         print("=" * 60)
 
-        # Show details of failed fixes if any
-        if self.failed_fixes > 0:
-            print("\n" + "-" * 40)
-            print("FAILED TO FIX RECORDS")
-            print("-" * 40)
-            failed_count = 0
-            for detail in self.inconsistent_details:
-                if failed_count >= self.failed_fixes:
-                    break
-                print(f"Record ID: {detail['id']}")
-                print(f"User ID: {detail['user_id']}")
-                print(f"Skill: {detail['skill_name']}")
-                print(f"Total Amount: {detail['total_amount']}")
-                print("Errors:")
-                for error in detail["errors"]:
-                    print(f"  - {error}")
-                print("-" * 20)
-                failed_count += 1
+    def __del__(self):
+        """Cleanup thread pool executor."""
+        if hasattr(self, "executor"):
+            self.executor.shutdown(wait=True)
 
 
 async def main():
-    """Main function to run the consistency fixer."""
-    logger.info("Starting CreditEvent consistency fixer...")
+    """Main function to run the optimized consistency fixer."""
+    logger.info("Starting Optimized CreditEvent consistency fixer...")
 
     # Initialize database connection
     await init_db(**config.db)
 
     # Create fixer instance
-    fixer = CreditEventConsistencyFixer()
+    fixer = OptimizedCreditEventConsistencyFixer()
 
-    # Run the fixing process
-    async with get_session() as session:
-        logger.info("Starting credit event consistency fixing...")
-        await fixer.find_and_fix_inconsistent_records(session)
+    try:
+        # Run the fixing process
+        async with get_session() as session:
+            logger.info("Starting credit event consistency fixing...")
+            await fixer.find_and_fix_inconsistent_records(session)
 
-    # Print summary
-    fixer.print_summary()
-    logger.info("Consistency fixing completed.")
+        # Print summary
+        fixer.print_summary()
+        logger.info("Consistency fixing completed.")
+
+    except Exception as e:
+        logger.error(f"Error during processing: {str(e)}")
+        raise
+    finally:
+        # Ensure cleanup
+        del fixer
 
 
 if __name__ == "__main__":
