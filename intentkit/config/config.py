@@ -98,6 +98,7 @@ class Config:
         self.venice_api_key = self.load("VENICE_API_KEY")
         # LLM Config
         self.system_prompt = self.load("SYSTEM_PROMPT")
+        self.intentkit_prompt = self.load("INTENTKIT_PROMPT")
         self.input_token_limit = self.load_int("INPUT_TOKEN_LIMIT", 60000)
         # XMTP
         self.xmtp_system_prompt = self.load(
