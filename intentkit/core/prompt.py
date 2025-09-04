@@ -18,7 +18,7 @@ from intentkit.models.skill import Skill
 # ============================================================================
 
 # Base system prompt components
-BASE_SYSTEM_PROMPT = """You are an AI agent built using IntentKit.
+INTENTKIT_PROMPT = """You are an AI agent built using IntentKit.
 Your tools are called 'skills'.
 If your skill fails to execute due to a technical error ask the user to try again later, don't retry by yourself. If someone asks you to do something you can't do with your currently available skills, you must say so, recommend them to submit their feedback to the IntentKit team at https://github.com/crestalnetwork/intentkit. Be concise and helpful with your responses."""
 
@@ -45,7 +45,10 @@ def _build_system_header() -> str:
     prompt = "# SYSTEM PROMPT\n\n"
     if config.system_prompt:
         prompt += config.system_prompt + "\n\n"
-    prompt += BASE_SYSTEM_PROMPT + "\n"
+    if config.intentkit_prompt:
+        prompt += config.intentkit_prompt + "\n\n"
+    else:
+        prompt += INTENTKIT_PROMPT + "\n\n"
     return prompt
 
 
