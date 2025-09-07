@@ -1,3 +1,26 @@
+## v0.7.0
+
+### Features
+- **Config Enhancement**: Add intentkit_prompt to config and prompt system for better customization
+- **Credit Management**: Add comprehensive credit event consistency checker with base validation
+- **Migration Tools**: Add script to migrate credit accounts from transactions
+- **Optimization**: Optimize credit event consistency checking scripts for better performance
+
+### Fixes
+- **Model Update**: Change default model to gpt-5-mini for improved performance
+- **Credit Events**: Update and improve credit event consistency check script
+- **Workflow**: Update pypi publish workflow and changelog
+
+### Refactoring
+- **Credit Event Logic**: Improve readability of credit type distribution logic
+- **Performance**: Remove redundant logs and add batch stats tracking for better monitoring
+
+### Chores
+- **Documentation**: Update LLM rules and guidelines
+- **Migration Scripts**: Fix and improve migration scripts
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.6.26...v0.7.0
+
 ## v0.6.26
 
 ### Refactoring

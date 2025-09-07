@@ -1628,6 +1628,9 @@ async def refill_free_credits_for_account(
         credit_debit=CreditDebit.CREDIT,
         change_amount=amount_to_add,
         credit_type=CreditType.FREE,
+        free_amount=amount_to_add,
+        reward_amount=Decimal("0"),
+        permanent_amount=Decimal("0"),
     )
     session.add(user_tx)
 
@@ -1640,6 +1643,9 @@ async def refill_free_credits_for_account(
         credit_debit=CreditDebit.DEBIT,
         change_amount=amount_to_add,
         credit_type=CreditType.FREE,
+        free_amount=amount_to_add,
+        reward_amount=Decimal("0"),
+        permanent_amount=Decimal("0"),
     )
     session.add(platform_tx)
 
