@@ -26,6 +26,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
+# Precision constant for 4 decimal places
+FOURPLACES = Decimal("0.0001")
+
 
 class CreditType(str, Enum):
     """Credit type is used in db column names, do not change it."""
@@ -300,8 +303,11 @@ class CreditAccount(BaseModel):
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
 
+        # Quantize the amount to ensure proper precision
+        quantized_amount = amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         values_dict = {
-            credit_type.value: getattr(CreditAccountTable, credit_type.value) - amount,
+            credit_type.value: getattr(CreditAccountTable, credit_type.value)
+            - quantized_amount,
             "expense_at": datetime.now(timezone.utc),
         }
         if event_id:
@@ -348,14 +354,18 @@ class CreditAccount(BaseModel):
         else:
             if account.free_credits > 0:
                 details[CreditType.FREE] = account.free_credits
-                amount_left -= account.free_credits
+                amount_left = (amount_left - account.free_credits).quantize(
+                    FOURPLACES, rounding=ROUND_HALF_UP
+                )
             if amount_left <= account.reward_credits:
                 details[CreditType.REWARD] = amount_left
                 amount_left = Decimal("0")
             else:
                 if account.reward_credits > 0:
                     details[CreditType.REWARD] = account.reward_credits
-                    amount_left -= account.reward_credits
+                    amount_left = (amount_left - account.reward_credits).quantize(
+                        FOURPLACES, rounding=ROUND_HALF_UP
+                    )
                 details[CreditType.PERMANENT] = amount_left
 
         # Create values dict based on what's in details, defaulting to 0 for missing keys
@@ -368,9 +378,12 @@ class CreditAccount(BaseModel):
         # Add credit type values only if they exist in details
         for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
             if credit_type in details:
+                # Quantize the amount to ensure proper precision
+                quantized_amount = details[credit_type].quantize(
+                    FOURPLACES, rounding=ROUND_HALF_UP
+                )
                 values_dict[credit_type.value] = (
-                    getattr(CreditAccountTable, credit_type.value)
-                    - details[credit_type]
+                    getattr(CreditAccountTable, credit_type.value) - quantized_amount
                 )
 
         stmt = (
@@ -419,8 +432,10 @@ class CreditAccount(BaseModel):
         # Add credit type values based on amount_details
         for credit_type, amount in amount_details.items():
             if amount > 0:
+                # Quantize the amount to ensure 4 decimal places precision
+                quantized_amount = amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
                 values_dict[credit_type.value] = (
-                    getattr(CreditAccountTable, credit_type.value) + amount
+                    getattr(CreditAccountTable, credit_type.value) + quantized_amount
                 )
 
         stmt = (
@@ -620,6 +635,10 @@ class CreditAccount(BaseModel):
 
         if not note:
             raise ValueError("Quota update requires a note explaining the reason")
+
+        # Quantize values to ensure proper precision (4 decimal places)
+        free_quota = free_quota.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+        refill_amount = refill_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
         # Update the free_quota field
         stmt = (

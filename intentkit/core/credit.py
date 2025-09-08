@@ -1562,7 +1562,7 @@ async def refill_free_credits_for_account(
     # If adding refill_amount would exceed free_quota, only add what's needed to reach free_quota
     amount_to_add = min(
         account.refill_amount, account.free_quota - account.free_credits
-    )
+    ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
     if amount_to_add <= Decimal("0"):
         return  # Nothing to add

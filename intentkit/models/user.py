@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, Optional, Type, TypeVar
 
 from intentkit.models.base import Base
@@ -148,8 +148,13 @@ class UserUpdate(BaseModel):
         upstream_tx_id = f"nft_{id}_{timestamp}"
 
         # Calculate new quota values based on nft_count
-        free_quota = Decimal(480 + 48 * new_nft_count)
-        refill_amount = Decimal(20 + 2 * new_nft_count)
+        FOURPLACES = Decimal("0.0001")
+        free_quota = Decimal(480 + 48 * new_nft_count).quantize(
+            FOURPLACES, rounding=ROUND_HALF_UP
+        )
+        refill_amount = Decimal(20 + 2 * new_nft_count).quantize(
+            FOURPLACES, rounding=ROUND_HALF_UP
+        )
         note = f"NFT count changed to {new_nft_count}"
 
         # Update daily quota

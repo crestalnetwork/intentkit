@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Annotated, Any, Optional
 
@@ -17,6 +17,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func
 logger = logging.getLogger(__name__)
 
 _credit_per_usdc = None
+FOURPLACES = Decimal("0.0001")
 
 
 class LLMProvider(str, Enum):
@@ -219,14 +220,14 @@ class LLMModelInfo(BaseModel):
             * Decimal(input_tokens)
             * self.input_price
             / Decimal(1000000)
-        )
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         output_cost = (
             _credit_per_usdc
             * Decimal(output_tokens)
             * self.output_price
             / Decimal(1000000)
-        )
-        return input_cost + output_cost
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+        return (input_cost + output_cost).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
 
 # Define all available models
