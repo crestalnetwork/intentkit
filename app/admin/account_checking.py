@@ -34,7 +34,9 @@ class AccountCheckingResult:
         return f"[{self.timestamp.isoformat()}] {self.check_type}: {status_str} - {self.details}"
 
 
-async def check_account_balance_consistency() -> List[AccountCheckingResult]:
+async def check_account_balance_consistency(
+    check_recent_only: bool = True, recent_hours: int = 24
+) -> List[AccountCheckingResult]:
     """Check if all account balances are consistent with their transactions.
 
     This verifies that the total balance in each account matches the sum of all transactions
@@ -45,6 +47,10 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
     transaction queries, ensuring that only transactions from events up to and including
     the last recorded event for that account are considered.
 
+    Args:
+        check_recent_only: If True, only check accounts updated within recent_hours. Default True.
+        recent_hours: Number of hours to look back for recent updates. Default 24.
+
     Returns:
         List of checking results
     """
@@ -53,6 +59,11 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
     total_processed = 0
     batch_count = 0
     last_id = ""  # Starting ID for pagination (empty string comes before all valid IDs)
+
+    # Calculate time threshold for recent updates if needed
+    time_threshold = None
+    if check_recent_only:
+        time_threshold = datetime.now(timezone.utc) - timedelta(hours=recent_hours)
 
     while True:
         # Create a new session for each batch to prevent timeouts
@@ -64,6 +75,10 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 .order_by(CreditAccountTable.id)
                 .limit(batch_size)
             )
+
+            # Add time filter if checking recent updates only
+            if check_recent_only and time_threshold:
+                query = query.where(CreditAccountTable.updated_at >= time_threshold)
             accounts_result = await session.execute(query)
             batch_accounts = [
                 CreditAccount.model_validate(acc)
@@ -100,8 +115,11 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 if account.last_event_id:
                     query = text("""
                     SELECT 
-                        SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
-                        SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.change_amount ELSE 0 END) as credits,
+                        SUM(CASE WHEN ct.credit_debit = 'debit' THEN ct.change_amount ELSE 0 END) as debits,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.free_amount ELSE -ct.free_amount END) as free_credits_sum,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.reward_amount ELSE -ct.reward_amount END) as reward_credits_sum,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.permanent_amount ELSE -ct.permanent_amount END) as permanent_credits_sum
                     FROM credit_transactions ct
                     JOIN credit_events ce ON ct.event_id = ce.id
                     WHERE ct.account_id = :account_id 
@@ -118,10 +136,13 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 else:
                     query = text("""
                     SELECT 
-                        SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as credits,
-                        SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as debits
-                    FROM credit_transactions
-                    WHERE account_id = :account_id
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.change_amount ELSE 0 END) as credits,
+                        SUM(CASE WHEN ct.credit_debit = 'debit' THEN ct.change_amount ELSE 0 END) as debits,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.free_amount ELSE -ct.free_amount END) as free_credits_sum,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.reward_amount ELSE -ct.reward_amount END) as reward_credits_sum,
+                        SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.permanent_amount ELSE -ct.permanent_amount END) as permanent_credits_sum
+                    FROM credit_transactions ct
+                    WHERE ct.account_id = :account_id
                 """)
 
                     tx_result = await session.execute(
@@ -134,11 +155,28 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                 debits = tx_data.debits or Decimal("0")
                 expected_balance = credits - debits
 
-                # Compare total balances
-                is_consistent = total_balance == expected_balance
+                # Calculate expected balances for each credit type
+                expected_free_credits = tx_data.free_credits_sum or Decimal("0")
+                expected_reward_credits = tx_data.reward_credits_sum or Decimal("0")
+                expected_permanent_credits = tx_data.permanent_credits_sum or Decimal(
+                    "0"
+                )
+
+                # Compare total balances and individual credit type balances
+                is_total_consistent = total_balance == expected_balance
+                is_free_consistent = account.free_credits == expected_free_credits
+                is_reward_consistent = account.reward_credits == expected_reward_credits
+                is_permanent_consistent = account.credits == expected_permanent_credits
+
+                is_consistent = (
+                    is_total_consistent
+                    and is_free_consistent
+                    and is_reward_consistent
+                    and is_permanent_consistent
+                )
 
                 result = AccountCheckingResult(
-                    check_type="account_total_balance",
+                    check_type="account_balance_consistency",
                     status=is_consistent,
                     details={
                         "account_id": account.id,
@@ -147,25 +185,66 @@ async def check_account_balance_consistency() -> List[AccountCheckingResult]:
                         "current_total_balance": float(total_balance),
                         "free_credits": float(account.free_credits),
                         "reward_credits": float(account.reward_credits),
-                        "credits": float(account.credits),
-                        "expected_balance": float(expected_balance),
+                        "permanent_credits": float(account.credits),
+                        "expected_total_balance": float(expected_balance),
+                        "expected_free_credits": float(expected_free_credits),
+                        "expected_reward_credits": float(expected_reward_credits),
+                        "expected_permanent_credits": float(expected_permanent_credits),
                         "total_credits": float(credits),
                         "total_debits": float(debits),
-                        "difference": float(total_balance - expected_balance),
+                        "total_balance_difference": float(
+                            total_balance - expected_balance
+                        ),
+                        "free_credits_difference": float(
+                            account.free_credits - expected_free_credits
+                        ),
+                        "reward_credits_difference": float(
+                            account.reward_credits - expected_reward_credits
+                        ),
+                        "permanent_credits_difference": float(
+                            account.credits - expected_permanent_credits
+                        ),
+                        "is_total_consistent": is_total_consistent,
+                        "is_free_consistent": is_free_consistent,
+                        "is_reward_consistent": is_reward_consistent,
+                        "is_permanent_consistent": is_permanent_consistent,
                         "last_event_id": account.last_event_id,
                         "batch": batch_count,
+                        "check_recent_only": check_recent_only,
+                        "recent_hours": recent_hours if check_recent_only else None,
                     },
                 )
                 results.append(result)
 
                 if not is_consistent:
+                    inconsistency_details = []
+                    if not is_total_consistent:
+                        inconsistency_details.append(
+                            f"Total: {total_balance} vs {expected_balance}"
+                        )
+                    if not is_free_consistent:
+                        inconsistency_details.append(
+                            f"Free: {account.free_credits} vs {expected_free_credits}"
+                        )
+                    if not is_reward_consistent:
+                        inconsistency_details.append(
+                            f"Reward: {account.reward_credits} vs {expected_reward_credits}"
+                        )
+                    if not is_permanent_consistent:
+                        inconsistency_details.append(
+                            f"Permanent: {account.credits} vs {expected_permanent_credits}"
+                        )
+
                     logger.warning(
-                        f"Account total balance inconsistency detected: {account.id} ({account.owner_type}:{account.owner_id}) "
-                        f"Current total: {total_balance}, Expected: {expected_balance}"
+                        f"Account balance inconsistency detected: {account.id} ({account.owner_type}:{account.owner_id}) - "
+                        f"{'; '.join(inconsistency_details)}"
                     )
 
+    filter_info = (
+        f" (recent {recent_hours}h only)" if check_recent_only else " (all accounts)"
+    )
     logger.info(
-        f"Completed account balance consistency check: processed {total_processed} accounts in {batch_count} batches"
+        f"Completed account balance consistency check{filter_info}: processed {total_processed} accounts in {batch_count} batches"
     )
 
     return results
@@ -687,9 +766,36 @@ async def run_slow_checks() -> Dict[str, List[AccountCheckingResult]]:
 async def main():
     """Main entry point for running account checks."""
     await init_db(**config.db)
-    logger.info("Starting account checking procedures")
-    results = await run_slow_checks()
-    logger.info("Completed account checking procedures")
+    logger.info("Starting account balance consistency check (permanent mode)")
+
+    # Test the modified check_account_balance_consistency function with permanent checking
+    results = await check_account_balance_consistency(check_recent_only=False)
+
+    # Print summary of results
+    total_accounts = len(results)
+    failed_accounts = sum(1 for result in results if not result.status)
+    passed_accounts = total_accounts - failed_accounts
+
+    logger.info("Account balance consistency check completed:")
+    logger.info(f"  Total accounts checked: {total_accounts}")
+    logger.info(f"  Passed: {passed_accounts}")
+    logger.info(f"  Failed: {failed_accounts}")
+
+    if failed_accounts > 0:
+        logger.warning(f"Found {failed_accounts} accounts with balance inconsistencies")
+        # Log details of first few failed accounts for debugging
+        for i, result in enumerate([r for r in results if not r.status][:5]):
+            details = result.details
+            logger.warning(
+                f"  Account {i + 1}: {details['account_id']} - "
+                f"Total: {details['current_total_balance']} vs {details['expected_total_balance']}, "
+                f"Free: {details['free_credits']} vs {details['expected_free_credits']}, "
+                f"Reward: {details['reward_credits']} vs {details['expected_reward_credits']}, "
+                f"Permanent: {details['permanent_credits']} vs {details['expected_permanent_credits']}"
+            )
+    else:
+        logger.info("All accounts have consistent balances!")
+
     return results
 
 
