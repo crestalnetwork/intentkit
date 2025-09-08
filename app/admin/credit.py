@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -363,6 +363,7 @@ async def get_agent_statistics(
         func.sum(CreditEventTable.total_amount).label("total_income"),
         func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
         func.sum(CreditEventTable.permanent_amount).label("permanent_income"),
+        func.sum(CreditEventTable.fee_agent_permanent_amount).label("permanent_profit"),
     ).where(CreditEventTable.agent_id == agent_id)
     result = await db.execute(stmt)
     row = result.first()
@@ -372,6 +373,9 @@ async def get_agent_statistics(
     net_income = row.net_income if row.net_income is not None else Decimal("0")
     permanent_income = (
         row.permanent_income if row.permanent_income is not None else Decimal("0")
+    )
+    permanent_profit = (
+        row.permanent_profit if row.permanent_profit is not None else Decimal("0")
     )
 
     # Calculate last 24h income
@@ -400,11 +404,7 @@ async def get_agent_statistics(
         total_income=total_income,
         net_income=net_income,
         permanent_income=permanent_income,
-        permanent_profit=(
-            net_income * permanent_income / total_income
-            if total_income > Decimal("0")
-            else Decimal("0")
-        ).quantize(Decimal("0.0001"), ROUND_HALF_UP),
+        permanent_profit=permanent_profit,
         last_24h_income=last_24h_income,
         last_24h_permanent_income=last_24h_permanent_income,
         avg_action_cost=quota.avg_action_cost,

@@ -6,12 +6,25 @@ from intentkit.models.db_mig import safe_migrate
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.types import Checkpointer
+from psycopg import OperationalError
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 engine = None
 _langgraph_checkpointer: Optional[Checkpointer] = None
+
+
+async def check_connection(conn):
+    """
+    Pre-ping function to validate connection health before returning to application.
+    This helps handle database restarts and failovers gracefully.
+    """
+    try:
+        await conn.execute("SELECT 1")
+    except OperationalError:
+        # Re-raise the exception to let the connection pool know this connection is broken
+        raise
 
 
 async def init_db(
@@ -51,6 +64,10 @@ async def init_db(
                 max_size=pool_size * 2,
                 timeout=60,
                 max_idle=30 * 60,
+                # Add health check function to handle database restarts
+                check=check_connection,
+                # Set connection max lifetime to prevent stale connections
+                max_lifetime=3600,  # 1 hour
             )
             _langgraph_checkpointer = AsyncPostgresSaver(pool)
             if auto_migrate:

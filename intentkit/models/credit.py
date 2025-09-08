@@ -26,6 +26,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
+# Precision constant for 4 decimal places
+FOURPLACES = Decimal("0.0001")
+
 
 class CreditType(str, Enum):
     """Credit type is used in db column names, do not change it."""
@@ -114,6 +117,47 @@ class CreditAccountTable(Base):
         String,
         nullable=True,
     )
+    # Total statistics fields
+    total_income = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_free_income = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_reward_income = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_permanent_income = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_expense = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_free_expense = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_reward_expense = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
+    total_permanent_expense = Column(
+        Numeric(22, 4),
+        default=0,
+        nullable=False,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -186,6 +230,63 @@ class CreditAccount(BaseModel):
         Optional[str],
         Field(None, description="ID of the last event that modified this account"),
     ]
+    # Total statistics fields
+    total_income: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total income from all credit transactions",
+        ),
+    ]
+    total_free_income: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total income from free credit transactions",
+        ),
+    ]
+    total_reward_income: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total income from reward credit transactions",
+        ),
+    ]
+    total_permanent_income: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total income from permanent credit transactions",
+        ),
+    ]
+    total_expense: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total expense from all credit transactions",
+        ),
+    ]
+    total_free_expense: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total expense from free credit transactions",
+        ),
+    ]
+    total_reward_expense: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total expense from reward credit transactions",
+        ),
+    ]
+    total_permanent_expense: Annotated[
+        Decimal,
+        Field(
+            default=Decimal("0"),
+            description="Total expense from permanent credit transactions",
+        ),
+    ]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this account was created")
     ]
@@ -194,7 +295,19 @@ class CreditAccount(BaseModel):
     ]
 
     @field_validator(
-        "free_quota", "refill_amount", "free_credits", "reward_credits", "credits"
+        "free_quota",
+        "refill_amount",
+        "free_credits",
+        "reward_credits",
+        "credits",
+        "total_income",
+        "total_free_income",
+        "total_reward_income",
+        "total_permanent_income",
+        "total_expense",
+        "total_free_expense",
+        "total_reward_expense",
+        "total_permanent_expense",
     )
     @classmethod
     def round_decimal(cls, v: Any) -> Decimal:
@@ -300,12 +413,31 @@ class CreditAccount(BaseModel):
         # check first, create if not exists
         await cls.get_or_create_in_session(session, owner_type, owner_id)
 
+        # Quantize the amount to ensure proper precision
+        quantized_amount = amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         values_dict = {
-            credit_type.value: getattr(CreditAccountTable, credit_type.value) - amount,
+            credit_type.value: getattr(CreditAccountTable, credit_type.value)
+            - quantized_amount,
             "expense_at": datetime.now(timezone.utc),
+            # Update total expense statistics
+            "total_expense": CreditAccountTable.total_expense + quantized_amount,
         }
         if event_id:
             values_dict["last_event_id"] = event_id
+
+        # Update corresponding statistics fields based on credit type
+        if credit_type == CreditType.FREE:
+            values_dict["total_free_expense"] = (
+                CreditAccountTable.total_free_expense + quantized_amount
+            )
+        elif credit_type == CreditType.REWARD:
+            values_dict["total_reward_expense"] = (
+                CreditAccountTable.total_reward_expense + quantized_amount
+            )
+        elif credit_type == CreditType.PERMANENT:
+            values_dict["total_permanent_expense"] = (
+                CreditAccountTable.total_permanent_expense + quantized_amount
+            )
 
         stmt = (
             update(CreditAccountTable)
@@ -348,14 +480,18 @@ class CreditAccount(BaseModel):
         else:
             if account.free_credits > 0:
                 details[CreditType.FREE] = account.free_credits
-                amount_left -= account.free_credits
+                amount_left = (amount_left - account.free_credits).quantize(
+                    FOURPLACES, rounding=ROUND_HALF_UP
+                )
             if amount_left <= account.reward_credits:
                 details[CreditType.REWARD] = amount_left
                 amount_left = Decimal("0")
             else:
                 if account.reward_credits > 0:
                     details[CreditType.REWARD] = account.reward_credits
-                    amount_left -= account.reward_credits
+                    amount_left = (amount_left - account.reward_credits).quantize(
+                        FOURPLACES, rounding=ROUND_HALF_UP
+                    )
                 details[CreditType.PERMANENT] = amount_left
 
         # Create values dict based on what's in details, defaulting to 0 for missing keys
@@ -365,13 +501,40 @@ class CreditAccount(BaseModel):
         if event_id:
             values_dict["last_event_id"] = event_id
 
+        # Calculate total expense for statistics
+        total_expense_amount = Decimal("0")
+
         # Add credit type values only if they exist in details
         for credit_type in [CreditType.FREE, CreditType.REWARD, CreditType.PERMANENT]:
             if credit_type in details:
-                values_dict[credit_type.value] = (
-                    getattr(CreditAccountTable, credit_type.value)
-                    - details[credit_type]
+                # Quantize the amount to ensure proper precision
+                quantized_amount = details[credit_type].quantize(
+                    FOURPLACES, rounding=ROUND_HALF_UP
                 )
+                values_dict[credit_type.value] = (
+                    getattr(CreditAccountTable, credit_type.value) - quantized_amount
+                )
+
+                # Update corresponding statistics fields
+                total_expense_amount += quantized_amount
+                if credit_type == CreditType.FREE:
+                    values_dict["total_free_expense"] = (
+                        CreditAccountTable.total_free_expense + quantized_amount
+                    )
+                elif credit_type == CreditType.REWARD:
+                    values_dict["total_reward_expense"] = (
+                        CreditAccountTable.total_reward_expense + quantized_amount
+                    )
+                elif credit_type == CreditType.PERMANENT:
+                    values_dict["total_permanent_expense"] = (
+                        CreditAccountTable.total_permanent_expense + quantized_amount
+                    )
+
+        # Update total expense if there was any expense
+        if total_expense_amount > 0:
+            values_dict["total_expense"] = (
+                CreditAccountTable.total_expense + total_expense_amount
+            )
 
         stmt = (
             update(CreditAccountTable)
@@ -416,12 +579,38 @@ class CreditAccount(BaseModel):
         if event_id:
             values_dict["last_event_id"] = event_id
 
+        # Calculate total income for statistics
+        total_income_amount = Decimal("0")
+
         # Add credit type values based on amount_details
         for credit_type, amount in amount_details.items():
             if amount > 0:
+                # Quantize the amount to ensure 4 decimal places precision
+                quantized_amount = amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
                 values_dict[credit_type.value] = (
-                    getattr(CreditAccountTable, credit_type.value) + amount
+                    getattr(CreditAccountTable, credit_type.value) + quantized_amount
                 )
+
+                # Update corresponding statistics fields
+                total_income_amount += quantized_amount
+                if credit_type == CreditType.FREE:
+                    values_dict["total_free_income"] = (
+                        CreditAccountTable.total_free_income + quantized_amount
+                    )
+                elif credit_type == CreditType.REWARD:
+                    values_dict["total_reward_income"] = (
+                        CreditAccountTable.total_reward_income + quantized_amount
+                    )
+                elif credit_type == CreditType.PERMANENT:
+                    values_dict["total_permanent_income"] = (
+                        CreditAccountTable.total_permanent_income + quantized_amount
+                    )
+
+        # Update total income if there was any income
+        if total_income_amount > 0:
+            values_dict["total_income"] = (
+                CreditAccountTable.total_income + total_income_amount
+            )
 
         stmt = (
             update(CreditAccountTable)
@@ -487,6 +676,16 @@ class CreditAccount(BaseModel):
             income_at=datetime.now(timezone.utc),
             expense_at=None,
             last_event_id=event_id if owner_type == OwnerType.USER else None,
+            # Initialize new statistics fields
+            # For USER accounts, initial free_quota counts as income
+            total_income=free_quota,
+            total_free_income=free_quota,
+            total_reward_income=0.0,
+            total_permanent_income=0.0,
+            total_expense=0.0,
+            total_free_expense=0.0,
+            total_reward_expense=0.0,
+            total_permanent_expense=0.0,
         )
         # Platform virtual accounts have fixed IDs, same as owner_id
         if owner_type == OwnerType.PLATFORM:
@@ -620,6 +819,10 @@ class CreditAccount(BaseModel):
 
         if not note:
             raise ValueError("Quota update requires a note explaining the reason")
+
+        # Quantize values to ensure proper precision (4 decimal places)
+        free_quota = free_quota.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+        refill_amount = refill_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
         # Update the free_quota field
         stmt = (
