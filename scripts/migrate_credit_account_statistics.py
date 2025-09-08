@@ -18,7 +18,8 @@ from typing import Dict, List
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.models.db import get_session
+from intentkit.config.config import config
+from intentkit.models.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(
@@ -195,13 +196,24 @@ async def process_single_account(account_id: str) -> bool:
 
 
 async def get_all_account_ids() -> List[str]:
-    """Get all credit account IDs from the database.
+    """Get credit account IDs that need migration (all 8 statistics fields are 0).
 
     Returns:
-        List of account IDs
+        List of account IDs that need statistics migration
     """
     async with get_session() as session:
-        query = text("SELECT id FROM credit_accounts ORDER BY created_at")
+        query = text("""
+            SELECT id FROM credit_accounts 
+            WHERE total_income = 0 
+              AND total_free_income = 0 
+              AND total_reward_income = 0 
+              AND total_permanent_income = 0 
+              AND total_expense = 0 
+              AND total_free_expense = 0 
+              AND total_reward_expense = 0 
+              AND total_permanent_expense = 0
+            ORDER BY created_at
+        """)
         result = await session.execute(query)
         return [row.id for row in result.fetchall()]
 
@@ -211,6 +223,9 @@ async def main():
     logger.info("Starting credit account statistics migration")
 
     try:
+        # Initialize database connection
+        await init_db(**config.db)
+
         # Create backup table
         async with get_session() as session:
             await create_backup_table(session)
