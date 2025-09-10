@@ -147,7 +147,7 @@ async def _generate_new_agent_schema(
     schema = {
         **attributes,
         "skills": skills_config,
-        "model": "gpt-4.1-nano",  # Default model
+        "model": "gpt-5-mini",  # Default model
         "temperature": 0.7,
         "wallet_provider": "cdp",
     }
