@@ -1,3 +1,21 @@
+## v0.7.1
+
+### Features
+- **Database**: Add connection health check and max lifetime to pool
+- **Credit System**: Add transaction statistics tracking to credit accounts
+- **Account Checking**: Enhance balance consistency check with detailed verification
+
+### Bug Fixes
+- Add database initialization and improve account filtering in migration script
+- Use direct permanent_profit field from database in agent statistics
+- Ensure decimal precision with quantize in credit calculations
+- Add missing amount fields to CreditTransactionTable instantiations in refill function
+
+### Documentation
+- Update changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.0...v0.7.1
+
 ## v0.7.0
 
 ### Features

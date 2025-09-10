@@ -60,6 +60,7 @@ DEFAULT_PLATFORM_ACCOUNT_VOICE = "platform_voice"
 DEFAULT_PLATFORM_ACCOUNT_KNOWLEDGE = "platform_knowledge"
 DEFAULT_PLATFORM_ACCOUNT_FEE = "platform_fee"
 DEFAULT_PLATFORM_ACCOUNT_DEV = "platform_dev"
+DEFAULT_PLATFORM_ACCOUNT_WITHDRAW = "platform_withdraw"
 
 
 class CreditAccountTable(Base):
@@ -735,7 +736,7 @@ class CreditAccount(BaseModel):
                 id=str(XID()),
                 account_id=account.id,
                 event_id=event_id,
-                tx_type=TransactionType.RECHARGE,
+                tx_type=TransactionType.REFILL,
                 credit_debit=CreditDebit.CREDIT,
                 change_amount=free_quota,
                 credit_type=CreditType.FREE,
@@ -865,6 +866,7 @@ class EventType(str, Enum):
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+    WITHDRAW = "withdraw"
     # Sync with RewardType values
     REWARD = "reward"
     EVENT_REWARD = "event_reward"
@@ -1378,6 +1380,7 @@ class TransactionType(str, Enum):
     REFUND = "refund"
     ADJUSTMENT = "adjustment"
     REFILL = "refill"
+    WITHDRAW = "withdraw"
     # Sync with RewardType values
     REWARD = "reward"
     EVENT_REWARD = "event_reward"

@@ -19,6 +19,7 @@ from intentkit.core.credit import (
     reward,
     update_credit_event_note,
     update_daily_quota,
+    withdraw,
 )
 from intentkit.models.agent_data import AgentQuota
 from intentkit.models.credit import (
@@ -94,6 +95,19 @@ class RewardRequest(BaseModel):
     reward_type: Annotated[
         Optional[RewardType],
         Field(RewardType.REWARD, description="Type of reward event"),
+    ]
+
+
+class WithdrawRequest(BaseModel):
+    """Request model for withdrawing from an agent account."""
+
+    upstream_tx_id: Annotated[
+        str, Field(str, description="Upstream transaction ID, idempotence Check")
+    ]
+    agent_id: Annotated[str, Field(description="ID of the agent to withdraw from")]
+    amount: Annotated[Decimal, Field(gt=Decimal("0"), description="Amount to withdraw")]
+    note: Annotated[
+        Optional[str], Field(None, description="Optional note for the withdraw")
     ]
 
 
@@ -228,6 +242,32 @@ async def reward_user_account(
         request.upstream_tx_id,
         request.note,
         request.reward_type,
+    )
+
+
+@credit_router.post(
+    "/withdraw",
+    response_model=CreditAccount,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="withdraw_account",
+    summary="Withdraw",
+    dependencies=[Depends(verify_admin_jwt)],
+)
+async def withdraw_agent_account(
+    request: WithdrawRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CreditAccount:
+    """Withdraw credits from an agent account to platform account.
+
+    Args:
+        request: Withdraw request details
+        db: Database session
+
+    Returns:
+        The updated agent credit account
+    """
+    return await withdraw(
+        db, request.agent_id, request.amount, request.upstream_tx_id, request.note
     )
 
 
