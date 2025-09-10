@@ -93,12 +93,14 @@
       "title": "API Key Provider",
       "description": "Provider of the API key",
       "enum": [
+        "platform",
         "agent_owner"
       ],
       "x-enum-title": [
+        "Nation Hosted",
         "Owner Provided"
       ],
-      "default": "agent_owner"
+      "default": "platform"
     },
     "api_key": {
       "type": "string",
