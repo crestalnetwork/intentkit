@@ -29,9 +29,7 @@ class FirecrawlBaseTool(IntentKitSkill):
             else:
                 raise ToolException("No api_key found in agent_owner configuration")
         else:
-            raise ToolException(
-                f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for Firecrawl."
-            )
+            return self.skill_store.get_system_config("firecrawl_api_key")
 
     @property
     def category(self) -> str:
