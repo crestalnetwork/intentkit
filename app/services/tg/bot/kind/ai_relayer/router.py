@@ -82,7 +82,7 @@ async def gp_process_message(message: Message) -> None:
             is_owner = False
 
         # Add processing reaction
-        await message.react([ReactionTypeEmoji(emoji="⌛️")])
+        await message.react([ReactionTypeEmoji(emoji="🤔")])
 
         try:
             # remove bot name tag from text
@@ -170,7 +170,7 @@ async def process_message(message: Message) -> None:
         is_owner = False
 
     # Add processing reaction
-    await message.react([ReactionTypeEmoji(emoji="⌛️")])
+    await message.react([ReactionTypeEmoji(emoji="🤔")])
 
     try:
         if len(message.text) > 65535:
