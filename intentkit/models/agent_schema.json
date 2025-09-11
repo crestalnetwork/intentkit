@@ -352,6 +352,11 @@
           "type": "string",
           "description": "Telegram bot token obtained from BotFather"
         },
+        "owner": {
+          "title": "Owner Username",
+          "type": "string",
+          "description": "Owner of the bot, if set, you can receive notifications from the bot"
+        },
         "group_memory_public": {
           "title": "Group Memory Public",
           "type": "boolean",

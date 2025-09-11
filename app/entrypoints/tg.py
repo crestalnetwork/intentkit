@@ -23,18 +23,16 @@ class AgentScheduler:
 
     async def sync(self):
         async with get_session() as db:
-            # Get all telegram agents
-            agents = await db.scalars(select(AgentTable))
+            # Get only telegram-enabled agents
+            agents = await db.scalars(
+                select(AgentTable).where(AgentTable.telegram_entrypoint_enabled)
+            )
 
         for item in agents:
             agent = Agent.model_validate(item)
             try:
                 if agent.id not in pool._agent_bots:
-                    if (
-                        agent.telegram_entrypoint_enabled
-                        and agent.telegram_config
-                        and agent.telegram_config.get("token")
-                    ):
+                    if agent.telegram_config and agent.telegram_config.get("token"):
                         token = clean_token_str(agent.telegram_config["token"])
                         if token in pool._bots:
                             logger.warning(
