@@ -6,7 +6,7 @@ import sys
 from sqlalchemy import select
 
 from app.services.tg.bot import pool
-from app.services.tg.bot.pool import BotPool, bot_by_token
+from app.services.tg.bot.pool import BotPool, bot_by_token, is_agent_failed
 from app.services.tg.utils.cleanup import clean_token_str
 from intentkit.config.config import config
 from intentkit.models.agent import Agent, AgentTable
@@ -32,6 +32,13 @@ class AgentScheduler:
             agent = Agent.model_validate(item)
             try:
                 if agent.id not in pool._agent_bots:
+                    # Skip agents that have failed with unauthorized errors
+                    if is_agent_failed(agent.id):
+                        logger.debug(
+                            f"Skipping agent {agent.id} - in failed cache due to unauthorized error"
+                        )
+                        continue
+
                     if agent.telegram_config and agent.telegram_config.get("token"):
                         token = clean_token_str(agent.telegram_config["token"])
                         if token in pool._bots:
