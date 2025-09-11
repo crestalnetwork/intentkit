@@ -4,7 +4,7 @@ import logging
 import telegramify_markdown
 from aiogram import Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, ReactionTypeEmoji
 from epyxid import XID
 
 from app.services.tg.bot import pool
@@ -82,7 +82,7 @@ async def gp_process_message(message: Message) -> None:
             is_owner = False
 
         # Add processing reaction
-        await message.react("⌛️")
+        await message.react([ReactionTypeEmoji(emoji="⌛️")])
 
         try:
             # remove bot name tag from text
@@ -131,7 +131,7 @@ async def gp_process_message(message: Message) -> None:
         finally:
             # Remove processing reaction
             try:
-                await message.react()
+                await message.react([])
             except Exception as e:
                 logger.warning(f"Failed to remove reaction: {str(e)}")
 
@@ -170,7 +170,7 @@ async def process_message(message: Message) -> None:
         is_owner = False
 
     # Add processing reaction
-    await message.react("⌛️")
+    await message.react([ReactionTypeEmoji(emoji="⌛️")])
 
     try:
         if len(message.text) > 65535:
@@ -215,6 +215,6 @@ async def process_message(message: Message) -> None:
     finally:
         # Remove processing reaction
         try:
-            await message.react()
+            await message.react([])
         except Exception as e:
             logger.warning(f"Failed to remove reaction: {str(e)}")
