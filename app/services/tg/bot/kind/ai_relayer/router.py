@@ -203,15 +203,12 @@ async def process_message(message: Message) -> None:
                 response[-1].message if response else "Server Error"
             ),
             parse_mode="MarkdownV2",
-            reply_to_message_id=message.message_id,
         )
     except Exception as e:
         logger.warning(
             f"error processing in function:{cur_func_name()}, token:{message.bot.token} err:{str(e)}"
         )
-        await message.answer(
-            text="Server Error", reply_to_message_id=message.message_id
-        )
+        await message.answer(text="Server Error")
     finally:
         # Remove processing reaction
         try:
