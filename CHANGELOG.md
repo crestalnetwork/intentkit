@@ -1,3 +1,15 @@
+## v0.7.2
+
+### Features
+- Updated firecrawl skill with improved configuration and base implementation
+- Enhanced agent generator configuration
+
+### Bug Fixes
+- Fixed credit system precision and transaction type handling
+- Added SQL script for fixing existing transaction types
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.1...v0.7.2
+
 ## v0.7.1
 
 ### Features

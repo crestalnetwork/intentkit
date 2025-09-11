@@ -15,6 +15,7 @@ class TelegramConfig(TypedDict):
     whitelist_chat_ids: NotRequired[list[int]]
     greeting_group: NotRequired[str]
     greeting_user: NotRequired[str]
+    owner: NotRequired[str]
 
 
 class BotPoolItem:
@@ -46,6 +47,7 @@ class BotPoolItem:
             "greeting_user",
             "Glory to the Nation!\nFind me on https://nation.fun",
         )
+        self._owner = cfg.get("owner")
 
     @property
     def agent_id(self):

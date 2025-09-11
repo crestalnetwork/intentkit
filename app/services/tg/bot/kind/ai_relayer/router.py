@@ -75,6 +75,12 @@ async def gp_process_message(message: Message) -> None:
             logger.warning(f"bot with token {message.bot.token} not found in cache.")
             return
 
+        if message.from_user:
+            logger.info(f"message from: {message.from_user}")
+            is_owner = cached_bot_item._owner == message.from_user.username
+        else:
+            is_owner = False
+
         try:
             # remove bot name tag from text
             message_text = remove_bot_name(bot.username, message.text)
@@ -96,7 +102,9 @@ async def gp_process_message(message: Message) -> None:
                 chat_id=pool.agent_chat_id(
                     cached_bot_item.is_public_memory, message.chat.id
                 ),
-                user_id=str(message.from_user.id),
+                user_id=cached_bot_item.agent_owner
+                if is_owner
+                else str(message.from_user.id),
                 author_id=str(message.from_user.id),
                 author_type=AuthorType.TELEGRAM,
                 thread_type=AuthorType.TELEGRAM,
@@ -146,6 +154,12 @@ async def process_message(message: Message) -> None:
         logger.warning(f"bot with token {message.bot.token} not found in cache.")
         return
 
+    if message.from_user:
+        logger.info(f"message from: {message.from_user}")
+        is_owner = cached_bot_item._owner == message.from_user.username
+    else:
+        is_owner = False
+
     if len(message.text) > 65535:
         send_slack_message(
             (
@@ -163,7 +177,9 @@ async def process_message(message: Message) -> None:
             id=str(XID()),
             agent_id=cached_bot_item.agent_id,
             chat_id=pool.agent_chat_id(False, message.chat.id),
-            user_id=cached_bot_item.agent_owner or str(message.from_user.id),
+            user_id=cached_bot_item.agent_owner
+            if is_owner
+            else str(message.from_user.id),
             author_id=str(message.from_user.id),
             author_type=AuthorType.TELEGRAM,
             thread_type=AuthorType.TELEGRAM,
