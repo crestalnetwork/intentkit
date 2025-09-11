@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import (
     SimpleRequestHandler,
@@ -27,6 +28,7 @@ BOTS_PATH = "/webhook/tgbot/{kind}/{bot_token}"
 
 _bots = {}
 _agent_bots = {}
+_failed_agents = set()  # Cache for agents that failed with 'Unauthorized' errors
 
 
 def bot_by_token(token) -> BotPoolItem:
@@ -43,6 +45,23 @@ def agent_by_id(agent_id) -> BotPoolAgentItem:
 
 def set_cache_agent(agent: BotPoolAgentItem):
     _agent_bots[agent.id] = agent
+
+
+def is_agent_failed(agent_id: str) -> bool:
+    """Check if an agent is in the failed cache."""
+    return agent_id in _failed_agents
+
+
+def add_failed_agent(agent_id: str):
+    """Add an agent to the failed cache."""
+    _failed_agents.add(agent_id)
+    logger.warning(f"Agent {agent_id} added to failed cache due to unauthorized error")
+
+
+def clear_failed_agents():
+    """Clear the failed agents cache."""
+    _failed_agents.clear()
+    logger.info("Failed agents cache cleared")
 
 
 def agent_chat_id(group_memory_public, chat_id):
@@ -126,6 +145,9 @@ class BotPool:
             logger.warning(
                 f"bot for agent {agent.id} did not started because of invalid data. err: {e}"
             )
+        except TelegramUnauthorizedError as e:
+            logger.info(f"failed to init new bot for agent {agent.id}: {e}")
+            add_failed_agent(agent.id)
         except Exception as e:
             logger.info(f"failed to init new bot for agent {agent.id}: {e}")
         finally:
