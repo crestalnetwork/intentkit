@@ -81,6 +81,9 @@ async def gp_process_message(message: Message) -> None:
         else:
             is_owner = False
 
+        # Add processing reaction
+        await message.react("⌛️")
+
         try:
             # remove bot name tag from text
             message_text = remove_bot_name(bot.username, message.text)
@@ -125,6 +128,12 @@ async def gp_process_message(message: Message) -> None:
             await message.answer(
                 text="Server Error", reply_to_message_id=message.message_id
             )
+        finally:
+            # Remove processing reaction
+            try:
+                await message.react()
+            except Exception as e:
+                logger.warning(f"Failed to remove reaction: {str(e)}")
 
 
 ## direct commands and messages
@@ -160,19 +169,22 @@ async def process_message(message: Message) -> None:
     else:
         is_owner = False
 
-    if len(message.text) > 65535:
-        send_slack_message(
-            (
-                "Message too long from telegram.\n"
-                f"length: {len(message.text)}\n"
-                f"chat_id:{message.chat.id}\n"
-                f"agent:{cached_bot_item.agent_id}\n"
-                f"user:{message.from_user.id}\n"
-                f"content:{message.text[:100]}..."
-            )
-        )
+    # Add processing reaction
+    await message.react("⌛️")
 
     try:
+        if len(message.text) > 65535:
+            send_slack_message(
+                (
+                    "Message too long from telegram.\n"
+                    f"length: {len(message.text)}\n"
+                    f"chat_id:{message.chat.id}\n"
+                    f"agent:{cached_bot_item.agent_id}\n"
+                    f"user:{message.from_user.id}\n"
+                    f"content:{message.text[:100]}..."
+                )
+            )
+
         input = ChatMessageCreate(
             id=str(XID()),
             agent_id=cached_bot_item.agent_id,
@@ -200,3 +212,9 @@ async def process_message(message: Message) -> None:
         await message.answer(
             text="Server Error", reply_to_message_id=message.message_id
         )
+    finally:
+        # Remove processing reaction
+        try:
+            await message.react()
+        except Exception as e:
+            logger.warning(f"Failed to remove reaction: {str(e)}")
