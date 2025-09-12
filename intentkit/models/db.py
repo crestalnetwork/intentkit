@@ -102,7 +102,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 @asynccontextmanager
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session using an async context manager.
 
     This function is designed to be used with the 'async with' statement,

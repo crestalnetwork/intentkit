@@ -170,7 +170,7 @@ class UserUpdate(BaseModel):
             note=note,
         )
 
-    async def patch(self, id: str) -> "User":
+    async def patch(self, id: str) -> UserModelType:
         """Update only the provided fields of a user in the database.
         If the user doesn't exist, create a new one with the provided ID and fields.
         If nft_count changes, update the daily quota accordingly.
@@ -182,7 +182,9 @@ class UserUpdate(BaseModel):
             Updated or newly created User model
         """
         user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
         user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
         async with get_session() as db:
             db_user = await db.get(user_table_class, id)
             old_nft_count = 0  # Default for new users
@@ -208,7 +210,7 @@ class UserUpdate(BaseModel):
 
             return user_model_class.model_validate(db_user)
 
-    async def put(self, id: str) -> "User":
+    async def put(self, id: str) -> UserModelType:
         """Replace all fields of a user in the database with the provided values.
         If the user doesn't exist, create a new one with the provided ID and fields.
         If nft_count changes, update the daily quota accordingly.
@@ -220,7 +222,9 @@ class UserUpdate(BaseModel):
             Updated or newly created User model
         """
         user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
         user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
         async with get_session() as db:
             db_user = await db.get(user_table_class, id)
             old_nft_count = 0  # Default for new users
@@ -261,7 +265,7 @@ class User(UserUpdate):
     ]
 
     @classmethod
-    async def get(cls, user_id: str) -> Optional["User"]:
+    async def get(cls, user_id: str) -> Optional[UserModelType]:
         """Get a user by ID.
 
         Args:
@@ -276,7 +280,7 @@ class User(UserUpdate):
     @classmethod
     async def get_in_session(
         cls, session: AsyncSession, user_id: str
-    ) -> Optional["User"]:
+    ) -> Optional[UserModelType]:
         """Get a user by ID using the provided session.
 
         Args:
@@ -286,11 +290,14 @@ class User(UserUpdate):
         Returns:
             User model or None if not found
         """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
         user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
         result = await session.execute(
             select(user_table_class).where(user_table_class.id == user_id)
         )
         user = result.scalars().first()
         if user is None:
             return None
-        return cls.model_validate(user)
+        return user_model_class.model_validate(user)
