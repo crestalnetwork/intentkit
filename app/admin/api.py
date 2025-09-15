@@ -49,32 +49,6 @@ admin_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-async def _process_agent(
-    agent: AgentCreate, subject: str | None = None, slack_message: str | None = None
-) -> tuple[Agent, AgentData]:
-    """Shared function to process agent creation or update.
-
-    Args:
-        agent: Agent configuration to process
-        subject: Optional subject from JWT token
-        slack_message: Optional custom message for Slack notification
-
-    Returns:
-        tuple[Agent, AgentData]: Tuple of (processed agent, agent data)
-    """
-    logger.info(f"Processing agent: {agent}")
-    if subject:
-        agent.owner = subject
-
-    # Get the latest agent from create_or_update
-    latest_agent, is_new = await agent.create_or_update()
-
-    # Process common post-creation/update steps
-    agent_data = await _process_agent_post_actions(latest_agent, is_new, slack_message)
-
-    return latest_agent, agent_data
-
-
 async def _process_agent_post_actions(
     agent: Agent, is_new: bool = True, slack_message: str | None = None
 ) -> AgentData:
@@ -276,49 +250,6 @@ def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) 
     )
 
 
-@admin_router.post(
-    "/agents",
-    tags=["Agent"],
-    status_code=201,
-    operation_id="post_agent_deprecated",
-    deprecated=True,
-)
-async def create_or_update_agent(
-    agent: AgentCreate = Body(AgentCreate, description="Agent configuration"),
-    subject: str = Depends(verify_admin_jwt),
-) -> Response:
-    """Create or update an agent.
-
-    THIS ENDPOINT IS DEPRECATED. Please use POST /agents/v2 for creating new agents.
-
-    This endpoint:
-    1. Validates agent ID format
-    2. Creates or updates agent configuration
-    3. Reinitializes agent if already in cache
-    4. Masks sensitive data in response
-
-    **Request Body:**
-    * `agent` - Agent configuration
-
-    **Returns:**
-    * `AgentResponse` - Updated agent configuration with additional processed data
-
-    **Raises:**
-    * `HTTPException`:
-        - 400: Invalid agent ID format
-        - 500: Database error
-    """
-    latest_agent, agent_data = await _process_agent(agent, subject)
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    # Return Response with ETag header
-    return Response(
-        content=agent_response.model_dump_json(),
-        media_type="application/json",
-        headers={"ETag": agent_response.etag()},
-    )
-
-
 @admin_router_readonly.post(
     "/agent/validate",
     tags=["Agent"],
@@ -466,14 +397,19 @@ async def create_agent(
 
 
 @admin_router.patch(
-    "/agents/{agent_id}", tags=["Agent"], status_code=200, operation_id="update_agent"
+    "/agents/{agent_id}",
+    tags=["Agent"],
+    status_code=200,
+    operation_id="update_agent",
+    deprecated=True,
 )
 async def update_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
     subject: str = Depends(verify_admin_jwt),
 ) -> Response:
-    """Update an existing agent.
+    """
+    Deprecated, use the put method instead, it will override the agent instead of updating it.
 
     Use input to update agent configuration. If some fields are not provided, they will not be changed.
 
