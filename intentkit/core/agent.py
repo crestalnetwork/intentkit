@@ -2,17 +2,325 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
+from aiogram import Bot
+from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
+from aiogram.utils.token import TokenValidationError
+from fastapi import HTTPException
 from sqlalchemy import func, select, text, update
 
-from intentkit.models.agent import Agent, AgentAutonomous, AgentTable
-from intentkit.models.agent_data import AgentQuotaTable
+from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.clients.cdp import get_cdp_client
+from intentkit.config.config import config
+from intentkit.models.agent import (
+    Agent,
+    AgentAutonomous,
+    AgentCreate,
+    AgentResponse,
+    AgentTable,
+    AgentUpdate,
+)
+from intentkit.models.agent_data import AgentData, AgentQuota, AgentQuotaTable
 from intentkit.models.credit import CreditEventTable, EventType, UpstreamType
 from intentkit.models.db import get_session
+from intentkit.models.skill import (
+    AgentSkillData,
+    AgentSkillDataCreate,
+    ThreadSkillData,
+    ThreadSkillDataCreate,
+)
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
+
+
+async def _process_agent_post_actions(
+    agent: Agent, is_new: bool = True, slack_message: str | None = None
+) -> AgentData:
+    """Process common actions after agent creation or update.
+
+    Args:
+        agent: The agent that was created or updated
+        is_new: Whether the agent is newly created
+        slack_message: Optional custom message for Slack notification
+
+    Returns:
+        AgentData: The processed agent data
+    """
+    if config.cdp_api_key_id and agent.wallet_provider == "cdp":
+        cdp_client = await get_cdp_client(agent.id, skill_store)
+        await cdp_client.get_wallet_provider()
+
+    # Get new agent data
+    # FIXME: refuse to change wallet provider
+    if agent.wallet_provider == "readonly":
+        agent_data = await AgentData.patch(
+            agent.id,
+            {
+                "evm_wallet_address": agent.readonly_wallet_address,
+            },
+        )
+    else:
+        agent_data = await AgentData.get(agent.id)
+
+    # Send Slack notification
+    slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
+    try:
+        _send_agent_notification(agent, agent_data, slack_message)
+    except Exception as e:
+        logger.error("Failed to send Slack notification: %s", e)
+
+    return agent_data
+
+
+async def _process_telegram_config(
+    agent: AgentUpdate, existing_agent: Optional[Agent], agent_data: AgentData
+) -> AgentData:
+    """Process telegram configuration for an agent.
+
+    Args:
+        agent: The agent with telegram configuration
+        existing_agent: The existing agent (if updating)
+        agent_data: The agent data to update
+
+    Returns:
+        AgentData: The updated agent data
+    """
+    changes = agent.model_dump(exclude_unset=True)
+    if not changes.get("telegram_entrypoint_enabled"):
+        return agent_data
+
+    if not changes.get("telegram_config") or not changes.get("telegram_config").get(
+        "token"
+    ):
+        return agent_data
+
+    tg_bot_token = changes.get("telegram_config").get("token")
+
+    if existing_agent and existing_agent.telegram_config.get("token") == tg_bot_token:
+        return agent_data
+
+    try:
+        bot = Bot(token=tg_bot_token)
+        bot_info = await bot.get_me()
+        agent_data.telegram_id = str(bot_info.id)
+        agent_data.telegram_username = bot_info.username
+        agent_data.telegram_name = bot_info.first_name
+        if bot_info.last_name:
+            agent_data.telegram_name = f"{bot_info.first_name} {bot_info.last_name}"
+        await agent_data.save()
+        try:
+            await bot.close()
+        except Exception:
+            pass
+        return agent_data
+    except (
+        TelegramUnauthorizedError,
+        TelegramConflictError,
+        TokenValidationError,
+    ) as req_err:
+        logger.error(
+            f"Unauthorized err getting telegram bot username with token {tg_bot_token}: {req_err}",
+        )
+        return agent_data
+    except Exception as e:
+        logger.error(
+            f"Error getting telegram bot username with token {tg_bot_token}: {e}",
+        )
+        return agent_data
+
+
+def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -> None:
+    """Send a notification about agent creation or update.
+
+    Args:
+        agent: The agent that was created or updated
+        agent_data: The agent data to update
+        message: The notification message
+    """
+    # Format autonomous configurations - show only enabled ones with their id, name, and schedule
+    autonomous_formatted = ""
+    if agent.autonomous:
+        enabled_autonomous = [auto for auto in agent.autonomous if auto.enabled]
+        if enabled_autonomous:
+            autonomous_items = []
+            for auto in enabled_autonomous:
+                schedule = (
+                    f"cron: {auto.cron}" if auto.cron else f"minutes: {auto.minutes}"
+                )
+                autonomous_items.append(
+                    f"• {auto.id}: {auto.name or 'Unnamed'} ({schedule})"
+                )
+            autonomous_formatted = "\n".join(autonomous_items)
+        else:
+            autonomous_formatted = "No enabled autonomous configurations"
+    else:
+        autonomous_formatted = "None"
+
+    # Format skills - find categories with enabled: true and list skills in public/private states
+    skills_formatted = ""
+    if agent.skills:
+        enabled_categories = []
+        for category, skill_config in agent.skills.items():
+            if skill_config and skill_config.get("enabled") is True:
+                skills_list = []
+                states = skill_config.get("states", {})
+                public_skills = [
+                    skill for skill, state in states.items() if state == "public"
+                ]
+                private_skills = [
+                    skill for skill, state in states.items() if state == "private"
+                ]
+
+                if public_skills:
+                    skills_list.append(f"  Public: {', '.join(public_skills)}")
+                if private_skills:
+                    skills_list.append(f"  Private: {', '.join(private_skills)}")
+
+                if skills_list:
+                    enabled_categories.append(
+                        f"• {category}:\n{chr(10).join(skills_list)}"
+                    )
+
+        if enabled_categories:
+            skills_formatted = "\n".join(enabled_categories)
+        else:
+            skills_formatted = "No enabled skills"
+    else:
+        skills_formatted = "None"
+
+    send_slack_message(
+        message,
+        attachments=[
+            {
+                "color": "good",
+                "fields": [
+                    {"title": "ID", "short": True, "value": agent.id},
+                    {"title": "Name", "short": True, "value": agent.name},
+                    {"title": "Model", "short": True, "value": agent.model},
+                    {
+                        "title": "Network",
+                        "short": True,
+                        "value": agent.network_id or "Default",
+                    },
+                    {
+                        "title": "X Username",
+                        "short": True,
+                        "value": agent_data.twitter_username,
+                    },
+                    {
+                        "title": "Telegram Enabled",
+                        "short": True,
+                        "value": str(agent.telegram_entrypoint_enabled),
+                    },
+                    {
+                        "title": "Telegram Username",
+                        "short": True,
+                        "value": agent_data.telegram_username,
+                    },
+                    {
+                        "title": "Wallet Address",
+                        "value": agent_data.evm_wallet_address,
+                    },
+                    {
+                        "title": "Autonomous",
+                        "value": autonomous_formatted,
+                    },
+                    {
+                        "title": "Skills",
+                        "value": skills_formatted,
+                    },
+                ],
+            }
+        ],
+    )
+
+
+async def create_agent(
+    input: AgentUpdate, owner: Optional[str] = None
+) -> AgentResponse:
+    """Create a new agent.
+
+    Args:
+        input: Agent configuration
+        owner: Optional subject/owner for the agent
+        upstream_id: Optional upstream ID for the agent
+    Returns:
+        AgentResponse: Created agent configuration with additional processed data
+
+    Raises:
+        HTTPException:
+            - 400: Invalid agent ID format or agent ID already exists
+            - 500: Database error
+    """
+    agent = AgentCreate.model_validate(input)
+
+    if owner:
+        agent.owner = owner
+    else:
+        agent.owner = "system"
+
+    # Check for existing agent by upstream_id
+    existing = await agent.get_by_upstream_id()
+    if existing:
+        agent_data = await AgentData.get(existing.id)
+        agent_response = await AgentResponse.from_agent(existing, agent_data)
+        return agent_response
+
+    # Create new agent
+    latest_agent = await agent.create()
+    # Process common post-creation actions
+    agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
+    agent_data = await _process_telegram_config(input, None, agent_data)
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
+
+    return agent_response
+
+
+async def override_agent(
+    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
+) -> AgentResponse:
+    """Override an existing agent.
+
+    Use input to override agent configuration. If some fields are not provided, they will be reset to default values.
+
+    Args:
+        agent_id: ID of the agent to update
+        agent: Agent update configuration
+        owner: Optional owner for the agent
+
+    Returns:
+        AgentResponse: Updated agent configuration with additional processed data
+
+    Raises:
+        HTTPException:
+            - 400: Invalid agent ID format
+            - 404: Agent not found
+            - 403: Permission denied (if owner mismatch)
+            - 500: Database error
+    """
+    existing_agent = await Agent.get(agent_id)
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    if owner and owner != existing_agent.owner:
+        raise IntentKitAPIError(403, "forbidden", "forbidden")
+
+    # Update agent
+    latest_agent = await agent.override(agent_id)
+
+    # Process common post-update actions
+    agent_data = await _process_agent_post_actions(
+        latest_agent, False, "Agent Overridden"
+    )
+
+    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
+
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
+
+    return agent_response
 
 
 async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
@@ -190,6 +498,182 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         )
 
         return result
+
+
+class SkillStore(SkillStoreABC):
+    """Implementation of skill data storage operations.
+
+    This class provides concrete implementations for storing and retrieving
+    skill-related data for both agents and threads.
+    """
+
+    @staticmethod
+    def get_system_config(key: str) -> Any:
+        # TODO: maybe need a whitelist here
+        if hasattr(config, key):
+            return getattr(config, key)
+        return None
+
+    @staticmethod
+    async def get_agent_config(agent_id: str) -> Optional[Agent]:
+        return await Agent.get(agent_id)
+
+    @staticmethod
+    async def get_agent_data(agent_id: str) -> AgentData:
+        return await AgentData.get(agent_id)
+
+    @staticmethod
+    async def set_agent_data(agent_id: str, data: Dict) -> AgentData:
+        return await AgentData.patch(agent_id, data)
+
+    @staticmethod
+    async def get_agent_quota(agent_id: str) -> AgentQuota:
+        return await AgentQuota.get(agent_id)
+
+    @staticmethod
+    async def get_agent_skill_data(
+        agent_id: str, skill: str, key: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+
+        Returns:
+            Dictionary containing the skill data if found, None otherwise
+        """
+        return await AgentSkillData.get(agent_id, skill, key)
+
+    @staticmethod
+    async def save_agent_skill_data(
+        agent_id: str, skill: str, key: str, data: Dict[str, Any]
+    ) -> None:
+        """Save or update skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+            data: JSON data to store
+        """
+        skill_data = AgentSkillDataCreate(
+            agent_id=agent_id,
+            skill=skill,
+            key=key,
+            data=data,
+        )
+        await skill_data.save()
+
+    @staticmethod
+    async def delete_agent_skill_data(agent_id: str, skill: str, key: str) -> None:
+        """Delete skill data for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            skill: Name of the skill
+            key: Data key
+        """
+        await AgentSkillData.delete(agent_id, skill, key)
+
+    @staticmethod
+    async def get_thread_skill_data(
+        thread_id: str, skill: str, key: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get skill data for a thread.
+
+        Args:
+            thread_id: ID of the thread
+            skill: Name of the skill
+            key: Data key
+
+        Returns:
+            Dictionary containing the skill data if found, None otherwise
+        """
+        return await ThreadSkillData.get(thread_id, skill, key)
+
+    @staticmethod
+    async def save_thread_skill_data(
+        thread_id: str,
+        agent_id: str,
+        skill: str,
+        key: str,
+        data: Dict[str, Any],
+    ) -> None:
+        """Save or update skill data for a thread.
+
+        Args:
+            thread_id: ID of the thread
+            agent_id: ID of the agent that owns this thread
+            skill: Name of the skill
+            key: Data key
+            data: JSON data to store
+        """
+        skill_data = ThreadSkillDataCreate(
+            thread_id=thread_id,
+            agent_id=agent_id,
+            skill=skill,
+            key=key,
+            data=data,
+        )
+        await skill_data.save()
+
+    @staticmethod
+    async def list_autonomous_tasks(agent_id: str) -> List[AgentAutonomous]:
+        """List all autonomous tasks for an agent.
+
+        Args:
+            agent_id: ID of the agent
+
+        Returns:
+            List[AgentAutonomous]: List of autonomous task configurations
+        """
+        return await list_autonomous_tasks(agent_id)
+
+    @staticmethod
+    async def add_autonomous_task(
+        agent_id: str, task: AgentAutonomous
+    ) -> AgentAutonomous:
+        """Add a new autonomous task to an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task: Autonomous task configuration
+
+        Returns:
+            AgentAutonomous: The created task
+        """
+        return await add_autonomous_task(agent_id, task)
+
+    @staticmethod
+    async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
+        """Delete an autonomous task from an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to delete
+        """
+        await delete_autonomous_task(agent_id, task_id)
+
+    @staticmethod
+    async def update_autonomous_task(
+        agent_id: str, task_id: str, task_updates: dict
+    ) -> AgentAutonomous:
+        """Update an autonomous task for an agent.
+
+        Args:
+            agent_id: ID of the agent
+            task_id: ID of the task to update
+            task_updates: Dictionary containing fields to update
+
+        Returns:
+            AgentAutonomous: The updated task
+        """
+        return await update_autonomous_task(agent_id, task_id, task_updates)
+
+
+skill_store = SkillStore()
 
 
 async def update_agent_action_cost():

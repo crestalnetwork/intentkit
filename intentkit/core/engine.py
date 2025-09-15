@@ -35,13 +35,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.core.agent import skill_store
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
 from intentkit.core.prompt import (
     create_formatted_prompt_function,
     explain_prompt,
 )
-from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType

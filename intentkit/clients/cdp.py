@@ -87,7 +87,7 @@ class CdpClient:
             return self._wallet_provider
         agent: Agent = await self._skill_store.get_agent_config(self._agent_id)
         agent_data: AgentData = await self._skill_store.get_agent_data(self._agent_id)
-        network_id = agent.network_id or agent.cdp_network_id
+        network_id = agent.network_id
 
         # Get credentials from skill store system config
         api_key_id = self._skill_store.get_system_config("cdp_api_key_id")

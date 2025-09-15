@@ -541,16 +541,6 @@ class AgentCore(BaseModel):
             },
         ),
     ]
-    upstream_extra: Annotated[
-        Optional[Dict[str, Any]],
-        PydanticField(
-            default=None,
-            description="Additional data store for upstream use",
-            json_schema_extra={
-                "x-group": "internal",
-            },
-        ),
-    ]
     # AI part
     model: Annotated[
         str,
@@ -708,16 +698,8 @@ class AgentCore(BaseModel):
         return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
 
 
-class AgentUpdate(AgentCore):
+class AgentUserInput(AgentCore):
     """Agent update model."""
-
-    model_config = ConfigDict(
-        title="Agent",
-        from_attributes=True,
-        json_schema_extra={
-            "required": ["name"],
-        },
-    )
 
     short_term_memory_strategy: Annotated[
         Optional[Literal["trim", "summarize"]],
@@ -817,6 +799,37 @@ class AgentUpdate(AgentCore):
             max_length=10000,
             json_schema_extra={
                 "x-group": "entrypoint",
+            },
+        ),
+    ]
+
+
+class AgentUpdate(AgentUserInput):
+    """Agent update model."""
+
+    model_config = ConfigDict(
+        title="Agent",
+        from_attributes=True,
+        json_schema_extra={
+            "required": ["name"],
+        },
+    )
+
+    upstream_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="External reference ID for idempotent operations",
+            max_length=100,
+        ),
+    ]
+    upstream_extra: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Additional data store for upstream use",
+            json_schema_extra={
+                "x-group": "internal",
             },
         ),
     ]
@@ -984,16 +997,8 @@ class AgentCreate(AgentUpdate):
         PydanticField(
             default=None,
             description="Slug of the agent, used for URL generation",
-            max_length=30,
+            max_length=20,
             min_length=2,
-        ),
-    ]
-    upstream_id: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="External reference ID for idempotent operations",
-            max_length=100,
         ),
     ]
     version: Annotated[
@@ -1035,6 +1040,7 @@ class AgentCreate(AgentUpdate):
 
         async with get_session() as db:
             db_agent = AgentTable(**self.model_dump())
+            db_agent.version = self.hash()
             db.add(db_agent)
             await db.commit()
             await db.refresh(db_agent)
@@ -1800,19 +1806,21 @@ class AgentResponse(BaseModel):
         )
 
         # Add processed fields to response
-        data.update({
-            "cdp_wallet_address": cdp_wallet_address,
-            "evm_wallet_address": evm_wallet_address,
-            "solana_wallet_address": solana_wallet_address,
-            "has_twitter_linked": has_twitter_linked,
-            "linked_twitter_username": linked_twitter_username,
-            "linked_twitter_name": linked_twitter_name,
-            "has_twitter_self_key": has_twitter_self_key,
-            "has_telegram_self_key": has_telegram_self_key,
-            "linked_telegram_username": linked_telegram_username,
-            "linked_telegram_name": linked_telegram_name,
-            "accept_image_input": accept_image_input,
-            "accept_image_input_private": accept_image_input_private,
-        })
+        data.update(
+            {
+                "cdp_wallet_address": cdp_wallet_address,
+                "evm_wallet_address": evm_wallet_address,
+                "solana_wallet_address": solana_wallet_address,
+                "has_twitter_linked": has_twitter_linked,
+                "linked_twitter_username": linked_twitter_username,
+                "linked_twitter_name": linked_twitter_name,
+                "has_twitter_self_key": has_twitter_self_key,
+                "has_telegram_self_key": has_telegram_self_key,
+                "linked_telegram_username": linked_telegram_username,
+                "linked_telegram_name": linked_telegram_name,
+                "accept_image_input": accept_image_input,
+                "accept_image_input_private": accept_image_input_private,
+            }
+        )
 
         return cls.model_validate(data)
