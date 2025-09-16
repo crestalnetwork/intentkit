@@ -1,3 +1,13 @@
+## v0.7.4
+
+### Features
+- **Memory Management**: Auto clear error memory for improved agent performance
+
+### Bug Fixes
+- **Code Quality**: Lint improvements
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.3...v0.7.4
+
 ## v0.7.3
 
 ### Features
