@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import re
@@ -14,10 +15,11 @@ from epyxid import XID
 from fastapi import HTTPException
 from intentkit.models.agent_data import AgentData
 from intentkit.models.base import Base
+from intentkit.models.credit import CreditAccount
 from intentkit.models.db import get_session
 from intentkit.models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
 from intentkit.models.skill import SkillTable
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
 from sqlalchemy import (
@@ -128,33 +130,6 @@ class AgentAutonomous(BaseModel):
             )
         return v
 
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and len(v.encode()) > 50:
-            raise ValueError("name must be at most 50 bytes")
-        return v
-
-    @field_validator("description")
-    @classmethod
-    def validate_description(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and len(v.encode()) > 200:
-            raise ValueError("description must be at most 200 bytes")
-        return v
-
-    @field_validator("prompt")
-    @classmethod
-    def validate_prompt(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and len(v.encode()) > 20000:
-            raise ValueError("prompt must be at most 20000 bytes")
-        return v
-
-    @model_validator(mode="after")
-    def validate_schedule(self) -> "AgentAutonomous":
-        # This validator is kept for backward compatibility
-        # The actual validation now happens in AgentUpdate.validate_autonomous_schedule
-        return self
-
 
 class AgentExample(BaseModel):
     """Agent example configuration."""
@@ -240,11 +215,6 @@ class AgentTable(Base):
         String,
         nullable=True,
         comment="Pool of the agent token",
-    )
-    mode = Column(
-        String,
-        nullable=True,
-        comment="Mode of the agent, public or private",
     )
     fee_percentage = Column(
         Numeric(22, 4),
@@ -362,13 +332,6 @@ class AgentTable(Base):
         nullable=True,
         comment="Dict of skills and their corresponding configurations",
     )
-
-    cdp_network_id = Column(
-        String,
-        nullable=True,
-        default="base-mainnet",
-        comment="Network identifier for CDP integration",
-    )
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled = Column(
         Boolean,
@@ -391,6 +354,31 @@ class AgentTable(Base):
         nullable=True,
         comment="Extra prompt for xmtp entrypoint",
     )
+    version = Column(
+        String,
+        nullable=True,
+        comment="Version hash of the agent",
+    )
+    statistics = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Statistics of the agent, update every 1 hour for query",
+    )
+    assets = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Assets of the agent, update every 1 hour for query",
+    )
+    account_snapshot = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Account snapshot of the agent, update every 1 hour for query",
+    )
+    extra = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Other helper data fields for query, come from agent and agent data",
+    )
     # auto timestamp
     created_at = Column(
         DateTime(timezone=True),
@@ -407,16 +395,8 @@ class AgentTable(Base):
     )
 
 
-class AgentUpdate(BaseModel):
-    """Agent update model."""
-
-    model_config = ConfigDict(
-        title="Agent",
-        from_attributes=True,
-        json_schema_extra={
-            "required": ["name", "purpose", "personality", "principles"],
-        },
-    )
+class AgentCore(BaseModel):
+    """Agent core model."""
 
     name: Annotated[
         Optional[str],
@@ -428,19 +408,6 @@ class AgentUpdate(BaseModel):
             json_schema_extra={
                 "x-group": "basic",
                 "x-placeholder": "Name your agent",
-            },
-        ),
-    ]
-    slug: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Slug of the agent, used for URL generation",
-            max_length=30,
-            min_length=2,
-            json_schema_extra={
-                "x-group": "internal",
-                "readOnly": True,
             },
         ),
     ]
@@ -515,16 +482,6 @@ class AgentUpdate(BaseModel):
             },
         ),
     ]
-    mode: Annotated[
-        Optional[Literal["public", "private"]],
-        PydanticField(
-            default=None,
-            description="Mode of the agent, public or private",
-            json_schema_extra={
-                "x-group": "basic",
-            },
-        ),
-    ]
     fee_percentage: Annotated[
         Optional[Decimal],
         PydanticField(
@@ -581,38 +538,6 @@ class AgentUpdate(BaseModel):
                 "errorMessage": {
                     "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
                 },
-            },
-        ),
-    ]
-    owner: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Owner identifier of the agent, used for access control",
-            max_length=50,
-            json_schema_extra={
-                "x-group": "internal",
-            },
-        ),
-    ]
-    upstream_id: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="External reference ID for idempotent operations",
-            max_length=100,
-            json_schema_extra={
-                "x-group": "internal",
-            },
-        ),
-    ]
-    upstream_extra: Annotated[
-        Optional[Dict[str, Any]],
-        PydanticField(
-            default=None,
-            description="Additional data store for upstream use",
-            json_schema_extra={
-                "x-group": "internal",
             },
         ),
     ]
@@ -693,6 +618,89 @@ class AgentUpdate(BaseModel):
             },
         ),
     ]
+    wallet_provider: Annotated[
+        Optional[Literal["cdp", "readonly"]],
+        PydanticField(
+            default="cdp",
+            description="Provider of the agent's wallet",
+            json_schema_extra={
+                "x-group": "onchain",
+            },
+        ),
+    ]
+    readonly_wallet_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
+        ),
+    ]
+    network_id: Annotated[
+        Optional[
+            Literal[
+                "ethereum-mainnet",
+                "ethereum-sepolia",
+                "polygon-mainnet",
+                "polygon-mumbai",
+                "base-mainnet",
+                "base-sepolia",
+                "arbitrum-mainnet",
+                "arbitrum-sepolia",
+                "optimism-mainnet",
+                "optimism-sepolia",
+                "solana",
+            ]
+        ],
+        PydanticField(
+            default="base-mainnet",
+            description="Network identifier",
+            json_schema_extra={
+                "x-group": "onchain",
+            },
+        ),
+    ]
+    skills: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Dict of skills and their corresponding configurations",
+            json_schema_extra={
+                "x-group": "skills",
+                "x-inline": True,
+            },
+        ),
+    ]
+
+    def hash(self) -> str:
+        """
+        Generate a fixed-length hash based on the agent's content.
+
+        The hash remains unchanged if the content is the same and changes if the content changes.
+        This method serializes only AgentCore fields to JSON and generates a SHA-256 hash.
+        When called from subclasses, it will only use AgentCore fields, not subclass fields.
+
+        Returns:
+            str: A 64-character hexadecimal hash string
+        """
+        # Create a dictionary with only AgentCore fields for hashing
+        hash_data = {}
+
+        # Get only AgentCore field values, excluding None values for consistency
+        for field_name in AgentCore.model_fields:
+            value = getattr(self, field_name)
+            if value is not None:
+                hash_data[field_name] = value
+
+        # Convert to JSON string with sorted keys for consistent ordering
+        json_str = json.dumps(hash_data, sort_keys=True, default=str, ensure_ascii=True)
+
+        # Generate SHA-256 hash
+        return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
+
+
+class AgentUserInput(AgentCore):
+    """Agent update model."""
+
     short_term_memory_strategy: Annotated[
         Optional[Literal["trim", "summarize"]],
         PydanticField(
@@ -751,82 +759,6 @@ class AgentUpdate(BaseModel):
             },
         ),
     ]
-    # skills
-    skills: Annotated[
-        Optional[Dict[str, Any]],
-        PydanticField(
-            default=None,
-            description="Dict of skills and their corresponding configurations",
-            json_schema_extra={
-                "x-group": "skills",
-                "x-inline": True,
-            },
-        ),
-    ]
-    wallet_provider: Annotated[
-        Optional[Literal["cdp", "readonly"]],
-        PydanticField(
-            default="cdp",
-            description="Provider of the agent's wallet",
-            json_schema_extra={
-                "x-group": "onchain",
-            },
-        ),
-    ]
-    readonly_wallet_address: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
-        ),
-    ]
-    network_id: Annotated[
-        Optional[
-            Literal[
-                "ethereum-mainnet",
-                "ethereum-sepolia",
-                "polygon-mainnet",
-                "polygon-mumbai",
-                "base-mainnet",
-                "base-sepolia",
-                "arbitrum-mainnet",
-                "arbitrum-sepolia",
-                "optimism-mainnet",
-                "optimism-sepolia",
-                "solana",
-            ]
-        ],
-        PydanticField(
-            default="base-mainnet",
-            description="Network identifier",
-            json_schema_extra={
-                "x-group": "onchain",
-            },
-        ),
-    ]
-    cdp_network_id: Annotated[
-        Optional[
-            Literal[
-                "ethereum-mainnet",
-                "ethereum-sepolia",
-                "polygon-mainnet",
-                "polygon-mumbai",
-                "base-mainnet",
-                "base-sepolia",
-                "arbitrum-mainnet",
-                "arbitrum-sepolia",
-                "optimism-mainnet",
-                "optimism-sepolia",
-            ]
-        ],
-        PydanticField(
-            default="base-mainnet",
-            description="Network identifier for CDP integration",
-            json_schema_extra={
-                "x-group": "deprecated",
-            },
-        ),
-    ]
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled: Annotated[
         Optional[bool],
@@ -867,6 +799,37 @@ class AgentUpdate(BaseModel):
             max_length=10000,
             json_schema_extra={
                 "x-group": "entrypoint",
+            },
+        ),
+    ]
+
+
+class AgentUpdate(AgentUserInput):
+    """Agent update model."""
+
+    model_config = ConfigDict(
+        title="Agent",
+        from_attributes=True,
+        json_schema_extra={
+            "required": ["name"],
+        },
+    )
+
+    upstream_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="External reference ID for idempotent operations",
+            max_length=100,
+        ),
+    ]
+    upstream_extra: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Additional data store for upstream use",
+            json_schema_extra={
+                "x-group": "internal",
             },
         ),
     ]
@@ -960,6 +923,7 @@ class AgentUpdate(BaseModel):
                         detail="The shortest execution interval is 5 minutes",
                     )
 
+    # deprecated, use override instead
     async def update(self, id: str) -> "Agent":
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
@@ -969,12 +933,6 @@ class AgentUpdate(BaseModel):
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
-            # check owner
-            if self.owner and db_agent.owner != self.owner:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to update this agent",
-                )
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
                 setattr(db_agent, key, value)
@@ -991,15 +949,11 @@ class AgentUpdate(BaseModel):
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
-            # check owner
-            if db_agent.owner and db_agent.owner != self.owner:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to update this agent",
-                )
             # update
             for key, value in self.model_dump().items():
                 setattr(db_agent, key, value)
+            # version
+            db_agent.version = self.hash()
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
@@ -1016,6 +970,14 @@ class AgentCreate(AgentUpdate):
             pattern=r"^[a-z][a-z0-9-]*$",
             min_length=2,
             max_length=67,
+        ),
+    ]
+    owner: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Owner identifier of the agent, used for access control",
+            max_length=50,
         ),
     ]
 
@@ -1050,38 +1012,11 @@ class AgentCreate(AgentUpdate):
 
         async with get_session() as db:
             db_agent = AgentTable(**self.model_dump())
+            db_agent.version = self.hash()
             db.add(db_agent)
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
-
-    async def create_or_update(self) -> ("Agent", bool):
-        # Validation is now handled by field validators
-        await self.check_upstream_id()
-
-        # Validate autonomous schedule settings if present
-        if self.autonomous:
-            self.validate_autonomous_schedule()
-
-        is_new = False
-        async with get_session() as db:
-            db_agent = await db.get(AgentTable, self.id)
-            if not db_agent:
-                db_agent = AgentTable(**self.model_dump())
-                db.add(db_agent)
-                is_new = True
-            else:
-                # check owner
-                if self.owner and db_agent.owner != self.owner:
-                    raise HTTPException(
-                        status_code=403,
-                        detail="You do not have permission to update this agent",
-                    )
-                for key, value in self.model_dump(exclude_unset=True).items():
-                    setattr(db_agent, key, value)
-            await db.commit()
-            await db.refresh(db_agent)
-            return Agent.model_validate(db_agent), is_new
 
 
 class Agent(AgentCreate):
@@ -1089,6 +1024,44 @@ class Agent(AgentCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
+    slug: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Slug of the agent, used for URL generation",
+            max_length=20,
+            min_length=2,
+        ),
+    ]
+    version: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Version hash of the agent",
+        ),
+    ]
+    statistics: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            description="Statistics of the agent, update every 1 hour for query"
+        ),
+    ]
+    assets: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(description="Assets of the agent, update every 1 hour for query"),
+    ]
+    account_snapshot: Annotated[
+        Optional[CreditAccount],
+        PydanticField(
+            description="Account snapshot of the agent, update every 1 hour for query"
+        ),
+    ]
+    extra: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            description="Other helper data fields for query, come from agent and agent data"
+        ),
+    ]
     # auto timestamp
     created_at: Annotated[
         datetime,
@@ -1555,13 +1528,6 @@ class AgentResponse(BaseModel):
             description="Pool of the agent token",
         ),
     ]
-    mode: Annotated[
-        Optional[Literal["public", "private"]],
-        PydanticField(
-            default=None,
-            description="Mode of the agent, public or private",
-        ),
-    ]
     fee_percentage: Annotated[
         Optional[Decimal],
         PydanticField(
@@ -1648,13 +1614,6 @@ class AgentResponse(BaseModel):
         PydanticField(
             default="base-mainnet",
             description="Network identifier",
-        ),
-    ]
-    cdp_network_id: Annotated[
-        Optional[str],
-        PydanticField(
-            default="base-mainnet",
-            description="Network identifier for CDP integration",
         ),
     ]
     # telegram entrypoint

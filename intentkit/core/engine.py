@@ -35,6 +35,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.core.agent import agent_store
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
@@ -42,7 +43,6 @@ from intentkit.core.prompt import (
     create_formatted_prompt_function,
     explain_prompt,
 )
-from intentkit.core.skill import skill_store
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -54,7 +54,7 @@ from intentkit.models.chat import (
 )
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
-from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
 from intentkit.models.skill import AgentSkillData, ThreadSkillData
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
@@ -71,9 +71,7 @@ _agents_updated: dict[str, datetime] = {}
 _private_agents_updated: dict[str, datetime] = {}
 
 
-async def create_agent(
-    agent: Agent, is_private: bool = False, has_search: bool = False
-) -> CompiledStateGraph:
+async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateGraph:
     """Create an AI agent with specified configuration and tools.
 
     This function:
@@ -91,9 +89,6 @@ async def create_agent(
         CompiledStateGraph: Initialized LangChain agent
     """
     agent_data = await AgentData.get(agent.id)
-
-    # ==== Initialize LLM using the LLM abstraction.
-    from intentkit.models.llm import create_llm_model
 
     # Create the LLM model instance
     llm_model = await create_llm_model(
@@ -123,7 +118,7 @@ async def create_agent(
                 skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
                     skill_tools = await skill_module.get_skills(
-                        v, is_private, skill_store, agent_id=agent.id
+                        v, is_private, agent_store, agent_id=agent.id
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)
@@ -137,8 +132,7 @@ async def create_agent(
 
     # Add search tools if requested
     if (
-        has_search
-        and llm_model.info.provider == LLMProvider.OPENAI
+        llm_model.info.provider == LLMProvider.OPENAI
         and llm_model.info.supports_search
         and not agent.model.startswith(
             "gpt-5"
@@ -159,7 +153,7 @@ async def create_agent(
         model=llm,
         short_term_memory_strategy=agent.short_term_memory_strategy,
         max_tokens=input_token_limit // 2,
-        max_summary_tokens=2048,  # later we can let agent to set this
+        max_summary_tokens=2048,
     )
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
@@ -202,21 +196,8 @@ async def initialize_agent(aid, is_private=False):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    # Determine if search should be enabled based on model capabilities
-    from intentkit.models.llm import create_llm_model
-
-    llm_model = await create_llm_model(
-        model_name=agent.model,
-        temperature=agent.temperature,
-        frequency_penalty=agent.frequency_penalty,
-        presence_penalty=agent.presence_penalty,
-    )
-    has_search = (
-        llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search
-    )
-
     # Create the agent using the new create_agent function
-    executor = await create_agent(agent, is_private, has_search)
+    executor = await create_agent(agent, is_private)
 
     # Cache the agent executor
     if is_private:

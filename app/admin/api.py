@@ -2,9 +2,7 @@ import importlib
 import logging
 from typing import Annotated, Optional, TypedDict
 
-from aiogram import Bot
-from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
-from aiogram.utils.token import TokenValidationError
+from epyxid import XID
 from fastapi import (
     APIRouter,
     Body,
@@ -25,14 +23,15 @@ from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
 from app.auth import verify_admin_jwt
-from intentkit.clients.cdp import get_cdp_client
 from intentkit.clients.twitter import unlink_twitter
-from intentkit.config.config import config
+from intentkit.core.agent import (
+    _process_agent_post_actions,
+    _process_telegram_config,
+    deploy_agent,
+)
 from intentkit.core.engine import clean_agent_memory
-from intentkit.core.skill import skill_store
 from intentkit.models.agent import (
     Agent,
-    AgentCreate,
     AgentResponse,
     AgentTable,
     AgentUpdate,
@@ -41,282 +40,11 @@ from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_db
 from intentkit.models.user import User
 from intentkit.skills import __all__ as skill_categories
-from intentkit.utils.slack_alert import send_slack_message
 
 admin_router_readonly = APIRouter()
 admin_router = APIRouter()
 
 logger = logging.getLogger(__name__)
-
-
-async def _process_agent(
-    agent: AgentCreate, subject: str | None = None, slack_message: str | None = None
-) -> tuple[Agent, AgentData]:
-    """Shared function to process agent creation or update.
-
-    Args:
-        agent: Agent configuration to process
-        subject: Optional subject from JWT token
-        slack_message: Optional custom message for Slack notification
-
-    Returns:
-        tuple[Agent, AgentData]: Tuple of (processed agent, agent data)
-    """
-    logger.info(f"Processing agent: {agent}")
-    if subject:
-        agent.owner = subject
-
-    # Get the latest agent from create_or_update
-    latest_agent, is_new = await agent.create_or_update()
-
-    # Process common post-creation/update steps
-    agent_data = await _process_agent_post_actions(latest_agent, is_new, slack_message)
-
-    return latest_agent, agent_data
-
-
-async def _process_agent_post_actions(
-    agent: Agent, is_new: bool = True, slack_message: str | None = None
-) -> AgentData:
-    """Process common actions after agent creation or update.
-
-    Args:
-        agent: The agent that was created or updated
-        is_new: Whether the agent is newly created
-        slack_message: Optional custom message for Slack notification
-
-    Returns:
-        AgentData: The processed agent data
-    """
-    if config.cdp_api_key_id and agent.wallet_provider == "cdp":
-        cdp_client = await get_cdp_client(agent.id, skill_store)
-        await cdp_client.get_wallet_provider()
-
-    # Get new agent data
-    # FIXME: refuse to change wallet provider
-    if agent.wallet_provider == "readonly":
-        agent_data = await AgentData.patch(
-            agent.id,
-            {
-                "evm_wallet_address": agent.readonly_wallet_address,
-            },
-        )
-    else:
-        agent_data = await AgentData.get(agent.id)
-
-    # Send Slack notification
-    slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
-    try:
-        _send_agent_notification(agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
-
-    return agent_data
-
-
-async def _process_telegram_config(
-    agent: AgentUpdate, existing_agent: Optional[Agent], agent_data: AgentData
-) -> AgentData:
-    """Process telegram configuration for an agent.
-
-    Args:
-        agent: The agent with telegram configuration
-        agent_data: The agent data to update
-
-    Returns:
-        AgentData: The updated agent data
-    """
-    changes = agent.model_dump(exclude_unset=True)
-    if not changes.get("telegram_entrypoint_enabled"):
-        return agent_data
-
-    if not changes.get("telegram_config") or not changes.get("telegram_config").get(
-        "token"
-    ):
-        return agent_data
-
-    tg_bot_token = changes.get("telegram_config").get("token")
-
-    if existing_agent and existing_agent.telegram_config.get("token") == tg_bot_token:
-        return agent_data
-
-    try:
-        bot = Bot(token=tg_bot_token)
-        bot_info = await bot.get_me()
-        agent_data.telegram_id = str(bot_info.id)
-        agent_data.telegram_username = bot_info.username
-        agent_data.telegram_name = bot_info.first_name
-        if bot_info.last_name:
-            agent_data.telegram_name = f"{bot_info.first_name} {bot_info.last_name}"
-        await agent_data.save()
-        try:
-            await bot.close()
-        except Exception:
-            pass
-        return agent_data
-    except (
-        TelegramUnauthorizedError,
-        TelegramConflictError,
-        TokenValidationError,
-    ) as req_err:
-        logger.error(
-            f"Unauthorized err getting telegram bot username with token {tg_bot_token}: {req_err}",
-        )
-        return agent_data
-    except Exception as e:
-        logger.error(
-            f"Error getting telegram bot username with token {tg_bot_token}: {e}",
-        )
-        return agent_data
-
-
-def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -> None:
-    """Send a notification about agent creation or update.
-
-    Args:
-        agent: The agent that was created or updated
-        agent_data: The agent data to update
-        message: The notification message
-    """
-    # Format autonomous configurations - show only enabled ones with their id, name, and schedule
-    autonomous_formatted = ""
-    if agent.autonomous:
-        enabled_autonomous = [auto for auto in agent.autonomous if auto.enabled]
-        if enabled_autonomous:
-            autonomous_items = []
-            for auto in enabled_autonomous:
-                schedule = (
-                    f"cron: {auto.cron}" if auto.cron else f"minutes: {auto.minutes}"
-                )
-                autonomous_items.append(
-                    f"• {auto.id}: {auto.name or 'Unnamed'} ({schedule})"
-                )
-            autonomous_formatted = "\n".join(autonomous_items)
-        else:
-            autonomous_formatted = "No enabled autonomous configurations"
-    else:
-        autonomous_formatted = "None"
-
-    # Format skills - find categories with enabled: true and list skills in public/private states
-    skills_formatted = ""
-    if agent.skills:
-        enabled_categories = []
-        for category, skill_config in agent.skills.items():
-            if skill_config and skill_config.get("enabled") is True:
-                skills_list = []
-                states = skill_config.get("states", {})
-                public_skills = [
-                    skill for skill, state in states.items() if state == "public"
-                ]
-                private_skills = [
-                    skill for skill, state in states.items() if state == "private"
-                ]
-
-                if public_skills:
-                    skills_list.append(f"  Public: {', '.join(public_skills)}")
-                if private_skills:
-                    skills_list.append(f"  Private: {', '.join(private_skills)}")
-
-                if skills_list:
-                    enabled_categories.append(
-                        f"• {category}:\n{chr(10).join(skills_list)}"
-                    )
-
-        if enabled_categories:
-            skills_formatted = "\n".join(enabled_categories)
-        else:
-            skills_formatted = "No enabled skills"
-    else:
-        skills_formatted = "None"
-
-    send_slack_message(
-        message,
-        attachments=[
-            {
-                "color": "good",
-                "fields": [
-                    {"title": "ID", "short": True, "value": agent.id},
-                    {"title": "Name", "short": True, "value": agent.name},
-                    {"title": "Model", "short": True, "value": agent.model},
-                    {
-                        "title": "Network",
-                        "short": True,
-                        "value": agent.network_id or agent.cdp_network_id or "Default",
-                    },
-                    {
-                        "title": "X Username",
-                        "short": True,
-                        "value": agent_data.twitter_username,
-                    },
-                    {
-                        "title": "Telegram Enabled",
-                        "short": True,
-                        "value": str(agent.telegram_entrypoint_enabled),
-                    },
-                    {
-                        "title": "Telegram Username",
-                        "short": True,
-                        "value": agent_data.telegram_username,
-                    },
-                    {
-                        "title": "Wallet Address",
-                        "value": agent_data.evm_wallet_address,
-                    },
-                    {
-                        "title": "Autonomous",
-                        "value": autonomous_formatted,
-                    },
-                    {
-                        "title": "Skills",
-                        "value": skills_formatted,
-                    },
-                ],
-            }
-        ],
-    )
-
-
-@admin_router.post(
-    "/agents",
-    tags=["Agent"],
-    status_code=201,
-    operation_id="post_agent_deprecated",
-    deprecated=True,
-)
-async def create_or_update_agent(
-    agent: AgentCreate = Body(AgentCreate, description="Agent configuration"),
-    subject: str = Depends(verify_admin_jwt),
-) -> Response:
-    """Create or update an agent.
-
-    THIS ENDPOINT IS DEPRECATED. Please use POST /agents/v2 for creating new agents.
-
-    This endpoint:
-    1. Validates agent ID format
-    2. Creates or updates agent configuration
-    3. Reinitializes agent if already in cache
-    4. Masks sensitive data in response
-
-    **Request Body:**
-    * `agent` - Agent configuration
-
-    **Returns:**
-    * `AgentResponse` - Updated agent configuration with additional processed data
-
-    **Raises:**
-    * `HTTPException`:
-        - 400: Invalid agent ID format
-        - 500: Database error
-    """
-    latest_agent, agent_data = await _process_agent(agent, subject)
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    # Return Response with ETag header
-    return Response(
-        content=agent_response.model_dump_json(),
-        media_type="application/json",
-        headers={"ETag": agent_response.etag()},
-    )
 
 
 @admin_router_readonly.post(
@@ -404,20 +132,15 @@ async def validate_agent_update(
 
 
 @admin_router.post(
-    "/agents/v2",
+    "/agents",
     tags=["Agent"],
+    status_code=201,
     operation_id="create_agent",
-    summary="Create Agent",
-    response_model=AgentResponse,
     responses={
-        200: {"model": AgentResponse, "description": "Agent already exists"},
-        201: {"model": AgentResponse, "description": "Agent created"},
-        400: {"description": "Other client errors except format error"},
-        422: {"description": "Invalid agent configuration"},
-        500: {"description": "Server error"},
+        201: {"description": "Agent created successfully"},
     },
 )
-async def create_agent(
+async def create_agent_endpoint(
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
     subject: str = Depends(verify_admin_jwt),
 ) -> Response:
@@ -430,50 +153,35 @@ async def create_agent(
     * `AgentResponse` - Created agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    agent = AgentCreate.model_validate(input)
-    if subject:
-        agent.owner = subject
+    agent_response = await deploy_agent(str(XID()), input, subject)
 
-    # Check for existing agent by upstream_id
-    existing = await agent.get_by_upstream_id()
-    if existing:
-        agent_data = await AgentData.get(existing.id)
-        agent_response = await AgentResponse.from_agent(existing, agent_data)
-        return Response(
-            status_code=200,
-            content=agent_response.model_dump_json(),
-            media_type="application/json",
-            headers={"ETag": agent_response.etag()},
-        )
-    # Create new agent
-    latest_agent = await agent.create()
-    # Process common post-creation actions
-    agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
-    agent_data = await _process_telegram_config(input, None, agent_data)
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    # Return Response with ETag header
+    # Return Response with ETag header and appropriate status code
     return Response(
-        status_code=201,
         content=agent_response.model_dump_json(),
         media_type="application/json",
         headers={"ETag": agent_response.etag()},
+        status_code=201,
     )
 
 
 @admin_router.patch(
-    "/agents/{agent_id}", tags=["Agent"], status_code=200, operation_id="update_agent"
+    "/agents/{agent_id}",
+    tags=["Agent"],
+    status_code=200,
+    operation_id="update_agent",
+    deprecated=True,
 )
 async def update_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
     subject: str = Depends(verify_admin_jwt),
 ) -> Response:
-    """Update an existing agent.
+    """
+    Deprecated, use the put method instead, it will override the agent instead of updating it.
 
     Use input to update agent configuration. If some fields are not provided, they will not be changed.
 
@@ -521,7 +229,7 @@ async def update_agent(
 @admin_router.put(
     "/agents/{agent_id}", tags=["Agent"], status_code=200, operation_id="override_agent"
 )
-async def override_agent(
+async def override_agent_endpoint(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
     subject: str = Depends(verify_admin_jwt),
@@ -546,27 +254,7 @@ async def override_agent(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    if subject:
-        agent.owner = subject
-
-    if not agent.owner:
-        raise HTTPException(status_code=400, detail="Owner is required")
-
-    existing_agent = await Agent.get(agent_id)
-    if not existing_agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-
-    # Update agent
-    latest_agent = await agent.override(agent_id)
-
-    # Process common post-update actions
-    agent_data = await _process_agent_post_actions(
-        latest_agent, False, "Agent Overridden"
-    )
-
-    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
-
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
+    agent_response = await deploy_agent(agent_id, agent, subject)
 
     # Return Response with ETag header
     return Response(
@@ -756,7 +444,7 @@ async def export_agent(
     if agent.skills is None:
         agent.skills = {}
 
-    # Process all skill categories
+    # fill all skill categories
     for category in skill_categories:
         try:
             # Dynamically import the skill module
@@ -888,14 +576,7 @@ async def import_agent(
         raise HTTPException(status_code=400, detail=f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    latest_agent = await agent.update(agent_id)
-
-    # Process common post-creation/update steps
-    agent_data = await _process_agent_post_actions(
-        latest_agent, False, "Agent Updated via YAML Import"
-    )
-
-    await _process_telegram_config(agent, existing_agent, agent_data)
+    await deploy_agent(agent_id, agent, subject)
 
     return "Agent import successful"
 

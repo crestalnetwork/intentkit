@@ -67,20 +67,6 @@
       "x-group": "basic",
       "x-placeholder": "Enter agent name"
     },
-    "mode": {
-      "title": "Usage Type",
-      "type": "string",
-      "description": "Mode of the agent, Public App or Personal Assistant",
-      "enum": [
-        "public",
-        "private"
-      ],
-      "x-enum-title": [
-        "Public App",
-        "Personal Assistant"
-      ],
-      "x-group": "deprecated"
-    },
     "fee_percentage": {
       "title": "Service Fee",
       "type": "number",
@@ -115,31 +101,6 @@
       "description": "Picture of the agent",
       "x-group": "experimental",
       "x-placeholder": "Upload a picture of your agent"
-    },
-    "slug": {
-      "title": "Slug",
-      "type": "string",
-      "description": "Slug of the agent, used for URL generation",
-      "maxLength": 30,
-      "minLength": 2,
-      "readOnly": true,
-      "x-group": "internal"
-    },
-    "owner": {
-      "title": "Owner",
-      "type": "string",
-      "description": "Owner identifier of the agent, used for access control",
-      "readOnly": true,
-      "maxLength": 50,
-      "x-group": "internal"
-    },
-    "upstream_id": {
-      "title": "Upstream ID",
-      "type": "string",
-      "description": "External reference ID for idempotent operations",
-      "readOnly": true,
-      "maxLength": 100,
-      "x-group": "internal"
     },
     "model": {
       "title": "AI Model",

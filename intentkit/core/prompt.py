@@ -106,7 +106,7 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
         return ""
 
     wallet_parts = []
-    network_id = agent.network_id or agent.cdp_network_id
+    network_id = agent.network_id
 
     if agent_data.evm_wallet_address and network_id != "solana":
         wallet_parts.append(

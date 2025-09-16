@@ -1,3 +1,34 @@
+## v0.7.4
+
+### Features
+- **Memory Management**: Auto clear error memory for improved agent performance
+
+### Bug Fixes
+- **Code Quality**: Lint improvements
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.3...v0.7.4
+
+## v0.7.3
+
+### Features
+- **Telegram Bot Enhancements**: Major improvements to telegram bot functionality
+  - Added telegram bot owner configuration and message routing for better control
+  - Added processing reactions to telegram bot messages for user feedback
+  - Updated telegram bot processing reaction emoji to thinking face for better UX
+  - Added telegram unauthorized error handling and failed agents cache for improved reliability
+
+### Bug Fixes
+- **Telegram Bot Fixes**: 
+  - Updated telegram bot reactions to use ReactionTypeEmoji format for proper display
+  - Removed redundant reply_to_message_id in AI relayer error handling
+
+### Technical Improvements
+- Enhanced error handling and caching mechanisms
+- Improved message routing and bot configuration
+- Better reaction handling and emoji formatting
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.2...v0.7.3
+
 ## v0.7.2
 
 ### Features
