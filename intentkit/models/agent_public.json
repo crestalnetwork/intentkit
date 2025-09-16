@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "AgentPublicInfo",
+  "description": "Public information of the agent",
+  "properties": {
+    "description": {
+      "title": "Description",
+      "type": "string",
+      "description": "Description of the agent, for public view, not contained in prompt",
+      "x-group": "basic",
+      "x-placeholder": "Introduce your agent"
+    },
+    "external_website": {
+      "title": "External Website",
+      "type": "string",
+      "description": "Link of external website of the agent, if you have one",
+      "format": "uri",
+      "x-group": "basic",
+      "x-placeholder": "Enter agent external website url"
+    },
+    "ticker": {
+      "title": "Ticker",
+      "type": "string",
+      "description": "Ticker symbol of the agent",
+      "maxLength": 10,
+      "minLength": 1,
+      "x-group": "basic",
+      "x-placeholder": "If one day, your agent has it's own token, what will it be?"
+    },
+    "token_address": {
+      "title": "Token Address",
+      "type": "string",
+      "description": "Token address of the agent",
+      "maxLength": 42,
+      "x-group": "internal",
+      "readOnly": true
+    },
+    "token_pool": {
+      "title": "Token Pool",
+      "type": "string",
+      "description": "Pool of the agent token",
+      "maxLength": 42,
+      "x-group": "internal",
+      "readOnly": true
+    },
+    "fee_percentage": {
+      "title": "Fee Percentage",
+      "type": "number",
+      "description": "Fee percentage of the agent",
+      "minimum": 0,
+      "x-group": "basic"
+    },
+    "example_intro": {
+      "title": "Example Introduction",
+      "type": "string",
+      "description": "Introduction of the example",
+      "maxLength": 2000,
+      "x-group": "examples"
+    },
+    "examples": {
+      "title": "Examples",
+      "type": "array",
+      "description": "List of example prompts for the agent",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the example",
+            "maxLength": 50,
+            "x-group": "examples"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "Description of the example",
+            "maxLength": 200,
+            "x-group": "examples"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string",
+            "description": "Example prompt",
+            "maxLength": 2000,
+            "x-group": "examples"
+          }
+        },
+        "required": ["name", "description", "prompt"]
+      },
+      "x-group": "examples",
+      "x-inline": true
+    }
+  },
+  "additionalProperties": true
+}
