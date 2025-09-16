@@ -166,60 +166,21 @@ class AgentExample(BaseModel):
     ]
 
 
-class AgentTable(Base):
-    """Agent table db model."""
+class AgentUserInputColumns:
+    """Abstract base class containing columns that are common to AgentTable and other tables."""
 
-    __tablename__ = "agents"
+    __abstract__ = True
 
-    id = Column(
-        String,
-        primary_key=True,
-        comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-    )
+    # Basic information fields from AgentCore
     name = Column(
         String,
         nullable=True,
         comment="Display name of the agent",
     )
-    slug = Column(
-        String,
-        nullable=True,
-        comment="Slug of the agent, used for URL generation",
-    )
-    description = Column(
-        String,
-        nullable=True,
-        comment="Description of the agent, for public view, not contained in prompt",
-    )
-    external_website = Column(
-        String,
-        nullable=True,
-        comment="Link of external website of the agent, if you have one",
-    )
     picture = Column(
         String,
         nullable=True,
         comment="Picture of the agent",
-    )
-    ticker = Column(
-        String,
-        nullable=True,
-        comment="Ticker symbol of the agent",
-    )
-    token_address = Column(
-        String,
-        nullable=True,
-        comment="Token address of the agent",
-    )
-    token_pool = Column(
-        String,
-        nullable=True,
-        comment="Pool of the agent token",
-    )
-    fee_percentage = Column(
-        Numeric(22, 4),
-        nullable=True,
-        comment="Fee percentage of the agent",
     )
     purpose = Column(
         String,
@@ -236,39 +197,8 @@ class AgentTable(Base):
         nullable=True,
         comment="Principles or values of the agent",
     )
-    owner = Column(
-        String,
-        nullable=True,
-        comment="Owner identifier of the agent, used for access control",
-    )
-    upstream_id = Column(
-        String,
-        index=True,
-        nullable=True,
-        comment="Upstream reference ID for idempotent operations",
-    )
-    upstream_extra = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="Additional data store for upstream use",
-    )
-    wallet_provider = Column(
-        String,
-        nullable=True,
-        comment="Provider of the agent's wallet",
-    )
-    readonly_wallet_address = Column(
-        String,
-        nullable=True,
-        comment="Readonly wallet address of the agent",
-    )
-    network_id = Column(
-        String,
-        nullable=True,
-        default="base-mainnet",
-        comment="Network identifier",
-    )
-    # AI part
+
+    # AI model configuration fields from AgentCore
     model = Column(
         String,
         nullable=True,
@@ -303,36 +233,44 @@ class AgentTable(Base):
         default=0.0,
         comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
     )
+
+    # Wallet and network configuration fields from AgentCore
+    wallet_provider = Column(
+        String,
+        nullable=True,
+        comment="Provider of the agent's wallet",
+    )
+    readonly_wallet_address = Column(
+        String,
+        nullable=True,
+        comment="Readonly wallet address of the agent",
+    )
+    network_id = Column(
+        String,
+        nullable=True,
+        default="base-mainnet",
+        comment="Network identifier",
+    )
+
+    # Skills configuration from AgentCore
+    skills = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Dict of skills and their corresponding configurations",
+    )
+
+    # Additional fields from AgentUserInput
     short_term_memory_strategy = Column(
         String,
         nullable=True,
         default="trim",
         comment="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
     )
-    # autonomous mode
     autonomous = Column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Autonomous agent configurations",
     )
-    # agent examples
-    example_intro = Column(
-        String,
-        nullable=True,
-        comment="Introduction for example interactions",
-    )
-    examples = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="List of example interactions for the agent",
-    )
-    # skills
-    skills = Column(
-        JSON().with_variant(JSONB(), "postgresql"),
-        nullable=True,
-        comment="Dict of skills and their corresponding configurations",
-    )
-    # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled = Column(
         Boolean,
         nullable=True,
@@ -353,6 +291,39 @@ class AgentTable(Base):
         String,
         nullable=True,
         comment="Extra prompt for xmtp entrypoint",
+    )
+
+
+class AgentTable(Base, AgentUserInputColumns):
+    """Agent table db model."""
+
+    __tablename__ = "agents"
+
+    id = Column(
+        String,
+        primary_key=True,
+        comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
+    )
+    slug = Column(
+        String,
+        nullable=True,
+        comment="Slug of the agent, used for URL generation",
+    )
+    owner = Column(
+        String,
+        nullable=True,
+        comment="Owner identifier of the agent, used for access control",
+    )
+    upstream_id = Column(
+        String,
+        index=True,
+        nullable=True,
+        comment="Upstream reference ID for idempotent operations",
+    )
+    upstream_extra = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Additional data store for upstream use",
     )
     version = Column(
         String,
@@ -379,6 +350,49 @@ class AgentTable(Base):
         nullable=True,
         comment="Other helper data fields for query, come from agent and agent data",
     )
+
+    # Fields moved from AgentUserInputColumns that are no longer in AgentUserInput
+    description = Column(
+        String,
+        nullable=True,
+        comment="Description of the agent, for public view, not contained in prompt",
+    )
+    external_website = Column(
+        String,
+        nullable=True,
+        comment="Link of external website of the agent, if you have one",
+    )
+    ticker = Column(
+        String,
+        nullable=True,
+        comment="Ticker symbol of the agent",
+    )
+    token_address = Column(
+        String,
+        nullable=True,
+        comment="Token address of the agent",
+    )
+    token_pool = Column(
+        String,
+        nullable=True,
+        comment="Pool of the agent token",
+    )
+    fee_percentage = Column(
+        Numeric(22, 4),
+        nullable=True,
+        comment="Fee percentage of the agent",
+    )
+    example_intro = Column(
+        String,
+        nullable=True,
+        comment="Introduction for example interactions",
+    )
+    examples = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="List of example interactions for the agent",
+    )
+
     # auto timestamp
     created_at = Column(
         DateTime(timezone=True),
@@ -411,29 +425,6 @@ class AgentCore(BaseModel):
             },
         ),
     ]
-    description: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Description of the agent, for public view, not contained in prompt",
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Introduce your agent",
-            },
-        ),
-    ]
-    external_website: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Link of external website of the agent, if you have one",
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Enter agent external website url",
-                "format": "uri",
-            },
-        ),
-    ]
     picture: Annotated[
         Optional[str],
         PydanticField(
@@ -442,54 +433,6 @@ class AgentCore(BaseModel):
             json_schema_extra={
                 "x-group": "experimental",
                 "x-placeholder": "Upload a picture of your agent",
-            },
-        ),
-    ]
-    ticker: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Ticker symbol of the agent",
-            max_length=10,
-            min_length=1,
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "If one day, your agent has it's own token, what will it be?",
-            },
-        ),
-    ]
-    token_address: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Token address of the agent",
-            max_length=42,
-            json_schema_extra={
-                "x-group": "internal",
-                "readOnly": True,
-            },
-        ),
-    ]
-    token_pool: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Pool of the agent token",
-            max_length=42,
-            json_schema_extra={
-                "x-group": "internal",
-                "readOnly": True,
-            },
-        ),
-    ]
-    fee_percentage: Annotated[
-        Optional[Decimal],
-        PydanticField(
-            default=None,
-            description="Fee percentage of the agent",
-            ge=Decimal("0.0"),
-            json_schema_extra={
-                "x-group": "basic",
             },
         ),
     ]
@@ -732,29 +675,6 @@ class AgentUserInput(AgentCore):
             ),
             json_schema_extra={
                 "x-group": "autonomous",
-                "x-inline": True,
-            },
-        ),
-    ]
-    example_intro: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Introduction of the example",
-            max_length=2000,
-            json_schema_extra={
-                "x-group": "examples",
-            },
-        ),
-    ]
-    examples: Annotated[
-        Optional[List[AgentExample]],
-        PydanticField(
-            default=None,
-            description="List of example prompts for the agent",
-            max_length=6,
-            json_schema_extra={
-                "x-group": "examples",
                 "x-inline": True,
             },
         ),
@@ -1019,7 +939,106 @@ class AgentCreate(AgentUpdate):
             return Agent.model_validate(db_agent)
 
 
-class Agent(AgentCreate):
+class AgentPublicInfo(BaseModel):
+    """Public information of the agent."""
+
+    description: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Description of the agent, for public view, not contained in prompt",
+            json_schema_extra={
+                "x-group": "basic",
+                "x-placeholder": "Introduce your agent",
+            },
+        ),
+    ]
+    external_website: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Link of external website of the agent, if you have one",
+            json_schema_extra={
+                "x-group": "basic",
+                "x-placeholder": "Enter agent external website url",
+                "format": "uri",
+            },
+        ),
+    ]
+    ticker: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Ticker symbol of the agent",
+            max_length=10,
+            min_length=1,
+            json_schema_extra={
+                "x-group": "basic",
+                "x-placeholder": "If one day, your agent has it's own token, what will it be?",
+            },
+        ),
+    ]
+    token_address: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Token address of the agent",
+            max_length=42,
+            json_schema_extra={
+                "x-group": "internal",
+                "readOnly": True,
+            },
+        ),
+    ]
+    token_pool: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Pool of the agent token",
+            max_length=42,
+            json_schema_extra={
+                "x-group": "internal",
+                "readOnly": True,
+            },
+        ),
+    ]
+    fee_percentage: Annotated[
+        Optional[Decimal],
+        PydanticField(
+            default=None,
+            description="Fee percentage of the agent",
+            ge=Decimal("0.0"),
+            json_schema_extra={
+                "x-group": "basic",
+            },
+        ),
+    ]
+    example_intro: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Introduction of the example",
+            max_length=2000,
+            json_schema_extra={
+                "x-group": "examples",
+            },
+        ),
+    ]
+    examples: Annotated[
+        Optional[List[AgentExample]],
+        PydanticField(
+            default=None,
+            description="List of example prompts for the agent",
+            max_length=6,
+            json_schema_extra={
+                "x-group": "examples",
+                "x-inline": True,
+            },
+        ),
+    ]
+
+
+class Agent(AgentCreate, AgentPublicInfo):
     """Agent model."""
 
     model_config = ConfigDict(from_attributes=True)
