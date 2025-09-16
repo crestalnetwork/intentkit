@@ -422,9 +422,9 @@ class QuicknodeChainProvider(ChainProvider):
                     )
 
             except httpx.HTTPStatusError as http_err:
-                raise (f"Quicknode API HTTP Error: {http_err}")
+                raise Exception(f"Quicknode API HTTP Error: {http_err}")
             except httpx.RequestError as req_err:
-                raise (f"Quicknode API Request Error: {req_err}")
+                raise Exception(f"Quicknode API Request Error: {req_err}")
             except (
                 KeyError,
                 TypeError,
@@ -433,4 +433,4 @@ class QuicknodeChainProvider(ChainProvider):
                     f"Error processing QuickNode API response: {e}. Check the API response format."
                 )
             except Exception as e:
-                raise (f"Quicknode API An unexpected error occurred: {e}")
+                raise Exception(f"Quicknode API An unexpected error occurred: {e}")

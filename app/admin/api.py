@@ -2,6 +2,7 @@ import importlib
 import logging
 from typing import Annotated, Optional, TypedDict
 
+from epyxid import XID
 from fastapi import (
     APIRouter,
     Body,
@@ -26,8 +27,7 @@ from intentkit.clients.twitter import unlink_twitter
 from intentkit.core.agent import (
     _process_agent_post_actions,
     _process_telegram_config,
-    create_agent,
-    override_agent,
+    deploy_agent,
 )
 from intentkit.core.engine import clean_agent_memory
 from intentkit.models.agent import (
@@ -153,11 +153,11 @@ async def create_agent_endpoint(
     * `AgentResponse` - Created agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    agent_response = await create_agent(input, subject)
+    agent_response = await deploy_agent(str(XID()),input, subject)
 
     # Return Response with ETag header and appropriate status code
     return Response(
@@ -254,7 +254,7 @@ async def override_agent_endpoint(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    agent_response = await override_agent(agent_id, agent, subject)
+    agent_response = await deploy_agent(agent_id, agent, subject)
 
     # Return Response with ETag header
     return Response(
@@ -444,7 +444,7 @@ async def export_agent(
     if agent.skills is None:
         agent.skills = {}
 
-    # Process all skill categories
+    # fill all skill categories
     for category in skill_categories:
         try:
             # Dynamically import the skill module
@@ -576,14 +576,7 @@ async def import_agent(
         raise HTTPException(status_code=400, detail=f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    latest_agent = await agent.update(agent_id)
-
-    # Process common post-creation/update steps
-    agent_data = await _process_agent_post_actions(
-        latest_agent, False, "Agent Updated via YAML Import"
-    )
-
-    await _process_telegram_config(agent, existing_agent, agent_data)
+    await deploy_agent(agent_id, agent, subject)
 
     return "Agent import successful"
 

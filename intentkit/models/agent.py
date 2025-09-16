@@ -933,12 +933,6 @@ class AgentUpdate(AgentUserInput):
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
-            # check owner
-            if self.owner and db_agent.owner != self.owner:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to update this agent",
-                )
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
                 setattr(db_agent, key, value)
@@ -955,12 +949,6 @@ class AgentUpdate(AgentUserInput):
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
-            # check owner
-            if db_agent.owner and db_agent.owner != self.owner:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to update this agent",
-                )
             # update
             for key, value in self.model_dump().items():
                 setattr(db_agent, key, value)
@@ -990,22 +978,6 @@ class AgentCreate(AgentUpdate):
             default=None,
             description="Owner identifier of the agent, used for access control",
             max_length=50,
-        ),
-    ]
-    slug: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Slug of the agent, used for URL generation",
-            max_length=20,
-            min_length=2,
-        ),
-    ]
-    version: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Version hash of the agent",
         ),
     ]
 
@@ -1052,6 +1024,22 @@ class Agent(AgentCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
+    slug: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Slug of the agent, used for URL generation",
+            max_length=20,
+            min_length=2,
+        ),
+    ]
+    version: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Version hash of the agent",
+        ),
+    ]
     statistics: Annotated[
         Optional[Dict[str, Any]],
         PydanticField(

@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from aiogram import Bot
 from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
-from fastapi import HTTPException
 from sqlalchemy import func, select, text, update
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -238,48 +237,7 @@ def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) 
     )
 
 
-async def create_agent(
-    input: AgentUpdate, owner: Optional[str] = None
-) -> AgentResponse:
-    """Create a new agent.
-
-    Args:
-        input: Agent configuration
-        owner: Optional subject/owner for the agent
-        upstream_id: Optional upstream ID for the agent
-    Returns:
-        AgentResponse: Created agent configuration with additional processed data
-
-    Raises:
-        HTTPException:
-            - 400: Invalid agent ID format or agent ID already exists
-            - 500: Database error
-    """
-    agent = AgentCreate.model_validate(input)
-
-    if owner:
-        agent.owner = owner
-    else:
-        agent.owner = "system"
-
-    # Check for existing agent by upstream_id
-    existing = await agent.get_by_upstream_id()
-    if existing:
-        agent_data = await AgentData.get(existing.id)
-        agent_response = await AgentResponse.from_agent(existing, agent_data)
-        return agent_response
-
-    # Create new agent
-    latest_agent = await agent.create()
-    # Process common post-creation actions
-    agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
-    agent_data = await _process_telegram_config(input, None, agent_data)
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    return agent_response
-
-
-async def override_agent(
+async def deploy_agent(
     agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
 ) -> AgentResponse:
     """Override an existing agent.
@@ -303,7 +261,27 @@ async def override_agent(
     """
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        agent = AgentCreate.model_validate(input)
+        agent.id = agent_id
+        if owner:
+            agent.owner = owner
+        else:
+            agent.owner = "system"
+        # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
+        existing = await agent.get_by_upstream_id()
+        if existing:
+            agent_data = await AgentData.get(existing.id)
+            agent_response = await AgentResponse.from_agent(existing, agent_data)
+            return agent_response
+
+        # Create new agent
+        latest_agent = await agent.create()
+        # Process common post-creation actions
+        agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
+        agent_data = await _process_telegram_config(input, None, agent_data)
+        agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
+
+        return agent_response
 
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "forbidden", "forbidden")
@@ -315,9 +293,7 @@ async def override_agent(
     agent_data = await _process_agent_post_actions(
         latest_agent, False, "Agent Overridden"
     )
-
     agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
-
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     return agent_response
