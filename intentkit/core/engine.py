@@ -35,7 +35,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
-from intentkit.core.agent import skill_store
+from intentkit.core.agent import agent_store
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
 from intentkit.core.prompt import (
@@ -117,7 +117,7 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
                 skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
                     skill_tools = await skill_module.get_skills(
-                        v, is_private, skill_store, agent_id=agent.id
+                        v, is_private, agent_store, agent_id=agent.id
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)

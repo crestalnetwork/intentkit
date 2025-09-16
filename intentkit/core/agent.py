@@ -50,7 +50,7 @@ async def _process_agent_post_actions(
         AgentData: The processed agent data
     """
     if config.cdp_api_key_id and agent.wallet_provider == "cdp":
-        cdp_client = await get_cdp_client(agent.id, skill_store)
+        cdp_client = await get_cdp_client(agent.id, agent_store)
         await cdp_client.get_wallet_provider()
 
     # Get new agent data
@@ -500,7 +500,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         return result
 
 
-class SkillStore(SkillStoreABC):
+class AgentStore(SkillStoreABC):
     """Implementation of skill data storage operations.
 
     This class provides concrete implementations for storing and retrieving
@@ -673,7 +673,7 @@ class SkillStore(SkillStoreABC):
         return await update_autonomous_task(agent_id, task_id, task_updates)
 
 
-skill_store = SkillStore()
+agent_store = AgentStore()
 
 
 async def update_agent_action_cost():
