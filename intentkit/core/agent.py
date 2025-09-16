@@ -277,7 +277,9 @@ async def deploy_agent(
         # Create new agent
         latest_agent = await agent.create()
         # Process common post-creation actions
-        agent_data = await _process_agent_post_actions(latest_agent, True, "Agent Created")
+        agent_data = await _process_agent_post_actions(
+            latest_agent, True, "Agent Created"
+        )
         agent_data = await _process_telegram_config(input, None, agent_data)
         agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 

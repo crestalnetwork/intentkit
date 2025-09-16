@@ -157,7 +157,7 @@ async def create_agent_endpoint(
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    agent_response = await deploy_agent(str(XID()),input, subject)
+    agent_response = await deploy_agent(str(XID()), input, subject)
 
     # Return Response with ETag header and appropriate status code
     return Response(
