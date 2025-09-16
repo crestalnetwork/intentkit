@@ -31,13 +31,13 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
     """
     try:
         # Construct thread_id by combining agent_id and chat_id
-        thread_id = f"{agent_id}_{chat_id}"
+        thread_id = f"{agent_id}-{chat_id}"
 
         # Get the LangGraph checkpointer instance
         checkpointer = get_langgraph_checkpointer()
 
         # Use the official LangGraph method to delete all thread content
-        await checkpointer.delete_thread(thread_id)
+        await checkpointer.adelete_thread(thread_id)
 
         logger.info(f"Successfully cleared thread memory for thread_id: {thread_id}")
         return True
@@ -46,6 +46,4 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
         logger.error(
             f"Failed to clear thread memory for agent_id: {agent_id}, chat_id: {chat_id}. Error: {str(e)}"
         )
-        raise IntentKitAPIError(
-            500, "ThreadMemoryClearError", f"Failed to clear thread memory: {str(e)}"
-        )
+        raise IntentKitAPIError(500, "ServerError", "Failed to clear thread memory")
