@@ -35,6 +35,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.node import PreModelNode, post_model_node
 from intentkit.core.prompt import (
@@ -793,6 +794,7 @@ async def stream_agent(message: ChatMessageCreate):
         )
         error_message = await error_message_create.save()
         yield error_message
+        await clear_thread_memory(input.agent_id, input.chat_id)
         return
 
 
