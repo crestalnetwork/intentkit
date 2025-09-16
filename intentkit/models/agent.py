@@ -1442,7 +1442,7 @@ class Agent(AgentCreate):
             return schema
 
 
-class AgentResponse(BaseModel):
+class AgentResponse(Agent):
     """Response model for Agent API."""
 
     model_config = ConfigDict(
@@ -1451,179 +1451,6 @@ class AgentResponse(BaseModel):
             datetime: lambda dt: dt.isoformat(),
         },
     )
-
-    id: Annotated[
-        str,
-        PydanticField(
-            description="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-        ),
-    ]
-    # auto timestamp
-    created_at: Annotated[
-        datetime,
-        PydanticField(
-            description="Timestamp when the agent was created, will ignore when importing"
-        ),
-    ]
-    updated_at: Annotated[
-        datetime,
-        PydanticField(
-            description="Timestamp when the agent was last updated, will ignore when importing"
-        ),
-    ]
-    # Agent part
-    name: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Display name of the agent",
-        ),
-    ]
-    slug: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Slug of the agent, used for URL generation",
-        ),
-    ]
-    description: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Description of the agent, for public view, not contained in prompt",
-        ),
-    ]
-    external_website: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Link of external website of the agent, if you have one",
-        ),
-    ]
-    picture: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Picture of the agent",
-        ),
-    ]
-    ticker: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Ticker symbol of the agent",
-        ),
-    ]
-    token_address: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Token address of the agent",
-        ),
-    ]
-    token_pool: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Pool of the agent token",
-        ),
-    ]
-    fee_percentage: Annotated[
-        Optional[Decimal],
-        PydanticField(
-            default=None,
-            description="Fee percentage of the agent",
-        ),
-    ]
-    owner: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Owner identifier of the agent, used for access control",
-            max_length=50,
-            json_schema_extra={
-                "x-group": "internal",
-            },
-        ),
-    ]
-    upstream_id: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="External reference ID for idempotent operations",
-            max_length=100,
-            json_schema_extra={
-                "x-group": "internal",
-            },
-        ),
-    ]
-    upstream_extra: Annotated[
-        Optional[Dict[str, Any]],
-        PydanticField(
-            default=None,
-            description="Additional data store for upstream use",
-        ),
-    ]
-    # AI part
-    model: Annotated[
-        str,
-        PydanticField(
-            description="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai, reigent",
-        ),
-    ]
-    # autonomous mode
-    autonomous: Annotated[
-        Optional[List[Dict[str, Any]]],
-        PydanticField(
-            default=None,
-            description=("Autonomous agent configurations."),
-        ),
-    ]
-    # agent examples
-    example_intro: Annotated[
-        Optional[str],
-        PydanticField(
-            default=None,
-            description="Introduction for example interactions",
-        ),
-    ]
-    examples: Annotated[
-        Optional[List[AgentExample]],
-        PydanticField(
-            default=None,
-            description="List of example prompts for the agent",
-        ),
-    ]
-    # skills
-    skills: Annotated[
-        Optional[Dict[str, Any]],
-        PydanticField(
-            default=None,
-            description="Dict of skills and their corresponding configurations",
-        ),
-    ]
-    wallet_provider: Annotated[
-        Optional[Literal["cdp", "readonly"]],
-        PydanticField(
-            default="cdp",
-            description="Provider of the agent's wallet",
-        ),
-    ]
-    network_id: Annotated[
-        Optional[str],
-        PydanticField(
-            default="base-mainnet",
-            description="Network identifier",
-        ),
-    ]
-    # telegram entrypoint
-    telegram_entrypoint_enabled: Annotated[
-        Optional[bool],
-        PydanticField(
-            default=False,
-            description="Whether the agent can play telegram bot",
-        ),
-    ]
 
     # data part
     cdp_wallet_address: Annotated[
@@ -1711,6 +1538,18 @@ class AgentResponse(BaseModel):
         """
         # Get base data from agent
         data = agent.model_dump()
+
+        # Hide the sensitive fields
+        data.pop("purpose", None)
+        data.pop("personality", None)
+        data.pop("principles", None)
+        data.pop("prompt", None)
+        data.pop("prompt_append", None)
+        data.pop("temperature", None)
+        data.pop("frequency_penalty", None)
+        data.pop("telegram_entrypoint_prompt", None)
+        data.pop("telegram_config", None)
+        data.pop("xmtp_entrypoint_prompt", None)
 
         # Filter sensitive fields from autonomous list
         if data.get("autonomous"):
@@ -1811,4 +1650,4 @@ class AgentResponse(BaseModel):
             }
         )
 
-        return cls.model_validate(data)
+        return cls.model_construct(**data)
