@@ -46,4 +46,6 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
         logger.error(
             f"Failed to clear thread memory for agent_id: {agent_id}, chat_id: {chat_id}. Error: {str(e)}"
         )
-        raise IntentKitAPIError(500, "ServerError", "Failed to clear thread memory")
+        raise IntentKitAPIError(
+            status_code=500, key="ServerError", message="Failed to clear thread memory"
+        )

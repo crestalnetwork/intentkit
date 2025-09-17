@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +37,7 @@ from intentkit.models.credit import (
     TransactionType,
 )
 from intentkit.models.db import get_db
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -859,9 +860,10 @@ async def fetch_credit_event_by_id_endpoint(
 
         # If no matching account found, the event doesn't belong to this user
         if not account:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Credit event with ID '{event_id}' does not belong to user '{user_id}'",
+            raise IntentKitAPIError(
+                403,
+                "Forbidden",
+                f"Credit event with ID '{event_id}' does not belong to user '{user_id}'",
             )
 
     return event

@@ -1,10 +1,11 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 
 from app.auth import verify_admin_jwt
 from intentkit.models.user import User, UserUpdate
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,9 @@ async def get_user(
     """
     user = await User.get(user_id)
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="User not found"
+        )
     return user
 
 

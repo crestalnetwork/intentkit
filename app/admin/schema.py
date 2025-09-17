@@ -2,7 +2,7 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.db import get_db
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +66,20 @@ async def get_skill_schema(
     * `JSONResponse` - The complete JSON schema for the skill with application/json content type
 
     **Raises:**
-    * `HTTPException` - If the skill is not found or name is invalid
+    * `IntentKitAPIError` - If the skill is not found or name is invalid
     """
     base_path = PROJECT_ROOT / "intentkit" / "skills"
     schema_path = base_path / skill / "schema.json"
     normalized_path = schema_path.resolve()
 
     if not normalized_path.is_relative_to(base_path):
-        raise HTTPException(status_code=400, detail="Invalid skill name")
+        raise IntentKitAPIError(400, "BadRequest", "Invalid skill name")
 
     try:
         with open(normalized_path) as f:
             schema = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        raise HTTPException(status_code=404, detail="Skill schema not found")
+        raise IntentKitAPIError(404, "NotFound", "Skill schema not found")
 
     return JSONResponse(content=schema, media_type="application/json")
 
@@ -111,17 +112,17 @@ async def get_skill_icon(
     * `FileResponse` - The icon file with appropriate content type
 
     **Raises:**
-    * `HTTPException` - If the skill or icon is not found or name is invalid
+    * `IntentKitAPIError` - If the skill or icon is not found or name is invalid
     """
     base_path = PROJECT_ROOT / "intentkit" / "skills"
     icon_path = base_path / skill / f"{icon_name}.{ext}"
     normalized_path = icon_path.resolve()
 
     if not normalized_path.is_relative_to(base_path):
-        raise HTTPException(status_code=400, detail="Invalid skill name")
+        raise IntentKitAPIError(400, "BadRequest", "Invalid skill name")
 
     if not normalized_path.exists():
-        raise HTTPException(status_code=404, detail="Skill icon not found")
+        raise IntentKitAPIError(404, "NotFound", "Skill icon not found")
 
     content_type = (
         "image/svg+xml"

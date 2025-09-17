@@ -286,7 +286,7 @@ async def deploy_agent(
         return agent_response
 
     if owner and owner != existing_agent.owner:
-        raise IntentKitAPIError(403, "forbidden", "forbidden")
+        raise IntentKitAPIError(403, "Forbidden", "forbidden")
 
     # Update agent
     latest_agent = await agent.override(agent_id)

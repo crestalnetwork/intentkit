@@ -3,9 +3,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated, Any, Dict, Optional
 
-from fastapi import HTTPException
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
+from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import (
@@ -754,7 +754,11 @@ class AgentQuota(BaseModel):
                 await session.execute(stmt)
         except Exception as e:
             logger.error(f"Error adding free income: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+            raise IntentKitAPIError(
+                status_code=500,
+                key="DatabaseError",
+                message=f"Database error: {str(e)}",
+            )
 
     async def add_message(self) -> None:
         """Add a message to the agent's message count."""

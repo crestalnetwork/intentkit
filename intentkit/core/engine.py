@@ -21,7 +21,6 @@ from typing import Optional
 
 import sqlalchemy
 from epyxid import XID
-from fastapi import HTTPException
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -194,7 +193,9 @@ async def initialize_agent(aid, is_private=False):
     # get the agent from the database
     agent: Optional[Agent] = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Create the agent using the new create_agent function
     executor = await create_agent(agent, is_private)
@@ -214,7 +215,9 @@ async def agent_executor(
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
     agents = _private_agents if is_private else _agents
     agents_updated = _private_agents_updated if is_private else _agents_updated
 
@@ -830,9 +833,10 @@ async def clean_agent_memory(
     # get the agent from the database
     try:
         if not clean_skill and not clean_agent:
-            raise HTTPException(
+            raise IntentKitAPIError(
                 status_code=400,
-                detail="at least one of skills data or agent memory should be true.",
+                key="InvalidCleanupParameters",
+                message="at least one of skills data or agent memory should be true",
             )
 
         if clean_skill:
@@ -879,7 +883,7 @@ async def clean_agent_memory(
     except SQLAlchemyError as e:
         # Handle other SQLAlchemy-related errors
         logger.error(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise IntentKitAPIError(status_code=500, key="DatabaseError", message=str(e))
     except Exception as e:
         logger.error("failed to cleanup the agent memory: " + str(e))
         raise e

@@ -7,8 +7,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, validator
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, field_validator
 
 from app.admin.generator import generate_validated_agent_schema
 from app.admin.generator.conversation_service import (
@@ -22,6 +22,7 @@ from app.admin.generator.llm_logger import (
 )
 from app.admin.generator.utils import generate_tags_from_nation_api
 from intentkit.models.agent import AgentUpdate
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,8 @@ class AgentGenerateRequest(BaseModel):
         description="Project ID for conversation history. If not provided, a new project will be created.",
     )
 
-    @validator("prompt")
+    @field_validator("prompt")
+    @classmethod
     def validate_prompt_length(cls, v):
         if len(v) < 10:
             raise ValueError(
@@ -68,7 +70,8 @@ class AgentGenerateRequest(BaseModel):
             )
         return v
 
-    @validator("user_id")
+    @field_validator("user_id")
+    @classmethod
     def validate_user_id(cls, v):
         if not v or not v.strip():
             raise ValueError(
@@ -182,7 +185,7 @@ async def generate_agent(
     * `tags` - Generated tags for categorization
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
       - 400: Invalid request (missing user_id, invalid prompt format or length)
       - 500: Agent generation failed after retries
     """
@@ -273,13 +276,8 @@ async def generate_agent(
             f"Agent generation failed after all attempts (project_id={project_id}): {str(e)}",
             exc_info=True,
         )
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "AgentGenerationFailed",
-                "msg": f"Failed to generate valid agent: {str(e)}",
-                "project_id": project_id,
-            },
+        raise IntentKitAPIError(
+            500, "AgentGenerationFailed", f"Failed to generate valid agent: {str(e)}"
         )
 
 
@@ -301,12 +299,12 @@ async def get_generations(
     * `GenerationsListResponse` - Contains list of projects with their conversation history
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
       - 400: Invalid parameters
       - 500: Failed to retrieve generations
     """
     if limit < 1 or limit > 100:
-        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+        raise IntentKitAPIError(400, "BadRequest", "Limit must be between 1 and 100")
 
     logger.info(f"Getting generations for user_id={user_id}, limit={limit}")
 
@@ -319,12 +317,10 @@ async def get_generations(
 
     except Exception as e:
         logger.error(f"Failed to retrieve generations: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "GenerationsRetrievalFailed",
-                "msg": f"Failed to retrieve generations: {str(e)}",
-            },
+        raise IntentKitAPIError(
+            500,
+            "GenerationsRetrievalFailed",
+            f"Failed to retrieve generations: {str(e)}",
         )
 
 
@@ -348,7 +344,7 @@ async def get_generation_detail(
     * `GenerationDetailResponse` - Contains full conversation history for the project
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
       - 404: Project not found or access denied
       - 500: Failed to retrieve generation detail
     """
@@ -365,13 +361,14 @@ async def get_generation_detail(
             )
         except ValueError as ve:
             logger.warning(f"Access denied or project not found: {ve}")
-            raise HTTPException(status_code=404, detail=str(ve))
+            raise IntentKitAPIError(404, "NotFound", str(ve))
 
         if not conversation_history:
             logger.warning(f"No conversation history found for project {project_id}")
-            raise HTTPException(
-                status_code=404,
-                detail=f"No conversation history found for project {project_id}",
+            raise IntentKitAPIError(
+                404,
+                "NotFound",
+                f"No conversation history found for project {project_id}",
             )
 
         # Get project metadata for additional information
@@ -400,15 +397,13 @@ async def get_generation_detail(
             conversation_history=conversation_history,
         )
 
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
+    except IntentKitAPIError:
+        # Re-raise IntentKitAPIError exceptions as-is
         raise
     except Exception as e:
         logger.error(f"Failed to retrieve generation detail: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "GenerationDetailRetrievalFailed",
-                "msg": f"Failed to retrieve generation detail: {str(e)}",
-            },
+        raise IntentKitAPIError(
+            500,
+            "GenerationDetailRetrievalFailed",
+            f"Failed to retrieve generation detail: {str(e)}",
         )

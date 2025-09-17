@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from epyxid import XID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,7 @@ from intentkit.models.chat import (
     ChatMessageAttachmentType,
     ChatMessageCreate,
 )
+from intentkit.utils.error import IntentKitAPIError
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -360,9 +361,10 @@ async def create_chat_completion(
     """
     agent_id = agent_token.agent_id
     if not request.messages:
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Messages array cannot be empty",
+            key="EmptyMessages",
+            message="Messages array cannot be empty",
         )
 
     # Get the last message only
@@ -372,15 +374,18 @@ async def create_chat_completion(
     text_content, attachments = extract_text_and_images(last_message.content)
 
     if not text_content.strip():
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Message content cannot be empty",
+            key="EmptyContent",
+            message="Message content cannot be empty",
         )
 
     # Get the agent to access its owner
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
+        )
 
     # Use agent owner or fallback to agent_id if owner is None
     if not agent_token.is_public and agent.owner:
@@ -418,9 +423,10 @@ async def create_chat_completion(
 
     # Process response messages based on AuthorType
     if not response_messages:
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No response from agent",
+            key="NoResponse",
+            message="No response from agent",
         )
 
     # Convert response messages to content list

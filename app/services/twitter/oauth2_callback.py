@@ -5,13 +5,14 @@ from typing import Optional
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import tweepy
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette.responses import JSONResponse, RedirectResponse
 
 from app.services.twitter.oauth2 import oauth2_user_handler
 from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
+from intentkit.utils.error import IntentKitAPIError
 
 router = APIRouter(prefix="/callback/auth", tags=["Callback"])
 
@@ -53,7 +54,11 @@ async def twitter_oauth_callback(
     * JSONResponse or RedirectResponse depending on redirect_uri
     """
     if not state:
-        raise HTTPException(status_code=400, detail="Missing state parameter")
+        raise IntentKitAPIError(
+            status_code=400,
+            key="MissingStateParameter",
+            message="Missing state parameter",
+        )
 
     try:
         # Parse state parameter
@@ -62,19 +67,31 @@ async def twitter_oauth_callback(
         redirect_uri = state_params.get("redirect_uri", [""])[0]
 
         if error:
-            raise HTTPException(status_code=400, detail=error)
+            raise IntentKitAPIError(
+                status_code=400, key="TwitterAuthError", message=error
+            )
 
         if not code:
-            raise HTTPException(status_code=400, detail="Missing code parameter")
+            raise IntentKitAPIError(
+                status_code=400,
+                key="MissingCodeParameter",
+                message="Missing code parameter",
+            )
 
         if not agent_id:
-            raise HTTPException(
-                status_code=400, detail="Missing agent_id in state parameter"
+            raise IntentKitAPIError(
+                status_code=400,
+                key="MissingAgentId",
+                message="Missing agent_id in state parameter",
             )
 
         agent = await Agent.get(agent_id)
         if not agent:
-            raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+            raise IntentKitAPIError(
+                status_code=404,
+                key="AgentNotFound",
+                message=f"Agent {agent_id} not found",
+            )
 
         agent_data = await AgentData.get(agent_id)
 
@@ -122,10 +139,10 @@ async def twitter_oauth_callback(
                 },
                 status_code=200,
             )
-    except HTTPException as http_exc:
+    except IntentKitAPIError as http_exc:
         # Handle error response
         if redirect_uri and is_valid_url(redirect_uri):
-            params = {"twitter_auth": "failed", "error": str(http_exc.detail)}
+            params = {"twitter_auth": "failed", "error": str(http_exc.message)}
             redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(params)}"
             return RedirectResponse(url=redirect_url)
         # Re-raise HTTP exceptions to preserve their status codes
@@ -137,4 +154,4 @@ async def twitter_oauth_callback(
             redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(params)}"
             return RedirectResponse(url=redirect_url)
         # For unexpected errors, use 500 status code
-        raise HTTPException(status_code=500, detail=str(e))
+        raise IntentKitAPIError(status_code=500, key="UnexpectedError", message=str(e))
