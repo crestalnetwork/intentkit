@@ -33,7 +33,9 @@ async def get_user(
     """
     user = await User.get(user_id)
     if user is None:
-        raise IntentKitAPIError(404, "NotFound", "User not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="User not found"
+        )
     return user
 
 

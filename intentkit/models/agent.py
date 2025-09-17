@@ -12,7 +12,7 @@ import jsonref
 import yaml
 from cron_validator import CronValidator
 from epyxid import XID
-from fastapi import HTTPException
+from intentkit.abstracts.error import IntentKitAPIError
 from intentkit.models.agent_data import AgentData
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
@@ -791,20 +791,25 @@ class AgentUpdate(AgentUserInput):
         for autonomous_config in self.autonomous:
             # Check that exactly one scheduling method is provided
             if not autonomous_config.minutes and not autonomous_config.cron:
-                raise HTTPException(
-                    status_code=400, detail="either minutes or cron must have a value"
+                raise IntentKitAPIError(
+                    status_code=400,
+                    key="InvalidAutonomousConfig",
+                    message="either minutes or cron must have a value",
                 )
 
             if autonomous_config.minutes and autonomous_config.cron:
-                raise HTTPException(
-                    status_code=400, detail="only one of minutes or cron can be set"
+                raise IntentKitAPIError(
+                    status_code=400,
+                    key="InvalidAutonomousConfig",
+                    message="only one of minutes or cron can be set",
                 )
 
             # Validate minimum interval of 5 minutes
             if autonomous_config.minutes and autonomous_config.minutes < 5:
-                raise HTTPException(
+                raise IntentKitAPIError(
                     status_code=400,
-                    detail="The shortest execution interval is 5 minutes",
+                    key="InvalidAutonomousInterval",
+                    message="The shortest execution interval is 5 minutes",
                 )
 
             # Validate cron expression to ensure interval is at least 5 minutes
@@ -814,15 +819,18 @@ class AgentUpdate(AgentUserInput):
                 try:
                     CronValidator.parse(autonomous_config.cron)
                 except ValueError:
-                    raise HTTPException(
+                    raise IntentKitAPIError(
                         status_code=400,
-                        detail=f"Invalid cron expression format: {autonomous_config.cron}",
+                        key="InvalidCronExpression",
+                        message=f"Invalid cron expression format: {autonomous_config.cron}",
                     )
 
                 parts = autonomous_config.cron.split()
                 if len(parts) < 5:
-                    raise HTTPException(
-                        status_code=400, detail="Invalid cron expression format"
+                    raise IntentKitAPIError(
+                        status_code=400,
+                        key="InvalidCronExpression",
+                        message="Invalid cron expression format",
                     )
 
                 minute, hour, day_of_month, month, day_of_week = parts[:5]
@@ -830,25 +838,28 @@ class AgentUpdate(AgentUserInput):
                 # Check if minutes or hours have too frequent intervals
                 if "*" in minute and "*" in hour:
                     # If both minute and hour are wildcards, it would run every minute
-                    raise HTTPException(
+                    raise IntentKitAPIError(
                         status_code=400,
-                        detail="The shortest execution interval is 5 minutes",
+                        key="InvalidAutonomousInterval",
+                        message="The shortest execution interval is 5 minutes",
                     )
 
                 if "/" in minute:
                     # Check step value in minute field (e.g., */15)
                     step = int(minute.split("/")[1])
                     if step < 5 and hour == "*":
-                        raise HTTPException(
+                        raise IntentKitAPIError(
                             status_code=400,
-                            detail="The shortest execution interval is 5 minutes",
+                            key="InvalidAutonomousInterval",
+                            message="The shortest execution interval is 5 minutes",
                         )
 
                 # Check for comma-separated values or ranges that might result in multiple executions per hour
                 if ("," in minute or "-" in minute) and hour == "*":
-                    raise HTTPException(
+                    raise IntentKitAPIError(
                         status_code=400,
-                        detail="The shortest execution interval is 5 minutes",
+                        key="InvalidAutonomousInterval",
+                        message="The shortest execution interval is 5 minutes",
                     )
 
     # deprecated, use override instead
@@ -860,7 +871,9 @@ class AgentUpdate(AgentUserInput):
         async with get_session() as db:
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
-                raise HTTPException(status_code=404, detail="Agent not found")
+                raise IntentKitAPIError(
+                    status_code=404, key="agent_not_found", message="Agent not found"
+                )
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
                 setattr(db_agent, key, value)
@@ -876,7 +889,9 @@ class AgentUpdate(AgentUserInput):
         async with get_session() as db:
             db_agent = await db.get(AgentTable, id)
             if not db_agent:
-                raise HTTPException(status_code=404, detail="Agent not found")
+                raise IntentKitAPIError(
+                    status_code=404, key="agent_not_found", message="Agent not found"
+                )
             # update
             for key, value in self.model_dump().items():
                 setattr(db_agent, key, value)
@@ -917,9 +932,10 @@ class AgentCreate(AgentUpdate):
                 select(AgentTable).where(AgentTable.upstream_id == self.upstream_id)
             )
             if existing:
-                raise HTTPException(
+                raise IntentKitAPIError(
                     status_code=400,
-                    detail="Upstream id already in use",
+                    key="upstream_id_already_in_use",
+                    message="Upstream id already in use",
                 )
 
     async def get_by_upstream_id(self) -> Optional["Agent"]:

@@ -8,7 +8,6 @@ from epyxid import XID
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Path,
     Query,
     Response,
@@ -20,6 +19,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AgentToken, verify_agent_token
+from intentkit.abstracts.error import IntentKitAPIError
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.agent import Agent, AgentResponse
 from intentkit.models.agent_data import AgentData
@@ -55,7 +55,7 @@ def get_real_user_id(
         Real user ID string
 
     Raises:
-        HTTPException: If user_id is provided for a private agent
+        IntentKitAPIError: If user_id is provided for a private agent
     """
     if user_id:
         return f"{agent_token.agent_id}_{user_id}"
@@ -204,7 +204,9 @@ async def get_chats(
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     return await Chat.get_by_agent_user(agent_id, real_user_id)
@@ -230,7 +232,11 @@ async def create_chat(
     # Verify that the entity exists
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404,
+            key="agent_not_found",
+            message=f"Entity {agent_id} not found",
+        )
 
     real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = ChatCreate(
@@ -267,13 +273,15 @@ async def get_chat(
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
     return chat
 
@@ -295,8 +303,8 @@ async def update_chat(
     agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
 
     # Update the summary field
@@ -321,8 +329,8 @@ async def delete_chat(
     agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
     await chat.delete()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -351,8 +359,8 @@ async def get_messages(
     agent_id = agent_token.agent_id
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
 
     stmt = (
@@ -407,14 +415,16 @@ async def send_message(
     agent_id = agent_token.agent_id
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     real_user_id = get_real_user_id(agent_token, request.user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
 
     # Update summary if it's empty
@@ -495,14 +505,16 @@ async def retry_message(
     # Get entity and check if exists
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     # Verify that the chat exists and belongs to the user
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        raise IntentKitAPIError(
+            status_code=404, key="chat_not_found", message="Chat not found"
         )
 
     last = await db.scalar(
@@ -515,7 +527,9 @@ async def retry_message(
     )
 
     if not last:
-        raise HTTPException(status_code=404, detail="No messages found")
+        raise IntentKitAPIError(
+            status_code=404, key="NoMessagesFound", message="No messages found"
+        )
 
     last_message = ChatMessage.model_validate(last)
 
@@ -630,13 +644,15 @@ async def get_message(
     # Get agent to access owner
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Entity {agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     message = await ChatMessage.get(message_id)
     if not message or message.user_id != real_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found"
+        raise IntentKitAPIError(
+            status_code=404, key="message_not_found", message="Message not found"
         )
     return message.sanitize_privacy()
 
@@ -658,13 +674,15 @@ async def get_current_agent(
     * `AgentResponse` - Agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 404: Agent not found
     """
     agent_id = agent_token.agent_id
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Entity {agent_id} not found"
+        )
 
     # Get agent data
     agent_data = await AgentData.get(agent_id)

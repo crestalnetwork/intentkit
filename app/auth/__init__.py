@@ -2,12 +2,13 @@ import logging
 from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from intentkit.config.config import config
 from intentkit.models.agent import AgentData
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,10 @@ async def verify_admin_jwt(
         return ""
 
     if not credentials:
-        raise HTTPException(
-            status_code=401, detail="Missing authentication credentials"
+        raise IntentKitAPIError(
+            status_code=401,
+            key="MissingCredentials",
+            message="Missing authentication credentials",
         )
 
     try:
@@ -56,7 +59,9 @@ async def verify_admin_jwt(
         )
         return payload.get("sub", "")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
+        raise IntentKitAPIError(
+            status_code=401, key="InvalidToken", message="Invalid authentication token"
+        )
 
 
 agent_security = HTTPBearer()
@@ -74,15 +79,17 @@ async def verify_agent_token(
         AgentToken: The agent token information containing agent_id and is_public
 
     Raises:
-        HTTPException: If token is invalid or agent not found
+        IntentKitAPIError: If token is invalid or agent not found
     """
     token = credentials.credentials
 
     # Find agent data by api_key
     agent_data = await AgentData.get_by_api_key(token)
     if not agent_data:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API token"
+        raise IntentKitAPIError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            key="InvalidAPIToken",
+            message="Invalid API token",
         )
 
     # Check if token is public (starts with 'pk-')

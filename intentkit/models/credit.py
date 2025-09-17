@@ -6,6 +6,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from epyxid import XID
 from fastapi import HTTPException
+from intentkit.abstracts.error import IntentKitAPIError
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -347,7 +348,11 @@ class CreditAccount(BaseModel):
         )
         result = await session.scalar(stmt)
         if not result:
-            raise HTTPException(status_code=404, detail="Credit account not found")
+            raise IntentKitAPIError(
+                status_code=404,
+                key="CreditAccountNotFound",
+                message="Credit account not found",
+            )
         return cls.model_validate(result)
 
     @classmethod
@@ -451,7 +456,11 @@ class CreditAccount(BaseModel):
         )
         res = await session.scalar(stmt)
         if not res:
-            raise HTTPException(status_code=500, detail="Failed to expense credits")
+            raise IntentKitAPIError(
+                status_code=500,
+                key="CreditExpenseFailed",
+                message="Failed to expense credits",
+            )
         return cls.model_validate(res)
 
     @classmethod
@@ -548,7 +557,11 @@ class CreditAccount(BaseModel):
         )
         res = await session.scalar(stmt)
         if not res:
-            raise HTTPException(status_code=500, detail="Failed to expense credits")
+            raise IntentKitAPIError(
+                status_code=500,
+                key="CreditExpenseFailed",
+                message="Failed to expense credits",
+            )
         return cls.model_validate(res), details
 
     def has_sufficient_credits(self, amount: Decimal) -> bool:
