@@ -8,7 +8,6 @@ from fastapi import (
     Body,
     Depends,
     File,
-    HTTPException,
     Path,
     Query,
     Response,
@@ -40,6 +39,7 @@ from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_db
 from intentkit.models.user import User
 from intentkit.skills import __all__ as skill_categories
+from intentkit.utils.error import IntentKitAPIError
 
 admin_router_readonly = APIRouter()
 admin_router = APIRouter()
@@ -68,22 +68,22 @@ async def validate_agent_create(
     * `204 No Content` - Agent configuration is valid
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent configuration
         - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
     if not input.owner:
-        raise HTTPException(status_code=400, detail="Owner is required")
+        raise IntentKitAPIError(400, "BadRequest", "Owner is required")
     max_fee = 100
     if user_id:
         if input.owner != user_id:
-            raise HTTPException(status_code=400, detail="Owner does not match user ID")
+            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
         user = await User.get(user_id)
         if user:
             max_fee += user.nft_count * 10
     if input.fee_percentage and input.fee_percentage > max_fee:
-        raise HTTPException(status_code=400, detail="Fee percentage too high")
+        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
@@ -110,23 +110,34 @@ async def validate_agent_update(
     * `204 No Content` - Agent configuration is valid
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent configuration
         - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
-    agent = await Agent.get(agent_id)
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+    if not input.owner:
+        raise IntentKitAPIError(400, "BadRequest", "Owner is required")
     max_fee = 100
     if user_id:
-        if agent.owner != user_id:
-            raise HTTPException(status_code=400, detail="Owner does not match user ID")
+        if input.owner != user_id:
+            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
         user = await User.get(user_id)
         if user:
             max_fee += user.nft_count * 10
     if input.fee_percentage and input.fee_percentage > max_fee:
-        raise HTTPException(status_code=400, detail="Fee percentage too high")
+        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
+    agent = await Agent.get(agent_id)
+    if not agent:
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+    max_fee = 100
+    if user_id:
+        if agent.owner != user_id:
+            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
+        user = await User.get(user_id)
+        if user:
+            max_fee += user.nft_count * 10
+    if input.fee_percentage and input.fee_percentage > max_fee:
+        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
@@ -195,7 +206,7 @@ async def update_agent(
     * `AgentResponse` - Updated agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent ID format
         - 404: Agent not found
         - 403: Permission denied (if owner mismatch)
@@ -206,7 +217,7 @@ async def update_agent(
 
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
 
     # Update agent
     latest_agent = await agent.update(agent_id)
@@ -248,7 +259,7 @@ async def override_agent_endpoint(
     * `AgentResponse` - Updated agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid agent ID format
         - 404: Agent not found
         - 403: Permission denied (if owner mismatch)
@@ -316,12 +327,12 @@ async def get_agent(
     * `AgentResponse` - Agent configuration with additional processed data
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 404: Agent not found
     """
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
 
     # Get agent data
     agent_data = await AgentData.get(agent_id)
@@ -381,21 +392,22 @@ async def clean_memory(
     * `str` - Formatted response lines from agent memory cleanup
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: If input parameters are invalid (empty agent_id, thread_id, or message text)
         - 404: If agent not found
         - 500: For other server-side errors
     """
     # Validate input parameters
     if not request.agent_id or not request.agent_id.strip():
-        raise HTTPException(status_code=400, detail="Agent ID cannot be empty")
+        raise IntentKitAPIError(400, "BadRequest", "Agent ID cannot be empty")
 
     try:
         agent = await Agent.get(request.agent_id)
         if not agent:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Agent with id {request.agent_id} not found",
+            raise IntentKitAPIError(
+                404,
+                "NotFound",
+                f"Agent with id {request.agent_id} not found",
             )
 
         await clean_agent_memory(
@@ -405,15 +417,13 @@ async def clean_memory(
             clean_skill=request.clean_skills_memory,
         )
     except NoResultFound:
-        raise HTTPException(
-            status_code=404, detail=f"Agent {request.agent_id} not found"
-        )
+        raise IntentKitAPIError(404, "NotFound", f"Agent {request.agent_id} not found")
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise IntentKitAPIError(500, "InternalServerError", f"Database error: {str(e)}")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise IntentKitAPIError(400, "BadRequest", str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+        raise IntentKitAPIError(500, "InternalServerError", f"Server error: {str(e)}")
 
 
 @admin_router_readonly.get(
@@ -434,12 +444,12 @@ async def export_agent(
     * `str` - YAML configuration of the agent
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 404: Agent not found
     """
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
     # Ensure agent.skills is initialized
     if agent.skills is None:
         agent.skills = {}
@@ -552,7 +562,7 @@ async def import_agent(
     * `str` - Success message
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 400: Invalid YAML or agent configuration
         - 404: Agent not found
         - 500: Server error
@@ -560,20 +570,20 @@ async def import_agent(
     # First check if agent exists
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
 
     # Read and parse YAML
     content = await file.read()
     try:
         yaml_data = safe_load(content)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid YAML format: {e}")
+        raise IntentKitAPIError(400, "BadRequest", f"Invalid YAML format: {e}")
 
     # Create Agent instance from YAML
     try:
         agent = AgentUpdate.model_validate(yaml_data)
     except ValidationError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid agent configuration: {e}")
+        raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
     await deploy_agent(agent_id, agent, subject)
@@ -597,13 +607,13 @@ async def unlink_twitter_endpoint(
     * `agent_id` - ID of the agent to unlink from X
 
     **Raises:**
-    * `HTTPException`:
+    * `IntentKitAPIError`:
         - 404: Agent not found
     """
     # Check if agent exists
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
 
     # Call the unlink_twitter function from clients.twitter
     agent_data = await unlink_twitter(agent_id)
