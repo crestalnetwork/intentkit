@@ -644,6 +644,11 @@ class AgentCore(BaseModel):
 class AgentUserInput(AgentCore):
     """Agent update model."""
 
+    model_config = ConfigDict(
+        title="AgentUserInput",
+        from_attributes=True,
+    )
+
     short_term_memory_strategy: Annotated[
         Optional[Literal["trim", "summarize"]],
         PydanticField(
@@ -941,6 +946,11 @@ class AgentCreate(AgentUpdate):
 
 class AgentPublicInfo(BaseModel):
     """Public information of the agent."""
+
+    model_config = ConfigDict(
+        title="AgentPublicInfo",
+        from_attributes=True,
+    )
 
     description: Annotated[
         Optional[str],
@@ -1465,6 +1475,7 @@ class AgentResponse(Agent):
     """Response model for Agent API."""
 
     model_config = ConfigDict(
+        use_enum_values=True,
         from_attributes=True,
         json_encoders={
             datetime: lambda dt: dt.isoformat(),
@@ -1575,13 +1586,32 @@ class AgentResponse(Agent):
             filtered_autonomous = []
             for item in data["autonomous"]:
                 if isinstance(item, dict):
-                    filtered_item = {
-                        "id": item.get("id"),
-                        "name": item.get("name"),
-                        "enabled": item.get("enabled"),
-                    }
-                    filtered_autonomous.append(filtered_item)
+                    # Create proper AgentAutonomous instance with only public fields
+                    filtered_autonomous.append(
+                        AgentAutonomous(
+                            id=item.get("id"),
+                            name=item.get("name"),
+                            enabled=item.get("enabled"),
+                            # Set required prompt field to empty string for public view
+                            prompt="",
+                        )
+                    )
             data["autonomous"] = filtered_autonomous
+
+        # Convert examples dictionaries to AgentExample instances
+        if data.get("examples"):
+            examples_list = []
+            for item in data["examples"]:
+                if isinstance(item, dict):
+                    # Create proper AgentExample instance
+                    examples_list.append(
+                        AgentExample(
+                            name=item.get("name", ""),
+                            description=item.get("description", ""),
+                            prompt=item.get("prompt", ""),
+                        )
+                    )
+            data["examples"] = examples_list
 
         # Filter sensitive fields from skills dictionary
         if data.get("skills"):
