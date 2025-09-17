@@ -4,7 +4,6 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import List, Optional, Tuple
 
 from epyxid import XID
-from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +38,7 @@ from intentkit.models.credit import (
 )
 from intentkit.models.db import get_session
 from intentkit.models.skill import Skill
+from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,9 @@ async def update_credit_event_note(
     event = result.scalar_one_or_none()
 
     if not event:
-        raise HTTPException(status_code=404, detail="Credit event not found")
+        raise IntentKitAPIError(
+            status_code=404, key="CreditEventNotFound", message="Credit event not found"
+        )
 
     # Update the note
     event.note = note
@@ -244,10 +246,14 @@ async def withdraw(
     # Get agent to retrieve user_id from agent.owner
     agent = await Agent.get(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     if not agent.owner:
-        raise HTTPException(status_code=400, detail="Agent has no owner")
+        raise IntentKitAPIError(
+            status_code=400, key="AgentNoOwner", message="Agent has no owner"
+        )
 
     # Get agent wallet address
     agent_data = await AgentData.get(agent.id)
@@ -264,9 +270,10 @@ async def withdraw(
 
     # Check if agent has sufficient permanent credits
     if agent_account.credits < amount:
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=400,
-            detail=f"Insufficient balance. Available: {agent_account.credits}, Required: {amount}",
+            key="InsufficientBalance",
+            message=f"Insufficient balance. Available: {agent_account.credits}, Required: {amount}",
         )
 
     # 1. Create credit event record first to get event_id
@@ -916,9 +923,10 @@ async def fetch_credit_event_by_upstream_tx_id(
 
     # Raise 404 if not found
     if not result:
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=404,
-            detail=f"Credit event with upstream_tx_id '{upstream_tx_id}' not found",
+            key="CreditEventNotFound",
+            message=f"Credit event with upstream_tx_id '{upstream_tx_id}' not found",
         )
 
     # Convert to Pydantic model and return
@@ -940,7 +948,7 @@ async def fetch_credit_event_by_id(
         The credit event if found.
 
     Raises:
-        HTTPException: If the credit event is not found.
+        IntentKitAPIError: If the credit event is not found.
     """
     # Build the query to find the event by ID
     stmt = select(CreditEventTable).where(CreditEventTable.id == event_id)
@@ -950,9 +958,10 @@ async def fetch_credit_event_by_id(
 
     # Raise 404 if not found
     if not result:
-        raise HTTPException(
+        raise IntentKitAPIError(
             status_code=404,
-            detail=f"Credit event with ID '{event_id}' not found",
+            key="CreditEventNotFound",
+            message=f"Credit event with ID '{event_id}' not found",
         )
 
     # Convert to Pydantic model and return

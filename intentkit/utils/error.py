@@ -23,7 +23,8 @@ class RateLimitExceeded(Exception):
 
 
 class IntentKitAPIError(Exception):
-    """The key is PasacalCase string, to allow the frontend to test errors."""
+    """All 3 parameters: status_code, key and message is required.
+    The key is PascalCase string, to allow the frontend to test errors."""
 
     def __init__(self, status_code: int, key: str, message: str):
         self.key = key

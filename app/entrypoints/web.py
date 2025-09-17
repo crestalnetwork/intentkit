@@ -10,7 +10,6 @@ from epyxid import XID
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Path,
     Query,
     Request,
@@ -40,6 +39,7 @@ from intentkit.models.chat import (
     ChatMessageTable,
 )
 from intentkit.models.db import get_db
+from intentkit.utils.error import IntentKitAPIError
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -59,9 +59,10 @@ def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(securit
         return None
 
     if not config.debug_username or not config.debug_password:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Debug credentials not configured",
+        raise IntentKitAPIError(
+            status_code=500,
+            key="DebugNotConfigured",
+            message="Debug credentials not configured",
         )
 
     is_username_correct = secrets.compare_digest(
@@ -72,10 +73,10 @@ def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(securit
     )
 
     if not (is_username_correct and is_password_correct):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Basic"},
+        raise IntentKitAPIError(
+            status_code=401,
+            key="InvalidCredentials",
+            message="Incorrect username or password",
         )
     return credentials.username
 
@@ -184,12 +185,16 @@ async def debug_chat(
     * `500` - Internal server error
     """
     if not q:
-        raise HTTPException(status_code=400, detail="Query string cannot be empty")
+        raise IntentKitAPIError(
+            status_code=400, key="EmptyQuery", message="Query string cannot be empty"
+        )
 
     # Get agent and validate quota
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Agent {aid} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
 
     # get thread_id from request ip
     if not chat_id:
@@ -278,7 +283,9 @@ async def get_chat_history(
     # Get agent and check if exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get chat messages (last 50 in DESC order)
     result = await db.scalars(
@@ -297,7 +304,11 @@ async def get_chat_history(
             if message.author_id == user_id:
                 break
         else:
-            raise HTTPException(status_code=403, detail="Chat not belongs to user")
+            raise IntentKitAPIError(
+                status_code=403,
+                key="ChatNotOwned",
+                message="Chat does not belong to user",
+            )
 
     # Reverse messages to get chronological order
     messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
@@ -344,7 +355,9 @@ async def retry_chat_deprecated(
     # Get agent and check if exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get last message
     last = await db.scalar(
@@ -354,7 +367,9 @@ async def retry_chat_deprecated(
         .limit(1)
     )
     if not last:
-        raise HTTPException(status_code=404, detail="No messages found")
+        raise IntentKitAPIError(
+            status_code=404, key="MessagesNotFound", message="No messages found"
+        )
 
     last_message = ChatMessage.model_validate(last)
 
@@ -426,7 +441,9 @@ async def retry_chat(
     # Get agent and check if exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get last message
     last = await db.scalar(
@@ -437,7 +454,9 @@ async def retry_chat(
     )
 
     if not last:
-        raise HTTPException(status_code=404, detail="No messages found")
+        raise IntentKitAPIError(
+            status_code=404, key="MessagesNotFound", message="No messages found"
+        )
 
     last_message = ChatMessage.model_validate(last)
     if (
@@ -505,7 +524,9 @@ async def create_chat_deprecated(
     # Get agent and validate quota
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Agent {aid} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
 
     # Create user message
     user_message = ChatMessageCreate(
@@ -583,7 +604,9 @@ async def create_chat(
     # Get agent and validate quota
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail=f"Agent {aid} not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
 
     # Create user message
     user_message = ChatMessageCreate(
@@ -647,7 +670,9 @@ async def get_agent_chats(
     # Verify agent exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get chats by agent and user
     chats = await Chat.get_by_agent_user(aid, user_id)
@@ -703,16 +728,24 @@ async def update_chat_summary(
     # Verify agent exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get chat
     chat = await Chat.get(chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found")
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
 
     # Verify chat belongs to agent
     if chat.agent_id != aid:
-        raise HTTPException(status_code=404, detail="Chat not found for this agent")
+        raise IntentKitAPIError(
+            status_code=404,
+            key="ChatNotFound",
+            message="Chat not found for this agent",
+        )
 
     # Update summary
     updated_chat = await chat.update_summary(update_data.summary)
@@ -745,16 +778,24 @@ async def delete_chat(
     # Verify agent exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get chat
     chat = await Chat.get(chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found")
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
 
     # Verify chat belongs to agent
     if chat.agent_id != aid:
-        raise HTTPException(status_code=404, detail="Chat not found for this agent")
+        raise IntentKitAPIError(
+            status_code=404,
+            key="ChatNotFound",
+            message="Chat not found for this agent",
+        )
 
     # Delete chat
     await chat.delete()
@@ -787,7 +828,9 @@ async def get_skill_history(
     # Get agent and check if exists
     agent = await Agent.get(aid)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
 
     # Get skill messages (last 50 in DESC order)
     result = await db.scalars(
@@ -851,16 +894,18 @@ async def get_chat_message(
     """
     message = await ChatMessage.get(message_id)
     if not message:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Message with ID {message_id} not found",
+        raise IntentKitAPIError(
+            status_code=404,
+            key="MessageNotFound",
+            message=f"Message with ID {message_id} not found",
         )
 
     # If user_id is provided, check if it matches the message's user_id
     if user_id and message.user_id and user_id != message.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to access this message",
+        raise IntentKitAPIError(
+            status_code=403,
+            key="AccessForbidden",
+            message="You don't have permission to access this message",
         )
 
     return message.sanitize_privacy()

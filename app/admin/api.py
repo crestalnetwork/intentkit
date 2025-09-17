@@ -74,16 +74,24 @@ async def validate_agent_create(
         - 500: Server error
     """
     if not input.owner:
-        raise IntentKitAPIError(400, "BadRequest", "Owner is required")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Owner is required"
+        )
     max_fee = 100
     if user_id:
         if input.owner != user_id:
-            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
+            raise IntentKitAPIError(
+                status_code=400,
+                key="BadRequest",
+                message="Owner does not match user ID",
+            )
         user = await User.get(user_id)
         if user:
             max_fee += user.nft_count * 10
     if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Fee percentage too high"
+        )
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
@@ -116,28 +124,44 @@ async def validate_agent_update(
         - 500: Server error
     """
     if not input.owner:
-        raise IntentKitAPIError(400, "BadRequest", "Owner is required")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Owner is required"
+        )
     max_fee = 100
     if user_id:
         if input.owner != user_id:
-            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
+            raise IntentKitAPIError(
+                status_code=400,
+                key="BadRequest",
+                message="Owner does not match user ID",
+            )
         user = await User.get(user_id)
         if user:
             max_fee += user.nft_count * 10
     if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Fee percentage too high"
+        )
     agent = await Agent.get(agent_id)
     if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
     max_fee = 100
     if user_id:
         if agent.owner != user_id:
-            raise IntentKitAPIError(400, "BadRequest", "Owner does not match user ID")
+            raise IntentKitAPIError(
+                status_code=400,
+                key="BadRequest",
+                message="Owner does not match user ID",
+            )
         user = await User.get(user_id)
         if user:
             max_fee += user.nft_count * 10
     if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(400, "BadRequest", "Fee percentage too high")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Fee percentage too high"
+        )
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
@@ -217,7 +241,9 @@ async def update_agent(
 
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
 
     # Update agent
     latest_agent = await agent.update(agent_id)
@@ -332,7 +358,9 @@ async def get_agent(
     """
     agent = await Agent.get(agent_id)
     if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
 
     # Get agent data
     agent_data = await AgentData.get(agent_id)
@@ -399,15 +427,17 @@ async def clean_memory(
     """
     # Validate input parameters
     if not request.agent_id or not request.agent_id.strip():
-        raise IntentKitAPIError(400, "BadRequest", "Agent ID cannot be empty")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message="Agent ID cannot be empty"
+        )
 
     try:
         agent = await Agent.get(request.agent_id)
         if not agent:
             raise IntentKitAPIError(
-                404,
-                "NotFound",
-                f"Agent with id {request.agent_id} not found",
+                status_code=404,
+                key="NotFound",
+                message=f"Agent with id {request.agent_id} not found",
             )
 
         await clean_agent_memory(
@@ -417,13 +447,25 @@ async def clean_memory(
             clean_skill=request.clean_skills_memory,
         )
     except NoResultFound:
-        raise IntentKitAPIError(404, "NotFound", f"Agent {request.agent_id} not found")
+        raise IntentKitAPIError(
+            status_code=404,
+            key="NotFound",
+            message=f"Agent {request.agent_id} not found",
+        )
     except SQLAlchemyError as e:
-        raise IntentKitAPIError(500, "InternalServerError", f"Database error: {str(e)}")
+        raise IntentKitAPIError(
+            status_code=500,
+            key="InternalServerError",
+            message=f"Database error: {str(e)}",
+        )
     except ValueError as e:
-        raise IntentKitAPIError(400, "BadRequest", str(e))
+        raise IntentKitAPIError(status_code=400, key="BadRequest", message=str(e))
     except Exception as e:
-        raise IntentKitAPIError(500, "InternalServerError", f"Server error: {str(e)}")
+        raise IntentKitAPIError(
+            status_code=500,
+            key="InternalServerError",
+            message=f"Server error: {str(e)}",
+        )
 
 
 @admin_router_readonly.get(
@@ -449,7 +491,9 @@ async def export_agent(
     """
     agent = await Agent.get(agent_id)
     if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
     # Ensure agent.skills is initialized
     if agent.skills is None:
         agent.skills = {}
@@ -570,14 +614,18 @@ async def import_agent(
     # First check if agent exists
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
 
     # Read and parse YAML
     content = await file.read()
     try:
         yaml_data = safe_load(content)
     except Exception as e:
-        raise IntentKitAPIError(400, "BadRequest", f"Invalid YAML format: {e}")
+        raise IntentKitAPIError(
+            status_code=400, key="BadRequest", message=f"Invalid YAML format: {e}"
+        )
 
     # Create Agent instance from YAML
     try:
