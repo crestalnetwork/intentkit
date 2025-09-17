@@ -647,6 +647,9 @@ class AgentUserInput(AgentCore):
     model_config = ConfigDict(
         title="AgentUserInput",
         from_attributes=True,
+        json_schema_extra={
+            "required": ["name"],
+        },
     )
 
     short_term_memory_strategy: Annotated[
