@@ -2,7 +2,6 @@ import importlib
 import logging
 from typing import Annotated, Optional, TypedDict
 
-from epyxid import XID
 from fastapi import (
     APIRouter,
     Body,
@@ -24,13 +23,16 @@ from yaml import safe_load
 from app.auth import verify_admin_jwt
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.core.agent import (
+    create_agent,
     deploy_agent,
+    override_agent,
     process_agent_wallet,
     send_agent_notification,
 )
 from intentkit.core.engine import clean_agent_memory
 from intentkit.models.agent import (
     Agent,
+    AgentCreate,
     AgentResponse,
     AgentTable,
     AgentUpdate,
@@ -184,9 +186,10 @@ async def validate_agent_update(
     responses={
         201: {"description": "Agent created successfully"},
     },
+    summary="Create Agent",
 )
-async def create_agent(
-    input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
+async def create_agent_endpoint(
+    agent: AgentUpdate = Body(AgentUpdate, description="Agent user input"),
     subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Create a new agent.
@@ -202,7 +205,9 @@ async def create_agent(
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    latest_agent, agent_data = await deploy_agent(str(XID()), input, subject)
+    new_agent = AgentCreate.model_validate(agent)
+    new_agent.owner = subject
+    latest_agent, agent_data = await create_agent(new_agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -283,9 +288,13 @@ async def update_agent(
 
 
 @admin_router.put(
-    "/agents/{agent_id}", tags=["Agent"], status_code=200, operation_id="override_agent"
+    "/agents/{agent_id}",
+    tags=["Agent"],
+    status_code=200,
+    operation_id="override_agent",
+    summary="Override Agent",
 )
-async def override_agent(
+async def override_agent_endpoint(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
     subject: str = Depends(verify_admin_jwt),
@@ -310,7 +319,7 @@ async def override_agent(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    latest_agent, agent_data = await deploy_agent(agent_id, agent, subject)
+    latest_agent, agent_data = await override_agent(agent_id, agent, subject)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 

@@ -1518,16 +1518,16 @@ class AgentResponse(Agent):
     )
 
     # Override privacy fields to exclude them from JSON schema
-    purpose: Annotated[Optional[str], SkipJsonSchema] = None
-    personality: Annotated[Optional[str], SkipJsonSchema] = None
-    principles: Annotated[Optional[str], SkipJsonSchema] = None
-    prompt: Annotated[Optional[str], SkipJsonSchema] = None
-    prompt_append: Annotated[Optional[str], SkipJsonSchema] = None
-    temperature: Annotated[Optional[float], SkipJsonSchema] = None
-    frequency_penalty: Annotated[Optional[float], SkipJsonSchema] = None
-    telegram_entrypoint_prompt: Annotated[Optional[str], SkipJsonSchema] = None
-    telegram_config: Annotated[Optional[dict], SkipJsonSchema] = None
-    xmtp_entrypoint_prompt: Annotated[Optional[str], SkipJsonSchema] = None
+    purpose: SkipJsonSchema[Optional[str]] = None
+    personality: SkipJsonSchema[Optional[str]] = None
+    principles: SkipJsonSchema[Optional[str]] = None
+    prompt: SkipJsonSchema[Optional[str]] = None
+    prompt_append: SkipJsonSchema[Optional[str]] = None
+    temperature: SkipJsonSchema[Optional[float]] = None
+    frequency_penalty: SkipJsonSchema[Optional[float]] = None
+    telegram_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
+    telegram_config: SkipJsonSchema[Optional[dict]] = None
+    xmtp_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
 
     # Additional fields specific to AgentResponse
     cdp_wallet_address: Annotated[
