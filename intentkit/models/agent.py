@@ -34,6 +34,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -960,12 +961,20 @@ class AgentCreate(AgentUpdate):
             self.validate_autonomous_schedule()
 
         async with get_session() as db:
-            db_agent = AgentTable(**self.model_dump())
-            db_agent.version = self.hash()
-            db.add(db_agent)
-            await db.commit()
-            await db.refresh(db_agent)
-            return Agent.model_validate(db_agent)
+            try:
+                db_agent = AgentTable(**self.model_dump())
+                db_agent.version = self.hash()
+                db.add(db_agent)
+                await db.commit()
+                await db.refresh(db_agent)
+                return Agent.model_validate(db_agent)
+            except IntegrityError:
+                await db.rollback()
+                raise IntentKitAPIError(
+                    status_code=400,
+                    key="AgentExists",
+                    message=f"Agent with ID '{self.id}' already exists",
+                )
 
 
 class AgentPublicInfo(BaseModel):

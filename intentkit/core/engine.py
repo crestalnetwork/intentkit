@@ -17,7 +17,7 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 import sqlalchemy
 from epyxid import XID
@@ -211,7 +211,7 @@ async def initialize_agent(aid, is_private=False):
 
 async def agent_executor(
     agent_id: str, is_private: bool
-) -> (CompiledStateGraph, float):
+) -> Tuple[CompiledStateGraph, float]:
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:
