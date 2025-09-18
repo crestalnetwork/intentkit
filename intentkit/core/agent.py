@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import func, select, text, update
 
@@ -193,53 +193,35 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
     )
 
 
-async def deploy_agent(
+async def override_agent(
     agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
-) -> Agent:
-    """Override an existing agent.
+) -> Tuple[Agent, AgentData]:
+    """Override an existing agent with new configuration.
 
-    Use input to override agent configuration. If some fields are not provided, they will be reset to default values.
+    This function updates an existing agent with the provided configuration.
+    If some fields are not provided, they will be reset to default values.
 
     Args:
-        agent_id: ID of the agent to update
-        agent: Agent update configuration
-        owner: Optional owner for the agent
+        agent_id: ID of the agent to override
+        agent: Agent update configuration containing the new settings
+        owner: Optional owner for permission validation
 
     Returns:
         tuple[Agent, AgentData]: Updated agent configuration and processed agent data
 
     Raises:
-        HTTPException:
-            - 400: Invalid agent ID format
+        IntentKitAPIError:
             - 404: Agent not found
             - 403: Permission denied (if owner mismatch)
-            - 500: Database error
+            - 400: Invalid configuration or wallet provider change
     """
     existing_agent = await Agent.get(agent_id)
-
     if not existing_agent:
-        new_agent = AgentCreate.model_validate(agent)
-        new_agent.id = agent_id
-        if owner:
-            new_agent.owner = owner
-        else:
-            new_agent.owner = "system"
-        # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
-        existing = await new_agent.get_by_upstream_id()
-        if existing:
-            raise IntentKitAPIError(
-                status_code=400,
-                key="BadRequest",
-                message="Agent with this upstream ID already exists",
-            )
-
-        # Create new agent
-        latest_agent = await new_agent.create()
-        agent_data = await process_agent_wallet(latest_agent)
-        send_agent_notification(latest_agent, agent_data, "Agent Deployed")
-
-        return latest_agent, agent_data
-
+        raise IntentKitAPIError(
+            status_code=404,
+            key="AgentNotFound",
+            message=f"Agent with ID '{agent_id}' not found",
+        )
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "Forbidden", "forbidden")
 
@@ -251,6 +233,79 @@ async def deploy_agent(
     send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
 
     return latest_agent, agent_data
+
+
+async def create_agent(agent: AgentCreate) -> Tuple[Agent, AgentData]:
+    """Create a new agent with the provided configuration.
+
+    This function creates a new agent instance with the given configuration,
+    initializes its wallet, and sends a notification about the creation.
+
+    Args:
+        agent: Agent creation configuration containing all necessary settings
+
+    Returns:
+        tuple[Agent, AgentData]: Created agent configuration and processed agent data
+
+    Raises:
+        IntentKitAPIError:
+            - 400: Agent with upstream ID already exists or invalid configuration
+            - 500: Database error or wallet initialization failure
+    """
+    if not agent.owner:
+        agent.owner = "system"
+    # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
+    existing = await agent.get_by_upstream_id()
+    if existing:
+        raise IntentKitAPIError(
+            status_code=400,
+            key="BadRequest",
+            message="Agent with this upstream ID already exists",
+        )
+
+    # Create new agent
+    latest_agent = await agent.create()
+    agent_data = await process_agent_wallet(latest_agent)
+    send_agent_notification(latest_agent, agent_data, "Agent Deployed")
+
+    return latest_agent, agent_data
+
+
+async def deploy_agent(
+    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
+) -> Tuple[Agent, AgentData]:
+    """Deploy an agent by first attempting to override, then creating if not found.
+
+    This function first tries to override an existing agent. If the agent is not found
+    (404 error), it will create a new agent instead.
+
+    Args:
+        agent_id: ID of the agent to deploy
+        agent: Agent configuration data
+        owner: Optional owner for the agent
+
+    Returns:
+        tuple[Agent, AgentData]: Deployed agent configuration and processed agent data
+
+    Raises:
+        IntentKitAPIError:
+            - 400: Invalid agent configuration or upstream ID conflict
+            - 403: Permission denied (if owner mismatch)
+            - 500: Database error
+    """
+    try:
+        # First try to override the existing agent
+        return await override_agent(agent_id, agent, owner)
+    except IntentKitAPIError as e:
+        # If agent not found (404), create a new one
+        if e.status_code == 404:
+            new_agent = AgentCreate.model_validate(agent)
+            new_agent.id = agent_id
+            new_agent.owner = owner
+            return await create_agent(new_agent)
+        else:
+            # Re-raise other errors
+            raise
 
 
 async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
