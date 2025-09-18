@@ -261,7 +261,7 @@ async def deploy_agent(
     """
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        agent = AgentCreate.model_validate(input)
+        agent = AgentCreate.model_validate(agent)
         agent.id = agent_id
         if owner:
             agent.owner = owner
