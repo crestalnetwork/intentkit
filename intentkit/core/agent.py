@@ -261,26 +261,26 @@ async def deploy_agent(
     """
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
-        agent = AgentCreate.model_validate(agent)
-        agent.id = agent_id
+        new_agent = AgentCreate.model_validate(agent)
+        new_agent.id = agent_id
         if owner:
-            agent.owner = owner
+            new_agent.owner = owner
         else:
-            agent.owner = "system"
+            new_agent.owner = "system"
         # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
-        existing = await agent.get_by_upstream_id()
+        existing = await new_agent.get_by_upstream_id()
         if existing:
             agent_data = await AgentData.get(existing.id)
             agent_response = await AgentResponse.from_agent(existing, agent_data)
             return agent_response
 
         # Create new agent
-        latest_agent = await agent.create()
+        latest_agent = await new_agent.create()
         # Process common post-creation actions
         agent_data = await _process_agent_post_actions(
             latest_agent, True, "Agent Created"
         )
-        agent_data = await _process_telegram_config(input, None, agent_data)
+        agent_data = await _process_telegram_config(agent, None, agent_data)
         agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
         return agent_response
