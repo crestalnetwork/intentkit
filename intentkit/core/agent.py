@@ -206,7 +206,7 @@ async def deploy_agent(
         owner: Optional owner for the agent
 
     Returns:
-        Agent: Updated agent configuration
+        tuple[Agent, AgentData]: Updated agent configuration and processed agent data
 
     Raises:
         HTTPException:
@@ -216,6 +216,7 @@ async def deploy_agent(
             - 500: Database error
     """
     existing_agent = await Agent.get(agent_id)
+
     if not existing_agent:
         new_agent = AgentCreate.model_validate(agent)
         new_agent.id = agent_id
@@ -226,20 +227,30 @@ async def deploy_agent(
         # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
         existing = await new_agent.get_by_upstream_id()
         if existing:
-            return existing
+            raise IntentKitAPIError(
+                status_code=400,
+                key="BadRequest",
+                message="Agent with this upstream ID already exists",
+            )
 
         # Create new agent
         latest_agent = await new_agent.create()
+        agent_data = await process_agent_wallet(latest_agent)
+        send_agent_notification(latest_agent, agent_data, "Agent Deployed")
 
-        return latest_agent
+        return latest_agent, agent_data
 
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "Forbidden", "forbidden")
 
     # Update agent
     latest_agent = await agent.override(agent_id)
+    agent_data = await process_agent_wallet(
+        latest_agent, existing_agent.wallet_provider
+    )
+    send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
 
-    return latest_agent
+    return latest_agent, agent_data
 
 
 async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:

@@ -202,17 +202,7 @@ async def create_agent(
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    latest_agent = await deploy_agent(str(XID()), input, subject)
-
-    # Process agent wallet initialization
-    agent_data = await process_agent_wallet(latest_agent)
-
-    # Send Slack notification
-    slack_message = "Agent Created"
-    try:
-        send_agent_notification(latest_agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
+    latest_agent, agent_data = await deploy_agent(str(XID()), input, subject)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -320,20 +310,7 @@ async def override_agent(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    existing_agent = await Agent.get(agent_id)
-    latest_agent = await deploy_agent(agent_id, agent, subject)
-
-    # Process agent wallet with old provider for validation
-    agent_data = await process_agent_wallet(
-        latest_agent, existing_agent.wallet_provider if existing_agent else None
-    )
-
-    # Send Slack notification
-    slack_message = "Agent Overridden"
-    try:
-        send_agent_notification(latest_agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
+    latest_agent, agent_data = await deploy_agent(agent_id, agent, subject)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -678,19 +655,7 @@ async def import_agent(
         raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    latest_agent = await deploy_agent(agent_id, agent, subject)
-
-    # Process agent wallet with old provider for validation
-    agent_data = await process_agent_wallet(
-        latest_agent, existing_agent.wallet_provider
-    )
-
-    # Send Slack notification
-    slack_message = "Agent Imported"
-    try:
-        send_agent_notification(latest_agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
+    latest_agent, agent_data = await deploy_agent(agent_id, agent, subject)
 
     return "Agent import successful"
 
