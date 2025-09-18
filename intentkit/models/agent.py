@@ -22,6 +22,7 @@ from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
+from pydantic.main import IncEx
 from sqlalchemy import (
     Boolean,
     Column,
@@ -1257,20 +1258,22 @@ class Agent(AgentCreate, AgentPublicInfo):
                 yaml_lines.append(indented_yaml.rstrip())
             elif hasattr(value, "model_dump"):
                 # Handle individual Pydantic model
-                model_dict = value.model_dump(exclude_none=True)
+                yaml_lines.append(f"{field_name}:")
                 yaml_value = yaml.dump(
-                    {field_name: model_dict},
+                    value.model_dump(exclude_none=True),
                     default_flow_style=False,
                     allow_unicode=True,
                 )
-                yaml_lines.append(yaml_value.rstrip())
+                # Indent all lines and append to yaml_lines
+                indented_yaml = "\n".join(
+                    f"  {line}" for line in yaml_value.split("\n") if line.strip()
+                )
+                yaml_lines.append(indented_yaml)
             else:
-                # Handle Decimal values specifically
+                # Handle Decimal and other types
                 if isinstance(value, Decimal):
-                    # Convert Decimal to string to avoid !!python/object/apply:decimal.Decimal serialization
-                    yaml_lines.append(f"{field_name}: {value}")
+                    yaml_lines.append(f"{field_name}: {str(value)}")
                 else:
-                    # Handle other non-string values
                     yaml_value = yaml.dump(
                         {field_name: value},
                         default_flow_style=False,
@@ -1495,68 +1498,111 @@ class Agent(AgentCreate, AgentPublicInfo):
 
 
 class AgentResponse(Agent):
-    """Response model for Agent API."""
+    """Agent response model that excludes sensitive fields from JSON output and schema."""
 
     model_config = ConfigDict(
-        use_enum_values=True,
+        title="AgentPublic",
         from_attributes=True,
-        json_encoders={
-            datetime: lambda dt: dt.isoformat(),
-        },
+        # json_encoders={
+        #     datetime: lambda v: v.isoformat(timespec="milliseconds"),
+        # },
     )
 
-    # data part
+    # Override privacy fields to exclude them from JSON schema
+    purpose: Annotated[Optional[str], SkipJsonSchema] = None
+    personality: Annotated[Optional[str], SkipJsonSchema] = None
+    principles: Annotated[Optional[str], SkipJsonSchema] = None
+    prompt: Annotated[Optional[str], SkipJsonSchema] = None
+    prompt_append: Annotated[Optional[str], SkipJsonSchema] = None
+    temperature: Annotated[Optional[float], SkipJsonSchema] = None
+    frequency_penalty: Annotated[Optional[float], SkipJsonSchema] = None
+    telegram_entrypoint_prompt: Annotated[Optional[str], SkipJsonSchema] = None
+    telegram_config: Annotated[Optional[dict], SkipJsonSchema] = None
+    xmtp_entrypoint_prompt: Annotated[Optional[str], SkipJsonSchema] = None
+
+    # Additional fields specific to AgentResponse
     cdp_wallet_address: Annotated[
-        Optional[str], PydanticField(description="CDP wallet address for the agent")
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="CDP wallet address of the agent",
+        ),
     ]
     evm_wallet_address: Annotated[
-        Optional[str], PydanticField(description="EVM wallet address for the agent")
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="EVM wallet address of the agent",
+        ),
     ]
     solana_wallet_address: Annotated[
-        Optional[str], PydanticField(description="Solana wallet address for the agent")
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Solana wallet address of the agent",
+        ),
     ]
     has_twitter_linked: Annotated[
         bool,
-        PydanticField(description="Whether the agent has linked their Twitter account"),
+        PydanticField(
+            default=False,
+            description="Whether the agent has Twitter linked",
+        ),
     ]
     linked_twitter_username: Annotated[
         Optional[str],
-        PydanticField(description="The username of the linked Twitter account"),
+        PydanticField(
+            default=None,
+            description="Linked Twitter username",
+        ),
     ]
     linked_twitter_name: Annotated[
         Optional[str],
-        PydanticField(description="The name of the linked Twitter account"),
+        PydanticField(
+            default=None,
+            description="Linked Twitter display name",
+        ),
     ]
     has_twitter_self_key: Annotated[
         bool,
         PydanticField(
-            description="Whether the agent has self-keyed their Twitter account"
+            default=False,
+            description="Whether the agent has Twitter self key",
         ),
     ]
     has_telegram_self_key: Annotated[
         bool,
         PydanticField(
-            description="Whether the agent has self-keyed their Telegram account"
+            default=False,
+            description="Whether the agent has Telegram self key",
         ),
     ]
     linked_telegram_username: Annotated[
         Optional[str],
-        PydanticField(description="The username of the linked Telegram account"),
+        PydanticField(
+            default=None,
+            description="Linked Telegram username",
+        ),
     ]
     linked_telegram_name: Annotated[
         Optional[str],
-        PydanticField(description="The name of the linked Telegram account"),
+        PydanticField(
+            default=None,
+            description="Linked Telegram display name",
+        ),
     ]
     accept_image_input: Annotated[
         bool,
         PydanticField(
-            description="Whether the agent accepts image inputs in public mode"
+            default=False,
+            description="Whether the agent accepts image input",
         ),
     ]
     accept_image_input_private: Annotated[
         bool,
         PydanticField(
-            description="Whether the agent accepts image inputs in private mode"
+            default=False,
+            description="Whether the agent accepts image input in private mode",
         ),
     ]
 
@@ -1589,76 +1635,6 @@ class AgentResponse(Agent):
         Returns:
             AgentResponse: Response model with additional processed data
         """
-        # Get base data from agent
-        data = agent.model_dump()
-
-        # Hide the sensitive fields
-        data.pop("purpose", None)
-        data.pop("personality", None)
-        data.pop("principles", None)
-        data.pop("prompt", None)
-        data.pop("prompt_append", None)
-        data.pop("temperature", None)
-        data.pop("frequency_penalty", None)
-        data.pop("telegram_entrypoint_prompt", None)
-        data.pop("telegram_config", None)
-        data.pop("xmtp_entrypoint_prompt", None)
-
-        # Filter sensitive fields from autonomous list
-        if data.get("autonomous"):
-            filtered_autonomous = []
-            for item in data["autonomous"]:
-                if isinstance(item, dict):
-                    # Create proper AgentAutonomous instance with only public fields
-                    filtered_autonomous.append(
-                        AgentAutonomous(
-                            id=item.get("id"),
-                            name=item.get("name"),
-                            enabled=item.get("enabled"),
-                            # Set required prompt field to empty string for public view
-                            prompt="",
-                        )
-                    )
-            data["autonomous"] = filtered_autonomous
-
-        # Convert examples dictionaries to AgentExample instances
-        if data.get("examples"):
-            examples_list = []
-            for item in data["examples"]:
-                if isinstance(item, dict):
-                    # Create proper AgentExample instance
-                    examples_list.append(
-                        AgentExample(
-                            name=item.get("name", ""),
-                            description=item.get("description", ""),
-                            prompt=item.get("prompt", ""),
-                        )
-                    )
-            data["examples"] = examples_list
-
-        # Filter sensitive fields from skills dictionary
-        if data.get("skills"):
-            filtered_skills = {}
-            for skill_name, skill_config in data["skills"].items():
-                if isinstance(skill_config, dict):
-                    # Only include skills that are enabled
-                    if skill_config.get("enabled") is True:
-                        filtered_config = {"enabled": True}
-                        # Only keep states with public or private values
-                        if "states" in skill_config and isinstance(
-                            skill_config["states"], dict
-                        ):
-                            filtered_states = {}
-                            for state_key, state_value in skill_config[
-                                "states"
-                            ].items():
-                                if state_value in ["public", "private"]:
-                                    filtered_states[state_key] = state_value
-                            if filtered_states:
-                                filtered_config["states"] = filtered_states
-                        filtered_skills[skill_name] = filtered_config
-            data["skills"] = filtered_skills
-
         # Process CDP wallet address
         cdp_wallet_address = agent_data.evm_wallet_address if agent_data else None
         evm_wallet_address = agent_data.evm_wallet_address if agent_data else None
@@ -1684,10 +1660,10 @@ class AgentResponse(Agent):
             agent_data and agent_data.twitter_self_key_refreshed_at
         )
 
-        # Process Telegram self-key status and remove token
+        # Process Telegram self-key status
         linked_telegram_username = None
         linked_telegram_name = None
-        telegram_config = data.get("telegram_config", {})
+        telegram_config = agent.telegram_config or {}
         has_telegram_self_key = bool(
             telegram_config and "token" in telegram_config and telegram_config["token"]
         )
@@ -1704,22 +1680,173 @@ class AgentResponse(Agent):
             or agent.has_image_parser_skill(is_private=True)
         )
 
-        # Add processed fields to response
-        data.update(
-            {
-                "cdp_wallet_address": cdp_wallet_address,
-                "evm_wallet_address": evm_wallet_address,
-                "solana_wallet_address": solana_wallet_address,
-                "has_twitter_linked": has_twitter_linked,
-                "linked_twitter_username": linked_twitter_username,
-                "linked_twitter_name": linked_twitter_name,
-                "has_twitter_self_key": has_twitter_self_key,
-                "has_telegram_self_key": has_telegram_self_key,
-                "linked_telegram_username": linked_telegram_username,
-                "linked_telegram_name": linked_telegram_name,
-                "accept_image_input": accept_image_input,
-                "accept_image_input_private": accept_image_input_private,
-            }
+        # Create AgentResponse instance directly from agent with additional fields
+        return cls(
+            # Copy all fields from agent
+            **agent.model_dump(),
+            # Add computed fields
+            cdp_wallet_address=cdp_wallet_address,
+            evm_wallet_address=evm_wallet_address,
+            solana_wallet_address=solana_wallet_address,
+            has_twitter_linked=has_twitter_linked,
+            linked_twitter_username=linked_twitter_username,
+            linked_twitter_name=linked_twitter_name,
+            has_twitter_self_key=has_twitter_self_key,
+            has_telegram_self_key=has_telegram_self_key,
+            linked_telegram_username=linked_telegram_username,
+            linked_telegram_name=linked_telegram_name,
+            accept_image_input=accept_image_input,
+            accept_image_input_private=accept_image_input_private,
         )
 
-        return cls.model_construct(**data)
+    def model_dump(
+        self,
+        *,
+        mode: str | Literal["json", "python"] = "python",
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
+        context: Any | None = None,
+        by_alias: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal["none", "warn", "error"] = True,
+        serialize_as_any: bool = False,
+    ) -> dict[str, Any]:
+        """Override model_dump to exclude privacy fields and filter data."""
+        # Get the base model dump
+        data = super().model_dump(
+            mode=mode,
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
+            serialize_as_any=serialize_as_any,
+        )
+
+        # Remove privacy fields that might still be present
+        privacy_fields = {
+            "purpose",
+            "personality",
+            "principles",
+            "prompt",
+            "prompt_append",
+            "temperature",
+            "frequency_penalty",
+            "telegram_entrypoint_prompt",
+            "telegram_config",
+            "xmtp_entrypoint_prompt",
+        }
+        for field in privacy_fields:
+            data.pop(field, None)
+
+        # Filter autonomous list to only keep safe fields
+        if "autonomous" in data and data["autonomous"]:
+            filtered_autonomous = []
+            for item in data["autonomous"]:
+                if isinstance(item, dict):
+                    # Only keep safe fields: id, name, description, enabled
+                    filtered_item = {
+                        key: item[key]
+                        for key in ["id", "name", "description", "enabled"]
+                        if key in item
+                    }
+                    filtered_autonomous.append(filtered_item)
+                else:
+                    # Handle AgentAutonomous objects
+                    item_dict = (
+                        item.model_dump() if hasattr(item, "model_dump") else dict(item)
+                    )
+                    # Only keep safe fields: id, name, description, enabled
+                    filtered_item = {
+                        key: item_dict[key]
+                        for key in ["id", "name", "description", "enabled"]
+                        if key in item_dict
+                    }
+                    filtered_autonomous.append(filtered_item)
+            data["autonomous"] = filtered_autonomous
+
+        # Convert examples to AgentExample instances if they're dictionaries
+        if "examples" in data and data["examples"]:
+            converted_examples = []
+            for example in data["examples"]:
+                if isinstance(example, dict):
+                    converted_examples.append(AgentExample(**example).model_dump())
+                else:
+                    converted_examples.append(
+                        example.model_dump()
+                        if hasattr(example, "model_dump")
+                        else example
+                    )
+            data["examples"] = converted_examples
+
+        # Filter skills to only include enabled ones with specific configurations
+        if "skills" in data and data["skills"]:
+            filtered_skills = {}
+            for skill_name, skill_config in data["skills"].items():
+                if (
+                    isinstance(skill_config, dict)
+                    and skill_config.get("enabled") is True
+                ):
+                    # Filter out disabled states from the skill configuration
+                    original_states = skill_config.get("states", {})
+                    filtered_states = {
+                        state_name: state_value
+                        for state_name, state_value in original_states.items()
+                        if state_value != "disabled"
+                    }
+
+                    # Only include the skill if it has at least one non-disabled state
+                    if filtered_states:
+                        filtered_config = {
+                            "enabled": skill_config["enabled"],
+                            "states": filtered_states,
+                        }
+                        # Add other non-sensitive config fields if needed
+                        for key in ["public", "private"]:
+                            if key in skill_config:
+                                filtered_config[key] = skill_config[key]
+                        filtered_skills[skill_name] = filtered_config
+            data["skills"] = filtered_skills
+
+        return data
+
+    def model_dump_json(
+        self,
+        *,
+        indent: int | str | None = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
+        context: Any | None = None,
+        by_alias: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal["none", "warn", "error"] = True,
+        serialize_as_any: bool = False,
+    ) -> str:
+        """Override model_dump_json to exclude privacy fields and filter sensitive data."""
+        # Get the filtered data using the same logic as model_dump
+        data = self.model_dump(
+            mode="json",
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
+            serialize_as_any=serialize_as_any,
+        )
+
+        # Use json.dumps to serialize the filtered data with proper indentation
+        return json.dumps(data, indent=indent, ensure_ascii=False)
