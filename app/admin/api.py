@@ -167,6 +167,16 @@ async def validate_agent_update(
 
 
 @admin_router.post(
+    "/agents/v2",
+    tags=["Agent"],
+    status_code=201,
+    operation_id="create_agent_deprecated",
+    responses={
+        201: {"description": "Agent created successfully"},
+    },
+    deprecated=True,
+)
+@admin_router.post(
     "/agents",
     tags=["Agent"],
     status_code=201,
@@ -175,7 +185,7 @@ async def validate_agent_update(
         201: {"description": "Agent created successfully"},
     },
 )
-async def create_agent_endpoint(
+async def create_agent(
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
     subject: str = Depends(verify_admin_jwt),
 ) -> Response:
@@ -266,7 +276,7 @@ async def update_agent(
 @admin_router.put(
     "/agents/{agent_id}", tags=["Agent"], status_code=200, operation_id="override_agent"
 )
-async def override_agent_endpoint(
+async def override_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
     subject: str = Depends(verify_admin_jwt),
