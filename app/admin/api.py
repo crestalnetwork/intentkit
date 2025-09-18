@@ -24,9 +24,9 @@ from yaml import safe_load
 from app.auth import verify_admin_jwt
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.core.agent import (
-    _process_agent_post_actions,
-    _process_telegram_config,
     deploy_agent,
+    process_agent_wallet,
+    send_agent_notification,
 )
 from intentkit.core.engine import clean_agent_memory
 from intentkit.models.agent import (
@@ -202,7 +202,19 @@ async def create_agent(
         - 400: Invalid agent ID format or agent ID already exists
         - 500: Database error
     """
-    agent_response = await deploy_agent(str(XID()), input, subject)
+    latest_agent = await deploy_agent(str(XID()), input, subject)
+
+    # Process agent wallet initialization
+    agent_data = await process_agent_wallet(latest_agent)
+
+    # Send Slack notification
+    slack_message = "Agent Created"
+    try:
+        send_agent_notification(latest_agent, agent_data, slack_message)
+    except Exception as e:
+        logger.error("Failed to send Slack notification: %s", e)
+
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header and appropriate status code
     return Response(
@@ -258,10 +270,17 @@ async def update_agent(
     # Update agent
     latest_agent = await agent.update(agent_id)
 
-    # Process common post-update actions
-    agent_data = await _process_agent_post_actions(latest_agent, False, "Agent Updated")
+    # Process agent wallet with old provider for validation
+    agent_data = await process_agent_wallet(
+        latest_agent, existing_agent.wallet_provider
+    )
 
-    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
+    # Send Slack notification
+    slack_message = "Agent Updated"
+    try:
+        send_agent_notification(latest_agent, agent_data, slack_message)
+    except Exception as e:
+        logger.error("Failed to send Slack notification: %s", e)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -301,7 +320,22 @@ async def override_agent(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    agent_response = await deploy_agent(agent_id, agent, subject)
+    existing_agent = await Agent.get(agent_id)
+    latest_agent = await deploy_agent(agent_id, agent, subject)
+
+    # Process agent wallet with old provider for validation
+    agent_data = await process_agent_wallet(
+        latest_agent, existing_agent.wallet_provider if existing_agent else None
+    )
+
+    # Send Slack notification
+    slack_message = "Agent Overridden"
+    try:
+        send_agent_notification(latest_agent, agent_data, slack_message)
+    except Exception as e:
+        logger.error("Failed to send Slack notification: %s", e)
+
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header
     return Response(
@@ -644,7 +678,19 @@ async def import_agent(
         raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    await deploy_agent(agent_id, agent, subject)
+    latest_agent = await deploy_agent(agent_id, agent, subject)
+
+    # Process agent wallet with old provider for validation
+    agent_data = await process_agent_wallet(
+        latest_agent, existing_agent.wallet_provider
+    )
+
+    # Send Slack notification
+    slack_message = "Agent Imported"
+    try:
+        send_agent_notification(latest_agent, agent_data, slack_message)
+    except Exception as e:
+        logger.error("Failed to send Slack notification: %s", e)
 
     return "Agent import successful"
 

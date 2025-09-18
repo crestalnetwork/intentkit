@@ -4,9 +4,6 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from aiogram import Bot
-from aiogram.exceptions import TelegramConflictError, TelegramUnauthorizedError
-from aiogram.utils.token import TokenValidationError
 from sqlalchemy import func, select, text, update
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -16,7 +13,6 @@ from intentkit.models.agent import (
     Agent,
     AgentAutonomous,
     AgentCreate,
-    AgentResponse,
     AgentTable,
     AgentUpdate,
 )
@@ -35,103 +31,63 @@ from intentkit.utils.slack_alert import send_slack_message
 logger = logging.getLogger(__name__)
 
 
-async def _process_agent_post_actions(
-    agent: Agent, is_new: bool = True, slack_message: str | None = None
+async def process_agent_wallet(
+    agent: Agent, old_wallet_provider: str | None = None
 ) -> AgentData:
-    """Process common actions after agent creation or update.
+    """Process agent wallet initialization and validation.
 
     Args:
         agent: The agent that was created or updated
-        is_new: Whether the agent is newly created
-        slack_message: Optional custom message for Slack notification
+        old_wallet_provider: Previous wallet provider (None, "cdp", or "readonly")
 
     Returns:
         AgentData: The processed agent data
+
+    Raises:
+        IntentKitAPIError: If attempting to change between cdp and readonly providers
     """
-    if config.cdp_api_key_id and agent.wallet_provider == "cdp":
+    current_wallet_provider = agent.wallet_provider
+
+    # 1. Check if changing between cdp and readonly (not allowed)
+    if (
+        old_wallet_provider is not None
+        and old_wallet_provider != current_wallet_provider
+    ):
+        raise IntentKitAPIError(
+            400,
+            "WalletProviderChangeNotAllowed",
+            "Cannot change wallet provider between cdp and readonly",
+        )
+
+    # 2. If wallet provider hasn't changed, return existing agent data
+    if (
+        old_wallet_provider is not None
+        and old_wallet_provider == current_wallet_provider
+    ):
+        return await AgentData.get(agent.id)
+
+    # 3. For new agents (old_wallet_provider is None), check if wallet already exists
+    agent_data = await AgentData.get(agent.id)
+    if agent_data.evm_wallet_address:
+        return agent_data
+
+    # 4. Initialize wallet based on provider type
+    if config.cdp_api_key_id and current_wallet_provider == "cdp":
         cdp_client = await get_cdp_client(agent.id, agent_store)
         await cdp_client.get_wallet_provider()
-
-    # Get new agent data
-    # FIXME: refuse to change wallet provider
-    if agent.wallet_provider == "readonly":
+        agent_data = await AgentData.get(agent.id)
+    elif current_wallet_provider == "readonly":
         agent_data = await AgentData.patch(
             agent.id,
             {
                 "evm_wallet_address": agent.readonly_wallet_address,
             },
         )
-    else:
-        agent_data = await AgentData.get(agent.id)
-
-    # Send Slack notification
-    slack_message = slack_message or ("Agent Created" if is_new else "Agent Updated")
-    try:
-        _send_agent_notification(agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
 
     return agent_data
 
 
-async def _process_telegram_config(
-    agent: AgentUpdate, existing_agent: Optional[Agent], agent_data: AgentData
-) -> AgentData:
-    """Process telegram configuration for an agent.
-
-    Args:
-        agent: The agent with telegram configuration
-        existing_agent: The existing agent (if updating)
-        agent_data: The agent data to update
-
-    Returns:
-        AgentData: The updated agent data
-    """
-    changes = agent.model_dump(exclude_unset=True)
-    if not changes.get("telegram_entrypoint_enabled"):
-        return agent_data
-
-    if not changes.get("telegram_config") or not changes.get("telegram_config").get(
-        "token"
-    ):
-        return agent_data
-
-    tg_bot_token = changes.get("telegram_config").get("token")
-
-    if existing_agent and existing_agent.telegram_config.get("token") == tg_bot_token:
-        return agent_data
-
-    try:
-        bot = Bot(token=tg_bot_token)
-        bot_info = await bot.get_me()
-        agent_data.telegram_id = str(bot_info.id)
-        agent_data.telegram_username = bot_info.username
-        agent_data.telegram_name = bot_info.first_name
-        if bot_info.last_name:
-            agent_data.telegram_name = f"{bot_info.first_name} {bot_info.last_name}"
-        await agent_data.save()
-        try:
-            await bot.close()
-        except Exception:
-            pass
-        return agent_data
-    except (
-        TelegramUnauthorizedError,
-        TelegramConflictError,
-        TokenValidationError,
-    ) as req_err:
-        logger.error(
-            f"Unauthorized err getting telegram bot username with token {tg_bot_token}: {req_err}",
-        )
-        return agent_data
-    except Exception as e:
-        logger.error(
-            f"Error getting telegram bot username with token {tg_bot_token}: {e}",
-        )
-        return agent_data
-
-
-def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -> None:
+def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -> None:
     """Send a notification about agent creation or update.
 
     Args:
@@ -239,7 +195,7 @@ def _send_agent_notification(agent: Agent, agent_data: AgentData, message: str) 
 
 async def deploy_agent(
     agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
-) -> AgentResponse:
+) -> Agent:
     """Override an existing agent.
 
     Use input to override agent configuration. If some fields are not provided, they will be reset to default values.
@@ -250,7 +206,7 @@ async def deploy_agent(
         owner: Optional owner for the agent
 
     Returns:
-        AgentResponse: Updated agent configuration with additional processed data
+        Agent: Updated agent configuration
 
     Raises:
         HTTPException:
@@ -270,20 +226,12 @@ async def deploy_agent(
         # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
         existing = await new_agent.get_by_upstream_id()
         if existing:
-            agent_data = await AgentData.get(existing.id)
-            agent_response = await AgentResponse.from_agent(existing, agent_data)
-            return agent_response
+            return existing
 
         # Create new agent
         latest_agent = await new_agent.create()
-        # Process common post-creation actions
-        agent_data = await _process_agent_post_actions(
-            latest_agent, True, "Agent Created"
-        )
-        agent_data = await _process_telegram_config(agent, None, agent_data)
-        agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
-        return agent_response
+        return latest_agent
 
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "Forbidden", "forbidden")
@@ -291,14 +239,7 @@ async def deploy_agent(
     # Update agent
     latest_agent = await agent.override(agent_id)
 
-    # Process common post-update actions
-    agent_data = await _process_agent_post_actions(
-        latest_agent, False, "Agent Overridden"
-    )
-    agent_data = await _process_telegram_config(agent, existing_agent, agent_data)
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    return agent_response
+    return latest_agent
 
 
 async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:

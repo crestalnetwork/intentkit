@@ -1753,8 +1753,8 @@ class AgentResponse(Agent):
                 if isinstance(item, dict):
                     # Only keep safe fields: id, name, description, enabled
                     filtered_item = {
-                        key: item[key] 
-                        for key in ["id", "name", "description", "enabled"] 
+                        key: item[key]
+                        for key in ["id", "name", "description", "enabled"]
                         if key in item
                     }
                     filtered_autonomous.append(filtered_item)
@@ -1765,8 +1765,8 @@ class AgentResponse(Agent):
                     )
                     # Only keep safe fields: id, name, description, enabled
                     filtered_item = {
-                        key: item_dict[key] 
-                        for key in ["id", "name", "description", "enabled"] 
+                        key: item_dict[key]
+                        for key in ["id", "name", "description", "enabled"]
                         if key in item_dict
                     }
                     filtered_autonomous.append(filtered_item)
@@ -1790,7 +1790,10 @@ class AgentResponse(Agent):
         if "skills" in data and data["skills"]:
             filtered_skills = {}
             for skill_name, skill_config in data["skills"].items():
-                if isinstance(skill_config, dict) and skill_config.get("enabled") is True:
+                if (
+                    isinstance(skill_config, dict)
+                    and skill_config.get("enabled") is True
+                ):
                     # Filter out disabled states from the skill configuration
                     original_states = skill_config.get("states", {})
                     filtered_states = {
@@ -1798,7 +1801,7 @@ class AgentResponse(Agent):
                         for state_name, state_value in original_states.items()
                         if state_value != "disabled"
                     }
-                    
+
                     # Only include the skill if it has at least one non-disabled state
                     if filtered_states:
                         filtered_config = {
@@ -1844,7 +1847,6 @@ class AgentResponse(Agent):
             warnings=warnings,
             serialize_as_any=serialize_as_any,
         )
-        
+
         # Use json.dumps to serialize the filtered data with proper indentation
-        import json
         return json.dumps(data, indent=indent, ensure_ascii=False)
