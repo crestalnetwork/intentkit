@@ -182,6 +182,59 @@ class FileType(str, Enum):
     PDF = "pdf"
 
 
+async def store_file(
+    content: bytes,
+    key: str,
+    content_type: Optional[str] = None,
+    size: Optional[int] = None,
+) -> str:
+    """Store raw file bytes with automatic content type detection."""
+    if not _client or not _bucket or not _prefix or not _cdn_url:
+        logger.info("S3 not initialized. Cannot store file bytes.")
+        return ""
+
+    if not content:
+        raise ValueError("File content cannot be empty")
+
+    actual_size = len(content)
+    if size is not None and size != actual_size:
+        raise ValueError(
+            f"Provided size {size} does not match actual content size {actual_size} bytes"
+        )
+
+    effective_size = size if size is not None else actual_size
+
+    detected_content_type = content_type
+    if not detected_content_type:
+        kind = filetype.guess(content)
+        detected_content_type = (
+            kind.mime if kind and kind.mime else "application/octet-stream"
+        )
+
+    prefixed_key = f"{_prefix}{key}"
+    file_obj = BytesIO(content)
+
+    logger.info(
+        "Uploading file to S3 with content type %s and size %s bytes",
+        detected_content_type,
+        effective_size,
+    )
+
+    _client.upload_fileobj(
+        file_obj,
+        _bucket,
+        prefixed_key,
+        ExtraArgs={
+            "ContentType": detected_content_type,
+            "ContentDisposition": "inline",
+        },
+    )
+
+    cdn_url = f"{_cdn_url}/{prefixed_key}"
+    logger.info("File uploaded successfully to %s", cdn_url)
+    return cdn_url
+
+
 async def store_file_bytes(
     file_bytes: bytes,
     key: str,
