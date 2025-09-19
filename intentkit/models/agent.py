@@ -1415,16 +1415,7 @@ class Agent(AgentCreate, AgentPublicInfo):
                 skills_properties = skills_property.get("properties", {})
 
                 if skills_properties:
-                    # Load all skills from the database
-                    # Query all skills grouped by category with enabled status
-                    stmt = select(
-                        SkillTable.category,
-                        func.bool_or(SkillTable.enabled).label("any_enabled"),
-                    ).group_by(SkillTable.category)
-                    result = await db.execute(stmt)
-                    category_status = {row.category: row.any_enabled for row in result}
-
-                    # Query all skills with their price levels for adding x-price-level fields
+                    # Query all enabled skills with their price levels for adding x-price-level fields
                     skills_stmt = select(
                         SkillTable.category,
                         SkillTable.config_name,
@@ -1434,8 +1425,12 @@ class Agent(AgentCreate, AgentPublicInfo):
                     skills_result = await db.execute(skills_stmt)
                     skills_data = {}
                     category_price_levels = {}
+                    enabled_categories = set()
 
                     for row in skills_result:
+                        # Collect enabled categories using a set for deduplication
+                        enabled_categories.add(row.category)
+
                         if row.category not in skills_data:
                             skills_data[row.category] = {}
                             category_price_levels[row.category] = []
@@ -1458,11 +1453,8 @@ class Agent(AgentCreate, AgentPublicInfo):
 
                     # Process each skill in the schema
                     for skill_category in skill_keys:
-                        if skill_category not in category_status:
-                            # If category not found in database, remove it from schema
-                            skills_properties.pop(skill_category, None)
-                        elif not category_status[skill_category]:
-                            # If category exists but all skills are disabled, remove it
+                        if skill_category not in enabled_categories:
+                            # If category not found in enabled categories, remove it from schema
                             skills_properties.pop(skill_category, None)
                         elif filter_owner_api_skills and cls._is_agent_owner_only_skill(
                             skills_properties[skill_category]
