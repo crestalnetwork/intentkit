@@ -1,0 +1,20 @@
+id,name,provider,enabled,input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,supports_skill_calls,supports_structured_output,has_reasoning,supports_search,supports_temperature,supports_frequency_penalty,supports_presence_penalty,api_base,timeout
+gpt-4o,GPT-4o,openai,FALSE,2.5,10,4,128000,4096,4,3,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,,180
+gpt-4o-mini,GPT-4o Mini,openai,FALSE,0.15,0.6,1,128000,4096,3,4,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,,180
+gpt-4.1-nano,GPT-4.1 Nano,openai,TRUE,0.1,0.4,1,128000,4096,3,5,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,180
+gpt-4.1-mini,GPT-4.1 Mini,openai,TRUE,0.4,1.6,2,128000,4096,4,4,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,,180
+gpt-4.1,GPT-4.1,openai,TRUE,2,8,4,128000,4096,5,3,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,,180
+gpt-5-nano,GPT-5 Nano,openai,TRUE,0.05,0.4,1,400000,128000,3,5,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,,180
+gpt-5-mini,GPT-5 Mini,openai,TRUE,0.25,2,2,400000,128000,4,4,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,,180
+gpt-5,GPT-5,openai,TRUE,1.25,10,4,400000,128000,5,3,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,,180
+o3,OpenAI o3,openai,TRUE,2,8,4,200000,100000,5,1,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,,180
+o4-mini,OpenAI o4-mini,openai,TRUE,1.1,4.4,3,128000,4096,4,3,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,,180
+deepseek-chat,Deepseek V3.1,deepseek,TRUE,0.56,1.68,2,128000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,https://api.deepseek.com,300
+deepseek-reasoner,DeepSeek V3.1 (Thinking Mode),deepseek,TRUE,0.56,1.68,2,128000,32000,5,1,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,https://api.deepseek.com,300
+grok-2,Grok 2,xai,TRUE,2,10,4,120000,4096,3,3,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,,180
+grok-3,Grok 3,xai,TRUE,3,15,4,131072,4096,5,3,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,,180
+grok-3-mini,Grok 3 Mini,xai,TRUE,0.3,0.5,2,131072,4096,5,3,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,,180
+eternalai,Eternal AI (Llama-3.3-70B),eternal,FALSE,0.25,0.75,2,64000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,https://api.eternalai.org/v1,300
+reigent,REI Network,reigent,FALSE,0.5,1.5,3,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.reisearch.box/v1,300
+venice-uncensored,Venice Uncensored,venice,TRUE,0.5,2,3,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.venice.ai/api/v1,300
+venice-llama-4-maverick-17b,Venice Llama 4 Maverick 17B,venice,TRUE,1.5,6,4,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.venice.ai/api/v1,300

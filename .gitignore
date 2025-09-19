@@ -176,4 +176,3 @@ wallet_data.txt
 # export/import data
 *.response
 scripts/*.yaml
-skills.csv
