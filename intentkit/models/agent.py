@@ -572,7 +572,7 @@ class AgentCore(BaseModel):
                 "x-group": "onchain",
             },
         ),
-    ]
+    ] = "cdp"
     readonly_wallet_address: Annotated[
         Optional[str],
         PydanticField(
