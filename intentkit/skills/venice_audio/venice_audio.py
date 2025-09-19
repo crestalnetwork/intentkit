@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
-from intentkit.utils.s3 import FileType, store_file_bytes
+from intentkit.utils.s3 import store_file
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
     ) -> Dict[str, Any]:
         """
         Generates audio using the configured voice model via Venice AI TTS /audio/speech endpoint.
-        Stores the resulting audio using store_file_bytes.
+        Stores the resulting audio using the generic S3 helper.
         Returns a dictionary containing audio details on success, or API error details on failure.
         """
         context = self.get_context()
@@ -155,11 +155,32 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                     key = f"{self.category}/{voice_model}/{audio_hash}.{file_extension}"
 
                     size_limit = 1024 * 20  # 20Mb Size limit
-                    stored_url = await store_file_bytes(
-                        file_bytes=audio_bytes,
+                    audio_size = len(audio_bytes)
+                    if audio_size > size_limit:
+                        message = f"Generated audio exceeds the allowed size of {size_limit} bytes."
+                        logger.error(
+                            "Failed to store audio (Voice: %s): %s",
+                            voice_model,
+                            message,
+                        )
+                        return {
+                            "error": True,
+                            "error_type": "FileSizeLimitExceeded",
+                            "message": message,
+                            "voice_model": voice_model,
+                            "requested_format": final_response_format,
+                        }
+
+                    mime_type = (
+                        content_type_header.split(";", 1)[0].strip()
+                        if content_type_header
+                        else None
+                    )
+                    stored_url = await store_file(
+                        content=audio_bytes,
                         key=key,
-                        file_type=FileType.AUDIO,
-                        size_limit_bytes=size_limit,
+                        content_type=mime_type,
+                        size=audio_size,
                     )
 
                     if not stored_url:
@@ -182,7 +203,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                     return {
                         "audio_url": stored_url,
                         "audio_bytes_sha256": audio_hash,
-                        "content_type": content_type_header,
+                        "content_type": mime_type or content_type_header,
                         "voice_model": voice_model,
                         "tts_engine": tts_model_id,
                         "speed": speed if speed is not None else 1.0,
