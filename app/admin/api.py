@@ -39,7 +39,6 @@ from intentkit.models.agent import (
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_db
-from intentkit.models.user import User
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 
@@ -75,25 +74,25 @@ async def validate_agent_create(
         - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
-    if not input.owner:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Owner is required"
-        )
-    max_fee = 100
-    if user_id:
-        if input.owner != user_id:
-            raise IntentKitAPIError(
-                status_code=400,
-                key="BadRequest",
-                message="Owner does not match user ID",
-            )
-        user = await User.get(user_id)
-        if user:
-            max_fee += user.nft_count * 10
-    if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Fee percentage too high"
-        )
+    # if not input.owner:
+    #     raise IntentKitAPIError(
+    #         status_code=400, key="BadRequest", message="Owner is required"
+    #     )
+    # max_fee = 100
+    # if user_id:
+    #     if input.owner != user_id:
+    #         raise IntentKitAPIError(
+    #             status_code=400,
+    #             key="BadRequest",
+    #             message="Owner does not match user ID",
+    #         )
+    # user = await User.get(user_id)
+    # if user:
+    #     max_fee += user.nft_count * 10
+    # if input.fee_percentage and input.fee_percentage > max_fee:
+    #     raise IntentKitAPIError(
+    #         status_code=400, key="BadRequest", message="Fee percentage too high"
+    #     )
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
@@ -125,31 +124,31 @@ async def validate_agent_update(
         - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
-    if not input.owner:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Owner is required"
-        )
-    max_fee = 100
-    if user_id:
-        if input.owner != user_id:
-            raise IntentKitAPIError(
-                status_code=400,
-                key="BadRequest",
-                message="Owner does not match user ID",
-            )
-        user = await User.get(user_id)
-        if user:
-            max_fee += user.nft_count * 10
-    if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Fee percentage too high"
-        )
+    # if not input.owner:
+    #     raise IntentKitAPIError(
+    #         status_code=400, key="BadRequest", message="Owner is required"
+    #     )
+    # max_fee = 100
+    # if user_id:
+    #     if input.owner != user_id:
+    #         raise IntentKitAPIError(
+    #             status_code=400,
+    #             key="BadRequest",
+    #             message="Owner does not match user ID",
+    #         )
+    #     user = await User.get(user_id)
+    #     if user:
+    #         max_fee += user.nft_count * 10
+    # if input.fee_percentage and input.fee_percentage > max_fee:
+    #     raise IntentKitAPIError(
+    #         status_code=400, key="BadRequest", message="Fee percentage too high"
+    #     )
     agent = await Agent.get(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
         )
-    max_fee = 100
+    # max_fee = 100
     if user_id:
         if agent.owner != user_id:
             raise IntentKitAPIError(
@@ -157,13 +156,13 @@ async def validate_agent_update(
                 key="BadRequest",
                 message="Owner does not match user ID",
             )
-        user = await User.get(user_id)
-        if user:
-            max_fee += user.nft_count * 10
-    if input.fee_percentage and input.fee_percentage > max_fee:
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Fee percentage too high"
-        )
+        # user = await User.get(user_id)
+        #     if user:
+        #         max_fee += user.nft_count * 10
+        # if input.fee_percentage and input.fee_percentage > max_fee:
+        # raise IntentKitAPIError(
+        #     status_code=400, key="BadRequest", message="Fee percentage too high"
+        # )
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
