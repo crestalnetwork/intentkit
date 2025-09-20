@@ -78,9 +78,6 @@ class Config:
         self.debug_auth_enabled = self.load("DEBUG_AUTH_ENABLED", "false") == "true"
         self.debug_username = self.load("DEBUG_USERNAME")
         self.debug_password = self.load("DEBUG_PASSWORD")
-        self.admin_llm_skill_control = (
-            self.load("ADMIN_LLM_SKILL_CONTROL", "false") == "true"
-        )
         # Payment
         self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
         # Open API for agent

@@ -7,7 +7,6 @@ from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
@@ -37,9 +36,7 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
     """
     return JSONResponse(
-        content=await Agent.get_json_schema(
-            db, admin_llm_skill_control=config.admin_llm_skill_control
-        ),
+        content=await Agent.get_json_schema(db),
         media_type="application/json",
     )
 

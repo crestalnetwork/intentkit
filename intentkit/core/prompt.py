@@ -204,7 +204,6 @@ def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
 async def explain_prompt(message: str) -> str:
     """
     Process message to replace @skill:*:* patterns with (call skill xxxxx) format.
-    This function is used when admin_llm_skill_control is enabled.
 
     Args:
         message (str): The input message to process
@@ -325,8 +324,7 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Option
     elif entrypoint == AuthorType.TRIGGER.value:
         entrypoint_prompt = "\n\n" + _build_autonomous_task_prompt(agent, context)
 
-    # Process with admin LLM skill control if enabled
-    if entrypoint_prompt and config.admin_llm_skill_control:
+    if entrypoint_prompt:
         entrypoint_prompt = await explain_prompt(entrypoint_prompt)
 
     return entrypoint_prompt
@@ -367,11 +365,8 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
     prompt = build_agent_prompt(agent, agent_data)
     escaped_prompt = escape_prompt(prompt)
 
-    # Process with admin LLM skill control if enabled
     async def get_base_prompt():
-        if config.admin_llm_skill_control:
-            return await explain_prompt(escaped_prompt)
-        return escaped_prompt
+        return await explain_prompt(escaped_prompt)
 
     # Build prompt array
     prompt_array = [
@@ -410,8 +405,7 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
         internal_info = build_internal_info_prompt(context)
         final_system_prompt = f"{final_system_prompt}{internal_info}"
 
-        # Process prompt_append with admin LLM skill control if needed
-        if agent.prompt_append and config.admin_llm_skill_control:
+        if agent.prompt_append:
             # Find the system message in prompt_array and process it
             for i, (role, content) in enumerate(prompt_array):
                 if role == "system":

@@ -16,8 +16,8 @@ from intentkit.models.agent_data import AgentData
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
 from intentkit.models.db import get_session
-from intentkit.models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
-from intentkit.models.skill import SkillTable
+from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.skill import Skill
 from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
@@ -1328,7 +1328,6 @@ class Agent(AgentCreate, AgentPublicInfo):
         cls,
         db: AsyncSession = None,
         filter_owner_api_skills: bool = False,
-        admin_llm_skill_control: bool = True,
     ) -> Dict:
         """Get the JSON schema for Agent model with all $ref references resolved.
 
@@ -1338,7 +1337,6 @@ class Agent(AgentCreate, AgentPublicInfo):
         Args:
             db: Database session (optional, will create if not provided)
             filter_owner_api_skills: Whether to filter out skills that require agent owner API keys
-            admin_llm_skill_control: Whether to enable admin LLM and skill control features
 
         Returns:
             Dict containing the complete JSON schema for the Agent model
@@ -1346,9 +1344,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         # Get database session if not provided
         if db is None:
             async with get_session() as session:
-                return await cls.get_json_schema(
-                    session, filter_owner_api_skills, admin_llm_skill_control
-                )
+                return await cls.get_json_schema(session, filter_owner_api_skills)
 
         # Get the schema file path relative to this file
         current_dir = Path(__file__).parent
@@ -1361,138 +1357,120 @@ class Agent(AgentCreate, AgentPublicInfo):
             # Get the model property from the schema
             model_property = schema.get("properties", {}).get("model", {})
 
-            if admin_llm_skill_control:
-                # Process model property - use LLMModelInfo as primary source
-                if model_property:
-                    # Query all LLM models from the database
-                    stmt = select(LLMModelInfoTable).where(LLMModelInfoTable.enabled)
-                    result = await db.execute(stmt)
-                    models = result.scalars().all()
+            # Process model property using defaults merged with database overrides
+            if model_property:
+                new_enum = []
+                new_enum_title = []
+                new_enum_category = []
+                new_enum_support_skill = []
 
-                    # Create new lists based on LLMModelInfo
-                    new_enum = []
-                    new_enum_title = []
-                    new_enum_category = []
-                    new_enum_support_skill = []
+                for model_info in await LLMModelInfo.get_all(db):
+                    if not model_info.enabled:
+                        continue
 
-                    # Process each model from database
-                    for model in models:
-                        model_info = LLMModelInfo.model_validate(model)
+                    provider = (
+                        LLMProvider(model_info.provider)
+                        if isinstance(model_info.provider, str)
+                        else model_info.provider
+                    )
 
-                        # Add model ID to enum
-                        new_enum.append(model_info.id)
+                    new_enum.append(model_info.id)
+                    new_enum_title.append(model_info.name)
+                    new_enum_category.append(provider.display_name())
+                    new_enum_support_skill.append(model_info.supports_skill_calls)
 
-                        # Add model name as title
-                        new_enum_title.append(model_info.name)
+                model_property["enum"] = new_enum
+                model_property["x-enum-title"] = new_enum_title
+                model_property["x-enum-category"] = new_enum_category
+                model_property["x-support-skill"] = new_enum_support_skill
 
-                        # Add provider display name as category
-                        provider = (
-                            LLMProvider(model_info.provider)
-                            if isinstance(model_info.provider, str)
-                            else model_info.provider
+                if (
+                    "default" in model_property
+                    and model_property["default"] not in new_enum
+                    and new_enum
+                ):
+                    model_property["default"] = new_enum[0]
+
+            # Process skills property using defaults merged with database overrides
+            skills_property = schema.get("properties", {}).get("skills", {})
+            skills_properties = skills_property.get("properties", {})
+
+            if skills_properties:
+                skill_states_map: dict[str, dict[str, Skill]] = {}
+
+                for skill_model in await Skill.get_all(db):
+                    if not skill_model.config_name:
+                        continue
+                    category_states = skill_states_map.setdefault(
+                        skill_model.category, {}
+                    )
+                    if skill_model.enabled:
+                        category_states[skill_model.config_name] = skill_model
+                    else:
+                        category_states.pop(skill_model.config_name, None)
+
+                enabled_categories = {
+                    category for category, states in skill_states_map.items() if states
+                }
+
+                category_avg_price_levels = {}
+                skills_data = {}
+                for category, states in skill_states_map.items():
+                    if not states:
+                        continue
+                    price_levels = [
+                        state.price_level
+                        for state in states.values()
+                        if state.price_level is not None
+                    ]
+                    if price_levels:
+                        category_avg_price_levels[category] = int(
+                            sum(price_levels) / len(price_levels)
                         )
-                        new_enum_category.append(provider.display_name())
+                    skills_data[category] = {
+                        config_name: state.price_level
+                        for config_name, state in states.items()
+                    }
 
-                        # Add skill support information
-                        new_enum_support_skill.append(model_info.supports_skill_calls)
+                skill_keys = list(skills_properties.keys())
 
-                    # Update the schema with the new lists constructed from LLMModelInfo
-                    model_property["enum"] = new_enum
-                    model_property["x-enum-title"] = new_enum_title
-                    model_property["x-enum-category"] = new_enum_category
-                    model_property["x-support-skill"] = new_enum_support_skill
-
-                    # If the default model is not in the new enum, update it if possible
-                    if (
-                        "default" in model_property
-                        and model_property["default"] not in new_enum
-                        and new_enum
+                for skill_category in skill_keys:
+                    if skill_category not in enabled_categories:
+                        skills_properties.pop(skill_category, None)
+                    elif filter_owner_api_skills and cls._is_agent_owner_only_skill(
+                        skills_properties[skill_category]
                     ):
-                        model_property["default"] = new_enum[0]
-
-                # Process skills property
-                skills_property = schema.get("properties", {}).get("skills", {})
-                skills_properties = skills_property.get("properties", {})
-
-                if skills_properties:
-                    # Query all enabled skills with their price levels for adding x-price-level fields
-                    skills_stmt = select(
-                        SkillTable.category,
-                        SkillTable.config_name,
-                        SkillTable.price_level,
-                        SkillTable.enabled,
-                    ).where(SkillTable.enabled)
-                    skills_result = await db.execute(skills_stmt)
-                    skills_data = {}
-                    category_price_levels = {}
-                    enabled_categories = set()
-
-                    for row in skills_result:
-                        # Collect enabled categories using a set for deduplication
-                        enabled_categories.add(row.category)
-
-                        if row.category not in skills_data:
-                            skills_data[row.category] = {}
-                            category_price_levels[row.category] = []
-
-                        if row.config_name:
-                            skills_data[row.category][row.config_name] = row.price_level
-
-                        if row.price_level is not None:
-                            category_price_levels[row.category].append(row.price_level)
-
-                    # Calculate average price levels for categories
-                    category_avg_price_levels = {}
-                    for category, price_levels in category_price_levels.items():
-                        if price_levels:
-                            avg_price_level = int(sum(price_levels) / len(price_levels))
-                            category_avg_price_levels[category] = avg_price_level
-
-                    # Create a copy of keys to avoid modifying during iteration
-                    skill_keys = list(skills_properties.keys())
-
-                    # Process each skill in the schema
-                    for skill_category in skill_keys:
-                        if skill_category not in enabled_categories:
-                            # If category not found in enabled categories, remove it from schema
-                            skills_properties.pop(skill_category, None)
-                        elif filter_owner_api_skills and cls._is_agent_owner_only_skill(
-                            skills_properties[skill_category]
-                        ):
-                            # If filtering owner API skills and this skill requires it, remove it
-                            skills_properties.pop(skill_category, None)
-                            logger.info(
-                                f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
+                        skills_properties.pop(skill_category, None)
+                        logger.info(
+                            f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
+                        )
+                    else:
+                        if skill_category in category_avg_price_levels:
+                            skills_properties[skill_category]["x-avg-price-level"] = (
+                                category_avg_price_levels[skill_category]
                             )
-                        else:
-                            # Add x-avg-price-level to category level
-                            if skill_category in category_avg_price_levels:
-                                skills_properties[skill_category][
-                                    "x-avg-price-level"
-                                ] = category_avg_price_levels[skill_category]
 
-                            # Add x-price-level to individual skill states
-                            if skill_category in skills_data:
-                                skill_states = (
-                                    skills_properties[skill_category]
-                                    .get("properties", {})
-                                    .get("states", {})
-                                    .get("properties", {})
-                                )
-                                for state_name, state_config in skill_states.items():
-                                    if (
-                                        state_name in skills_data[skill_category]
-                                        and skills_data[skill_category][state_name]
-                                        is not None
-                                    ):
-                                        state_config["x-price-level"] = skills_data[
-                                            skill_category
-                                        ][state_name]
+                        if skill_category in skills_data:
+                            skill_states = (
+                                skills_properties[skill_category]
+                                .get("properties", {})
+                                .get("states", {})
+                                .get("properties", {})
+                            )
+                            for state_name, state_config in skill_states.items():
+                                if (
+                                    state_name in skills_data[skill_category]
+                                    and skills_data[skill_category][state_name]
+                                    is not None
+                                ):
+                                    state_config["x-price-level"] = skills_data[
+                                        skill_category
+                                    ][state_name]
 
             # Log the changes for debugging
             logger.debug(
-                f"Schema processed with LLM and skill controls enabled: {admin_llm_skill_control}, "
-                f"filtered owner API skills: {filter_owner_api_skills}"
+                "Schema processed with merged LLM/skill defaults; filtered owner API skills: %s",
+                filter_owner_api_skills,
             )
 
             return schema
