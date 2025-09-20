@@ -5,14 +5,15 @@ import sys
 
 from sqlalchemy import select
 
-from app.services.tg.bot import pool
-from app.services.tg.bot.pool import BotPool, bot_by_token, is_agent_failed
-from app.services.tg.utils.cleanup import clean_token_str
 from intentkit.config.config import config
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.models.db import get_session, init_db
 from intentkit.models.redis import init_redis
+
+from app.services.tg.bot import pool
+from app.services.tg.bot.pool import BotPool, bot_by_token, is_agent_failed
+from app.services.tg.utils.cleanup import clean_token_str
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,6 @@ async def run_telegram_server() -> None:
     # Signal handler for graceful shutdown
     def signal_handler(signum, frame):
         logger.info("Received termination signal. Shutting down gracefully...")
-        scheduler.shutdown()
         sys.exit(0)
 
     # Register signal handlers

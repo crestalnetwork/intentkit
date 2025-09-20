@@ -100,5 +100,11 @@ build-backend = "hatchling.build"
 [tool.ruff.lint]
 extend-select = ["I"]
 
+[tool.ruff.lint.isort]
+force-single-line = false
+known-first-party = ["intentkit"]
+known-local-folder = ["app"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
 [tool.deptry]
 known_first_party = ["intentkit"]

@@ -10,6 +10,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
 
+from intentkit.models.agent import AgentUpdate
+from intentkit.utils.error import IntentKitAPIError
+
 from app.admin.generator import generate_validated_agent_schema
 from app.admin.generator.conversation_service import (
     get_conversation_history,
@@ -21,8 +24,6 @@ from app.admin.generator.llm_logger import (
     create_llm_logger,
 )
 from app.admin.generator.utils import generate_tags_from_nation_api
-from intentkit.models.agent import AgentUpdate
-from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 

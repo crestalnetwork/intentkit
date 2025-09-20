@@ -13,7 +13,6 @@ from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.admin.account_checking import run_quick_checks, run_slow_checks
 from intentkit.config.config import config
 from intentkit.models.db import init_db
 from intentkit.models.redis import (
@@ -22,6 +21,8 @@ from intentkit.models.redis import (
     init_redis,
     send_heartbeat,
 )
+
+from app.admin.account_checking import run_quick_checks, run_slow_checks
 
 logger = logging.getLogger(__name__)
 

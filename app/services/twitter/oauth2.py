@@ -3,9 +3,10 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.auth import verify_admin_jwt
 from intentkit.clients.twitter import OAuth2UserHandler
 from intentkit.config.config import config
+
+from app.auth import verify_admin_jwt
 
 # Initialize Twitter OAuth2 client
 oauth2_user_handler = OAuth2UserHandler(

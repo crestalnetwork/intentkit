@@ -4,8 +4,9 @@ from aiogram import Bot
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from app.services.tg.utils.cleanup import clean_token_str
 from intentkit.models.agent import Agent
+
+from app.services.tg.utils.cleanup import clean_token_str
 
 
 class TelegramConfig(TypedDict):

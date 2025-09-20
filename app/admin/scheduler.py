@@ -6,12 +6,13 @@ from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 from intentkit.config.config import config
 from intentkit.core.agent import update_agent_action_cost
 from intentkit.core.credit import refill_all_free_credits
 from intentkit.models.agent_data import AgentQuota
 from intentkit.models.redis import get_redis, send_heartbeat
+
+from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,6 @@ def create_scheduler():
         trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
         id="reset_daily_quotas",
         name="Reset daily quotas",
-        replace_existing=True,
     )
 
     # Reset monthly quotas at UTC 00:00 on the first day of each month
@@ -62,7 +62,6 @@ def create_scheduler():
         trigger=CronTrigger(day=1, hour=0, minute=0, timezone="UTC"),
         id="reset_monthly_quotas",
         name="Reset monthly quotas",
-        replace_existing=True,
     )
 
     # Check for expiring tokens every 5 minutes
@@ -71,7 +70,6 @@ def create_scheduler():
         trigger=CronTrigger(minute="*/5", timezone="UTC"),  # Run every 5 minutes
         id="refresh_twitter_tokens",
         name="Refresh expiring Twitter tokens",
-        replace_existing=True,
     )
 
     # Refill free credits every 10 minutes
@@ -80,7 +78,6 @@ def create_scheduler():
         trigger=CronTrigger(minute="20", timezone="UTC"),  # Run every hour
         id="refill_free_credits",
         name="Refill free credits",
-        replace_existing=True,
     )
 
     # Update agent action costs hourly
@@ -89,7 +86,6 @@ def create_scheduler():
         trigger=CronTrigger(minute=40, timezone="UTC"),
         id="update_agent_action_cost",
         name="Update agent action costs",
-        replace_existing=True,
     )
 
     # Send heartbeat every minute
@@ -99,7 +95,6 @@ def create_scheduler():
             trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
             id="scheduler_heartbeat",
             name="Scheduler Heartbeat",
-            replace_existing=True,
         )
 
     return scheduler
