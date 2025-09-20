@@ -7,9 +7,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl \
-        build-essential \
-        libpq-dev \
+    curl \
+    build-essential \
+    libpq-dev \
     && apt-get purge -y --auto-remove curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -26,6 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG RELEASE
 ENV RELEASE=$RELEASE
 ENV PATH="/app/.venv/bin:$PATH"
+ENV UVICORN_LOOP=asyncio
 
 # Command to run the application
 CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "80"]
