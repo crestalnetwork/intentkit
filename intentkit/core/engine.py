@@ -368,10 +368,7 @@ async def stream_agent(message: ChatMessageCreate):
         ]
 
     # Process input message to handle @skill patterns
-    if config.admin_llm_skill_control:
-        input_message = await explain_prompt(input.message)
-    else:
-        input_message = input.message
+    input_message = await explain_prompt(input.message)
 
     # super mode
     recursion_limit = 30

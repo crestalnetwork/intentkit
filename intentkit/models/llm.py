@@ -1,8 +1,10 @@
+import csv
 import json
 import logging
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Any, Optional
 
 from intentkit.models.app_setting import AppSetting
@@ -13,11 +15,80 @@ from intentkit.utils.error import IntentKitLookUpError
 from langchain_core.language_models import LanguageModelLike
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
 _credit_per_usdc = None
 FOURPLACES = Decimal("0.0001")
+
+
+def _parse_bool(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"true", "1", "yes"}
+
+
+def _parse_optional_int(value: Optional[str]) -> Optional[int]:
+    if value is None:
+        return None
+    value = value.strip()
+    return int(value) if value else None
+
+
+def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
+    """Load default LLM models from a CSV file."""
+
+    path = Path(__file__).with_name("llm.csv")
+    if not path.exists():
+        logger.warning("Default LLM CSV not found at %s", path)
+        return {}
+
+    defaults: dict[str, "LLMModelInfo"] = {}
+    with path.open(newline="", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            try:
+                timestamp = datetime.now(timezone.utc)
+                model = LLMModelInfo(
+                    id=row["id"],
+                    name=row["name"],
+                    provider=LLMProvider(row["provider"]),
+                    enabled=_parse_bool(row.get("enabled")),
+                    input_price=Decimal(row["input_price"]),
+                    output_price=Decimal(row["output_price"]),
+                    price_level=_parse_optional_int(row.get("price_level")),
+                    context_length=int(row["context_length"]),
+                    output_length=int(row["output_length"]),
+                    intelligence=int(row["intelligence"]),
+                    speed=int(row["speed"]),
+                    supports_image_input=_parse_bool(row.get("supports_image_input")),
+                    supports_skill_calls=_parse_bool(row.get("supports_skill_calls")),
+                    supports_structured_output=_parse_bool(
+                        row.get("supports_structured_output")
+                    ),
+                    has_reasoning=_parse_bool(row.get("has_reasoning")),
+                    supports_search=_parse_bool(row.get("supports_search")),
+                    supports_temperature=_parse_bool(row.get("supports_temperature")),
+                    supports_frequency_penalty=_parse_bool(
+                        row.get("supports_frequency_penalty")
+                    ),
+                    supports_presence_penalty=_parse_bool(
+                        row.get("supports_presence_penalty")
+                    ),
+                    api_base=row.get("api_base", "").strip() or None,
+                    timeout=int(row.get("timeout", "") or 180),
+                    created_at=timestamp,
+                    updated_at=timestamp,
+                )
+            except Exception as exc:
+                logger.error(
+                    "Failed to load default LLM model %s: %s", row.get("id"), exc
+                )
+                continue
+            defaults[model.id] = model
+
+    return defaults
 
 
 class LLMProvider(str, Enum):
@@ -210,6 +281,26 @@ class LLMModelInfo(BaseModel):
         # Not found anywhere
         raise IntentKitLookUpError(f"Model {model_id} not found")
 
+    @classmethod
+    async def get_all(cls, session: AsyncSession | None = None) -> list["LLMModelInfo"]:
+        """Return all models merged from defaults and database overrides."""
+
+        if session is None:
+            async with get_session() as db:
+                return await cls.get_all(session=db)
+
+        models: dict[str, "LLMModelInfo"] = {
+            model_id: model.model_copy(deep=True)
+            for model_id, model in AVAILABLE_MODELS.items()
+        }
+
+        result = await session.execute(select(LLMModelInfoTable))
+        for row in result.scalars():
+            model_info = cls.model_validate(row)
+            models[model_info.id] = model_info
+
+        return list(models.values())
+
     async def calculate_cost(self, input_tokens: int, output_tokens: int) -> Decimal:
         global _credit_per_usdc
         if not _credit_per_usdc:
@@ -230,325 +321,8 @@ class LLMModelInfo(BaseModel):
         return (input_cost + output_cost).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
 
-# Define all available models
-AVAILABLE_MODELS = {
-    # OpenAI models
-    "gpt-4o": LLMModelInfo(
-        id="gpt-4o",
-        name="GPT-4o",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("2.50"),  # per 1M input tokens
-        output_price=Decimal("10.00"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=4,
-        speed=3,
-        supports_image_input=True,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-4o-mini": LLMModelInfo(
-        id="gpt-4o-mini",
-        name="GPT-4o Mini",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("0.15"),  # per 1M input tokens
-        output_price=Decimal("0.60"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=3,
-        speed=4,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-5-nano": LLMModelInfo(
-        id="gpt-5-nano",
-        name="GPT-5 Nano",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("0.05"),  # per 1M input tokens
-        output_price=Decimal("0.4"),  # per 1M output tokens
-        context_length=400000,
-        output_length=128000,
-        intelligence=3,
-        speed=5,
-        supports_image_input=True,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_temperature=False,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-5-mini": LLMModelInfo(
-        id="gpt-5-mini",
-        name="GPT-5 Mini",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("0.25"),  # per 1M input tokens
-        output_price=Decimal("2"),  # per 1M output tokens
-        context_length=400000,
-        output_length=128000,
-        intelligence=4,
-        speed=4,
-        supports_image_input=True,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_temperature=False,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-5": LLMModelInfo(
-        id="gpt-5",
-        name="GPT-5",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("1.25"),  # per 1M input tokens
-        output_price=Decimal("10.00"),  # per 1M output tokens
-        context_length=400000,
-        output_length=128000,
-        intelligence=5,
-        speed=3,
-        supports_image_input=True,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_temperature=False,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-4.1-nano": LLMModelInfo(
-        id="gpt-4.1-nano",
-        name="GPT-4.1 Nano",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("0.1"),  # per 1M input tokens
-        output_price=Decimal("0.4"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=3,
-        speed=5,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-4.1-mini": LLMModelInfo(
-        id="gpt-4.1-mini",
-        name="GPT-4.1 Mini",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("0.4"),  # per 1M input tokens
-        output_price=Decimal("1.6"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=4,
-        speed=4,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "gpt-4.1": LLMModelInfo(
-        id="gpt-4.1",
-        name="GPT-4.1",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("2.00"),  # per 1M input tokens
-        output_price=Decimal("8.00"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=5,
-        speed=3,
-        supports_image_input=True,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    "o4-mini": LLMModelInfo(
-        id="o4-mini",
-        name="OpenAI o4-mini",
-        provider=LLMProvider.OPENAI,
-        input_price=Decimal("1.10"),  # per 1M input tokens
-        output_price=Decimal("4.40"),  # per 1M output tokens
-        context_length=128000,
-        output_length=4096,
-        intelligence=4,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        has_reasoning=True,  # Has strong reasoning capabilities
-        supports_temperature=False,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-    ),
-    # Deepseek models
-    "deepseek-chat": LLMModelInfo(
-        id="deepseek-chat",
-        name="Deepseek V3 (0324)",
-        provider=LLMProvider.DEEPSEEK,
-        input_price=Decimal("0.27"),
-        output_price=Decimal("1.10"),
-        context_length=60000,
-        output_length=4096,
-        intelligence=4,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        api_base="https://api.deepseek.com",
-        timeout=300,
-    ),
-    "deepseek-reasoner": LLMModelInfo(
-        id="deepseek-reasoner",
-        name="Deepseek R1",
-        provider=LLMProvider.DEEPSEEK,
-        input_price=Decimal("0.55"),
-        output_price=Decimal("2.19"),
-        context_length=60000,
-        output_length=4096,
-        intelligence=4,
-        speed=2,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        has_reasoning=True,  # Has strong reasoning capabilities
-        api_base="https://api.deepseek.com",
-        timeout=300,
-    ),
-    # XAI models
-    "grok-2": LLMModelInfo(
-        id="grok-2",
-        name="Grok 2",
-        provider=LLMProvider.XAI,
-        input_price=Decimal("2"),
-        output_price=Decimal("10"),
-        context_length=120000,
-        output_length=4096,
-        intelligence=3,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        timeout=180,
-    ),
-    "grok-3": LLMModelInfo(
-        id="grok-3",
-        name="Grok 3",
-        provider=LLMProvider.XAI,
-        input_price=Decimal("3"),
-        output_price=Decimal("15"),
-        context_length=131072,
-        output_length=4096,
-        intelligence=5,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_search=True,
-        timeout=180,
-    ),
-    "grok-3-mini": LLMModelInfo(
-        id="grok-3-mini",
-        name="Grok 3 Mini",
-        provider=LLMProvider.XAI,
-        input_price=Decimal("0.3"),
-        output_price=Decimal("0.5"),
-        context_length=131072,
-        output_length=4096,
-        intelligence=5,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        has_reasoning=True,  # Has strong reasoning capabilities
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,  # Grok-3-mini doesn't support presence_penalty
-        timeout=180,
-    ),
-    # Eternal AI models
-    "eternalai": LLMModelInfo(
-        id="eternalai",
-        name="Eternal AI (Llama-3.3-70B)",
-        provider=LLMProvider.ETERNAL,
-        input_price=Decimal("0.25"),
-        output_price=Decimal("0.75"),
-        context_length=60000,
-        output_length=4096,
-        intelligence=4,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        api_base="https://api.eternalai.org/v1",
-        timeout=300,
-    ),
-    # Reigent models
-    "reigent": LLMModelInfo(
-        id="reigent",
-        name="REI Network",
-        provider=LLMProvider.REIGENT,
-        input_price=Decimal("0.50"),  # Placeholder price, update with actual pricing
-        output_price=Decimal("1.50"),  # Placeholder price, update with actual pricing
-        context_length=32000,
-        output_length=4096,
-        intelligence=4,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_temperature=False,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-        api_base="https://api.reisearch.box/v1",
-        timeout=300,
-    ),
-    # Venice models
-    "venice-uncensored": LLMModelInfo(
-        id="venice-uncensored",
-        name="Venice Uncensored",
-        provider=LLMProvider.VENICE,
-        input_price=Decimal("0.50"),  # Placeholder price, update with actual pricing
-        output_price=Decimal("2.00"),  # Placeholder price, update with actual pricing
-        context_length=32000,
-        output_length=4096,
-        intelligence=3,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_temperature=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-        api_base="https://api.venice.ai/api/v1",
-        timeout=300,
-    ),
-    "venice-llama-4-maverick-17b": LLMModelInfo(
-        id="venice-llama-4-maverick-17b",
-        name="Venice Llama-4 Maverick 17B",
-        provider=LLMProvider.VENICE,
-        input_price=Decimal("1.50"),
-        output_price=Decimal("6.00"),
-        context_length=32000,
-        output_length=4096,
-        intelligence=3,
-        speed=3,
-        supports_image_input=False,
-        supports_skill_calls=True,
-        supports_structured_output=True,
-        supports_temperature=True,
-        supports_frequency_penalty=False,
-        supports_presence_penalty=False,
-        api_base="https://api.venice.ai/api/v1",
-        timeout=300,
-    ),
-}
+# Default models loaded from CSV
+AVAILABLE_MODELS = _load_default_llm_models()
 
 
 class LLMModel(BaseModel):
@@ -563,7 +337,7 @@ class LLMModel(BaseModel):
     async def model_info(self) -> LLMModelInfo:
         """Get the model information with caching.
 
-        First tries to get from cache, then database, then AVAILABLE_MODELS.
+        First tries to get from cache, then database, then default models loaded from CSV.
         Raises ValueError if model is not found anywhere.
         """
         model_info = await LLMModelInfo.get(self.model_name)

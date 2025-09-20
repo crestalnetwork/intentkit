@@ -2,12 +2,11 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.models.db import get_db
-from intentkit.models.llm import LLMModelInfo, LLMModelInfoTable, LLMProvider
-from intentkit.models.skill import Skill, SkillTable
+from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.skill import Skill
 
 # Create a readonly router for metadata endpoints
 metadata_router_readonly = APIRouter(tags=["Metadata"])
@@ -33,13 +32,7 @@ async def get_skills(db: AsyncSession = Depends(get_db)):
     * `List[Skill]` - List of all skills
     """
     try:
-        # Query all skills from the database
-        stmt = select(SkillTable)
-        result = await db.execute(stmt)
-        skills = result.scalars().all()
-
-        # Convert to Skill models
-        return [Skill.model_validate(skill) for skill in skills]
+        return await Skill.get_all(db)
     except Exception as e:
         logging.error(f"Error getting skills: {e}")
         raise
@@ -59,16 +52,8 @@ async def get_llms(db: AsyncSession = Depends(get_db)):
     * `List[LLMModelInfoWithProviderName]` - List of all LLM models with provider display names
     """
     try:
-        # Query all LLM models from the database
-        stmt = select(LLMModelInfoTable)
-        result = await db.execute(stmt)
-        models = result.scalars().all()
-
-        # Convert to LLMModelInfoWithProviderName models
         result_models = []
-        for model in models:
-            model_info = LLMModelInfo.model_validate(model)
-            # Convert provider string to LLMProvider enum if needed
+        for model_info in await LLMModelInfo.get_all(db):
             provider = (
                 LLMProvider(model_info.provider)
                 if isinstance(model_info.provider, str)

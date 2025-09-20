@@ -1,6 +1,9 @@
+import csv
 import json
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 from typing import Annotated, Any, Dict, Optional
 
 from intentkit.models.base import Base
@@ -19,6 +22,9 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 
 class AgentSkillDataTable(Base):
@@ -349,6 +355,76 @@ class ThreadSkillData(ThreadSkillDataCreate):
             await db.commit()
 
 
+def _skill_parse_bool(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"true", "1", "yes"}
+
+
+def _skill_parse_optional_int(value: Optional[str]) -> Optional[int]:
+    if value is None:
+        return None
+    value = value.strip()
+    return int(value) if value else None
+
+
+def _skill_parse_decimal(value: Optional[str], default: str = "0") -> Decimal:
+    value = (value or "").strip()
+    if not value:
+        value = default
+    return Decimal(value)
+
+
+def _load_default_skills() -> tuple[dict[str, "Skill"], dict[tuple[str, str], "Skill"]]:
+    """Load default skills from CSV into lookup maps."""
+
+    path = Path(__file__).with_name("skills.csv")
+    if not path.exists():
+        logger.warning("Default skills CSV not found at %s", path)
+        return {}, {}
+
+    by_name: dict[str, "Skill"] = {}
+    by_category_config: dict[tuple[str, str], "Skill"] = {}
+
+    with path.open(newline="", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            try:
+                timestamp = datetime.now(timezone.utc)
+                price_default = row.get("price") or "1"
+                skill = Skill(
+                    name=row["name"],
+                    category=row["category"],
+                    config_name=row.get("config_name") or None,
+                    enabled=_skill_parse_bool(row.get("enabled")),
+                    price_level=_skill_parse_optional_int(row.get("price_level")),
+                    price=_skill_parse_decimal(row.get("price"), default="1"),
+                    price_self_key=_skill_parse_decimal(
+                        row.get("price_self_key"), default=price_default
+                    ),
+                    rate_limit_count=_skill_parse_optional_int(
+                        row.get("rate_limit_count")
+                    ),
+                    rate_limit_minutes=_skill_parse_optional_int(
+                        row.get("rate_limit_minutes")
+                    ),
+                    author=row.get("author") or None,
+                    created_at=timestamp,
+                    updated_at=timestamp,
+                )
+            except Exception as exc:
+                logger.error(
+                    "Failed to load default skill %s: %s", row.get("name"), exc
+                )
+                continue
+
+            by_name[skill.name] = skill
+            if skill.config_name:
+                by_category_config[(skill.category, skill.config_name)] = skill
+
+    return by_name, by_category_config
+
+
 class SkillTable(Base):
     """Database table model for Skill."""
 
@@ -447,17 +523,20 @@ class Skill(BaseModel):
             stmt = select(SkillTable).where(SkillTable.name == name)
             skill = await session.scalar(stmt)
 
-            # If skill doesn't exist, return None
-            if not skill:
-                return None
+            # If skill exists in database, convert and cache it
+            if skill:
+                skill_model = Skill.model_validate(skill)
+                await redis.set(cache_key, skill_model.model_dump_json(), ex=cache_ttl)
+                return skill_model
 
-            # Convert to Skill model
-            skill_model = Skill.model_validate(skill)
-
-            # Cache the skill in Redis
+        # Fallback to default skills loaded from CSV
+        default_skill = DEFAULT_SKILLS_BY_NAME.get(name)
+        if default_skill:
+            skill_model = default_skill.model_copy(deep=True)
             await redis.set(cache_key, skill_model.model_dump_json(), ex=cache_ttl)
-
             return skill_model
+
+        return None
 
     @staticmethod
     async def get_by_config_name(category: str, config_name: str) -> Optional["Skill"]:
@@ -477,9 +556,37 @@ class Skill(BaseModel):
             )
             skill = await session.scalar(stmt)
 
-            # If skill doesn't exist, return None
-            if not skill:
-                return None
+            # If skill exists in database, return it
+            if skill:
+                return Skill.model_validate(skill)
 
-            # Convert to Skill model
-            return Skill.model_validate(skill)
+        # Fallback to default skills loaded from CSV
+        default_skill = DEFAULT_SKILLS_BY_CATEGORY_CONFIG.get((category, config_name))
+        if default_skill:
+            return default_skill.model_copy(deep=True)
+
+        return None
+
+    @classmethod
+    async def get_all(cls, session: AsyncSession | None = None) -> list["Skill"]:
+        """Return all skills merged from defaults and database overrides."""
+
+        if session is None:
+            async with get_session() as db:
+                return await cls.get_all(session=db)
+
+        skills: dict[str, "Skill"] = {
+            name: skill.model_copy(deep=True)
+            for name, skill in DEFAULT_SKILLS_BY_NAME.items()
+        }
+
+        result = await session.execute(select(SkillTable))
+        for row in result.scalars():
+            skill_model = cls.model_validate(row)
+            skills[skill_model.name] = skill_model
+
+        return list(skills.values())
+
+
+# Default skills loaded from CSV
+DEFAULT_SKILLS_BY_NAME, DEFAULT_SKILLS_BY_CATEGORY_CONFIG = _load_default_skills()
