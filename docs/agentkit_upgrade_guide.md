@@ -1,10 +1,10 @@
-# AgentKit 0.4.0 → 0.6.0 Upgrade Guide
+# AgentKit 0.4.0 → 0.7.2 Upgrade Guide
 
-This guide covers the complete migration from **coinbase-agentkit 0.4.0** to **0.6.0**, including breaking changes, wallet compatibility fixes, and required updates.
+This guide covers the complete migration from **coinbase-agentkit 0.4.0** to **0.7.2**, including breaking changes, wallet compatibility fixes, and required updates.
 
 ## Quick Summary
 
-- **Dependencies**: Updated AgentKit core and langchain packages
+- **Dependencies**: Updated AgentKit core and LangChain packages
 - **API Changes**: Wallet providers renamed, function signatures changed
 - **Environment Variables**: New canonical names for CDP credentials
 - **Wallet Compatibility**: Fixed invalid wallet addresses from format changes
@@ -18,19 +18,19 @@ coinbase-agentkit = "0.4.0"
 coinbase-agentkit-langchain = "0.3.0"
 langgraph = ">=0.4.3"
 
-# After (0.6.0)
-coinbase-agentkit = "0.6.0"
-coinbase-agentkit-langchain = "0.5.0"
+# After (0.7.2)
+coinbase-agentkit = "0.7.2"
+coinbase-agentkit-langchain = "0.7.0"
 langgraph = ">=0.3.0"
 pydantic = ">=2.10.0,<2.11.0"
 ```
 
 ## 2. Environment Variables
 
-AgentKit 0.6.0 uses new environment variable names:
+AgentKit 0.7.x uses new environment variable names:
 
 ```bash
-# New variables (0.6.0)
+# New variables (0.7.x)
 export CDP_API_KEY_ID="your_key_id"
 export CDP_API_KEY_SECRET="your_private_key"
 export CDP_WALLET_SECRET="your_wallet_secret"
@@ -43,8 +43,8 @@ export CDP_WALLET_SECRET="your_wallet_secret"
 # Before (0.4.0)
 from coinbase_agentkit import CdpWalletProvider, CdpWalletProviderConfig
 
-# After (0.6.0)
-from coinbase_agentkit import CdpEvmServerWalletProvider, CdpEvmServerWalletProviderConfig
+# After (0.7.2)
+from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
 ```
 
 ### Function Calls
@@ -52,12 +52,12 @@ from coinbase_agentkit import CdpEvmServerWalletProvider, CdpEvmServerWalletProv
 # Before (0.4.0)
 cdp_api_action_provider(cdp_provider_config)
 
-# After (0.6.0)
+# After (0.7.2)
 cdp_api_action_provider()  # No arguments
 ```
 
 ### Removed Functions
-The following functions were completely removed in 0.6.0:
+The following functions were removed in 0.6.0 and remain unavailable in 0.7.x:
 - `CdpWalletActionProvider_deploy_contract`
 - `CdpWalletActionProvider_deploy_nft`
 - `CdpWalletActionProvider_deploy_token`
@@ -67,7 +67,7 @@ The following functions were completely removed in 0.6.0:
 
 ### The Problem
 
-AgentKit 0.6.0 changed how wallet data is stored and validated. Agents created with 0.4.0 had wallet addresses stored in a format that became **invalid** in 0.6.0, causing this error:
+AgentKit 0.7.x changed how wallet data is stored and validated. Agents created with 0.4.0 had wallet addresses stored in a format that became **invalid** in 0.7.x, causing this error:
 
 ```
 ApiError(http_code=404, error_type=not_found, error_message=EVM account with given address not found.)
@@ -84,7 +84,7 @@ ApiError(http_code=404, error_type=not_found, error_message=EVM account with giv
 }
 ```
 
-**AgentKit 0.6.0 Format:**
+**AgentKit 0.7.x Format:**
 ```json
 {
   "default_address_id": "0x5678...",
@@ -97,8 +97,8 @@ The address validation and wallet initialization process changed, making old wal
 
 ### Two Wallet Management Approaches Found
 
-1. **Older agents**: `cdp_wallet_address: null` → Create wallets **on-demand** → ✅ **Work with 0.6.0**
-2. **Newer agents**: Pre-stored `cdp_wallet_address` → Use **stored addresses** → ❌ **Fail with 0.6.0**
+1. **Older agents**: `cdp_wallet_address: null` → Create wallets **on-demand** → ✅ **Work with 0.7.x**
+2. **Newer agents**: Pre-stored `cdp_wallet_address` → Use **stored addresses** → ❌ **Fail with 0.7.x**
 
 ## 5. Wallet Fix Script
 
@@ -107,24 +107,24 @@ The address validation and wallet initialization process changed, making old wal
 We created `scripts/fix_invalid_wallets.py` to resolve wallet compatibility issues:
 
 1. **Scans all agents** with stored wallet addresses
-2. **Tests each address** by attempting to initialize it with the new AgentKit 0.6.0 API
+2. **Tests each address** by attempting to initialize it with the new AgentKit 0.7.x API
 3. **Identifies invalid addresses** that cause "not found" errors
 4. **Clears invalid wallet data** so agents can create fresh, compatible wallets
 
 ### How It Works
 
 ```python
-# Test if wallet address exists in CDP 0.6.0
-wallet_config = CdpEvmServerWalletProviderConfig(
-    api_key_id=config.cdp_api_key_name,
-    api_key_secret=config.cdp_api_key_private_key,
+# Test if wallet address exists in CDP 0.7.2
+wallet_config = CdpEvmWalletProviderConfig(
+    api_key_id=config.cdp_api_key_id,
+    api_key_secret=config.cdp_api_key_secret,
     network_id="base-mainnet",
     address=wallet_address,
-    wallet_secret=None
+    wallet_secret=None,
 )
 
 # This will throw an error if address is invalid
-wallet_provider = CdpEvmServerWalletProvider(wallet_config)
+wallet_provider = CdpEvmWalletProvider(wallet_config)
 ```
 
 ### Usage
@@ -182,7 +182,7 @@ Summary: 5 invalid addresses found, 5 fixed
 - ✅ All agents work without wallet-related errors
 - ✅ Agents create fresh, compatible wallets on-demand
 - ✅ Existing funded wallets are re-discovered and maintained
-- ✅ New agents work seamlessly with 0.6.0
+- ✅ New agents work seamlessly with 0.7.x
 
 ## 9. Key Insights & Future Considerations
 

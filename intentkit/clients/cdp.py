@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from typing import Dict, Optional
@@ -5,10 +6,7 @@ from typing import Dict, Optional
 from bip32 import BIP32
 from cdp import CdpClient as OriginCdpClient
 from cdp import EvmServerAccount
-from coinbase_agentkit import (
-    CdpEvmServerWalletProvider,
-    CdpEvmServerWalletProviderConfig,
-)
+from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
 from eth_keys.datatypes import PrivateKey
 from eth_utils import to_checksum_address
 
@@ -79,10 +77,10 @@ class CdpClient:
     def __init__(self, agent_id: str, skill_store: SkillStoreABC) -> None:
         self._agent_id = agent_id
         self._skill_store = skill_store
-        self._wallet_provider: Optional[CdpEvmServerWalletProvider] = None
-        self._wallet_provider_config: Optional[CdpEvmServerWalletProviderConfig] = None
+        self._wallet_provider: Optional[CdpEvmWalletProvider] = None
+        self._wallet_provider_config: Optional[CdpEvmWalletProviderConfig] = None
 
-    async def get_wallet_provider(self) -> CdpEvmServerWalletProvider:
+    async def get_wallet_provider(self) -> CdpEvmWalletProvider:
         if self._wallet_provider:
             return self._wallet_provider
         agent: Agent = await self._skill_store.get_agent_config(self._agent_id)
@@ -136,25 +134,16 @@ class CdpClient:
             await agent_data.save()
 
         # it must have v2 account now, load agentkit wallet provider
-        self._wallet_provider_config = CdpEvmServerWalletProviderConfig(
+        self._wallet_provider_config = CdpEvmWalletProviderConfig(
             api_key_id=api_key_id,
             api_key_secret=api_key_secret,
             network_id=network_id,
             address=address,
             wallet_secret=wallet_secret,
         )
-        self._wallet_provider = CdpEvmServerWalletProvider(self._wallet_provider_config)
-        # hack for cdp bug
-        if network_id == "base-mainnet":
-            self._wallet_provider._network.network_id = "base"
-        elif network_id == "arbitrum-mainnet":
-            self._wallet_provider._network.network_id = "arbitrum"
-        elif network_id == "optimism-mainnet":
-            self._wallet_provider._network.network_id = "optimism"
-        elif network_id == "polygon-mainnet":
-            self._wallet_provider._network.network_id = "polygon"
-        elif network_id == "ethereum-mainnet":
-            self._wallet_provider._network.network_id = "ethereum"
+        self._wallet_provider = await asyncio.to_thread(
+            CdpEvmWalletProvider, self._wallet_provider_config
+        )
         return self._wallet_provider
 
     async def get_account(self) -> EvmServerAccount:
@@ -167,7 +156,7 @@ class CdpClient:
         # Access the internal account object
         return wallet_provider._account
 
-    async def get_provider_config(self) -> CdpEvmServerWalletProviderConfig:
+    async def get_provider_config(self) -> CdpEvmWalletProviderConfig:
         if not self._wallet_provider_config:
             await self.get_wallet_provider()
         return self._wallet_provider_config

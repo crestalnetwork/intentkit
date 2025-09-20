@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
 from cdp import EvmServerAccount
-from coinbase_agentkit import CdpEvmServerWalletProvider
+from coinbase_agentkit import CdpEvmWalletProvider
 from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -39,14 +39,14 @@ class EnsoBaseTool(IntentKitSkill):
 
     async def get_wallet_provider(
         self, context: AgentContext
-    ) -> Optional[CdpEvmServerWalletProvider]:
+    ) -> Optional[CdpEvmWalletProvider]:
         """Get the wallet provider from the CDP client.
 
         Args:
             context: The skill context containing agent information.
 
         Returns:
-            Optional[CdpEvmServerWalletProvider]: The wallet provider if available.
+            Optional[CdpEvmWalletProvider]: The wallet provider if available.
         """
         client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
         return await client.get_wallet_provider()

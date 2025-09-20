@@ -21,10 +21,7 @@ from typing import List, Optional
 # Add the parent directory to the path to import intentkit modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from coinbase_agentkit import (
-    CdpEvmServerWalletProvider,
-    CdpEvmServerWalletProviderConfig,
-)
+from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
 from sqlalchemy import select, update
 
 from intentkit.config.config import config
@@ -55,7 +52,7 @@ class WalletFixer:
         """Check if a wallet address can be initialized with CDP."""
         try:
             # Try to initialize the wallet provider with the address
-            wallet_config = CdpEvmServerWalletProviderConfig(
+            wallet_config = CdpEvmWalletProviderConfig(
                 api_key_id=config.cdp_api_key_id,
                 api_key_secret=config.cdp_api_key_secret,
                 network_id=network_id,
@@ -64,7 +61,7 @@ class WalletFixer:
             )
 
             # Try to create the wallet provider - this will fail if address doesn't exist
-            CdpEvmServerWalletProvider(wallet_config)  # Just try to initialize it
+            await asyncio.to_thread(CdpEvmWalletProvider, wallet_config)
             return True
 
         except Exception as e:

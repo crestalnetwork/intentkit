@@ -85,7 +85,7 @@ class Config:
         self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
         # Open API for agent
         self.open_api_base_url = self.load("OPEN_API_BASE_URL", "http://localhost:8000")
-        # CDP - AgentKit 0.6.0 Configuration
+        # CDP - AgentKit 0.7.x Configuration
         self.cdp_api_key_id = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret = self.load("CDP_API_KEY_SECRET")
         self.cdp_wallet_secret = self.load("CDP_WALLET_SECRET")
