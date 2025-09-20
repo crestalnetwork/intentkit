@@ -17,7 +17,6 @@ dependencies = [
     "boto3 (>=1.37.23,<2.0.0)",
     "botocore>=1.35.97",
     "coinbase-agentkit (>=0.7.2,<0.8.0)",
-    "coinbase-agentkit-langchain (>=0.7.0,<0.8.0)",
     "cron-validator (>=1.0.8,<2.0.0)",
     "epyxid>=0.3.3",
     "faiss-cpu>=1.11.0",
