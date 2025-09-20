@@ -3,6 +3,7 @@
 from typing import TypedDict
 
 from coinbase_agentkit import (
+    Action,
     AgentKit,
     AgentKitConfig,
     CdpEvmWalletProvider,
@@ -17,7 +18,7 @@ from coinbase_agentkit import (
     wow_action_provider,
 )
 from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
-from coinbase_agentkit_langchain import get_langchain_tools
+from langchain.tools import StructuredTool
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import CdpClient, get_cdp_client
@@ -25,6 +26,20 @@ from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cdp.base import CDPBaseTool
 from intentkit.skills.cdp.get_balance import GetBalance
 from intentkit.skills.cdp.swap import Swap
+
+
+def _action_to_structured_tool(action: Action) -> StructuredTool:
+    """Convert an AgentKit action to a LangChain StructuredTool."""
+
+    def _tool_fn(**kwargs: object) -> str:
+        return action.invoke(kwargs)
+
+    return StructuredTool(
+        name=action.name,
+        description=action.description,
+        func=_tool_fn,
+        args_schema=action.args_schema,
+    )
 
 
 class SkillStates(TypedDict):
@@ -109,7 +124,7 @@ async def get_skills(
             ],
         )
     )
-    cdp_tools = get_langchain_tools(agent_kit)
+    actions = agent_kit.get_actions()
     tools = []
     for skill in available_skills:
         if skill == "get_balance":
@@ -130,8 +145,9 @@ async def get_skills(
                 )
             )
             continue
-        for tool in cdp_tools:
-            if tool.name.endswith(skill):
+        for action in actions:
+            if action.name.endswith(skill):
+                tool = _action_to_structured_tool(action)
                 tool.handle_tool_error = lambda e: f"tool error: {e}"
                 tool.handle_validation_error = lambda e: f"validation error: {e}"
                 tools.append(tool)

@@ -521,21 +521,6 @@ wheels = [
 ]
 
 [[package]]
-name = "coinbase-agentkit-langchain"
-version = "0.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coinbase-agentkit" },
-    { name = "langchain" },
-    { name = "nest-asyncio" },
-    { name = "python-dotenv" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/40/48/5c737adb262a4a2b01b951aa50b64db2b41f818be3e9517498a2e6befe18/coinbase_agentkit_langchain-0.7.0.tar.gz", hash = "sha256:9ace3bf09a683d90d87e24abbbff537ffd9622ead969ce2090b85d7204cf123c", size = 2950, upload-time = "2025-09-06T01:45:17.92Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/2d/fb5afe4eb3306b4f2aa05807d8a2cbba667f63ac3734360aa3ab567c13e7/coinbase_agentkit_langchain-0.7.0-py3-none-any.whl", hash = "sha256:b55b88fcfec891347dd8aa0a078b9d4816c4ccaf1d8847d0444a2dbb9fb021cc", size = 2625, upload-time = "2025-09-06T01:45:16.3Z" },
-]
-
-[[package]]
 name = "coincurve"
 version = "20.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1222,7 +1207,6 @@ dependencies = [
     { name = "botocore" },
     { name = "cdp-sdk" },
     { name = "coinbase-agentkit" },
-    { name = "coinbase-agentkit-langchain" },
     { name = "cron-validator" },
     { name = "epyxid" },
     { name = "eth-keys" },
@@ -1285,7 +1269,6 @@ requires-dist = [
     { name = "botocore", specifier = ">=1.35.97" },
     { name = "cdp-sdk", specifier = ">=1.22.0" },
     { name = "coinbase-agentkit", specifier = ">=0.7.2,<0.8.0" },
-    { name = "coinbase-agentkit-langchain", specifier = ">=0.7.0,<0.8.0" },
     { name = "cron-validator", specifier = ">=1.0.8,<2.0.0" },
     { name = "epyxid", specifier = ">=0.3.3" },
     { name = "eth-keys", specifier = ">=0.4.0" },
@@ -1356,7 +1339,6 @@ dependencies = [
     { name = "botocore" },
     { name = "cdp-sdk" },
     { name = "coinbase-agentkit" },
-    { name = "coinbase-agentkit-langchain" },
     { name = "cron-validator" },
     { name = "epyxid" },
     { name = "eth-keys" },
@@ -1435,7 +1417,6 @@ requires-dist = [
     { name = "botocore", specifier = ">=1.35.97" },
     { name = "cdp-sdk", specifier = ">=1.22.0" },
     { name = "coinbase-agentkit", specifier = ">=0.7.2,<0.8.0" },
-    { name = "coinbase-agentkit-langchain", specifier = ">=0.7.0,<0.8.0" },
     { name = "cron-validator", specifier = ">=1.0.8,<2.0.0" },
     { name = "epyxid", specifier = ">=0.3.3" },
     { name = "eth-keys", specifier = ">=0.4.0" },

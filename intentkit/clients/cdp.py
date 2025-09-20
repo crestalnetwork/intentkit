@@ -4,15 +4,18 @@ import logging
 from typing import Dict, Optional
 
 from bip32 import BIP32
-from cdp import CdpClient as OriginCdpClient
-from cdp import EvmServerAccount
-from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
+from cdp import CdpClient as OriginCdpClient  # noqa: E402
+from cdp import EvmServerAccount  # noqa: E402
+from coinbase_agentkit import (  # noqa: E402
+    CdpEvmWalletProvider,
+    CdpEvmWalletProviderConfig,
+)
 from eth_keys.datatypes import PrivateKey
 from eth_utils import to_checksum_address
 
-from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.models.agent import Agent
-from intentkit.models.agent_data import AgentData
+from intentkit.abstracts.skill import SkillStoreABC  # noqa: E402
+from intentkit.models.agent import Agent  # noqa: E402
+from intentkit.models.agent_data import AgentData  # noqa: E402
 
 _clients: Dict[str, "CdpClient"] = {}
 _origin_cdp_client: Optional[OriginCdpClient] = None
