@@ -5,7 +5,7 @@ from typing import TypedDict
 from coinbase_agentkit import (
     AgentKit,
     AgentKitConfig,
-    CdpEvmServerWalletProvider,
+    CdpEvmWalletProvider,
     basename_action_provider,
     cdp_api_action_provider,
     erc20_action_provider,
@@ -91,9 +91,7 @@ async def get_skills(
 
     # Initialize CDP client
     cdp_client: CdpClient = await get_cdp_client(agent_id, store)
-    cdp_wallet_provider: CdpEvmServerWalletProvider = (
-        await cdp_client.get_wallet_provider()
-    )
+    cdp_wallet_provider: CdpEvmWalletProvider = await cdp_client.get_wallet_provider()
     agent_kit = AgentKit(
         AgentKitConfig(
             wallet_provider=cdp_wallet_provider,

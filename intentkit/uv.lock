@@ -567,10 +567,9 @@ wheels = [
 
 [[package]]
 name = "coinbase-agentkit"
-version = "0.6.0"
+version = "0.7.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "allora-sdk" },
     { name = "cdp-sdk" },
     { name = "ecdsa" },
     { name = "jsonschema" },
@@ -580,16 +579,19 @@ dependencies = [
     { name = "pyjwt", extra = ["crypto"] },
     { name = "python-dotenv" },
     { name = "requests" },
+    { name = "solana" },
+    { name = "solders" },
     { name = "web3" },
+    { name = "x402" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/e1/6a21afddfffe91b53b6865bae9e6a910b4d595eb05feab25e59a382e6242/coinbase_agentkit-0.6.0.tar.gz", hash = "sha256:b0700af4a3a736254dc1f308d3673e238817067fdee91b5e5d44c9e7fda7052f", size = 102816, upload-time = "2025-05-30T19:26:08.424Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/91/9f3efe6d4737707341a4f054c7e236b485d42ec3105ba97db1e6ed747311/coinbase_agentkit-0.7.2.tar.gz", hash = "sha256:621935644118054772d9b047bed4dbca04cd28f6d67ea0779507d2c480a17b41", size = 114875, upload-time = "2025-09-06T00:13:29.564Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/35/76010c76941a8a0f47e1d49ffc0cd1ec0eac5a6746eca9bb7a59c388ccb9/coinbase_agentkit-0.6.0-py3-none-any.whl", hash = "sha256:9847a4037accd0de25743fd8b941ca4666715454db0146a809030f9b80d31535", size = 163009, upload-time = "2025-05-30T19:26:06.141Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/0c/0dc601ace61f967eeced8b33c776d04b2cb08ee029c23a9aed91eaf2d747/coinbase_agentkit-0.7.2-py3-none-any.whl", hash = "sha256:32c097c4a0e87086d88ddb45082b3bf96d40cd20980a7052bffb1cc68f902b97", size = 179654, upload-time = "2025-09-06T00:13:27.834Z" },
 ]
 
 [[package]]
 name = "coinbase-agentkit-langchain"
-version = "0.5.0"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coinbase-agentkit" },
@@ -597,9 +599,9 @@ dependencies = [
     { name = "nest-asyncio" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/11/07/c3d2cc1015e34aab038775f5a599251431f5d9c087026bd59ee2606ba555/coinbase_agentkit_langchain-0.5.0.tar.gz", hash = "sha256:52a76976da0cf09673b5f0aa7b5bec8bd34316b0a63e798a3e9fb9dc36b85259", size = 2954, upload-time = "2025-05-30T19:54:42.699Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/48/5c737adb262a4a2b01b951aa50b64db2b41f818be3e9517498a2e6befe18/coinbase_agentkit_langchain-0.7.0.tar.gz", hash = "sha256:9ace3bf09a683d90d87e24abbbff537ffd9622ead969ce2090b85d7204cf123c", size = 2950, upload-time = "2025-09-06T01:45:17.92Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/62/ebdaf7dd4fe7278f8c17d8f4b6e5e4c39c91769aee8e6d8aa12263fb443d/coinbase_agentkit_langchain-0.5.0-py3-none-any.whl", hash = "sha256:356d0e839f2c13bb550473737ac98ecb6edc3a88697f7b9bacf898a7833a00ac", size = 2625, upload-time = "2025-05-30T19:54:41.423Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/2d/fb5afe4eb3306b4f2aa05807d8a2cbba667f63ac3734360aa3ab567c13e7/coinbase_agentkit_langchain-0.7.0-py3-none-any.whl", hash = "sha256:b55b88fcfec891347dd8aa0a078b9d4816c4ccaf1d8847d0444a2dbb9fb021cc", size = 2625, upload-time = "2025-09-06T01:45:16.3Z" },
 ]
 
 [[package]]
@@ -1289,8 +1291,8 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.37.23,<2.0.0" },
     { name = "botocore", specifier = ">=1.35.97" },
     { name = "cdp-sdk", specifier = ">=1.22.0" },
-    { name = "coinbase-agentkit", specifier = ">=0.6.0,<0.7.0" },
-    { name = "coinbase-agentkit-langchain", specifier = ">=0.5.0" },
+    { name = "coinbase-agentkit", specifier = ">=0.7.2,<0.8.0" },
+    { name = "coinbase-agentkit-langchain", specifier = ">=0.7.0,<0.8.0" },
     { name = "cron-validator", specifier = ">=1.0.8,<2.0.0" },
     { name = "epyxid", specifier = ">=0.3.3" },
     { name = "eth-keys", specifier = ">=0.4.0" },
