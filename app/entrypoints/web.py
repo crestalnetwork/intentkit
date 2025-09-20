@@ -22,7 +22,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import verify_admin_jwt
 from intentkit.config.config import config
 from intentkit.core.engine import execute_agent, thread_stats
 from intentkit.core.prompt import agent_prompt
@@ -40,6 +39,8 @@ from intentkit.models.chat import (
 )
 from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import verify_admin_jwt
 
 # init logger
 logger = logging.getLogger(__name__)

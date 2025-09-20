@@ -5,9 +5,10 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
-from app.services.twitter.oauth2 import oauth2_user_handler
 from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_session
+
+from app.services.twitter.oauth2 import oauth2_user_handler
 
 logger = logging.getLogger(__name__)
 

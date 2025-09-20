@@ -18,7 +18,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.agent import Agent, AgentResponse
 from intentkit.models.agent_data import AgentData
@@ -34,6 +33,8 @@ from intentkit.models.chat import (
 )
 from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import AgentToken, verify_agent_token
 
 logger = logging.getLogger(__name__)
 

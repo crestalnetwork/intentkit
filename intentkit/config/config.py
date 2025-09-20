@@ -1,15 +1,18 @@
 # app/config.py
+import asyncio
 import json
 import logging
 import os
 
-import cdp
 from dotenv import load_dotenv
 
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
 from intentkit.utils.s3 import init_s3
 from intentkit.utils.slack_alert import init_slack
+
+# hack for cdp bug
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 # Load environment variables from .env file
 load_dotenv()
@@ -205,5 +208,3 @@ class Config:
 
 
 config: Config = Config()
-
-logger.info(f"cdp-sdk version: {cdp.__version__}")

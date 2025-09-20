@@ -3,9 +3,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path
 
-from app.auth import verify_admin_jwt
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import verify_admin_jwt
 
 logger = logging.getLogger(__name__)
 

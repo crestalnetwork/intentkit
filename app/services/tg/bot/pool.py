@@ -12,6 +12,8 @@ from aiogram.webhook.aiohttp_server import (
 )
 from aiohttp import web
 
+from intentkit.models.agent import Agent
+
 from app.services.tg.bot.kind.ai_relayer.router import general_router
 from app.services.tg.bot.kind.god.router import god_router
 from app.services.tg.bot.kind.god.startup import GOD_BOT_PATH, GOD_BOT_TOKEN, on_startup
@@ -20,7 +22,6 @@ from app.services.tg.bot.types.bot import BotPoolItem
 from app.services.tg.bot.types.kind import Kind
 from app.services.tg.bot.types.router_obj import RouterObj
 from app.services.tg.utils.cleanup import clean_token_str
-from intentkit.models.agent import Agent
 
 logger = logging.getLogger(__name__)
 

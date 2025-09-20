@@ -7,15 +7,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.admin import (
-    admin_router_readonly,
-    credit_router_readonly,
-    health_router,
-    metadata_router_readonly,
-    schema_router_readonly,
-    user_router_readonly,
-)
-from app.entrypoints.web import chat_router_readonly
 from intentkit.config.config import config
 from intentkit.models.db import init_db
 from intentkit.models.redis import init_redis
@@ -26,6 +17,16 @@ from intentkit.utils.error import (
     intentkit_other_error_handler,
     request_validation_exception_handler,
 )
+
+from app.admin import (
+    admin_router_readonly,
+    credit_router_readonly,
+    health_router,
+    metadata_router_readonly,
+    schema_router_readonly,
+    user_router_readonly,
+)
+from app.entrypoints.web import chat_router_readonly
 
 # init logger
 logger = logging.getLogger(__name__)

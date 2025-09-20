@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.auth import AgentToken, verify_agent_token
 from intentkit.core.engine import execute_agent
 from intentkit.models.agent import Agent
 from intentkit.models.chat import (
@@ -16,6 +15,8 @@ from intentkit.models.chat import (
     ChatMessageCreate,
 )
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import AgentToken, verify_agent_token
 
 # init logger
 logger = logging.getLogger(__name__)

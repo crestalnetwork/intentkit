@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
-from app.auth import verify_admin_jwt
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.core.agent import (
     create_agent,
@@ -41,6 +40,8 @@ from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.models.db import get_db
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import verify_admin_jwt
 
 admin_router_readonly = APIRouter()
 admin_router = APIRouter()

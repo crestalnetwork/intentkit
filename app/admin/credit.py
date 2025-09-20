@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import verify_admin_jwt
 from intentkit.core.credit import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
@@ -38,6 +37,8 @@ from intentkit.models.credit import (
 )
 from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
+
+from app.auth import verify_admin_jwt
 
 logger = logging.getLogger(__name__)
 
