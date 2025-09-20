@@ -3,6 +3,7 @@ import json
 import logging
 import os
 
+import cdp
 from dotenv import load_dotenv
 
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
@@ -204,3 +205,5 @@ class Config:
 
 
 config: Config = Config()
+
+logger.info(f"cdp-sdk version: {cdp.__version__}")

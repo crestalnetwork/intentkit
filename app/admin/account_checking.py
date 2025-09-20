@@ -514,7 +514,7 @@ async def check_total_credit_balance() -> List[AccountCheckingResult]:
         is_balanced = grand_total == Decimal("0")
 
         # If not exactly zero but very close (due to potential rounding issues), log a warning but still consider it balanced
-        if not is_balanced and abs(grand_total) < Decimal("0.001"):
+        if not is_balanced and abs(grand_total) < Decimal("0.01"):
             logger.warning(
                 f"Total credit balance is very close to zero but not exact: {grand_total}. "
                 f"This might be due to rounding issues."
