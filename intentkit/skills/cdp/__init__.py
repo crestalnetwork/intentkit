@@ -3,70 +3,28 @@
 from typing import TypedDict
 
 from coinbase_agentkit import (
-    Action,
-    AgentKit,
-    AgentKitConfig,
-    CdpEvmWalletProvider,
-    basename_action_provider,
     cdp_api_action_provider,
-    erc20_action_provider,
-    morpho_action_provider,
-    pyth_action_provider,
-    superfluid_action_provider,
+    cdp_evm_wallet_action_provider,
     wallet_action_provider,
-    weth_action_provider,
-    wow_action_provider,
 )
-from coinbase_agentkit.action_providers.erc721 import erc721_action_provider
-from langchain.tools import StructuredTool
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients import CdpClient, get_cdp_client
-from intentkit.skills.base import SkillConfig, SkillState
+from intentkit.skills.base import (
+    SkillConfig,
+    SkillState,
+    action_to_structured_tool,
+    get_agentkit_actions,
+)
 from intentkit.skills.cdp.base import CDPBaseTool
-from intentkit.skills.cdp.get_balance import GetBalance
-from intentkit.skills.cdp.swap import Swap
-
-
-def _action_to_structured_tool(action: Action) -> StructuredTool:
-    """Convert an AgentKit action to a LangChain StructuredTool."""
-
-    def _tool_fn(**kwargs: object) -> str:
-        return action.invoke(kwargs)
-
-    return StructuredTool(
-        name=action.name,
-        description=action.description,
-        func=_tool_fn,
-        args_schema=action.args_schema,
-    )
 
 
 class SkillStates(TypedDict):
-    get_balance: SkillState
-    swap: SkillState
     WalletActionProvider_get_balance: SkillState
     WalletActionProvider_get_wallet_details: SkillState
     WalletActionProvider_native_transfer: SkillState
-    CdpApiActionProvider_address_reputation: SkillState
     CdpApiActionProvider_request_faucet_funds: SkillState
-    PythActionProvider_fetch_price: SkillState
-    PythActionProvider_fetch_price_feed_id: SkillState
-    BasenameActionProvider_register_basename: SkillState
-    ERC20ActionProvider_get_balance: SkillState
-    ERC20ActionProvider_transfer: SkillState
-    Erc721ActionProvider_get_balance: SkillState
-    Erc721ActionProvider_mint: SkillState
-    Erc721ActionProvider_transfer: SkillState
-    WethActionProvider_wrap_eth: SkillState
-    MorphoActionProvider_deposit: SkillState
-    MorphoActionProvider_withdraw: SkillState
-    SuperfluidActionProvider_create_flow: SkillState
-    SuperfluidActionProvider_delete_flow: SkillState
-    SuperfluidActionProvider_update_flow: SkillState
-    WowActionProvider_buy_token: SkillState
-    WowActionProvider_create_token: SkillState
-    WowActionProvider_sell_token: SkillState
+    CdpEvmWalletActionProvider_get_swap_price: SkillState
+    CdpEvmWalletActionProvider_swap: SkillState
 
 
 class Config(SkillConfig):
@@ -105,50 +63,18 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Initialize CDP client
-    cdp_client: CdpClient = await get_cdp_client(agent_id, store)
-    cdp_wallet_provider: CdpEvmWalletProvider = await cdp_client.get_wallet_provider()
-    agent_kit = AgentKit(
-        AgentKitConfig(
-            wallet_provider=cdp_wallet_provider,
-            action_providers=[
-                wallet_action_provider(),
-                cdp_api_action_provider(),
-                pyth_action_provider(),
-                basename_action_provider(),
-                erc20_action_provider(),
-                erc721_action_provider(),
-                weth_action_provider(),
-                morpho_action_provider(),
-                superfluid_action_provider(),
-                wow_action_provider(),
-            ],
-        )
+    actions = await get_agentkit_actions(
+        agent_id,
+        store,
+        [
+            wallet_action_provider,
+            cdp_api_action_provider,
+            cdp_evm_wallet_action_provider,
+        ],
     )
-    actions = agent_kit.get_actions()
     tools = []
     for skill in available_skills:
-        if skill == "get_balance":
-            # Get the account object for the custom GetBalance skill
-            tools.append(
-                GetBalance(
-                    agent_id=agent_id,
-                    skill_store=store,
-                )
-            )
-            continue
-        elif skill == "swap" or skill.endswith("_trade"):
-            # Add the custom Swap skill, "trade" is backword compatible
-            tools.append(
-                Swap(
-                    agent_id=agent_id,
-                    skill_store=store,
-                )
-            )
-            continue
         for action in actions:
             if action.name.endswith(skill):
-                tool = _action_to_structured_tool(action)
-                tool.handle_tool_error = lambda e: f"tool error: {e}"
-                tool.handle_validation_error = lambda e: f"validation error: {e}"
-                tools.append(tool)
+                tools.append(action_to_structured_tool(action))
     return tools

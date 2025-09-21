@@ -10,6 +10,10 @@ author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
 author_github = "TxCorpi0x"
 author_wallet = "0x2Bd32A312280bF5A01140e68ca630fB76cE8A3De"
 
+[basename]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [cdp]
 author_github = "hyacinthus"
 author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
@@ -50,6 +54,14 @@ author_wallet = "0x2Bd32A312280bF5A01140e68ca630fB76cE8A3De"
 author_github = "TxCorpi0x"
 author_wallet = "0x2Bd32A312280bF5A01140e68ca630fB76cE8A3De"
 
+[erc20]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
+[erc721]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [github]
 author_github = "bluntbrain"
 author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
@@ -66,6 +78,10 @@ author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 author_github = "developerfred"
 author_wallet = "0xd1a8Dd23e356B9fAE27dF5DeF9ea025A602EC81e"
 
+[morpho]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [nation]
 author_github = "spidemen"
 author_wallet = "0x275960ad41DbE218bBf72cDF612F88b5C6f40648"
@@ -75,6 +91,10 @@ author_github = "hyacinthus"
 author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 
 [slack]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
+[superfluid]
 author_github = "hyacinthus"
 author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 
@@ -102,6 +122,18 @@ author_wallet = "0xF60D4B6780D5D51827602D7aC319458bc9e921F4"
 author_github = "bluntbrain"
 author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
 
+[pyth]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [token]
 author_github = "bluntbrain"
 author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
+
+[weth]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
+[wow]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"

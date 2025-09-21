@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "WETH",
+  "description": "Wrap ETH actions via Coinbase AgentKit",
+  "x-icon": "https://ai.service.crestal.dev/skills/weth/weth.svg",
+  "x-tags": [
+    "Blockchain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "WethActionProvider_wrap_eth": {
+          "type": "string",
+          "title": "Wrap ETH",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for WethActionProvider_wrap_eth",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each WETH skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}

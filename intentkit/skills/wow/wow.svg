@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" fill="#0f766e" rx="16" />
+  <text x="50%" y="50%" font-family="Arial,Helvetica,sans-serif" font-size="48" fill="#ecfeff" font-weight="700" text-anchor="middle">WOW</text>
+  <circle cx="32" cy="96" r="12" fill="#5eead4" />
+  <circle cx="64" cy="96" r="12" fill="#34d399" />
+  <circle cx="96" cy="96" r="12" fill="#22c55e" />
+</svg>

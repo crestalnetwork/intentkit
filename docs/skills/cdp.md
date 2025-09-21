@@ -4,33 +4,15 @@
 
 All CDP Skills are supported by [AgentKit](https://github.com/coinbase/agentkit/).
 
-AgentKit supports the following tools:
+The core CDP skills bundle now focuses on wallet management and faucet access. Available tools are:
 
 ```
 WalletActionProvider_get_balance
 WalletActionProvider_get_wallet_details
 WalletActionProvider_native_transfer
-CdpApiActionProvider_address_reputation
 CdpApiActionProvider_request_faucet_funds
-CdpWalletActionProvider_deploy_contract
-CdpWalletActionProvider_deploy_nft
-CdpWalletActionProvider_deploy_token
-CdpWalletActionProvider_trade
-PythActionProvider_fetch_price
-PythActionProvider_fetch_price_feed_id
-BasenameActionProvider_register_basename
-ERC20ActionProvider_get_balance
-ERC20ActionProvider_transfer
-Erc721ActionProvider_get_balance
-Erc721ActionProvider_mint
-Erc721ActionProvider_transfer
-WethActionProvider_wrap_eth
-MorphoActionProvider_deposit
-MorphoActionProvider_withdraw
-SuperfluidActionProvider_create_flow
-SuperfluidActionProvider_delete_flow
-SuperfluidActionProvider_update_flow
-WowActionProvider_buy_token
-WowActionProvider_create_token
-WowActionProvider_sell_token
+CdpEvmWalletActionProvider_get_swap_price
+CdpEvmWalletActionProvider_swap
 ```
+
+Other AgentKit providers such as Basename, ERC20, ERC721, Morpho, Pyth, Superfluid, WETH, and WOW are exposed through their own dedicated skill categories under `intentkit/skills/`.

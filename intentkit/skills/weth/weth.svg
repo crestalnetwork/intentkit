@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" fill="#1a237e" rx="16" />
+  <polygon points="64,20 88,48 64,76 40,48" fill="#8c9eff" />
+  <polygon points="64,56 88,84 64,112 40,84" fill="#536dfe" />
+  <text x="50%" y="122" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#c5cae9" text-anchor="middle">WETH</text>
+</svg>

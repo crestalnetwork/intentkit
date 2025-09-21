@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Pyth",
+  "description": "Pyth oracle price data via Coinbase AgentKit",
+  "x-icon": "https://ai.service.crestal.dev/skills/pyth/pyth.svg",
+  "x-tags": [
+    "Blockchain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "PythActionProvider_fetch_price": {
+          "type": "string",
+          "title": "Fetch Price",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for PythActionProvider_fetch_price",
+          "default": "disabled"
+        },
+        "PythActionProvider_fetch_price_feed": {
+          "type": "string",
+          "title": "Fetch Price Feed",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for PythActionProvider_fetch_price_feed",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each Pyth skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
