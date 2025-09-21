@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "WOW",
+  "description": "WOW social token actions via Coinbase AgentKit",
+  "x-icon": "https://ai.service.crestal.dev/skills/wow/wow.svg",
+  "x-tags": [
+    "Blockchain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "WowActionProvider_buy_token": {
+          "type": "string",
+          "title": "Buy Token",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for WowActionProvider_buy_token",
+          "default": "disabled"
+        },
+        "WowActionProvider_create_token": {
+          "type": "string",
+          "title": "Create Token",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for WowActionProvider_create_token",
+          "default": "disabled"
+        },
+        "WowActionProvider_sell_token": {
+          "type": "string",
+          "title": "Sell Token",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for WowActionProvider_sell_token",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each WOW skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}

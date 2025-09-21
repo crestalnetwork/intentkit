@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Superfluid",
+  "description": "Superfluid streaming actions via Coinbase AgentKit",
+  "x-icon": "https://ai.service.crestal.dev/skills/superfluid/superfluid.svg",
+  "x-tags": [
+    "Blockchain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "SuperfluidActionProvider_create_flow": {
+          "type": "string",
+          "title": "Create Flow",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for SuperfluidActionProvider_create_flow",
+          "default": "disabled"
+        },
+        "SuperfluidActionProvider_delete_flow": {
+          "type": "string",
+          "title": "Delete Flow",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for SuperfluidActionProvider_delete_flow",
+          "default": "disabled"
+        },
+        "SuperfluidActionProvider_update_flow": {
+          "type": "string",
+          "title": "Update Flow",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for SuperfluidActionProvider_update_flow",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each Superfluid skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}

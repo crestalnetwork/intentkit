@@ -1,6 +1,14 @@
 import logging
+from collections.abc import Sequence
 from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
 
+from coinbase_agentkit import (
+    Action,
+    AgentKit,
+    AgentKitConfig,
+    CdpEvmWalletProvider,
+)
+from langchain.tools import StructuredTool
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
@@ -13,6 +21,7 @@ from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.clients import CdpClient, get_cdp_client
 from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
 from intentkit.utils.error import RateLimitExceeded
@@ -162,3 +171,39 @@ class IntentKitSkill(BaseTool):
         network_id = agent.network_id
 
         return get_web3_client(network_id, self.skill_store)
+
+
+async def get_agentkit_actions(
+    agent_id: str,
+    store: SkillStoreABC,
+    provider_factories: Sequence[Callable[[], object]],
+) -> list[Action]:
+    """Build an AgentKit instance and return its actions."""
+
+    cdp_client: CdpClient = await get_cdp_client(agent_id, store)
+    wallet_provider: CdpEvmWalletProvider = await cdp_client.get_wallet_provider()
+
+    agent_kit = AgentKit(
+        AgentKitConfig(
+            wallet_provider=wallet_provider,
+            action_providers=[factory() for factory in provider_factories],
+        )
+    )
+    return agent_kit.get_actions()
+
+
+def action_to_structured_tool(action: Action) -> StructuredTool:
+    """Convert an AgentKit action to a LangChain StructuredTool."""
+
+    def _tool_fn(**kwargs: object) -> str:
+        return action.invoke(kwargs)
+
+    tool = StructuredTool(
+        name=action.name,
+        description=action.description,
+        func=_tool_fn,
+        args_schema=action.args_schema,
+    )
+    tool.handle_tool_error = lambda e: f"tool error: {e}"
+    tool.handle_validation_error = lambda e: f"validation error: {e}"
+    return tool

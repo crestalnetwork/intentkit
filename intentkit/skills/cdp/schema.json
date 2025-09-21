@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Coinbase Wallet",
-  "description": "Integration with Coinbase Wallet (CDP) providing blockchain wallet functionality including balance checking, token transfers, and cryptocurrency trading operations",
+  "description": "Integration with Coinbase Wallet (CDP) providing blockchain wallet functionality including balance checking and native transfers",
   "x-icon": "https://ai.service.crestal.dev/skills/cdp/cdp.png",
   "x-tags": [
     "Blockchain"
@@ -17,38 +17,6 @@
     "states": {
       "type": "object",
       "properties": {
-        "get_balance": {
-          "type": "string",
-          "title": "CDP Wallet Get Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Use coinbase API to get wallet balance, float result.",
-          "default": "private"
-        },
-        "swap": {
-          "type": "string",
-          "title": "CDP Wallet Swap",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Use coinbase API to swap.",
-          "default": "disabled"
-        },
         "WalletActionProvider_get_balance": {
           "type": "string",
           "title": "Normal Get Balance",
@@ -81,121 +49,9 @@
           "description": "Get wallet details using coinbase API",
           "default": "public"
         },
-        "CdpApiActionProvider_address_reputation": {
-          "type": "string",
-          "title": "Address Reputation",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for CdpApiActionProvider_address_reputation",
-          "default": "disabled"
-        },
-        "ERC20ActionProvider_get_balance": {
-          "type": "string",
-          "title": "Erc20 Get Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for ERC20ActionProvider_get_balance",
-          "default": "disabled"
-        },
-        "ERC20ActionProvider_transfer": {
-          "type": "string",
-          "title": "Erc20 Transfer",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for ERC20ActionProvider_transfer",
-          "default": "private"
-        },
-        "WethActionProvider_wrap_eth": {
-          "type": "string",
-          "title": "Wrap ETH",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for WethActionProvider_wrap_eth",
-          "default": "disabled"
-        },
-        "Erc721ActionProvider_get_balance": {
-          "type": "string",
-          "title": "Erc721 NFT Get Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for Erc721ActionProvider_get_balance",
-          "default": "disabled"
-        },
-        "Erc721ActionProvider_transfer": {
-          "type": "string",
-          "title": "Erc721 NFT Transfer",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for Erc721ActionProvider_transfer",
-          "default": "disabled"
-        },
-        "Erc721ActionProvider_mint": {
-          "type": "string",
-          "title": "Erc721 Mint",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for Erc721ActionProvider_mint",
-          "default": "disabled"
-        },
         "WalletActionProvider_native_transfer": {
           "type": "string",
-          "title": "Wallet Native Transfer",
+          "title": "Native Transfer",
           "enum": [
             "disabled",
             "public",
@@ -206,12 +62,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for WalletActionProvider_native_transfer",
-          "default": "private"
+          "description": "Transfer the native asset from the wallet",
+          "default": "disabled"
         },
         "CdpApiActionProvider_request_faucet_funds": {
           "type": "string",
-          "title": "CDP Request Faucet Funds",
+          "title": "Request Faucet Funds",
           "enum": [
             "disabled",
             "public",
@@ -222,12 +78,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Only available in base-sepolia network",
+          "description": "State for CdpApiActionProvider_request_faucet_funds",
           "default": "disabled"
         },
-        "MorphoActionProvider_deposit": {
+        "CdpEvmWalletActionProvider_get_swap_price": {
           "type": "string",
-          "title": "Morpho Deposit",
+          "title": "Get Swap Price",
           "enum": [
             "disabled",
             "public",
@@ -238,12 +94,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for MorphoActionProvider_deposit",
+          "description": "State for CdpEvmWalletActionProvider_get_swap_price",
           "default": "disabled"
         },
-        "MorphoActionProvider_withdraw": {
+        "CdpEvmWalletActionProvider_swap": {
           "type": "string",
-          "title": "Morpho Withdraw",
+          "title": "Swap Tokens",
           "enum": [
             "disabled",
             "public",
@@ -254,151 +110,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for MorphoActionProvider_withdraw",
-          "default": "disabled"
-        },
-        "PythActionProvider_fetch_price_feed_id": {
-          "type": "string",
-          "title": "Pyth Fetch Price Feed Id",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for PythActionProvider_fetch_price_feed_id",
-          "default": "private"
-        },
-        "PythActionProvider_fetch_price": {
-          "type": "string",
-          "title": "Pyth Fetch Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for PythActionProvider_fetch_price",
-          "default": "private"
-        },
-        "WowActionProvider_buy_token": {
-          "type": "string",
-          "title": "Wow Buy Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for WowActionProvider_buy_token",
-          "default": "disabled"
-        },
-        "WowActionProvider_create_token": {
-          "type": "string",
-          "title": "Wow Create Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for WowActionProvider_create_token",
-          "default": "disabled"
-        },
-        "WowActionProvider_sell_token": {
-          "type": "string",
-          "title": "Wow Sell Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for WowActionProvider_sell_token",
-          "default": "disabled"
-        },
-        "SuperfluidActionProvider_create_flow": {
-          "type": "string",
-          "title": "Superfluid Create Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for SuperfluidActionProvider_create_flow",
-          "default": "disabled"
-        },
-        "SuperfluidActionProvider_update_flow": {
-          "type": "string",
-          "title": "Superfluid Update Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for SuperfluidActionProvider_update_flow",
-          "default": "disabled"
-        },
-        "SuperfluidActionProvider_delete_flow": {
-          "type": "string",
-          "title": "Superfluid Delete Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for SuperfluidActionProvider_delete_flow",
-          "default": "disabled"
-        },
-        "BasenameActionProvider_register_basename": {
-          "type": "string",
-          "title": "Register Basename",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for BasenameActionProvider_register_basename",
+          "description": "State for CdpEvmWalletActionProvider_swap",
           "default": "disabled"
         }
       },

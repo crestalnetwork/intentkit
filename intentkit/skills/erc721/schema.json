@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "ERC721",
+  "description": "ERC721 NFT management actions via Coinbase AgentKit",
+  "x-icon": "https://ai.service.crestal.dev/skills/erc721/erc721.svg",
+  "x-tags": [
+    "Blockchain"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "Erc721ActionProvider_get_balance": {
+          "type": "string",
+          "title": "Get ERC721 Balance",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for Erc721ActionProvider_get_balance",
+          "default": "disabled"
+        },
+        "Erc721ActionProvider_mint": {
+          "type": "string",
+          "title": "Mint ERC721",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for Erc721ActionProvider_mint",
+          "default": "disabled"
+        },
+        "Erc721ActionProvider_transfer": {
+          "type": "string",
+          "title": "Transfer ERC721",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "State for Erc721ActionProvider_transfer",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each ERC721 skill (disabled, public, or private)"
+    },
+    "api_key_provider": {
+      "type": "string",
+      "title": "API Key Provider",
+      "description": "Who provides the API key",
+      "enum": [
+        "platform"
+      ],
+      "x-enum-title": [
+        "Nation Hosted"
+      ],
+      "default": "platform"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
