@@ -4,6 +4,7 @@ LiFi Skills Utilities
 Common utilities and helper functions for LiFi token transfer skills.
 """
 
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -179,7 +180,7 @@ def handle_api_response(
     from_chain: str,
     to_token: str,
     to_chain: str,
-) -> Tuple[Optional[Dict], Optional[str]]:
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """
     Handle LiFi API response and return data or error message.
 
@@ -293,17 +294,20 @@ def convert_chain_to_id(chain: str) -> int:
 
 
 def convert_amount_to_wei(amount: str, token_symbol: str = "ETH") -> str:
-    """
-    Convert human-readable amount to wei format for LiFi API.
+    """Convert a token amount into the smallest denomination expected by LiFi."""
 
-    Args:
-        amount: Amount in human readable format (e.g., "0.0015")
-        token_symbol: Token symbol to determine decimals
+    if amount is None:
+        raise ValueError("Amount is required")
 
-    Returns:
-        Amount in wei format as string
-    """
-    # Default decimals for common tokens
+    normalized_amount = amount.strip()
+    if not normalized_amount:
+        raise ValueError("Amount cannot be empty")
+
+    # If the user already provided an integer amount without a decimal point,
+    # assume it is already in the token's smallest denomination.
+    if normalized_amount.isdigit():
+        return normalized_amount
+
     token_decimals = {
         "ETH": 18,
         "USDC": 6,
@@ -318,13 +322,16 @@ def convert_amount_to_wei(amount: str, token_symbol: str = "ETH") -> str:
     decimals = token_decimals.get(token_symbol.upper(), 18)
 
     try:
-        # Convert string to float, then to wei
-        amount_float = float(amount)
-        amount_wei = int(amount_float * (10**decimals))
-        return str(amount_wei)
-    except (ValueError, TypeError):
-        # If conversion fails, return original amount
-        return amount
+        decimal_amount = Decimal(normalized_amount)
+        scaled_amount = (decimal_amount * (Decimal(10) ** decimals)).quantize(
+            Decimal("1"),
+            rounding=ROUND_DOWN,
+        )
+        return str(int(scaled_amount))
+    except (InvalidOperation, ValueError, TypeError):
+        # If conversion fails, fall back to the original value to avoid
+        # accidentally submitting an incorrect amount.
+        return normalized_amount
 
 
 def build_quote_params(
@@ -350,15 +357,12 @@ def build_quote_params(
     Raises:
         ValueError: If chain identifiers are not recognized
     """
-    # Convert amount to wei format for API
-    wei_amount = convert_amount_to_wei(from_amount, from_token)
-
     return {
         "fromChain": convert_chain_to_id(from_chain),
         "toChain": convert_chain_to_id(to_chain),
         "fromToken": from_token,
         "toToken": to_token,
-        "fromAmount": wei_amount,
+        "fromAmount": convert_amount_to_wei(from_amount, from_token),
         "fromAddress": from_address or DUMMY_ADDRESS,
         "slippage": slippage,
     }
@@ -381,35 +385,84 @@ def is_native_token(token_address: str) -> bool:
     )
 
 
-def prepare_transaction_params(transaction_request: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Prepare transaction parameters for CDP wallet provider.
+def _convert_hex_or_decimal(value: Any) -> Optional[int]:
+    """Convert LiFi transaction numeric values into integers."""
 
-    Args:
-        transaction_request: Transaction request from LiFi API
+    if value is None:
+        return None
 
-    Returns:
-        Formatted transaction parameters
+    if isinstance(value, int):
+        return value
 
-    Raises:
-        Exception: If required parameters are missing
-    """
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if stripped.startswith("0x"):
+            return int(stripped, 16)
+        try:
+            return int(Decimal(stripped))
+        except (InvalidOperation, ValueError):
+            return None
+
+    return None
+
+
+def prepare_transaction_params(
+    transaction_request: Dict[str, Any],
+    wallet_address: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Prepare transaction parameters for the CDP wallet provider."""
+
     to_address = transaction_request.get("to")
-    value = transaction_request.get("value", "0")
+    value = transaction_request.get("value", "0x0")
     data = transaction_request.get("data", "0x")
 
     if not to_address:
-        raise Exception("No destination address in transaction request")
+        raise Exception("Transaction request is missing destination address")
 
-    # Convert value to integer if it's a string
-    if isinstance(value, str):
-        value = int(value, 16) if value.startswith("0x") else int(value)
-
-    return {
+    tx_params: Dict[str, Any] = {
         "to": Web3.to_checksum_address(to_address),
-        "value": value,
         "data": data,
     }
+
+    int_value = _convert_hex_or_decimal(value)
+    if int_value is not None:
+        tx_params["value"] = int_value
+
+    chain_id = _convert_hex_or_decimal(transaction_request.get("chainId"))
+    if chain_id is not None:
+        tx_params["chainId"] = chain_id
+
+    gas_limit = _convert_hex_or_decimal(
+        transaction_request.get("gasLimit") or transaction_request.get("gas")
+    )
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+
+    gas_price = _convert_hex_or_decimal(transaction_request.get("gasPrice"))
+    if gas_price is not None:
+        tx_params["gasPrice"] = gas_price
+
+    max_fee_per_gas = _convert_hex_or_decimal(transaction_request.get("maxFeePerGas"))
+    if max_fee_per_gas is not None:
+        tx_params["maxFeePerGas"] = max_fee_per_gas
+
+    max_priority_fee_per_gas = _convert_hex_or_decimal(
+        transaction_request.get("maxPriorityFeePerGas")
+    )
+    if max_priority_fee_per_gas is not None:
+        tx_params["maxPriorityFeePerGas"] = max_priority_fee_per_gas
+
+    nonce = _convert_hex_or_decimal(transaction_request.get("nonce"))
+    if nonce is not None:
+        tx_params["nonce"] = nonce
+
+    from_address = transaction_request.get("from") or wallet_address
+    if from_address:
+        tx_params["from"] = Web3.to_checksum_address(from_address)
+
+    return tx_params
 
 
 def format_quote_basic_info(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -464,7 +517,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
 
     # Extract gas and fee costs
     gas_costs = estimate.get("gasCosts", [])
-    fee_costs = []
+    fee_costs: List[Dict[str, Any]] = []
 
     # Collect fee information from included steps
     for step in data.get("includedSteps", []):
@@ -476,7 +529,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
     fees_text = ""
     if fee_costs:
         fees_text = "**Fees:**\n"
-        total_fee_usd = 0
+        total_fee_usd = 0.0
         for fee in fee_costs:
             fee_name = fee.get("name", "Unknown fee")
             fee_amount = fee.get("amount", "0")
@@ -508,7 +561,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
     gas_text = ""
     if gas_costs:
         gas_text = "**Gas Cost:**\n"
-        total_gas_usd = 0
+        total_gas_usd = 0.0
         for gas in gas_costs:
             gas_amount = gas.get("amount", "0")
             gas_token = gas.get("token", {}).get("symbol", "ETH")
@@ -628,7 +681,7 @@ def get_explorer_url(chain_id: int, tx_hash: str) -> str:
 
 
 def format_transaction_result(
-    tx_hash: str, chain_id: int, token_info: dict = None
+    tx_hash: str, chain_id: int, token_info: Optional[Dict[str, str]] = None
 ) -> str:
     """
     Format transaction result with explorer link.

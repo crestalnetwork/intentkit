@@ -2,11 +2,12 @@ import asyncio
 from typing import Any, Dict, List, Optional, Type
 
 import httpx
+from coinbase_agentkit import CdpEvmWalletProvider
 from pydantic import BaseModel, Field
 from web3 import Web3
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients import get_cdp_client
+from intentkit.clients import CdpClient, get_cdp_client
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_quote import TokenQuote
 from intentkit.skills.lifi.utils import (
@@ -69,7 +70,7 @@ class TokenExecute(LiFiBaseTool):
     default_slippage: float = 0.03
     allowed_chains: Optional[List[str]] = None
     max_execution_time: int = 300
-    quote_tool: TokenQuote = Field(default=None, exclude=True)
+    quote_tool: Optional[TokenQuote] = Field(default=None, exclude=True)
 
     def __init__(
         self,
@@ -77,7 +78,7 @@ class TokenExecute(LiFiBaseTool):
         default_slippage: float = 0.03,
         allowed_chains: Optional[List[str]] = None,
         max_execution_time: int = 300,
-    ):
+    ) -> None:
         """Initialize the TokenExecute skill with configuration options."""
         super().__init__(skill_store=skill_store)
         self.default_slippage = default_slippage
@@ -93,6 +94,8 @@ class TokenExecute(LiFiBaseTool):
 
     def _format_quote_result(self, data: Dict[str, Any]) -> str:
         """Format the quote result in a readable format."""
+        if self.quote_tool is None:
+            raise RuntimeError("Quote tool is not initialized")
         # Use the same formatting as token_quote
         return self.quote_tool._format_quote_result(data)
 
@@ -103,7 +106,7 @@ class TokenExecute(LiFiBaseTool):
         from_token: str,
         to_token: str,
         from_amount: str,
-        slippage: float = None,
+        slippage: Optional[float] = None,
         **kwargs,
     ) -> str:
         """Execute a token transfer."""
@@ -168,7 +171,9 @@ class TokenExecute(LiFiBaseTool):
 
                 # Step 3: Execute transaction
                 tx_hash = await self._execute_transfer_transaction(
-                    cdp_wallet_provider, quote_data
+                    cdp_wallet_provider,
+                    quote_data,
+                    from_address,
                 )
 
                 # Step 4: Monitor status and return result
@@ -180,10 +185,12 @@ class TokenExecute(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             return f"An unexpected error occurred: {str(e)}"
 
-    async def _get_cdp_wallet_provider(self, agent_id: str):
+    async def _get_cdp_wallet_provider(
+        self, agent_id: str
+    ) -> CdpEvmWalletProvider | str:
         """Get CDP wallet provider with error handling."""
         try:
-            cdp_client = await get_cdp_client(agent_id, self.skill_store)
+            cdp_client: CdpClient = await get_cdp_client(agent_id, self.skill_store)
             if not cdp_client:
                 return "CDP client not available. Please ensure your agent has CDP wallet configuration."
 
@@ -207,7 +214,7 @@ class TokenExecute(LiFiBaseTool):
         from_amount: str,
         slippage: float,
         from_address: str,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Any] | str:
         """Get quote from LiFi API."""
         api_params = build_quote_params(
             from_chain,
@@ -249,7 +256,7 @@ class TokenExecute(LiFiBaseTool):
         return data
 
     async def _handle_token_approval(
-        self, wallet_provider, quote_data: Dict[str, Any]
+        self, wallet_provider: CdpEvmWalletProvider, quote_data: Dict[str, Any]
     ) -> Optional[str]:
         """Handle ERC20 token approval if needed."""
         estimate = quote_data.get("estimate", {})
@@ -273,13 +280,18 @@ class TokenExecute(LiFiBaseTool):
             raise Exception(f"Failed to approve token: {str(e)}")
 
     async def _execute_transfer_transaction(
-        self, wallet_provider, quote_data: Dict[str, Any]
+        self,
+        wallet_provider: CdpEvmWalletProvider,
+        quote_data: Dict[str, Any],
+        from_address: str,
     ) -> str:
         """Execute the main transfer transaction."""
         transaction_request = quote_data.get("transactionRequest")
 
         try:
-            tx_params = prepare_transaction_params(transaction_request)
+            tx_params = prepare_transaction_params(
+                transaction_request, wallet_address=from_address
+            )
             self.logger.info(
                 f"Sending transaction to {tx_params['to']} with value {tx_params['value']}"
             )
@@ -407,7 +419,7 @@ class TokenExecute(LiFiBaseTool):
 
     async def _check_and_set_allowance(
         self,
-        wallet_provider,
+        wallet_provider: CdpEvmWalletProvider,
         token_address: str,
         approval_address: str,
         amount: str,

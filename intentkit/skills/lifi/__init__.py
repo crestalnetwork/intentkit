@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, TypedDict
+from typing import Any, List, Optional, TypedDict
 
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
@@ -32,10 +32,10 @@ async def get_skills(
     config: "Config",
     is_private: bool,
     store: SkillStoreABC,
-    **_,
+    **_: Any,
 ) -> list[LiFiBaseTool]:
     """Get all LiFi skills."""
-    available_skills = []
+    available_skills: list[str] = []
 
     # Log configuration
     logger.info(f"[LiFi_Skills] Initializing with config: {config}")
@@ -57,7 +57,7 @@ async def get_skills(
     logger.info(f"[LiFi_Skills] Available skills: {available_skills}")
 
     # Get each skill using the cached getter
-    skills = []
+    skills: list[LiFiBaseTool] = []
     for name in available_skills:
         try:
             skill = get_lifi_skill(name, store, config)

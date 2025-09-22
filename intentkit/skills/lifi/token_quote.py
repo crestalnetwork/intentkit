@@ -65,7 +65,7 @@ class TokenQuote(LiFiBaseTool):
         skill_store: SkillStoreABC,
         default_slippage: float = 0.03,
         allowed_chains: Optional[List[str]] = None,
-    ):
+    ) -> None:
         """Initialize the TokenQuote skill with configuration options."""
         super().__init__(skill_store=skill_store)
         self.default_slippage = default_slippage
@@ -78,7 +78,7 @@ class TokenQuote(LiFiBaseTool):
         from_token: str,
         to_token: str,
         from_amount: str,
-        slippage: float = None,
+        slippage: Optional[float] = None,
         **kwargs,
     ) -> str:
         """Get a quote for token transfer."""
