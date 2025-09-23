@@ -142,7 +142,7 @@ class AgentExample(BaseModel):
             description="Name of the example",
             max_length=50,
             json_schema_extra={
-                "x-group": "examples",
+                "x-placeholder": "Add a name for the example",
             },
         ),
     ]
@@ -152,7 +152,7 @@ class AgentExample(BaseModel):
             description="Description of the example",
             max_length=200,
             json_schema_extra={
-                "x-group": "examples",
+                "x-placeholder": "Add a short description for the example",
             },
         ),
     ]
@@ -162,7 +162,7 @@ class AgentExample(BaseModel):
             description="Example prompt",
             max_length=2000,
             json_schema_extra={
-                "x-group": "examples",
+                "x-placeholder": "The prompt will be sent to the agent",
             },
         ),
     ]
@@ -393,6 +393,21 @@ class AgentTable(Base, AgentUserInputColumns):
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="List of example interactions for the agent",
+    )
+    public_extra = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Public extra data of the agent",
+    )
+    deployed_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when the agent was deployed",
+    )
+    public_info_updated_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when the agent public info was last updated",
     )
 
     # auto timestamp
@@ -881,6 +896,8 @@ class AgentUpdate(AgentUserInput):
             # update
             for key, value in self.model_dump(exclude_unset=True).items():
                 setattr(db_agent, key, value)
+            db_agent.version = self.hash()
+            db_agent.deployed_at = func.now()
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
@@ -903,6 +920,7 @@ class AgentUpdate(AgentUserInput):
                 setattr(db_agent, key, value)
             # version
             db_agent.version = self.hash()
+            db_agent.deployed_at = func.now()
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
@@ -964,6 +982,7 @@ class AgentCreate(AgentUpdate):
             try:
                 db_agent = AgentTable(**self.model_dump())
                 db_agent.version = self.hash()
+                db_agent.deployed_at = func.now()
                 db.add(db_agent)
                 await db.commit()
                 await db.refresh(db_agent)
@@ -991,7 +1010,6 @@ class AgentPublicInfo(BaseModel):
             default=None,
             description="Description of the agent, for public view, not contained in prompt",
             json_schema_extra={
-                "x-group": "basic",
                 "x-placeholder": "Introduce your agent",
             },
         ),
@@ -1002,7 +1020,6 @@ class AgentPublicInfo(BaseModel):
             default=None,
             description="Link of external website of the agent, if you have one",
             json_schema_extra={
-                "x-group": "basic",
                 "x-placeholder": "Enter agent external website url",
                 "format": "uri",
             },
@@ -1016,7 +1033,6 @@ class AgentPublicInfo(BaseModel):
             max_length=10,
             min_length=1,
             json_schema_extra={
-                "x-group": "basic",
                 "x-placeholder": "If one day, your agent has it's own token, what will it be?",
             },
         ),
@@ -1028,8 +1044,7 @@ class AgentPublicInfo(BaseModel):
             description="Token address of the agent",
             max_length=42,
             json_schema_extra={
-                "x-group": "internal",
-                "readOnly": True,
+                "x-placeholder": "The contract address of the agent token",
             },
         ),
     ]
@@ -1040,8 +1055,7 @@ class AgentPublicInfo(BaseModel):
             description="Pool of the agent token",
             max_length=42,
             json_schema_extra={
-                "x-group": "internal",
-                "readOnly": True,
+                "x-placeholder": "The contract address of the agent token pool",
             },
         ),
     ]
@@ -1052,7 +1066,7 @@ class AgentPublicInfo(BaseModel):
             description="Fee percentage of the agent",
             ge=Decimal("0.0"),
             json_schema_extra={
-                "x-group": "basic",
+                "x-placeholder": "Agent will charge service fee according to this ratio.",
             },
         ),
     ]
@@ -1063,7 +1077,7 @@ class AgentPublicInfo(BaseModel):
             description="Introduction of the example",
             max_length=2000,
             json_schema_extra={
-                "x-group": "examples",
+                "x-placeholder": "Add a short introduction in new chat",
             },
         ),
     ]
@@ -1074,11 +1088,51 @@ class AgentPublicInfo(BaseModel):
             description="List of example prompts for the agent",
             max_length=6,
             json_schema_extra={
-                "x-group": "examples",
                 "x-inline": True,
             },
         ),
     ]
+    public_extra: Annotated[
+        Optional[Dict[str, Any]],
+        PydanticField(
+            default=None,
+            description="Public extra data of the agent",
+        ),
+    ]
+
+    async def override(self, agent_id: str) -> "Agent":
+        """Override agent public info with all fields from this instance.
+
+        Args:
+            agent_id: The ID of the agent to override
+
+        Returns:
+            The updated Agent instance
+        """
+        async with get_session() as session:
+            # Get the agent from database
+            result = await session.execute(
+                select(AgentTable).where(AgentTable.id == agent_id)
+            )
+            db_agent = result.scalar_one_or_none()
+
+            if not db_agent:
+                raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
+
+            # Update public info fields
+            update_data = self.model_dump()
+            for key, value in update_data.items():
+                if hasattr(db_agent, key):
+                    setattr(db_agent, key, value)
+
+            # Update public_info_updated_at timestamp
+            db_agent.public_info_updated_at = func.now()
+
+            # Commit changes
+            await session.commit()
+            await session.refresh(db_agent)
+
+            return Agent.model_validate(db_agent)
 
 
 class Agent(AgentCreate, AgentPublicInfo):
@@ -1124,6 +1178,21 @@ class Agent(AgentCreate, AgentPublicInfo):
             description="Other helper data fields for query, come from agent and agent data"
         ),
     ]
+    deployed_at: Annotated[
+        Optional[datetime],
+        PydanticField(
+            default=None,
+            description="Timestamp when the agent was deployed",
+        ),
+    ]
+    public_info_updated_at: Annotated[
+        Optional[datetime],
+        PydanticField(
+            default=None,
+            description="Timestamp when the agent public info was last updated",
+        ),
+    ]
+
     # auto timestamp
     created_at: Annotated[
         datetime,
