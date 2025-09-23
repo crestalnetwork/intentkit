@@ -897,7 +897,7 @@ class AgentUpdate(AgentUserInput):
             for key, value in self.model_dump(exclude_unset=True).items():
                 setattr(db_agent, key, value)
             db_agent.version = self.hash()
-            db_agent.deployed_at = datetime.now(timezone.utc)
+            db_agent.deployed_at = func.now()
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
@@ -920,7 +920,7 @@ class AgentUpdate(AgentUserInput):
                 setattr(db_agent, key, value)
             # version
             db_agent.version = self.hash()
-            db_agent.deployed_at = datetime.now(timezone.utc)
+            db_agent.deployed_at = func.now()
             await db.commit()
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
@@ -982,7 +982,7 @@ class AgentCreate(AgentUpdate):
             try:
                 db_agent = AgentTable(**self.model_dump())
                 db_agent.version = self.hash()
-                db_agent.deployed_at = datetime.now(timezone.utc)
+                db_agent.deployed_at = func.now()
                 db.add(db_agent)
                 await db.commit()
                 await db.refresh(db_agent)
@@ -1099,6 +1099,40 @@ class AgentPublicInfo(BaseModel):
             description="Public extra data of the agent",
         ),
     ]
+
+    async def override(self, agent_id: str) -> "Agent":
+        """Override agent public info with all fields from this instance.
+
+        Args:
+            agent_id: The ID of the agent to override
+
+        Returns:
+            The updated Agent instance
+        """
+        async with get_session() as session:
+            # Get the agent from database
+            result = await session.execute(
+                select(AgentTable).where(AgentTable.id == agent_id)
+            )
+            db_agent = result.scalar_one_or_none()
+
+            if not db_agent:
+                raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
+
+            # Update public info fields
+            update_data = self.model_dump()
+            for key, value in update_data.items():
+                if hasattr(db_agent, key):
+                    setattr(db_agent, key, value)
+
+            # Update public_info_updated_at timestamp
+            db_agent.public_info_updated_at = func.now()
+
+            # Commit changes
+            await session.commit()
+            await session.refresh(db_agent)
+
+            return Agent.model_validate(db_agent)
 
 
 class Agent(AgentCreate, AgentPublicInfo):
