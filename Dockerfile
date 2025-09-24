@@ -26,7 +26,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ARG RELEASE
 ENV RELEASE=$RELEASE
 ENV PATH="/app/.venv/bin:$PATH"
-ENV UVICORN_LOOP=asyncio
 
 # Command to run the application
 CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "80"]
