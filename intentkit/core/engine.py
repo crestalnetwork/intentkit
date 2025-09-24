@@ -21,6 +21,7 @@ from typing import Optional, Tuple
 
 import sqlalchemy
 from epyxid import XID
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -29,6 +30,7 @@ from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
+from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -70,8 +72,8 @@ _agents_updated: dict[str, datetime] = {}
 _private_agents_updated: dict[str, datetime] = {}
 
 
-async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateGraph:
-    """Create an AI agent with specified configuration and tools.
+async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph:
+    """Build an AI agent with specified configuration and tools.
 
     This function:
     1. Initializes LLM with specified model
@@ -81,13 +83,12 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
 
     Args:
         agent (Agent): Agent configuration object
+        agent_data (AgentData): Agent data object
         is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
-        has_search (bool, optional): Flag indicating whether to include search tools. Defaults to False.
 
     Returns:
         CompiledStateGraph: Initialized LangChain agent
     """
-    agent_data = await AgentData.get(agent.id)
 
     # Create the LLM model instance
     llm_model = await create_llm_model(
@@ -108,6 +109,7 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []
+    private_tools: list[BaseTool | dict] = []
 
     if agent.skills:
         for k, v in agent.skills.items():
@@ -116,11 +118,18 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
             try:
                 skill_module = importlib.import_module(f"intentkit.skills.{k}")
                 if hasattr(skill_module, "get_skills"):
+                    # all
                     skill_tools = await skill_module.get_skills(
-                        v, is_private, agent_store, agent_id=agent.id
+                        v, False, agent_store, agent_id=agent.id
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)
+                    # private
+                    skill_private_tools = await skill_module.get_skills(
+                        v, True, agent_store, agent_id=agent.id
+                    )
+                    if skill_private_tools and len(skill_private_tools) > 0:
+                        private_tools.extend(skill_private_tools)
                 else:
                     logger.error(f"Skill {k} does not have get_skills function")
             except ImportError as e:
@@ -128,23 +137,33 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
 
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
+    private_tools = list({tool.name: tool for tool in private_tools}.values())
 
     # Add search tools if requested
     if (
-        llm_model.info.provider == LLMProvider.OPENAI
-        and llm_model.info.supports_search
-        and not agent.model.startswith(
-            "gpt-5"
-        )  # tmp disable gpt-5 search since package bugs
+        llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search
+        # and not agent.model.startswith(
+        #     "gpt-5"
+        # )  # tmp disable gpt-5 search since package bugs
     ):
         tools.append({"type": "web_search_preview"})
+        private_tools.append({"type": "web_search_preview"})
 
     # Create the formatted_prompt function using the refactored prompt module
     formatted_prompt = create_formatted_prompt_function(agent, agent_data)
 
+    # bind tools to llm
+    def select_model(
+        state: AgentState, runtime: Runtime[AgentContext]
+    ) -> BaseChatModel:
+        context = runtime.context
+        if context.is_private:
+            return llm.bind_tools(private_tools)
+        return llm.bind_tools(tools)
+
     for tool in tools:
         logger.info(
-            f"[{agent.id}{'-private' if is_private else ''}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
+            f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
 
     # Pre model hook
@@ -157,7 +176,7 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
-        model=llm,
+        model=select_model,
         tools=tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
@@ -172,7 +191,23 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
     return executor
 
 
-async def initialize_agent(aid, is_private=False):
+async def create_agent(agent: Agent) -> CompiledStateGraph:
+    """Create an AI agent with specified configuration and tools.
+
+    This function maintains backward compatibility by calling build_agent internally.
+
+    Args:
+        agent (Agent): Agent configuration object
+        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+
+    Returns:
+        CompiledStateGraph: Initialized LangChain agent
+    """
+    agent_data = await AgentData.get(agent.id)
+    return await build_agent(agent, agent_data)
+
+
+async def initialize_agent(aid):
     """Initialize an AI agent with specified configuration and tools.
 
     This function:
@@ -198,47 +233,34 @@ async def initialize_agent(aid, is_private=False):
         )
 
     # Create the agent using the new create_agent function
-    executor = await create_agent(agent, is_private)
+    executor = await create_agent(agent)
 
     # Cache the agent executor
-    if is_private:
-        _private_agents[aid] = executor
-        _private_agents_updated[aid] = agent.updated_at
-    else:
-        _agents[aid] = executor
-        _agents_updated[aid] = agent.updated_at
+    _agents[aid] = executor
+    _agents_updated[aid] = agent.deployed_at if agent.deployed_at else agent.updated_at
 
 
-async def agent_executor(
-    agent_id: str, is_private: bool
-) -> Tuple[CompiledStateGraph, float]:
+async def agent_executor(agent_id: str) -> Tuple[CompiledStateGraph, float]:
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
         )
-    agents = _private_agents if is_private else _agents
-    agents_updated = _private_agents_updated if is_private else _agents_updated
-
+    updated_at = agent.deployed_at if agent.deployed_at else agent.updated_at
     # Check if agent needs reinitialization due to updates
     needs_reinit = False
-    if agent_id in agents:
-        if (
-            agent_id not in agents_updated
-            or agent.updated_at != agents_updated[agent_id]
-        ):
+    if agent_id in _agents:
+        if agent_id not in _agents_updated or updated_at != _agents_updated[agent_id]:
             needs_reinit = True
-            logger.info(
-                f"Reinitializing agent {agent_id} due to updates, private mode: {is_private}"
-            )
+            logger.info(f"Reinitializing agent {agent_id} due to updates")
 
     # cold start or needs reinitialization
     cold_start_cost = 0.0
-    if (agent_id not in agents) or needs_reinit:
-        await initialize_agent(agent_id, is_private)
+    if (agent_id not in _agents) or needs_reinit:
+        await initialize_agent(agent_id)
         cold_start_cost = time.perf_counter() - start
-    return agents[agent_id], cold_start_cost
+    return _agents[agent_id], cold_start_cost
 
 
 async def stream_agent(message: ChatMessageCreate):
@@ -355,7 +377,7 @@ async def stream_agent(message: ChatMessageCreate):
     if input.user_id == agent.owner:
         is_private = True
 
-    executor, cold_start_cost = await agent_executor(input.agent_id, is_private)
+    executor, cold_start_cost = await agent_executor(input.agent_id)
     last = start + cold_start_cost
 
     # Extract images from attachments
@@ -889,10 +911,7 @@ async def clean_agent_memory(
 async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
     thread_id = f"{agent_id}-{chat_id}"
     stream_config = {"configurable": {"thread_id": thread_id}}
-    is_private = False
-    if chat_id.startswith("owner") or chat_id.startswith("autonomous"):
-        is_private = True
-    executor, _ = await agent_executor(agent_id, is_private)
+    executor, _ = await agent_executor(agent_id)
     snap = await executor.aget_state(stream_config)
     if snap.values and "messages" in snap.values:
         return snap.values["messages"]
