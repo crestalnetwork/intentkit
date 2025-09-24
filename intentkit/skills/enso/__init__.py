@@ -36,7 +36,7 @@ class Config(SkillConfig):
 
     states: SkillStates
     api_token: NotRequired[str]
-    main_tokens: List[str]
+    main_tokens: NotRequired[List[str]]
 
 
 async def get_skills(

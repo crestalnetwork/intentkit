@@ -4,13 +4,11 @@ import httpx
 from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from .base import EnsoBaseTool, base_url, default_chain_id
+from .base import EnsoBaseTool, base_url
 
 
 class EnsoGetPricesInput(BaseModel):
-    chainId: int = Field(
-        default_chain_id, description="Blockchain chain ID of the token"
-    )
+    chainId: int | None = Field(None, description="Blockchain chain ID of the token")
     address: str = Field(
         "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         description="Contract address of the token",
@@ -43,22 +41,21 @@ class EnsoGetPrices(EnsoBaseTool):
     async def _arun(
         self,
         address: str,
-        chainId: int = default_chain_id,
+        chainId: int | None = None,
         **kwargs,
     ) -> EnsoGetPricesOutput:
         """
         Asynchronous function to request the token price from the API.
 
         Args:
-            chainId (int): The blockchain's chain ID.
+            chainId (int | None): The blockchain's chain ID. Defaults to the agent's configured network.
             address (str): Contract address of the token.
 
         Returns:
             EnsoGetPricesOutput: Token price response or error message.
         """
-        url = f"{base_url}/api/v1/prices/{str(chainId)}/{address}"
-
         context = self.get_context()
+        resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
 
         headers = {
@@ -68,7 +65,10 @@ class EnsoGetPrices(EnsoBaseTool):
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.get(url, headers=headers)
+                response = await client.get(
+                    f"{base_url}/api/v1/prices/{str(resolved_chain_id)}/{address}",
+                    headers=headers,
+                )
                 response.raise_for_status()
                 json_dict = response.json()
 
