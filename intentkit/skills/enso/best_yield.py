@@ -4,14 +4,7 @@ import httpx
 from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.skills.enso.base import (
-    EnsoBaseTool,
-    base_url,
-)
-from intentkit.utils.chain import NetworkId
-
-# Chain ID for Base Mainnet
-BASE_CHAIN_ID = int(NetworkId.BaseMainnet)
+from intentkit.skills.enso.base import EnsoBaseTool, base_url
 
 
 class EnsoGetBestYieldInput(BaseModel):
@@ -21,9 +14,9 @@ class EnsoGetBestYieldInput(BaseModel):
         "USDC",
         description="Symbol of the token to find the best yield for (e.g., 'USDC', 'ETH', 'USDT')",
     )
-    chain_id: int = Field(
-        BASE_CHAIN_ID,
-        description="The blockchain chain ID. Default is Base Mainnet (8453)",
+    chain_id: int | None = Field(
+        None,
+        description="The blockchain chain ID. Defaults to the agent's configured network.",
     )
     top_n: int = Field(
         5,
@@ -80,7 +73,7 @@ class EnsoGetBestYield(EnsoBaseTool):
     async def _arun(
         self,
         token_symbol: str = "USDC",
-        chain_id: int = BASE_CHAIN_ID,
+        chain_id: int | None = None,
         top_n: int = 5,
         **kwargs,
     ) -> EnsoGetBestYieldOutput:
@@ -89,7 +82,7 @@ class EnsoGetBestYield(EnsoBaseTool):
 
         Args:
             token_symbol (str): Symbol of the token to find the best yield for (default: USDC)
-            chain_id (int): The chain id of the network (default: Base Mainnet)
+            chain_id (int | None): The chain id of the network. Defaults to the agent's configured network.
             top_n (int): Number of top yield options to return
 
         Returns:
@@ -99,16 +92,17 @@ class EnsoGetBestYield(EnsoBaseTool):
             ToolException: If there's an error accessing the Enso API.
         """
         context = self.get_context()
+        resolved_chain_id = self.resolve_chain_id(context, chain_id)
         api_token = self.get_api_token(context)
 
         if not api_token:
             raise ToolException("No API token found for Enso Finance")
 
         # Get the chain name for the given chain ID
-        chain_name = await self._get_chain_name(api_token, chain_id)
+        chain_name = await self._get_chain_name(api_token, resolved_chain_id)
 
         # Get all protocols on the specified chain
-        protocols = await self._get_protocols(api_token, chain_id)
+        protocols = await self._get_protocols(api_token, resolved_chain_id)
 
         # Collect all yield options from all protocols
         all_yield_options = []
@@ -119,7 +113,7 @@ class EnsoGetBestYield(EnsoBaseTool):
 
             # Get yield-bearing tokens for this protocol
             tokens = await self._get_protocol_tokens(
-                api_token, chain_id, protocol_slug, token_symbol
+                api_token, resolved_chain_id, protocol_slug, token_symbol
             )
 
             # Process tokens to extract yield options
@@ -170,7 +164,7 @@ class EnsoGetBestYield(EnsoBaseTool):
         return EnsoGetBestYieldOutput(
             best_options=top_options,
             token_symbol=token_symbol,
-            chain_id=chain_id,
+            chain_id=resolved_chain_id,
             chain_name=chain_name,
         )
 

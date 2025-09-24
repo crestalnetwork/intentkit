@@ -7,8 +7,6 @@ from pydantic import BaseModel, Field
 
 from .base import EnsoBaseTool, base_url
 
-logger = logging.getLogger(__name__)
-
 
 class EnsoGetNetworksInput(BaseModel):
     """
@@ -36,6 +34,9 @@ class EnsoGetNetworksOutput(BaseModel):
     res: list[ConnectedNetwork] | None = Field(
         None, description="Response containing networks and metadata"
     )
+
+
+logger = logging.getLogger(__name__)
 
 
 class EnsoGetNetworks(EnsoBaseTool):

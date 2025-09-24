@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from intentkit.skills.enso.networks import EnsoGetNetworks
 
-from .base import EnsoBaseTool, base_url, default_chain_id
+from .base import EnsoBaseTool, base_url, format_amount_with_decimals
 
 
 class EnsoRouteShortcutInput(BaseModel):
@@ -18,9 +18,9 @@ class EnsoRouteShortcutInput(BaseModel):
         False,
         description="Whether to broadcast the transaction or not, this is false by default.",
     )
-    chainId: int = Field(
-        default_chain_id,
-        description="(Optional) Chain ID of the network to execute the transaction on. the default value is the chain_id extracted from networks according to tokenIn and tokenOut",
+    chainId: int | None = Field(
+        None,
+        description="(Optional) Chain ID of the network to execute the transaction on. Defaults to the agent's configured network.",
     )
     amountIn: list[int] = Field(
         description="Amount of tokenIn to swap in wei, you should multiply user's requested value by token decimals."
@@ -162,7 +162,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
         amountIn: list[int],
         tokenIn: list[str],
         tokenOut: list[str],
-        chainId: int = default_chain_id,
+        chainId: int | None = None,
         broadcast_requested: bool = False,
         **kwargs,
     ) -> EnsoRouteShortcutOutput:
@@ -173,7 +173,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
             amountIn (list[int]): Amount of tokenIn to swap in wei, you should multiply user's requested value by token decimals.
             tokenIn (list[str]): Ethereum address of the token to swap or enter into a position from (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
             tokenOut (list[str]): Ethereum address of the token to swap or enter into a position to (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee).
-            chainId (int): The chain id of the network to be used for swap, deposit and routing.
+            chainId (int | None): The chain id of the network to be used for swap, deposit and routing. Defaults to the agent's configured network.
             broadcast_requested (bool): User should ask for broadcasting the transaction explicitly, otherwise it is always false.
 
         Returns:
@@ -182,8 +182,9 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
         context = self.get_context()
         agent_id = context.agent_id
+        resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        account = await self.get_account(context)
+        wallet_address = await self.get_wallet_address(context)
 
         async with httpx.AsyncClient() as client:
             try:
@@ -193,9 +194,10 @@ class EnsoRouteShortcut(EnsoBaseTool):
                 )
 
                 if networks:
+                    resolved_key = str(resolved_chain_id)
                     network_name = (
-                        networks.get(str(chainId)).get("name")
-                        if networks.get(str(chainId))
+                        networks.get(resolved_key).get("name")
+                        if networks.get(resolved_key)
                         else None
                     )
                 if network_name is None:
@@ -204,12 +206,12 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     ).arun()
 
                     for network in networks.res:
-                        if network.id == chainId:
+                        if network.id == resolved_chain_id:
                             network_name = network.name
 
                 if not network_name:
                     raise ToolException(
-                        f"network name not found for chainId: {chainId}"
+                        f"network name not found for chainId: {resolved_chain_id}"
                     )
 
                 headers = {
@@ -242,13 +244,13 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
                 # Prepare query parameters
                 params = EnsoRouteShortcutInput(
-                    chainId=chainId,
+                    chainId=resolved_chain_id,
                     amountIn=amountIn,
                     tokenIn=tokenIn,
                     tokenOut=tokenOut,
                 ).model_dump(exclude_none=True)
 
-                params["fromAddress"] = account.address
+                params["fromAddress"] = wallet_address
 
                 response = await client.get(url, headers=headers, params=params)
                 response.raise_for_status()  # Raise HTTPError for non-2xx responses
@@ -256,10 +258,12 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
                 res = EnsoRouteShortcutOutput(**json_dict)
                 res.network = network_name
-
-                res.amountOut = str(
-                    float(res.amountOut) / 10 ** token_decimals[tokenOut[0]]
+                decimals = token_decimals.get(tokenOut[0])
+                amount_out = format_amount_with_decimals(
+                    json_dict.get("amountOut"), decimals
                 )
+                if amount_out is not None:
+                    res.amountOut = amount_out
 
                 if broadcast_requested:
                     # Use the wallet provider to send the transaction
@@ -269,13 +273,13 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     tx_data = json_dict.get("tx", {})
                     if tx_data:
                         # Send the transaction using the wallet provider
-                        tx_hash = wallet_provider.send_transaction(
-                            {
-                                "to": tx_data.get("to"),
-                                "data": tx_data.get("data", "0x"),
-                                "value": tx_data.get("value", 0),
-                            }
-                        )
+                        tx_params = {
+                            "to": tx_data.get("to"),
+                            "data": tx_data.get("data", "0x"),
+                            "value": tx_data.get("value", 0),
+                            "from": wallet_address,
+                        }
+                        tx_hash = wallet_provider.send_transaction(tx_params)
 
                         # Wait for transaction confirmation
                         wallet_provider.wait_for_transaction_receipt(tx_hash)
