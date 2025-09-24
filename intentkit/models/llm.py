@@ -12,7 +12,7 @@ from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitLookUpError
-from langchain_core.language_models import LanguageModelLike
+from langchain.chat_models.base import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -344,7 +344,7 @@ class LLMModel(BaseModel):
         return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return the LLM instance based on the configuration."""
         raise NotImplementedError("Subclasses must implement create_instance")
 
@@ -362,7 +362,7 @@ class LLMModel(BaseModel):
 class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
@@ -398,7 +398,7 @@ class OpenAILLM(LLMModel):
 class DeepseekLLM(LLMModel):
     """Deepseek LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatDeepseek instance."""
 
         from langchain_deepseek import ChatDeepSeek
@@ -431,7 +431,7 @@ class DeepseekLLM(LLMModel):
 class XAILLM(LLMModel):
     """XAI (Grok) LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatXAI instance."""
 
         from langchain_xai import ChatXAI
@@ -463,7 +463,7 @@ class XAILLM(LLMModel):
 class EternalLLM(LLMModel):
     """Eternal AI LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Eternal AI."""
         from langchain_openai import ChatOpenAI
 
@@ -495,7 +495,7 @@ class EternalLLM(LLMModel):
 class ReigentLLM(LLMModel):
     """Reigent LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Reigent."""
         from langchain_openai import ChatOpenAI
 
@@ -517,7 +517,7 @@ class ReigentLLM(LLMModel):
 class VeniceLLM(LLMModel):
     """Venice LLM configuration."""
 
-    async def create_instance(self, config: Any) -> LanguageModelLike:
+    async def create_instance(self, config: Any) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Venice."""
         from langchain_openai import ChatOpenAI
 
