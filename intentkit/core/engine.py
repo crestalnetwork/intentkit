@@ -70,8 +70,10 @@ _agents_updated: dict[str, datetime] = {}
 _private_agents_updated: dict[str, datetime] = {}
 
 
-async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateGraph:
-    """Create an AI agent with specified configuration and tools.
+async def build_agent(
+    agent: Agent, agent_data: AgentData, is_private: bool = False
+) -> CompiledStateGraph:
+    """Build an AI agent with specified configuration and tools.
 
     This function:
     1. Initializes LLM with specified model
@@ -81,13 +83,12 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
 
     Args:
         agent (Agent): Agent configuration object
+        agent_data (AgentData): Agent data object
         is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
-        has_search (bool, optional): Flag indicating whether to include search tools. Defaults to False.
 
     Returns:
         CompiledStateGraph: Initialized LangChain agent
     """
-    agent_data = await AgentData.get(agent.id)
 
     # Create the LLM model instance
     llm_model = await create_llm_model(
@@ -170,6 +171,22 @@ async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateG
     )
 
     return executor
+
+
+async def create_agent(agent: Agent, is_private: bool = False) -> CompiledStateGraph:
+    """Create an AI agent with specified configuration and tools.
+
+    This function maintains backward compatibility by calling build_agent internally.
+
+    Args:
+        agent (Agent): Agent configuration object
+        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+
+    Returns:
+        CompiledStateGraph: Initialized LangChain agent
+    """
+    agent_data = await AgentData.get(agent.id)
+    return await build_agent(agent, agent_data, is_private)
 
 
 async def initialize_agent(aid, is_private=False):
