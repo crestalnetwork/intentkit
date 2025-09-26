@@ -280,7 +280,7 @@ async def stream_agent(message: ChatMessageCreate):
     agent = await Agent.get(message.agent_id)
     executor, cold_start_cost = await agent_executor(message.agent_id)
     message.cold_start_cost = cold_start_cost
-    async for chat_message in stream_agent_raw(agent, executor, message):
+    async for chat_message in stream_agent_raw(message, agent, executor):
         yield chat_message
 
 
