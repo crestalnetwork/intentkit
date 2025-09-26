@@ -277,6 +277,16 @@ async def stream_agent(message: ChatMessageCreate):
     Yields:
         ChatMessage: Individual response messages including timing information
     """
+    agent = await Agent.get(message.agent_id)
+    executor, cold_start_cost = await agent_executor(message.agent_id)
+    message.cold_start_cost = cold_start_cost
+    async for chat_message in stream_agent_raw(agent, executor, message):
+        yield chat_message
+
+
+async def stream_agent_raw(
+    message: ChatMessageCreate, agent: Agent, executor: CompiledStateGraph
+):
     start = time.perf_counter()
     # make sure reply_to is set
     message.reply_to = message.id
@@ -284,10 +294,6 @@ async def stream_agent(message: ChatMessageCreate):
     # save input message first
     user_message = await message.save()
 
-    # agent
-    agent = await Agent.get(user_message.agent_id)
-
-    # model
     model = await LLMModelInfo.get(agent.model)
 
     payment_enabled = config.payment_enabled
@@ -375,8 +381,7 @@ async def stream_agent(message: ChatMessageCreate):
     if user_message.user_id == agent.owner:
         is_private = True
 
-    executor, cold_start_cost = await agent_executor(user_message.agent_id)
-    last = start + cold_start_cost
+    last = start
 
     # Extract images from attachments
     image_urls = []
@@ -516,9 +521,6 @@ async def stream_agent(message: ChatMessageCreate):
                         time_cost=this_time - last,
                     )
                     last = this_time
-                    if cold_start_cost > 0:
-                        chat_message_create.cold_start_cost = cold_start_cost
-                        cold_start_cost = 0
                     # handle message and payment in one transaction
                     async with get_session() as session:
                         # payment
@@ -632,9 +634,6 @@ async def stream_agent(message: ChatMessageCreate):
                     time_cost=this_time - last,
                 )
                 last = this_time
-                if cold_start_cost > 0:
-                    skill_message_create.cold_start_cost = cold_start_cost
-                    cold_start_cost = 0
                 # save message and credit in one transaction
                 async with get_session() as session:
                     if payment_enabled:
@@ -714,11 +713,6 @@ async def stream_agent(message: ChatMessageCreate):
                                 time_cost=this_time - last,
                             )
                             last = this_time
-                            if cold_start_cost > 0:
-                                post_model_message_create.cold_start_cost = (
-                                    cold_start_cost
-                                )
-                                cold_start_cost = 0
                             post_model_message = await post_model_message_create.save()
                             yield post_model_message
                         error_message_create = (
