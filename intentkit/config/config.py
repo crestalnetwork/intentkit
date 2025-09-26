@@ -92,6 +92,7 @@ class Config:
         self.eternal_api_key = self.load("ETERNAL_API_KEY")
         self.reigent_api_key = self.load("REIGENT_API_KEY")
         self.venice_api_key = self.load("VENICE_API_KEY")
+        self.gatewayz_api_key = self.load("GATEWAYZ_API_KEY")
         # LLM Config
         self.system_prompt = self.load("SYSTEM_PROMPT")
         self.intentkit_prompt = self.load("INTENTKIT_PROMPT")

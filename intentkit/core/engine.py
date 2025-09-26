@@ -422,8 +422,8 @@ async def stream_agent_raw(
             input_message = re.sub(r"\b@web\b", "", input_message).strip()
 
     # content to llm
-    content = [
-        {"type": "text", "text": input_message},
+    messages = [
+        HumanMessage(content=input_message),
     ]
     # if the model doesn't natively support image parsing, add the image URLs to the message
     if image_urls:
@@ -432,21 +432,19 @@ async def stream_agent_raw(
             and not model.supports_image_input
         ):
             input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
-            content = [
-                {"type": "text", "text": input_message},
+            messages = [
+                HumanMessage(content=input_message),
             ]
         else:
             # anyway, pass it directly to LLM
-            content.extend(
+            messages.extend(
                 [
-                    {"type": "image_url", "image_url": {"url": image_url}}
+                    HumanMessage(
+                        content={"type": "image_url", "image_url": {"url": image_url}}
+                    )
                     for image_url in image_urls
                 ]
             )
-
-    messages = [
-        HumanMessage(content=content),
-    ]
 
     # stream config
     thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
