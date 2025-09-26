@@ -144,8 +144,8 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
         #     "gpt-5"
         # )  # tmp disable gpt-5 search since package bugs
     ):
-        tools.append({"type": "web_search_preview"})
-        private_tools.append({"type": "web_search_preview"})
+        tools.append({"type": "web_search"})
+        private_tools.append({"type": "web_search"})
 
     # Create the formatted_prompt function using the refactored prompt module
     formatted_prompt = create_formatted_prompt_function(agent, agent_data)

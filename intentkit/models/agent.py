@@ -1159,23 +1159,29 @@ class Agent(AgentCreate, AgentPublicInfo):
     statistics: Annotated[
         Optional[Dict[str, Any]],
         PydanticField(
-            description="Statistics of the agent, update every 1 hour for query"
+            default=None,
+            description="Statistics of the agent, update every 1 hour for query",
         ),
     ]
     assets: Annotated[
         Optional[Dict[str, Any]],
-        PydanticField(description="Assets of the agent, update every 1 hour for query"),
+        PydanticField(
+            default=None,
+            description="Assets of the agent, update every 1 hour for query",
+        ),
     ]
     account_snapshot: Annotated[
         Optional[CreditAccount],
         PydanticField(
-            description="Account snapshot of the agent, update every 1 hour for query"
+            default=None,
+            description="Account snapshot of the agent, update every 1 hour for query",
         ),
     ]
     extra: Annotated[
         Optional[Dict[str, Any]],
         PydanticField(
-            description="Other helper data fields for query, come from agent and agent data"
+            default=None,
+            description="Other helper data fields for query, come from agent and agent data",
         ),
     ]
     deployed_at: Annotated[
