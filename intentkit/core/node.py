@@ -81,10 +81,10 @@ class PreModelNode(RunnableCallable):
         self.func_accepts_config = True
 
     def _parse_input(
-        self, input: AgentState
+        self, state: AgentState
     ) -> tuple[list[AnyMessage], dict[str, Any]]:
-        messages = input.get("messages")
-        context = input.get("context", {})
+        messages = state.get("messages")
+        context = state.get("context", {})
         if messages is None or not isinstance(messages, list) or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
         return messages, context
@@ -107,13 +107,13 @@ class PreModelNode(RunnableCallable):
     def _func(self, AgentState) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
-    async def _afunc(self, input: AgentState) -> dict[str, Any]:
-        messages, context = self._parse_input(input)
+    async def _afunc(self, state: AgentState) -> dict[str, Any]:
+        messages, context = self._parse_input(state)
         try:
             _validate_chat_history(messages)
         except ValueError as e:
             logger.error(f"Invalid chat history: {e}")
-            logger.info(input)
+            logger.info(state)
             # delete all messages
             return {"messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]}
         if self.short_term_memory_strategy == "trim":
@@ -162,7 +162,7 @@ class PreModelNode(RunnableCallable):
                 return self._prepare_state_update(context, summarization_result)
             except ValueError as e:
                 logger.error(f"Invalid chat history: {e}")
-                logger.info(input)
+                logger.info(state)
                 # delete all messages
                 return {"messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]}
         raise ValueError(
@@ -175,15 +175,15 @@ class PostModelNode(RunnableCallable):
         super().__init__(self._func, self._afunc, name="post_model_node", trace=False)
         self.func_accepts_config = True
 
-    def _func(self, input: AgentState) -> dict[str, Any]:
+    def _func(self, state: AgentState) -> dict[str, Any]:
         raise NotImplementedError("Not implemented yet")
 
-    async def _afunc(self, input: AgentState) -> dict[str, Any]:
+    async def _afunc(self, state: AgentState) -> dict[str, Any]:
         runtime = get_runtime(AgentContext)
         context = runtime.context
-        logger.debug(f"Running PostModelNode, input: {input}, context: {context}")
+        logger.debug(f"Running PostModelNode, input: {state}, context: {context}")
         state_update = {}
-        messages = input.get("messages")
+        messages = state.get("messages")
         if messages is None or not isinstance(messages, list) or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
         payer = context.payer

@@ -12,7 +12,7 @@ class VeniceAudioInput(BaseModel):
     Defines parameters controllable by the user when invoking the tool.
     """
 
-    input: str = Field(
+    voice_input: str = Field(
         ...,  # Ellipsis (...) indicates this field is required
         description="The text to generate audio for. Maximum length is 4096 characters.",
         min_length=1,  # As per API docs: Required string length: 1

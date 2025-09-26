@@ -40,7 +40,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
 
     async def _arun(
         self,
-        input: str,
+        voice_input: str,
         voice_model: str,
         speed: Optional[float] = 1.0,
         response_format: Optional[AllowedAudioFormat] = "mp3",
@@ -98,7 +98,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
             # --- Prepare API Call ---
             payload: Dict[str, Any] = {
                 "model": tts_model_id,
-                "input": input,
+                "input": voice_input,
                 "voice": voice_model,
                 "response_format": final_response_format,
                 "speed": speed if speed is not None else 1.0,
@@ -208,7 +208,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                         "tts_engine": tts_model_id,
                         "speed": speed if speed is not None else 1.0,
                         "response_format": final_response_format,
-                        "input_text_length": len(input),
+                        "input_text_length": len(voice_input),
                         "error": False,
                         "status_code": response.status_code,
                     }
