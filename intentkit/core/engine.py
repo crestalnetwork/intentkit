@@ -65,11 +65,9 @@ logger = logging.getLogger(__name__)
 
 # Global variable to cache all agent executors
 _agents: dict[str, CompiledStateGraph] = {}
-_private_agents: dict[str, CompiledStateGraph] = {}
 
 # Global dictionaries to cache agent update times
 _agents_updated: dict[str, datetime] = {}
-_private_agents_updated: dict[str, datetime] = {}
 
 
 async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph:
@@ -284,10 +282,10 @@ async def stream_agent(message: ChatMessageCreate):
     message.reply_to = message.id
 
     # save input message first
-    input = await message.save()
+    user_message = await message.save()
 
     # agent
-    agent = await Agent.get(input.agent_id)
+    agent = await Agent.get(user_message.agent_id)
 
     # model
     model = await LLMModelInfo.get(agent.model)
@@ -296,7 +294,7 @@ async def stream_agent(message: ChatMessageCreate):
 
     # check user balance
     if payment_enabled:
-        if not input.user_id or not agent.owner:
+        if not user_message.user_id or not agent.owner:
             raise IntentKitAPIError(
                 500,
                 "PaymentError",
@@ -307,20 +305,20 @@ async def stream_agent(message: ChatMessageCreate):
             if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
                 error_message_create = await ChatMessageCreate.from_system_message(
                     SystemMessageType.SERVICE_FEE_ERROR,
-                    agent_id=input.agent_id,
-                    chat_id=input.chat_id,
-                    user_id=input.user_id,
-                    author_id=input.agent_id,
-                    thread_type=input.author_type,
-                    reply_to=input.id,
+                    agent_id=user_message.agent_id,
+                    chat_id=user_message.chat_id,
+                    user_id=user_message.user_id,
+                    author_id=user_message.agent_id,
+                    thread_type=user_message.author_type,
+                    reply_to=user_message.id,
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
                 yield error_message
                 return
         # payer
-        payer = input.user_id
-        if input.author_type in [
+        payer = user_message.user_id
+        if user_message.author_type in [
             AuthorType.TELEGRAM,
             AuthorType.TWITTER,
             AuthorType.API,
@@ -343,12 +341,12 @@ async def stream_agent(message: ChatMessageCreate):
             if quota and quota.free_income_daily > 24000:
                 error_message_create = await ChatMessageCreate.from_system_message(
                     SystemMessageType.DAILY_USAGE_LIMIT_EXCEEDED,
-                    agent_id=input.agent_id,
-                    chat_id=input.chat_id,
-                    user_id=input.user_id,
-                    author_id=input.agent_id,
-                    thread_type=input.author_type,
-                    reply_to=input.id,
+                    agent_id=user_message.agent_id,
+                    chat_id=user_message.chat_id,
+                    user_id=user_message.user_id,
+                    author_id=user_message.agent_id,
+                    thread_type=user_message.author_type,
+                    reply_to=user_message.id,
                     time_cost=time.perf_counter() - start,
                 )
                 error_message = await error_message_create.save()
@@ -361,12 +359,12 @@ async def stream_agent(message: ChatMessageCreate):
         if not user_account.has_sufficient_credits(avg_count):
             error_message_create = await ChatMessageCreate.from_system_message(
                 SystemMessageType.INSUFFICIENT_BALANCE,
-                agent_id=input.agent_id,
-                chat_id=input.chat_id,
-                user_id=input.user_id,
-                author_id=input.agent_id,
-                thread_type=input.author_type,
-                reply_to=input.id,
+                agent_id=user_message.agent_id,
+                chat_id=user_message.chat_id,
+                user_id=user_message.user_id,
+                author_id=user_message.agent_id,
+                thread_type=user_message.author_type,
+                reply_to=user_message.id,
                 time_cost=time.perf_counter() - start,
             )
             error_message = await error_message_create.save()
@@ -374,23 +372,23 @@ async def stream_agent(message: ChatMessageCreate):
             return
 
     is_private = False
-    if input.user_id == agent.owner:
+    if user_message.user_id == agent.owner:
         is_private = True
 
-    executor, cold_start_cost = await agent_executor(input.agent_id)
+    executor, cold_start_cost = await agent_executor(user_message.agent_id)
     last = start + cold_start_cost
 
     # Extract images from attachments
     image_urls = []
-    if input.attachments:
+    if user_message.attachments:
         image_urls = [
             att["url"]
-            for att in input.attachments
+            for att in user_message.attachments
             if "type" in att and att["type"] == "image" and "url" in att
         ]
 
     # Process input message to handle @skill patterns
-    input_message = await explain_prompt(input.message)
+    input_message = await explain_prompt(user_message.message)
 
     # super mode
     recursion_limit = 30
@@ -446,7 +444,7 @@ async def stream_agent(message: ChatMessageCreate):
     ]
 
     # stream config
-    thread_id = f"{input.agent_id}-{input.chat_id}"
+    thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
     stream_config = {
         "configurable": {
             "thread_id": thread_id,
@@ -455,11 +453,11 @@ async def stream_agent(message: ChatMessageCreate):
     }
 
     context = AgentContext(
-        agent_id=input.agent_id,
-        chat_id=input.chat_id,
-        user_id=input.user_id,
-        app_id=input.app_id,
-        entrypoint=input.author_type,
+        agent_id=user_message.agent_id,
+        chat_id=user_message.chat_id,
+        user_id=user_message.user_id,
+        app_id=user_message.app_id,
+        entrypoint=user_message.author_type,
         is_private=is_private,
         payer=payer if payment_enabled else None,
     )
@@ -496,14 +494,14 @@ async def stream_agent(message: ChatMessageCreate):
                     # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
-                        agent_id=input.agent_id,
-                        chat_id=input.chat_id,
-                        user_id=input.user_id,
-                        author_id=input.agent_id,
+                        agent_id=user_message.agent_id,
+                        chat_id=user_message.chat_id,
+                        user_id=user_message.user_id,
+                        author_id=user_message.agent_id,
                         author_type=AuthorType.AGENT,
                         model=agent.model,
-                        thread_type=input.author_type,
-                        reply_to=input.id,
+                        thread_type=user_message.author_type,
+                        reply_to=user_message.id,
                         message=content,
                         input_tokens=(
                             msg.usage_metadata.get("input_tokens", 0)
@@ -541,7 +539,7 @@ async def stream_agent(message: ChatMessageCreate):
                                 for tool_output in tool_outputs:
                                     if tool_output.get("type") == "web_search_call":
                                         logger.info(
-                                            f"[{input.agent_id}] Found web_search_call in additional_kwargs"
+                                            f"[{user_message.agent_id}] Found web_search_call in additional_kwargs"
                                         )
                                         amount += 35
                                         break
@@ -549,11 +547,13 @@ async def stream_agent(message: ChatMessageCreate):
                                 session,
                                 payer,
                                 chat_message_create.id,
-                                input.id,
+                                user_message.id,
                                 amount,
                                 agent,
                             )
-                            logger.info(f"[{input.agent_id}] expense message: {amount}")
+                            logger.info(
+                                f"[{user_message.agent_id}] expense message: {amount}"
+                            )
                             chat_message_create.credit_event_id = credit_event.id
                             chat_message_create.credit_cost = credit_event.total_amount
                         chat_message = await chat_message_create.save_in_session(
@@ -604,14 +604,14 @@ async def stream_agent(message: ChatMessageCreate):
                             break
                 skill_message_create = ChatMessageCreate(
                     id=str(XID()),
-                    agent_id=input.agent_id,
-                    chat_id=input.chat_id,
-                    user_id=input.user_id,
-                    author_id=input.agent_id,
+                    agent_id=user_message.agent_id,
+                    chat_id=user_message.chat_id,
+                    user_id=user_message.user_id,
+                    author_id=user_message.agent_id,
                     author_type=AuthorType.SKILL,
                     model=agent.model,
-                    thread_type=input.author_type,
-                    reply_to=input.id,
+                    thread_type=user_message.author_type,
+                    reply_to=user_message.id,
                     message="",
                     skill_calls=skill_calls,
                     attachments=cached_attachments,
@@ -648,7 +648,7 @@ async def stream_agent(message: ChatMessageCreate):
                                 session,
                                 payer,
                                 skill_message_create.id,
-                                input.id,
+                                user_message.id,
                                 message_amount,
                                 agent,
                             )
@@ -666,7 +666,7 @@ async def stream_agent(message: ChatMessageCreate):
                                 session,
                                 payer,
                                 skill_message_create.id,
-                                input.id,
+                                user_message.id,
                                 skill_call["id"],
                                 skill_call["name"],
                                 agent,
@@ -674,7 +674,7 @@ async def stream_agent(message: ChatMessageCreate):
                             skill_call["credit_event_id"] = payment_event.id
                             skill_call["credit_cost"] = payment_event.total_amount
                             logger.info(
-                                f"[{input.agent_id}] skill payment: {skill_call}"
+                                f"[{user_message.agent_id}] skill payment: {skill_call}"
                             )
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
@@ -700,14 +700,14 @@ async def stream_agent(message: ChatMessageCreate):
                                 content = msg.content[0]
                             post_model_message_create = ChatMessageCreate(
                                 id=str(XID()),
-                                agent_id=input.agent_id,
-                                chat_id=input.chat_id,
-                                user_id=input.user_id,
-                                author_id=input.agent_id,
+                                agent_id=user_message.agent_id,
+                                chat_id=user_message.chat_id,
+                                user_id=user_message.user_id,
+                                author_id=user_message.agent_id,
                                 author_type=AuthorType.AGENT,
                                 model=agent.model,
-                                thread_type=input.author_type,
-                                reply_to=input.id,
+                                thread_type=user_message.author_type,
+                                reply_to=user_message.id,
                                 message=content,
                                 input_tokens=0,
                                 output_tokens=0,
@@ -724,12 +724,12 @@ async def stream_agent(message: ChatMessageCreate):
                         error_message_create = (
                             await ChatMessageCreate.from_system_message(
                                 SystemMessageType.INSUFFICIENT_BALANCE,
-                                agent_id=input.agent_id,
-                                chat_id=input.chat_id,
-                                user_id=input.user_id,
-                                author_id=input.agent_id,
-                                thread_type=input.author_type,
-                                reply_to=input.id,
+                                agent_id=user_message.agent_id,
+                                chat_id=user_message.chat_id,
+                                user_id=user_message.user_id,
+                                author_id=user_message.agent_id,
+                                thread_type=user_message.author_type,
+                                reply_to=user_message.id,
                                 time_cost=0,
                             )
                         )
@@ -749,12 +749,12 @@ async def stream_agent(message: ChatMessageCreate):
         )
         error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.AGENT_INTERNAL_ERROR,
-            agent_id=input.agent_id,
-            chat_id=input.chat_id,
-            user_id=input.user_id,
-            author_id=input.agent_id,
-            thread_type=input.author_type,
-            reply_to=input.id,
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
@@ -764,16 +764,16 @@ async def stream_agent(message: ChatMessageCreate):
         error_traceback = traceback.format_exc()
         logger.error(
             f"reached recursion limit: {str(e)}\n{error_traceback}",
-            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+            extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.STEP_LIMIT_EXCEEDED,
-            agent_id=input.agent_id,
-            chat_id=input.chat_id,
-            user_id=input.user_id,
-            author_id=input.agent_id,
-            thread_type=input.author_type,
-            reply_to=input.id,
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
@@ -783,21 +783,21 @@ async def stream_agent(message: ChatMessageCreate):
         error_traceback = traceback.format_exc()
         logger.error(
             f"failed to execute agent: {str(e)}\n{error_traceback}",
-            extra={"thread_id": thread_id, "agent_id": input.agent_id},
+            extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         error_message_create = await ChatMessageCreate.from_system_message(
             SystemMessageType.AGENT_INTERNAL_ERROR,
-            agent_id=input.agent_id,
-            chat_id=input.chat_id,
-            user_id=input.user_id,
-            author_id=input.agent_id,
-            thread_type=input.author_type,
-            reply_to=input.id,
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
             time_cost=time.perf_counter() - start,
         )
         error_message = await error_message_create.save()
         yield error_message
-        await clear_thread_memory(input.agent_id, input.chat_id)
+        await clear_thread_memory(user_message.agent_id, user_message.chat_id)
         return
 
 
