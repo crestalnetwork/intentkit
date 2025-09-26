@@ -457,8 +457,12 @@ async def stream_agent_raw(
         "recursion_limit": recursion_limit,
     }
 
+    def get_agent() -> Agent:
+        return agent
+
     context = AgentContext(
         agent_id=user_message.agent_id,
+        get_agent=get_agent,
         chat_id=user_message.chat_id,
         user_id=user_message.user_id,
         app_id=user_message.app_id,
