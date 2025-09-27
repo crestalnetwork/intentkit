@@ -431,7 +431,8 @@ async def stream_agent_raw(
             agent.has_image_parser_skill(is_private=is_private)
             and not model.supports_image_input
         ):
-            input_message += f"\n\nImages:\n{'\n'.join(image_urls)}"
+            image_urls_text = "\n".join(image_urls)
+            input_message += f"\n\nImages:\n{image_urls_text}"
             messages = [
                 HumanMessage(content=input_message),
             ]
