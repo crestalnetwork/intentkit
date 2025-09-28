@@ -1466,81 +1466,109 @@ class Agent(AgentCreate, AgentPublicInfo):
                 ):
                     model_property["default"] = new_enum[0]
 
-            # Process skills property using defaults merged with database overrides
+            # Process skills property using data from Skill.get_all instead of agent_schema.json
             skills_property = schema.get("properties", {}).get("skills", {})
-            skills_properties = skills_property.get("properties", {})
 
-            if skills_properties:
-                skill_states_map: dict[str, dict[str, Skill]] = {}
+            # Build skill_states_map from database
+            skill_states_map: dict[str, dict[str, Skill]] = {}
+            for skill_model in await Skill.get_all(db):
+                if not skill_model.config_name:
+                    continue
+                category_states = skill_states_map.setdefault(skill_model.category, {})
+                if skill_model.enabled:
+                    category_states[skill_model.config_name] = skill_model
+                else:
+                    category_states.pop(skill_model.config_name, None)
 
-                for skill_model in await Skill.get_all(db):
-                    if not skill_model.config_name:
-                        continue
-                    category_states = skill_states_map.setdefault(
-                        skill_model.category, {}
+            enabled_categories = {
+                category for category, states in skill_states_map.items() if states
+            }
+
+            # Calculate price levels and skills data
+            category_avg_price_levels = {}
+            skills_data = {}
+            for category, states in skill_states_map.items():
+                if not states:
+                    continue
+                price_levels = [
+                    state.price_level
+                    for state in states.values()
+                    if state.price_level is not None
+                ]
+                if price_levels:
+                    category_avg_price_levels[category] = int(
+                        sum(price_levels) / len(price_levels)
                     )
-                    if skill_model.enabled:
-                        category_states[skill_model.config_name] = skill_model
-                    else:
-                        category_states.pop(skill_model.config_name, None)
-
-                enabled_categories = {
-                    category for category, states in skill_states_map.items() if states
+                skills_data[category] = {
+                    config_name: state.price_level
+                    for config_name, state in states.items()
                 }
 
-                category_avg_price_levels = {}
-                skills_data = {}
-                for category, states in skill_states_map.items():
-                    if not states:
-                        continue
-                    price_levels = [
-                        state.price_level
-                        for state in states.values()
-                        if state.price_level is not None
-                    ]
-                    if price_levels:
-                        category_avg_price_levels[category] = int(
-                            sum(price_levels) / len(price_levels)
-                        )
-                    skills_data[category] = {
-                        config_name: state.price_level
-                        for config_name, state in states.items()
-                    }
+            # Dynamically generate skills_properties from Skill.get_all data
+            skills_properties = {}
+            current_dir = Path(__file__).parent
 
-                skill_keys = list(skills_properties.keys())
+            for category in enabled_categories:
+                # Skip if filtered for auto-generation
+                skill_schema_path = current_dir / f"../skills/{category}/schema.json"
+                if skill_schema_path.exists():
+                    try:
+                        with open(skill_schema_path) as f:
+                            skill_schema = json.load(f)
 
-                for skill_category in skill_keys:
-                    if skill_category not in enabled_categories:
-                        skills_properties.pop(skill_category, None)
-                    elif filter_owner_api_skills and cls._is_agent_owner_only_skill(
-                        skills_properties[skill_category]
-                    ):
-                        skills_properties.pop(skill_category, None)
-                        logger.info(
-                            f"Filtered out skill '{skill_category}' from auto-generation: requires agent owner API key"
-                        )
-                    else:
-                        if skill_category in category_avg_price_levels:
-                            skills_properties[skill_category]["x-avg-price-level"] = (
-                                category_avg_price_levels[skill_category]
+                        # Check if this skill should be filtered for owner API requirements
+                        if filter_owner_api_skills and cls._is_agent_owner_only_skill(
+                            skill_schema
+                        ):
+                            logger.info(
+                                f"Filtered out skill '{category}' from auto-generation: requires agent owner API key"
+                            )
+                            continue
+
+                        # Create skill property with embedded schema instead of reference
+                        # Load and embed the full skill schema directly
+                        base_uri = f"file://{skill_schema_path}"
+                        with open(skill_schema_path) as f:
+                            embedded_skill_schema = jsonref.load(
+                                f, base_uri=base_uri, proxies=False, lazy_load=False
                             )
 
-                        if skill_category in skills_data:
+                        skills_properties[category] = {
+                            "title": skill_schema.get("title", category.title()),
+                            **embedded_skill_schema,  # Embed the full schema instead of using $ref
+                        }
+
+                        # Add price level information
+                        if category in category_avg_price_levels:
+                            skills_properties[category]["x-avg-price-level"] = (
+                                category_avg_price_levels[category]
+                            )
+
+                        if category in skills_data:
+                            # Add price level to states in the embedded schema
                             skill_states = (
-                                skills_properties[skill_category]
+                                skills_properties[category]
                                 .get("properties", {})
                                 .get("states", {})
                                 .get("properties", {})
                             )
                             for state_name, state_config in skill_states.items():
                                 if (
-                                    state_name in skills_data[skill_category]
-                                    and skills_data[skill_category][state_name]
-                                    is not None
+                                    state_name in skills_data[category]
+                                    and skills_data[category][state_name] is not None
                                 ):
                                     state_config["x-price-level"] = skills_data[
-                                        skill_category
+                                        category
                                     ][state_name]
+                    except (FileNotFoundError, json.JSONDecodeError) as e:
+                        logger.warning(
+                            f"Could not load schema for skill category '{category}': {e}"
+                        )
+                        continue
+
+            # Update the skills property in the schema
+            if skills_property:
+                skills_property["properties"] = skills_properties
 
             # Log the changes for debugging
             logger.debug(
