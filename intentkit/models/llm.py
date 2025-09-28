@@ -95,6 +95,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     DEEPSEEK = "deepseek"
     XAI = "xai"
+    GATEWAYZ = "gatewayz"
     ETERNAL = "eternal"
     REIGENT = "reigent"
     VENICE = "venice"
@@ -462,6 +463,35 @@ class XAILLM(LLMModel):
         return ChatXAI(**kwargs)
 
 
+class GatewayzLLM(LLMModel):
+    """Gatewayz AI LLM configuration."""
+
+    async def create_instance(self, config: Any) -> BaseChatModel:
+        """Create and return a ChatOpenAI instance configured for Eternal AI."""
+        from langchain_openai import ChatOpenAI
+
+        info = await self.model_info()
+
+        kwargs = {
+            "model": self.model_name,
+            "api_key": config.gatewayz_api_key,
+            "base_url": info.api_base,
+            "timeout": info.timeout,
+        }
+
+        # Add optional parameters based on model support
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        if info.supports_frequency_penalty:
+            kwargs["frequency_penalty"] = self.frequency_penalty
+
+        if info.supports_presence_penalty:
+            kwargs["presence_penalty"] = self.presence_penalty
+
+        return ChatOpenAI(**kwargs)
+
+
 class EternalLLM(LLMModel):
     """Eternal AI LLM configuration."""
 
@@ -575,6 +605,8 @@ async def create_llm_model(
         return ReigentLLM(**base_params)
     elif provider == LLMProvider.VENICE:
         return VeniceLLM(**base_params)
+    elif provider == LLMProvider.GATEWAYZ:
+        return GatewayzLLM(**base_params)
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)
