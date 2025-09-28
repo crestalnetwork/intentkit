@@ -106,9 +106,10 @@ class LLMProvider(str, Enum):
             self.OPENAI: "OpenAI",
             self.DEEPSEEK: "DeepSeek",
             self.XAI: "xAI",
-            self.ETERNAL: "Others",
-            self.REIGENT: "Others",
-            self.VENICE: "Others",
+            self.GATEWAYZ: "Gatewayz",
+            self.ETERNAL: "Eternal",
+            self.REIGENT: "Reigent",
+            self.VENICE: "Venice",
         }
         return display_names.get(self, self.value)
 
