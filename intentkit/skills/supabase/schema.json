@@ -5,8 +5,7 @@
   "description": "Integration with Supabase backend-as-a-service platform enabling database operations and Edge Function invocations",
   "x-icon": "https://ai.service.crestal.dev/skills/supabase/supabase.svg",
   "x-tags": [
-    "Database",
-    "Backend"
+    "Infrastructure"
   ],
   "properties": {
     "enabled": {

@@ -5,8 +5,9 @@
   "description": "Integration with Acolyt Oracle providing blockchain oracle services for accessing and verifying off-chain data with secure API connections",
   "x-icon": "https://ai.service.crestal.dev/skills/acolyt/acolyt.jpg",
   "x-tags": [
-    "Blockchain",
-    "Oracle"
+    "Analytics",
+    "Crypto",
+    "DeFi"
   ],
   "properties": {
     "enabled": {

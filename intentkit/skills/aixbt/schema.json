@@ -5,9 +5,9 @@
   "description": "Cryptocurrency project data and analytics through the AIXBT API",
   "x-icon": "https://ai.service.crestal.dev/skills/aixbt/aixbt.jpg",
   "x-tags": [
-    "Cryptocurrency",
-    "Research",
-    "Analytics"
+    "Analytics",
+    "Crypto",
+    "Knowledge Base"
   ],
   "properties": {
     "enabled": {

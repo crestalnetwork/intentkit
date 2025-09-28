@@ -6,7 +6,7 @@
   "x-icon": "https://ai.service.crestal.dev/skills/venice_image/venice_image.jpg",
   "x-tags": [
     "AI",
-    "Image Generation"
+    "Image"
   ],
   "properties": {
     "enabled": {

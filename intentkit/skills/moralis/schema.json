@@ -152,5 +152,10 @@
       ]
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "x-tags": [
+    "Analytics",
+    "Crypto",
+    "DeFi"
+  ]
 }

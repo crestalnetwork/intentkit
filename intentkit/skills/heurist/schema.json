@@ -6,7 +6,7 @@
   "x-icon": "https://ai.service.crestal.dev/skills/heurist/heurist.png",
   "x-tags": [
     "AI",
-    "Image Generation"
+    "Image"
   ],
   "properties": {
     "enabled": {

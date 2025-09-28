@@ -5,7 +5,6 @@
   "description": "Casino gaming skills including card decks and quantum dice rolling for interactive games with users",
   "x-icon": "https://ai.service.crestal.dev/skills/casino/casino.png",
   "x-tags": [
-    "Gaming",
     "Entertainment"
   ],
   "properties": {
