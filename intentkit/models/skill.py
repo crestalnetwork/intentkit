@@ -583,6 +583,17 @@ class Skill(BaseModel):
         result = await session.execute(select(SkillTable))
         for row in result.scalars():
             skill_model = cls.model_validate(row)
+
+            default_skill = DEFAULT_SKILLS_BY_NAME.get(skill_model.name)
+            if default_skill is not None:
+                # Merge database overrides with default skill configuration while
+                # keeping default values for fields that are omitted in the
+                # database (e.g. config_name).
+                skill_model = default_skill.model_copy(
+                    update=skill_model.model_dump(exclude_none=True),
+                    deep=True,
+                )
+
             skills[skill_model.name] = skill_model
 
         return list(skills.values())
