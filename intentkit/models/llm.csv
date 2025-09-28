@@ -1,4 +1,7 @@
 id,name,provider,enabled,input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,supports_skill_calls,supports_structured_output,has_reasoning,supports_search,supports_temperature,supports_frequency_penalty,supports_presence_penalty,api_base,timeout
+qwen/qwen3-235b-a22b-2507,Qwen3 235B A22B Instruct 2507,gatewayz,TRUE,0.1,0.6,1,262000,262000,4,2,FALSE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+google/gemini-2.5-flash,Grok 4 Fast,gatewayz,TRUE,0.2,0.5,1,128000,30000,4,2,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+x-ai/grok-4-fast:free,Grok 4 Fast,gatewayz,TRUE,0.2,0.5,1,128000,30000,4,2,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
 x-ai/grok-code-fast-1,Grok Code Fast 1,gatewayz,TRUE,3,15,5,200000,64000,5,1,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
 anthropic/claude-sonnet-4,Anthropic Claude Sonnet 4,gatewayz,TRUE,3,15,5,200000,64000,5,1,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
 gpt-4o,GPT-4o,openai,FALSE,2.5,10,4,128000,4096,4,3,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,,180
