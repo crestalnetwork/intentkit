@@ -5,7 +5,8 @@
   "description": "Integration with Allora API for blockchain-based price predictions and market forecasting services via Upshot's prediction markets",
   "x-icon": "https://ai.service.crestal.dev/skills/allora/allora.jpeg",
   "x-tags": [
-    "Blockchain"
+    "Analytics",
+    "Crypto"
   ],
   "properties": {
     "enabled": {

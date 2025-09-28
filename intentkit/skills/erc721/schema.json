@@ -5,7 +5,8 @@
   "description": "ERC721 NFT management actions via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/erc721/erc721.svg",
   "x-tags": [
-    "Blockchain"
+    "Crypto",
+    "NFT"
   ],
   "properties": {
     "enabled": {

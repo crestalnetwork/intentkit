@@ -5,10 +5,8 @@
   "description": "Web search and content extraction capabilities using Tavily",
   "x-icon": "https://ai.service.crestal.dev/skills/tavily/tavily.jpg",
   "x-tags": [
-    "Internet",
-    "Search",
-    "Information",
-    "Content Extraction"
+    "Knowledge Base",
+    "Search"
   ],
   "x-nft-requirement": 1,
   "properties": {

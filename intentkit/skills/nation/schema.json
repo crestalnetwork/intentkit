@@ -5,8 +5,9 @@
   "description": "Check nation NFT stats",
   "x-icon": "https://ai.service.crestal.dev/skills/nation/nation.png",
   "x-tags": [
-    "Nation",
-    "NFTChecker"
+    "Analytics",
+    "Crypto",
+    "NFT"
   ],
   "properties": {
     "enabled": {

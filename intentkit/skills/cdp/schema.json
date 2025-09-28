@@ -5,7 +5,8 @@
   "description": "Integration with Coinbase Wallet (CDP) providing blockchain wallet functionality including balance checking and native transfers",
   "x-icon": "https://ai.service.crestal.dev/skills/cdp/cdp.png",
   "x-tags": [
-    "Blockchain"
+    "Crypto",
+    "DeFi"
   ],
   "properties": {
     "enabled": {

@@ -5,7 +5,8 @@
   "description": "ERC20 token balance and transfer actions via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/erc20/erc20.svg",
   "x-tags": [
-    "Blockchain"
+    "Crypto",
+    "DeFi"
   ],
   "properties": {
     "enabled": {

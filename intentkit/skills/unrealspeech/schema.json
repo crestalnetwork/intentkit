@@ -5,10 +5,7 @@
   "description": "Convert text to natural-sounding speech with various voices and customization options",
   "x-icon": "https://ai.service.crestal.dev/skills/unrealspeech/unrealspeech.jpg",
   "x-tags": [
-    "Audio",
-    "Speech",
-    "Text-to-Speech",
-    "Voice"
+    "Audio"
   ],
   "properties": {
     "enabled": {

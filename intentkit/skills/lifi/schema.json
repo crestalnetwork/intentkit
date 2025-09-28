@@ -5,10 +5,7 @@
   "description": "Cross-chain token transfer and swap capabilities using the LiFi protocol",
   "x-icon": "https://ai.service.crestal.dev/skills/lifi/lifi.png",
   "x-tags": [
-    "DeFi",
-    "Blockchain",
-    "Token Transfer",
-    "Cross-chain"
+    "DeFi"
   ],
   "properties": {
     "enabled": {
@@ -53,7 +50,10 @@
           "description": "Execute token transfers (requires CDP wallet and cdp skills enabled)"
         }
       },
-      "required": ["token_quote", "token_execute"],
+      "required": [
+        "token_quote",
+        "token_execute"
+      ],
       "description": "States for each LiFi skill"
     },
     "default_slippage": {
@@ -71,7 +71,13 @@
       "description": "List of blockchain networks that can be used (if empty, all supported chains are allowed)",
       "items": {
         "type": "string",
-        "examples": ["ETH", "POL", "ARB", "OPT", "DAI"]
+        "examples": [
+          "ETH",
+          "POL",
+          "ARB",
+          "OPT",
+          "DAI"
+        ]
       },
       "uniqueItems": true
     },
@@ -84,6 +90,9 @@
       "maximum": 1800
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
-} 
+}

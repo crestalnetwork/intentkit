@@ -379,5 +379,9 @@
   "required": [
     "states",
     "enabled"
+  ],
+  "x-tags": [
+    "Analytics",
+    "DeFi"
   ]
 }

@@ -5,11 +5,7 @@
   "description": "Scrape web content and index it for intelligent querying and retrieval",
   "x-icon": "https://ai.service.crestal.dev/skills/web_scraper/langchain.png",
   "x-tags": [
-    "Web Scraping",
-    "Content Indexing",
-    "Vector Search",
-    "LangChain",
-    "Document Retrieval"
+    "Knowledge Base"
   ],
   "properties": {
     "enabled": {

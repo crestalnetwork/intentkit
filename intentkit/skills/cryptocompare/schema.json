@@ -5,8 +5,8 @@
   "description": "Integration with CryptoCompare API providing cryptocurrency market data, price information, and crypto news with rate limiting capabilities",
   "x-icon": "https://ai.service.crestal.dev/skills/cryptocompare/cryptocompare.png",
   "x-tags": [
-    "Blockchain",
-    "Finance"
+    "Analytics",
+    "Crypto"
   ],
   "properties": {
     "enabled": {
