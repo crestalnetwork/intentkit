@@ -5,11 +5,8 @@
   "type": "object",
   "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
   "x-tags": [
-    "Blockchain",
-    "Web3",
-    "Crypto",
-    "Token",
-    "DeFi"
+    "Analytics",
+    "Crypto"
   ],
   "properties": {
     "enabled": {

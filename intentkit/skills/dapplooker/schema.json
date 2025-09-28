@@ -5,10 +5,8 @@
   "description": "Retrieve comprehensive market data and analytics for AI agent tokens using DappLooker. This API specializes in AI-focused crypto projects and may not provide data for general cryptocurrencies like BTC or ETH.",
   "x-icon": "https://ai.service.crestal.dev/skills/dapplooker/dapplooker.jpg",
   "x-tags": [
-    "Crypto",
-    "Market Data",
-    "Token Metrics",
-    "AI Agents"
+    "Analytics",
+    "Crypto"
   ],
   "properties": {
     "enabled": {

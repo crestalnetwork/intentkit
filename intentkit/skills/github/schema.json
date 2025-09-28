@@ -5,9 +5,8 @@
   "description": "Search capabilities for GitHub repositories, users, and code",
   "x-icon": "https://ai.service.crestal.dev/skills/github/github.jpg",
   "x-tags": [
-    "GitHub",
-    "Search",
-    "Code"
+    "Developer Tools",
+    "Search"
   ],
   "properties": {
     "enabled": {

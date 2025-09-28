@@ -5,7 +5,9 @@
   "description": "CryptoPanic is a news aggregator platform indicating impact on price and market for traders and cryptocurrency enthusiasts.",
   "x-icon": "https://ai.service.crestal.dev/skills/cryptopanic/cryptopanic.png",
   "x-tags": [
-    "Data"
+    "Analytics",
+    "Crypto",
+    "Knowledge Base"
   ],
   "properties": {
     "enabled": {

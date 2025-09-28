@@ -5,11 +5,7 @@
   "description": "AI-powered web scraping and crawling capabilities using Firecrawl",
   "x-icon": "https://ai.service.crestal.dev/skills/firecrawl/firecrawl.png",
   "x-tags": [
-    "Web Scraping",
-    "Crawling",
-    "Content Extraction",
-    "Data Mining",
-    "Website Analysis"
+    "Knowledge Base"
   ],
   "properties": {
     "enabled": {

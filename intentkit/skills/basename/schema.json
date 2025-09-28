@@ -5,7 +5,8 @@
   "description": "Basename ENS-style name registration via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/basename/basename.svg",
   "x-tags": [
-    "Blockchain"
+    "Crypto",
+    "Identity"
   ],
   "properties": {
     "enabled": {

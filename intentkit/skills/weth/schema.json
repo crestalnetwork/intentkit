@@ -5,7 +5,8 @@
   "description": "Wrap ETH actions via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/weth/weth.svg",
   "x-tags": [
-    "Blockchain"
+    "Crypto",
+    "DeFi"
   ],
   "properties": {
     "enabled": {

@@ -5,10 +5,9 @@
   "description": "HTTP client skills for making web requests",
   "x-icon": "https://ai.service.crestal.dev/skills/http/http.svg",
   "x-tags": [
-    "HTTP",
-    "Web",
-    "API",
-    "Client"
+    "Developer Tools",
+    "Infrastructure",
+    "Knowledge Base"
   ],
   "properties": {
     "enabled": {

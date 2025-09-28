@@ -95,5 +95,10 @@
       ]
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "x-tags": [
+    "Analytics",
+    "Crypto",
+    "Knowledge Base"
+  ]
 }

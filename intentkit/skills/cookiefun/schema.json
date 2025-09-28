@@ -5,10 +5,8 @@
   "description": "Access Twitter/X analytics and insights using CookieFun API. Get data about accounts, tweets, followers, and trends across different industry sectors.",
   "x-icon": "https://ai.service.crestal.dev/skills/cookiefun/cookiefun.png",
   "x-tags": [
-    "Twitter",
-    "Social Media",
     "Analytics",
-    "X"
+    "Communication"
   ],
   "x-nft-requirement": 10,
   "properties": {

@@ -5,7 +5,7 @@
   "description": "Superfluid streaming actions via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/superfluid/superfluid.svg",
   "x-tags": [
-    "Blockchain"
+    "DeFi"
   ],
   "properties": {
     "enabled": {

@@ -5,9 +5,7 @@
   "description": "System management and configuration skills for agent operations including API key management",
   "x-icon": "https://ai.service.crestal.dev/skills/system/system.svg",
   "x-tags": [
-    "System",
-    "Management",
-    "Configuration"
+    "Infrastructure"
   ],
   "properties": {
     "enabled": {

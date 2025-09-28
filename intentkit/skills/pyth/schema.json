@@ -5,7 +5,9 @@
   "description": "Pyth oracle price data via Coinbase AgentKit",
   "x-icon": "https://ai.service.crestal.dev/skills/pyth/pyth.svg",
   "x-tags": [
-    "Blockchain"
+    "Analytics",
+    "Crypto",
+    "DeFi"
   ],
   "properties": {
     "enabled": {

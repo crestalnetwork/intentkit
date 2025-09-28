@@ -6,8 +6,7 @@
   "x-icon": "https://ai.service.crestal.dev/skills/openai/openai.png",
   "x-tags": [
     "AI",
-    "Image Generation",
-    "Image Analysis"
+    "Image"
   ],
   "properties": {
     "enabled": {
