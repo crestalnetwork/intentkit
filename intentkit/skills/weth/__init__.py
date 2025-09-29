@@ -1,6 +1,6 @@
 """WETH AgentKit skills."""
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 from coinbase_agentkit import weth_action_provider
 
@@ -12,6 +12,9 @@ from intentkit.skills.base import (
     get_agentkit_actions,
 )
 from intentkit.skills.weth.base import WethBaseTool
+
+if TYPE_CHECKING:
+    from intentkit.models.agent import Agent
 
 
 class SkillStates(TypedDict):
@@ -29,6 +32,7 @@ async def get_skills(
     is_private: bool,
     store: SkillStoreABC,
     agent_id: str,
+    agent: Optional["Agent"] = None,
     **_,
 ) -> list[WethBaseTool]:
     """Get all WETH skills."""
@@ -40,7 +44,9 @@ async def get_skills(
         if state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
 
-    actions = await get_agentkit_actions(agent_id, store, [weth_action_provider])
+    actions = await get_agentkit_actions(
+        agent_id, store, [weth_action_provider], agent=agent
+    )
     tools: list[WethBaseTool] = []
     for skill in available_skills:
         for action in actions:

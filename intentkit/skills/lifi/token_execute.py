@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 from web3 import Web3
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients import CdpClient, get_cdp_client
+from intentkit.clients import get_wallet_provider as get_agent_wallet_provider
+from intentkit.models.agent import Agent
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_quote import TokenQuote
 from intentkit.skills.lifi.utils import (
@@ -130,14 +131,14 @@ class TokenExecute(LiFiBaseTool):
 
             # Get agent context for CDP wallet
             context = self.get_context()
-            agent_id = context.agent_id
+            agent = context.agent
 
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
             )
 
             # Get CDP wallet provider
-            cdp_wallet_provider = await self._get_cdp_wallet_provider(agent_id)
+            cdp_wallet_provider = await self._get_cdp_wallet_provider(agent)
             if isinstance(cdp_wallet_provider, str):  # Error message
                 return cdp_wallet_provider
 
@@ -186,15 +187,11 @@ class TokenExecute(LiFiBaseTool):
             return f"An unexpected error occurred: {str(e)}"
 
     async def _get_cdp_wallet_provider(
-        self, agent_id: str
+        self, agent: Agent
     ) -> CdpEvmWalletProvider | str:
         """Get CDP wallet provider with error handling."""
         try:
-            cdp_client: CdpClient = await get_cdp_client(agent_id, self.skill_store)
-            if not cdp_client:
-                return "CDP client not available. Please ensure your agent has CDP wallet configuration."
-
-            cdp_wallet_provider = await cdp_client.get_wallet_provider()
+            cdp_wallet_provider = await get_agent_wallet_provider(agent)
             if not cdp_wallet_provider:
                 return "CDP wallet provider not configured. Please set up your agent's CDP wallet first."
 

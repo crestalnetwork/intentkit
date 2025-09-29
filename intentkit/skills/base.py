@@ -1,6 +1,16 @@
 import logging
 from collections.abc import Sequence
-from typing import Any, Callable, Dict, Literal, NotRequired, Optional, TypedDict, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    NotRequired,
+    Optional,
+    TypedDict,
+    Union,
+)
 
 from coinbase_agentkit import (
     Action,
@@ -21,10 +31,13 @@ from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients import CdpClient, get_cdp_client
+from intentkit.clients import get_wallet_provider
 from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
-from intentkit.utils.error import RateLimitExceeded
+from intentkit.utils.error import IntentKitAPIError, RateLimitExceeded
+
+if TYPE_CHECKING:
+    from intentkit.models.agent import Agent
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
@@ -175,13 +188,32 @@ class IntentKitSkill(BaseTool):
 
 async def get_agentkit_actions(
     agent_id: str,
-    store: SkillStoreABC,
+    _store: SkillStoreABC,
     provider_factories: Sequence[Callable[[], object]],
+    *,
+    agent: Optional["Agent"] = None,
 ) -> list[Action]:
     """Build an AgentKit instance and return its actions."""
 
-    cdp_client: CdpClient = await get_cdp_client(agent_id, store)
-    wallet_provider: CdpEvmWalletProvider = await cdp_client.get_wallet_provider()
+    if agent is None:
+        try:
+            context = IntentKitSkill.get_context()
+        except ValueError as exc:  # pragma: no cover - defensive guard
+            raise IntentKitAPIError(
+                500,
+                "AgentContextMissing",
+                "Agent context is required to initialize AgentKit actions.",
+            ) from exc
+        agent = context.agent
+
+    if agent.id != agent_id:
+        raise IntentKitAPIError(
+            400,
+            "AgentMismatch",
+            "The requested agent does not match the active context agent.",
+        )
+
+    wallet_provider: CdpEvmWalletProvider = await get_wallet_provider(agent)
 
     agent_kit = AgentKit(
         AgentKitConfig(

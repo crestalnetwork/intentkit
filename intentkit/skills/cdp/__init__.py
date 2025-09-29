@@ -1,6 +1,6 @@
 """CDP wallet interaction skills."""
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 from coinbase_agentkit import (
     cdp_api_action_provider,
@@ -16,6 +16,9 @@ from intentkit.skills.base import (
     get_agentkit_actions,
 )
 from intentkit.skills.cdp.base import CDPBaseTool
+
+if TYPE_CHECKING:
+    from intentkit.models.agent import Agent
 
 
 class SkillStates(TypedDict):
@@ -40,6 +43,7 @@ async def get_skills(
     is_private: bool,
     store: SkillStoreABC,
     agent_id: str,
+    agent: Optional["Agent"] = None,
     **_,
 ) -> list[CDPBaseTool]:
     """Get all CDP skills.
@@ -71,6 +75,7 @@ async def get_skills(
             cdp_api_action_provider,
             cdp_evm_wallet_action_provider,
         ],
+        agent=agent,
     )
     tools = []
     for skill in available_skills:
