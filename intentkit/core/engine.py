@@ -96,12 +96,6 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
         presence_penalty=agent.presence_penalty,
     )
 
-    # Get the LLM instance
-    llm = await llm_model.create_instance(config)
-
-    # Get the token limit from the model info
-    input_token_limit = min(config.input_token_limit, llm_model.info.context_length)
-
     # ==== Store buffered conversation history in memory.
     memory = get_langgraph_checkpointer()
 
@@ -137,24 +131,27 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
     tools = list({tool.name: tool for tool in tools}.values())
     private_tools = list({tool.name: tool for tool in private_tools}.values())
 
-    # Add search tools if requested
-    if (
-        llm_model.info.provider == LLMProvider.OPENAI and llm_model.info.supports_search
-        # and not agent.model.startswith(
-        #     "gpt-5"
-        # )  # tmp disable gpt-5 search since package bugs
-    ):
-        tools.append({"type": "web_search"})
-        private_tools.append({"type": "web_search"})
-
     # Create the formatted_prompt function using the refactored prompt module
     formatted_prompt = create_formatted_prompt_function(agent, agent_data)
 
     # bind tools to llm
-    def select_model(
+    async def select_model(
         state: AgentState, runtime: Runtime[AgentContext]
     ) -> BaseChatModel:
+        llm_params = {}
         context = runtime.context
+        if context.search:
+            if llm_model.info.supports_search:
+                if llm_model.info.provider == LLMProvider.OPENAI:
+                    tools.append({"type": "web_search"})
+                    private_tools.append({"type": "web_search"})
+                    if agent.model.startswith("gpt-5-"):
+                        llm_params["reasoning_effort"] = "low"
+                if llm_model.info.provider == LLMProvider.XAI:
+                    llm_params["search_parameters"] = {"mode": "auto"}
+            # TODO: else use a search skill
+        # build llm now
+        llm = await llm_model.create_instance(llm_params)
         if context.is_private:
             return llm.bind_tools(private_tools)
         return llm.bind_tools(tools)
@@ -165,10 +162,12 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
         )
 
     # Pre model hook
+    summarize_llm = await create_llm_model(model_name="gpt-5-mini")
+    summarize_model = await summarize_llm.create_instance()
     pre_model_hook = PreModelNode(
-        model=llm,
+        model=summarize_model,
         short_term_memory_strategy=agent.short_term_memory_strategy,
-        max_tokens=input_token_limit // 2,
+        max_tokens=llm_model.info.context_length // 2,
         max_summary_tokens=2048,
     )
 
@@ -403,9 +402,11 @@ async def stream_agent_raw(
         input_message = re.sub(r"\b@super\b", "", input_message).strip()
 
     # llm native search
+    search = False
     if re.search(r"\b@search\b", input_message) or re.search(
         r"\b@web\b", input_message
     ):
+        search = True
         if model.supports_search:
             input_message = re.sub(
                 r"\b@search\b",
@@ -467,6 +468,7 @@ async def stream_agent_raw(
         app_id=user_message.app_id,
         entrypoint=user_message.author_type,
         is_private=is_private,
+        search=search,
         payer=payer if payment_enabled else None,
     )
 

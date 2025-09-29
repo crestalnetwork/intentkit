@@ -34,6 +34,8 @@ class AgentContext(BaseModel):
     app_id: Optional[str] = None
     entrypoint: AuthorType
     is_private: bool
+    search: bool = False
+    thinking: bool = False
     payer: Optional[str] = None
 
     @property

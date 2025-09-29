@@ -66,7 +66,7 @@ class PreModelNode(RunnableCallable):
         model: LanguageModelLike,
         short_term_memory_strategy: str,
         max_tokens: int,
-        max_summary_tokens: int = 1024,
+        max_summary_tokens: int = 2048,
     ) -> None:
         super().__init__(self._func, self._afunc, name="pre_model_node", trace=False)
         self.model = model
