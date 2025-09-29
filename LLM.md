@@ -49,6 +49,10 @@ IntentKit is an autonomous agent framework that enables creation and management 
 
 ## Dev Guide
 
+### IntentKit Source Code
+
+1. To avoid circular dependencies, we'll establish an order for packages in the intentkit/ folder, where packages on the left can never import packages on the right: utils, config, models, abstracts, skills, core
+
 ### Skills Development
 
 1. Skills are in the `intentkit/skills/` folder. Each folder is a category. Each skill category can contain multiple skills. A category can be a theme or a brand.
