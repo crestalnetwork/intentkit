@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 from bip32 import BIP32
 from cdp import CdpClient as OriginCdpClient  # noqa: E402
-from cdp import EvmServerAccount  # noqa: E402
 from coinbase_agentkit import (  # noqa: E402
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
@@ -161,21 +160,6 @@ class CdpClient:
             CdpEvmWalletProvider, self._wallet_provider_config
         )
         return self._wallet_provider
-
-    async def get_account(self) -> EvmServerAccount:
-        """Get the account object from the wallet provider.
-
-        Returns:
-            EvmServerAccount: The account object that can be used for balance checks, transfers, etc.
-        """
-        wallet_provider = await self.get_wallet_provider()
-        # Access the internal account object
-        return wallet_provider._account
-
-    async def get_provider_config(self) -> CdpEvmWalletProviderConfig:
-        if not self._wallet_provider_config:
-            await self.get_wallet_provider()
-        return self._wallet_provider_config
 
 
 async def get_cdp_client(agent_id: str, skill_store: SkillStoreABC) -> "CdpClient":
