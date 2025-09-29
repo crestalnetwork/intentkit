@@ -478,6 +478,7 @@ class GatewayzLLM(LLMModel):
             "api_key": config.gatewayz_api_key,
             "base_url": info.api_base,
             "timeout": info.timeout,
+            "max_completion_tokens": 999,
         }
 
         # Add optional parameters based on model support

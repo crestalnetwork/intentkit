@@ -15,7 +15,8 @@ from eth_utils import to_checksum_address
 
 from intentkit.abstracts.skill import SkillStoreABC  # noqa: E402
 from intentkit.models.agent import Agent  # noqa: E402
-from intentkit.models.agent_data import AgentData  # noqa: E402
+from intentkit.models.agent_data import AgentData
+from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _clients: Dict[str, "CdpClient"] = {}
 _origin_cdp_client: Optional[OriginCdpClient] = None
@@ -88,6 +89,18 @@ class CdpClient:
             return self._wallet_provider
         agent: Agent = await self._skill_store.get_agent_config(self._agent_id)
         agent_data: AgentData = await self._skill_store.get_agent_data(self._agent_id)
+        if agent.wallet_provider != "cdp":
+            raise IntentKitAPIError(
+                400,
+                "BadWalletProvider",
+                "Your agent wallet provider is not cdp but you selected a skill that requires a cdp wallet.",
+            )
+        if not agent.network_id:
+            raise IntentKitAPIError(
+                400,
+                "BadNetworkID",
+                "Your agent network ID is not set. Please set it in the agent config.",
+            )
         network_id = agent.network_id
 
         # Get credentials from skill store system config
