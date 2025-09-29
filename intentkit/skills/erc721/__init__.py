@@ -1,6 +1,6 @@
 """ERC721 AgentKit skills."""
 
-from typing import TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 from coinbase_agentkit import erc721_action_provider
 
@@ -12,6 +12,9 @@ from intentkit.skills.base import (
     get_agentkit_actions,
 )
 from intentkit.skills.erc721.base import ERC721BaseTool
+
+if TYPE_CHECKING:
+    from intentkit.models.agent import Agent
 
 
 class SkillStates(TypedDict):
@@ -31,6 +34,7 @@ async def get_skills(
     is_private: bool,
     store: SkillStoreABC,
     agent_id: str,
+    agent: Optional["Agent"] = None,
     **_,
 ) -> list[ERC721BaseTool]:
     """Get all ERC721 skills."""
@@ -42,7 +46,9 @@ async def get_skills(
         if state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
 
-    actions = await get_agentkit_actions(agent_id, store, [erc721_action_provider])
+    actions = await get_agentkit_actions(
+        agent_id, store, [erc721_action_provider], agent=agent
+    )
     tools: list[ERC721BaseTool] = []
     for skill in available_skills:
         for action in actions:

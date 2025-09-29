@@ -108,7 +108,7 @@ class XmtpSwap(XmtpBaseTool):
         network_for_cdp = self.get_cdp_network(agent.network_id)
 
         # Get CDP client from global origin helper (server-side credentials)
-        cdp_client = get_origin_cdp_client(self.skill_store)
+        cdp_client = get_origin_cdp_client()
 
         # Call CDP to create swap quote and extract call datas
         # Be permissive with response shape across SDK versions

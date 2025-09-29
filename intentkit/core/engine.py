@@ -118,13 +118,13 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
                 if hasattr(skill_module, "get_skills"):
                     # all
                     skill_tools = await skill_module.get_skills(
-                        v, False, agent_store, agent_id=agent.id
+                        v, False, agent_store, agent_id=agent.id, agent=agent
                     )
                     if skill_tools and len(skill_tools) > 0:
                         tools.extend(skill_tools)
                     # private
                     skill_private_tools = await skill_module.get_skills(
-                        v, True, agent_store, agent_id=agent.id
+                        v, True, agent_store, agent_id=agent.id, agent=agent
                     )
                     if skill_private_tools and len(skill_private_tools) > 0:
                         private_tools.extend(skill_private_tools)

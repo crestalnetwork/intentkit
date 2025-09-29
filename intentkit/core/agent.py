@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import func, select, text, update
 
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients.cdp import get_cdp_client
+from intentkit.clients.cdp import get_wallet_provider
 from intentkit.config.config import config
 from intentkit.models.agent import (
     Agent,
@@ -73,8 +73,7 @@ async def process_agent_wallet(
 
     # 4. Initialize wallet based on provider type
     if config.cdp_api_key_id and current_wallet_provider == "cdp":
-        cdp_client = await get_cdp_client(agent.id, agent_store)
-        await cdp_client.get_wallet_provider()
+        await get_wallet_provider(agent)
         agent_data = await AgentData.get(agent.id)
     elif current_wallet_provider == "readonly":
         agent_data = await AgentData.patch(

@@ -50,7 +50,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
 
         network_for_cdp = self.get_cdp_network(agent.network_id)
 
-        cdp_client = get_origin_cdp_client(self.skill_store)
+        cdp_client = get_origin_cdp_client()
         # Note: Don't use async with context manager as get_origin_cdp_client returns a managed global client
         price = await cdp_client.evm.get_swap_price(
             from_token=from_token,

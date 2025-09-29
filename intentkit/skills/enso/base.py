@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.abstracts.skill import SkillStoreABC
-from intentkit.clients import CdpClient, get_cdp_client
+from intentkit.clients import get_wallet_provider as get_agent_wallet_provider
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.chain import ChainProvider, Network, network_to_id
 
@@ -33,8 +33,7 @@ class EnsoBaseTool(IntentKitSkill):
         Returns:
             Optional[CdpEvmWalletProvider]: The wallet provider if available.
         """
-        client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
-        return await client.get_wallet_provider()
+        return await get_agent_wallet_provider(context.agent)
 
     async def get_wallet_address(self, context: AgentContext) -> str:
         provider: CdpEvmWalletProvider = await self.get_wallet_provider(context)
