@@ -347,7 +347,7 @@ class LLMModel(BaseModel):
         return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return the LLM instance based on the configuration."""
         raise NotImplementedError("Subclasses must implement create_instance")
 
@@ -365,7 +365,7 @@ class LLMModel(BaseModel):
 class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
@@ -406,7 +406,7 @@ class OpenAILLM(LLMModel):
 class DeepseekLLM(LLMModel):
     """Deepseek LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatDeepseek instance."""
 
         from langchain_deepseek import ChatDeepSeek
@@ -442,7 +442,7 @@ class DeepseekLLM(LLMModel):
 class XAILLM(LLMModel):
     """XAI (Grok) LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatXAI instance."""
 
         from langchain_xai import ChatXAI
@@ -465,9 +465,6 @@ class XAILLM(LLMModel):
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
 
-        if self.model_name in ["grok-3", "grok-3-mini"]:
-            kwargs["search_parameters"] = {"mode": "auto"}
-
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
@@ -477,7 +474,7 @@ class XAILLM(LLMModel):
 class GatewayzLLM(LLMModel):
     """Gatewayz AI LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Eternal AI."""
         from langchain_openai import ChatOpenAI
 
@@ -510,7 +507,7 @@ class GatewayzLLM(LLMModel):
 class EternalLLM(LLMModel):
     """Eternal AI LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Eternal AI."""
         from langchain_openai import ChatOpenAI
 
@@ -545,7 +542,7 @@ class EternalLLM(LLMModel):
 class ReigentLLM(LLMModel):
     """Reigent LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Reigent."""
         from langchain_openai import ChatOpenAI
 
@@ -570,7 +567,7 @@ class ReigentLLM(LLMModel):
 class VeniceLLM(LLMModel):
     """Venice LLM configuration."""
 
-    async def create_instance(self, params: dict[str, Any]) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Venice."""
         from langchain_openai import ChatOpenAI
 
