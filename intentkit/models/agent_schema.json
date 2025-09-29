@@ -79,80 +79,11 @@
       "type": "string",
       "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
       "default": "gpt-5-mini",
-      "enum": [
-        "gpt-5-nano",
-        "gpt-5-mini",
-        "gpt-5",
-        "gpt-4.1-nano",
-        "gpt-4.1-mini",
-        "gpt-4.1",
-        "gpt-4o",
-        "gpt-4o-mini",
-        "o3",
-        "o4-mini",
-        "deepseek-chat",
-        "deepseek-reasoner",
-        "grok-2",
-        "grok-3",
-        "grok-3-mini",
-        "eternalai",
-        "reigent",
-        "venice-uncensored",
-        "venice-llama-4-maverick-17b"
-      ],
+      "enum": [],
       "x-component": "category-select",
-      "x-enum-title": [
-        "GPT-5 nano",
-        "GPT-5 mini",
-        "GPT-5",
-        "GPT-4.1 nano",
-        "GPT-4.1 mini",
-        "GPT-4.1",
-        "GPT-4o",
-        "GPT-4o mini",
-        "OpenAI o3",
-        "OpenAI o4-mini",
-        "Deepseek V3.1",
-        "Deepseek V3.1 Thinking",
-        "Grok 2",
-        "Grok 3",
-        "Grok 3 Mini"
-      ],
-      "x-enum-category": [
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "OpenAI",
-        "Deepseek",
-        "Deepseek",
-        "Grok",
-        "Grok",
-        "Grok"
-      ],
-      "x-support-skill": [
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-      ],
+      "x-enum-title": [],
+      "x-enum-category": [],
+      "x-support-skill": [],
       "x-group": "llm"
     },
     "purpose": {
@@ -218,6 +149,17 @@
       "x-str-type": "prompt",
       "x-group": "llm"
     },
+    "short_term_memory_strategy": {
+      "title": "Short Term Memory Strategy",
+      "type": "string",
+      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+      "default": "trim",
+      "enum": [
+        "trim",
+        "summarize"
+      ],
+      "x-group": "llm"
+    },
     "temperature": {
       "title": "Temperature",
       "type": "number",
@@ -236,7 +178,8 @@
       "minimum": -2.0,
       "maximum": 2.0,
       "x-group": "llm",
-      "x-step": 0.1
+      "x-step": 0.1,
+      "x-advanced": true
     },
     "presence_penalty": {
       "title": "Presence Penalty",
@@ -246,18 +189,8 @@
       "minimum": -2.0,
       "maximum": 2.0,
       "x-group": "llm",
-      "x-step": 0.1
-    },
-    "short_term_memory_strategy": {
-      "title": "Short Term Memory Strategy",
-      "type": "string",
-      "description": "Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
-      "default": "trim",
-      "enum": [
-        "trim",
-        "summarize"
-      ],
-      "x-group": "llm"
+      "x-step": 0.1,
+      "x-advanced": true
     },
     "telegram_entrypoint_enabled": {
       "title": "Enable Telegram Communication",
@@ -402,7 +335,6 @@
         "Coinbase Server Wallet V2",
         "Readonly Wallet"
       ],
-      "default": "cdp",
       "x-group": "onchain"
     },
     "network_id": {

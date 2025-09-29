@@ -581,13 +581,13 @@ class AgentCore(BaseModel):
     wallet_provider: Annotated[
         Optional[Literal["cdp", "readonly"]],
         PydanticField(
-            default="cdp",
+            default=None,
             description="Provider of the agent's wallet",
             json_schema_extra={
                 "x-group": "onchain",
             },
         ),
-    ] = "cdp"
+    ]
     readonly_wallet_address: Annotated[
         Optional[str],
         PydanticField(
@@ -598,12 +598,12 @@ class AgentCore(BaseModel):
     network_id: Annotated[
         Optional[
             Literal[
+                "base-mainnet",
+                "base-sepolia",
                 "ethereum-mainnet",
                 "ethereum-sepolia",
                 "polygon-mainnet",
                 "polygon-mumbai",
-                "base-mainnet",
-                "base-sepolia",
                 "arbitrum-mainnet",
                 "arbitrum-sepolia",
                 "optimism-mainnet",

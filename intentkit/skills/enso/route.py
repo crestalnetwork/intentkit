@@ -184,7 +184,9 @@ class EnsoRouteShortcut(EnsoBaseTool):
         agent_id = context.agent_id
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_wallet_address(context)
+        # Use the wallet provider to send the transaction
+        wallet_provider = await self.get_wallet_provider(context)
+        wallet_address = wallet_provider.get_address()
 
         async with httpx.AsyncClient() as client:
             try:
@@ -266,9 +268,6 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     res.amountOut = amount_out
 
                 if broadcast_requested:
-                    # Use the wallet provider to send the transaction
-                    wallet_provider = await self.get_wallet_provider(context)
-
                     # Extract transaction data from the Enso API response
                     tx_data = json_dict.get("tx", {})
                     if tx_data:
@@ -277,7 +276,6 @@ class EnsoRouteShortcut(EnsoBaseTool):
                             "to": tx_data.get("to"),
                             "data": tx_data.get("data", "0x"),
                             "value": tx_data.get("value", 0),
-                            "from": wallet_address,
                         }
                         tx_hash = wallet_provider.send_transaction(tx_params)
 

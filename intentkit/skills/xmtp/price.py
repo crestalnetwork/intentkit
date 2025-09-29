@@ -1,5 +1,6 @@
 from typing import Literal, Type
 
+from langchain.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_origin_cdp_client
@@ -43,7 +44,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
             "optimism-mainnet",
         ]
         if agent.network_id not in supported_networks:
-            raise ValueError(
+            raise ToolException(
                 f"Swap price only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
             )
 

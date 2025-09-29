@@ -24,9 +24,7 @@ class EnsoBaseTool(IntentKitSkill):
         description="The skill store for persisting data"
     )
 
-    async def get_wallet_provider(
-        self, context: AgentContext
-    ) -> Optional[CdpEvmWalletProvider]:
+    async def get_wallet_provider(self, context: AgentContext) -> CdpEvmWalletProvider:
         """Get the wallet provider from the CDP client.
 
         Args:
@@ -39,11 +37,8 @@ class EnsoBaseTool(IntentKitSkill):
         return await client.get_wallet_provider()
 
     async def get_wallet_address(self, context: AgentContext) -> str:
-        client: CdpClient = await get_cdp_client(context.agent.id, self.skill_store)
-        provider_config = await client.get_provider_config()
-        if not provider_config.address:
-            raise ToolException("wallet address not found for agent")
-        return provider_config.address
+        provider: CdpEvmWalletProvider = await self.get_wallet_provider(context)
+        return provider.get_address()
 
     def get_chain_provider(self, context: AgentContext) -> Optional[ChainProvider]:
         return self.skill_store.get_system_config("chain_provider")

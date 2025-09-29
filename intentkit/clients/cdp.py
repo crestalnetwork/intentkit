@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 from bip32 import BIP32
 from cdp import CdpClient as OriginCdpClient  # noqa: E402
-from cdp import EvmServerAccount  # noqa: E402
 from coinbase_agentkit import (  # noqa: E402
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
@@ -15,7 +14,8 @@ from eth_utils import to_checksum_address
 
 from intentkit.abstracts.skill import SkillStoreABC  # noqa: E402
 from intentkit.models.agent import Agent  # noqa: E402
-from intentkit.models.agent_data import AgentData  # noqa: E402
+from intentkit.models.agent_data import AgentData
+from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _clients: Dict[str, "CdpClient"] = {}
 _origin_cdp_client: Optional[OriginCdpClient] = None
@@ -88,6 +88,18 @@ class CdpClient:
             return self._wallet_provider
         agent: Agent = await self._skill_store.get_agent_config(self._agent_id)
         agent_data: AgentData = await self._skill_store.get_agent_data(self._agent_id)
+        if agent.wallet_provider != "cdp":
+            raise IntentKitAPIError(
+                400,
+                "BadWalletProvider",
+                "Your agent wallet provider is not cdp but you selected a skill that requires a cdp wallet.",
+            )
+        if not agent.network_id:
+            raise IntentKitAPIError(
+                400,
+                "BadNetworkID",
+                "Your agent network ID is not set. Please set it in the agent config.",
+            )
         network_id = agent.network_id
 
         # Get credentials from skill store system config
@@ -148,21 +160,6 @@ class CdpClient:
             CdpEvmWalletProvider, self._wallet_provider_config
         )
         return self._wallet_provider
-
-    async def get_account(self) -> EvmServerAccount:
-        """Get the account object from the wallet provider.
-
-        Returns:
-            EvmServerAccount: The account object that can be used for balance checks, transfers, etc.
-        """
-        wallet_provider = await self.get_wallet_provider()
-        # Access the internal account object
-        return wallet_provider._account
-
-    async def get_provider_config(self) -> CdpEvmWalletProviderConfig:
-        if not self._wallet_provider_config:
-            await self.get_wallet_provider()
-        return self._wallet_provider_config
 
 
 async def get_cdp_client(agent_id: str, skill_store: SkillStoreABC) -> "CdpClient":

@@ -158,7 +158,7 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
                     {
                         "title": "Network",
                         "short": True,
-                        "value": agent.network_id or "Default",
+                        "value": agent.network_id or "Not Set",
                     },
                     {
                         "title": "X Username",
