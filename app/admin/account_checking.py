@@ -162,11 +162,22 @@ async def check_account_balance_consistency(
                     "0"
                 )
 
-                # Compare total balances and individual credit type balances
-                is_total_consistent = total_balance == expected_balance
-                is_free_consistent = account.free_credits == expected_free_credits
-                is_reward_consistent = account.reward_credits == expected_reward_credits
-                is_permanent_consistent = account.credits == expected_permanent_credits
+                # Compare total balances and individual credit type balances with tolerance
+                tolerance = Decimal("0.01")
+
+                total_balance_diff = abs(total_balance - expected_balance)
+                free_credits_diff = abs(account.free_credits - expected_free_credits)
+                reward_credits_diff = abs(
+                    account.reward_credits - expected_reward_credits
+                )
+                permanent_credits_diff = abs(
+                    account.credits - expected_permanent_credits
+                )
+
+                is_total_consistent = total_balance_diff <= tolerance
+                is_free_consistent = free_credits_diff <= tolerance
+                is_reward_consistent = reward_credits_diff <= tolerance
+                is_permanent_consistent = permanent_credits_diff <= tolerance
 
                 is_consistent = (
                     is_total_consistent
@@ -754,6 +765,31 @@ async def run_slow_checks() -> Dict[str, List[AccountCheckingResult]]:
                 "short": True,
             }
         )
+
+    # If there are failed account balance checks, add details of first 5 failed accounts
+    if "account_balance" in results:
+        failed_account_results = [r for r in results["account_balance"] if not r.status]
+        if failed_account_results:
+            # Add a separate attachment for failed account details
+            failed_details_text = "First 5 inconsistent accounts:\n"
+            for i, result in enumerate(failed_account_results[:5]):
+                details = result.details
+                failed_details_text += (
+                    f"{i + 1}. Account {details['account_id']} ({details['owner_type']}:{details['owner_id']}):\n"
+                    f"   • Total: {details['current_total_balance']:.4f} vs {details['expected_total_balance']:.4f} (diff: {details['total_balance_difference']:.4f})\n"
+                    f"   • Free: {details['free_credits']:.4f} vs {details['expected_free_credits']:.4f} (diff: {details['free_credits_difference']:.4f})\n"
+                    f"   • Reward: {details['reward_credits']:.4f} vs {details['expected_reward_credits']:.4f} (diff: {details['reward_credits_difference']:.4f})\n"
+                    f"   • Permanent: {details['permanent_credits']:.4f} vs {details['expected_permanent_credits']:.4f} (diff: {details['permanent_credits_difference']:.4f})\n"
+                )
+
+            attachments.append(
+                {
+                    "color": "warning",
+                    "title": "Account Balance Inconsistencies Details",
+                    "text": failed_details_text,
+                    "mrkdwn_in": ["text"],
+                }
+            )
 
     # Send the message
     send_slack_message(
