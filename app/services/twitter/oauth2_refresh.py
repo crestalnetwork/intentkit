@@ -1,5 +1,6 @@
 """Twitter OAuth2 token refresh functionality."""
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -46,8 +47,10 @@ async def refresh_token(agent_data_record: AgentDataTable):
         agent_data_record: Agent data record containing refresh token
     """
     try:
-        # Get new token using refresh token
-        token = oauth2_user_handler.refresh(agent_data_record.twitter_refresh_token)
+        # Get new token using refresh token without blocking the event loop
+        token = await asyncio.to_thread(
+            oauth2_user_handler.refresh, agent_data_record.twitter_refresh_token
+        )
 
         token = {} if token is None else token
 
@@ -80,5 +83,7 @@ async def refresh_expiring_tokens():
     It will check for tokens expiring in the next 5 minutes and refresh them.
     """
     agents = await get_expiring_tokens()
-    for agent in agents:
-        await refresh_token(agent)
+    if not agents:
+        return
+
+    await asyncio.gather(*(refresh_token(agent) for agent in agents))
