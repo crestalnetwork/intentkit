@@ -74,6 +74,9 @@ def get_redis() -> Redis:
     return _redis_client
 
 
+DEFAULT_HEARTBEAT_TTL = 16 * 60
+
+
 async def send_heartbeat(redis_client: Redis, name: str) -> None:
     """Set a heartbeat key in Redis that expires after 16 minutes.
 
@@ -83,7 +86,7 @@ async def send_heartbeat(redis_client: Redis, name: str) -> None:
     """
     try:
         key = f"intentkit:heartbeat:{name}"
-        await redis_client.set(key, 1, ex=190)  # 190 seconds = 3 minutes
+        await redis_client.set(key, 1, ex=DEFAULT_HEARTBEAT_TTL)
     except Exception as e:
         logger.error(f"Failed to send heartbeat for {name}: {e}")
 
