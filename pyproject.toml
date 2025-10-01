@@ -80,10 +80,13 @@ dev = [
     "ruff>=0.11.9,<0.12",
     "jsonschema>=4.21.1,<5",
     "deptry>=0.23.0",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.2.0",
 ]
 
 [tool.uv]
 package = false
+default-groups = ["dev"]
 
 [tool.uv.workspace]
 members = [
@@ -108,3 +111,7 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 
 [tool.deptry]
 known_first_party = ["intentkit"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
