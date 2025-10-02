@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 from sqlalchemy import func, select, text, update
 
@@ -17,7 +17,13 @@ from intentkit.models.agent import (
     AgentUpdate,
 )
 from intentkit.models.agent_data import AgentData, AgentQuota, AgentQuotaTable
-from intentkit.models.credit import CreditEventTable, EventType, UpstreamType
+from intentkit.models.credit import (
+    CreditAccount,
+    CreditEventTable,
+    EventType,
+    OwnerType,
+    UpstreamType,
+)
 from intentkit.models.db import get_session
 from intentkit.models.skill import (
     AgentSkillData,
@@ -660,7 +666,31 @@ class AgentStore(SkillStoreABC):
 agent_store = AgentStore()
 
 
-async def update_agent_action_cost():
+async def _iterate_agent_id_batches(
+    batch_size: int = 100,
+) -> AsyncGenerator[list[str], None]:
+    """Yield agent IDs in ascending batches to limit memory usage."""
+
+    last_id: Optional[str] = None
+    while True:
+        async with get_session() as session:
+            query = select(AgentTable.id).order_by(AgentTable.id)
+
+            if last_id:
+                query = query.where(AgentTable.id > last_id)
+
+            query = query.limit(batch_size)
+            result = await session.execute(query)
+            agent_ids = [row[0] for row in result]
+
+        if not agent_ids:
+            break
+
+        yield agent_ids
+        last_id = agent_ids[-1]
+
+
+async def update_agent_action_cost(batch_size: int = 100) -> None:
     """
     Update action costs for all agents.
 
@@ -677,42 +707,20 @@ async def update_agent_action_cost():
     """
     logger.info("Starting update of agent average action costs")
     start_time = time.time()
-    batch_size = 100
-    last_id = None
     total_updated = 0
 
-    while True:
-        # Get a batch of agent IDs ordered by ID
-        async with get_session() as session:
-            query = select(AgentTable.id).order_by(AgentTable.id)
-
-            # Apply pagination if we have a last_id from previous batch
-            if last_id:
-                query = query.where(AgentTable.id > last_id)
-
-            query = query.limit(batch_size)
-            result = await session.execute(query)
-            agent_ids = [row[0] for row in result]
-
-            # If no more agents, we're done
-            if not agent_ids:
-                break
-
-            # Update last_id for next batch
-            last_id = agent_ids[-1]
-
-        # Process this batch of agents
+    async for agent_ids in _iterate_agent_id_batches(batch_size):
         logger.info(
-            f"Processing batch of {len(agent_ids)} agents starting with ID {agent_ids[0]}"
+            "Processing batch of %s agents starting with ID %s",
+            len(agent_ids),
+            agent_ids[0],
         )
         batch_start_time = time.time()
 
         for agent_id in agent_ids:
             try:
-                # Calculate action costs for this agent
                 costs = await agent_action_cost(agent_id)
 
-                # Update the agent's quota record
                 async with get_session() as session:
                     update_stmt = (
                         update(AgentQuotaTable)
@@ -730,17 +738,188 @@ async def update_agent_action_cost():
                     await session.commit()
 
                 total_updated += 1
-            except Exception as e:
+            except Exception as e:  # pragma: no cover - log path only
                 logger.error(
-                    f"Error updating action costs for agent {agent_id}: {str(e)}"
+                    "Error updating action costs for agent %s: %s", agent_id, str(e)
                 )
 
         batch_time = time.time() - batch_start_time
-        logger.info(f"Completed batch in {batch_time:.3f}s")
+        logger.info("Completed batch in %.3fs", batch_time)
 
     total_time = time.time() - start_time
     logger.info(
-        f"Finished updating action costs for {total_updated} agents in {total_time:.3f}s"
+        "Finished updating action costs for %s agents in %.3fs",
+        total_updated,
+        total_time,
+    )
+
+
+async def update_agents_account_snapshot(batch_size: int = 100) -> None:
+    """Refresh the cached credit account snapshot for every agent."""
+
+    logger.info("Starting update of agent account snapshots")
+    start_time = time.time()
+    total_updated = 0
+
+    async for agent_ids in _iterate_agent_id_batches(batch_size):
+        logger.info(
+            "Processing snapshot batch of %s agents starting with ID %s",
+            len(agent_ids),
+            agent_ids[0],
+        )
+        batch_start_time = time.time()
+
+        for agent_id in agent_ids:
+            try:
+                async with get_session() as session:
+                    account = await CreditAccount.get_or_create_in_session(
+                        session, OwnerType.AGENT, agent_id
+                    )
+                    await session.execute(
+                        update(AgentTable)
+                        .where(AgentTable.id == agent_id)
+                        .values(
+                            account_snapshot=account.model_dump(mode="json"),
+                        )
+                    )
+                    await session.commit()
+
+                total_updated += 1
+            except Exception as exc:  # pragma: no cover - log path only
+                logger.error(
+                    "Error updating account snapshot for agent %s: %s",
+                    agent_id,
+                    exc,
+                )
+
+        batch_time = time.time() - batch_start_time
+        logger.info("Completed snapshot batch in %.3fs", batch_time)
+
+    total_time = time.time() - start_time
+    logger.info(
+        "Finished updating account snapshots for %s agents in %.3fs",
+        total_updated,
+        total_time,
+    )
+
+
+async def update_agents_assets(batch_size: int = 100) -> None:
+    """Refresh cached asset information for all agents."""
+
+    from intentkit.core.asset import agent_asset
+
+    logger.info("Starting update of agent assets")
+    start_time = time.time()
+    total_updated = 0
+
+    async for agent_ids in _iterate_agent_id_batches(batch_size):
+        logger.info(
+            "Processing asset batch of %s agents starting with ID %s",
+            len(agent_ids),
+            agent_ids[0],
+        )
+        batch_start_time = time.time()
+
+        for agent_id in agent_ids:
+            try:
+                assets = await agent_asset(agent_id)
+            except IntentKitAPIError as exc:  # pragma: no cover - log path only
+                logger.warning(
+                    "Skipping asset update for agent %s due to API error: %s",
+                    agent_id,
+                    exc,
+                )
+                continue
+            except Exception as exc:  # pragma: no cover - log path only
+                logger.error("Error retrieving assets for agent %s: %s", agent_id, exc)
+                continue
+
+            try:
+                async with get_session() as session:
+                    await session.execute(
+                        update(AgentTable)
+                        .where(AgentTable.id == agent_id)
+                        .values(assets=assets.model_dump(mode="json"))
+                    )
+                    await session.commit()
+
+                total_updated += 1
+            except Exception as exc:  # pragma: no cover - log path only
+                logger.error(
+                    "Error updating asset cache for agent %s: %s", agent_id, exc
+                )
+
+        batch_time = time.time() - batch_start_time
+        logger.info("Completed asset batch in %.3fs", batch_time)
+
+    total_time = time.time() - start_time
+    logger.info(
+        "Finished updating assets for %s agents in %.3fs",
+        total_updated,
+        total_time,
+    )
+
+
+async def update_agents_statistics(
+    *, end_time: Optional[datetime] = None, batch_size: int = 100
+) -> None:
+    """Refresh cached statistics for every agent."""
+
+    from intentkit.core.statistics import get_agent_statistics
+
+    if end_time is None:
+        end_time = datetime.now(timezone.utc)
+    elif end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=timezone.utc)
+    else:
+        end_time = end_time.astimezone(timezone.utc)
+
+    logger.info("Starting update of agent statistics using end_time %s", end_time)
+    start_time = time.time()
+    total_updated = 0
+
+    async for agent_ids in _iterate_agent_id_batches(batch_size):
+        logger.info(
+            "Processing statistics batch of %s agents starting with ID %s",
+            len(agent_ids),
+            agent_ids[0],
+        )
+        batch_start_time = time.time()
+
+        for agent_id in agent_ids:
+            try:
+                statistics = await get_agent_statistics(agent_id, end_time=end_time)
+            except Exception as exc:  # pragma: no cover - log path only
+                logger.error(
+                    "Error computing statistics for agent %s: %s", agent_id, exc
+                )
+                continue
+
+            try:
+                async with get_session() as session:
+                    await session.execute(
+                        update(AgentTable)
+                        .where(AgentTable.id == agent_id)
+                        .values(statistics=statistics.model_dump(mode="json"))
+                    )
+                    await session.commit()
+
+                total_updated += 1
+            except Exception as exc:  # pragma: no cover - log path only
+                logger.error(
+                    "Error updating statistics cache for agent %s: %s",
+                    agent_id,
+                    exc,
+                )
+
+        batch_time = time.time() - batch_start_time
+        logger.info("Completed statistics batch in %.3fs", batch_time)
+
+    total_time = time.time() - start_time
+    logger.info(
+        "Finished updating statistics for %s agents in %.3fs",
+        total_updated,
+        total_time,
     )
 
 
