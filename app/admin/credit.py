@@ -1,13 +1,14 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, Path, Query, status
 from pydantic import BaseModel, Field, model_validator
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.core import statistics as agent_statistics
 from intentkit.core.credit import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
@@ -20,7 +21,6 @@ from intentkit.core.credit import (
     update_daily_quota,
     withdraw,
 )
-from intentkit.models.agent_data import AgentQuota
 from intentkit.models.credit import (
     CreditAccount,
     CreditAccountTable,
@@ -336,35 +336,9 @@ async def update_account_free_quota(
     )
 
 
-class AgentStatisticsResponse(BaseModel):
-    """Response model for agent statistics."""
-
-    agent_id: str = Field(description="ID of the agent")
-    account_id: str = Field(description="ID of the agent's credit account")
-    balance: Decimal = Field(description="Total balance of the agent's account")
-    total_income: Decimal = Field(description="Total income from all credit events")
-    net_income: Decimal = Field(description="Net income from all credit events")
-    permanent_income: Decimal = Field(
-        description="Permanent income from all credit events"
-    )
-    permanent_profit: Decimal = Field(
-        description="Permanent profit from all credit events"
-    )
-    last_24h_income: Decimal = Field(description="Income from last 24 hours")
-    last_24h_permanent_income: Decimal = Field(
-        description="Permanent income from last 24 hours"
-    )
-    avg_action_cost: Decimal = Field(description="Average action cost")
-    min_action_cost: Decimal = Field(description="Minimum action cost")
-    max_action_cost: Decimal = Field(description="Maximum action cost")
-    low_action_cost: Decimal = Field(description="Low action cost")
-    medium_action_cost: Decimal = Field(description="Medium action cost")
-    high_action_cost: Decimal = Field(description="High action cost")
-
-
 @credit_router.get(
     "/accounts/agent/{agent_id}/statistics",
-    response_model=AgentStatisticsResponse,
+    response_model=agent_statistics.AgentStatistics,
     operation_id="get_agent_statistics",
     summary="Get Agent Statistics",
     dependencies=[Depends(verify_admin_jwt)],
@@ -372,7 +346,7 @@ class AgentStatisticsResponse(BaseModel):
 async def get_agent_statistics(
     agent_id: Annotated[str, Path(description="ID of the agent")],
     db: AsyncSession = Depends(get_db),
-) -> AgentStatisticsResponse:
+) -> agent_statistics.AgentStatistics:
     """Get statistics for an agent account.
 
     This endpoint is not in readonly router, because it may create a new account.
@@ -387,75 +361,7 @@ async def get_agent_statistics(
     Raises:
         404: If the agent account is not found
     """
-    # Get the agent account
-    agent_account = await CreditAccount.get_or_create_in_session(
-        db, OwnerType.AGENT, agent_id
-    )
-
-    # Calculate the total balance
-    balance = (
-        agent_account.free_credits
-        + agent_account.reward_credits
-        + agent_account.credits
-    )
-
-    # Calculate total income (sum of total_amount) and net income (sum of fee_agent_amount) at SQL level
-    # Query to get the sum of total_amount and fee_agent_amount
-    stmt = select(
-        func.sum(CreditEventTable.total_amount).label("total_income"),
-        func.sum(CreditEventTable.fee_agent_amount).label("net_income"),
-        func.sum(CreditEventTable.permanent_amount).label("permanent_income"),
-        func.sum(CreditEventTable.fee_agent_permanent_amount).label("permanent_profit"),
-    ).where(CreditEventTable.agent_id == agent_id)
-    result = await db.execute(stmt)
-    row = result.first()
-
-    # Extract the sums, defaulting to 0 if None
-    total_income = row.total_income if row.total_income is not None else Decimal("0")
-    net_income = row.net_income if row.net_income is not None else Decimal("0")
-    permanent_income = (
-        row.permanent_income if row.permanent_income is not None else Decimal("0")
-    )
-    permanent_profit = (
-        row.permanent_profit if row.permanent_profit is not None else Decimal("0")
-    )
-
-    # Calculate last 24h income
-    stmt = select(
-        func.sum(CreditEventTable.total_amount).label("last_24h_income"),
-        func.sum(CreditEventTable.permanent_amount).label("last_24h_permanent_income"),
-    ).where(
-        CreditEventTable.agent_id == agent_id,
-        CreditEventTable.created_at >= datetime.now() - timedelta(hours=24),
-    )
-    result = await db.execute(stmt)
-    row = result.first()
-    last_24h_income = (
-        row.last_24h_income if row.last_24h_income is not None else Decimal("0")
-    )
-    last_24h_permanent_income = (
-        row.last_24h_permanent_income
-        if row.last_24h_permanent_income is not None
-        else Decimal("0")
-    )
-    quota = await AgentQuota.get(agent_id)
-    return AgentStatisticsResponse(
-        agent_id=agent_id,
-        account_id=agent_account.id,
-        balance=balance,
-        total_income=total_income,
-        net_income=net_income,
-        permanent_income=permanent_income,
-        permanent_profit=permanent_profit,
-        last_24h_income=last_24h_income,
-        last_24h_permanent_income=last_24h_permanent_income,
-        avg_action_cost=quota.avg_action_cost,
-        min_action_cost=quota.min_action_cost,
-        max_action_cost=quota.max_action_cost,
-        low_action_cost=quota.low_action_cost,
-        medium_action_cost=quota.medium_action_cost,
-        high_action_cost=quota.high_action_cost,
-    )
+    return await agent_statistics.get_agent_statistics(agent_id, session=db)
 
 
 @credit_router_readonly.get(
