@@ -10,28 +10,28 @@
       "order": 1
     },
     {
+      "id": "skills",
+      "title": "Skills",
+      "order": 2
+    },
+    {
       "id": "llm",
       "title": "LLM",
-      "order": 2
+      "order": 3
     },
     {
       "id": "onchain",
       "title": "On-Chain",
-      "order": 3
+      "order": 4
     },
     {
       "id": "examples",
       "title": "Quick Actions",
-      "order": 4
+      "order": 5
     },
     {
       "id": "entrypoint",
       "title": "Communication Channels",
-      "order": 5
-    },
-    {
-      "id": "skills",
-      "title": "Skills",
       "order": 6
     },
     {
@@ -251,7 +251,7 @@
     "skills": {
       "title": "Skills",
       "type": "object",
-      "description": "Dict of skills and their corresponding configurations",
+      "description": "Please choose the Agent's skills carefully. Excessive skills will pollute the context and reduce the Agent's intelligence. Only select the necessary skills, and it is best not to exceed 10.",
       "x-group": "skills",
       "x-inline": true,
       "properties": {}
