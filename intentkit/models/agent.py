@@ -1042,7 +1042,7 @@ class AgentPublicInfo(BaseModel):
         PydanticField(
             default=None,
             description="Token address of the agent",
-            max_length=42,
+            max_length=66,
             json_schema_extra={
                 "x-placeholder": "The contract address of the agent token",
             },
@@ -1053,7 +1053,7 @@ class AgentPublicInfo(BaseModel):
         PydanticField(
             default=None,
             description="Pool of the agent token",
-            max_length=42,
+            max_length=66,
             json_schema_extra={
                 "x-placeholder": "The contract address of the agent token pool",
             },
