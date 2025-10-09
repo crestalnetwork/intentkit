@@ -1,4 +1,5 @@
 """Discord entrypoint for IntentKit."""
+
 import asyncio
 import logging
 import signal
@@ -11,8 +12,8 @@ from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.db import get_session, init_db
 from intentkit.models.redis import init_redis
 
-from app.services.discord.bot.pool import BotPool, agent_by_id, is_agent_failed
 from app.services.discord.bot import pool as pool_module
+from app.services.discord.bot.pool import BotPool, agent_by_id, is_agent_failed
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +102,7 @@ async def run_discord_server() -> None:
     scheduler = AgentScheduler(bot_pool)
 
     # Start the scheduler
-    asyncio.create_task(
-        scheduler.start(int(config.discord_new_agent_poll_interval))
-    )
+    asyncio.create_task(scheduler.start(int(config.discord_new_agent_poll_interval)))
 
     # Keep the server running
     try:

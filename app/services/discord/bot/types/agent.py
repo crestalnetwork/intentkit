@@ -1,4 +1,5 @@
 """Discord bot pool agent item."""
+
 from intentkit.models.agent import Agent
 
 

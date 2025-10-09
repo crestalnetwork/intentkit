@@ -6,6 +6,7 @@ Note: These handlers require the following intents to be enabled in Discord Deve
 
 Without Message Content Intent enabled, the bot will receive messages but message.content will be empty.
 """
+
 import logging
 
 import discord
@@ -93,13 +94,16 @@ async def on_message_handler(message: discord.Message, bot_item):
 
             # Send response
             response_text = response[-1].message if response else "Server Error"
-            
+
             # Reply to the original message (like Telegram does)
             if len(response_text) <= 2000:
                 await message.reply(response_text)
             else:
                 # For long messages, split and send first as reply, rest as regular messages
-                chunks = [response_text[i : i + 2000] for i in range(0, len(response_text), 2000)]
+                chunks = [
+                    response_text[i : i + 2000]
+                    for i in range(0, len(response_text), 2000)
+                ]
                 await message.reply(chunks[0])
                 for chunk in chunks[1:]:
                     await message.channel.send(chunk)
@@ -112,7 +116,7 @@ async def on_message_handler(message: discord.Message, bot_item):
 async def should_respond(message: discord.Message, bot_item) -> bool:
     """
     Determine if bot should respond to this message.
-    
+
     Similar to Telegram pattern:
     - DMs: respond to all messages
     - Servers: only respond to mentions or replies
@@ -146,7 +150,7 @@ async def should_respond(message: discord.Message, bot_item) -> bool:
 async def send_discord_response(channel, text: str):
     """
     Send response, splitting if over Discord's 2000 char limit.
-    
+
     Args:
         channel: Discord channel to send to
         text: Message text to send

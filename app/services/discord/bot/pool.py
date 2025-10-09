@@ -1,11 +1,11 @@
 """Discord bot pool management."""
+
 import asyncio
 import logging
 
 import discord
 
 from intentkit.models.agent import Agent
-from intentkit.models.agent_data import AgentData
 
 from app.services.discord.bot.types.agent import BotPoolAgentItem
 from app.services.discord.bot.types.bot import BotPoolItem
@@ -43,12 +43,12 @@ def add_failed_agent(agent_id: str):
 def agent_chat_id(guild_memory_public: bool, channel_id: int, guild_id: int = None):
     """
     Generate chat_id similar to Telegram pattern.
-    
+
     Args:
         guild_memory_public: If True, share memory across guild
         channel_id: Discord channel ID
         guild_id: Discord guild/server ID
-        
+
     Returns:
         Chat ID string for memory management
     """

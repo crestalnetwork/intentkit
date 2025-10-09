@@ -700,6 +700,18 @@ wheels = [
 ]
 
 [[package]]
+name = "discord-py"
+version = "2.6.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6f/00/ec765ba7d5e16dfc070953a992379c8de8489164f9e006f7ebd8870b426f/discord_py-2.6.3.tar.gz", hash = "sha256:92bb3ef9dbe08525803be1e357bc0191f59ae16956690fc96c34f40bcd02c649", size = 1092075, upload-time = "2025-08-31T19:30:23.476Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/4e/05fcecd452bde37fba8e9545c318099cbb8bad7f496b6d9322fa2b88f92f/discord_py-2.6.3-py3-none-any.whl", hash = "sha256:69835269d73d9889a2f0efff4c91264a18998db0fdc4295a3c886fe9196dea4e", size = 1208828, upload-time = "2025-08-31T19:30:21.48Z" },
+]
+
+[[package]]
 name = "distro"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1341,6 +1353,7 @@ dependencies = [
     { name = "cdp-sdk" },
     { name = "coinbase-agentkit" },
     { name = "cron-validator" },
+    { name = "discord-py" },
     { name = "epyxid" },
     { name = "eth-keys" },
     { name = "eth-utils" },
@@ -1421,6 +1434,7 @@ requires-dist = [
     { name = "cdp-sdk", specifier = ">=1.31.1" },
     { name = "coinbase-agentkit", specifier = ">=0.7.2" },
     { name = "cron-validator", specifier = ">=1.0.8,<2.0.0" },
+    { name = "discord-py", specifier = ">=2.3.2" },
     { name = "epyxid", specifier = ">=0.3.3" },
     { name = "eth-keys", specifier = ">=0.4.0" },
     { name = "eth-utils", specifier = ">=2.1.0" },

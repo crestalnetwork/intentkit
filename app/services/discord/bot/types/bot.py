@@ -1,4 +1,5 @@
 """Discord bot pool item."""
+
 import discord
 
 from intentkit.models.agent import Agent
@@ -10,14 +11,18 @@ class BotPoolItem:
     def __init__(self, agent: Agent):
         self._agent_id = agent.id
         self._agent_owner = agent.owner
-        self._token = agent.discord_config.get("token") if agent.discord_config else None
+        self._token = (
+            agent.discord_config.get("token") if agent.discord_config else None
+        )
 
         if not self._token:
             raise ValueError("Discord token cannot be empty")
 
         # Discord bot setup with required intents
         intents = discord.Intents.default()
-        intents.message_content = True  # Privileged: Required for reading message content
+        intents.message_content = (
+            True  # Privileged: Required for reading message content
+        )
         intents.guilds = True  # Required for guild events
         intents.guild_messages = True  # Required for receiving guild messages
         intents.dm_messages = True  # Required for receiving DMs
@@ -39,7 +44,9 @@ class BotPoolItem:
         self._greeting_server = config.get(
             "greeting_server", "Hello! Mention me or reply to my messages to chat."
         )
-        self._greeting_dm = config.get("greeting_dm", "Hello! Send me a message to chat.")
+        self._greeting_dm = config.get(
+            "greeting_dm", "Hello! Send me a message to chat."
+        )
         self._owner_discord_id = config.get("owner_discord_id")
 
     @property
