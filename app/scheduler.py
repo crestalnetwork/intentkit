@@ -1,20 +1,25 @@
-"""Scheduler process entry point.
-
-This module runs the scheduler in a separate process, using the implementation
-from app.admin.scheduler.
-"""
+"""Scheduler process entry point."""
 
 import asyncio
 import logging
 import signal
+from typing import Dict
 
 import sentry_sdk
+from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.triggers.cron import CronTrigger
 
 from intentkit.config.config import config
+from intentkit.core.scheduler import create_scheduler
 from intentkit.models.db import init_db
-from intentkit.models.redis import clean_heartbeat, get_redis, init_redis
+from intentkit.models.redis import (
+    clean_heartbeat,
+    get_redis,
+    init_redis,
+    send_heartbeat,
+)
 
-from app.admin.scheduler import create_scheduler
+from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +36,16 @@ if config.sentry_dsn:
 
 
 if __name__ == "__main__":
+
+    async def send_scheduler_heartbeat():
+        """Send a heartbeat signal to Redis to indicate the scheduler is running."""
+        logger.info("Sending scheduler heartbeat")
+        try:
+            redis_client = get_redis()
+            await send_heartbeat(redis_client, "scheduler")
+            logger.info("Sent scheduler heartbeat successfully")
+        except Exception as e:
+            logger.error(f"Error sending scheduler heartbeat: {e}")
 
     async def main():
         # Create a shutdown event for graceful termination
@@ -68,7 +83,35 @@ if __name__ == "__main__":
                 logger.error(f"Error cleaning up heartbeat: {e}")
 
         # Initialize scheduler
-        scheduler = create_scheduler()
+        jobstores: Dict[str, RedisJobStore] = {}
+        if config.redis_host:
+            jobstores["default"] = RedisJobStore(
+                host=config.redis_host,
+                port=config.redis_port,
+                db=config.redis_db,
+                jobs_key="intentkit:scheduler:jobs",
+                run_times_key="intentkit:scheduler:run_times",
+            )
+            logger.info(f"scheduler use redis store: {config.redis_host}")
+
+        scheduler = create_scheduler(jobstores=jobstores)
+
+        scheduler.add_job(
+            refresh_expiring_tokens,
+            trigger=CronTrigger(minute="*/5", timezone="UTC"),
+            id="refresh_twitter_tokens",
+            name="Refresh expiring Twitter tokens",
+            replace_existing=True,
+        )
+
+        if config.redis_host:
+            scheduler.add_job(
+                send_scheduler_heartbeat,
+                trigger=CronTrigger(minute="*", timezone="UTC"),
+                id="scheduler_heartbeat",
+                name="Scheduler Heartbeat",
+                replace_existing=True,
+            )
 
         try:
             logger.info("Starting scheduler process...")
