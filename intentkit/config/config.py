@@ -108,6 +108,8 @@ class Config:
         self.tg_server_host = self.load("TG_SERVER_HOST", "127.0.0.1")
         self.tg_server_port = self.load("TG_SERVER_PORT", "8081")
         self.tg_new_agent_poll_interval = self.load("TG_NEW_AGENT_POLL_INTERVAL", "60")
+        # Discord server settings
+        self.discord_new_agent_poll_interval = self.load("DISCORD_NEW_AGENT_POLL_INTERVAL", "30")
         # Twitter
         self.twitter_oauth2_client_id = self.load("TWITTER_OAUTH2_CLIENT_ID")
         self.twitter_oauth2_client_secret = self.load("TWITTER_OAUTH2_CLIENT_SECRET")

@@ -60,6 +60,9 @@ class AgentDataTable(Base):
     telegram_id = Column(String, nullable=True, comment="Telegram user ID")
     telegram_username = Column(String, nullable=True, comment="Telegram username")
     telegram_name = Column(String, nullable=True, comment="Telegram display name")
+    discord_id = Column(String, nullable=True, comment="Discord user ID")
+    discord_username = Column(String, nullable=True, comment="Discord username")
+    discord_name = Column(String, nullable=True, comment="Discord display name")
     error_message = Column(String, nullable=True, comment="Last error message")
     api_key = Column(
         String, nullable=True, unique=True, comment="API key for the agent"
@@ -189,6 +192,27 @@ class AgentData(BaseModel):
         PydanticField(
             default=None,
             description="Telegram display name",
+        ),
+    ] = None
+    discord_id: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Discord user ID",
+        ),
+    ] = None
+    discord_username: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Discord username",
+        ),
+    ] = None
+    discord_name: Annotated[
+        Optional[str],
+        PydanticField(
+            default=None,
+            description="Discord display name",
         ),
     ] = None
     error_message: Annotated[
