@@ -183,7 +183,7 @@ class IntentKitSkill(BaseTool):
         agent = context.agent
         network_id = agent.network_id
 
-        return get_web3_client(network_id, self.skill_store)
+        return get_web3_client(network_id)
 
 
 async def get_agentkit_actions(
