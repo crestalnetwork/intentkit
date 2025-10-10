@@ -12,7 +12,6 @@ from web3 import Web3
 
 from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
-from intentkit.core.agent import agent_store
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
@@ -184,7 +183,7 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         return AgentAssets(net_worth="0", tokens=[])
 
     try:
-        web3_client = get_web3_client(str(agent.network_id), agent_store)
+        web3_client = get_web3_client(str(agent.network_id))
         tokens = await _build_assets_list(agent, agent_data, web3_client)
         net_worth = await _get_wallet_net_worth(agent_data.evm_wallet_address)
         return AgentAssets(net_worth=net_worth, tokens=tokens)
