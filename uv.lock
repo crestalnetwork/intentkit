@@ -1016,15 +1016,6 @@ wheels = [
 ]
 
 [[package]]
-name = "frozendict"
-version = "2.3.10"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c8/0b/5892fa56dca4a3f133f317f5e1e59d99916d649b4d47b7408bae7ac26b1a/frozendict-2.3.10.tar.gz", hash = "sha256:aadc83510ce82751a0bb3575231f778bc37cbb373f5f05a52b888e26cbb92f79", size = 312896, upload-time = "2023-11-29T21:53:18.671Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/2c/e391d6d57bbd837d383a6b69b54ecb4768d75b31d8bc7a380b4b4afe4cb2/frozendict-2.3.10-py3-none-any.whl", hash = "sha256:66cded65f144393b4226bda9fe9ac2f42451d2d603e8a486015744bb566a7008", size = 14571, upload-time = "2023-11-29T21:53:16.747Z" },
-]
-
-[[package]]
 name = "frozenlist"
 version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1374,7 +1365,6 @@ dependencies = [
     { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-prebuilt" },
     { name = "langmem" },
-    { name = "moralis" },
     { name = "mypy-boto3-s3" },
     { name = "openai" },
     { name = "pgvector" },
@@ -1455,7 +1445,6 @@ requires-dist = [
     { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.16" },
     { name = "langgraph-prebuilt", specifier = ">=0.6.1" },
     { name = "langmem", specifier = ">=0.0.27" },
-    { name = "moralis", specifier = ">=0.1.49" },
     { name = "mypy-boto3-s3", specifier = ">=1.37.24,<2.0.0" },
     { name = "openai", specifier = ">=1.59.6" },
     { name = "pgvector", specifier = ">=0.3.6" },
@@ -1988,22 +1977,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/11/96/ea46a376a7c4cd56955ecdfff0ea68de43996a4e6d1aee4599729453bd11/mistletoe-1.4.0.tar.gz", hash = "sha256:1630f906e5e4bbe66fdeb4d29d277e2ea515d642bb18a9b49b136361a9818c9d", size = 107203, upload-time = "2024-07-14T10:17:35.212Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/0f/b5e545f0c7962be90366af3418989b12cf441d9da1e5d89d88f2f3e5cf8f/mistletoe-1.4.0-py3-none-any.whl", hash = "sha256:44a477803861de1237ba22e375c6b617690a31d2902b47279d1f8f7ed498a794", size = 51304, upload-time = "2024-07-14T10:17:33.243Z" },
-]
-
-[[package]]
-name = "moralis"
-version = "0.1.49"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "frozendict" },
-    { name = "python-dateutil" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/cf/e122fb3a39755a7640b10cdfe3e4205c05f1ec2a71a9c101535db38ddd44/moralis-0.1.49.tar.gz", hash = "sha256:ea73e08344e75be980a8ee61f0c16c6d5262e9c34934520cb7b3725dfd838040", size = 579209, upload-time = "2024-08-12T12:34:36.551Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/65/0e4df06f0840a00af5661fa09e3438eeaaeba3027ce9381528fe77560613/moralis-0.1.49-py3-none-any.whl", hash = "sha256:2a92e26f61d57e726f947541fa30950a48ba45bc0e3fb8e489ff5d7adbc64a7c", size = 2251845, upload-time = "2024-08-12T12:34:34.597Z" },
 ]
 
 [[package]]
