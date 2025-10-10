@@ -78,5 +78,23 @@ services:
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
     command: python -m app.scheduler
 
+  intent-discord:
+    image: crestal/intentkit:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ENV=${ENV:-local}
+      - RELEASE=${RELEASE:-local}
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-intentkit}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DISCORD_NEW_AGENT_POLL_INTERVAL=30
+    command: python -m app.discord
+
 volumes:
   postgres_data:
