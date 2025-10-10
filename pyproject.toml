@@ -73,6 +73,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "langchain-deepseek>=0.1.4",
     "intentkit",
+    "moralis>=0.1.49",
 ]
 
 [dependency-groups]
