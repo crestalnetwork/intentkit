@@ -329,12 +329,15 @@
       "description": "Provider of the agent's wallet, choose cdp if you want the agent to have it's own wallet.",
       "enum": [
         "cdp",
-        "readonly"
+        "readonly",
+        "none"
       ],
       "x-enum-title": [
         "Coinbase Server Wallet V2",
-        "Readonly Wallet"
+        "Readonly Wallet",
+        "None"
       ],
+      "default": "cdp",
       "x-group": "onchain"
     },
     "network_id": {

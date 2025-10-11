@@ -57,6 +57,7 @@ async def process_agent_wallet(
     # 1. Check if changing between cdp and readonly (not allowed)
     if (
         old_wallet_provider is not None
+        and old_wallet_provider != "none"
         and old_wallet_provider != current_wallet_provider
     ):
         raise IntentKitAPIError(
@@ -68,6 +69,7 @@ async def process_agent_wallet(
     # 2. If wallet provider hasn't changed, return existing agent data
     if (
         old_wallet_provider is not None
+        and old_wallet_provider != "none"
         and old_wallet_provider == current_wallet_provider
     ):
         return await AgentData.get(agent.id)
