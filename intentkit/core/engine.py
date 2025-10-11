@@ -293,6 +293,26 @@ async def stream_agent_raw(
     # save input message first
     user_message = await message.save()
 
+    if user_message.message.startswith("@clear "):
+        await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+
+        confirmation_message = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            author_type=AuthorType.AGENT,
+            model=agent.model,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
+            message="Memory in context has been cleared.",
+            time_cost=time.perf_counter() - start,
+        )
+
+        yield await confirmation_message.save()
+        return
+
     model = await LLMModelInfo.get(agent.model)
 
     payment_enabled = config.payment_enabled
