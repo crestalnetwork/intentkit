@@ -51,7 +51,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 
 ### IntentKit Source Code
 
-1. To avoid circular dependencies, we'll establish an order for packages in the intentkit/ folder, where packages on the left can never import packages on the right: utils, config, models, abstracts, skills, core
+1. To avoid circular dependencies, we'll establish an order for packages in the intentkit/ folder, where packages on the left can never import packages on the right: utils, config, models, abstracts, clients, skills, core
 
 ### Skills Development
 
