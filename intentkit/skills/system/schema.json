@@ -12,7 +12,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": false
+      "default": true
     },
     "states": {
       "type": "object",
@@ -57,7 +57,7 @@
             "Agent Owner Only"
           ],
           "description": "List all autonomous task configurations for the agent.",
-          "default": "disabled"
+          "default": "private"
         },
         "add_autonomous_task": {
           "type": "string",
@@ -71,7 +71,7 @@
             "Agent Owner Only"
           ],
           "description": "Add a new autonomous task configuration to the agent.",
-          "default": "disabled"
+          "default": "private"
         },
         "delete_autonomous_task": {
           "type": "string",
@@ -85,7 +85,7 @@
             "Agent Owner Only"
           ],
           "description": "Delete an autonomous task configuration from the agent.",
-          "default": "disabled"
+          "default": "private"
         },
         "edit_autonomous_task": {
           "type": "string",
@@ -99,7 +99,7 @@
             "Agent Owner Only"
           ],
           "description": "Edit an existing autonomous task configuration for the agent.",
-          "default": "disabled"
+          "default": "private"
         }
       }
     }
