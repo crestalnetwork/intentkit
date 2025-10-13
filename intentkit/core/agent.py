@@ -83,6 +83,13 @@ async def process_agent_wallet(
     if config.cdp_api_key_id and current_wallet_provider == "cdp":
         await get_wallet_provider(agent)
         agent_data = await AgentData.get(agent.id)
+        # Update agent slug with evm_wallet_address if slug is null or empty
+        if not agent.slug:
+            async with get_session() as db:
+                db_agent = await db.get(AgentTable, agent.id)
+                if db_agent:
+                    db_agent.slug = agent_data.evm_wallet_address
+                    await db.commit()
     elif current_wallet_provider == "readonly":
         agent_data = await AgentData.patch(
             agent.id,
