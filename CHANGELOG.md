@@ -1,3 +1,44 @@
+## v0.8.0
+
+### New Features
+- **Agent System Enhancements**: Enhanced agent deployment with wallet processing and notifications
+- **Agent Fields**: Added new agent fields and public schema support
+- **LLM and Skills Management**: Added centralized LLM and skills CSV model files
+- **S3 File Storage**: Added generic S3 file storage helper functionality
+- **Agent Response Validation**: Added required field validation for agent name in JSON schema
+
+### Improvements
+- **Code Quality**: Improved type annotations and error handling throughout the agent system
+- **Agent Model**: Refactored agent model schema with public schema support
+- **Agent Core**: Major refactoring of agent core functionality
+- **Skill Store**: Changed skill store to agent store for better organization
+- **LiFi Functions**: Added annotations to LiFi functions
+- **Account Balance**: Improved account balance checking precision with diagnostic script
+
+### Bug Fixes
+- **Environment Configuration**: Fixed environment example configuration
+- **Scheduler**: Fixed duplicate job errors by adding replace_existing=True to scheduler jobs
+- **Telegram**: Fixed Telegram uvloop issues
+- **Coinbase Dependencies**: Dropped coinbase langchain dependency
+- **SQLite Compatibility**: Fixed incompatible SQLite SQL issues
+- **Fee Validation**: Commented out fee validation and set default wallet provider to CDP
+- **Agent Deployment**: Fixed agent deployment issues and variable naming conflicts
+- **HTTP Errors**: Improved HTTP error handling
+- **Agent Response**: Fixed agent response model validation and data conversion
+
+### Refactoring
+- **Agent Provider Icons**: Replaced agentkit provider icons
+- **Code Formatting**: Improved code formatting and removed unused imports
+- **Agent Model**: Major refactoring of agent model structure
+- **Engine**: Fixed various engine bugs
+- **User Model**: Fixed user model issues
+
+### Documentation
+- **Agent Documentation**: Added agents documentation symlink
+- **Changelog**: Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.7.4...v0.8.0
+
 ## v0.7.4
 
 ### Features

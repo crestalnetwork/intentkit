@@ -1145,7 +1145,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         PydanticField(
             default=None,
             description="Slug of the agent, used for URL generation",
-            max_length=20,
+            max_length=100,
             min_length=2,
         ),
     ]
