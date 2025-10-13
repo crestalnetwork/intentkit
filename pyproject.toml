@@ -45,7 +45,7 @@ dependencies = [
     "psycopg>=3.2.9",
     "psycopg-pool>=3.2.4",
     "psycopg2-binary>=2.9.10,<3.0.0",
-    "pydantic>=2.10.6,<2.11.0",
+    "pydantic>=2.10.6",
     "pydantic-settings>=2.8.1",
     "python-dotenv>=1.0.1",
     "python-multipart>=0.0.20",
@@ -77,7 +77,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.11.9,<0.12",
+    "ruff>=0.11.9",
     "jsonschema>=4.21.1,<5",
     "deptry>=0.23.0",
     "pytest>=8.4.0",
