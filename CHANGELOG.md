@@ -1,3 +1,14 @@
+## v0.8.2
+
+### New Features
+- **Improved @clear command matching**: Enhanced the @clear command with case-insensitive regex matching and support for both @clear and /clear formats
+  - Case-insensitive matching: Now supports @Clear, @CLEAR, /Clear, /CLEAR, etc.
+  - Multiple formats: Added support for both @clear and /clear commands
+  - Word boundary matching: Uses regex with \b to ensure exact word matching
+  - Trim support: Messages are trimmed before matching to handle whitespace
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.1...v0.8.2
+
 ## v0.8.1
 
 ### New Features
