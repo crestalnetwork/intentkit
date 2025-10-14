@@ -293,7 +293,7 @@ async def stream_agent_raw(
     # save input message first
     user_message = await message.save()
 
-    if user_message.message.startswith("@clear "):
+    if re.search(r"\b(@clear|/clear)\b", user_message.message.strip(), re.IGNORECASE):
         await clear_thread_memory(user_message.agent_id, user_message.chat_id)
 
         confirmation_message = ChatMessageCreate(

@@ -1,3 +1,14 @@
+## v0.8.1
+
+### New Features
+- **Agent Slug Enhancement**: Automatically update agent slug with EVM wallet address when slug is empty
+
+### Maintenance
+- Updated uv.lock dependencies for improved compatibility and security
+- Updated project configuration and dependencies
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.0...v0.8.1
+
 ## v0.8.0
 
 ### New Features
