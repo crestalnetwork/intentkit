@@ -13,8 +13,9 @@ from eth_keys.datatypes import PrivateKey
 from eth_utils import to_checksum_address
 
 from intentkit.config.config import config
-from intentkit.models.agent import Agent  # noqa: E402
+from intentkit.models.agent import Agent, AgentTable  # noqa: E402
 from intentkit.models.agent_data import AgentData
+from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _wallet_providers: Dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
@@ -144,6 +145,13 @@ async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
 
         agent_data.evm_wallet_address = address
         await agent_data.save()
+        # Update agent slug with evm_wallet_address if slug is null or empty
+        if not agent.slug:
+            async with get_session() as db:
+                db_agent = await db.get(AgentTable, agent.id)
+                if db_agent:
+                    db_agent.slug = agent_data.evm_wallet_address
+                    await db.commit()
 
     wallet_provider_config = CdpEvmWalletProviderConfig(
         api_key_id=api_key_id,

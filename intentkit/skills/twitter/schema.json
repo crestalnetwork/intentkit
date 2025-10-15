@@ -5,7 +5,8 @@
   "description": "Integration with X API enabling social media interactions including retrieving posts, mentions, user information, and posting content with media support",
   "x-icon": "https://ai.service.crestal.dev/skills/twitter/twitter.png",
   "x-tags": [
-    "Communication"
+    "Communication",
+    "Social"
   ],
   "properties": {
     "enabled": {

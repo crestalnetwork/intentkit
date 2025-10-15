@@ -69,7 +69,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
       - Config is inherit from `SkillConfig`, and the `states` is a dict, key is the skill name, value is the skill state. If the skill category have any other config fields need agent creator to set, they can be added to Config.
       - If the skill is stateless, you can add a global _cache for it, to avoid re-create the skill object every time.
    - A square image is needed in the category folder.
-   - Add schema.json file for the config, since the Config inherit from SkillConfig, you can check examples in exists skill category to find out the pattern. The x-tags in schema should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search
+   - Add schema.json file for the config, since the Config inherit from SkillConfig, you can check examples in exists skill category to find out the pattern. The x-tags in schema should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search, Social
    - There is no need to catch exceptions in skills, because the agent has a dedicated module to catch skill exceptions. If you need to add more information to the exception, you can catch it and re-throw the appropriate exception.
 
 ## Ops Guide
