@@ -1,3 +1,14 @@
+## v0.8.3
+
+### Bug Fixes
+- **Clear command detection**: Fixed the logic for correctly detecting clear commands in the system
+
+### Maintenance
+- **Dependencies**: Updated project dependencies and changelog to reflect recent changes
+- **Code quality**: Applied linting and formatting improvements
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.2...v0.8.3
+
 ## v0.8.2
 
 ### New Features

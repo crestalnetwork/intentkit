@@ -51,18 +51,5 @@ async def get_twitter_auth_url(agent_id: str, redirect_uri: str) -> TwitterAuthR
     **Returns:**
     * Object containing agent_id and authorization URL
     """
-    url = oauth2_user_handler.get_authorization_url(agent_id, redirect_uri)
+    url = await oauth2_user_handler.get_authorization_url(agent_id, redirect_uri)
     return TwitterAuthResponse(agent_id=agent_id, url=url)
-
-
-def get_authorization_url(agent_id: str, redirect_uri: str) -> str:
-    """Get Twitter OAuth2 authorization URL.
-
-    **Query Parameters:**
-    * `agent_id` - ID of the agent to authenticate
-    * `redirect_uri` - DApp URI to redirect to after authorization from agentkit to DApp
-
-    **Returns:**
-    * Authorization URL with agent_id as state parameter
-    """
-    return oauth2_user_handler.get_authorization_url(agent_id, redirect_uri)
