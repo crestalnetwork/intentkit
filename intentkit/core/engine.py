@@ -156,7 +156,7 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
             return llm.bind_tools(private_tools)
         return llm.bind_tools(tools)
 
-    for tool in tools:
+    for tool in private_tools:
         logger.info(
             f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
@@ -174,7 +174,7 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
         model=select_model,
-        tools=tools,
+        tools=private_tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
         post_model_hook=post_model_node if config.payment_enabled else None,
@@ -293,11 +293,7 @@ async def stream_agent_raw(
     # save input message first
     user_message = await message.save()
 
-    if re.search(
-        r"(@clear|/clear)(?!\w)",
-        user_message.message.strip(),
-        re.IGNORECASE,
-    ):
+    if user_message.message.startswith("@clear "):
         await clear_thread_memory(user_message.agent_id, user_message.chat_id)
 
         confirmation_message = ChatMessageCreate(
