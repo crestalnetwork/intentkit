@@ -14,11 +14,15 @@ from tweepy.asynchronous import AsyncClient
 from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.abstracts.twitter import TwitterABC
 from intentkit.models.agent_data import AgentData
+from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 
 _clients_linked: Dict[str, "TwitterClient"] = {}
 _clients_self_key: Dict[str, "TwitterClient"] = {}
+
+_VERIFIER_KEY = "intentkit:twitter:code_verifier"
+_CHALLENGE_KEY = "intentkit:twitter:code_challenge"
 
 
 class TwitterMedia(BaseModel):
@@ -460,17 +464,33 @@ class OAuth2UserHandler(OAuth2Session):
             self.auth = HTTPBasicAuth(client_id, client_secret)
         else:
             self.auth = None
-        self.code_challenge = self._client.create_code_challenge(
-            self._client.create_code_verifier(128), "S256"
-        )
+        self.code_verifier = None
+        self.code_challenge = None
 
-    def get_authorization_url(self, agent_id: str, redirect_uri: str):
+    async def get_authorization_url(self, agent_id: str, redirect_uri: str):
         """Get the authorization URL to redirect the user to
 
         Args:
             agent_id: ID of the agent to authenticate
             redirect_uri: URI to redirect to after authorization
         """
+        if not self.code_challenge:
+            try:
+                kv = await get_redis()
+                self.code_verifier = await kv.get(_VERIFIER_KEY)
+                self.code_challenge = await kv.get(_CHALLENGE_KEY)
+                if not self.code_verifier or not self.code_challenge:
+                    self.code_verifier = self._client.create_code_verifier(128)
+                    self.code_challenge = self._client.create_code_challenge(
+                        self.code_verifier, "S256"
+                    )
+                    await kv.set(_VERIFIER_KEY, self.code_verifier)
+                    await kv.set(_CHALLENGE_KEY, self.code_challenge)
+            except Exception:
+                self.code_verifier = self._client.create_code_verifier(128)
+                self.code_challenge = self._client.create_code_challenge(
+                    self.code_verifier, "S256"
+                )
         state_params = {"agent_id": agent_id, "redirect_uri": redirect_uri}
         authorization_url, _ = self.authorization_url(
             "https://x.com/i/oauth2/authorize",
@@ -484,12 +504,14 @@ class OAuth2UserHandler(OAuth2Session):
         """After user has authorized the app, fetch access token with
         authorization response URL
         """
+        if not self.code_verifier or not self.code_challenge:
+            raise ValueError("Code verifier or challenge not init")
         return super().fetch_token(
             "https://api.x.com/2/oauth2/token",
             authorization_response=authorization_response,
             auth=self.auth,
             include_client_id=True,
-            code_verifier=self._client.code_verifier,
+            code_verifier=self.code_verifier,
         )
 
     def refresh(self, refresh_token: str):

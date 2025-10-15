@@ -368,30 +368,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.40.51"
+version = "1.40.52"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/02/d3ee174681961dc2ebfe81f326e1b5e1ba338b7ff939e1e94eef76e7c65a/boto3-1.40.51.tar.gz", hash = "sha256:ed1b7750df07b2f2ece0141ff2ed0489db2ec2b5311a956d00a496b05fd4fadb", size = 111571, upload-time = "2025-10-13T19:20:44.594Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a0/5a/8ba08c979926326d961e2384d994d789a2eda3ed281bb6cb333b36e92310/boto3-1.40.52.tar.gz", hash = "sha256:96ee720b52be647d8ef5ba92fccfce6b65d6321769430fe6edd10d57ec43c25b", size = 111530, upload-time = "2025-10-14T20:32:12.226Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/da/67c37721d8f8f3480c03a04e93ef1fae0f7620c9a2d305b3ed8a93600d79/boto3-1.40.51-py3-none-any.whl", hash = "sha256:6aa81b9acb4eff87b5505ae26c948883a2015cc3308ce5168a9df6e00ab815d2", size = 139343, upload-time = "2025-10-13T19:20:42.009Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/d2/879e9787c5263aefc5c88f0dd97cdea29ac01c480dd53c2421de77a493f7/boto3-1.40.52-py3-none-any.whl", hash = "sha256:ecc8c99d3cc96716cdfba62d9c9c6ce0eb98d02494a66690bcc2ec181c1ced67", size = 139345, upload-time = "2025-10-14T20:32:10.801Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.40.51"
+version = "1.40.52"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/33/9e197d872adf1eadf8ecc259d0f451143326ff044d236b8971ff8bf980ee/botocore-1.40.51.tar.gz", hash = "sha256:a06de20408c3009e59e8f161a1146f1801d279d0923ab950349154900951bb20", size = 14421749, upload-time = "2025-10-13T19:20:32.491Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/74/3449d77c002d82586786b91dff6dd2e6fd52c5cdc1793d1ac7ea690ea52c/botocore-1.40.52.tar.gz", hash = "sha256:b65d970ca4ccd869639332083da17c3a933bcf495120dcc4f5c7723cb3f6216c", size = 14427680, upload-time = "2025-10-14T20:32:03.065Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/f1/a6d9fdfec74c658cd8d639dc98de415fa42ce3c023602514c67f68e556d9/botocore-1.40.51-py3-none-any.whl", hash = "sha256:d5811a834bbdec6dac540565eab9f5ad954ed439b535686fbc3219e1cbfbfc49", size = 14090941, upload-time = "2025-10-13T19:20:28.165Z" },
+    { url = "https://files.pythonhosted.org/packages/05/ad/559dc4097fe1368e5f3abb5d8ca496f9c609e4e452498bca11134fde1462/botocore-1.40.52-py3-none-any.whl", hash = "sha256:838697a06c7713df8d39f088105334b4eadcc3d65c7a260bf1a1bd8bf616ce4a", size = 14098823, upload-time = "2025-10-14T20:32:00.094Z" },
 ]
 
 [[package]]
@@ -1864,7 +1864,7 @@ wheels = [
 
 [[package]]
 name = "langsmith"
-version = "0.4.34"
+version = "0.4.35"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1875,9 +1875,9 @@ dependencies = [
     { name = "requests-toolbelt" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e2/5d/38887a18b68aa7acbac040c1fad2f2217c55d3eef7784d0412261fe37513/langsmith-0.4.34.tar.gz", hash = "sha256:5b90c0b49ab03f78331005df1591abd86b41afceda6ac7144ad7d23693c62f31", size = 964392, upload-time = "2025-10-09T23:34:26.359Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/e4/937e20de425eea337c275475d5283402c31284f79c37016c8d6e8a08c5bd/langsmith-0.4.35.tar.gz", hash = "sha256:de589346911ed2bfeb92de9f634a7090efb8961a0c842fd1fb17c75ceefa5be7", size = 966172, upload-time = "2025-10-14T20:21:10.845Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/a4/db5903757d710c4c401e7a87f6ba53a8242c580e8c1df5869b7acb949b2d/langsmith-0.4.34-py3-none-any.whl", hash = "sha256:3b83b2544f99bb8f6fca2681ee80fe6a44b0578c29e809e5a4e72fdee4db9146", size = 386981, upload-time = "2025-10-09T23:34:24.386Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/a9/40cfd19ab7f2c2737d94d1bd6cb3dc3da85232705d7a563044397d0479e8/langsmith-0.4.35-py3-none-any.whl", hash = "sha256:3c3e6ec236e31099c0be175918d21a342cdb87df35138051205da726b9058b8e", size = 387139, upload-time = "2025-10-14T20:21:09.08Z" },
 ]
 
 [[package]]
