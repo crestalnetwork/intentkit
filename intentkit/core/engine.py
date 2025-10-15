@@ -156,7 +156,7 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
             return llm.bind_tools(private_tools)
         return llm.bind_tools(tools)
 
-    for tool in tools:
+    for tool in private_tools:
         logger.info(
             f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
@@ -174,7 +174,7 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
     executor = create_react_agent(
         model=select_model,
-        tools=tools,
+        tools=private_tools,
         prompt=formatted_prompt,
         pre_model_hook=pre_model_hook,
         post_model_hook=post_model_node if config.payment_enabled else None,

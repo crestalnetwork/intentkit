@@ -1,3 +1,16 @@
+## v0.8.4
+
+### New Features
+- **CDP Client Enhancement**: Enhanced CDP client implementation with improved configuration management
+- **Agent Configuration**: Updated agent configurations for better functionality
+
+### Improvements
+- **Skill Schemas**: Updated skill schemas for cookiefun and twitter integrations
+- **Build Workflow**: Enhanced build workflow configuration
+- **Documentation**: Updated LLM documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.3...v0.8.4
+
 ## v0.8.3
 
 ### Bug Fixes
