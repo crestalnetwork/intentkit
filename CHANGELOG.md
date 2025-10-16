@@ -1,3 +1,15 @@
+## v0.8.5
+
+### Bug Fixes
+- **Clear Change Functionality**: Restored functionality for clearing changes in the system
+- **Draft Chat Bug**: Fixed issues with draft chat functionality that were preventing proper message handling
+- **Private Skill Bug**: Resolved bugs related to private skills system that were affecting skill execution
+
+### Documentation
+- **Changelog Updates**: Updated changelog documentation for better release tracking
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.4...v0.8.5
+
 ## v0.8.4
 
 ### New Features
