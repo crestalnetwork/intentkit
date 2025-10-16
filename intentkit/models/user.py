@@ -93,6 +93,18 @@ class UserTable(Base):
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
+    evm_wallet_address = Column(
+        String,
+        nullable=True,
+    )
+    solana_wallet_address = Column(
+        String,
+        nullable=True,
+    )
+    linked_accounts = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -131,6 +143,15 @@ class UserUpdate(BaseModel):
     ]
     extra: Annotated[
         Optional[dict], Field(None, description="Additional user information")
+    ]
+    evm_wallet_address: Annotated[
+        Optional[str], Field(None, description="User's EVM wallet address")
+    ]
+    solana_wallet_address: Annotated[
+        Optional[str], Field(None, description="User's Solana wallet address")
+    ]
+    linked_accounts: Annotated[
+        Optional[dict], Field(None, description="User's linked accounts information")
     ]
 
     async def _update_quota_for_nft_count(
