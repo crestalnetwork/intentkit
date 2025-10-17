@@ -21,4 +21,10 @@ if config.sentry_dsn:
     )
 
 if __name__ == "__main__":
-    asyncio.run(run_telegram_server())
+    # Create a new event loop to avoid conflicts with nest_asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(run_telegram_server())
+    finally:
+        loop.close()
