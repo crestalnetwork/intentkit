@@ -1,3 +1,14 @@
+## v0.8.6
+
+### Bug Fixes
+- **Checker and Scheduler Modules**: Updated checker and scheduler modules to improve functionality
+- **Readonly Instance**: Removed readonly instance to fix configuration issues
+
+### Maintenance
+- **Dependencies**: Upgraded dependencies with uv sync --upgrade
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.5...v0.8.6
+
 ## v0.8.5
 
 ### Bug Fixes
