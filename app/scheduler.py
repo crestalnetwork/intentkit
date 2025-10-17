@@ -6,7 +6,8 @@ import signal
 from typing import Dict
 
 import sentry_sdk
-from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.jobstores.base import BaseJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.triggers.cron import CronTrigger
 
 from intentkit.config.config import config
@@ -83,16 +84,9 @@ if __name__ == "__main__":
                 logger.error(f"Error cleaning up heartbeat: {e}")
 
         # Initialize scheduler
-        jobstores: Dict[str, RedisJobStore] = {}
-        if config.redis_host:
-            jobstores["default"] = RedisJobStore(
-                host=config.redis_host,
-                port=config.redis_port,
-                db=config.redis_db,
-                jobs_key="intentkit:scheduler:jobs",
-                run_times_key="intentkit:scheduler:run_times",
-            )
-            logger.info(f"scheduler use redis store: {config.redis_host}")
+        jobstores: Dict[str, BaseJobStore] = {}
+        jobstores["default"] = MemoryJobStore()
+        logger.info("scheduler using in-memory job store")
 
         scheduler = create_scheduler(jobstores=jobstores)
 

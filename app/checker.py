@@ -9,7 +9,7 @@ import logging
 import signal
 
 import sentry_sdk
-from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -85,15 +85,9 @@ def create_checker():
     """Create and configure the AsyncIOScheduler for validation checks."""
     # Job Store
     jobstores = {}
-    if config.redis_host:
-        jobstores["default"] = RedisJobStore(
-            host=config.redis_host,
-            port=config.redis_port,
-            db=config.redis_db,
-            jobs_key="intentkit:checker:jobs",
-            run_times_key="intentkit:checker:run_times",
-        )
-        logger.info(f"checker using redis store: {config.redis_host}")
+    # Job Store
+    jobstores["default"] = MemoryJobStore()
+    logger.info("checker using in-memory job store")
 
     scheduler = AsyncIOScheduler(jobstores=jobstores)
 
