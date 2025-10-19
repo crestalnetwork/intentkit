@@ -12,6 +12,7 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType
 from intentkit.models.skill import Skill
+from intentkit.models.user import User
 
 # ============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -120,18 +121,37 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
     return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
 
 
-def _build_user_info_section(context: AgentContext) -> str:
+async def _build_user_info_section(context: AgentContext) -> str:
     """Build user information section when user_id is a valid EVM wallet address."""
     if not context.user_id:
         return ""
 
-    # Check if user_id is a valid EVM wallet address
-    try:
-        if is_address(context.user_id):
-            return f"## User Info\n\nThe person you are talking to has wallet address: {context.user_id}\n\n"
-    except Exception:
-        # If validation fails, don't include the section
-        pass
+    user = await User.get(context.user_id)
+
+    prompt_array = []
+
+    evm_wallet_address = ""
+    if user and user.evm_wallet_address:
+        evm_wallet_address = user.evm_wallet_address
+    elif is_address(context.user_id):
+        evm_wallet_address = context.user_id
+
+    if evm_wallet_address:
+        prompt_array.append(
+            f"The user you are talking to has EVM wallet address: {evm_wallet_address}\n"
+        )
+
+    if user:
+        if user.email:
+            prompt_array.append(f"User Email: {user.email}\n")
+        if user.x_username:
+            prompt_array.append(f"User X Username: {user.x_username}\n")
+        if user.telegram_username:
+            prompt_array.append(f"User Telegram Username: {user.telegram_username}\n")
+
+    if prompt_array:
+        prompt_array.append("\n")
+        return "## User Info\n\n" + "".join(prompt_array)
 
     return ""
 
@@ -397,7 +417,7 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
             )
 
         # Add user info if user_id is a valid EVM wallet address
-        user_info = _build_user_info_section(context)
+        user_info = await _build_user_info_section(context)
         if user_info:
             final_system_prompt = f"{final_system_prompt}{user_info}"
 
