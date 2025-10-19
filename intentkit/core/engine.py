@@ -293,6 +293,12 @@ async def stream_agent_raw(
     # save input message first
     user_message = await message.save()
 
+    # temporary debug logging for telegram messages
+    if user_message.author_type == AuthorType.TELEGRAM:
+        logger.info(
+            f"[TELEGRAM DEBUG] Agent: {user_message.agent_id} | Chat: {user_message.chat_id} | Message: {user_message.message}"
+        )
+
     if re.search(
         r"(@clear|/clear)(?!\w)",
         user_message.message.strip(),
