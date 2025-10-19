@@ -322,3 +322,29 @@ class User(UserUpdate):
         if user is None:
             return None
         return user_model_class.model_validate(user)
+
+    @classmethod
+    async def get_by_tg(cls, telegram_username: str) -> Optional[UserModelType]:
+        """Get a user by telegram username.
+
+        Args:
+            telegram_username: Telegram username of the user to get
+
+        Returns:
+            User model or None if not found
+        """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(
+                    user_table_class.telegram_username == telegram_username
+                )
+            )
+            user = result.scalars().first()
+            if user is None:
+                return None
+            return user_model_class.model_validate(user)
