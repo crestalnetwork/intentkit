@@ -132,6 +132,14 @@ async def gp_process_message(message: Message) -> None:
                     )
                 )
 
+            # Wrap message with group context and username
+            username = (
+                message.from_user.username
+                if message.from_user and message.from_user.username
+                else "Unknown"
+            )
+            wrapped_message = f"[Group Message from @{username}]: {message_text}"
+
             input = ChatMessageCreate(
                 id=str(XID()),
                 agent_id=cached_bot_item.agent_id,
@@ -142,7 +150,7 @@ async def gp_process_message(message: Message) -> None:
                 author_id=user_id,
                 author_type=AuthorType.TELEGRAM,
                 thread_type=AuthorType.TELEGRAM,
-                message=message_text,
+                message=wrapped_message,
             )
             response = await execute_agent(input)
             await message.answer(
