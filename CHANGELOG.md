@@ -1,3 +1,10 @@
+## v0.8.7
+
+### Bug Fixes
+- **Telegram Event Loop Handling**: Improved stability and reliability of the telegram integration by fixing event loop handling
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.6...v0.8.7
+
 ## v0.8.6
 
 ### Bug Fixes
