@@ -6,6 +6,7 @@ from abc import ABC
 from typing import Any, Dict, Type
 
 import aiohttp
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
@@ -29,8 +30,14 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
         if skill_config.get("api_key_provider") == "agent_owner":
-            return skill_config.get("api_key")
-        return self.skill_store.get_system_config("moralis_api_key")
+            api_key = skill_config.get("api_key")
+        else:
+            api_key = self.skill_store.get_system_config("moralis_api_key")
+
+        if not api_key:
+            raise ToolException("Moralis API key is not configured.")
+
+        return api_key
 
     @property
     def category(self) -> str:
@@ -95,13 +102,23 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
             ) as response:
                 if response.status >= 400:
                     error_text = await response.text()
-                    logger.error(f"portfolio/base.py: API error: {error_text}")
-                    return {
-                        "error": f"API error: {response.status}",
-                        "details": error_text,
-                    }
+                    logger.error(
+                        "portfolio/base.py: API error %s for %s", response.status, url
+                    )
+                    raise ToolException(
+                        f"Moralis API error: {response.status} - {error_text}"
+                    )
 
-                return await response.json()
+                try:
+                    return await response.json()
+                except aiohttp.ContentTypeError as exc:
+                    await response.text()
+                    logger.error(
+                        "portfolio/base.py: Failed to decode JSON response from %s", url
+                    )
+                    raise ToolException(
+                        "Moralis API returned invalid JSON payload."
+                    ) from exc
 
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the tool synchronously by running the async version in a loop."""

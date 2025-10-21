@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, Optional, Type, Union
 
 import httpx
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.http.base import HttpBaseTool
@@ -100,12 +101,16 @@ class HttpPut(HttpBaseTool):
                 # Return response content
                 return f"Status: {response.status_code}\nContent: {response.text}"
 
-        except httpx.TimeoutException:
-            return f"Error: Request to {url} timed out after {timeout} seconds"
-        except httpx.HTTPStatusError as e:
-            return f"Error: HTTP {e.response.status_code} - {e.response.text}"
-        except httpx.RequestError as e:
-            return f"Error: Failed to connect to {url} - {str(e)}"
-        except Exception as e:
-            logger.error(f"Unexpected error in HTTP PUT request: {e}")
-            return f"Error: Unexpected error occurred - {str(e)}"
+        except httpx.TimeoutException as exc:
+            raise ToolException(
+                f"Request to {url} timed out after {timeout} seconds"
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise ToolException(
+                f"HTTP {exc.response.status_code} - {exc.response.text}"
+            ) from exc
+        except httpx.RequestError as exc:
+            raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Unexpected error in HTTP PUT request", exc_info=exc)
+            raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc

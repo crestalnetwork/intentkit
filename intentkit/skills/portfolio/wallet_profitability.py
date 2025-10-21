@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Type
 
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -68,11 +69,6 @@ class WalletProfitability(PortfolioBaseTool):
             f"wallet_profitability.py: Fetching profitability breakdown with context {context}"
         )
 
-        # Get the API key from the agent's configuration
-        api_key = self.get_api_key()
-        if not api_key:
-            return {"error": "No Moralis API key provided in the configuration."}
-
         # Build query parameters
         params = {
             "chain": chain,
@@ -84,16 +80,20 @@ class WalletProfitability(PortfolioBaseTool):
             params["token_addresses"] = token_addresses
 
         # Call Moralis API
+        api_key = self.get_api_key()
+
         try:
             endpoint = f"/wallets/{address}/profitability"
             return await self._make_request(
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
-        except Exception as e:
+        except ToolException:
+            raise
+        except Exception as exc:  # noqa: BLE001
             logger.error(
-                f"wallet_profitability.py: Error fetching profitability breakdown: {e}",
-                exc_info=True,
+                "wallet_profitability.py: Error fetching profitability breakdown",
+                exc_info=exc,
             )
-            return {
-                "error": "An error occurred while fetching profitability breakdown. Please try again later."
-            }
+            raise ToolException(
+                "An unexpected error occurred while fetching profitability breakdown."
+            ) from exc
