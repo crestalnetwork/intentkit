@@ -37,7 +37,6 @@ dependencies = [
     "langgraph-checkpoint>=2.0.18",
     "langgraph-checkpoint-postgres>=2.0.16",
     "langgraph-prebuilt (>=0.6.1)",
-    "langmem>=0.0.27",
     "mypy-boto3-s3 (>=1.37.24,<2.0.0)",
     "openai>=1.59.6",
     "pgvector>=0.3.6",
@@ -73,6 +72,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "langchain-deepseek>=0.1.4",
     "intentkit",
+    "langmem",
 ]
 
 [dependency-groups]
@@ -95,6 +95,7 @@ members = [
 
 [tool.uv.sources]
 intentkit = { workspace = true }
+langmem = { git = "https://github.com/langchain-ai/langmem.git" }
 
 [build-system]
 requires = ["hatchling"]
