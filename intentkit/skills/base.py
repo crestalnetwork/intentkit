@@ -18,8 +18,7 @@ from coinbase_agentkit import (
     AgentKitConfig,
     CdpEvmWalletProvider,
 )
-from langchain.tools import StructuredTool
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import (
