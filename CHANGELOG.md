@@ -1,3 +1,13 @@
+## v0.8.9
+
+### Features
+- **feat: update wallet section in prompt** - Enhanced wallet section building logic in `_build_wallet_section` function and improved prompt handling for wallet-related operations
+
+### Bug Fixes
+- **fix: update dockerfile configuration** - Updated Dockerfile configuration for better deployment
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.8...v0.8.9
+
 ## v0.8.7
 
 ### Bug Fixes

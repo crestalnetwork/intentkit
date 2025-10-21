@@ -131,9 +131,10 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
             )
             if has_enabled_cdp_skills:
                 wallet_parts.append(
-                    "Before any token-related operations, use the `token_search` skill to query the token's address and confirm with the user. "
-                    "If the `token_search` skill is not found, remind the user to enable it. "
-                    "Do not perform any transfers, swaps, or other transactions without checking and confirming the token address."
+                    "If a skill input parameter requires a token address but you only have the user-provided token symbol, "
+                    "and the address cannot be found in the nearby context, you must use the `token_search` skill to query "
+                    f"the address of that symbol on the current chain ({network_id}) and confirm this address with the user."
+                    "If the `token_search` skill is not found, remind the user to enable it."
                 )
 
     return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
