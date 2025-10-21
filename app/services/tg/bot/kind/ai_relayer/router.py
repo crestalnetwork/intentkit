@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Cache configuration
 CACHE_TTL = 24 * 60 * 60  # 1 day in seconds
-MAX_CACHED_MESSAGES = 10
+MAX_CACHED_MESSAGES = 20
 MAX_CACHE_SIZE_BYTES = 2048  # 2KB
 
 
