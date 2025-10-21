@@ -111,12 +111,30 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
 
     if agent_data.evm_wallet_address and network_id != "solana":
         wallet_parts.append(
-            f"Your wallet address in {network_id} is {agent_data.evm_wallet_address}."
+            f"Your EVM wallet address is {agent_data.evm_wallet_address}."
+            f"You are now in {network_id} network."
         )
     if agent_data.solana_wallet_address and network_id == "solana":
         wallet_parts.append(
-            f"Your wallet address in {network_id} is {agent_data.solana_wallet_address}."
+            f"Your Solana wallet address is {agent_data.solana_wallet_address}."
+            f"You are now in {network_id} network."
         )
+
+    # Add CDP skills prompt if CDP skills are enabled
+    if agent.skills and "cdp" in agent.skills:
+        cdp_config = agent.skills["cdp"]
+        if cdp_config and cdp_config.get("enabled") is True:
+            # Check if any CDP skills are in public or private state (not disabled)
+            states = cdp_config.get("states", {})
+            has_enabled_cdp_skills = any(
+                state in ["public", "private"] for state in states.values()
+            )
+            if has_enabled_cdp_skills:
+                wallet_parts.append(
+                    "Before any token-related operations, use the `token_search` skill to query the token's address and confirm with the user. "
+                    "If the `token_search` skill is not found, remind the user to enable it. "
+                    "Do not perform any transfers, swaps, or other transactions without checking and confirming the token address."
+                )
 
     return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
 
