@@ -213,12 +213,12 @@ class AgentSkillData(AgentSkillDataCreate):
             await db.commit()
 
 
-class ThreadSkillDataTable(Base):
-    """Database table model for storing skill-specific data for threads."""
+class ChatSkillDataTable(Base):
+    """Database table model for storing skill-specific data for chats."""
 
-    __tablename__ = "thread_skill_data"
+    __tablename__ = "chat_skill_data"
 
-    thread_id = Column(String, primary_key=True)
+    chat_id = Column(String, primary_key=True)
     skill = Column(String, primary_key=True)
     key = Column(String, primary_key=True)
     agent_id = Column(String, nullable=False)
@@ -236,31 +236,29 @@ class ThreadSkillDataTable(Base):
     )
 
 
-class ThreadSkillDataCreate(BaseModel):
-    """Base model for creating thread skill data records."""
+class ChatSkillDataCreate(BaseModel):
+    """Base model for creating chat skill data records."""
 
     model_config = ConfigDict(from_attributes=True)
 
-    thread_id: Annotated[
-        str, Field(description="ID of the thread this data belongs to")
-    ]
+    chat_id: Annotated[str, Field(description="ID of the chat this data belongs to")]
     skill: Annotated[str, Field(description="Name of the skill this data is for")]
     key: Annotated[str, Field(description="Key for this specific piece of data")]
-    agent_id: Annotated[str, Field(description="ID of the agent that owns this thread")]
+    agent_id: Annotated[str, Field(description="ID of the agent that owns this chat")]
     data: Annotated[Dict[str, Any], Field(description="JSON data stored for this key")]
 
-    async def save(self) -> "ThreadSkillData":
+    async def save(self) -> "ChatSkillData":
         """Save or update skill data.
 
         Returns:
-            ThreadSkillData: The saved thread skill data instance
+            ChatSkillData: The saved chat skill data instance
         """
         async with get_session() as db:
             record = await db.scalar(
-                select(ThreadSkillDataTable).where(
-                    ThreadSkillDataTable.thread_id == self.thread_id,
-                    ThreadSkillDataTable.skill == self.skill,
-                    ThreadSkillDataTable.key == self.key,
+                select(ChatSkillDataTable).where(
+                    ChatSkillDataTable.chat_id == self.chat_id,
+                    ChatSkillDataTable.skill == self.skill,
+                    ChatSkillDataTable.key == self.key,
                 )
             )
 
@@ -270,18 +268,18 @@ class ThreadSkillDataCreate(BaseModel):
                 record.agent_id = self.agent_id
             else:
                 # Create new record
-                record = ThreadSkillDataTable(**self.model_dump())
+                record = ChatSkillDataTable(**self.model_dump())
             db.add(record)
             await db.commit()
             await db.refresh(record)
-            return ThreadSkillData.model_validate(record)
+            return ChatSkillData.model_validate(record)
 
 
-class ThreadSkillData(ThreadSkillDataCreate):
-    """Model for storing skill-specific data for threads.
+class ChatSkillData(ChatSkillDataCreate):
+    """Model for storing skill-specific data for chats.
 
-    This model uses a composite primary key of (thread_id, skill, key) to store
-    skill-specific data for threads in a flexible way. It also includes agent_id
+    This model uses a composite primary key of (chat_id, skill, key) to store
+    skill-specific data for chats in a flexible way. It also includes agent_id
     as a required field for tracking ownership.
     """
 
@@ -298,11 +296,11 @@ class ThreadSkillData(ThreadSkillDataCreate):
     ]
 
     @classmethod
-    async def get(cls, thread_id: str, skill: str, key: str) -> Optional[dict]:
-        """Get skill data for a thread.
+    async def get(cls, chat_id: str, skill: str, key: str) -> Optional[dict]:
+        """Get skill data for a chat.
 
         Args:
-            thread_id: ID of the thread
+            chat_id: ID of the chat
             skill: Name of the skill
             key: Data key
 
@@ -311,10 +309,10 @@ class ThreadSkillData(ThreadSkillDataCreate):
         """
         async with get_session() as db:
             record = await db.scalar(
-                select(ThreadSkillDataTable).where(
-                    ThreadSkillDataTable.thread_id == thread_id,
-                    ThreadSkillDataTable.skill == skill,
-                    ThreadSkillDataTable.key == key,
+                select(ChatSkillDataTable).where(
+                    ChatSkillDataTable.chat_id == chat_id,
+                    ChatSkillDataTable.skill == skill,
+                    ChatSkillDataTable.key == key,
                 )
             )
         return record.data if record else None
@@ -323,33 +321,33 @@ class ThreadSkillData(ThreadSkillDataCreate):
     async def clean_data(
         cls,
         agent_id: str,
-        thread_id: Annotated[
+        chat_id: Annotated[
             str,
             Field(
                 default="",
-                description="Optional ID of the thread. If provided, only cleans data for that thread.",
+                description="Optional ID of the chat. If provided, only cleans data for that chat.",
             ),
         ],
     ):
-        """Clean all skill data for a thread or agent.
+        """Clean all skill data for a chat or agent.
 
         Args:
             agent_id: ID of the agent
-            thread_id: Optional ID of the thread. If provided, only cleans data for that thread.
-                      If empty, cleans all data for the agent.
+            chat_id: Optional ID of the chat. If provided, only cleans data for that chat.
+                     If empty, cleans all data for the agent.
         """
         async with get_session() as db:
-            if thread_id and thread_id != "":
+            if chat_id and chat_id != "":
                 await db.execute(
-                    delete(ThreadSkillDataTable).where(
-                        ThreadSkillDataTable.agent_id == agent_id,
-                        ThreadSkillDataTable.thread_id == thread_id,
+                    delete(ChatSkillDataTable).where(
+                        ChatSkillDataTable.agent_id == agent_id,
+                        ChatSkillDataTable.chat_id == chat_id,
                     )
                 )
             else:
                 await db.execute(
-                    delete(ThreadSkillDataTable).where(
-                        ThreadSkillDataTable.agent_id == agent_id
+                    delete(ChatSkillDataTable).where(
+                        ChatSkillDataTable.agent_id == agent_id
                     )
                 )
             await db.commit()

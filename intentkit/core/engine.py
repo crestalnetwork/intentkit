@@ -56,7 +56,7 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
-from intentkit.models.skill import AgentSkillData, ThreadSkillData
+from intentkit.models.skill import AgentSkillData, ChatSkillData
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 
@@ -896,7 +896,7 @@ async def clean_agent_memory(
 
         if clean_skill:
             await AgentSkillData.clean_data(agent_id)
-            await ThreadSkillData.clean_data(agent_id, chat_id)
+            await ChatSkillData.clean_data(agent_id, chat_id)
 
         async with get_session() as db:
             if clean_agent:

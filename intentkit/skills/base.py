@@ -36,8 +36,8 @@ from intentkit.models.redis import get_redis
 from intentkit.models.skill import (
     AgentSkillData,
     AgentSkillDataCreate,
-    ThreadSkillData,
-    ThreadSkillDataCreate,
+    ChatSkillData,
+    ChatSkillDataCreate,
 )
 from intentkit.utils.error import IntentKitAPIError, RateLimitExceeded
 
@@ -218,15 +218,15 @@ class IntentKitSkill(BaseTool):
         self,
         key: str,
     ) -> Optional[Dict[str, Any]]:
-        """Retrieve persisted data for this skill scoped to the active thread."""
+        """Retrieve persisted data for this skill scoped to the active chat."""
         context = self.get_context()
-        return await ThreadSkillData.get(context.thread_id, self.name, key)
+        return await ChatSkillData.get(context.chat_id, self.name, key)
 
     async def save_thread_skill_data(self, key: str, data: Dict[str, Any]) -> None:
-        """Persist data for this skill scoped to the active thread."""
+        """Persist data for this skill scoped to the active chat."""
         context = self.get_context()
-        skill_data = ThreadSkillDataCreate(
-            thread_id=context.thread_id,
+        skill_data = ChatSkillDataCreate(
+            chat_id=context.chat_id,
             agent_id=context.agent_id,
             skill=self.name,
             key=key,
