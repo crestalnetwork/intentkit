@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class FirecrawlVectorStoreManager:
         """Load existing vector store for an agent."""
         try:
             vector_store_key = f"vector_store_{agent_id}"
-            stored_data = await self.skill_store.get_agent_skill_data(
+            stored_data = await AgentSkillData.get(
                 agent_id, "web_scraper", vector_store_key
             )
 
@@ -162,9 +163,13 @@ class FirecrawlVectorStoreManager:
                 "chunk_overlap": chunk_overlap,
             }
 
-            await self.skill_store.save_agent_skill_data(
-                agent_id, "web_scraper", vector_store_key, storage_data
+            skill_data = AgentSkillDataCreate(
+                agent_id=agent_id,
+                skill="web_scraper",
+                key=vector_store_key,
+                data=storage_data,
             )
+            await skill_data.save()
 
         except Exception as e:
             logger.error(f"Error saving vector store for agent {agent_id}: {e}")
@@ -194,9 +199,13 @@ class FirecrawlMetadataManager:
         """Update metadata for an agent."""
         try:
             metadata_key = f"indexed_urls_{agent_id}"
-            await self.skill_store.save_agent_skill_data(
-                agent_id, "web_scraper", metadata_key, new_metadata
+            skill_data = AgentSkillDataCreate(
+                agent_id=agent_id,
+                skill="web_scraper",
+                key=metadata_key,
+                data=new_metadata,
             )
+            await skill_data.save()
         except Exception as e:
             logger.error(f"Error updating metadata for agent {agent_id}: {e}")
             raise

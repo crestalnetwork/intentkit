@@ -32,8 +32,9 @@ IntentKit is an autonomous agent framework that enables creation and management 
    - Skill integration testing in `tests/skills/`
 
 ## Technology Stack
-- Package manager: uv, please use native `uv` command, do not use the `uv pip` command. If you want run or test python script, use `uv run` command, don't directly using python command.
-- Lint: ruff, run `uv run ruff format & uv run ruff check --fix` after your final edit.
+- Package manager: uv
+- Virtual environment: .venv, please use `source .venv/bin/activate` at least once to active virtual environment before running any command.
+- Lint: ruff, run `ruff format & ruff check --fix` after your final edit.
 - API framework: fastapi, Doc in https://fastapi.tiangolo.com/
 - DB ORM: SQLAlchemy 2.0, please check the 2.0 api for use, do not use the legacy way. Doc in https://docs.sqlalchemy.org/en/20/
 - Model: Pydantic V2, Also be careful not to use the obsolete V1 interface. Doc in https://docs.pydantic.dev/latest/
@@ -75,14 +76,14 @@ IntentKit is an autonomous agent framework that enables creation and management 
 ## Ops Guide
 
 ### Git Commit
-1. run `uv run ruff format && uv run ruff check --fix` before commit.
+1. Run `ruff format && ruff check --fix` before commit.
 2. When you generate git commit message, always start with one of feat/fix/chore/docs/test/refactor/improve. Title Format: `<type>: <subject>`, subject should start with lowercase. Only one-line needed, do not generate commit message body.
 
 ### Github Pull Request
 1. If there are uncommited changes, add them and commit them.
 2. Push to remote branch.
 3. Pull origin/main, so you can summarize the changes for pull request title and description.
-4. Create a pull request with MCP tools.
+4. Create pull requests with github MCP tools.
 
 ### Github Release
 1. Make a `git pull` first.

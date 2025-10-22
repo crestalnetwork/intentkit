@@ -52,9 +52,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
         Returns:
             Rate limit status and error message if limited
         """
-        rate_limit = await self.skill_store.get_agent_skill_data(
-            context.agent_id, self.name, "rate_limit"
-        )
+        rate_limit = await self.get_agent_skill_data("rate_limit")
         current_time = datetime.now(tz=timezone.utc)
 
         if (
@@ -67,18 +65,14 @@ class DefiLlamaBaseTool(IntentKitSkill):
                 return True, "Rate limit exceeded"
 
             rate_limit["count"] += 1
-            await self.skill_store.save_agent_skill_data(
-                context.agent_id, self.name, "rate_limit", rate_limit
-            )
+            await self.save_agent_skill_data("rate_limit", rate_limit)
             return False, None
 
         new_rate_limit = {
             "count": 1,
             "reset_time": (current_time + timedelta(minutes=interval)).isoformat(),
         }
-        await self.skill_store.save_agent_skill_data(
-            context.agent_id, self.name, "rate_limit", new_rate_limit
-        )
+        await self.save_agent_skill_data("rate_limit", new_rate_limit)
         return False, None
 
     async def validate_chain(self, chain: str | None) -> tuple[bool, str | None]:

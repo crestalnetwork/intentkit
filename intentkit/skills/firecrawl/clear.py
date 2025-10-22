@@ -3,6 +3,7 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
+from intentkit.models.skill import AgentSkillData
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
 
 logger = logging.getLogger(__name__)
@@ -62,15 +63,11 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
         try:
             # Delete vector store data (using web_scraper storage format for compatibility)
             vector_store_key = f"vector_store_{agent_id}"
-            await self.skill_store.delete_agent_skill_data(
-                agent_id, "web_scraper", vector_store_key
-            )
+            await AgentSkillData.delete(agent_id, "web_scraper", vector_store_key)
 
             # Delete metadata
             metadata_key = f"indexed_urls_{agent_id}"
-            await self.skill_store.delete_agent_skill_data(
-                agent_id, "web_scraper", metadata_key
-            )
+            await AgentSkillData.delete(agent_id, "web_scraper", metadata_key)
 
             logger.info(
                 f"firecrawl_clear: Successfully cleared all indexed content for agent {agent_id}"

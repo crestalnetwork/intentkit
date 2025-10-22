@@ -21,6 +21,7 @@ from typing import Optional, Tuple
 
 import sqlalchemy
 from epyxid import XID
+from langchain.agents import create_agent as create_react_agent
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     BaseMessage,
@@ -29,7 +30,6 @@ from langchain_core.messages import (
 from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import create_react_agent
 from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -56,7 +56,7 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
-from intentkit.models.skill import AgentSkillData, ThreadSkillData
+from intentkit.models.skill import AgentSkillData, ChatSkillData
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 
@@ -70,7 +70,9 @@ _agents: dict[str, CompiledStateGraph] = {}
 _agents_updated: dict[str, datetime] = {}
 
 
-async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph:
+async def build_agent(
+    agent: Agent, agent_data: AgentData, custom_skills: list[BaseTool] = []
+) -> CompiledStateGraph:
     """Build an AI agent with specified configuration and tools.
 
     This function:
@@ -82,7 +84,8 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
     Args:
         agent (Agent): Agent configuration object
         agent_data (AgentData): Agent data object
-        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
+        custom_skills (list[BaseTool], optional): Designed for advanced user who directly
+            call this function to inject custom skills into the agent tool node.
 
     Returns:
         CompiledStateGraph: Initialized LangChain agent
@@ -126,6 +129,10 @@ async def build_agent(agent: Agent, agent_data: AgentData) -> CompiledStateGraph
                     logger.error(f"Skill {k} does not have get_skills function")
             except ImportError as e:
                 logger.error(f"Could not import skill module: {k} ({e})")
+
+    # add custom skills to private tools
+    if custom_skills and len(custom_skills) > 0:
+        private_tools.extend(custom_skills)
 
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
@@ -889,7 +896,7 @@ async def clean_agent_memory(
 
         if clean_skill:
             await AgentSkillData.clean_data(agent_id)
-            await ThreadSkillData.clean_data(agent_id, chat_id)
+            await ChatSkillData.clean_data(agent_id, chat_id)
 
         async with get_session() as db:
             if clean_agent:

@@ -56,15 +56,12 @@ class TwitterGetMentions(TwitterBaseTool):
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
                 await self.check_rate_limit(
-                    context.agent_id,
                     max_requests=1,
                     interval=15,
                 )
 
             # get since id from store
-            last = await self.skill_store.get_agent_skill_data(
-                context.agent_id, self.name, "last"
-            )
+            last = await self.get_agent_skill_data("last")
             last = last or {}
             max_results = 10
             since_id = last.get("since_id")
@@ -113,9 +110,7 @@ class TwitterGetMentions(TwitterBaseTool):
             # Update since_id in store
             if mentions.get("meta") and mentions["meta"].get("newest_id"):
                 last["since_id"] = mentions["meta"].get("newest_id")
-                await self.skill_store.save_agent_skill_data(
-                    context.agent_id, self.name, "last", last
-                )
+                await self.save_agent_skill_data("last", last)
 
             return mentions
 

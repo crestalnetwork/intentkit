@@ -52,14 +52,10 @@ class TwitterGetTimeline(TwitterBaseTool):
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
-                await self.check_rate_limit(
-                    context.agent_id, max_requests=1, interval=15
-                )
+                await self.check_rate_limit(max_requests=1, interval=15)
 
             # get since id from store
-            last = await self.skill_store.get_agent_skill_data(
-                context.agent_id, self.name, "last"
-            )
+            last = await self.get_agent_skill_data("last")
             last = last or {}
             since_id = last.get("since_id")
 
@@ -101,9 +97,7 @@ class TwitterGetTimeline(TwitterBaseTool):
             # Update the since_id in store for the next request
             if timeline.get("meta") and timeline["meta"].get("newest_id"):
                 last["since_id"] = timeline["meta"]["newest_id"]
-                await self.skill_store.save_agent_skill_data(
-                    context.agent_id, self.name, "last", last
-                )
+                await self.save_agent_skill_data("last", last)
 
             return timeline
 

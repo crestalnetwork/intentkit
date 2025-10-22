@@ -181,7 +181,6 @@ class EnsoRouteShortcut(EnsoBaseTool):
         """
 
         context = self.get_context()
-        agent_id = context.agent_id
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
         # Use the wallet provider to send the transaction
@@ -191,8 +190,8 @@ class EnsoRouteShortcut(EnsoBaseTool):
         async with httpx.AsyncClient() as client:
             try:
                 network_name = None
-                networks = await self.skill_store.get_agent_skill_data(
-                    agent_id, "enso_get_networks", "networks"
+                networks = await self.get_agent_skill_data_raw(
+                    "enso_get_networks", "networks"
                 )
 
                 if networks:
@@ -221,8 +220,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     "Authorization": f"Bearer {api_token}",
                 }
 
-                token_decimals = await self.skill_store.get_agent_skill_data(
-                    agent_id,
+                token_decimals = await self.get_agent_skill_data_raw(
                     "enso_get_tokens",
                     "decimals",
                 )

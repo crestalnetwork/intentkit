@@ -72,7 +72,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
             skill_config = context.agent.skill_config(self.category)
 
             # Check rate limit
-            await self.check_rate_limit(context.agent_id, max_requests=5, interval=60)
+            await self.check_rate_limit(max_requests=5, interval=60)
 
             # Get API key from context
             api_key = skill_config.get("api_key")

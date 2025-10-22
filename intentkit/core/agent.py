@@ -25,12 +25,6 @@ from intentkit.models.credit import (
     UpstreamType,
 )
 from intentkit.models.db import get_session
-from intentkit.models.skill import (
-    AgentSkillData,
-    AgentSkillDataCreate,
-    ThreadSkillData,
-    ThreadSkillDataCreate,
-)
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.slack_alert import send_slack_message
 
@@ -521,95 +515,6 @@ class AgentStore(SkillStoreABC):
     @staticmethod
     async def get_agent_quota(agent_id: str) -> AgentQuota:
         return await AgentQuota.get(agent_id)
-
-    @staticmethod
-    async def get_agent_skill_data(
-        agent_id: str, skill: str, key: str
-    ) -> Optional[Dict[str, Any]]:
-        """Get skill data for an agent.
-
-        Args:
-            agent_id: ID of the agent
-            skill: Name of the skill
-            key: Data key
-
-        Returns:
-            Dictionary containing the skill data if found, None otherwise
-        """
-        return await AgentSkillData.get(agent_id, skill, key)
-
-    @staticmethod
-    async def save_agent_skill_data(
-        agent_id: str, skill: str, key: str, data: Dict[str, Any]
-    ) -> None:
-        """Save or update skill data for an agent.
-
-        Args:
-            agent_id: ID of the agent
-            skill: Name of the skill
-            key: Data key
-            data: JSON data to store
-        """
-        skill_data = AgentSkillDataCreate(
-            agent_id=agent_id,
-            skill=skill,
-            key=key,
-            data=data,
-        )
-        await skill_data.save()
-
-    @staticmethod
-    async def delete_agent_skill_data(agent_id: str, skill: str, key: str) -> None:
-        """Delete skill data for an agent.
-
-        Args:
-            agent_id: ID of the agent
-            skill: Name of the skill
-            key: Data key
-        """
-        await AgentSkillData.delete(agent_id, skill, key)
-
-    @staticmethod
-    async def get_thread_skill_data(
-        thread_id: str, skill: str, key: str
-    ) -> Optional[Dict[str, Any]]:
-        """Get skill data for a thread.
-
-        Args:
-            thread_id: ID of the thread
-            skill: Name of the skill
-            key: Data key
-
-        Returns:
-            Dictionary containing the skill data if found, None otherwise
-        """
-        return await ThreadSkillData.get(thread_id, skill, key)
-
-    @staticmethod
-    async def save_thread_skill_data(
-        thread_id: str,
-        agent_id: str,
-        skill: str,
-        key: str,
-        data: Dict[str, Any],
-    ) -> None:
-        """Save or update skill data for a thread.
-
-        Args:
-            thread_id: ID of the thread
-            agent_id: ID of the agent that owns this thread
-            skill: Name of the skill
-            key: Data key
-            data: JSON data to store
-        """
-        skill_data = ThreadSkillDataCreate(
-            thread_id=thread_id,
-            agent_id=agent_id,
-            skill=skill,
-            key=key,
-            data=data,
-        )
-        await skill_data.save()
 
     @staticmethod
     async def list_autonomous_tasks(agent_id: str) -> List[AgentAutonomous]:

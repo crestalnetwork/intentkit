@@ -36,22 +36,17 @@ class CryptoCompareBaseTool(IntentKitSkill):
     def category(self) -> str:
         return "cryptocompare"
 
-    async def check_rate_limit(
-        self, agent_id: str, max_requests: int = 1, interval: int = 15
-    ) -> None:
+    async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.
 
         Args:
-            agent_id: The ID of the agent.
             max_requests: Maximum number of requests allowed within the rate limit window.
             interval: Time interval in minutes for the rate limit window.
 
         Raises:
             RateLimitExceeded: If the rate limit has been exceeded.
         """
-        rate_limit = await self.skill_store.get_agent_skill_data(
-            agent_id, self.name, "rate_limit"
-        )
+        rate_limit = await self.get_agent_skill_data("rate_limit")
 
         current_time = datetime.now(tz=timezone.utc)
 
@@ -65,9 +60,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
                 raise RateLimitExceeded("Rate limit exceeded")
 
             rate_limit["count"] += 1
-            await self.skill_store.save_agent_skill_data(
-                agent_id, self.name, "rate_limit", rate_limit
-            )
+            await self.save_agent_skill_data("rate_limit", rate_limit)
 
             return
 
@@ -76,9 +69,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             "count": 1,
             "reset_time": (current_time + timedelta(minutes=interval)).isoformat(),
         }
-        await self.skill_store.save_agent_skill_data(
-            agent_id, self.name, "rate_limit", new_rate_limit
-        )
+        await self.save_agent_skill_data("rate_limit", new_rate_limit)
         return
 
     async def fetch_price(

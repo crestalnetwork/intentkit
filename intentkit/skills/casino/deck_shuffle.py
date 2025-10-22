@@ -95,8 +95,10 @@ class CasinoDeckShuffle(CasinoBaseTool):
                         "shuffled": data["shuffled"],
                     }
 
-                    await self.skill_store.save_agent_skill_data(
-                        context.agent_id, DECK_STORAGE_KEY, CURRENT_DECK_KEY, deck_info
+                    await self.save_agent_skill_data_raw(
+                        DECK_STORAGE_KEY,
+                        CURRENT_DECK_KEY,
+                        deck_info,
                     )
 
                     return {

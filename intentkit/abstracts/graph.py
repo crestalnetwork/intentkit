@@ -41,3 +41,7 @@ class AgentContext(BaseModel):
     @property
     def agent(self) -> Agent:
         return self.get_agent()
+
+    @property
+    def thread_id(self) -> str:
+        return f"{self.agent_id}-{self.chat_id}"

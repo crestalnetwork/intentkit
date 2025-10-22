@@ -61,9 +61,7 @@ class TwitterPostTweet(TwitterBaseTool):
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
-                await self.check_rate_limit(
-                    context.agent_id, max_requests=24, interval=1440
-                )
+                await self.check_rate_limit(max_requests=24, interval=1440)
 
             media_ids = []
             image_warning = ""

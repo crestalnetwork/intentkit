@@ -68,8 +68,8 @@ class CasinoDeckDraw(CasinoBaseTool):
             count = validate_card_count(count)
 
             # Get current deck info
-            deck_info = await self.skill_store.get_agent_skill_data(
-                context.agent_id, DECK_STORAGE_KEY, CURRENT_DECK_KEY
+            deck_info = await self.get_agent_skill_data_raw(
+                DECK_STORAGE_KEY, CURRENT_DECK_KEY
             )
 
             deck_id = "new"  # Default to new deck
@@ -99,8 +99,7 @@ class CasinoDeckDraw(CasinoBaseTool):
                         else:
                             deck_info["remaining"] = data["remaining"]
 
-                        await self.skill_store.save_agent_skill_data(
-                            context.agent_id,
+                        await self.save_agent_skill_data_raw(
                             DECK_STORAGE_KEY,
                             CURRENT_DECK_KEY,
                             deck_info,

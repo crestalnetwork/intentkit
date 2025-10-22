@@ -196,9 +196,8 @@ class QueryIndexedContent(WebScraperBaseTool):
 
             logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
 
-            stored_data = await self.skill_store.get_agent_skill_data(
-                agent_id, "web_scraper", vector_store_key
-            )
+            vs_manager = VectorStoreManager(self.skill_store)
+            stored_data = await vs_manager.get_existing_vector_store(agent_id)
 
             if not stored_data:
                 logger.warning(f"[{agent_id}] No vector store found")
@@ -210,7 +209,6 @@ class QueryIndexedContent(WebScraperBaseTool):
 
             # Create embeddings and decode vector store
             logger.info(f"[{agent_id}] Decoding vector store")
-            vs_manager = VectorStoreManager(self.skill_store)
             embeddings = vs_manager.create_embeddings()
             vector_store = vs_manager.decode_vector_store(
                 stored_data["faiss_files"], embeddings

@@ -83,12 +83,7 @@ class EnsoGetNetworks(EnsoBaseTool):
                         exclude_none=True
                     )
 
-                await self.skill_store.save_agent_skill_data(
-                    context.agent_id,
-                    "enso_get_networks",
-                    "networks",
-                    networks_memory,
-                )
+                await self.save_agent_skill_data("networks", networks_memory)
 
                 return EnsoGetNetworksOutput(res=networks)
             except httpx.RequestError as req_err:
