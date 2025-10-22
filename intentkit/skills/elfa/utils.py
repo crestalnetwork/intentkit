@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 import httpx
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from .base import base_url

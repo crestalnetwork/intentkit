@@ -68,7 +68,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
         Raises:
             ToolException: If the API request fails or data is invalid.
         """
-        from langchain.tools.base import ToolException
+        from langchain_core.tools.base import ToolException
 
         if currency not in SUPPORTED_CURRENCIES:
             raise ToolException(f"Unsupported currency: {currency}")

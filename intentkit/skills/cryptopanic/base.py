@@ -5,7 +5,7 @@ Defines the base class and shared utilities for CryptoPanic skills.
 
 from typing import Type
 
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC

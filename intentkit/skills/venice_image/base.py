@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import Field
 
 from intentkit.abstracts.skill import SkillStoreABC

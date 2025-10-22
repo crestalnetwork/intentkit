@@ -79,7 +79,7 @@ Conclude with a short-term outlook for {currency}. Provide a concise, profession
         Raises:
             ToolException: If news fetching fails.
         """
-        from langchain.tools.base import ToolException
+        from langchain_core.tools.base import ToolException
 
         from intentkit.skills.cryptopanic.fetch_crypto_news import (
             FetchCryptoNews,

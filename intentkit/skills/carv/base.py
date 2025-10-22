@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Optional, Tuple, Type
 
 import httpx  # Ensure httpx is installed: pip install httpx
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.skill import SkillStoreABC
