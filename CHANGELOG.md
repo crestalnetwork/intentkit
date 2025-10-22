@@ -24,6 +24,13 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.10...v0.8.11
 
+## v0.8.10
+
+### Bug Fixes
+- **fix: improve token address handling in wallet prompt** - Updated the prompt message in `_build_wallet_section` to provide clearer guidance on when to use `token_search` skill. Improved the logic for token address resolution by specifying that the skill should be used when only a token symbol is provided and the address cannot be found in context. Added network_id reference to make the prompt more specific about which chain to search on.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.9...v0.8.10
+
 ## v0.8.9
 
 ### Features
