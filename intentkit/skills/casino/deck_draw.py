@@ -11,7 +11,6 @@ except ImportError:
     )
 from pydantic import BaseModel, Field
 
-from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 from intentkit.skills.casino.base import CasinoBaseTool
 from intentkit.skills.casino.utils import (
     CURRENT_DECK_KEY,
@@ -69,8 +68,8 @@ class CasinoDeckDraw(CasinoBaseTool):
             count = validate_card_count(count)
 
             # Get current deck info
-            deck_info = await AgentSkillData.get(
-                context.agent_id, DECK_STORAGE_KEY, CURRENT_DECK_KEY
+            deck_info = await self.get_agent_skill_data_raw(
+                DECK_STORAGE_KEY, CURRENT_DECK_KEY
             )
 
             deck_id = "new"  # Default to new deck
@@ -100,13 +99,11 @@ class CasinoDeckDraw(CasinoBaseTool):
                         else:
                             deck_info["remaining"] = data["remaining"]
 
-                        skill_data = AgentSkillDataCreate(
-                            agent_id=context.agent_id,
-                            skill=DECK_STORAGE_KEY,
-                            key=CURRENT_DECK_KEY,
-                            data=deck_info,
+                        await self.save_agent_skill_data_raw(
+                            DECK_STORAGE_KEY,
+                            CURRENT_DECK_KEY,
+                            deck_info,
                         )
-                        await skill_data.save()
 
                         # Format card information with images
                         cards = [

@@ -195,15 +195,32 @@ class IntentKitSkill(BaseTool):
         key: str,
     ) -> Optional[Dict[str, Any]]:
         """Retrieve persisted data for this skill scoped to the active agent."""
+        return await self.get_agent_skill_data_raw(self.name, key)
+
+    async def get_agent_skill_data_raw(
+        self,
+        skill_name: str,
+        key: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve persisted data for a specific skill scoped to the active agent."""
         context = self.get_context()
-        return await AgentSkillData.get(context.agent_id, self.name, key)
+        return await AgentSkillData.get(context.agent_id, skill_name, key)
 
     async def save_agent_skill_data(self, key: str, data: Dict[str, Any]) -> None:
         """Persist data for this skill scoped to the active agent."""
+        await self.save_agent_skill_data_raw(self.name, key, data)
+
+    async def save_agent_skill_data_raw(
+        self,
+        skill_name: str,
+        key: str,
+        data: Dict[str, Any],
+    ) -> None:
+        """Persist data for a specific skill scoped to the active agent."""
         context = self.get_context()
         skill_data = AgentSkillDataCreate(
             agent_id=context.agent_id,
-            skill=self.name,
+            skill=skill_name,
             key=key,
             data=data,
         )

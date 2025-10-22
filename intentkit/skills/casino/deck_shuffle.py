@@ -11,7 +11,6 @@ except ImportError:
     )
 from pydantic import BaseModel, Field
 
-from intentkit.models.skill import AgentSkillDataCreate
 from intentkit.skills.casino.base import CasinoBaseTool
 from intentkit.skills.casino.utils import (
     CURRENT_DECK_KEY,
@@ -96,13 +95,11 @@ class CasinoDeckShuffle(CasinoBaseTool):
                         "shuffled": data["shuffled"],
                     }
 
-                    skill_data = AgentSkillDataCreate(
-                        agent_id=context.agent_id,
-                        skill=DECK_STORAGE_KEY,
-                        key=CURRENT_DECK_KEY,
-                        data=deck_info,
+                    await self.save_agent_skill_data_raw(
+                        DECK_STORAGE_KEY,
+                        CURRENT_DECK_KEY,
+                        deck_info,
                     )
-                    await skill_data.save()
 
                     return {
                         "success": True,

@@ -4,7 +4,6 @@ import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 from intentkit.skills.enso.base import EnsoBaseTool, base_url
 
 # Actual Enso output types
@@ -155,7 +154,6 @@ class EnsoGetTokens(EnsoBaseTool):
         url = f"{base_url}/api/v1/tokens"
 
         context = self.get_context()
-        agent_id = context.agent_id
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
         main_tokens = self.get_main_tokens(context)
@@ -179,11 +177,7 @@ class EnsoGetTokens(EnsoBaseTool):
                 response.raise_for_status()
                 json_dict = response.json()
 
-                token_decimals = await AgentSkillData.get(
-                    agent_id,
-                    "enso_get_tokens",
-                    "decimals",
-                )
+                token_decimals = await self.get_agent_skill_data("decimals")
                 if not token_decimals:
                     token_decimals = {}
 
@@ -204,13 +198,7 @@ class EnsoGetTokens(EnsoBaseTool):
                                 if u_token.address:
                                     token_decimals[u_token.address] = u_token.decimals
 
-                skill_data = AgentSkillDataCreate(
-                    agent_id=agent_id,
-                    skill="enso_get_tokens",
-                    key="decimals",
-                    data=token_decimals,
-                )
-                await skill_data.save()
+                await self.save_agent_skill_data("decimals", token_decimals)
 
                 return res
             except httpx.RequestError as req_err:

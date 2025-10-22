@@ -5,7 +5,6 @@ import httpx
 from langchain_core.documents import Document
 from pydantic import BaseModel, Field
 
-from intentkit.models.skill import AgentSkillData
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
 
 logger = logging.getLogger(__name__)
@@ -369,8 +368,8 @@ class FirecrawlScrape(FirecrawlBaseTool):
                             # Update metadata to track all URLs
                             # Get existing metadata to preserve other URLs
                             metadata_key = f"indexed_urls_{agent_id}"
-                            existing_metadata = await AgentSkillData.get(
-                                agent_id, "firecrawl", metadata_key
+                            existing_metadata = await self.get_agent_skill_data_raw(
+                                "firecrawl", metadata_key
                             )
 
                             if existing_metadata and existing_metadata.get("urls"):
