@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional, Type
 
 from coinbase_agentkit import CdpEvmWalletProvider
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext

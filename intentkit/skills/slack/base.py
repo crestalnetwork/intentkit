@@ -1,6 +1,6 @@
 from typing import Optional, Type
 
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from slack_sdk import WebClient
 

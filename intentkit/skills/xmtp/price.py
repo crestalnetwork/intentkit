@@ -1,6 +1,6 @@
 from typing import Literal, Type
 
-from langchain.tools.base import ToolException
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_origin_cdp_client

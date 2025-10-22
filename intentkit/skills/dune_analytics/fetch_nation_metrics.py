@@ -138,7 +138,7 @@ class FetchNationMetrics(DuneBaseTool):
         Raises:
             ToolException: If the API request fails.
         """
-        from langchain.tools.base import ToolException
+        from langchain_core.tools.base import ToolException
 
         url = f"{BASE_URL}/{query_id}/results?limit={limit}"
         headers = {"X-Dune-API-Key": api_key}
