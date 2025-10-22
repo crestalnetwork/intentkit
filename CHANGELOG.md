@@ -1,3 +1,29 @@
+## v0.8.11
+
+### New Features
+- **Import Checking Scripts**: Added comprehensive import validation tools to maintain code quality
+  - `check_imports.py` - Basic import validation script
+  - `check_imports_comprehensive.py` - Advanced import analysis with circular dependency detection  
+  - `simple_import_check.py` - Lightweight import checker
+
+### Improvements
+- **Code Quality**: Automated code formatting updates across multiple skill modules
+- **Developer Tools**: Enhanced dependency management and organization capabilities
+- **CI/CD Ready**: Scripts can be integrated into continuous integration pipelines
+
+### Benefits
+- Early detection of circular dependencies
+- Improved code quality through automated import validation
+- Better dependency management and organization
+- Consistent code formatting across the codebase
+
+### Changes
+- Added 3 new import checking scripts in the `scripts/` directory
+- Code formatting updates across 32+ skill module files
+- Enhanced development workflow with automated quality assurance tools
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.10...v0.8.11
+
 ## v0.8.9
 
 ### Features
