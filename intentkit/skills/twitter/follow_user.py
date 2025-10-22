@@ -49,9 +49,7 @@ class TwitterFollowUser(TwitterBaseTool):
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
-                await self.check_rate_limit(
-                    context.agent_id, max_requests=5, interval=15
-                )
+                await self.check_rate_limit(max_requests=5, interval=15)
 
             # Follow the user using tweepy client
             response = await client.follow_user(

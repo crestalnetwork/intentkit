@@ -33,6 +33,12 @@ from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import get_wallet_provider
 from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
+from intentkit.models.skill import (
+    AgentSkillData,
+    AgentSkillDataCreate,
+    ThreadSkillData,
+    ThreadSkillDataCreate,
+)
 from intentkit.utils.error import IntentKitAPIError, RateLimitExceeded
 
 if TYPE_CHECKING:
@@ -183,6 +189,50 @@ class IntentKitSkill(BaseTool):
         network_id = agent.network_id
 
         return get_web3_client(network_id)
+
+    async def get_agent_skill_data(
+        self,
+        key: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve persisted data for this skill scoped to the active agent."""
+        context = self.get_context()
+        return await AgentSkillData.get(context.agent_id, self.name, key)
+
+    async def save_agent_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+        """Persist data for this skill scoped to the active agent."""
+        context = self.get_context()
+        skill_data = AgentSkillDataCreate(
+            agent_id=context.agent_id,
+            skill=self.name,
+            key=key,
+            data=data,
+        )
+        await skill_data.save()
+
+    async def delete_agent_skill_data(self, key: str) -> None:
+        """Remove persisted data for this skill scoped to the active agent."""
+        context = self.get_context()
+        await AgentSkillData.delete(context.agent_id, self.name, key)
+
+    async def get_thread_skill_data(
+        self,
+        key: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve persisted data for this skill scoped to the active thread."""
+        context = self.get_context()
+        return await ThreadSkillData.get(context.thread_id, self.name, key)
+
+    async def save_thread_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+        """Persist data for this skill scoped to the active thread."""
+        context = self.get_context()
+        skill_data = ThreadSkillDataCreate(
+            thread_id=context.thread_id,
+            agent_id=context.agent_id,
+            skill=self.name,
+            key=key,
+            data=data,
+        )
+        await skill_data.save()
 
 
 async def get_agentkit_actions(

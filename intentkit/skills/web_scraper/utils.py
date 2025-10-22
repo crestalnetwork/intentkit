@@ -18,6 +18,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +114,7 @@ class VectorStoreManager:
     async def get_existing_vector_store(self, agent_id: str) -> Optional[Dict]:
         """Get existing vector store data if it exists."""
         vector_store_key, _ = self.get_storage_keys(agent_id)
-        return await self.skill_store.get_agent_skill_data(
-            agent_id, "web_scraper", vector_store_key
-        )
+        return await AgentSkillData.get(agent_id, "web_scraper", vector_store_key)
 
     async def merge_with_existing(
         self,
@@ -184,12 +183,13 @@ class VectorStoreManager:
 
         try:
             # Save to storage
-            await self.skill_store.save_agent_skill_data(
+            skill_data = AgentSkillDataCreate(
                 agent_id=agent_id,
                 skill="web_scraper",
                 key=vector_store_key,
                 data=storage_data,
             )
+            await skill_data.save()
 
             logger.info(f"[{agent_id}] Successfully saved vector store")
 
@@ -319,12 +319,7 @@ class MetadataManager:
         """Get existing metadata for an agent."""
         vs_manager = VectorStoreManager(self.skill_store)
         _, metadata_key = vs_manager.get_storage_keys(agent_id)
-        return (
-            await self.skill_store.get_agent_skill_data(
-                agent_id, "web_scraper", metadata_key
-            )
-            or {}
-        )
+        return await AgentSkillData.get(agent_id, "web_scraper", metadata_key) or {}
 
     def create_url_metadata(
         self,
@@ -391,12 +386,13 @@ class MetadataManager:
         existing_metadata.update(new_metadata)
 
         # Save updated metadata
-        await self.skill_store.save_agent_skill_data(
+        skill_data = AgentSkillDataCreate(
             agent_id=agent_id,
             skill="web_scraper",
             key=metadata_key,
             data=existing_metadata,
         )
+        await skill_data.save()
 
 
 class ResponseFormatter:

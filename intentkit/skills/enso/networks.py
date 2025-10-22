@@ -5,6 +5,8 @@ import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.models.skill import AgentSkillDataCreate
+
 from .base import EnsoBaseTool, base_url
 
 
@@ -83,12 +85,13 @@ class EnsoGetNetworks(EnsoBaseTool):
                         exclude_none=True
                     )
 
-                await self.skill_store.save_agent_skill_data(
-                    context.agent_id,
-                    "enso_get_networks",
-                    "networks",
-                    networks_memory,
+                skill_data = AgentSkillDataCreate(
+                    agent_id=context.agent_id,
+                    skill="enso_get_networks",
+                    key="networks",
+                    data=networks_memory,
                 )
+                await skill_data.save()
 
                 return EnsoGetNetworksOutput(res=networks)
             except httpx.RequestError as req_err:

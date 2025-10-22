@@ -47,9 +47,7 @@ class TwitterLikeTweet(TwitterBaseTool):
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
-                await self.check_rate_limit(
-                    context.agent_id, max_requests=100, interval=1440
-                )
+                await self.check_rate_limit(max_requests=100, interval=1440)
 
             # Like the tweet using tweepy client
             response = await client.like(tweet_id=tweet_id, user_auth=twitter.use_key)

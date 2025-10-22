@@ -4,6 +4,7 @@ import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.models.skill import AgentSkillData
 from intentkit.skills.enso.networks import EnsoGetNetworks
 
 from .base import EnsoBaseTool, base_url, format_amount_with_decimals
@@ -191,7 +192,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
         async with httpx.AsyncClient() as client:
             try:
                 network_name = None
-                networks = await self.skill_store.get_agent_skill_data(
+                networks = await AgentSkillData.get(
                     agent_id, "enso_get_networks", "networks"
                 )
 
@@ -221,7 +222,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
                     "Authorization": f"Bearer {api_token}",
                 }
 
-                token_decimals = await self.skill_store.get_agent_skill_data(
+                token_decimals = await AgentSkillData.get(
                     agent_id,
                     "enso_get_tokens",
                     "decimals",
