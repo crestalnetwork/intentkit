@@ -9,7 +9,6 @@ import httpx
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 
 BASE_URL = "https://api.dune.com/api/v1/query"
@@ -49,7 +48,6 @@ class FetchKOLBuys(DuneBaseTool):
         "Supports a configurable limit for the number of results. Handles rate limits with retries."
     )
     args_schema: Type[BaseModel] = KOLBuysInput
-    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=5, min=5, max=60)

@@ -264,11 +264,8 @@ class FirecrawlScrape(FirecrawlBaseTool):
                         # Get agent ID for indexing
                         agent_id = context.agent_id
                         if agent_id:
-                            # Initialize managers
-                            vs_manager = FirecrawlVectorStoreManager(self.skill_store)
-                            metadata_manager = FirecrawlMetadataManager(
-                                self.skill_store
-                            )
+                            # Initialize vector store manager
+                            vs_manager = FirecrawlVectorStoreManager()
 
                             # Load existing vector store
                             existing_vector_store = await vs_manager.load_vector_store(
@@ -385,11 +382,13 @@ class FirecrawlScrape(FirecrawlBaseTool):
                                 }
                             else:
                                 # Create new metadata
-                                updated_metadata = metadata_manager.create_url_metadata(
-                                    [url], [document], "firecrawl_scrape"
+                                updated_metadata = (
+                                    FirecrawlMetadataManager.create_url_metadata(
+                                        [url], [document], "firecrawl_scrape"
+                                    )
                                 )
 
-                            await metadata_manager.update_metadata(
+                            await FirecrawlMetadataManager.update_metadata(
                                 agent_id, updated_metadata
                             )
 

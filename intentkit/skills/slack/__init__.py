@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.slack.base import SlackBaseTool
 from intentkit.skills.slack.get_channel import SlackGetChannel
@@ -34,7 +33,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[SlackBaseTool]:
     """Get all Slack skills."""
@@ -50,7 +48,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_slack_skill(name, store)
+        skill = get_slack_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -58,40 +56,30 @@ async def get_skills(
 
 def get_slack_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> SlackBaseTool:
     """Get a Slack skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Slack skill
     """
     if name == "get_channel":
         if name not in _cache:
-            _cache[name] = SlackGetChannel(
-                skill_store=store,
-            )
+            _cache[name] = SlackGetChannel()
         return _cache[name]
     elif name == "get_message":
         if name not in _cache:
-            _cache[name] = SlackGetMessage(
-                skill_store=store,
-            )
+            _cache[name] = SlackGetMessage()
         return _cache[name]
     elif name == "schedule_message":
         if name not in _cache:
-            _cache[name] = SlackScheduleMessage(
-                skill_store=store,
-            )
+            _cache[name] = SlackScheduleMessage()
         return _cache[name]
     elif name == "send_message":
         if name not in _cache:
-            _cache[name] = SlackSendMessage(
-                skill_store=store,
-            )
+            _cache[name] = SlackSendMessage()
         return _cache[name]
     else:
         logger.warning(f"Unknown Slack skill: {name}")

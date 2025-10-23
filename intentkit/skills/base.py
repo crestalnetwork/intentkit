@@ -29,7 +29,6 @@ from redis.exceptions import RedisError
 from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import get_wallet_provider
 from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
@@ -63,7 +62,6 @@ class IntentKitSkill(BaseTool):
     Will have predefined abilities.
     """
 
-    skill_store: SkillStoreABC
     # overwrite the value of BaseTool
     handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
         lambda e: f"tool error: {e}"
@@ -331,7 +329,6 @@ class IntentKitSkill(BaseTool):
 
 async def get_agentkit_actions(
     agent_id: str,
-    _store: SkillStoreABC,
     provider_factories: Sequence[Callable[[], object]],
     *,
     agent: Optional["Agent"] = None,

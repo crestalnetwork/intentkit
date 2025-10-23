@@ -6,8 +6,8 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import get_wallet_provider as get_agent_wallet_provider
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.chain import ChainProvider, Network, network_to_id
 
@@ -20,9 +20,6 @@ class EnsoBaseTool(IntentKitSkill):
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
-    )
 
     async def get_wallet_provider(self, context: AgentContext) -> CdpEvmWalletProvider:
         """Get the wallet provider from the CDP client.
@@ -40,7 +37,7 @@ class EnsoBaseTool(IntentKitSkill):
         return provider.get_address()
 
     def get_chain_provider(self, context: AgentContext) -> Optional[ChainProvider]:
-        return self.skill_store.get_system_config("chain_provider")
+        return config.chain_provider
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
         skill_config = context.agent.skill_config(self.category)
@@ -52,7 +49,7 @@ class EnsoBaseTool(IntentKitSkill):
         skill_config = context.agent.skill_config(self.category)
         api_key_provider = skill_config.get("api_key_provider")
         if api_key_provider == "platform":
-            return self.skill_store.get_system_config("enso_api_token")
+            return config.enso_api_token
         # for backward compatibility, may only have api_token in skill_config
         elif skill_config.get("api_token"):
             return skill_config.get("api_token")

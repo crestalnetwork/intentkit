@@ -59,7 +59,6 @@ class TwitterGetUserTweets(TwitterBaseTool):
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
-                skill_store=self.skill_store,
                 config=skill_config,
             )
             client = await twitter.get_client()

@@ -1,7 +1,6 @@
 import logging
 from typing import List, Literal, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.venice_audio import VeniceAudioTool
@@ -39,7 +38,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,  # Allow for extra arguments if the loader passes them
 ) -> list[VeniceAudioBaseTool]:
     """
@@ -47,7 +45,6 @@ async def get_skills(
 
     Args:
         config: The configuration dictionary for the Venice Audio skill.
-        skill_store: The skill store instance.
         agent_id: The ID of the agent requesting the skills.
 
     Returns:
@@ -70,7 +67,7 @@ async def get_skills(
             continue
         elif state == "public" or (state == "private" and is_private):
             # If enabled, get the skill instance using the factory function
-            skill_instance = get_venice_audio_skill(skill_name, store)
+            skill_instance = get_venice_audio_skill(skill_name)
             if skill_instance:
                 available_skills.append(skill_instance)
             else:
@@ -82,14 +79,12 @@ async def get_skills(
 
 def get_venice_audio_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> Optional[VeniceAudioBaseTool]:
     """
     Factory function to get a cached Venice Audio skill instance by name.
 
     Args:
         name: The name of voice model.
-        store: The skill store, passed to the skill constructor.
 
     Returns:
         The requested Venice Audio skill instance, or None if the name is unknown.
@@ -100,7 +95,5 @@ def get_venice_audio_skill(
         return _cache[name]
 
     # Cache and return the newly created instance
-    _cache[name] = VeniceAudioTool(
-        skill_store=store,
-    )
+    _cache[name] = VeniceAudioTool()
     return _cache[name]

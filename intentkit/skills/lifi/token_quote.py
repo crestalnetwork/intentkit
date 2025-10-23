@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Type
 import httpx
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.utils import (
     LIFI_API_URL,
@@ -62,12 +61,11 @@ class TokenQuote(LiFiBaseTool):
 
     def __init__(
         self,
-        skill_store: SkillStoreABC,
         default_slippage: float = 0.03,
         allowed_chains: Optional[List[str]] = None,
     ) -> None:
         """Initialize the TokenQuote skill with configuration options."""
-        super().__init__(skill_store=skill_store)
+        super().__init__()
         self.default_slippage = default_slippage
         self.allowed_chains = allowed_chains
 

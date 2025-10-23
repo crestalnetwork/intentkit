@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from intentkit.config.config import config
+from intentkit.models.agent_data import AgentData
 from intentkit.skills.system.base import SystemBaseTool
 
 
@@ -43,11 +45,11 @@ class RegenerateAgentApiKey(SystemBaseTool):
         context = self.get_context()
         agent_id = context.agent_id
 
-        # Get agent data from skill store
-        agent_data = await self.skill_store.get_agent_data(agent_id)
+        # Get agent data directly from the model
+        agent_data = await AgentData.get(agent_id)
 
         # Get API base URL from system config
-        open_api_base_url = self.skill_store.get_system_config("open_api_base_url")
+        open_api_base_url = config.open_api_base_url
         api_endpoint = f"{open_api_base_url}/v1/chat/completions"
 
         # Check if previous API keys existed
@@ -58,7 +60,7 @@ class RegenerateAgentApiKey(SystemBaseTool):
         new_public_api_key = self._generate_public_api_key()
 
         # Save the new API keys to agent data (overwrites existing)
-        await self.skill_store.set_agent_data(
+        await AgentData.patch(
             agent_id, {"api_key": new_api_key, "api_key_public": new_public_api_key}
         )
 

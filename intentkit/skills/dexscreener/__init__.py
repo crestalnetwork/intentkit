@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
 from intentkit.skills.dexscreener.get_pair_info import GetPairInfo
@@ -40,7 +39,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[DexScreenerBaseTool]:
     """Get all DexScreener skills.
@@ -48,7 +46,6 @@ async def get_skills(
     Args:
         config: The configuration for DexScreener skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of DexScreener skills.
@@ -69,7 +66,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_dexscreener_skills(name, store)
+        skill = get_dexscreener_skills(name)
         if skill:
             result.append(skill)
     return result
@@ -77,13 +74,11 @@ async def get_skills(
 
 def get_dexscreener_skills(
     name: str,
-    store: SkillStoreABC,
 ) -> Optional[DexScreenerBaseTool]:
     """Get a DexScreener skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested DexScreener skill
@@ -98,5 +93,5 @@ def get_dexscreener_skills(
         logger.warning(f"Unknown Dexscreener skill: {name}")
         return None
 
-    _cache[name] = skill_class(skill_store=store)
+    _cache[name] = skill_class()
     return _cache[name]

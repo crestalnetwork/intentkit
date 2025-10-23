@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
 from intentkit.skills.firecrawl.clear import FirecrawlClearIndexedContent
@@ -37,7 +36,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[FirecrawlBaseTool]:
     """Get all Firecrawl skills.
@@ -45,7 +43,6 @@ async def get_skills(
     Args:
         config: The configuration for Firecrawl skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Firecrawl skills.
@@ -60,18 +57,16 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_firecrawl_skill(name, store) for name in available_skills]
+    return [get_firecrawl_skill(name) for name in available_skills]
 
 
 def get_firecrawl_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> FirecrawlBaseTool:
     """Get a Firecrawl skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Firecrawl skill
@@ -81,27 +76,19 @@ def get_firecrawl_skill(
     """
     if name == "firecrawl_scrape":
         if name not in _cache:
-            _cache[name] = FirecrawlScrape(
-                skill_store=store,
-            )
+            _cache[name] = FirecrawlScrape()
         return _cache[name]
     elif name == "firecrawl_crawl":
         if name not in _cache:
-            _cache[name] = FirecrawlCrawl(
-                skill_store=store,
-            )
+            _cache[name] = FirecrawlCrawl()
         return _cache[name]
     elif name == "firecrawl_query_indexed_content":
         if name not in _cache:
-            _cache[name] = FirecrawlQueryIndexedContent(
-                skill_store=store,
-            )
+            _cache[name] = FirecrawlQueryIndexedContent()
         return _cache[name]
     elif name == "firecrawl_clear_indexed_content":
         if name not in _cache:
-            _cache[name] = FirecrawlClearIndexedContent(
-                skill_store=store,
-            )
+            _cache[name] = FirecrawlClearIndexedContent()
         return _cache[name]
     else:
         raise ValueError(f"Unknown Firecrawl skill: {name}")

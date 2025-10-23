@@ -9,7 +9,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 
 logger = logging.getLogger(__name__)
@@ -63,15 +63,20 @@ class FirecrawlDocumentProcessor:
 class FirecrawlVectorStoreManager:
     """Manages vector store operations for Firecrawl content."""
 
-    def __init__(self, skill_store: SkillStoreABC):
-        self.skill_store = skill_store
+    def __init__(self, embedding_api_key: Optional[str] = None):
+        self._embedding_api_key = embedding_api_key
+
+    def _resolve_api_key(self) -> str:
+        """Resolve the API key to use for embeddings."""
+        if self._embedding_api_key:
+            return self._embedding_api_key
+        if config.openai_api_key:
+            return config.openai_api_key
+        raise ValueError("OpenAI API key not found in system configuration")
 
     def create_embeddings(self) -> OpenAIEmbeddings:
         """Create OpenAI embeddings instance."""
-        openai_api_key = self.skill_store.get_system_config("openai_api_key")
-        if not openai_api_key:
-            raise ValueError("OpenAI API key not found in system configuration")
-
+        openai_api_key = self._resolve_api_key()
         return OpenAIEmbeddings(
             openai_api_key=openai_api_key, model="text-embedding-3-small"
         )
@@ -179,11 +184,9 @@ class FirecrawlVectorStoreManager:
 class FirecrawlMetadataManager:
     """Manages metadata for Firecrawl indexed content."""
 
-    def __init__(self, skill_store: SkillStoreABC):
-        self.skill_store = skill_store
-
+    @staticmethod
     def create_url_metadata(
-        self, urls: List[str], documents: List[Document], source_type: str
+        urls: List[str], documents: List[Document], source_type: str
     ) -> Dict[str, Any]:
         """Create metadata for indexed URLs."""
         return {
@@ -193,9 +196,9 @@ class FirecrawlMetadataManager:
             "indexed_at": str(len(urls)),  # Simple counter
         }
 
-    async def update_metadata(
-        self, agent_id: str, new_metadata: Dict[str, Any]
-    ) -> None:
+    @staticmethod
+    @staticmethod
+    async def update_metadata(agent_id: str, new_metadata: Dict[str, Any]) -> None:
         """Update metadata for an agent."""
         try:
             metadata_key = f"indexed_urls_{agent_id}"
@@ -214,7 +217,7 @@ class FirecrawlMetadataManager:
 async def index_documents(
     documents: List[Document],
     agent_id: str,
-    skill_store: SkillStoreABC,
+    vector_manager: FirecrawlVectorStoreManager,
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
 ) -> Tuple[int, bool]:
@@ -224,7 +227,7 @@ async def index_documents(
     Args:
         documents: List of documents to index
         agent_id: Agent ID for storage
-        skill_store: Skill store for persistence
+        vector_manager: Vector store manager
         chunk_size: Size of text chunks
         chunk_overlap: Overlap between chunks
 
@@ -233,8 +236,6 @@ async def index_documents(
     """
     try:
         # Initialize managers
-        vs_manager = FirecrawlVectorStoreManager(skill_store)
-
         # Split documents into chunks
         split_docs = FirecrawlDocumentProcessor.split_documents(
             documents, chunk_size, chunk_overlap
@@ -245,10 +246,10 @@ async def index_documents(
             return 0, False
 
         # Create embeddings
-        embeddings = vs_manager.create_embeddings()
+        embeddings = vector_manager.create_embeddings()
 
         # Try to load existing vector store
-        existing_vector_store = await vs_manager.load_vector_store(agent_id)
+        existing_vector_store = await vector_manager.load_vector_store(agent_id)
 
         if existing_vector_store:
             # Add to existing vector store
@@ -261,7 +262,7 @@ async def index_documents(
             was_merged = False
 
         # Save the vector store
-        await vs_manager.save_vector_store(
+        await vector_manager.save_vector_store(
             agent_id, vector_store, chunk_size, chunk_overlap
         )
 
@@ -278,7 +279,7 @@ async def index_documents(
 async def query_indexed_content(
     query: str,
     agent_id: str,
-    skill_store: SkillStoreABC,
+    vector_manager: FirecrawlVectorStoreManager,
     max_results: int = 4,
 ) -> List[Document]:
     """
@@ -287,7 +288,7 @@ async def query_indexed_content(
     Args:
         query: Search query
         agent_id: Agent ID
-        skill_store: Skill store for persistence
+        vector_manager: Manager for vector store persistence
         max_results: Maximum number of results to return
 
     Returns:
@@ -295,10 +296,8 @@ async def query_indexed_content(
     """
     try:
         # Initialize vector store manager
-        vs_manager = FirecrawlVectorStoreManager(skill_store)
-
         # Load vector store
-        vector_store = await vs_manager.load_vector_store(agent_id)
+        vector_store = await vector_manager.load_vector_store(agent_id)
 
         if not vector_store:
             logger.warning(f"No vector store found for agent {agent_id}")

@@ -1,7 +1,6 @@
 import logging
 from typing import Any, List, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_execute import TokenExecute
@@ -31,7 +30,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_: Any,
 ) -> list[LiFiBaseTool]:
     """Get all LiFi skills."""
@@ -60,7 +58,7 @@ async def get_skills(
     skills: list[LiFiBaseTool] = []
     for name in available_skills:
         try:
-            skill = get_lifi_skill(name, store, config)
+            skill = get_lifi_skill(name, config)
             skills.append(skill)
             logger.info(f"[LiFi_Skills] Successfully loaded skill: {name}")
         except Exception as e:
@@ -73,7 +71,6 @@ async def get_skills(
 
 def get_lifi_skill(
     name: str,
-    store: SkillStoreABC,
     config: Config,
 ) -> LiFiBaseTool:
     """Get a LiFi skill by name."""
@@ -108,7 +105,6 @@ def get_lifi_skill(
                 logger.info(f"[LiFi_Skills] Allowed chains: {allowed_chains}")
 
             _cache[cache_key] = TokenQuote(
-                skill_store=store,
                 default_slippage=default_slippage,
                 allowed_chains=allowed_chains,
             )
@@ -129,7 +125,6 @@ def get_lifi_skill(
             )
 
             _cache[cache_key] = TokenExecute(
-                skill_store=store,
                 default_slippage=default_slippage,
                 allowed_chains=allowed_chains,
                 max_execution_time=max_execution_time,

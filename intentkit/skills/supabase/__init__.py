@@ -3,7 +3,6 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.supabase.base import SupabaseBaseTool
 from intentkit.skills.supabase.delete_data import SupabaseDeleteData
@@ -41,7 +40,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[SupabaseBaseTool]:
     """Get all Supabase skills."""
@@ -57,7 +55,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_supabase_skill(name, store)
+        skill = get_supabase_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -65,52 +63,38 @@ async def get_skills(
 
 def get_supabase_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> SupabaseBaseTool:
     """Get a Supabase skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Supabase skill
     """
     if name == "fetch_data":
         if name not in _cache:
-            _cache[name] = SupabaseFetchData(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseFetchData()
         return _cache[name]
     elif name == "insert_data":
         if name not in _cache:
-            _cache[name] = SupabaseInsertData(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseInsertData()
         return _cache[name]
     elif name == "update_data":
         if name not in _cache:
-            _cache[name] = SupabaseUpdateData(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseUpdateData()
         return _cache[name]
     elif name == "upsert_data":
         if name not in _cache:
-            _cache[name] = SupabaseUpsertData(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseUpsertData()
         return _cache[name]
     elif name == "delete_data":
         if name not in _cache:
-            _cache[name] = SupabaseDeleteData(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseDeleteData()
         return _cache[name]
     elif name == "invoke_function":
         if name not in _cache:
-            _cache[name] = SupabaseInvokeFunction(
-                skill_store=store,
-            )
+            _cache[name] = SupabaseInvokeFunction()
         return _cache[name]
     else:
         logger.warning(f"Unknown Supabase skill: {name}")

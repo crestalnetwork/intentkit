@@ -66,7 +66,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
       - The `description` attribute is the description of the skill, which will be used in LLM to select the skill.
       - The `args_schema` attribute is the pydantic model for the skill arguments.
       - The `_arun` method is the main logic of the skill. There is special parameter `config: RunnableConfig`, which is used to pass the LangChain runnable config. There is function `context_from_config` in IntentKitSkill, can be used to get the context from the runnable config. In the _arun method, if there is any exception, just raise it, and the exception will be handled by the Agent. If the return value is not a string, you can document it in the description attribute.
-   - The `__init__.py` must have the function `async def get_skills( config: "Config", is_private: bool, store: SkillStoreABC, **_,) -> list[OpenAIBaseTool]`
+      - The `__init__.py` must have the function `async def get_skills( config: "Config", is_private: bool, **_,) -> list[OpenAIBaseTool]`
       - Config is inherit from `SkillConfig`, and the `states` is a dict, key is the skill name, value is the skill state. If the skill category have any other config fields need agent creator to set, they can be added to Config.
       - If the skill is stateless, you can add a global _cache for it, to avoid re-create the skill object every time.
    - A square image is needed in the category folder.

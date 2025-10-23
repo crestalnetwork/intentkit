@@ -4,6 +4,7 @@ from typing import Type
 import httpx
 from pydantic import BaseModel, Field
 
+from intentkit.config.config import config
 from intentkit.skills.tavily.base import TavilyBaseTool
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ class TavilySearch(TavilyBaseTool):
         if skill_config.get("api_key_provider") == "agent_owner":
             api_key = skill_config.get("api_key")
         else:
-            api_key = self.skill_store.get_system_config("tavily_api_key")
+            api_key = config.tavily_api_key
         if not api_key:
             return "Error: No Tavily API key provided in the configuration."
 

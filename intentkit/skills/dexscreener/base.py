@@ -3,9 +3,7 @@ import logging
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
-from pydantic import Field
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.dexscreener.utils import DEXSCREENER_BASE_URL
 
@@ -21,9 +19,6 @@ class DexScreenerBaseTool(IntentKitSkill):
     Handles shared logic like API calls and error reporting via return values.
     """
 
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data and configs."
-    )
     base_url: str = DEXSCREENER_BASE_URL
 
     @property

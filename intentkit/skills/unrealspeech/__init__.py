@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
 from intentkit.skills.unrealspeech.text_to_speech import TextToSpeech
@@ -23,7 +22,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[UnrealSpeechBaseTool]:
     """Get all UnrealSpeech tools."""
@@ -37,19 +35,16 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_unrealspeech_skill(name, store) for name in available_skills]
+    return [get_unrealspeech_skill(name) for name in available_skills]
 
 
 def get_unrealspeech_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> UnrealSpeechBaseTool:
     """Get an UnrealSpeech skill by name."""
     if name == "text_to_speech":
         if name not in _cache:
-            _cache[name] = TextToSpeech(
-                skill_store=store,
-            )
+            _cache[name] = TextToSpeech()
         return _cache[name]
     else:
         raise ValueError(f"Unknown UnrealSpeech skill: {name}")

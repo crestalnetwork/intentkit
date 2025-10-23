@@ -80,12 +80,9 @@ class GPTImageGeneration(OpenAIBaseTool):
             Exception: If the image generation fails.
         """
         context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
 
-        # Get the OpenAI API key from the skill store
-        api_key = skill_config.get("api_key") or self.skill_store.get_system_config(
-            "openai_api_key"
-        )
+        # Get the OpenAI API key from configuration or agent settings
+        api_key = self.get_api_key()
 
         # Generate a unique job ID
         job_id = str(XID())

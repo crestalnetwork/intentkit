@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.casino.base import CasinoBaseTool
 from intentkit.skills.casino.deck_draw import CasinoDeckDraw
@@ -31,7 +30,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[CasinoBaseTool]:
     """Get all Casino skills.
@@ -39,7 +37,6 @@ async def get_skills(
     Args:
         config: The configuration for Casino skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Casino skills.
@@ -56,7 +53,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_casino_skill(name, store)
+        skill = get_casino_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -64,34 +61,26 @@ async def get_skills(
 
 def get_casino_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> CasinoBaseTool:
     """Get a Casino skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Casino skill
     """
     if name == "deck_shuffle":
         if name not in _cache:
-            _cache[name] = CasinoDeckShuffle(
-                skill_store=store,
-            )
+            _cache[name] = CasinoDeckShuffle()
         return _cache[name]
     elif name == "deck_draw":
         if name not in _cache:
-            _cache[name] = CasinoDeckDraw(
-                skill_store=store,
-            )
+            _cache[name] = CasinoDeckDraw()
         return _cache[name]
     elif name == "dice_roll":
         if name not in _cache:
-            _cache[name] = CasinoDiceRoll(
-                skill_store=store,
-            )
+            _cache[name] = CasinoDiceRoll()
         return _cache[name]
     else:
         raise ValueError(f"Unknown Casino skill: {name}")

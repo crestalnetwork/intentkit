@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
 from intentkit.skills.cookiefun.get_account_details import GetAccountDetails
@@ -35,7 +34,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[CookieFunBaseTool]:
     """Get all CookieFun skills."""
@@ -49,28 +47,27 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    skills = [get_cookiefun_skill(name, store) for name in available_skills]
+    skills = [get_cookiefun_skill(name) for name in available_skills]
     logger.info("Returning %d CookieFun skills", len(skills))
     return skills
 
 
 def get_cookiefun_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> CookieFunBaseTool:
     """Get a CookieFun skill by name."""
 
     if name not in _cache:
         if name == "get_sectors":
-            _cache[name] = GetSectors(skill_store=store)
+            _cache[name] = GetSectors()
         elif name == "get_account_details":
-            _cache[name] = GetAccountDetails(skill_store=store)
+            _cache[name] = GetAccountDetails()
         elif name == "get_account_smart_followers":
-            _cache[name] = GetAccountSmartFollowers(skill_store=store)
+            _cache[name] = GetAccountSmartFollowers()
         elif name == "search_accounts":
-            _cache[name] = SearchAccounts(skill_store=store)
+            _cache[name] = SearchAccounts()
         elif name == "get_account_feed":
-            _cache[name] = GetAccountFeed(skill_store=store)
+            _cache[name] = GetAccountFeed()
         else:
             logger.error("Unknown CookieFun skill: %s", name)
             raise ValueError(f"Unknown CookieFun skill: {name}")

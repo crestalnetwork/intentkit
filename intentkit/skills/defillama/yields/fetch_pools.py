@@ -87,9 +87,9 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
 
     Example:
         pools_tool = DefiLlamaFetchPools(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await pools_tool._arun()
     """

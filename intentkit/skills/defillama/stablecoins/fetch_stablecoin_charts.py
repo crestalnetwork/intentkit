@@ -69,9 +69,9 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
 
     Example:
         charts_tool = DefiLlamaFetchStablecoinCharts(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         # Get all chains data
         result = await charts_tool._arun(stablecoin_id="1")

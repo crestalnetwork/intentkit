@@ -6,7 +6,6 @@ Loads and initializes skills for fetching data from Dune Analytics API.
 import logging
 from typing import Dict, List, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 
@@ -33,7 +32,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: Config,
     is_private: bool,
-    store: SkillStoreABC,
     **kwargs,
 ) -> List[DuneBaseTool]:
     """Load Dune Analytics skills based on configuration.
@@ -59,7 +57,7 @@ async def get_skills(
 
     loaded_skills = []
     for name in available_skills:
-        skill = get_dune_skill(name, store)
+        skill = get_dune_skill(name)
         if skill:
             logger.info("Successfully loaded skill: %s", name)
             loaded_skills.append(skill)
@@ -69,7 +67,7 @@ async def get_skills(
     return loaded_skills
 
 
-def get_dune_skill(name: str, store: SkillStoreABC) -> Optional[DuneBaseTool]:
+def get_dune_skill(name: str) -> Optional[DuneBaseTool]:
     """Retrieve a Dune Analytics skill instance by name.
 
     Args:
@@ -87,11 +85,11 @@ def get_dune_skill(name: str, store: SkillStoreABC) -> Optional[DuneBaseTool]:
         if name == "fetch_nation_metrics":
             from .fetch_nation_metrics import FetchNationMetrics
 
-            _skill_cache[name] = FetchNationMetrics(skill_store=store)
+            _skill_cache[name] = FetchNationMetrics()
         elif name == "fetch_kol_buys":
             from .fetch_kol_buys import FetchKOLBuys
 
-            _skill_cache[name] = FetchKOLBuys(skill_store=store)
+            _skill_cache[name] = FetchKOLBuys()
         else:
             logger.warning("Unknown Dune Analytics skill: %s", name)
             return None

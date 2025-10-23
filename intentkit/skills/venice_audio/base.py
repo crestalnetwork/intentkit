@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Type
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
@@ -16,9 +16,6 @@ class VeniceAudioBaseTool(IntentKitSkill):
     name: str = Field(default="venice_base_tool", description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]  # type: ignore
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
-    )
 
     @property
     def category(self) -> str:
@@ -74,7 +71,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
                 )
 
             elif api_key_provider == "platform":
-                system_api_key = self.skill_store.get_system_config("venice_api_key")
+                system_api_key = config.venice_api_key
                 if system_api_key:
                     logger.debug(
                         f"Using system Venice API key for skill {self.name} in category {self.category}"

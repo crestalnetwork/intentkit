@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.tavily.base import TavilyBaseTool
 from intentkit.skills.tavily.tavily_extract import TavilyExtract
@@ -30,7 +29,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[TavilyBaseTool]:
     """Get all Tavily search skills.
@@ -38,7 +36,6 @@ async def get_skills(
     Args:
         config: The configuration for Tavily search skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Tavily search skills.
@@ -55,7 +52,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_tavily_skill(name, store)
+        skill = get_tavily_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -63,28 +60,22 @@ async def get_skills(
 
 def get_tavily_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> TavilyBaseTool:
     """Get a Tavily search skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Tavily search skill
     """
     if name == "tavily_search":
         if name not in _cache:
-            _cache[name] = TavilySearch(
-                skill_store=store,
-            )
+            _cache[name] = TavilySearch()
         return _cache[name]
     elif name == "tavily_extract":
         if name not in _cache:
-            _cache[name] = TavilyExtract(
-                skill_store=store,
-            )
+            _cache[name] = TavilyExtract()
         return _cache[name]
     else:
         logger.warning(f"Unknown Tavily skill: {name}")

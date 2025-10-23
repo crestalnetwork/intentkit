@@ -50,7 +50,6 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import IntentKitSkill
 
 
@@ -60,9 +59,6 @@ class CommonBaseTool(IntentKitSkill):
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
-    )
 
     @property
     def category(self) -> str:
@@ -73,7 +69,7 @@ Key points:
 - The base class should inherit from `IntentKitSkill`
 - Define common attributes all skills in this category will use
 - Implement the `category` property to identify the skill category
-- Include the `skill_store` for persistence if your skills need to store data
+- Use persistence helpers like `get_agent_skill_data`/`save_agent_skill_data` when you need to store state
 
 ### Skill class (current_time.py)
 
@@ -119,7 +115,6 @@ The `__init__.py` file exports your skills and defines how they are configured:
 ```python
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.common.base import CommonBaseTool
 from intentkit.skills.common.current_time import CurrentTime
@@ -141,7 +136,6 @@ class Config(SkillConfig):
 async def get_skills(
         config: "Config",
         is_private: bool,
-        store: SkillStoreABC,
         **_,
 ) -> list[CommonBaseTool]:
     """Get all common utility skills."""
@@ -155,19 +149,16 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_common_skill(name, store) for name in available_skills]
+    return [get_common_skill(name) for name in available_skills]
 
 
 def get_common_skill(
         name: str,
-        store: SkillStoreABC,
 ) -> CommonBaseTool:
     """Get a common utility skill by name."""
     if name == "current_time":
         if name not in _cache:
-            _cache[name] = CurrentTime(
-                skill_store=store,
-            )
+            _cache[name] = CurrentTime()
         return _cache[name]
     else:
         raise ValueError(f"Unknown common skill: {name}")
@@ -313,7 +304,7 @@ If you need to use other packages, please add them to the pyproject.toml use `uv
 
 ### How to store data in skill
 
-You can use the [skill_store](https://github.com/crestalnetwork/intentkit/blob/main/abstracts/skill.py) to store data in the skill. It is a key-value store that can be used to store data that is specific to the skill.
+For persistence, leverage helpers such as `get_agent_skill_data`/`save_agent_skill_data` (for per-agent state) or `AgentSkillData` models directly. These helpers provide structured storage without needing an explicit skill store dependency.
 
 You can store and retrieve a dict at these levels:
 - agent

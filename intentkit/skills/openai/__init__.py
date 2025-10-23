@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.openai.base import OpenAIBaseTool
 from intentkit.skills.openai.dalle_image_generation import DALLEImageGeneration
@@ -34,7 +33,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[OpenAIBaseTool]:
     """Get all OpenAI skills.
@@ -42,7 +40,6 @@ async def get_skills(
     Args:
         config: The configuration for OpenAI skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of OpenAI skills.
@@ -59,7 +56,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_openai_skill(name, store)
+        skill = get_openai_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -67,40 +64,30 @@ async def get_skills(
 
 def get_openai_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> OpenAIBaseTool:
     """Get an OpenAI skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested OpenAI skill
     """
     if name == "image_to_text":
         if name not in _cache:
-            _cache[name] = ImageToText(
-                skill_store=store,
-            )
+            _cache[name] = ImageToText()
         return _cache[name]
     elif name == "dalle_image_generation":
         if name not in _cache:
-            _cache[name] = DALLEImageGeneration(
-                skill_store=store,
-            )
+            _cache[name] = DALLEImageGeneration()
         return _cache[name]
     elif name == "gpt_image_generation":
         if name not in _cache:
-            _cache[name] = GPTImageGeneration(
-                skill_store=store,
-            )
+            _cache[name] = GPTImageGeneration()
         return _cache[name]
     elif name == "gpt_image_to_image":
         if name not in _cache:
-            _cache[name] = GPTImageToImage(
-                skill_store=store,
-            )
+            _cache[name] = GPTImageToImage()
         return _cache[name]
     else:
         logger.warning(f"Unknown OpenAI skill: {name}")

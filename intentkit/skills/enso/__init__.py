@@ -3,7 +3,6 @@
 import logging
 from typing import List, NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.enso.base import EnsoBaseTool
 from intentkit.skills.enso.best_yield import EnsoGetBestYield
@@ -42,7 +41,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: Config,
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[EnsoBaseTool]:
     """Get all Enso skills."""
@@ -58,7 +56,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_enso_skill(name, store)
+        skill = get_enso_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -66,49 +64,31 @@ async def get_skills(
 
 def get_enso_skill(
     name: str,
-    skill_store: SkillStoreABC,
 ) -> EnsoBaseTool:
     """Get an Enso skill by name.
 
     Args:
         name: The name of the skill to get
-        skill_store: The skill store for persisting data
 
     Returns:
         The requested Enso skill
     """
     if name == "get_networks":
-        return EnsoGetNetworks(
-            skill_store=skill_store,
-        )
+        return EnsoGetNetworks()
     if name == "get_tokens":
-        return EnsoGetTokens(
-            skill_store=skill_store,
-        )
+        return EnsoGetTokens()
     if name == "get_prices":
-        return EnsoGetPrices(
-            skill_store=skill_store,
-        )
+        return EnsoGetPrices()
     if name == "get_wallet_approvals":
-        return EnsoGetWalletApprovals(
-            skill_store=skill_store,
-        )
+        return EnsoGetWalletApprovals()
     if name == "get_wallet_balances":
-        return EnsoGetWalletBalances(
-            skill_store=skill_store,
-        )
+        return EnsoGetWalletBalances()
     if name == "wallet_approve":
-        return EnsoWalletApprove(
-            skill_store=skill_store,
-        )
+        return EnsoWalletApprove()
     if name == "route_shortcut":
-        return EnsoRouteShortcut(
-            skill_store=skill_store,
-        )
+        return EnsoRouteShortcut()
     if name == "get_best_yield":
-        return EnsoGetBestYield(
-            skill_store=skill_store,
-        )
+        return EnsoGetBestYield()
     else:
         logger.warning(f"Unknown Enso skill: {name}")
         return None

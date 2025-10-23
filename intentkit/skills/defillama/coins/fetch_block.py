@@ -46,9 +46,9 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
 
     Example:
         block_tool = DefiLlamaFetchBlock(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await block_tool._arun(chain="ethereum")
     """

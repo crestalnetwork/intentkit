@@ -62,9 +62,9 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
 
     Example:
         chart_tool = DefiLlamaFetchPriceChart(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await chart_tool._arun(
             coins=["ethereum:0x...", "coingecko:ethereum"]

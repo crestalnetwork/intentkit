@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.aixbt.base import AIXBTBaseTool
 from intentkit.skills.aixbt.projects import AIXBTProjects
 from intentkit.skills.base import SkillConfig, SkillState
@@ -27,7 +26,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[AIXBTBaseTool]:
     """Get all AIXBT API skills."""
@@ -44,26 +42,17 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [
-        get_aixbt_skill(
-            name=name,
-            store=store,
-        )
-        for name in available_skills
-    ]
+    return [get_aixbt_skill(name) for name in available_skills]
 
 
 def get_aixbt_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> AIXBTBaseTool:
     """Get an AIXBT API skill by name."""
 
     if name == "aixbt_projects":
         if name not in _cache:
-            _cache[name] = AIXBTProjects(
-                skill_store=store,
-            )
+            _cache[name] = AIXBTProjects()
         return _cache[name]
     else:
         raise ValueError(f"Unknown AIXBT skill: {name}")

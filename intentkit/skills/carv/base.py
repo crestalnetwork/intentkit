@@ -5,7 +5,7 @@ import httpx  # Ensure httpx is installed: pip install httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,6 @@ class CarvBaseTool(IntentKitSkill):
     name: str = Field(description="Tool name")  # type: ignore
     description: str = Field(description="Tool description")
     args_schema: Type[BaseModel]  # type: ignore
-    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
     @property
     def category(self) -> str:
@@ -51,7 +50,7 @@ class CarvBaseTool(IntentKitSkill):
                 )
 
             elif api_key_provider == "platform":
-                system_api_key = self.skill_store.get_system_config("carv_api_key")
+                system_api_key = config.carv_api_key
                 if system_api_key:
                     logger.debug(
                         f"Using system CARV API key for skill {self.name} in category {self.category}"

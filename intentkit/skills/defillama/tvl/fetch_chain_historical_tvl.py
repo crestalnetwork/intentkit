@@ -48,9 +48,9 @@ class DefiLlamaFetchChainHistoricalTvl(DefiLlamaBaseTool):
 
     Example:
         tvl_tool = DefiLlamaFetchChainHistoricalTvl(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await tvl_tool._arun(chain="ethereum")
     """

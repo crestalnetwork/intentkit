@@ -2,11 +2,10 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple
+from typing import AsyncGenerator, Dict, Optional, Tuple
 
 from sqlalchemy import func, select, text, update
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients.cdp import get_wallet_provider
 from intentkit.config.config import config
 from intentkit.models.agent import (
@@ -15,7 +14,7 @@ from intentkit.models.agent import (
     AgentTable,
     AgentUpdate,
 )
-from intentkit.models.agent_data import AgentData, AgentQuota, AgentQuotaTable
+from intentkit.models.agent_data import AgentData, AgentQuotaTable
 from intentkit.models.credit import (
     CreditAccount,
     CreditEventTable,
@@ -483,40 +482,6 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         )
 
         return result
-
-
-class AgentStore(SkillStoreABC):
-    """Implementation of skill data storage operations.
-
-    This class provides concrete implementations for storing and retrieving
-    skill-related data for both agents and threads.
-    """
-
-    @staticmethod
-    def get_system_config(key: str) -> Any:
-        # TODO: maybe need a whitelist here
-        if hasattr(config, key):
-            return getattr(config, key)
-        return None
-
-    @staticmethod
-    async def get_agent_config(agent_id: str) -> Optional[Agent]:
-        return await Agent.get(agent_id)
-
-    @staticmethod
-    async def get_agent_data(agent_id: str) -> AgentData:
-        return await AgentData.get(agent_id)
-
-    @staticmethod
-    async def set_agent_data(agent_id: str, data: Dict) -> AgentData:
-        return await AgentData.patch(agent_id, data)
-
-    @staticmethod
-    async def get_agent_quota(agent_id: str) -> AgentQuota:
-        return await AgentQuota.get(agent_id)
-
-
-agent_store = AgentStore()
 
 
 async def _iterate_agent_id_batches(

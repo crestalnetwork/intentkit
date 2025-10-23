@@ -53,9 +53,9 @@ class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
 
     Example:
         first_price_tool = DefiLlamaFetchFirstPrice(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await first_price_tool._arun(
             coins=["ethereum:0x...", "coingecko:ethereum"]

@@ -11,7 +11,6 @@ import httpx
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 
 SUPPORTED_QUERIES = {
@@ -86,7 +85,6 @@ class FetchNationMetrics(DuneBaseTool):
         "Handles rate limits with retries."
     )
     args_schema: Type[BaseModel] = NationMetricsInput
-    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
     def normalize_metric(self, metric: str) -> str:
         """Normalize a metric string for matching.

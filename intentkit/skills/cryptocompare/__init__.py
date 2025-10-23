@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool
 from intentkit.skills.cryptocompare.fetch_news import CryptoCompareFetchNews
@@ -44,7 +43,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[CryptoCompareBaseTool]:
     """Get all CryptoCompare skills.
@@ -52,7 +50,6 @@ async def get_skills(
     Args:
         config: The configuration for CryptoCompare skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of CryptoCompare skills.
@@ -69,7 +66,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_cryptocompare_skill(name, store)
+        skill = get_cryptocompare_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -77,13 +74,11 @@ async def get_skills(
 
 def get_cryptocompare_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> CryptoCompareBaseTool:
     """Get a CryptoCompare skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested CryptoCompare skill
@@ -91,39 +86,27 @@ def get_cryptocompare_skill(
 
     if name == "fetch_news":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchNews(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchNews()
         return _cache[name]
     elif name == "fetch_price":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchPrice(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchPrice()
         return _cache[name]
     elif name == "fetch_trading_signals":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchTradingSignals(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchTradingSignals()
         return _cache[name]
     elif name == "fetch_top_market_cap":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopMarketCap(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchTopMarketCap()
         return _cache[name]
     elif name == "fetch_top_exchanges":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopExchanges(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchTopExchanges()
         return _cache[name]
     elif name == "fetch_top_volume":
         if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopVolume(
-                skill_store=store,
-            )
+            _cache[name] = CryptoCompareFetchTopVolume()
         return _cache[name]
     else:
         logger.warning(f"Unknown CryptoCompare skill: {name}")
