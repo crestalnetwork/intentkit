@@ -42,9 +42,9 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
 
     Example:
         prices_tool = DefiLlamaFetchStablecoinPrices(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await prices_tool._arun()
     """

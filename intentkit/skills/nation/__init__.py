@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.nation.base import NationBaseTool
 from intentkit.skills.nation.nft_check import NftCheck
@@ -25,7 +24,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[NationBaseTool]:
     """Get all nation skills."""
@@ -42,20 +40,17 @@ async def get_skills(
     return [
         skill
         for name in available_skills
-        if (skill := get_nation_skill(name, store)) is not None
+        if (skill := get_nation_skill(name)) is not None
     ]
 
 
 def get_nation_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> Optional[NationBaseTool]:
     """Get a nation skill by name."""
     if name == "nft_check":
         if name not in _cache:
-            _cache[name] = NftCheck(
-                skill_store=store,
-            )
+            _cache[name] = NftCheck()
         return _cache[name]
     else:
         logger.error(f"Unknown Nation skill: {name}")

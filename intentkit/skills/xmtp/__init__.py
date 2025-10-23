@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.xmtp.base import XmtpBaseTool
 from intentkit.skills.xmtp.price import XmtpGetSwapPrice
@@ -31,7 +30,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[XmtpBaseTool]:
     """Get all XMTP skills.
@@ -39,7 +37,6 @@ async def get_skills(
     Args:
         config: The configuration for XMTP skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of XMTP skills.
@@ -56,7 +53,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_xmtp_skill(name, store)
+        skill = get_xmtp_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -64,34 +61,26 @@ async def get_skills(
 
 def get_xmtp_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> XmtpBaseTool:
     """Get an XMTP skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested XMTP skill
     """
     if name == "xmtp_transfer":
         if name not in _cache:
-            _cache[name] = XmtpTransfer(
-                skill_store=store,
-            )
+            _cache[name] = XmtpTransfer()
         return _cache[name]
     elif name == "xmtp_swap":
         if name not in _cache:
-            _cache[name] = XmtpSwap(
-                skill_store=store,
-            )
+            _cache[name] = XmtpSwap()
         return _cache[name]
     elif name == "xmtp_get_swap_price":
         if name not in _cache:
-            _cache[name] = XmtpGetSwapPrice(
-                skill_store=store,
-            )
+            _cache[name] = XmtpGetSwapPrice()
         return _cache[name]
     else:
         logger.warning(f"Unknown XMTP skill: {name}")

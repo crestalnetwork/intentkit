@@ -61,9 +61,9 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
 
     Example:
         prices_tool = DefiLlamaFetchHistoricalPrices(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await prices_tool._arun(
             timestamp=1640995200,  # Jan 1, 2022

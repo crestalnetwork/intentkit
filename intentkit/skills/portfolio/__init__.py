@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.portfolio.base import PortfolioBaseTool
 from intentkit.skills.portfolio.token_balances import TokenBalances
@@ -51,7 +50,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[PortfolioBaseTool]:
     """Get all Portfolio blockchain analysis skills.
@@ -59,7 +57,6 @@ async def get_skills(
     Args:
         config: The configuration for Portfolio skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Portfolio blockchain analysis skills.
@@ -76,7 +73,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_portfolio_skill(name, store)
+        skill = get_portfolio_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -84,68 +81,47 @@ async def get_skills(
 
 def get_portfolio_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> PortfolioBaseTool:
     """Get a portfolio skill by name."""
     if name == "wallet_history":
         if name not in _cache:
-            _cache[name] = WalletHistory(
-                skill_store=store,
-            )
+            _cache[name] = WalletHistory()
         return _cache[name]
     elif name == "token_balances":
         if name not in _cache:
-            _cache[name] = TokenBalances(
-                skill_store=store,
-            )
+            _cache[name] = TokenBalances()
         return _cache[name]
     elif name == "wallet_approvals":
         if name not in _cache:
-            _cache[name] = WalletApprovals(
-                skill_store=store,
-            )
+            _cache[name] = WalletApprovals()
         return _cache[name]
     elif name == "wallet_swaps":
         if name not in _cache:
-            _cache[name] = WalletSwaps(
-                skill_store=store,
-            )
+            _cache[name] = WalletSwaps()
         return _cache[name]
     elif name == "wallet_net_worth":
         if name not in _cache:
-            _cache[name] = WalletNetWorth(
-                skill_store=store,
-            )
+            _cache[name] = WalletNetWorth()
         return _cache[name]
     elif name == "wallet_profitability_summary":
         if name not in _cache:
-            _cache[name] = WalletProfitabilitySummary(
-                skill_store=store,
-            )
+            _cache[name] = WalletProfitabilitySummary()
         return _cache[name]
     elif name == "wallet_profitability":
         if name not in _cache:
-            _cache[name] = WalletProfitability(
-                skill_store=store,
-            )
+            _cache[name] = WalletProfitability()
         return _cache[name]
     elif name == "wallet_stats":
         if name not in _cache:
-            _cache[name] = WalletStats(
-                skill_store=store,
-            )
+            _cache[name] = WalletStats()
         return _cache[name]
     elif name == "wallet_defi_positions":
         if name not in _cache:
-            _cache[name] = WalletDefiPositions(
-                skill_store=store,
-            )
+            _cache[name] = WalletDefiPositions()
         return _cache[name]
     elif name == "wallet_nfts":
         if name not in _cache:
-            _cache[name] = WalletNFTs(
-                skill_store=store,
-            )
+            _cache[name] = WalletNFTs()
         return _cache[name]
     else:
         raise ValueError(f"Unknown portfolio skill: {name}")

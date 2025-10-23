@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from intentkit.config.config import config
+from intentkit.models.agent_data import AgentData
 from intentkit.skills.system.base import SystemBaseTool
 
 
@@ -41,11 +43,11 @@ class ReadAgentApiKey(SystemBaseTool):
         context = self.get_context()
         agent_id = context.agent_id
 
-        # Get agent data from skill store
-        agent_data = await self.skill_store.get_agent_data(agent_id)
+        # Get agent data from the database
+        agent_data = await AgentData.get(agent_id)
 
         # Get API base URL from system config
-        open_api_base_url = self.skill_store.get_system_config("open_api_base_url")
+        open_api_base_url = config.open_api_base_url
         api_endpoint = f"{open_api_base_url}/v1/chat/completions"
 
         # Check if API keys exist
@@ -72,7 +74,7 @@ class ReadAgentApiKey(SystemBaseTool):
             update_data["api_key_public"] = new_public_api_key
 
         if update_data:
-            await self.skill_store.set_agent_data(agent_id, update_data)
+            await AgentData.patch(agent_id, update_data)
 
         return ReadAgentApiKeyOutput(
             api_key=new_api_key,

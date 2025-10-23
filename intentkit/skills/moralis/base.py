@@ -5,7 +5,7 @@ from typing import List, Optional, Type
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 # Chain ID to chain name mapping for EVM chains
@@ -30,9 +30,6 @@ class WalletBaseTool(IntentKitSkill):
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
-    )
 
     # Optional fields for blockchain providers
     solana_networks: Optional[List[str]] = Field(
@@ -44,7 +41,7 @@ class WalletBaseTool(IntentKitSkill):
         skill_config = context.agent.skill_config(self.category)
         api_key_provider = skill_config.get("api_key_provider")
         if api_key_provider == "platform":
-            return self.skill_store.get_system_config("moralis_api_key")
+            return config.moralis_api_key
         # for backward compatibility, may only have api_key in skill_config
         elif skill_config.get("api_key"):
             return skill_config.get("api_key")

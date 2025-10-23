@@ -128,9 +128,9 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
 
     Example:
         protocols_tool = DefiLlamaFetchProtocols(
-            skill_store=store,
+            ,
             agent_id="agent_123",
-            agent_store=agent_store
+            agent=agent
         )
         result = await protocols_tool._arun()
     """

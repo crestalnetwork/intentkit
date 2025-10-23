@@ -1,7 +1,6 @@
 import logging
 from typing import NotRequired, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,
@@ -87,7 +86,6 @@ _SKILL_NAME_TO_CLASS_MAP: dict[str, type[VeniceImageBaseTool]] = {
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,  # Allow for extra arguments if the loader passes them
 ) -> list[VeniceImageBaseTool]:
     """Get all enabled Venice Image skills based on configuration and privacy level.
@@ -95,7 +93,6 @@ async def get_skills(
     Args:
         config: The configuration for Venice Image skills.
         is_private: Whether the context is private (e.g., agent owner).
-        store: The skill store for persisting data and accessing system config.
 
     Returns:
         A list of instantiated and enabled Venice Image skill objects.
@@ -116,7 +113,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_venice_image_skill(name, store, config)
+        skill = get_venice_image_skill(name, config)
         if skill:
             result.append(skill)
     return result
@@ -124,7 +121,6 @@ async def get_skills(
 
 def get_venice_image_skill(
     name: str,
-    store: SkillStoreABC,
     config: "Config",
 ) -> Optional[VeniceImageBaseTool]:
     """
@@ -132,7 +128,6 @@ def get_venice_image_skill(
 
     Args:
         name: The name of the skill to get (must match keys in _SKILL_NAME_TO_CLASS_MAP).
-        store: The skill store, passed to the skill constructor.
 
     Returns:
         The requested Venice Image skill instance, or None if the name is unknown.
@@ -148,7 +143,5 @@ def get_venice_image_skill(
         return None
 
     # Cache and return the newly created instance
-    _cache[name] = skill_class(
-        skill_store=store,
-    )
+    _cache[name] = skill_class()
     return _cache[name]

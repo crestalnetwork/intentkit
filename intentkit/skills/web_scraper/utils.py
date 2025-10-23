@@ -17,7 +17,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
 
 logger = logging.getLogger(__name__)
@@ -63,12 +63,20 @@ METADATA_KEY_PREFIX = "indexed_urls"
 class VectorStoreManager:
     """Manages vector store operations including creation, saving, loading, and merging."""
 
-    def __init__(self, skill_store: SkillStoreABC):
-        self.skill_store = skill_store
+    def __init__(self, embedding_api_key: Optional[str] = None):
+        self._embedding_api_key = embedding_api_key
+
+    def _resolve_api_key(self) -> str:
+        """Resolve the OpenAI API key to use for embeddings."""
+        if self._embedding_api_key:
+            return self._embedding_api_key
+        if config.openai_api_key:
+            return config.openai_api_key
+        raise ValueError("OpenAI API key is not configured")
 
     def create_embeddings(self) -> OpenAIEmbeddings:
-        """Create OpenAI embeddings using system API key."""
-        api_key = self.skill_store.get_system_config("openai_api_key")
+        """Create OpenAI embeddings using the resolved API key."""
+        api_key = self._resolve_api_key()
         return OpenAIEmbeddings(api_key=api_key)
 
     def get_storage_keys(self, agent_id: str) -> Tuple[str, str]:
@@ -226,7 +234,8 @@ class VectorStoreManager:
 
         return total_size
 
-    def format_size(self, size_bytes: int) -> str:
+    @staticmethod
+    def format_size(size_bytes: int) -> str:
         """Format size in bytes to human readable format."""
         if size_bytes < 1024:
             return f"{size_bytes} B"
@@ -312,13 +321,12 @@ class DocumentProcessor:
 class MetadataManager:
     """Manages metadata for indexed content."""
 
-    def __init__(self, skill_store: SkillStoreABC):
-        self.skill_store = skill_store
+    def __init__(self, vector_manager: VectorStoreManager):
+        self._vector_manager = vector_manager
 
     async def get_existing_metadata(self, agent_id: str) -> Dict:
         """Get existing metadata for an agent."""
-        vs_manager = VectorStoreManager(self.skill_store)
-        _, metadata_key = vs_manager.get_storage_keys(agent_id)
+        _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", metadata_key) or {}
 
     def create_url_metadata(
@@ -376,8 +384,7 @@ class MetadataManager:
 
     async def update_metadata(self, agent_id: str, new_metadata: Dict) -> None:
         """Update metadata for an agent."""
-        vs_manager = VectorStoreManager(self.skill_store)
-        _, metadata_key = vs_manager.get_storage_keys(agent_id)
+        _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
 
         # Get existing metadata
         existing_metadata = await self.get_existing_metadata(agent_id)
@@ -453,9 +460,8 @@ class ResponseFormatter:
 
         # Add size information
         if current_size_bytes > 0:
-            vs_manager = VectorStoreManager(None)  # Just for formatting
-            formatted_size = vs_manager.format_size(current_size_bytes)
-            max_size = vs_manager.format_size(MAX_CONTENT_SIZE_BYTES)
+            formatted_size = VectorStoreManager.format_size(current_size_bytes)
+            max_size = VectorStoreManager.format_size(MAX_CONTENT_SIZE_BYTES)
             response_parts.append(
                 f"Current storage size: {formatted_size} / {max_size}"
             )
@@ -477,7 +483,7 @@ class ResponseFormatter:
 async def scrape_and_index_urls(
     urls: List[str],
     agent_id: str,
-    skill_store: SkillStoreABC,
+    vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
     requests_per_second: int = DEFAULT_REQUESTS_PER_SECOND,
@@ -488,7 +494,7 @@ async def scrape_and_index_urls(
     Args:
         urls: List of URLs to scrape
         agent_id: Agent identifier for storage
-        skill_store: Skill store instance
+        vector_manager: Manager for vector store operations
         chunk_size: Size of text chunks
         chunk_overlap: Overlap between chunks
         requests_per_second: Rate limiting for requests
@@ -516,16 +522,15 @@ async def scrape_and_index_urls(
         return 0, False, []
 
     # Check existing content size
-    vs_manager = VectorStoreManager(skill_store)
-    current_size = await vs_manager.get_content_size(agent_id)
+    current_size = await vector_manager.get_content_size(agent_id)
 
     logger.info(
-        f"[{agent_id}] Current storage size: {vs_manager.format_size(current_size)}"
+        f"[{agent_id}] Current storage size: {VectorStoreManager.format_size(current_size)}"
     )
 
     if current_size >= MAX_CONTENT_SIZE_BYTES:
         logger.warning(
-            f"[{agent_id}] Storage limit already reached: {vs_manager.format_size(current_size)}"
+            f"[{agent_id}] Storage limit already reached: {VectorStoreManager.format_size(current_size)}"
         )
         return 0, False, []
 
@@ -595,7 +600,7 @@ async def scrape_and_index_urls(
 
             # Process and index this URL's content
             chunks, merged = await index_documents(
-                documents, agent_id, skill_store, chunk_size, chunk_overlap
+                documents, agent_id, vector_manager, chunk_size, chunk_overlap
             )
 
             if chunks > 0:
@@ -605,7 +610,7 @@ async def scrape_and_index_urls(
                 current_size += content_size
 
                 logger.info(
-                    f"[{agent_id}] Processed {url}: {chunks} chunks, current size: {vs_manager.format_size(current_size)}"
+                    f"[{agent_id}] Processed {url}: {chunks} chunks, current size: {VectorStoreManager.format_size(current_size)}"
                 )
 
             # Add delay for rate limiting
@@ -633,7 +638,7 @@ async def scrape_and_index_urls(
 async def index_documents(
     documents: List[Document],
     agent_id: str,
-    skill_store: SkillStoreABC,
+    vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> Tuple[int, bool]:
@@ -650,13 +655,12 @@ async def index_documents(
         raise ValueError("No content could be processed into chunks")
 
     # Handle vector store
-    vs_manager = VectorStoreManager(skill_store)
-    vector_store, was_merged = await vs_manager.merge_with_existing(
+    vector_store, was_merged = await vector_manager.merge_with_existing(
         split_docs, agent_id, chunk_size, chunk_overlap
     )
 
     # Save vector store
-    await vs_manager.save_vector_store(
+    await vector_manager.save_vector_store(
         vector_store, agent_id, chunk_size, chunk_overlap
     )
 

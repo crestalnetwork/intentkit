@@ -62,12 +62,14 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
             # Import query utilities from firecrawl utils
             from intentkit.skills.firecrawl.utils import (
                 FirecrawlDocumentProcessor,
+                FirecrawlVectorStoreManager,
                 query_indexed_content,
             )
 
             # Query the indexed content
+            vector_manager = FirecrawlVectorStoreManager()
             docs = await query_indexed_content(
-                query, agent_id, self.skill_store, max_results
+                query, agent_id, vector_manager, max_results
             )
 
             if not docs:

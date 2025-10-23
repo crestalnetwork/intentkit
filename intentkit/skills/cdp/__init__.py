@@ -8,7 +8,6 @@ from coinbase_agentkit import (
     wallet_action_provider,
 )
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,
@@ -41,7 +40,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     agent_id: str,
     agent: Optional["Agent"] = None,
     **_,
@@ -51,7 +49,6 @@ async def get_skills(
     Args:
         config: The configuration for CDP skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
         agent_id: The ID of the agent using the skills.
 
     Returns:
@@ -69,7 +66,6 @@ async def get_skills(
     # Initialize CDP client
     actions = await get_agentkit_actions(
         agent_id,
-        store,
         [
             wallet_action_provider,
             cdp_api_action_provider,

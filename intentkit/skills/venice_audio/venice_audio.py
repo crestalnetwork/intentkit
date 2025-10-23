@@ -4,9 +4,8 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
 from intentkit.utils.s3 import store_file
@@ -34,9 +33,6 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         "and audio format (mp3, opus, aac, flac, wav, pcm, default mp3)."
     )
     args_schema: Type[BaseModel] = VeniceAudioInput
-    skill_store: SkillStoreABC = Field(
-        description="The skill store instance for accessing system/agent configurations and persisting data."
-    )
 
     async def _arun(
         self,

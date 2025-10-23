@@ -3,7 +3,6 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.elfa.base import ElfaBaseTool
 from intentkit.skills.elfa.mention import (
@@ -36,7 +35,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[ElfaBaseTool]:
     """Get all Elfa skills.
@@ -44,7 +42,6 @@ async def get_skills(
     Args:
         config: The configuration for Elfa skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Elfa skills.
@@ -61,7 +58,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_elfa_skill(name, store)
+        skill = get_elfa_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -69,13 +66,11 @@ async def get_skills(
 
 def get_elfa_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> ElfaBaseTool:
     """Get an Elfa skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Elfa skill
@@ -83,30 +78,22 @@ def get_elfa_skill(
 
     if name == "get_top_mentions":
         if name not in _cache:
-            _cache[name] = ElfaGetTopMentions(
-                skill_store=store,
-            )
+            _cache[name] = ElfaGetTopMentions()
         return _cache[name]
 
     elif name == "search_mentions":
         if name not in _cache:
-            _cache[name] = ElfaSearchMentions(
-                skill_store=store,
-            )
+            _cache[name] = ElfaSearchMentions()
         return _cache[name]
 
     elif name == "get_trending_tokens":
         if name not in _cache:
-            _cache[name] = ElfaGetTrendingTokens(
-                skill_store=store,
-            )
+            _cache[name] = ElfaGetTrendingTokens()
         return _cache[name]
 
     elif name == "get_smart_stats":
         if name not in _cache:
-            _cache[name] = ElfaGetSmartStats(
-                skill_store=store,
-            )
+            _cache[name] = ElfaGetSmartStats()
         return _cache[name]
 
     else:

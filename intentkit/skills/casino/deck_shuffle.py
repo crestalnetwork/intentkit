@@ -64,9 +64,8 @@ class CasinoDeckShuffle(CasinoBaseTool):
             # Apply rate limit using built-in user_rate_limit method
             rate_config = RATE_LIMITS["deck_shuffle"]
             await self.user_rate_limit(
-                context.user_id or context.agent_id,
                 rate_config["max_requests"],
-                rate_config["interval"] // 60,  # Convert to minutes
+                rate_config["interval"],
                 "deck_shuffle",
             )
 

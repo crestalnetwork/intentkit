@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional, TypedDict
 
 from coinbase_agentkit import erc20_action_provider
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,
@@ -31,7 +30,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     agent_id: str,
     agent: Optional["Agent"] = None,
     **_,
@@ -45,9 +43,7 @@ async def get_skills(
         if state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
 
-    actions = await get_agentkit_actions(
-        agent_id, store, [erc20_action_provider], agent=agent
-    )
+    actions = await get_agentkit_actions(agent_id, [erc20_action_provider], agent=agent)
     tools: list[ERC20BaseTool] = []
     for skill in available_skills:
         for action in actions:

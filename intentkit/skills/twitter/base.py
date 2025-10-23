@@ -4,7 +4,7 @@ from typing import Type
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import RateLimitExceeded
 
@@ -15,9 +15,6 @@ class TwitterBaseTool(IntentKitSkill):
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
     args_schema: Type[BaseModel]
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data"
-    )
 
     def get_api_key(self) -> dict:
         context = self.get_context()
@@ -25,20 +22,21 @@ class TwitterBaseTool(IntentKitSkill):
         api_key_provider = skill_config.get("api_key_provider")
         if api_key_provider == "platform":
             # Return platform keys (these need to be added to config.py)
-            return {
-                "consumer_key": self.skill_store.get_system_config(
-                    "twitter_consumer_key"
-                ),
-                "consumer_secret": self.skill_store.get_system_config(
-                    "twitter_consumer_secret"
-                ),
-                "access_token": self.skill_store.get_system_config(
-                    "twitter_access_token"
-                ),
-                "access_token_secret": self.skill_store.get_system_config(
-                    "twitter_access_token_secret"
+            platform_keys = {
+                "consumer_key": getattr(config, "twitter_consumer_key", None),
+                "consumer_secret": getattr(config, "twitter_consumer_secret", None),
+                "access_token": getattr(config, "twitter_access_token", None),
+                "access_token_secret": getattr(
+                    config, "twitter_access_token_secret", None
                 ),
             }
+            missing = [key for key, value in platform_keys.items() if not value]
+            if missing:
+                raise ToolException(
+                    "Twitter platform API keys are not configured: "
+                    + ", ".join(missing)
+                )
+            return platform_keys
         # for backward compatibility or agent_owner provider
         elif api_key_provider == "agent_owner":
             required_keys = [

@@ -6,7 +6,6 @@ from coinbase_agentkit import CdpEvmWalletProvider
 from pydantic import BaseModel, Field
 from web3 import Web3
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import get_wallet_provider as get_agent_wallet_provider
 from intentkit.models.agent import Agent
 from intentkit.skills.lifi.base import LiFiBaseTool
@@ -75,20 +74,18 @@ class TokenExecute(LiFiBaseTool):
 
     def __init__(
         self,
-        skill_store: SkillStoreABC,
         default_slippage: float = 0.03,
         allowed_chains: Optional[List[str]] = None,
         max_execution_time: int = 300,
     ) -> None:
         """Initialize the TokenExecute skill with configuration options."""
-        super().__init__(skill_store=skill_store)
+        super().__init__()
         self.default_slippage = default_slippage
         self.allowed_chains = allowed_chains
         self.max_execution_time = max_execution_time
         # Initialize quote tool if not set
         if not self.quote_tool:
             self.quote_tool = TokenQuote(
-                skill_store=skill_store,
                 default_slippage=default_slippage,
                 allowed_chains=allowed_chains,
             )

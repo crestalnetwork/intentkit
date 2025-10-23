@@ -1,7 +1,6 @@
 import logging
 from typing import List, Literal, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.carv.base import CarvBaseTool
 from intentkit.skills.carv.fetch_news import FetchNewsTool
@@ -42,7 +41,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[CarvBaseTool]:
     """
@@ -51,7 +49,6 @@ async def get_skills(
     Args:
         config: The configuration object for the CARV skill.
         is_private: A boolean indicating whether the request is from a private context.
-        store: An instance of `SkillStoreABC`.
 
     Returns:
         A list of `CarvBaseTool` instances.
@@ -73,7 +70,7 @@ async def get_skills(
             continue
         elif state == "public" or (state == "private" and is_private):
             # If enabled, get the skill instance using the factory function
-            skill_instance = get_carv_skill(skill_name, store)
+            skill_instance = get_carv_skill(skill_name)
             if skill_instance:
                 available_skills.append(skill_instance)
             else:
@@ -84,14 +81,12 @@ async def get_skills(
 
 def get_carv_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> Optional[CarvBaseTool]:
     """
     Factory function to retrieve a cached CARV skill instance by name.
 
     Args:
         name: The name of the CARV skill to retrieve.
-        store: An instance of `SkillStoreABC`.
 
     Returns:
         The requested `CarvBaseTool` instance if found and enabled, otherwise None.
@@ -107,7 +102,7 @@ def get_carv_skill(
     if skill_class:
         try:
             # Instantiate the skill and add to cache
-            instance = skill_class(skill_store=store)  # type: ignore
+            instance = skill_class()  # type: ignore
             _cache[name] = instance
             return instance
         except Exception as e:

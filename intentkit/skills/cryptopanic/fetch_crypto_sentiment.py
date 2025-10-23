@@ -4,7 +4,6 @@ from typing import ClassVar, List, Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.cryptopanic.base import CryptopanicBaseTool
 
 SUPPORTED_CURRENCIES = ["BTC", "ETH"]
@@ -45,7 +44,6 @@ class FetchCryptoSentiment(CryptopanicBaseTool):
         "Defaults to BTC."
     )
     args_schema: Type[BaseModel] = CryptopanicSentimentInput
-    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
     INSIGHTS_PROMPT: ClassVar[str] = """
 CryptoPanic Headlines for {currency}:
@@ -90,7 +88,7 @@ Conclude with a short-term outlook for {currency}. Provide a concise, profession
             currency = "BTC"
 
         # Instantiate FetchCryptoNews
-        news_skill = FetchCryptoNews(skill_store=self.skill_store)
+        news_skill = FetchCryptoNews()
 
         try:
             news_output: CryptopanicNewsOutput = await news_skill._arun(

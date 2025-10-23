@@ -2,9 +2,8 @@ import logging
 from typing import Any, Dict, Optional, Tuple
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.venice_image.api import (
     make_venice_api_request,
@@ -39,10 +38,6 @@ class VeniceImageBaseTool(IntentKitSkill):
         Returns the category of this skill, used for configuration and logging.
         """
         return "venice_image"
-
-    skill_store: SkillStoreABC = Field(
-        description="The skill store for persisting data and configs."
-    )
 
     def getSkillConfig(self, context) -> VeniceImageConfig:
         """
@@ -94,7 +89,7 @@ class VeniceImageBaseTool(IntentKitSkill):
                 )
 
             elif skillConfig.api_key_provider == "platform":
-                system_api_key = self.skill_store.get_system_config("venice_api_key")
+                system_api_key = config.venice_api_key
                 if system_api_key:
                     logger.debug(
                         f"Using system Venice API key for skill {self.name} in category {self.category}"
@@ -134,16 +129,14 @@ class VeniceImageBaseTool(IntentKitSkill):
                     logger.debug(
                         f"Applying Agent rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
                     )
-                    await self.user_rate_limit_by_category(
-                        user_id, limit_num, limit_min
-                    )
+                    await self.user_rate_limit_by_category(limit_num, limit_min * 60)
 
             elif skillConfig.api_key_provider == "platform":
-                system_limit_num = self.skill_store.get_system_config(
-                    f"{self.category}_rate_limit_number"
+                system_limit_num = getattr(
+                    config, f"{self.category}_rate_limit_number", None
                 )
-                system_limit_min = self.skill_store.get_system_config(
-                    f"{self.category}_rate_limit_minutes"
+                system_limit_min = getattr(
+                    config, f"{self.category}_rate_limit_minutes", None
                 )
 
                 if system_limit_num and system_limit_min:
@@ -153,7 +146,7 @@ class VeniceImageBaseTool(IntentKitSkill):
                         f"Applying System rate limit ({system_limit_num}/{system_limit_min} min) for user {user_id} on {self.name}"
                     )
                     await self.user_rate_limit_by_category(
-                        user_id, system_limit_num, system_limit_min
+                        system_limit_num, system_limit_min * 60
                     )
             # do nothing if no rate limit is
             return None

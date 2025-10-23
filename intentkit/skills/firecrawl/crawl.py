@@ -137,9 +137,8 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
-                    context.user_id,
                     skill_config["rate_limit_number"],
-                    skill_config["rate_limit_minutes"],
+                    skill_config["rate_limit_minutes"] * 60,
                 )
 
         # Get the API key from the agent's configuration
@@ -279,6 +278,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                 # Import indexing utilities from firecrawl utils
                                 from intentkit.skills.firecrawl.utils import (
                                     FirecrawlMetadataManager,
+                                    FirecrawlVectorStoreManager,
                                     index_documents,
                                 )
 
@@ -309,24 +309,25 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                                 # Get agent ID for indexing
                                 agent_id = context.agent_id
                                 if agent_id and documents:
+                                    vector_manager = FirecrawlVectorStoreManager()
+
                                     # Index all documents
                                     total_chunks, was_merged = await index_documents(
                                         documents,
                                         agent_id,
-                                        self.skill_store,
+                                        vector_manager,
                                         chunk_size,
                                         chunk_overlap,
                                     )
 
                                     # Update metadata
-                                    metadata_manager = FirecrawlMetadataManager(
-                                        self.skill_store
-                                    )
                                     urls = [doc.metadata["source"] for doc in documents]
-                                    new_metadata = metadata_manager.create_url_metadata(
-                                        urls, documents, "firecrawl_crawl"
+                                    new_metadata = (
+                                        FirecrawlMetadataManager.create_url_metadata(
+                                            urls, documents, "firecrawl_crawl"
+                                        )
                                     )
-                                    await metadata_manager.update_metadata(
+                                    await FirecrawlMetadataManager.update_metadata(
                                         agent_id, new_metadata
                                     )
 

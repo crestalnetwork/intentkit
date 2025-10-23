@@ -6,7 +6,6 @@ Loads and initializes skills for fetching crypto news and providing market insig
 import logging
 from typing import Dict, List, Optional, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 
 from .base import CryptopanicBaseTool
@@ -34,7 +33,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: Config,
     is_private: bool,
-    store: SkillStoreABC,
     **kwargs,
 ) -> List[CryptopanicBaseTool]:
     """Load CryptoPanic skills based on configuration.
@@ -60,7 +58,7 @@ async def get_skills(
 
     loaded_skills = []
     for name in available_skills:
-        skill = get_cryptopanic_skill(name, store)
+        skill = get_cryptopanic_skill(name)
         if skill:
             logger.info("Successfully loaded skill: %s", name)
             loaded_skills.append(skill)
@@ -72,7 +70,6 @@ async def get_skills(
 
 def get_cryptopanic_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> Optional[CryptopanicBaseTool]:
     """Retrieve a CryptoPanic skill instance by name.
 
@@ -91,11 +88,11 @@ def get_cryptopanic_skill(
         if name == "fetch_crypto_news":
             from .fetch_crypto_news import FetchCryptoNews
 
-            _skill_cache[name] = FetchCryptoNews(skill_store=store)
+            _skill_cache[name] = FetchCryptoNews()
         elif name == "fetch_crypto_sentiment":
             from .fetch_crypto_sentiment import FetchCryptoSentiment
 
-            _skill_cache[name] = FetchCryptoSentiment(skill_store=store)
+            _skill_cache[name] = FetchCryptoSentiment()
         else:
             logger.warning("Unknown CryptoPanic skill: %s", name)
             return None

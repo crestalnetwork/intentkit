@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import aiohttp
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.token.constants import MORALIS_API_BASE_URL
 
@@ -18,10 +18,6 @@ class TokenBaseTool(IntentKitSkill):
     This base class provides common functionality for token API interactions,
     including making HTTP requests to the Moralis API.
     """
-
-    def __init__(self, skill_store: SkillStoreABC = None):
-        """Initialize the token tool with a skill store."""
-        super().__init__(skill_store=skill_store)
 
     @property
     def category(self) -> str:
@@ -37,7 +33,7 @@ class TokenBaseTool(IntentKitSkill):
         skill_config = context.agent.skill_config(self.category)
         if skill_config.get("api_key_provider") == "agent_owner":
             return skill_config.get("api_key")
-        return self.skill_store.get_system_config("moralis_api_key")
+        return config.moralis_api_key
 
     def _prepare_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Convert boolean values to lowercase strings for API compatibility.

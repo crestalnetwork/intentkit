@@ -5,6 +5,7 @@ from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
+from intentkit.config.config import config
 from intentkit.skills.twitter.base import TwitterBaseTool
 
 NAME = "twitter_reply_tweet"
@@ -56,7 +57,6 @@ class TwitterReplyTweet(TwitterBaseTool):
             skill_config = context.agent.skill_config(self.category)
             twitter = get_twitter_client(
                 agent_id=context.agent_id,
-                skill_store=self.skill_store,
                 config=skill_config,
             )
             client = await twitter.get_client()
@@ -71,7 +71,7 @@ class TwitterReplyTweet(TwitterBaseTool):
             # Handle image upload if provided
             if image:
                 # Validate image URL - must be from system's S3 CDN
-                aws_s3_cdn_url = self.skill_store.get_system_config("aws_s3_cdn_url")
+                aws_s3_cdn_url = config.aws_s3_cdn_url
                 if aws_s3_cdn_url and image.startswith(aws_s3_cdn_url):
                     # Use the TwitterClient method to upload the image
                     media_ids = await twitter.upload_media(context.agent_id, image)

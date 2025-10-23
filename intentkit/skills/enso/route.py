@@ -202,9 +202,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
                         else None
                     )
                 if network_name is None:
-                    networks = await EnsoGetNetworks(
-                        skill_store=self.skill_store,
-                    ).arun()
+                    networks = await EnsoGetNetworks().arun()
 
                     for network in networks.res:
                         if network.id == resolved_chain_id:

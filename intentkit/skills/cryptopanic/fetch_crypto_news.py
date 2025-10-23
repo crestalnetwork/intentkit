@@ -8,7 +8,6 @@ from typing import List, Type
 import httpx
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.cryptopanic.base import CryptopanicBaseTool
 
 SUPPORTED_CURRENCIES = ["BTC", "ETH"]
@@ -49,7 +48,6 @@ class FetchCryptoNews(CryptopanicBaseTool):
         "sorted by publication date (newest first). Defaults to BTC."
     )
     args_schema: Type[BaseModel] = CryptopanicNewsInput
-    skill_store: SkillStoreABC = Field(description="Skill store for data persistence")
 
     async def fetch_news(
         self,

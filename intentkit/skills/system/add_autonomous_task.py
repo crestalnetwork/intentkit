@@ -75,7 +75,7 @@ class AddAutonomousTask(SystemBaseTool):
             AddAutonomousTaskOutput: The created task
         """
         context = self.get_context()
-        agent_id = context.agent_id
+        agent = context.agent
 
         task = AgentAutonomous(
             name=name,
@@ -86,6 +86,6 @@ class AddAutonomousTask(SystemBaseTool):
             enabled=True,
         )
 
-        created_task = await self.skill_store.add_autonomous_task(agent_id, task)
+        created_task = await agent.add_autonomous_task(task)
 
         return AddAutonomousTaskOutput(task=created_task)

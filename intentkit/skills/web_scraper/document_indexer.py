@@ -108,17 +108,19 @@ class DocumentIndexer(WebScraperBaseTool):
             f"[{agent_id}] Document created, length: {len(document.page_content)} chars"
         )
 
+        embedding_api_key = self.get_openai_api_key()
+        vector_manager = VectorStoreManager(embedding_api_key)
+
         # Index the document
         total_chunks, was_merged = await index_documents(
-            [document], agent_id, self.skill_store, chunk_size, chunk_overlap
+            [document], agent_id, vector_manager, chunk_size, chunk_overlap
         )
 
         # Get current storage size for response
-        vs_manager = VectorStoreManager(self.skill_store)
-        current_size = await vs_manager.get_content_size(agent_id)
+        current_size = await vector_manager.get_content_size(agent_id)
 
         # Update metadata
-        metadata_manager = MetadataManager(self.skill_store)
+        metadata_manager = MetadataManager(vector_manager)
         new_metadata = metadata_manager.create_document_metadata(
             title, source, tags, [document], len(text_content)
         )

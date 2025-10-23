@@ -3,7 +3,6 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.allora.base import AlloraBaseTool
 from intentkit.skills.allora.price import AlloraGetPrice
 from intentkit.skills.base import SkillConfig, SkillState
@@ -28,7 +27,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[AlloraBaseTool]:
     """Get all Allora skills.
@@ -36,7 +34,6 @@ async def get_skills(
     Args:
         config: The configuration for Allora skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Allora skills.
@@ -53,7 +50,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_allora_skill(name, store)
+        skill = get_allora_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -61,22 +58,18 @@ async def get_skills(
 
 def get_allora_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> AlloraBaseTool:
     """Get an Allora skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Allora skill
     """
     if name == "get_price_prediction":
         if name not in _cache:
-            _cache[name] = AlloraGetPrice(
-                skill_store=store,
-            )
+            _cache[name] = AlloraGetPrice()
         return _cache[name]
     else:
         logger.warning(f"Unknown Allora skill: {name}")

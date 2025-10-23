@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional, TypedDict
 
 from coinbase_agentkit import basename_action_provider
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,
@@ -30,7 +29,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     agent_id: str,
     agent: Optional["Agent"] = None,
     **_,
@@ -45,7 +43,7 @@ async def get_skills(
             available_skills.append(skill_name)
 
     actions = await get_agentkit_actions(
-        agent_id, store, [basename_action_provider], agent=agent
+        agent_id, [basename_action_provider], agent=agent
     )
     tools: list[BasenameBaseTool] = []
     for skill in available_skills:

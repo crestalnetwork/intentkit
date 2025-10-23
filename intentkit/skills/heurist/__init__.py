@@ -3,7 +3,6 @@
 import logging
 from typing import NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.heurist.base import HeuristBaseTool
 from intentkit.skills.heurist.image_generation_animagine_xl import (
@@ -52,7 +51,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[HeuristBaseTool]:
     """Get all Heurist AI skills.
@@ -60,7 +58,6 @@ async def get_skills(
     Args:
         config: The configuration for Heurist AI skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Heurist AI skills.
@@ -77,7 +74,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_heurist_skill(name, store)
+        skill = get_heurist_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -85,58 +82,42 @@ async def get_skills(
 
 def get_heurist_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> HeuristBaseTool:
     """Get a Heurist AI skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Heurist AI skill
     """
     if name == "image_generation_animagine_xl":
         if name not in _cache:
-            _cache[name] = ImageGenerationAnimagineXL(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationAnimagineXL()
         return _cache[name]
     elif name == "image_generation_arthemy_comics":
         if name not in _cache:
-            _cache[name] = ImageGenerationArthemyComics(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationArthemyComics()
         return _cache[name]
     elif name == "image_generation_arthemy_real":
         if name not in _cache:
-            _cache[name] = ImageGenerationArthemyReal(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationArthemyReal()
         return _cache[name]
     elif name == "image_generation_braindance":
         if name not in _cache:
-            _cache[name] = ImageGenerationBrainDance(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationBrainDance()
         return _cache[name]
     elif name == "image_generation_cyber_realistic_xl":
         if name not in _cache:
-            _cache[name] = ImageGenerationCyberRealisticXL(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationCyberRealisticXL()
         return _cache[name]
     elif name == "image_generation_flux_1_dev":
         if name not in _cache:
-            _cache[name] = ImageGenerationFlux1Dev(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationFlux1Dev()
         return _cache[name]
     elif name == "image_generation_sdxl":
         if name not in _cache:
-            _cache[name] = ImageGenerationSDXL(
-                skill_store=store,
-            )
+            _cache[name] = ImageGenerationSDXL()
         return _cache[name]
     else:
         logger.warning(f"Unknown Heurist skill: {name}")

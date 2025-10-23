@@ -92,9 +92,12 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 f"[{agent_id}] Starting scrape and index operation with {len(urls)} URLs"
             )
 
+            embedding_api_key = self.get_openai_api_key()
+            vector_manager = VectorStoreManager(embedding_api_key)
+
             # Use the utility function to scrape and index URLs
             total_chunks, was_merged, valid_urls = await scrape_and_index_urls(
-                urls, agent_id, self.skill_store, chunk_size, chunk_overlap
+                urls, agent_id, vector_manager, chunk_size, chunk_overlap
             )
 
             logger.info(
@@ -110,12 +113,11 @@ class ScrapeAndIndex(WebScraperBaseTool):
                 return "Error: No content could be extracted from the provided URLs."
 
             # Get current storage size for response
-            vs_manager = VectorStoreManager(self.skill_store)
-            current_size = await vs_manager.get_content_size(agent_id)
+            current_size = await vector_manager.get_content_size(agent_id)
             size_limit_reached = len(valid_urls) < len(urls)
 
             # Update metadata
-            metadata_manager = MetadataManager(self.skill_store)
+            metadata_manager = MetadataManager(vector_manager)
             new_metadata = metadata_manager.create_url_metadata(
                 valid_urls, [], "scrape_and_index"
             )
@@ -196,8 +198,9 @@ class QueryIndexedContent(WebScraperBaseTool):
 
             logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
 
-            vs_manager = VectorStoreManager(self.skill_store)
-            stored_data = await vs_manager.get_existing_vector_store(agent_id)
+            embedding_api_key = self.get_openai_api_key()
+            vector_manager = VectorStoreManager(embedding_api_key)
+            stored_data = await vector_manager.get_existing_vector_store(agent_id)
 
             if not stored_data:
                 logger.warning(f"[{agent_id}] No vector store found")
@@ -209,8 +212,8 @@ class QueryIndexedContent(WebScraperBaseTool):
 
             # Create embeddings and decode vector store
             logger.info(f"[{agent_id}] Decoding vector store")
-            embeddings = vs_manager.create_embeddings()
-            vector_store = vs_manager.decode_vector_store(
+            embeddings = vector_manager.create_embeddings()
+            vector_store = vector_manager.decode_vector_store(
                 stored_data["faiss_files"], embeddings
             )
 

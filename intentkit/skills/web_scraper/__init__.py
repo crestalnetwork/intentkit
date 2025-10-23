@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillOwnerState, SkillState
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
 from intentkit.skills.web_scraper.document_indexer import DocumentIndexer
@@ -35,7 +34,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[WebScraperBaseTool]:
     """Get all web scraper skills.
@@ -43,7 +41,6 @@ async def get_skills(
     Args:
         config: The configuration for web scraper skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of web scraper skills.
@@ -60,7 +57,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_web_scraper_skill(name, store)
+        skill = get_web_scraper_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -68,40 +65,30 @@ async def get_skills(
 
 def get_web_scraper_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> WebScraperBaseTool:
     """Get a web scraper skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested web scraper skill
     """
     if name == "scrape_and_index":
         if name not in _cache:
-            _cache[name] = ScrapeAndIndex(
-                skill_store=store,
-            )
+            _cache[name] = ScrapeAndIndex()
         return _cache[name]
     elif name == "query_indexed_content":
         if name not in _cache:
-            _cache[name] = QueryIndexedContent(
-                skill_store=store,
-            )
+            _cache[name] = QueryIndexedContent()
         return _cache[name]
     elif name == "website_indexer":
         if name not in _cache:
-            _cache[name] = WebsiteIndexer(
-                skill_store=store,
-            )
+            _cache[name] = WebsiteIndexer()
         return _cache[name]
     elif name == "document_indexer":
         if name not in _cache:
-            _cache[name] = DocumentIndexer(
-                skill_store=store,
-            )
+            _cache[name] = DocumentIndexer()
         return _cache[name]
     else:
         logger.warning(f"Unknown web scraper skill: {name}")

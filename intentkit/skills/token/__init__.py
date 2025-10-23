@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.token.base import TokenBaseTool
 from intentkit.skills.token.erc20_transfers import ERC20Transfers
@@ -36,7 +35,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[TokenBaseTool]:
     """Get all Token blockchain analysis skills.
@@ -44,7 +42,6 @@ async def get_skills(
     Args:
         config: The configuration for Token skills.
         is_private: Whether to include private skills.
-        store: The skill store for persisting data.
 
     Returns:
         A list of Token blockchain analysis skills.
@@ -65,7 +62,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_token_skill(name, store)
+        skill = get_token_skill(name)
         if skill:
             result.append(skill)
 
@@ -74,13 +71,11 @@ async def get_skills(
 
 def get_token_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> TokenBaseTool:
     """Get a Token blockchain analysis skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Token blockchain analysis skill
@@ -90,13 +85,13 @@ def get_token_skill(
 
     skill = None
     if name == "token_price":
-        skill = TokenPrice(skill_store=store)
+        skill = TokenPrice()
     elif name == "token_erc20_transfers":
-        skill = ERC20Transfers(skill_store=store)
+        skill = ERC20Transfers()
     elif name == "token_search":
-        skill = TokenSearch(skill_store=store)
+        skill = TokenSearch()
     elif name == "token_analytics":
-        skill = TokenAnalytics(skill_store=store)
+        skill = TokenAnalytics()
     else:
         logger.warning(f"Unknown Token skill: {name}")
         return None

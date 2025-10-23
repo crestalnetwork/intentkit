@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 from intentkit.skills.defillama.coins.fetch_batch_historical_prices import (
@@ -124,7 +123,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[DefiLlamaBaseTool]:
     """Get all DeFi Llama skills."""
@@ -140,7 +138,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_defillama_skill(name, store)
+        skill = get_defillama_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -148,13 +146,11 @@ async def get_skills(
 
 def get_defillama_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> DefiLlamaBaseTool:
     """Get a DeFi Llama skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested DeFi Llama skill
@@ -167,145 +163,101 @@ def get_defillama_skill(
     # TVL Skills
     if name == "fetch_protocols":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocols(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchProtocols()
         return _cache[name]
     elif name == "fetch_protocol":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocol(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchProtocol()
         return _cache[name]
     elif name == "fetch_historical_tvl":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchHistoricalTvl(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchHistoricalTvl()
         return _cache[name]
     elif name == "fetch_chain_historical_tvl":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchChainHistoricalTvl(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchChainHistoricalTvl()
         return _cache[name]
     elif name == "fetch_protocol_current_tvl":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocolCurrentTvl(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchProtocolCurrentTvl()
         return _cache[name]
     elif name == "fetch_chains":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchChains(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchChains()
         return _cache[name]
 
     # Coins Skills
     elif name == "fetch_current_prices":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchCurrentPrices(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchCurrentPrices()
         return _cache[name]
     elif name == "fetch_historical_prices":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchHistoricalPrices(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchHistoricalPrices()
         return _cache[name]
     elif name == "fetch_batch_historical_prices":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchBatchHistoricalPrices(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchBatchHistoricalPrices()
         return _cache[name]
     elif name == "fetch_price_chart":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchPriceChart(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchPriceChart()
         return _cache[name]
     elif name == "fetch_price_percentage":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchPricePercentage(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchPricePercentage()
         return _cache[name]
     elif name == "fetch_first_price":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchFirstPrice(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchFirstPrice()
         return _cache[name]
     elif name == "fetch_block":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchBlock(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchBlock()
         return _cache[name]
 
     # Stablecoins Skills
     elif name == "fetch_stablecoins":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoins(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchStablecoins()
         return _cache[name]
     elif name == "fetch_stablecoin_charts":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinCharts(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchStablecoinCharts()
         return _cache[name]
     elif name == "fetch_stablecoin_chains":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinChains(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchStablecoinChains()
         return _cache[name]
     elif name == "fetch_stablecoin_prices":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinPrices(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchStablecoinPrices()
         return _cache[name]
 
     # Yields Skills
     elif name == "fetch_pools":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchPools(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchPools()
         return _cache[name]
     elif name == "fetch_pool_chart":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchPoolChart(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchPoolChart()
         return _cache[name]
 
     # Volumes Skills
     elif name == "fetch_dex_overview":  # Handles both base and chain-specific overviews
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchDexOverview(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchDexOverview()
         return _cache[name]
     elif name == "fetch_dex_summary":
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchDexSummary(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchDexSummary()
         return _cache[name]
     elif (
         name == "fetch_options_overview"
     ):  # Handles both base and chain-specific overviews
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchOptionsOverview(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchOptionsOverview()
         return _cache[name]
 
     # Fees Skills
@@ -313,9 +265,7 @@ def get_defillama_skill(
         name == "fetch_fees_overview"
     ):  # Handles both base and chain-specific overviews
         if name not in _cache:
-            _cache[name] = DefiLlamaFetchFeesOverview(
-                skill_store=store,
-            )
+            _cache[name] = DefiLlamaFetchFeesOverview()
         return _cache[name]
 
     else:

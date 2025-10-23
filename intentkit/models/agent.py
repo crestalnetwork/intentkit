@@ -436,21 +436,13 @@ class AgentCore(BaseModel):
             title="Name",
             description="Display name of the agent",
             max_length=50,
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Name your agent",
-            },
         ),
     ]
     picture: Annotated[
         Optional[str],
         PydanticField(
             default=None,
-            description="Picture of the agent",
-            json_schema_extra={
-                "x-group": "experimental",
-                "x-placeholder": "Upload a picture of your agent",
-            },
+            description="Avatar of the agent",
         ),
     ]
     purpose: Annotated[
@@ -459,14 +451,6 @@ class AgentCore(BaseModel):
             default=None,
             description="Purpose or role of the agent",
             max_length=20000,
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Enter agent purpose, it will be a part of the system prompt",
-                "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-                "errorMessage": {
-                    "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-                },
-            },
         ),
     ]
     personality: Annotated[
@@ -475,14 +459,6 @@ class AgentCore(BaseModel):
             default=None,
             description="Personality traits of the agent",
             max_length=20000,
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Enter agent personality, it will be a part of the system prompt",
-                "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-                "errorMessage": {
-                    "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-                },
-            },
         ),
     ]
     principles: Annotated[
@@ -491,14 +467,6 @@ class AgentCore(BaseModel):
             default=None,
             description="Principles or values of the agent",
             max_length=20000,
-            json_schema_extra={
-                "x-group": "basic",
-                "x-placeholder": "Enter agent principles, it will be a part of the system prompt",
-                "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-                "errorMessage": {
-                    "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-                },
-            },
         ),
     ]
     # AI part
@@ -506,10 +474,7 @@ class AgentCore(BaseModel):
         str,
         PydanticField(
             default="gpt-5-mini",
-            description="AI model identifier to be used by this agent for processing requests.",
-            json_schema_extra={
-                "x-group": "ai",
-            },
+            description="LLM of the agent",
         ),
     ]
     prompt: Annotated[
@@ -518,13 +483,6 @@ class AgentCore(BaseModel):
             default=None,
             description="Base system prompt that defines the agent's behavior and capabilities",
             max_length=20000,
-            json_schema_extra={
-                "x-group": "ai",
-                "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-                "errorMessage": {
-                    "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-                },
-            },
         ),
     ]
     prompt_append: Annotated[
@@ -533,13 +491,6 @@ class AgentCore(BaseModel):
             default=None,
             description="Additional system prompt that has higher priority than the base prompt",
             max_length=20000,
-            json_schema_extra={
-                "x-group": "ai",
-                "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
-                "errorMessage": {
-                    "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
-                },
-            },
         ),
     ]
     temperature: Annotated[
@@ -549,9 +500,6 @@ class AgentCore(BaseModel):
             description="The randomness of the generated results is such that the higher the number, the more creative the results will be. However, this also makes them wilder and increases the likelihood of errors. For creative tasks, you can adjust it to above 1, but for rigorous tasks, such as quantitative trading, it's advisable to set it lower, around 0.2. (0.0~2.0)",
             ge=0.0,
             le=2.0,
-            json_schema_extra={
-                "x-group": "ai",
-            },
         ),
     ]
     frequency_penalty: Annotated[
@@ -561,9 +509,6 @@ class AgentCore(BaseModel):
             description="The frequency penalty is a measure of how much the AI is allowed to repeat itself. A lower value means the AI is more likely to repeat previous responses, while a higher value means the AI is more likely to generate new content. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
             ge=-2.0,
             le=2.0,
-            json_schema_extra={
-                "x-group": "ai",
-            },
         ),
     ]
     presence_penalty: Annotated[
@@ -573,9 +518,6 @@ class AgentCore(BaseModel):
             description="The presence penalty is a measure of how much the AI is allowed to deviate from the topic. A higher value means the AI is more likely to deviate from the topic, while a lower value means the AI is more likely to follow the topic. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
             ge=-2.0,
             le=2.0,
-            json_schema_extra={
-                "x-group": "ai",
-            },
         ),
     ]
     wallet_provider: Annotated[
@@ -583,9 +525,6 @@ class AgentCore(BaseModel):
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
-            json_schema_extra={
-                "x-group": "onchain",
-            },
         ),
     ]
     readonly_wallet_address: Annotated[
@@ -614,9 +553,6 @@ class AgentCore(BaseModel):
         PydanticField(
             default="base-mainnet",
             description="Network identifier",
-            json_schema_extra={
-                "x-group": "onchain",
-            },
         ),
     ]
     skills: Annotated[
@@ -624,10 +560,6 @@ class AgentCore(BaseModel):
         PydanticField(
             default=None,
             description="Dict of skills and their corresponding configurations",
-            json_schema_extra={
-                "x-group": "skills",
-                "x-inline": True,
-            },
         ),
     ]
 
@@ -674,9 +606,6 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default="trim",
             description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
-            json_schema_extra={
-                "x-group": "ai",
-            },
         ),
     ]
     # autonomous mode
@@ -698,10 +627,6 @@ class AgentUserInput(AgentCore):
                 "    prompt: |-\n"
                 "      Say hi [sequence], use number for sequence.\n"
             ),
-            json_schema_extra={
-                "x-group": "autonomous",
-                "x-inline": True,
-            },
         ),
     ]
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
@@ -710,9 +635,6 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=False,
             description="Whether the agent can play telegram bot",
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ]
     telegram_entrypoint_prompt: Annotated[
@@ -721,9 +643,6 @@ class AgentUserInput(AgentCore):
             default=None,
             description="Extra prompt for telegram entrypoint",
             max_length=10000,
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ]
     telegram_config: Annotated[
@@ -731,9 +650,6 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ]
     xmtp_entrypoint_prompt: Annotated[
@@ -742,9 +658,6 @@ class AgentUserInput(AgentCore):
             default=None,
             description="Extra prompt for xmtp entrypoint, xmtp support is in beta",
             max_length=10000,
-            json_schema_extra={
-                "x-group": "entrypoint",
-            },
         ),
     ]
 
@@ -1379,6 +1292,113 @@ class Agent(AgentCreate, AgentPublicInfo):
             if item is None:
                 return None
             return cls.model_validate(item)
+
+    @staticmethod
+    def _deserialize_autonomous(
+        autonomous_data: Optional[List[Any]],
+    ) -> List[AgentAutonomous]:
+        if not autonomous_data:
+            return []
+
+        deserialized: List[AgentAutonomous] = []
+        for entry in autonomous_data:
+            if isinstance(entry, AgentAutonomous):
+                deserialized.append(entry)
+            else:
+                deserialized.append(AgentAutonomous.model_validate(entry))
+        return deserialized
+
+    @staticmethod
+    def _serialize_autonomous(tasks: List[AgentAutonomous]) -> List[Dict[str, Any]]:
+        return [task.model_dump() for task in tasks]
+
+    @staticmethod
+    def _autonomous_not_allowed_error() -> IntentKitAPIError:
+        return IntentKitAPIError(
+            400,
+            "AgentNotDeployed",
+            "Only deployed agents can call this feature.",
+        )
+
+    async def list_autonomous_tasks(self) -> List[AgentAutonomous]:
+        persisted = await Agent.get(self.id)
+        if persisted is None:
+            raise self._autonomous_not_allowed_error()
+
+        tasks = persisted.autonomous or []
+        # Keep local state in sync with persisted data
+        self.autonomous = tasks
+        return tasks
+
+    async def add_autonomous_task(self, task: AgentAutonomous) -> AgentAutonomous:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+            current_tasks.append(task)
+
+            db_agent.autonomous = self._serialize_autonomous(current_tasks)
+            await session.commit()
+
+        self.autonomous = current_tasks
+        return task
+
+    async def delete_autonomous_task(self, task_id: str) -> None:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+
+            updated_tasks = [task for task in current_tasks if task.id != task_id]
+            if len(updated_tasks) == len(current_tasks):
+                raise IntentKitAPIError(
+                    404,
+                    "TaskNotFound",
+                    f"Autonomous task with ID {task_id} not found.",
+                )
+
+            db_agent.autonomous = self._serialize_autonomous(updated_tasks)
+            await session.commit()
+
+        self.autonomous = updated_tasks
+
+    async def update_autonomous_task(
+        self, task_id: str, task_updates: dict
+    ) -> AgentAutonomous:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+
+            updated_task: Optional[AgentAutonomous] = None
+            rewritten_tasks: List[AgentAutonomous] = []
+            for task in current_tasks:
+                if task.id == task_id:
+                    task_dict = task.model_dump()
+                    task_dict.update(task_updates)
+                    updated_task = AgentAutonomous.model_validate(task_dict)
+                    rewritten_tasks.append(updated_task)
+                else:
+                    rewritten_tasks.append(task)
+
+            if updated_task is None:
+                raise IntentKitAPIError(
+                    404,
+                    "TaskNotFound",
+                    f"Autonomous task with ID {task_id} not found.",
+                )
+
+            db_agent.autonomous = self._serialize_autonomous(rewritten_tasks)
+            await session.commit()
+
+        self.autonomous = rewritten_tasks
+        return updated_task
 
     def skill_config(self, category: str) -> Dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}

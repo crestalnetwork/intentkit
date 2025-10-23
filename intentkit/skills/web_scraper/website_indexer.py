@@ -250,10 +250,7 @@ Extract the URLs now:"""
         """Call OpenAI GPT-4o-mini to extract URLs from sitemap content."""
         try:
             # Get OpenAI API key using the standard pattern
-            from intentkit.skills.openai.base import OpenAIBaseTool
-
-            temp_tool = OpenAIBaseTool(skill_store=self.skill_store)
-            api_key = temp_tool.get_api_key()
+            api_key = self.get_openai_api_key()
 
             # Initialize OpenAI client
             client = openai.AsyncOpenAI(api_key=api_key)
@@ -385,9 +382,12 @@ Extract the URLs now:"""
                 f"[{agent_id}] Extracted {len(unique_urls)} URLs from sitemaps. Scraping and indexing..."
             )
 
+            embedding_api_key = self.get_openai_api_key()
+            vector_manager = VectorStoreManager(embedding_api_key)
+
             # Use the utility function to scrape and index URLs directly
             total_chunks, was_merged, valid_urls = await scrape_and_index_urls(
-                unique_urls, agent_id, self.skill_store, chunk_size, chunk_overlap
+                unique_urls, agent_id, vector_manager, chunk_size, chunk_overlap
             )
 
             if total_chunks == 0:
@@ -397,12 +397,11 @@ Extract the URLs now:"""
                 return f"Error: No content could be extracted from the discovered URLs. Found sitemaps: {', '.join(found_sitemaps)}"
 
             # Get current storage size for response
-            vs_manager = VectorStoreManager(self.skill_store)
-            current_size = await vs_manager.get_content_size(agent_id)
+            current_size = await vector_manager.get_content_size(agent_id)
             size_limit_reached = len(valid_urls) < len(unique_urls)
 
             # Update metadata
-            metadata_manager = MetadataManager(self.skill_store)
+            metadata_manager = MetadataManager(vector_manager)
             new_metadata = metadata_manager.create_url_metadata(
                 valid_urls, [], "website_indexer"
             )

@@ -5,6 +5,7 @@ import httpx
 from epyxid import XID
 from pydantic import BaseModel, Field
 
+from intentkit.config.config import config
 from intentkit.skills.heurist.base import HeuristBaseTool
 from intentkit.utils.s3 import store_image
 
@@ -78,20 +79,19 @@ class ImageGenerationArthemyReal(HeuristBaseTool):
         skill_config = context.agent.skill_config(self.category)
         skill_config = skill_config
 
-        # Get the Heurist API key from the skill store
+        # Get the Heurist API key from configuration
         if "api_key" in skill_config and skill_config["api_key"]:
             api_key = skill_config["api_key"]
             if skill_config.get("rate_limit_number") and skill_config.get(
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
-                    context.user_id,
                     skill_config["rate_limit_number"],
-                    skill_config["rate_limit_minutes"],
+                    skill_config["rate_limit_minutes"] * 60,
                 )
         else:
-            api_key = self.skill_store.get_system_config("heurist_api_key")
-            await self.user_rate_limit_by_category(context.user_id, 10, 1440)
+            api_key = config.heurist_api_key
+            await self.user_rate_limit_by_category(10, 1440 * 60)
 
         # Generate a unique job ID
         job_id = str(XID())

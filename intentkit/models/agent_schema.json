@@ -158,7 +158,8 @@
         "trim",
         "summarize"
       ],
-      "x-group": "llm"
+      "x-group": "llm",
+      "x-advanced": true
     },
     "temperature": {
       "title": "Temperature",
@@ -168,7 +169,8 @@
       "minimum": 0.0,
       "maximum": 1.5,
       "x-group": "llm",
-      "x-step": 0.1
+      "x-step": 0.1,
+      "x-advanced": true
     },
     "frequency_penalty": {
       "title": "Frequency Penalty",

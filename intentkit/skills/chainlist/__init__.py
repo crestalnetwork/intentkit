@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.chainlist.base import ChainlistBaseTool
 from intentkit.skills.chainlist.chain_lookup import ChainLookup
@@ -22,7 +21,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[ChainlistBaseTool]:
     """Get all chainlist skills."""
@@ -36,19 +34,16 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_chainlist_skill(name, store) for name in available_skills]
+    return [get_chainlist_skill(name) for name in available_skills]
 
 
 def get_chainlist_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> ChainlistBaseTool:
     """Get a chainlist skill by name."""
     if name == "chain_lookup":
         if name not in _cache:
-            _cache[name] = ChainLookup(
-                skill_store=store,
-            )
+            _cache[name] = ChainLookup()
         return _cache[name]
     else:
         raise ValueError(f"Unknown chainlist skill: {name}")

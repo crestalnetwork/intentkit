@@ -3,7 +3,6 @@
 import logging
 from typing import TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
 from intentkit.clients import TwitterClientConfig
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.twitter.base import TwitterBaseTool
@@ -46,7 +45,6 @@ class Config(SkillConfig, TwitterClientConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> list[TwitterBaseTool]:
     """Get all Twitter skills."""
@@ -62,7 +60,7 @@ async def get_skills(
     # Get each skill using the cached getter
     result = []
     for name in available_skills:
-        skill = get_twitter_skill(name, store)
+        skill = get_twitter_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -70,76 +68,54 @@ async def get_skills(
 
 def get_twitter_skill(
     name: str,
-    store: SkillStoreABC,
 ) -> TwitterBaseTool:
     """Get a Twitter skill by name.
 
     Args:
         name: The name of the skill to get
-        store: The skill store for persisting data
 
     Returns:
         The requested Twitter skill
     """
     if name == "get_mentions":
         if name not in _cache:
-            _cache[name] = TwitterGetMentions(
-                skill_store=store,
-            )
+            _cache[name] = TwitterGetMentions()
         return _cache[name]
     elif name == "post_tweet":
         if name not in _cache:
-            _cache[name] = TwitterPostTweet(
-                skill_store=store,
-            )
+            _cache[name] = TwitterPostTweet()
         return _cache[name]
     elif name == "reply_tweet":
         if name not in _cache:
-            _cache[name] = TwitterReplyTweet(
-                skill_store=store,
-            )
+            _cache[name] = TwitterReplyTweet()
         return _cache[name]
     elif name == "get_timeline":
         if name not in _cache:
-            _cache[name] = TwitterGetTimeline(
-                skill_store=store,
-            )
+            _cache[name] = TwitterGetTimeline()
         return _cache[name]
     elif name == "follow_user":
         if name not in _cache:
-            _cache[name] = TwitterFollowUser(
-                skill_store=store,
-            )
+            _cache[name] = TwitterFollowUser()
         return _cache[name]
     elif name == "like_tweet":
         if name not in _cache:
-            _cache[name] = TwitterLikeTweet(
-                skill_store=store,
-            )
+            _cache[name] = TwitterLikeTweet()
         return _cache[name]
     elif name == "retweet":
         if name not in _cache:
-            _cache[name] = TwitterRetweet(
-                skill_store=store,
-            )
+            _cache[name] = TwitterRetweet()
         return _cache[name]
     elif name == "search_tweets":
         if name not in _cache:
-            _cache[name] = TwitterSearchTweets(
-                skill_store=store,
-            )
+            _cache[name] = TwitterSearchTweets()
         return _cache[name]
     elif name == "get_user_by_username":
         if name not in _cache:
-            _cache[name] = TwitterGetUserByUsername(
-                skill_store=store,
-            )
+            _cache[name] = TwitterGetUserByUsername()
         return _cache[name]
     elif name == "get_user_tweets":
         if name not in _cache:
-            _cache[name] = TwitterGetUserTweets(
-                skill_store=store,
-            )
+            _cache[name] = TwitterGetUserTweets()
         return _cache[name]
     else:
         logger.warning(f"Unknown Twitter skill: {name}")

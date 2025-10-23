@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, NotRequired, TypedDict
 
-from intentkit.abstracts.skill import SkillStoreABC
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.moralis.base import WalletBaseTool
 from intentkit.skills.moralis.fetch_chain_portfolio import FetchChainPortfolio
@@ -34,7 +34,6 @@ class Config(SkillConfig):
 async def get_skills(
     config: "Config",
     is_private: bool,
-    store: SkillStoreABC,
     **_,
 ) -> List[WalletBaseTool]:
     """Get all Wallet Portfolio skills.
@@ -42,7 +41,6 @@ async def get_skills(
     Args:
         config: Skill configuration
         is_private: Whether the request is from an authenticated user
-        store: Skill store for persistence
         chain_provider: Optional chain provider for blockchain interactions
         **_: Additional arguments
 
@@ -67,12 +65,12 @@ async def get_skills(
     if config.get("api_key_provider") == "agent_owner":
         api_key = config.get("api_key")
     else:
-        api_key = store.get_system_config("moralis_api_key")
+        api_key = system_config.moralis_api_key
 
     # Get each skill using the getter
     result = []
     for name in available_skills:
-        skill = get_wallet_skill(name, api_key, store)
+        skill = get_wallet_skill(name, api_key)
         if skill:
             result.append(skill)
     return result
@@ -81,7 +79,6 @@ async def get_skills(
 def get_wallet_skill(
     name: str,
     api_key: str,
-    store: SkillStoreABC,
 ) -> WalletBaseTool:
     """Get a specific Wallet Portfolio skill by name.
 
@@ -106,5 +103,4 @@ def get_wallet_skill(
 
     return skill_classes[name](
         api_key=api_key,
-        skill_store=store,
     )
