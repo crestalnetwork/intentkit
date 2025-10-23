@@ -134,9 +134,7 @@ class VeniceImageBaseTool(IntentKitSkill):
                     logger.debug(
                         f"Applying Agent rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
                     )
-                    await self.user_rate_limit_by_category(
-                        user_id, limit_num, limit_min
-                    )
+                    await self.user_rate_limit_by_category(limit_num, limit_min * 60)
 
             elif skillConfig.api_key_provider == "platform":
                 system_limit_num = self.skill_store.get_system_config(
@@ -153,7 +151,7 @@ class VeniceImageBaseTool(IntentKitSkill):
                         f"Applying System rate limit ({system_limit_num}/{system_limit_min} min) for user {user_id} on {self.name}"
                     )
                     await self.user_rate_limit_by_category(
-                        user_id, system_limit_num, system_limit_min
+                        system_limit_num, system_limit_min * 60
                     )
             # do nothing if no rate limit is
             return None

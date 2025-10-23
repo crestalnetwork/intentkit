@@ -72,11 +72,9 @@ class SearchToken(DexScreenerBaseTool):
 
         # dexscreener 300 request per minute (across all user) based on dexscreener docs
         # https://docs.dexscreener.com/api/reference#get-latest-dex-search
-        await self.user_rate_limit_by_category(
-            # using hardcoded user_id to make sure it limit across all users
-            user_id=f"{self.category}{self.name}",
+        await self.global_rate_limit_by_skill(
             limit=300,
-            minutes=1,
+            seconds=60,
         )
 
         sort_by = sort_by or SortBy.LIQUIDITY

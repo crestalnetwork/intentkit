@@ -84,15 +84,12 @@ class IntentKitSkill(BaseTool):
         """Get the category of the skill."""
         raise NotImplementedError
 
-    async def user_rate_limit(
-        self, user_id: str, limit: int, minutes: int, key: str
-    ) -> None:
+    async def user_rate_limit(self, limit: int, seconds: int, key: str) -> None:
         """Check if a user has exceeded the rate limit for this skill.
 
         Args:
-            user_id: The ID of the user to check
             limit: Maximum number of requests allowed
-            minutes: Time window in minutes
+            seconds: Time window in seconds
             key: The key to use for rate limiting (e.g., skill name or category)
 
         Raises:
@@ -101,25 +98,48 @@ class IntentKitSkill(BaseTool):
         Returns:
             None: Always returns None if no exception is raised
         """
-        if not user_id:
-            return None  # No rate limiting for users without ID
+        try:
+            context = self.get_context()
+        except ValueError:
+            self.logger.info(
+                "AgentContext not available, skipping rate limit for %s",
+                key,
+            )
+            return None
+
+        user_identifier = context.user_id or context.agent_id
+        if not user_identifier:
+            return None  # No rate limiting when no identifier is available
+
+        try:
+            max_requests = int(limit)
+            window_seconds = int(seconds)
+        except (TypeError, ValueError):
+            self.logger.info(
+                "Invalid user rate limit parameters for %s: limit=%r, seconds=%r",
+                key,
+                limit,
+                seconds,
+            )
+            return None
+
+        if window_seconds <= 0 or max_requests <= 0:
+            return None
 
         try:
             redis = get_redis()
             # Create a unique key for this rate limit and user
-            rate_limit_key = f"rate_limit:{key}:{user_id}"
+            rate_limit_key = f"rate_limit:{key}:{user_identifier}"
 
             # Get the current count
             count = await redis.incr(rate_limit_key)
 
             # Set expiration if this is the first request
             if count == 1:
-                await redis.expire(
-                    rate_limit_key, minutes * 60
-                )  # Convert minutes to seconds
+                await redis.expire(rate_limit_key, window_seconds)
 
             # Check if user has exceeded the limit
-            if count > limit:
+            if count > max_requests:
                 raise RateLimitExceeded(f"Rate limit exceeded for {key}")
 
             return None
@@ -135,40 +155,97 @@ class IntentKitSkill(BaseTool):
             )
             return None
 
-    async def user_rate_limit_by_skill(
-        self, user_id: str, limit: int, minutes: int
-    ) -> None:
+    async def user_rate_limit_by_skill(self, limit: int, seconds: int) -> None:
         """Check if a user has exceeded the rate limit for this specific skill.
 
         This uses the skill name as the rate limit key.
 
         Args:
-            user_id: The ID of the user to check
             limit: Maximum number of requests allowed
-            minutes: Time window in minutes
+            seconds: Time window in seconds
 
         Raises:
             RateLimitExceeded: If the user has exceeded the rate limit
         """
-        return await self.user_rate_limit(user_id, limit, minutes, self.name)
+        return await self.user_rate_limit(limit, seconds, self.name)
 
-    async def user_rate_limit_by_category(
-        self, user_id: str, limit: int, minutes: int
-    ) -> None:
+    async def user_rate_limit_by_category(self, limit: int, seconds: int) -> None:
         """Check if a user has exceeded the rate limit for this skill category.
 
         This uses the skill category as the rate limit key, which means the limit
         is shared across all skills in the same category.
 
         Args:
-            user_id: The ID of the user to check
             limit: Maximum number of requests allowed
-            minutes: Time window in minutes
+            seconds: Time window in seconds
 
         Raises:
             RateLimitExceeded: If the user has exceeded the rate limit
         """
-        return await self.user_rate_limit(user_id, limit, minutes, self.category)
+        return await self.user_rate_limit(limit, seconds, self.category)
+
+    async def global_rate_limit(self, limit: int, seconds: int, key: str) -> None:
+        """Check if a global rate limit has been exceeded for a given key.
+
+        Args:
+            limit: Maximum number of requests allowed
+            seconds: Time window in seconds
+            key: The key to use for rate limiting (e.g., skill name or category)
+
+        Raises:
+            RateLimitExceeded: If the global limit has been exceeded
+
+        Returns:
+            None: Always returns None if no exception is raised
+        """
+        try:
+            max_requests = int(limit)
+            window_seconds = int(seconds)
+        except (TypeError, ValueError):
+            self.logger.info(
+                "Invalid global rate limit parameters for %s: limit=%r, seconds=%r",
+                key,
+                limit,
+                seconds,
+            )
+            return None
+
+        if window_seconds <= 0 or max_requests <= 0:
+            return None
+
+        try:
+            redis = get_redis()
+            rate_limit_key = f"rate_limit:{key}"
+
+            count = await redis.incr(rate_limit_key)
+
+            if count == 1:
+                await redis.expire(rate_limit_key, window_seconds)
+
+            if count > max_requests:
+                raise RateLimitExceeded(f"Global rate limit exceeded for {key}")
+
+            return None
+
+        except RuntimeError:
+            self.logger.info(
+                "Redis not initialized, skipping global rate limit for %s",
+                key,
+            )
+            return None
+        except RedisError as e:
+            self.logger.info(
+                f"Redis error in global rate limiting: {e}, skipping rate limit for {key}"
+            )
+            return None
+
+    async def global_rate_limit_by_skill(self, limit: int, seconds: int) -> None:
+        """Apply a global rate limit scoped to this specific skill."""
+        return await self.global_rate_limit(limit, seconds, self.name)
+
+    async def global_rate_limit_by_category(self, limit: int, seconds: int) -> None:
+        """Apply a global rate limit scoped to this skill category."""
+        return await self.global_rate_limit(limit, seconds, self.category)
 
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError(

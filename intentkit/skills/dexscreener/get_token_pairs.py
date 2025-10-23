@@ -55,10 +55,9 @@ class GetTokenPairs(DexScreenerBaseTool):
         """Implementation to get all pairs for a specific token."""
 
         # Apply rate limiting
-        await self.user_rate_limit_by_category(
-            user_id=f"{self.category}{self.name}",
+        await self.global_rate_limit_by_skill(
             limit=RATE_LIMITS["token_pairs"],
-            minutes=1,
+            seconds=60,
         )
 
         logger.info(

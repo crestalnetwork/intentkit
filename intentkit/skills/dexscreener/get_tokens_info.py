@@ -75,10 +75,9 @@ class GetTokensInfo(DexScreenerBaseTool):
         """Implementation to get information for multiple tokens."""
 
         # Apply rate limiting
-        await self.user_rate_limit_by_category(
-            user_id=f"{self.category}{self.name}",
+        await self.global_rate_limit_by_skill(
             limit=RATE_LIMITS["tokens"],
-            minutes=1,
+            seconds=60,
         )
 
         logger.info(

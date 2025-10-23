@@ -50,10 +50,9 @@ class GetPairInfo(DexScreenerBaseTool):
         """Implementation to get specific pair information."""
 
         # Apply rate limiting
-        await self.user_rate_limit_by_category(
-            user_id=f"{self.category}{self.name}",
+        await self.global_rate_limit_by_skill(
             limit=RATE_LIMITS["pairs"],
-            minutes=1,
+            seconds=60,
         )
 
         logger.info(

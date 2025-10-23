@@ -113,7 +113,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
                 f"Applying {limit_source} rate limit ({limit_num}/{limit_min} min) for user {user_id} on {self.name}"
             )
             if user_id:
-                await self.user_rate_limit_by_category(user_id, limit_num, limit_min)
+                await self.user_rate_limit_by_category(limit_num, limit_min * 60)
         else:
             # No valid agent configuration found, so do nothing.
             logger.debug(

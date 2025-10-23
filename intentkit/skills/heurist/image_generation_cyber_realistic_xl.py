@@ -85,13 +85,12 @@ class ImageGenerationCyberRealisticXL(HeuristBaseTool):
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
-                    context.user_id,
                     skill_config["rate_limit_number"],
-                    skill_config["rate_limit_minutes"],
+                    skill_config["rate_limit_minutes"] * 60,
                 )
         else:
             api_key = self.skill_store.get_system_config("heurist_api_key")
-            await self.user_rate_limit_by_category(context.user_id, 10, 1440)
+            await self.user_rate_limit_by_category(10, 1440 * 60)
 
         # Generate a unique job ID
         job_id = str(XID())

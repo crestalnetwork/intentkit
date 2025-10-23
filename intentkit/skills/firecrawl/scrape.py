@@ -124,9 +124,8 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 "rate_limit_minutes"
             ):
                 await self.user_rate_limit_by_category(
-                    context.user_id,
                     skill_config["rate_limit_number"],
-                    skill_config["rate_limit_minutes"],
+                    skill_config["rate_limit_minutes"] * 60,
                 )
 
         # Get the API key from the agent's configuration
