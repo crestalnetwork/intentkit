@@ -43,8 +43,8 @@ class ListAutonomousTasks(SystemBaseTool):
             ListAutonomousTasksOutput: List of autonomous tasks
         """
         context = self.get_context()
-        agent_id = context.agent_id
+        agent = context.agent
 
-        tasks = await self.skill_store.list_autonomous_tasks(agent_id)
+        tasks = await agent.list_autonomous_tasks()
 
         return ListAutonomousTasksOutput(tasks=tasks)

@@ -85,7 +85,7 @@ class EditAutonomousTask(SystemBaseTool):
             EditAutonomousTaskOutput: The updated task
         """
         context = self.get_context()
-        agent_id = context.agent_id
+        agent = context.agent
 
         if minutes is not None and cron is not None:
             raise ValueError("minutes and cron are mutually exclusive")
@@ -107,8 +107,6 @@ class EditAutonomousTask(SystemBaseTool):
         if enabled is not None:
             task_updates["enabled"] = enabled
 
-        updated_task = await self.skill_store.update_autonomous_task(
-            agent_id, task_id, task_updates
-        )
+        updated_task = await agent.update_autonomous_task(task_id, task_updates)
 
         return EditAutonomousTaskOutput(task=updated_task)

@@ -45,9 +45,9 @@ class DeleteAutonomousTask(SystemBaseTool):
             DeleteAutonomousTaskOutput: Confirmation of deletion
         """
         context = self.get_context()
-        agent_id = context.agent_id
+        agent = context.agent
 
-        await self.skill_store.delete_autonomous_task(agent_id, task_id)
+        await agent.delete_autonomous_task(task_id)
 
         return DeleteAutonomousTaskOutput(
             success=True, message=f"Successfully deleted autonomous task {task_id}"

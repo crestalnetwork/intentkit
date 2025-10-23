@@ -1380,6 +1380,113 @@ class Agent(AgentCreate, AgentPublicInfo):
                 return None
             return cls.model_validate(item)
 
+    @staticmethod
+    def _deserialize_autonomous(
+        autonomous_data: Optional[List[Any]],
+    ) -> List[AgentAutonomous]:
+        if not autonomous_data:
+            return []
+
+        deserialized: List[AgentAutonomous] = []
+        for entry in autonomous_data:
+            if isinstance(entry, AgentAutonomous):
+                deserialized.append(entry)
+            else:
+                deserialized.append(AgentAutonomous.model_validate(entry))
+        return deserialized
+
+    @staticmethod
+    def _serialize_autonomous(tasks: List[AgentAutonomous]) -> List[Dict[str, Any]]:
+        return [task.model_dump() for task in tasks]
+
+    @staticmethod
+    def _autonomous_not_allowed_error() -> IntentKitAPIError:
+        return IntentKitAPIError(
+            400,
+            "AgentNotDeployed",
+            "Only deployed agents can call this feature.",
+        )
+
+    async def list_autonomous_tasks(self) -> List[AgentAutonomous]:
+        persisted = await Agent.get(self.id)
+        if persisted is None:
+            raise self._autonomous_not_allowed_error()
+
+        tasks = persisted.autonomous or []
+        # Keep local state in sync with persisted data
+        self.autonomous = tasks
+        return tasks
+
+    async def add_autonomous_task(self, task: AgentAutonomous) -> AgentAutonomous:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+            current_tasks.append(task)
+
+            db_agent.autonomous = self._serialize_autonomous(current_tasks)
+            await session.commit()
+
+        self.autonomous = current_tasks
+        return task
+
+    async def delete_autonomous_task(self, task_id: str) -> None:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+
+            updated_tasks = [task for task in current_tasks if task.id != task_id]
+            if len(updated_tasks) == len(current_tasks):
+                raise IntentKitAPIError(
+                    404,
+                    "TaskNotFound",
+                    f"Autonomous task with ID {task_id} not found.",
+                )
+
+            db_agent.autonomous = self._serialize_autonomous(updated_tasks)
+            await session.commit()
+
+        self.autonomous = updated_tasks
+
+    async def update_autonomous_task(
+        self, task_id: str, task_updates: dict
+    ) -> AgentAutonomous:
+        async with get_session() as session:
+            db_agent = await session.get(AgentTable, self.id)
+            if db_agent is None:
+                raise self._autonomous_not_allowed_error()
+
+            current_tasks = self._deserialize_autonomous(db_agent.autonomous)
+
+            updated_task: Optional[AgentAutonomous] = None
+            rewritten_tasks: List[AgentAutonomous] = []
+            for task in current_tasks:
+                if task.id == task_id:
+                    task_dict = task.model_dump()
+                    task_dict.update(task_updates)
+                    updated_task = AgentAutonomous.model_validate(task_dict)
+                    rewritten_tasks.append(updated_task)
+                else:
+                    rewritten_tasks.append(task)
+
+            if updated_task is None:
+                raise IntentKitAPIError(
+                    404,
+                    "TaskNotFound",
+                    f"Autonomous task with ID {task_id} not found.",
+                )
+
+            db_agent.autonomous = self._serialize_autonomous(rewritten_tasks)
+            await session.commit()
+
+        self.autonomous = rewritten_tasks
+        return updated_task
+
     def skill_config(self, category: str) -> Dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}
 
