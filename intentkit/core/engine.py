@@ -21,7 +21,6 @@ from typing import Optional, Tuple
 
 import sqlalchemy
 from epyxid import XID
-from langchain.agents import create_agent as create_react_agent
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     BaseMessage,
@@ -30,6 +29,7 @@ from langchain_core.messages import (
 from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.prebuilt import create_react_agent
 from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
