@@ -55,7 +55,7 @@ from intentkit.models.chat import (
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
-from intentkit.models.skill import AgentSkillData, ChatSkillData
+from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 
@@ -701,6 +701,9 @@ async def stream_agent_raw(
                         # skill payment
                         for skill_call in skill_calls:
                             if not skill_call["success"]:
+                                continue
+                            skill = await Skill.get(skill_call["name"])
+                            if not skill:
                                 continue
                             payment_event = await expense_skill(
                                 session,
