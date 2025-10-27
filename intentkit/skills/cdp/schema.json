@@ -66,22 +66,6 @@
           "description": "Transfer the native asset from the wallet",
           "default": "disabled"
         },
-        "CdpApiActionProvider_request_faucet_funds": {
-          "type": "string",
-          "title": "Request Faucet Funds",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for CdpApiActionProvider_request_faucet_funds",
-          "default": "disabled"
-        },
         "CdpEvmWalletActionProvider_get_swap_price": {
           "type": "string",
           "title": "Get Swap Price",

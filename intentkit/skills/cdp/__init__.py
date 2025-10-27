@@ -24,7 +24,6 @@ class SkillStates(TypedDict):
     WalletActionProvider_get_balance: SkillState
     WalletActionProvider_get_wallet_details: SkillState
     WalletActionProvider_native_transfer: SkillState
-    CdpApiActionProvider_request_faucet_funds: SkillState
     CdpEvmWalletActionProvider_get_swap_price: SkillState
     CdpEvmWalletActionProvider_swap: SkillState
 
