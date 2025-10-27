@@ -538,15 +538,10 @@ class AgentCore(BaseModel):
         Optional[
             Literal[
                 "base-mainnet",
-                "base-sepolia",
                 "ethereum-mainnet",
-                "ethereum-sepolia",
                 "polygon-mainnet",
-                "polygon-mumbai",
                 "arbitrum-mainnet",
-                "arbitrum-sepolia",
                 "optimism-mainnet",
-                "optimism-sepolia",
                 "solana",
             ]
         ],
