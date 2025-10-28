@@ -79,6 +79,7 @@ class Config:
         self.debug_password = self.load("DEBUG_PASSWORD")
         # Payment
         self.payment_enabled = self.load("PAYMENT_ENABLED", "false") == "true"
+        self.x402_fee_address = self.load("X402_FEE_ADDRESS")
         # Open API for agent
         self.open_api_base_url = self.load("OPEN_API_BASE_URL", "http://localhost:8000")
         # CDP - AgentKit 0.7.x Configuration

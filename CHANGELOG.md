@@ -1,3 +1,10 @@
+## v0.8.12
+
+### Features
+- **feat: update asset scheduler and llm model configuration** - Enhanced asset scheduler functionality, improved core scheduler operations, and updated LLM model configuration in CSV file
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.11...v0.8.12
+
 ## v0.8.11
 
 ### New Features

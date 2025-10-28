@@ -332,6 +332,8 @@ async def stream_agent_raw(
     model = await LLMModelInfo.get(agent.model)
 
     payment_enabled = config.payment_enabled
+    if user_message.author_type == AuthorType.X402:
+        payment_enabled = False
 
     # check user balance
     if payment_enabled:
