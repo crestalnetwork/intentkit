@@ -51,40 +51,7 @@ from app.entrypoints.x402 import X402MessageRequest, x402_router
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
 
-# init logger
 logger = logging.getLogger(__name__)
-
-
-def get_x402_message_request_schema() -> dict:
-    """Generate JSON schema for X402MessageRequest with resolved $defs.
-
-    This helper function creates the proper JSON schema for X402MessageRequest,
-    with all $defs references resolved to nested schemas for X402 endpoints.
-
-    Returns:
-        dict: JSON schema for X402MessageRequest
-    """
-    # Get the base schema with $defs
-    base_schema = X402MessageRequest.model_json_schema(mode="serialization")
-
-    # Resolve all $defs references
-    return resolve_schema_refs(base_schema)
-
-
-def get_chat_message_list_schema() -> dict:
-    """Generate JSON schema for List[ChatMessage] with resolved $defs.
-
-    This helper function creates the proper JSON schema for a list of ChatMessage objects,
-    with all $defs references resolved to nested schemas for X402 endpoints.
-
-    Returns:
-        dict: JSON schema for List[ChatMessage]
-    """
-    # Get the base schema with $defs
-    base_schema = ChatMessage.model_json_schema(mode="serialization")
-
-    # Use the utility function to create array schema with resolved refs
-    return create_array_schema(base_schema, resolve_refs=True)
 
 
 if config.sentry_dsn:
@@ -196,6 +163,7 @@ x402_app.add_middleware(
 if config.x402_fee_address:
     from cdp.x402 import create_facilitator_config
     from x402.fastapi.middleware import require_payment
+    from x402.types import HTTPInputSchema
 
     facilitator_config = create_facilitator_config(
         api_key_id=config.cdp_api_key_id,
@@ -211,8 +179,13 @@ if config.x402_fee_address:
             facilitator_config=facilitator_config,
             discoverable=True if config.env == "testnet-prod" else False,
             description="Crestal nation.fun Agent API",
-            input_schema=get_x402_message_request_schema(),
-            output_schema=get_chat_message_list_schema(),
+            input_schema=HTTPInputSchema(
+                body_type="json",
+                body_fields=resolve_schema_refs(X402MessageRequest.model_json_schema()),
+            ),
+            output_schema=create_array_schema(
+                ChatMessage.model_json_schema(), resolve_refs=True
+            ),
         )
     )
 
