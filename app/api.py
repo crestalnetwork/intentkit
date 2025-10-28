@@ -19,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from intentkit.config.config import config
 from intentkit.core.api import core_router
 from intentkit.models.agent import AgentTable
+from intentkit.models.chat import ChatMessage
 from intentkit.models.db import get_session, init_db
 from intentkit.models.redis import init_redis
 from intentkit.utils.error import (
@@ -28,6 +29,7 @@ from intentkit.utils.error import (
     intentkit_other_error_handler,
     request_validation_exception_handler,
 )
+from intentkit.utils.schema import create_array_schema, resolve_schema_refs
 
 from app.admin import (
     admin_router,
@@ -45,11 +47,45 @@ from app.entrypoints.agent_api import router_ro as agent_api_ro
 from app.entrypoints.agent_api import router_rw as agent_api_rw
 from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router, chat_router_readonly
+from app.entrypoints.x402 import X402MessageRequest, x402_router
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
 
 # init logger
 logger = logging.getLogger(__name__)
+
+
+def get_x402_message_request_schema() -> dict:
+    """Generate JSON schema for X402MessageRequest with resolved $defs.
+
+    This helper function creates the proper JSON schema for X402MessageRequest,
+    with all $defs references resolved to nested schemas for X402 endpoints.
+
+    Returns:
+        dict: JSON schema for X402MessageRequest
+    """
+    # Get the base schema with $defs
+    base_schema = X402MessageRequest.model_json_schema(mode="serialization")
+
+    # Resolve all $defs references
+    return resolve_schema_refs(base_schema)
+
+
+def get_chat_message_list_schema() -> dict:
+    """Generate JSON schema for List[ChatMessage] with resolved $defs.
+
+    This helper function creates the proper JSON schema for a list of ChatMessage objects,
+    with all $defs references resolved to nested schemas for X402 endpoints.
+
+    Returns:
+        dict: JSON schema for List[ChatMessage]
+    """
+    # Get the base schema with $defs
+    base_schema = ChatMessage.model_json_schema(mode="serialization")
+
+    # Use the utility function to create array schema with resolved refs
+    return create_array_schema(base_schema, resolve_refs=True)
+
 
 if config.sentry_dsn:
     sentry_sdk.init(
@@ -127,6 +163,63 @@ agent_app.include_router(agent_api_ro)
 agent_app.include_router(openai_router)
 
 
+# Create X402 sub-application with payment middleware
+x402_app = FastAPI(
+    title="IntentKit X402 API",
+    description="X402 Payment Protocol API for IntentKit",
+    version=config.release,
+    contact={
+        "name": "IntentKit Team",
+        "url": "https://github.com/crestalnetwork/intentkit",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+)
+
+# Add exception handlers to the X402 sub-application
+x402_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+x402_app.exception_handler(RequestValidationError)(request_validation_exception_handler)
+x402_app.exception_handler(StarletteHTTPException)(http_exception_handler)
+x402_app.exception_handler(Exception)(intentkit_other_error_handler)
+
+# Add CORS middleware to the X402 sub-application
+x402_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Add X402 payment middleware if fee address is configured
+if config.x402_fee_address:
+    from cdp.x402 import create_facilitator_config
+    from x402.fastapi.middleware import require_payment
+
+    facilitator_config = create_facilitator_config(
+        api_key_id=config.cdp_api_key_id,
+        api_key_secret=config.cdp_api_key_secret,
+    )
+
+    x402_app.middleware("http")(
+        require_payment(
+            path="/",
+            price="$0.01",  # Default price, can be overridden per route
+            pay_to_address=config.x402_fee_address,
+            network_id="base",
+            facilitator_config=facilitator_config,
+            discoverable=True if config.env == "testnet-prod" else False,
+            description="Crestal nation.fun Agent API",
+            input_schema=get_x402_message_request_schema(),
+            output_schema=get_chat_message_list_schema(),
+        )
+    )
+
+# Add routers to the X402 sub-application
+x402_app.include_router(x402_router)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle.
@@ -190,6 +283,9 @@ app.add_middleware(
 
 # Mount the Agent API sub-application
 app.mount("/v1", agent_app)
+
+# Mount the X402 sub-application
+app.mount("/x402", x402_app)
 
 app.include_router(chat_router)
 app.include_router(chat_router_readonly)

@@ -1288,6 +1288,35 @@ class Agent(AgentCreate, AgentPublicInfo):
                 return None
             return cls.model_validate(item)
 
+    @classmethod
+    async def get_by_id_or_slug(cls, agent_id: str) -> Optional["Agent"]:
+        """Get agent by ID or slug.
+
+        First tries to get by ID if agent_id length <= 20,
+        then falls back to searching by slug if not found.
+
+        Args:
+            agent_id: Agent ID or slug to search for
+
+        Returns:
+            Agent if found, None otherwise
+        """
+        async with get_session() as db:
+            agent = None
+
+            # Try to get by ID if length <= 20
+            if len(agent_id) <= 20:
+                agent = await Agent.get(agent_id)
+
+            # If not found, try to get by slug
+            if agent is None:
+                slug_stmt = select(AgentTable).where(AgentTable.slug == agent_id)
+                agent_row = await db.scalar(slug_stmt)
+                if agent_row is not None:
+                    agent = Agent.model_validate(agent_row)
+
+            return agent
+
     @staticmethod
     def _deserialize_autonomous(
         autonomous_data: Optional[List[Any]],

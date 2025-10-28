@@ -73,6 +73,7 @@ dependencies = [
     "langchain-deepseek>=0.1.4",
     "intentkit",
     "langmem",
+    "x402>=0.2.1",
 ]
 
 [dependency-groups]
