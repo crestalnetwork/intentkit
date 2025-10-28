@@ -11,7 +11,6 @@ from apscheduler.triggers.cron import CronTrigger
 from intentkit.core.agent import (
     update_agent_action_cost,
     update_agents_account_snapshot,
-    update_agents_assets,
     update_agents_statistics,
 )
 from intentkit.core.credit import refill_all_free_credits
@@ -63,13 +62,14 @@ def create_scheduler(
     )
 
     # Update agent assets daily at UTC midnight
-    scheduler.add_job(
-        update_agents_assets,
-        trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
-        id="update_agent_assets",
-        name="Update agent assets",
-        replace_existing=True,
-    )
+    # This is too expensive to run daily, so it will only be triggered when detail page is visited
+    # scheduler.add_job(
+    #     update_agents_assets,
+    #     trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
+    #     id="update_agent_assets",
+    #     name="Update agent assets",
+    #     replace_existing=True,
+    # )
 
     # Update agent action costs hourly at minute 40
     scheduler.add_job(

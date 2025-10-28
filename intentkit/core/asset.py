@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from decimal import Decimal
 from typing import Optional
 
 import httpx
 from pydantic import BaseModel, Field
+from sqlalchemy import update
 from web3 import Web3
 
 from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -171,29 +175,72 @@ async def _build_assets_list(
 
 async def agent_asset(agent_id: str) -> AgentAssets:
     """Fetch wallet net worth and token balances for an agent."""
+
+    cache_key = f"intentkit:agent_assets:{agent_id}"
+    redis_client = None
+
+    try:
+        redis_client = get_redis()
+    except Exception as exc:  # pragma: no cover - best effort fallback
+        logger.debug("Redis unavailable for agent assets: %s", exc)
+
     agent = await Agent.get(agent_id)
     if not agent:
         raise IntentKitAPIError(404, "AgentNotFound", "Agent not found")
 
+    if redis_client:
+        try:
+            cached_raw = await redis_client.get(cache_key)
+            if cached_raw:
+                cached_data = json.loads(cached_raw)
+                cached_assets = AgentAssets.model_validate(cached_data)
+                return cached_assets
+        except Exception as exc:  # pragma: no cover - cache read path only
+            logger.debug("Failed to read agent asset cache for %s: %s", agent_id, exc)
+
     agent_data = await AgentData.get(agent_id)
     if not agent_data or not agent_data.evm_wallet_address:
-        return AgentAssets(net_worth="0", tokens=[])
+        assets_result = AgentAssets(net_worth="0", tokens=[])
+    elif not agent.network_id:
+        assets_result = AgentAssets(net_worth="0", tokens=[])
+    else:
+        try:
+            web3_client = get_web3_client(str(agent.network_id))
+            tokens = await _build_assets_list(agent, agent_data, web3_client)
+            net_worth = await _get_wallet_net_worth(agent_data.evm_wallet_address)
+            assets_result = AgentAssets(net_worth=net_worth, tokens=tokens)
+        except IntentKitAPIError:
+            raise
+        except Exception as exc:
+            logger.error("Error getting agent assets for %s: %s", agent_id, exc)
+            raise IntentKitAPIError(
+                500, "AgentAssetError", "Failed to retrieve agent assets"
+            ) from exc
 
-    if not agent.network_id:
-        return AgentAssets(net_worth="0", tokens=[])
+    assets_payload = assets_result.model_dump(mode="json")
+
+    if redis_client:
+        try:
+            await redis_client.set(
+                cache_key,
+                json.dumps(assets_payload),
+                ex=3600,
+            )
+        except Exception as exc:  # pragma: no cover - cache write path only
+            logger.debug("Failed to write agent asset cache for %s: %s", agent_id, exc)
 
     try:
-        web3_client = get_web3_client(str(agent.network_id))
-        tokens = await _build_assets_list(agent, agent_data, web3_client)
-        net_worth = await _get_wallet_net_worth(agent_data.evm_wallet_address)
-        return AgentAssets(net_worth=net_worth, tokens=tokens)
-    except IntentKitAPIError:
-        raise
-    except Exception as exc:
-        logger.error("Error getting agent assets for %s: %s", agent_id, exc)
-        raise IntentKitAPIError(
-            500, "AgentAssetError", "Failed to retrieve agent assets"
-        ) from exc
+        async with get_session() as session:
+            await session.execute(
+                update(AgentTable)
+                .where(AgentTable.id == agent_id)
+                .values(assets=assets_payload)
+            )
+            await session.commit()
+    except Exception as exc:  # pragma: no cover - db persistence path only
+        logger.error("Error updating agent assets cache for %s: %s", agent_id, exc)
+
+    return assets_result
 
 
 __all__ = [
