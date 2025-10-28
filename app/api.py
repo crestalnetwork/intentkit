@@ -161,6 +161,7 @@ x402_app.add_middleware(
 
 # Add X402 payment middleware if fee address is configured
 if config.x402_fee_address:
+    logger.info(f"X402 fee address: {config.x402_fee_address}")
     from cdp.x402 import create_facilitator_config
     from x402.fastapi.middleware import require_payment
     from x402.types import HTTPInputSchema
@@ -172,10 +173,10 @@ if config.x402_fee_address:
 
     x402_app.middleware("http")(
         require_payment(
-            path="/",
+            # path="/x402",
             price="$0.01",  # Default price, can be overridden per route
             pay_to_address=config.x402_fee_address,
-            network_id="base",
+            network="base",
             facilitator_config=facilitator_config,
             discoverable=True if config.env == "testnet-prod" else False,
             description="Crestal nation.fun Agent API",
