@@ -10,7 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -254,6 +254,21 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+
+@app.middleware("http")
+async def normalize_x402_path(request: Request, call_next):
+    """Ensure `/x402` requests hit the mounted X402 app without redirect."""
+    scope = request.scope
+    if scope.get("type") == "http" and scope.get("path") == "/x402":
+        scope["path"] = "/x402/"
+        query_string = scope.get("query_string", b"")
+        raw_path = b"/x402/"
+        if query_string:
+            raw_path += b"?" + query_string
+        scope["raw_path"] = raw_path
+    return await call_next(request)
+
 
 # Mount the Agent API sub-application
 app.mount("/v1", agent_app)
