@@ -2,7 +2,7 @@ from typing import List, Tuple, Type
 
 from pydantic import BaseModel, Field
 
-from intentkit.clients.cdp import get_origin_cdp_client
+from intentkit.clients.cdp import get_cdp_client
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 from intentkit.skills.xmtp.base import XmtpBaseTool
 
@@ -107,15 +107,15 @@ class XmtpSwap(XmtpBaseTool):
         # https://github.com/coinbase/cdp-sdk/blob/main/examples/python/evm/swaps/create_swap_quote.py
         network_for_cdp = self.get_cdp_network(agent.network_id)
 
-        # Get CDP client from global origin helper (server-side credentials)
-        cdp_client = get_origin_cdp_client()
+        # Get CDP client from the global helper (server-side credentials)
+        cdp_client = get_cdp_client()
 
         # Call CDP to create swap quote and extract call datas
         # Be permissive with response shape across SDK versions
         try:
             # Attempt the canonical method per CDP SDK examples
             # create_swap_quote(from_token, to_token, from_amount, network, taker, slippage_bps, signer_address)
-            # Note: Don't use async with context manager as get_origin_cdp_client returns a managed global client
+            # Note: Don't use async with context manager as get_cdp_client returns a managed global client
             quote = await cdp_client.evm.create_swap_quote(
                 from_token=from_token,
                 to_token=to_token,

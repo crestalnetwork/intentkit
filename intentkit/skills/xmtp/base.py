@@ -1,9 +1,9 @@
 from typing import Dict, Literal
 
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class XmtpBaseTool(IntentKitSkill):
+class XmtpBaseTool(IntentKitOnChainSkill):
     """Base class for XMTP-related skills."""
 
     # Set response format to content_and_artifact for returning tuple
