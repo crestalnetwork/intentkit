@@ -26,11 +26,9 @@ from pydantic import (
 )
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
-from web3 import Web3
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.clients import get_wallet_provider
-from intentkit.clients.web3 import get_web3_client
 from intentkit.models.redis import get_redis
 from intentkit.models.skill import (
     AgentSkillData,
@@ -256,14 +254,6 @@ class IntentKitSkill(BaseTool):
         if runtime.context is None or not isinstance(runtime.context, AgentContext):
             raise ValueError("No AgentContext found")
         return runtime.context
-
-    def web3_client(self) -> Web3:
-        """Get a Web3 client for the skill."""
-        context = self.get_context()
-        agent = context.agent
-        network_id = agent.network_id
-
-        return get_web3_client(network_id)
 
     async def get_agent_skill_data(
         self,
