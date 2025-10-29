@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Optional, Tuple
 
 from bip32 import BIP32
-from cdp import CdpClient  # noqa: E402
+from cdp import CdpClient, EvmServerAccount  # noqa: E402
 from coinbase_agentkit import (  # noqa: E402
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
@@ -77,7 +77,7 @@ def get_cdp_client() -> CdpClient:
     return _cdp_client
 
 
-async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
+def _assert_cdp_wallet_provider(agent: Agent) -> None:
     if agent.wallet_provider != "cdp":
         raise IntentKitAPIError(
             400,
@@ -85,6 +85,64 @@ async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
             "Your agent wallet provider is not cdp but you selected a skill that requires a cdp wallet.",
         )
 
+
+async def _ensure_evm_account(
+    agent: Agent, agent_data: AgentData | None = None
+) -> Tuple[EvmServerAccount, AgentData]:
+    cdp_client = get_cdp_client()
+    agent_data = agent_data or await AgentData.get(agent.id)
+    address = agent_data.evm_wallet_address
+    account: Optional[EvmServerAccount] = None
+
+    if not address:
+        if agent_data.cdp_wallet_data:
+            wallet_data = json.loads(agent_data.cdp_wallet_data)
+            if not isinstance(wallet_data, dict):
+                raise ValueError("Invalid wallet data format")
+            if wallet_data.get("default_address_id") and wallet_data.get("seed"):
+                keys = bip39_seed_to_eth_keys(wallet_data["seed"])
+                if keys["address"] != wallet_data["default_address_id"]:
+                    raise ValueError(
+                        "Bad wallet data, seed does not match default_address_id"
+                    )
+                logger.info("Migrating wallet data to v2...")
+                account = await cdp_client.evm.import_account(
+                    name=agent.id,
+                    private_key=keys["private_key"],
+                )
+                address = account.address
+                logger.info("Migrated wallet data to v2 successfully: %s", address)
+        if not address:
+            logger.info("Creating new wallet...")
+            account = await cdp_client.evm.create_account(
+                name=agent.id,
+            )
+            address = account.address
+            logger.info("Created new wallet: %s", address)
+
+        agent_data.evm_wallet_address = address
+        await agent_data.save()
+        if not agent.slug:
+            async with get_session() as db:
+                db_agent = await db.get(AgentTable, agent.id)
+                if db_agent and not db_agent.slug:
+                    db_agent.slug = agent_data.evm_wallet_address
+                    await db.commit()
+
+    if account is None:
+        account = await cdp_client.evm.get_account(address=address)
+
+    return account, agent_data
+
+
+async def get_evm_account(agent: Agent) -> EvmServerAccount:
+    _assert_cdp_wallet_provider(agent)
+    account, _ = await _ensure_evm_account(agent)
+    return account
+
+
+async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
+    _assert_cdp_wallet_provider(agent)
     if not agent.network_id:
         raise IntentKitAPIError(
             400,
@@ -104,54 +162,15 @@ async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
             if cached_address == address:
                 return provider
 
+    account, agent_data = await _ensure_evm_account(agent, agent_data)
+    address = account.address
+
     # Get credentials from global config
     api_key_id = config.cdp_api_key_id
     api_key_secret = config.cdp_api_key_secret
     wallet_secret = config.cdp_wallet_secret
 
     network_id = agent.network_id
-
-    # new agent or address not migrated yet
-    if not address:
-        cdp_client = get_cdp_client()
-        # try migrating from v1 cdp_wallet_data
-        if agent_data.cdp_wallet_data:
-            wallet_data = json.loads(agent_data.cdp_wallet_data)
-            if not isinstance(wallet_data, dict):
-                raise ValueError("Invalid wallet data format")
-            if wallet_data.get("default_address_id") and wallet_data.get("seed"):
-                # verify seed and convert to pk
-                keys = bip39_seed_to_eth_keys(wallet_data["seed"])
-                if keys["address"] != wallet_data["default_address_id"]:
-                    raise ValueError(
-                        "Bad wallet data, seed does not match default_address_id"
-                    )
-                # try to import wallet to v2
-                logger.info("Migrating wallet data to v2...")
-                await cdp_client.evm.import_account(
-                    name=agent.id,
-                    private_key=keys["private_key"],
-                )
-                address = keys["address"]
-                logger.info("Migrated wallet data to v2 successfully: %s", address)
-        # still not address
-        if not address:
-            logger.info("Creating new wallet...")
-            new_account = await cdp_client.evm.create_account(
-                name=agent.id,
-            )
-            address = new_account.address
-            logger.info("Created new wallet: %s", address)
-
-        agent_data.evm_wallet_address = address
-        await agent_data.save()
-        # Update agent slug with evm_wallet_address if slug is null or empty
-        if not agent.slug:
-            async with get_session() as db:
-                db_agent = await db.get(AgentTable, agent.id)
-                if db_agent:
-                    db_agent.slug = agent_data.evm_wallet_address
-                    await db.commit()
 
     wallet_provider_config = CdpEvmWalletProviderConfig(
         api_key_id=api_key_id,
