@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "x402",
+  "description": "Interact with other IntentKit agents through the x402 payment protocol.",
+  "x-icon": "https://ai.service.crestal.dev/skills/x402/x402.png",
+  "x-tags": [
+    "Communication",
+    "Infrastructure"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill category is enabled.",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "x402_ask_agent": {
+          "type": "string",
+          "title": "Ask Agent",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Send a message to another IntentKit agent via the x402 API and return the final agent response.",
+          "default": "disabled"
+        }
+      }
+    }
+  }
+}
