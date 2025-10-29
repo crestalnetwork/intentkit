@@ -1,9 +1,14 @@
+import threading
 from typing import Any, Dict, Optional, Type
 
+from coinbase_agentkit.wallet_providers.evm_wallet_provider import (
+    EvmWalletSigner as CoinbaseEvmWalletSigner,
+)
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 from x402.clients.httpx import x402HttpxClient
 
+from intentkit.clients import get_wallet_provider
 from intentkit.config.config import config
 from intentkit.models.chat import AuthorType
 from intentkit.skills.x402.base import X402BaseSkill
@@ -42,8 +47,10 @@ class X402AskAgent(X402BaseSkill):
         if not base_url:
             raise ValueError("X402 API base URL is not configured.")
 
-        # Ensure an EVM account exists and retrieve wallet provider signer
-        evm_account = await self.get_evm_account()
+        # Use wallet provider signer to satisfy eth_account.BaseAccount interface requirements
+        context = self.get_context()
+        wallet_provider = await get_wallet_provider(context.agent)
+        account = ThreadSafeEvmWalletSigner(wallet_provider)
 
         payload: Dict[str, Any] = {
             "agent_id": agent_id,
@@ -56,7 +63,7 @@ class X402AskAgent(X402BaseSkill):
             payload["super_mode"] = super_mode
 
         async with x402HttpxClient(
-            account=evm_account,
+            account=account,
             base_url=base_url,
             timeout=20.0,
         ) as client:
@@ -80,3 +87,55 @@ class X402AskAgent(X402BaseSkill):
             raise ToolException("Agent response did not include message text.")
 
         return str(content)
+
+
+class ThreadSafeEvmWalletSigner(CoinbaseEvmWalletSigner):
+    """EVM wallet signer that avoids nested event loop errors.
+
+    Coinbase's signer runs async wallet calls in the current thread. When invoked
+    inside an active asyncio loop (as happens in async skills), it trips over the
+    loop already running. We hop work to a background thread so the provider can
+    spin up its own loop safely.
+    """
+
+    def _run_in_thread(self, func: Any, *args: Any, **kwargs: Any) -> Any:
+        result: list[Any] = []
+        error: list[BaseException] = []
+
+        def _target() -> None:
+            try:
+                result.append(func(*args, **kwargs))
+            except BaseException as exc:  # pragma: no cover - bubble up original error
+                error.append(exc)
+
+        thread = threading.Thread(target=_target, daemon=True)
+        thread.start()
+        thread.join()
+
+        if error:
+            raise error[0]
+        return result[0] if result else None
+
+    def unsafe_sign_hash(self, message_hash: Any) -> Any:
+        return self._run_in_thread(super().unsafe_sign_hash, message_hash)
+
+    def sign_message(self, signable_message: Any) -> Any:
+        return self._run_in_thread(super().sign_message, signable_message)
+
+    def sign_transaction(self, transaction_dict: Any) -> Any:
+        return self._run_in_thread(super().sign_transaction, transaction_dict)
+
+    def sign_typed_data(
+        self,
+        domain_data: Optional[Dict[str, Any]] = None,
+        message_types: Optional[Dict[str, Any]] = None,
+        message_data: Optional[Dict[str, Any]] = None,
+        full_message: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        return self._run_in_thread(
+            super().sign_typed_data,
+            domain_data=domain_data,
+            message_types=message_types,
+            message_data=message_data,
+            full_message=full_message,
+        )

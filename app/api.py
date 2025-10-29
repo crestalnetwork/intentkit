@@ -269,6 +269,7 @@ async def normalize_x402_path(request: Request, call_next):
         scope["raw_path"] = raw_path
     return await call_next(request)
 
+
 # Mount the Agent API sub-application
 app.mount("/v1", agent_app)
 
