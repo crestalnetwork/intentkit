@@ -3,7 +3,7 @@ from typing import Literal, Type
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.clients.cdp import get_origin_cdp_client
+from intentkit.clients.cdp import get_cdp_client
 from intentkit.skills.xmtp.base import XmtpBaseTool
 
 
@@ -50,8 +50,8 @@ class XmtpGetSwapPrice(XmtpBaseTool):
 
         network_for_cdp = self.get_cdp_network(agent.network_id)
 
-        cdp_client = get_origin_cdp_client()
-        # Note: Don't use async with context manager as get_origin_cdp_client returns a managed global client
+        cdp_client = get_cdp_client()
+        # Note: Don't use async with context manager as get_cdp_client returns a managed global client
         price = await cdp_client.evm.get_swap_price(
             from_token=from_token,
             to_token=to_token,

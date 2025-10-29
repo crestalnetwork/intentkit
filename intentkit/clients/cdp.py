@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Optional, Tuple
 
 from bip32 import BIP32
-from cdp import CdpClient as OriginCdpClient  # noqa: E402
+from cdp import CdpClient  # noqa: E402
 from coinbase_agentkit import (  # noqa: E402
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
@@ -19,7 +19,7 @@ from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _wallet_providers: Dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
-_origin_cdp_client: Optional[OriginCdpClient] = None
+_cdp_client: Optional[CdpClient] = None
 
 logger = logging.getLogger(__name__)
 
@@ -59,22 +59,22 @@ def bip39_seed_to_eth_keys(seed_hex: str) -> Dict[str, str]:
     }
 
 
-def get_origin_cdp_client() -> OriginCdpClient:
-    global _origin_cdp_client
-    if _origin_cdp_client:
-        return _origin_cdp_client
+def get_cdp_client() -> CdpClient:
+    global _cdp_client
+    if _cdp_client:
+        return _cdp_client
 
     # Get credentials from global configuration
     api_key_id = config.cdp_api_key_id
     api_key_secret = config.cdp_api_key_secret
     wallet_secret = config.cdp_wallet_secret
 
-    _origin_cdp_client = OriginCdpClient(
+    _cdp_client = CdpClient(
         api_key_id=api_key_id,
         api_key_secret=api_key_secret,
         wallet_secret=wallet_secret,
     )
-    return _origin_cdp_client
+    return _cdp_client
 
 
 async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
@@ -113,7 +113,7 @@ async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
 
     # new agent or address not migrated yet
     if not address:
-        cdp_client = get_origin_cdp_client()
+        cdp_client = get_cdp_client()
         # try migrating from v1 cdp_wallet_data
         if agent_data.cdp_wallet_data:
             wallet_data = json.loads(agent_data.cdp_wallet_data)
