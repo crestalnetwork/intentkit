@@ -1141,8 +1141,11 @@ class Agent(AgentCreate, AgentPublicInfo):
         return False
 
     async def is_model_support_image(self) -> bool:
-        model = await LLMModelInfo.get(self.model)
-        return model.supports_image_input
+        try:
+            model = await LLMModelInfo.get(self.model)
+            return model.supports_image_input
+        except Exception:
+            return False
 
     def to_yaml(self) -> str:
         """

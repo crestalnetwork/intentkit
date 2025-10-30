@@ -12,7 +12,7 @@ from intentkit.models.app_setting import AppSetting
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
 from intentkit.models.redis import get_redis
-from intentkit.utils.error import IntentKitLookUpError
+from intentkit.utils.error import IntentKitAPIError
 from langchain.chat_models.base import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
@@ -282,7 +282,11 @@ class LLMModelInfo(BaseModel):
             return model_info
 
         # Not found anywhere
-        raise IntentKitLookUpError(f"Model {model_id} not found")
+        raise IntentKitAPIError(
+            400,
+            "ModelNotFound",
+            f"Model {model_id} not found, maybe deprecated, please change it in the agent configuration.",
+        )
 
     @classmethod
     async def get_all(cls, session: AsyncSession | None = None) -> list["LLMModelInfo"]:
