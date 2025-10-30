@@ -1,3 +1,25 @@
+## v0.8.14
+
+### Features
+- **x402 Skill Improvements**: Updated x402 skill image format from PNG to WebP for better performance and smaller file size
+- **Model Configuration Updates**: Enhanced agent and LLM model configurations for improved functionality
+- **Schema Updates**: Updated x402 skill schema configuration
+
+### Changes
+- Converted x402 skill image from PNG to WebP format
+- Updated `intentkit/models/agent.py` with improved agent model configurations
+- Updated `intentkit/models/llm.py` with enhanced LLM model configurations
+- Updated `intentkit/skills/x402/schema.json` with latest skill schema
+- Removed temporary analysis script `analyze_schema_defs.py`
+- Updated dependencies in `uv.lock`
+
+### Impact
+- Improved performance with WebP image format
+- Better model configurations for enhanced functionality
+- Cleaner codebase with removal of temporary files
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.13...v0.8.14
+
 ## v0.8.13
 
 ### New Features
