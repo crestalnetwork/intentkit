@@ -3,7 +3,7 @@
   "type": "object",
   "title": "x402",
   "description": "Interact with other IntentKit agents through the x402 payment protocol.",
-  "x-icon": "https://ai.service.crestal.dev/skills/x402/x402.png",
+  "x-icon": "https://ai.service.crestal.dev/skills/x402/x402.webp",
   "x-tags": [
     "Communication",
     "Infrastructure"

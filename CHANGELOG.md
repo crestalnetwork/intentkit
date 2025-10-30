@@ -1,3 +1,21 @@
+## v0.8.13
+
+### New Features
+- **X402 Server Implementation**: Complete x402 server implementation with routing and API endpoints
+- **Base Onchain Skill Class**: Added foundational class for onchain operations and blockchain interactions
+- **EVM Account Support**: Enhanced EVM account management capabilities for better blockchain integration
+
+### Improvements
+- **API Updates**: Enhanced API functionality and x402 ask agent capabilities
+- **CDP Client Refactor**: Improved CDP (Coinbase Developer Platform) client implementation for better reliability and performance
+
+### Bug Fixes
+- **X402 Router**: Fixed x402 router bug for improved stability
+- **X402 Input Schema**: Corrected x402 input schema validation
+- **API Routing**: Fixed x402 path commenting in API routing
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.12...v0.8.13
+
 ## v0.8.12
 
 ### Features
