@@ -1,3 +1,18 @@
+## v0.8.15
+
+### Bug Fixes
+- **x402 error handling**: Improved error handling mechanisms for x402 operations
+- **x402 message bug**: Fixed message processing issues in x402 integration
+- **documentation**: Updated changelog and documentation
+
+### Features
+- Enhanced x402 skill integration with better reliability and functionality
+
+### Summary
+This release focuses on improving the x402 integration with better error handling and message processing capabilities.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.14...v0.8.15
+
 ## v0.8.14
 
 ### Features
