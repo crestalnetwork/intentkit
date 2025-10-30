@@ -1,3 +1,4 @@
+import logging
 import threading
 from typing import Any, Dict, Optional, Type
 
@@ -12,6 +13,8 @@ from intentkit.clients import get_wallet_provider
 from intentkit.config.config import config
 from intentkit.models.chat import AuthorType
 from intentkit.skills.x402.base import X402BaseSkill
+
+logger = logging.getLogger(__name__)
 
 
 class AskAgentInput(BaseModel):
@@ -43,50 +46,70 @@ class X402AskAgent(X402BaseSkill):
         search_mode: Optional[bool] = None,
         super_mode: Optional[bool] = None,
     ) -> str:
-        base_url = (config.open_api_base_url or "").rstrip("/")
-        if not base_url:
-            raise ValueError("X402 API base URL is not configured.")
+        try:
+            base_url = (config.open_api_base_url or "").rstrip("/")
+            if not base_url:
+                raise ValueError("X402 API base URL is not configured.")
 
-        # Use wallet provider signer to satisfy eth_account.BaseAccount interface requirements
-        context = self.get_context()
-        wallet_provider = await get_wallet_provider(context.agent)
-        account = ThreadSafeEvmWalletSigner(wallet_provider)
+            # Use wallet provider signer to satisfy eth_account.BaseAccount interface requirements
+            context = self.get_context()
+            wallet_provider = await get_wallet_provider(context.agent)
+            account = ThreadSafeEvmWalletSigner(wallet_provider)
 
-        payload: Dict[str, Any] = {
-            "agent_id": agent_id,
-            "message": message,
-            "app_id": "skill",
-        }
-        if search_mode is not None:
-            payload["search_mode"] = search_mode
-        if super_mode is not None:
-            payload["super_mode"] = super_mode
+            payload: Dict[str, Any] = {
+                "agent_id": agent_id,
+                "message": message,
+                "app_id": "skill",
+            }
+            if search_mode is not None:
+                payload["search_mode"] = search_mode
+            if super_mode is not None:
+                payload["super_mode"] = super_mode
 
-        async with x402HttpxClient(
-            account=account,
-            base_url=base_url,
-            timeout=20.0,
-        ) as client:
-            response = await client.post("/x402", json=payload)
-            response.raise_for_status()
-            messages = response.json()
-        if not isinstance(messages, list) or not messages:
-            raise ValueError("Agent returned an empty response.")
+            async with x402HttpxClient(
+                account=account,
+                base_url=base_url,
+                timeout=20.0,
+            ) as client:
+                response = await client.post("/x402", json=payload)
+                try:
+                    response.raise_for_status()
+                except Exception as e:
+                    error_body = ""
+                    try:
+                        error_body = response.text
+                    except Exception:
+                        error_body = "Unable to read response body"
+                    logger.error(
+                        f"HTTP request failed with status {response.status_code}: {error_body}"
+                    )
+                    raise ToolException(
+                        f"HTTP request failed with status {response.status_code}: {error_body}"
+                    ) from e
+                messages = response.json()
+            if not isinstance(messages, list) or not messages:
+                raise ValueError("Agent returned an empty response.")
 
-        last_message = messages[-1]
-        if not isinstance(last_message, dict):
-            raise ValueError("Agent response format is invalid.")
+            last_message = messages[-1]
+            if not isinstance(last_message, dict):
+                raise ValueError("Agent response format is invalid.")
 
-        author_type = last_message.get("author_type")
-        content = last_message.get("message")
+            author_type = last_message.get("author_type")
+            content = last_message.get("message")
 
-        if author_type == AuthorType.SYSTEM.value:
-            raise ToolException(content or "Agent returned a system message.")
+            if author_type == AuthorType.SYSTEM.value:
+                raise ToolException(content or "Agent returned a system message.")
 
-        if not content:
-            raise ToolException("Agent response did not include message text.")
+            if not content:
+                raise ToolException("Agent response did not include message text.")
 
-        return str(content)
+            return str(content)
+        except ToolException:
+            # Re-raise ToolException as-is
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in x402_ask_agent: {str(e)}")
+            raise ToolException(f"Unexpected error occurred: {str(e)}") from e
 
 
 class ThreadSafeEvmWalletSigner(CoinbaseEvmWalletSigner):
