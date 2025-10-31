@@ -289,6 +289,17 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Telegram integration configuration settings",
     )
+    discord_entrypoint_enabled = Column(
+        Boolean,
+        nullable=True,
+        default=False,
+        comment="Whether the agent can receive events from Discord",
+    )
+    discord_config = Column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=True,
+        comment="Discord integration configuration settings",
+    )
     xmtp_entrypoint_prompt = Column(
         String,
         nullable=True,
@@ -645,6 +656,26 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
+        ),
+    ]
+    discord_entrypoint_enabled: Annotated[
+        Optional[bool],
+        PydanticField(
+            default=False,
+            description="Whether the agent can play discord bot",
+            json_schema_extra={
+                "x-group": "entrypoint",
+            },
+        ),
+    ]
+    discord_config: Annotated[
+        Optional[dict],
+        PydanticField(
+            default=None,
+            description="Discord integration configuration settings including token, whitelists, and behavior settings",
+            json_schema_extra={
+                "x-group": "entrypoint",
+            },
         ),
     ]
     xmtp_entrypoint_prompt: Annotated[
@@ -1647,6 +1678,7 @@ class AgentResponse(Agent):
     frequency_penalty: SkipJsonSchema[Optional[float]] = None
     telegram_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
     telegram_config: SkipJsonSchema[Optional[dict]] = None
+    discord_config: SkipJsonSchema[Optional[dict]] = None
     xmtp_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
 
     # Additional fields specific to AgentResponse
@@ -1870,6 +1902,7 @@ class AgentResponse(Agent):
             "frequency_penalty",
             "telegram_entrypoint_prompt",
             "telegram_config",
+            "discord_config",
             "xmtp_entrypoint_prompt",
         }
         for field in privacy_fields:

@@ -43,6 +43,7 @@ class AuthorType(str, Enum):
     SKILL = "skill"
     TELEGRAM = "telegram"
     TWITTER = "twitter"
+    DISCORD = "discord"
     WEB = "web"
     SYSTEM = "system"
     API = "api"
