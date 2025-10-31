@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -117,7 +117,7 @@ class PaymentSettings(BaseModel):
         Field(default=False, description="Whether agent whitelist is enabled"),
     ]
     agent_whitelist: Annotated[
-        List[str],
+        list[str],
         Field(default_factory=list, description="List of whitelisted agent IDs"),
     ]
 

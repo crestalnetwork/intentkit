@@ -10,7 +10,7 @@ import base64
 import logging
 import os
 import tempfile
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Tuple
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -63,7 +63,7 @@ METADATA_KEY_PREFIX = "indexed_urls"
 class VectorStoreManager:
     """Manages vector store operations including creation, saving, loading, and merging."""
 
-    def __init__(self, embedding_api_key: Optional[str] = None):
+    def __init__(self, embedding_api_key: str | None = None):
         self._embedding_api_key = embedding_api_key
 
     def _resolve_api_key(self) -> str:
@@ -119,14 +119,14 @@ class VectorStoreManager:
                 allow_dangerous_deserialization=True,
             )
 
-    async def get_existing_vector_store(self, agent_id: str) -> Optional[Dict]:
+    async def get_existing_vector_store(self, agent_id: str) -> Dict | None:
         """Get existing vector store data if it exists."""
         vector_store_key, _ = self.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", vector_store_key)
 
     async def merge_with_existing(
         self,
-        new_documents: List[Document],
+        new_documents: list[Document],
         agent_id: str,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
@@ -205,7 +205,7 @@ class VectorStoreManager:
             logger.error(f"[{agent_id}] Failed to save vector store: {e}")
             raise
 
-    async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
+    async def load_vector_store(self, agent_id: str) -> FAISS | None:
         """Load vector store for an agent."""
         stored_data = await self.get_existing_vector_store(agent_id)
 
@@ -250,10 +250,10 @@ class DocumentProcessor:
 
     @staticmethod
     def create_chunks(
-        documents: List[Document],
+        documents: list[Document],
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Split documents into chunks."""
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -292,7 +292,7 @@ class DocumentProcessor:
         title: str,
         source: str,
         tags: str = "",
-        extra_metadata: Optional[Dict] = None,
+        extra_metadata: Dict | None = None,
     ) -> Document:
         """Create a Document with standardized metadata."""
         cleaned_content = DocumentProcessor.clean_text(content)
@@ -331,10 +331,10 @@ class MetadataManager:
 
     def create_url_metadata(
         self,
-        urls: List[str],
-        split_docs: List[Document],
+        urls: list[str],
+        split_docs: list[Document],
         source_type: str = "web_scraper",
-        extra_fields: Optional[Dict] = None,
+        extra_fields: Dict | None = None,
     ) -> Dict:
         """Create metadata for a list of URLs."""
         metadata = {}
@@ -361,7 +361,7 @@ class MetadataManager:
         title: str,
         source: str,
         tags: str,
-        split_docs: List[Document],
+        split_docs: list[Document],
         document_length: int,
     ) -> Dict:
         """Create metadata for a document."""
@@ -408,12 +408,12 @@ class ResponseFormatter:
     @staticmethod
     def format_indexing_response(
         operation_type: str,
-        urls_or_content: List[str] | str,
+        urls_or_content: list[str] | str,
         total_chunks: int,
         chunk_size: int,
         chunk_overlap: int,
         was_merged: bool,
-        extra_info: Optional[Dict] = None,
+        extra_info: Dict | None = None,
         current_size_bytes: int = 0,
         size_limit_reached: bool = False,
         total_requested_urls: int = 0,
@@ -481,13 +481,13 @@ class ResponseFormatter:
 
 
 async def scrape_and_index_urls(
-    urls: List[str],
+    urls: list[str],
     agent_id: str,
     vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
     requests_per_second: int = DEFAULT_REQUESTS_PER_SECOND,
-) -> Tuple[int, bool, List[str]]:
+) -> Tuple[int, bool, list[str]]:
     """
     Scrape URLs and index their content into vector store with size limits.
 
@@ -636,7 +636,7 @@ async def scrape_and_index_urls(
 
 # Convenience function that combines all operations
 async def index_documents(
-    documents: List[Document],
+    documents: list[Document],
     agent_id: str,
     vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,

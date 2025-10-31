@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -46,8 +45,8 @@ class AgentStatistics(BaseModel):
 async def get_agent_statistics(
     agent_id: str,
     *,
-    end_time: Optional[datetime] = None,
-    session: Optional[AsyncSession] = None,
+    end_time: datetime | None = None,
+    session: AsyncSession | None = None,
 ) -> AgentStatistics:
     """Calculate statistics for an agent credit account.
 

@@ -1,7 +1,7 @@
 """Tool for fetching top cryptocurrencies by trading volume via CryptoCompare API."""
 
 import logging
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -45,7 +45,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
         to_symbol: str = "USD",
         limit: int = 10,
         **kwargs,
-    ) -> List[CryptoCurrency]:
+    ) -> list[CryptoCurrency]:
         """Async implementation of the tool to fetch top cryptocurrencies by trading volume.
 
         Args:

@@ -1,6 +1,6 @@
 """Tool for fetching stablecoin prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 from pydantic import BaseModel, Field
 
@@ -28,10 +28,10 @@ class PriceDataPoint(BaseModel):
 class FetchStablecoinPricesResponse(BaseModel):
     """Response schema for stablecoin prices data."""
 
-    data: List[PriceDataPoint] = Field(
+    data: list[PriceDataPoint] = Field(
         default_factory=list, description="List of price data points"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):

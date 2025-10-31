@@ -1,6 +1,6 @@
 """Tool for fetching stablecoin data via DeFi Llama API."""
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 from pydantic import BaseModel, Field
 
@@ -45,7 +45,7 @@ class Stablecoin(BaseModel):
     id: str = Field(..., description="Unique identifier")
     name: str = Field(..., description="Stablecoin name")
     symbol: str = Field(..., description="Token symbol")
-    gecko_id: Optional[str] = Field(None, description="CoinGecko ID if available")
+    gecko_id: str | None = Field(None, description="CoinGecko ID if available")
     pegType: str = Field(..., description="Type of peg (e.g. peggedUSD)")
     priceSource: str = Field(..., description="Source of price data")
     pegMechanism: str = Field(..., description="Mechanism maintaining the peg")
@@ -64,7 +64,7 @@ class Stablecoin(BaseModel):
     chainCirculating: Dict[str, ChainCirculating] = Field(
         ..., description="Circulating amounts per chain"
     )
-    chains: List[str] = Field(
+    chains: list[str] = Field(
         ..., description="List of chains where the stablecoin is present"
     )
     price: float = Field(..., description="Current price in USD")
@@ -73,10 +73,10 @@ class Stablecoin(BaseModel):
 class FetchStablecoinsResponse(BaseModel):
     """Response schema for stablecoin data."""
 
-    peggedAssets: List[Stablecoin] = Field(
+    peggedAssets: list[Stablecoin] = Field(
         default_factory=list, description="List of stablecoins with their data"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchStablecoins(DefiLlamaBaseTool):

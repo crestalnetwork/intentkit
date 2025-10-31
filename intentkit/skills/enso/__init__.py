@@ -1,7 +1,7 @@
 """Enso skills."""
 
 import logging
-from typing import List, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.enso.base import EnsoBaseTool
@@ -35,7 +35,7 @@ class Config(SkillConfig):
 
     states: SkillStates
     api_token: NotRequired[str]
-    main_tokens: NotRequired[List[str]]
+    main_tokens: NotRequired[list[str]]
 
 
 async def get_skills(

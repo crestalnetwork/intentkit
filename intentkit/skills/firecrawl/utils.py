@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -36,8 +36,8 @@ class FirecrawlDocumentProcessor:
 
     @staticmethod
     def split_documents(
-        documents: List[Document], chunk_size: int = 1000, chunk_overlap: int = 200
-    ) -> List[Document]:
+        documents: list[Document], chunk_size: int = 1000, chunk_overlap: int = 200
+    ) -> list[Document]:
         """Split documents into smaller chunks for better indexing."""
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -63,7 +63,7 @@ class FirecrawlDocumentProcessor:
 class FirecrawlVectorStoreManager:
     """Manages vector store operations for Firecrawl content."""
 
-    def __init__(self, embedding_api_key: Optional[str] = None):
+    def __init__(self, embedding_api_key: str | None = None):
         self._embedding_api_key = embedding_api_key
 
     def _resolve_api_key(self) -> str:
@@ -131,7 +131,7 @@ class FirecrawlVectorStoreManager:
             logger.error(f"Error decoding vector store: {e}")
             raise
 
-    async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
+    async def load_vector_store(self, agent_id: str) -> FAISS | None:
         """Load existing vector store for an agent."""
         try:
             vector_store_key = f"vector_store_{agent_id}"
@@ -186,7 +186,7 @@ class FirecrawlMetadataManager:
 
     @staticmethod
     def create_url_metadata(
-        urls: List[str], documents: List[Document], source_type: str
+        urls: list[str], documents: list[Document], source_type: str
     ) -> Dict[str, Any]:
         """Create metadata for indexed URLs."""
         return {
@@ -215,7 +215,7 @@ class FirecrawlMetadataManager:
 
 
 async def index_documents(
-    documents: List[Document],
+    documents: list[Document],
     agent_id: str,
     vector_manager: FirecrawlVectorStoreManager,
     chunk_size: int = 1000,
@@ -281,7 +281,7 @@ async def query_indexed_content(
     agent_id: str,
     vector_manager: FirecrawlVectorStoreManager,
     max_results: int = 4,
-) -> List[Document]:
+) -> list[Document]:
     """
     Query the Firecrawl indexed content.
 

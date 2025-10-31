@@ -1,6 +1,6 @@
 """Trending tokens skill for Elfa AI API."""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -11,13 +11,13 @@ from .utils import make_elfa_request
 class ElfaGetTrendingTokensInput(BaseModel):
     """Input parameters for trending tokens."""
 
-    timeWindow: Optional[str] = Field(
+    timeWindow: str | None = Field(
         "7d",
         description="Time window for trending analysis (e.g., '30m', '1h', '4h', '24h', '7d', '30d')",
     )
-    page: Optional[int] = Field(1, description="Page number for pagination")
-    pageSize: Optional[int] = Field(50, description="Number of items per page")
-    minMentions: Optional[int] = Field(
+    page: int | None = Field(1, description="Page number for pagination")
+    pageSize: int | None = Field(50, description="Number of items per page")
+    minMentions: int | None = Field(
         5, description="Minimum number of mentions required"
     )
 
@@ -25,20 +25,20 @@ class ElfaGetTrendingTokensInput(BaseModel):
 class TrendingToken(BaseModel):
     """Individual trending token data."""
 
-    token: Optional[str] = Field(None, description="Token symbol")
-    current_count: Optional[int] = Field(None, description="Current mention count")
-    previous_count: Optional[int] = Field(None, description="Previous mention count")
-    change_percent: Optional[float] = Field(None, description="Change percentage")
+    token: str | None = Field(None, description="Token symbol")
+    current_count: int | None = Field(None, description="Current mention count")
+    previous_count: int | None = Field(None, description="Previous mention count")
+    change_percent: float | None = Field(None, description="Change percentage")
 
 
 class ElfaGetTrendingTokensOutput(BaseModel):
     """Output structure for trending tokens response."""
 
     success: bool
-    data: Optional[List[TrendingToken]] = Field(
+    data: list[TrendingToken] | None = Field(
         None, description="List of trending tokens"
     )
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    metadata: Dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetTrendingTokens(ElfaBaseTool):

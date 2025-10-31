@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from epyxid import XID
 from fastapi import APIRouter, Request
@@ -37,7 +37,7 @@ class X402MessageRequest(BaseModel):
         ),
     ]
     app_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
             None,
             description="Optional application identifier",
@@ -55,21 +55,21 @@ class X402MessageRequest(BaseModel):
         ),
     ]
     search_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable search mode",
         ),
     ]
     super_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable super mode",
         ),
     ]
     attachments: Annotated[
-        Optional[List[ChatMessageAttachment]],
+        list[ChatMessageAttachment] | None,
         Field(
             None,
             description="Optional list of attachments (links, images, or files)",
@@ -90,7 +90,7 @@ class X402MessageRequest(BaseModel):
 
 @x402_router.post(
     "/",
-    response_model=List[ChatMessage],
+    response_model=list[ChatMessage],
     operation_id="send_x402_message",
     summary="Send a message via X402",
     description=(

@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -68,7 +68,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         return
 
     async def fetch_price(
-        self, api_key: str, from_symbol: str, to_symbols: List[str]
+        self, api_key: str, from_symbol: str, to_symbols: list[str]
     ) -> dict:
         """Fetch current price for a cryptocurrency in multiple currencies.
 

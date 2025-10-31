@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict
 
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData, AgentQuota
@@ -24,7 +24,7 @@ class AgentStoreABC(ABC):
         self.agent_id = agent_id
 
     @abstractmethod
-    async def get_config(self) -> Optional[Agent]:
+    async def get_config(self) -> Agent | None:
         """Get agent configuration.
 
         Returns:
@@ -33,7 +33,7 @@ class AgentStoreABC(ABC):
         pass
 
     @abstractmethod
-    async def get_data(self) -> Optional[AgentData]:
+    async def get_data(self) -> AgentData | None:
         """Get additional agent data.
 
         Returns:
@@ -51,7 +51,7 @@ class AgentStoreABC(ABC):
         pass
 
     @abstractmethod
-    async def get_quota(self) -> Optional[AgentQuota]:
+    async def get_quota(self) -> AgentQuota | None:
         """Get agent quota information.
 
         Returns:

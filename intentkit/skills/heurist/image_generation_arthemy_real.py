@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Type
+from typing import Type
 
 import httpx
 from epyxid import XID
@@ -18,16 +18,16 @@ class ImageGenerationArthemyRealInput(BaseModel):
     prompt: str = Field(
         description="Text prompt describing the image to generate.",
     )
-    neg_prompt: Optional[str] = Field(
+    neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
         description="Negative prompt describing what to avoid in the generated image.",
     )
-    width: Optional[int] = Field(
+    width: int | None = Field(
         default=1024,
         le=1024,
         description="Width of the generated image.",
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=1024,
         le=1024,
         description="Height of the generated image.",
@@ -58,9 +58,9 @@ class ImageGenerationArthemyReal(HeuristBaseTool):
     async def _arun(
         self,
         prompt: str,
-        neg_prompt: Optional[str] = "(worst quality: 1.4), bad quality, nsfw",
-        width: Optional[int] = 1024,
-        height: Optional[int] = 680,
+        neg_prompt: str | None = "(worst quality: 1.4), bad quality, nsfw",
+        width: int | None = 1024,
+        height: int | None = 680,
         **kwargs,
     ) -> str:
         """Implementation of the tool to generate realistic images using Heurist AI's ArthemyReal model.

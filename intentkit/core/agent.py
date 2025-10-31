@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import AsyncGenerator, Dict, Optional, Tuple
+from typing import AsyncGenerator, Dict, Tuple
 
 from sqlalchemy import func, select, text, update
 
@@ -193,7 +193,7 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
 
 
 async def override_agent(
-    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
+    agent_id: str, agent: AgentUpdate, owner: str | None = None
 ) -> Tuple[Agent, AgentData]:
     """Override an existing agent with new configuration.
 
@@ -271,7 +271,7 @@ async def create_agent(agent: AgentCreate) -> Tuple[Agent, AgentData]:
 
 
 async def deploy_agent(
-    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
+    agent_id: str, agent: AgentUpdate, owner: str | None = None
 ) -> Tuple[Agent, AgentData]:
     """Deploy an agent by first attempting to override, then creating if not found.
 
@@ -489,7 +489,7 @@ async def _iterate_agent_id_batches(
 ) -> AsyncGenerator[list[str], None]:
     """Yield agent IDs in ascending batches to limit memory usage."""
 
-    last_id: Optional[str] = None
+    last_id: str | None = None
     while True:
         async with get_session() as session:
             query = select(AgentTable.id).order_by(AgentTable.id)
@@ -679,7 +679,7 @@ async def update_agents_assets(batch_size: int = 100) -> None:
 
 
 async def update_agents_statistics(
-    *, end_time: Optional[datetime] = None, batch_size: int = 100
+    *, end_time: datetime | None = None, batch_size: int = 100
 ) -> None:
     """Refresh cached statistics for every agent."""
 

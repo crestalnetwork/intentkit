@@ -3,7 +3,6 @@ Slack notification module for sending messages to Slack channels.
 """
 
 import logging
-from typing import Optional
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -11,9 +10,9 @@ from slack_sdk.errors import SlackApiError
 logger = logging.getLogger(__name__)
 
 # Global variables for Slack configuration
-_slack_token: Optional[str] = None
-_slack_channel: Optional[str] = None
-_slack_client: Optional[WebClient] = None
+_slack_token: str | None = None
+_slack_channel: str | None = None
+_slack_client: WebClient | None = None
 
 
 def init_slack(token: str, channel: str) -> None:
@@ -36,10 +35,10 @@ def init_slack(token: str, channel: str) -> None:
 
 def send_slack_message(
     message: str,
-    blocks: Optional[list] = None,
-    attachments: Optional[list] = None,
-    thread_ts: Optional[str] = None,
-    channel: Optional[str] = None,
+    blocks: list | None = None,
+    attachments: list | None = None,
+    thread_ts: str | None = None,
+    channel: str | None = None,
 ):
     """
     Send a message to a Slack channel.

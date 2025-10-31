@@ -8,7 +8,7 @@ This module handles all validation operations for agent generation including:
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import jsonschema
 from pydantic import BaseModel, Field, ValidationError
@@ -22,7 +22,7 @@ class ValidationResult(BaseModel):
     """Result of schema validation."""
 
     valid: bool = Field(..., description="Whether the schema is valid")
-    errors: List[str] = Field(default_factory=list, description="Validation errors")
+    errors: list[str] = Field(default_factory=list, description="Validation errors")
 
 
 async def validate_schema_against_json_schema(
@@ -157,7 +157,7 @@ async def validate_agent_create(
 
 
 async def fix_validation_errors(
-    schema: Dict[str, Any], schema_errors: List[str], agent_errors: List[str]
+    schema: Dict[str, Any], schema_errors: list[str], agent_errors: list[str]
 ) -> Dict[str, Any]:
     """Attempt to fix validation errors.
 

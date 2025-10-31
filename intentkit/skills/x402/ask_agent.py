@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -16,10 +16,10 @@ class AskAgentInput(BaseModel):
 
     agent_id: str = Field(description="ID or slug of the agent to query.")
     message: str = Field(description="Message to send to the target agent.")
-    search_mode: Optional[bool] = Field(
+    search_mode: bool | None = Field(
         default=None, description="Enable search mode when interacting with the agent."
     )
-    super_mode: Optional[bool] = Field(
+    super_mode: bool | None = Field(
         default=None, description="Enable super mode when interacting with the agent."
     )
 
@@ -37,8 +37,8 @@ class X402AskAgent(X402BaseSkill):
         self,
         agent_id: str,
         message: str,
-        search_mode: Optional[bool] = None,
-        super_mode: Optional[bool] = None,
+        search_mode: bool | None = None,
+        super_mode: bool | None = None,
     ) -> str:
         try:
             # Use wallet provider signer to satisfy eth_account.BaseAccount interface requirements

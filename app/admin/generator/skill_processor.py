@@ -10,7 +10,7 @@ import importlib
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Set
 
 from openai import OpenAI
 
@@ -30,7 +30,7 @@ _all_skills_cache: Dict[str, Dict[str, Set[str]]] = {}
 _skill_schemas_cache: Dict[str, Dict[str, Any]] = {}
 
 
-def load_skill_schema(skill_name: str) -> Optional[Dict[str, Any]]:
+def load_skill_schema(skill_name: str) -> Dict[str, Any] | None:
     """Load schema.json for a specific skill."""
     if skill_name in _skill_schemas_cache:
         return _skill_schemas_cache[skill_name]
@@ -104,7 +104,7 @@ def get_configurable_api_key_skills() -> Set[str]:
     return configurable_skills
 
 
-def get_skill_keyword_config() -> Dict[str, List[str]]:
+def get_skill_keyword_config() -> Dict[str, list[str]]:
     """Generate skill keyword configuration from schemas."""
     config = {}
 
@@ -249,7 +249,7 @@ def get_all_real_skills() -> Dict[str, Set[str]]:
 
 
 def merge_autonomous_skills(
-    skills_config: Dict[str, Any], autonomous_skills: List[str]
+    skills_config: Dict[str, Any], autonomous_skills: list[str]
 ) -> Dict[str, Any]:
     """Merge autonomous skills into existing skills configuration.
 
@@ -442,7 +442,7 @@ async def filter_skills_for_auto_generation(
 
 
 async def identify_skills(
-    prompt: str, client: OpenAI, llm_logger: Optional["LLMLogger"] = None
+    prompt: str, client: OpenAI, llm_logger: "LLMLogger" | None = None
 ) -> Dict[str, Any]:
     """Identify relevant skills from the prompt using only real skill data.
 

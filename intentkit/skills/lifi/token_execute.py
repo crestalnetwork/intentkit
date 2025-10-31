@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 import httpx
 from coinbase_agentkit import CdpEvmWalletProvider
@@ -68,14 +68,14 @@ class TokenExecute(LiFiBaseTool):
 
     # Configuration options
     default_slippage: float = 0.03
-    allowed_chains: Optional[List[str]] = None
+    allowed_chains: list[str] | None = None
     max_execution_time: int = 300
-    quote_tool: Optional[TokenQuote] = Field(default=None, exclude=True)
+    quote_tool: TokenQuote | None = Field(default=None, exclude=True)
 
     def __init__(
         self,
         default_slippage: float = 0.03,
-        allowed_chains: Optional[List[str]] = None,
+        allowed_chains: list[str] | None = None,
         max_execution_time: int = 300,
     ) -> None:
         """Initialize the TokenExecute skill with configuration options."""
@@ -104,7 +104,7 @@ class TokenExecute(LiFiBaseTool):
         from_token: str,
         to_token: str,
         from_amount: str,
-        slippage: Optional[float] = None,
+        slippage: float | None = None,
         **kwargs,
     ) -> str:
         """Execute a token transfer."""
@@ -251,7 +251,7 @@ class TokenExecute(LiFiBaseTool):
 
     async def _handle_token_approval(
         self, wallet_provider: CdpEvmWalletProvider, quote_data: Dict[str, Any]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Handle ERC20 token approval if needed."""
         estimate = quote_data.get("estimate", {})
         approval_address = estimate.get("approvalAddress")
@@ -417,7 +417,7 @@ class TokenExecute(LiFiBaseTool):
         token_address: str,
         approval_address: str,
         amount: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Check if token allowance is sufficient and set approval if needed."""
         try:
             # Normalize addresses

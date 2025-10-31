@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -17,35 +17,35 @@ class WalletNFTsInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'base', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    format: Optional[str] = Field(
+    format: str | None = Field(
         description="The format of the token ID ('decimal' or 'hex').",
         default="decimal",
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The desired page size of the result.",
         default=DEFAULT_LIMIT,
     )
-    exclude_spam: Optional[bool] = Field(
+    exclude_spam: bool | None = Field(
         description="Should spam NFTs be excluded from the result?",
         default=True,
     )
-    token_addresses: Optional[List[str]] = Field(
+    token_addresses: list[str] | None = Field(
         description="The non-fungible token (NFT) addresses to get balances for.",
         default=None,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor returned in the previous response (for pagination).",
         default=None,
     )
-    normalize_metadata: Optional[bool] = Field(
+    normalize_metadata: bool | None = Field(
         description="The option to enable metadata normalization.",
         default=True,
     )
-    media_items: Optional[bool] = Field(
+    media_items: bool | None = Field(
         description="Should preview media data be returned?",
         default=False,
     )
-    include_prices: Optional[bool] = Field(
+    include_prices: bool | None = Field(
         description="Should NFT last sale prices be included in the result?",
         default=False,
     )
@@ -69,14 +69,14 @@ class WalletNFTs(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        format: Optional[str] = "decimal",
-        limit: Optional[int] = DEFAULT_LIMIT,
-        exclude_spam: Optional[bool] = True,
-        token_addresses: Optional[List[str]] = None,
-        cursor: Optional[str] = None,
-        normalize_metadata: Optional[bool] = True,
-        media_items: Optional[bool] = False,
-        include_prices: Optional[bool] = False,
+        format: str | None = "decimal",
+        limit: int | None = DEFAULT_LIMIT,
+        exclude_spam: bool | None = True,
+        token_addresses: list[str] | None = None,
+        cursor: str | None = None,
+        normalize_metadata: bool | None = True,
+        media_items: bool | None = False,
+        include_prices: bool | None = False,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch NFTs owned by a wallet from Moralis.

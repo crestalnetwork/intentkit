@@ -1,6 +1,6 @@
 """Utility functions for Elfa skills."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -14,13 +14,13 @@ class ElfaResponse(BaseModel):
 
     success: bool
     data: Any = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Dict[str, Any] | None = None
 
 
 async def make_elfa_request(
     endpoint: str,
     api_key: str,
-    params: Optional[Dict[str, Any]] = None,
+    params: Dict[str, Any] | None = None,
     timeout: int = 30,
 ) -> ElfaResponse:
     """
@@ -82,32 +82,32 @@ async def make_elfa_request(
 class RepostBreakdown(BaseModel):
     """Repost breakdown data."""
 
-    smart: Optional[int] = None
-    ct: Optional[int] = None
+    smart: int | None = None
+    ct: int | None = None
 
 
 class Account(BaseModel):
     """Account information."""
 
-    username: Optional[str] = None
-    isVerified: Optional[bool] = None
+    username: str | None = None
+    isVerified: bool | None = None
 
 
 class MentionData(BaseModel):
     """Base mention data structure used across multiple endpoints."""
 
-    tweetId: Optional[str] = Field(None, description="Tweet ID")
-    link: Optional[str] = Field(None, description="Link to the tweet")
-    likeCount: Optional[int] = Field(None, description="Number of likes")
-    repostCount: Optional[int] = Field(None, description="Number of reposts")
-    viewCount: Optional[int] = Field(None, description="Number of views")
-    quoteCount: Optional[int] = Field(None, description="Number of quotes")
-    replyCount: Optional[int] = Field(None, description="Number of replies")
-    bookmarkCount: Optional[int] = Field(None, description="Number of bookmarks")
-    mentionedAt: Optional[str] = Field(None, description="When mentioned")
-    type: Optional[str] = Field(None, description="Post type")
-    account: Optional[Account] = Field(None, description="Account information")
-    repostBreakdown: Optional[RepostBreakdown] = Field(
+    tweetId: str | None = Field(None, description="Tweet ID")
+    link: str | None = Field(None, description="Link to the tweet")
+    likeCount: int | None = Field(None, description="Number of likes")
+    repostCount: int | None = Field(None, description="Number of reposts")
+    viewCount: int | None = Field(None, description="Number of views")
+    quoteCount: int | None = Field(None, description="Number of quotes")
+    replyCount: int | None = Field(None, description="Number of replies")
+    bookmarkCount: int | None = Field(None, description="Number of bookmarks")
+    mentionedAt: str | None = Field(None, description="When mentioned")
+    type: str | None = Field(None, description="Post type")
+    account: Account | None = Field(None, description="Account information")
+    repostBreakdown: RepostBreakdown | None = Field(
         None, description="Repost breakdown"
     )
 
@@ -115,13 +115,11 @@ class MentionData(BaseModel):
 class SmartStatsData(BaseModel):
     """Smart stats data structure."""
 
-    smartFollowingCount: Optional[int] = Field(
-        None, description="Smart following count"
-    )
-    averageEngagement: Optional[float] = Field(None, description="Average engagement")
-    averageReach: Optional[float] = Field(None, description="Average reach")
-    smartFollowerCount: Optional[int] = Field(None, description="Smart follower count")
-    followerCount: Optional[int] = Field(None, description="Total follower count")
+    smartFollowingCount: int | None = Field(None, description="Smart following count")
+    averageEngagement: float | None = Field(None, description="Average engagement")
+    averageReach: float | None = Field(None, description="Average reach")
+    smartFollowerCount: int | None = Field(None, description="Smart follower count")
+    followerCount: int | None = Field(None, description="Total follower count")
 
 
 def clean_params(params: Dict[str, Any]) -> Dict[str, Any]:

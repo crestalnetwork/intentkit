@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from bip32 import BIP32
 from cdp import CdpClient, EvmServerAccount  # noqa: E402
@@ -19,7 +19,7 @@ from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _wallet_providers: Dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
-_cdp_client: Optional[CdpClient] = None
+_cdp_client: CdpClient | None = None
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ async def _ensure_evm_account(
     cdp_client = get_cdp_client()
     agent_data = agent_data or await AgentData.get(agent.id)
     address = agent_data.evm_wallet_address
-    account: Optional[EvmServerAccount] = None
+    account: EvmServerAccount | None = None
 
     if not address:
         if agent_data.cdp_wallet_data:

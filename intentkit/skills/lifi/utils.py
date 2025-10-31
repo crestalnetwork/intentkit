@@ -5,7 +5,7 @@ Common utilities and helper functions for LiFi token transfer skills.
 """
 
 from decimal import ROUND_DOWN, Decimal, InvalidOperation
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import httpx
 from web3 import Web3
@@ -72,8 +72,8 @@ def validate_inputs(
     to_token: str,
     from_amount: str,
     slippage: float,
-    allowed_chains: Optional[List[str]] = None,
-) -> Optional[str]:
+    allowed_chains: list[str] | None = None,
+) -> str | None:
     """
     Validate all input parameters for LiFi operations.
 
@@ -180,7 +180,7 @@ def handle_api_response(
     from_chain: str,
     to_token: str,
     to_chain: str,
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+) -> Tuple[Dict[str, Any] | None, str | None]:
     """
     Handle LiFi API response and return data or error message.
 
@@ -341,7 +341,7 @@ def build_quote_params(
     to_token: str,
     from_amount: str,
     slippage: float,
-    from_address: Optional[str] = None,
+    from_address: str | None = None,
 ) -> Dict[str, Any]:
     """
     Build parameters for LiFi quote API request.
@@ -385,7 +385,7 @@ def is_native_token(token_address: str) -> bool:
     )
 
 
-def _convert_hex_or_decimal(value: Any) -> Optional[int]:
+def _convert_hex_or_decimal(value: Any) -> int | None:
     """Convert LiFi transaction numeric values into integers."""
 
     if value is None:
@@ -410,7 +410,7 @@ def _convert_hex_or_decimal(value: Any) -> Optional[int]:
 
 def prepare_transaction_params(
     transaction_request: Dict[str, Any],
-    wallet_address: Optional[str] = None,
+    wallet_address: str | None = None,
 ) -> Dict[str, Any]:
     """Prepare transaction parameters for the CDP wallet provider."""
 
@@ -517,7 +517,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
 
     # Extract gas and fee costs
     gas_costs = estimate.get("gasCosts", [])
-    fee_costs: List[Dict[str, Any]] = []
+    fee_costs: list[Dict[str, Any]] = []
 
     # Collect fee information from included steps
     for step in data.get("includedSteps", []):
@@ -681,7 +681,7 @@ def get_explorer_url(chain_id: int, tx_hash: str) -> str:
 
 
 def format_transaction_result(
-    tx_hash: str, chain_id: int, token_info: Optional[Dict[str, str]] = None
+    tx_hash: str, chain_id: int, token_info: Dict[str, str] | None = None
 ) -> str:
     """
     Format transaction result with explorer link.

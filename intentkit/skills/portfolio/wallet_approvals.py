@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -21,11 +21,11 @@ class WalletApprovalsInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor for pagination.",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The number of results per page.",
         default=DEFAULT_LIMIT,
     )
@@ -49,8 +49,8 @@ class WalletApprovals(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = DEFAULT_LIMIT,
+        cursor: str | None = None,
+        limit: int | None = DEFAULT_LIMIT,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet token approvals from Moralis.

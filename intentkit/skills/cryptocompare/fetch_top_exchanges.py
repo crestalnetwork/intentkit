@@ -1,7 +1,7 @@
 """Tool for fetching top exchanges for a cryptocurrency pair via CryptoCompare API."""
 
 import logging
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -52,7 +52,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
         to_symbol: str = "USD",
         limit: int = 10,
         **kwargs,
-    ) -> List[CryptoExchange]:
+    ) -> list[CryptoExchange]:
         """Async implementation of the tool to fetch top exchanges for a cryptocurrency pair.
 
         Args:

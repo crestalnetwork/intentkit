@@ -3,7 +3,7 @@
 Fetches all news posts for BTC or ETH, sorted by publication date (newest first).
 """
 
-from typing import List, Type
+from typing import Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -35,7 +35,7 @@ class CryptopanicNewsOutput(BaseModel):
     """Output schema for fetching crypto news."""
 
     currency: str = Field(description="Currency news was fetched for")
-    news_items: List[NewsItem] = Field(description="List of news items")
+    news_items: list[NewsItem] = Field(description="List of news items")
     summary: str = Field(description="Summary of fetched news")
 
 
@@ -53,7 +53,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
         self,
         currency: str,
         api_key: str,
-    ) -> List[NewsItem]:
+    ) -> list[NewsItem]:
         """Fetch the latest news for a specific currency from CryptoPanic API.
 
         Args:

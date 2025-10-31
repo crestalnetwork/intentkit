@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.nation.base import NationBaseTool
@@ -46,7 +46,7 @@ async def get_skills(
 
 def get_nation_skill(
     name: str,
-) -> Optional[NationBaseTool]:
+) -> NationBaseTool | None:
     """Get a nation skill by name."""
     if name == "nft_check":
         if name not in _cache:

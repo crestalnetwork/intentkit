@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class WalletProfitabilitySummaryInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    days: Optional[str] = Field(
+    days: str | None = Field(
         description="Timeframe in days for the profitability summary. Options: 'all', '7', '30', '60', '90'.",
         default="all",
     )
@@ -43,7 +43,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        days: Optional[str] = "all",
+        days: str | None = "all",
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet profitability summary from Moralis.

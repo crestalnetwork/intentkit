@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class SlackScheduleMessageSchema(BaseModel):
     post_at: str = Field(
         description="The time to send the message in ISO format (e.g., '2023-12-25T10:00:00Z')",
     )
-    thread_ts: Optional[str] = Field(
+    thread_ts: str | None = Field(
         None,
         description="The timestamp of the thread to reply to, if sending a thread reply",
     )
@@ -36,7 +36,7 @@ class SlackScheduleMessage(SlackBaseTool):
         channel_id: str,
         text: str,
         post_at: str,
-        thread_ts: Optional[str] = None,
+        thread_ts: str | None = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Run the tool to schedule a Slack message.

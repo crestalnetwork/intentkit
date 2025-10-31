@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Type, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -10,12 +10,12 @@ from intentkit.skills.cookiefun.constants import DEFAULT_HEADERS, ENDPOINTS
 class GetAccountSmartFollowersInput(BaseModel):
     """Input for GetAccountSmartFollowers tool."""
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         default=None,
         description="Twitter username (either username or userId is required)",
     )
 
-    userId: Optional[str] = Field(
+    userId: str | None = Field(
         default=None,
         description="Twitter user ID (either username or userId is required)",
     )
@@ -30,10 +30,10 @@ class GetAccountSmartFollowers(CookieFunBaseTool):
 
     async def _arun(
         self,
-        username: Optional[str] = None,
-        userId: Optional[str] = None,
+        username: str | None = None,
+        userId: str | None = None,
         **kwargs,
-    ) -> Union[List[Dict[str, Any]], str]:
+    ) -> Union[list[Dict[str, Any]], str]:
         """
         Get smart followers for a Twitter account.
 

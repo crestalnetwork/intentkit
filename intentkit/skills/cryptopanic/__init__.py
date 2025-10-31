@@ -4,7 +4,7 @@ Loads and initializes skills for fetching crypto news and providing market insig
 """
 
 import logging
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 
@@ -34,7 +34,7 @@ async def get_skills(
     config: Config,
     is_private: bool,
     **kwargs,
-) -> List[CryptopanicBaseTool]:
+) -> list[CryptopanicBaseTool]:
     """Load CryptoPanic skills based on configuration.
 
     Args:
@@ -70,7 +70,7 @@ async def get_skills(
 
 def get_cryptopanic_skill(
     name: str,
-) -> Optional[CryptopanicBaseTool]:
+) -> CryptopanicBaseTool | None:
     """Retrieve a CryptoPanic skill instance by name.
 
     Args:

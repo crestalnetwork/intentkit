@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -12,23 +12,23 @@ class WalletNetWorthInput(BaseModel):
     """Input for wallet net worth tool."""
 
     address: str = Field(description="The wallet address to calculate net worth for.")
-    chains: Optional[List[str]] = Field(
+    chains: list[str] | None = Field(
         description="The chains to query (e.g., ['eth', 'bsc', 'polygon']).",
         default=None,
     )
-    exclude_spam: Optional[bool] = Field(
+    exclude_spam: bool | None = Field(
         description="Exclude spam tokens from the result.",
         default=True,
     )
-    exclude_unverified_contracts: Optional[bool] = Field(
+    exclude_unverified_contracts: bool | None = Field(
         description="Exclude unverified contracts from the result.",
         default=True,
     )
-    max_token_inactivity: Optional[int] = Field(
+    max_token_inactivity: int | None = Field(
         description="Exclude tokens inactive for more than the given amount of days.",
         default=1,
     )
-    min_pair_side_liquidity_usd: Optional[float] = Field(
+    min_pair_side_liquidity_usd: float | None = Field(
         description="Exclude tokens with liquidity less than the specified amount in USD.",
         default=1000,
     )
@@ -51,11 +51,11 @@ class WalletNetWorth(PortfolioBaseTool):
     async def _arun(
         self,
         address: str,
-        chains: Optional[List[str]] = None,
-        exclude_spam: Optional[bool] = True,
-        exclude_unverified_contracts: Optional[bool] = True,
-        max_token_inactivity: Optional[int] = 1,
-        min_pair_side_liquidity_usd: Optional[float] = 1000,
+        chains: list[str] | None = None,
+        exclude_spam: bool | None = True,
+        exclude_unverified_contracts: bool | None = True,
+        max_token_inactivity: int | None = 1,
+        min_pair_side_liquidity_usd: float | None = 1000,
         **kwargs,
     ) -> Dict[str, Any]:
         """Calculate wallet net worth from Moralis.

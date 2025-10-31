@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Optional
+from typing import Callable
 
 from eth_utils import is_address
 from langchain_core.messages import BaseMessage
@@ -328,7 +328,7 @@ def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
     return f"{task_info}. "
 
 
-async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Optional[str]:
+async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> str | None:
     """
     Build entrypoint-specific prompt based on context.
 

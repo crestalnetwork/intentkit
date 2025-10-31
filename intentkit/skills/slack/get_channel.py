@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -8,11 +8,11 @@ from intentkit.skills.slack.base import SlackBaseTool, SlackChannel
 class SlackGetChannelSchema(BaseModel):
     """Input schema for SlackGetChannel."""
 
-    channel_id: Optional[str] = Field(
+    channel_id: str | None = Field(
         None,
         description="The ID of the channel to get information about. Provide either channel_id or channel_name.",
     )
-    channel_name: Optional[str] = Field(
+    channel_name: str | None = Field(
         None,
         description="The name of the channel to get information about. Provide either channel_id or channel_name.",
     )
@@ -27,8 +27,8 @@ class SlackGetChannel(SlackBaseTool):
 
     async def _arun(
         self,
-        channel_id: Optional[str] = None,
-        channel_name: Optional[str] = None,
+        channel_id: str | None = None,
+        channel_name: str | None = None,
         **kwargs,
     ) -> Union[SlackChannel, Dict[str, SlackChannel]]:
         """Run the tool to get information about a Slack channel.

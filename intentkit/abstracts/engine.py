@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable
 
 from pydantic import BaseModel
 
@@ -19,12 +19,12 @@ class AgentMessageInput(BaseModel):
     text: str  # required
     """The main text content or query to be processed by the agent"""
 
-    images: List[str] = []  # optional, defaults to empty list
+    images: list[str] = []  # optional, defaults to empty list
     """List of image references or URLs for multimodal processing"""
 
 
 # Define a type hint for the callback that takes three strings and returns a list of strings
-AgentExecutionCallback = Callable[[str, AgentMessageInput, str], List[str]]
+AgentExecutionCallback = Callable[[str, AgentMessageInput, str], list[str]]
 """Callback function type for agent execution.
 
 Args:

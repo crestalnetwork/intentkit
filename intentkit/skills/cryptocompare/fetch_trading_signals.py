@@ -1,7 +1,7 @@
 """Tool for fetching cryptocurrency trading signals via CryptoCompare API."""
 
 import logging
-from typing import Dict, List, Type
+from typing import Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -49,7 +49,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
         self,
         from_symbol: str,
         **kwargs,
-    ) -> List[TradingSignal]:
+    ) -> list[TradingSignal]:
         """Async implementation of the tool to fetch cryptocurrency trading signals.
 
         Args:

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ class TwitterGetUserTweetsInput(BaseModel):
     """Input for TwitterGetUserTweets tool."""
 
     user_id: str = Field(description="The Twitter user ID to fetch tweets from")
-    exclude: Optional[List[str]] = Field(
+    exclude: list[str] | None = Field(
         default=["replies", "retweets"],
         description="Types of tweets to exclude (e.g., 'replies', 'retweets')",
     )

@@ -1,7 +1,6 @@
 import base64
 import io
 import logging
-from typing import Optional
 
 import filetype
 import httpx
@@ -67,7 +66,7 @@ async def fetch_image_as_bytes(image_url: HttpUrl) -> bytes:
         raise ToolException(msg) from e
 
 
-async def fetch_image_as_base64(image_url: HttpUrl) -> Optional[str]:
+async def fetch_image_as_base64(image_url: HttpUrl) -> str | None:
     """Fetches an image from the URL and returns the image as a Base64-encoded string."""
     image_bytes = await fetch_image_as_bytes(image_url)
 

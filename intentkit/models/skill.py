@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Dict, Optional
+from typing import Annotated, Any, Dict
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -157,7 +157,7 @@ class AgentSkillData(AgentSkillDataCreate):
             return result or 0
 
     @classmethod
-    async def get(cls, agent_id: str, skill: str, key: str) -> Optional[dict]:
+    async def get(cls, agent_id: str, skill: str, key: str) -> dict | None:
         """Get skill data for an agent.
 
         Args:
@@ -296,7 +296,7 @@ class ChatSkillData(ChatSkillDataCreate):
     ]
 
     @classmethod
-    async def get(cls, chat_id: str, skill: str, key: str) -> Optional[dict]:
+    async def get(cls, chat_id: str, skill: str, key: str) -> dict | None:
         """Get skill data for a chat.
 
         Args:
@@ -353,20 +353,20 @@ class ChatSkillData(ChatSkillDataCreate):
             await db.commit()
 
 
-def _skill_parse_bool(value: Optional[str]) -> bool:
+def _skill_parse_bool(value: str | None) -> bool:
     if value is None:
         return False
     return value.strip().lower() in {"true", "1", "yes"}
 
 
-def _skill_parse_optional_int(value: Optional[str]) -> Optional[int]:
+def _skill_parse_optional_int(value: str | None) -> int | None:
     if value is None:
         return None
     value = value.strip()
     return int(value) if value else None
 
 
-def _skill_parse_decimal(value: Optional[str], default: str = "0") -> Decimal:
+def _skill_parse_decimal(value: str | None, default: str = "0") -> Decimal:
     value = (value or "").strip()
     if not value:
         value = default
@@ -464,10 +464,8 @@ class Skill(BaseModel):
     name: Annotated[str, Field(description="Name of the skill")]
     enabled: Annotated[bool, Field(description="Is this skill enabled?")]
     category: Annotated[str, Field(description="Category of the skill")]
-    config_name: Annotated[Optional[str], Field(description="Config name of the skill")]
-    price_level: Annotated[
-        Optional[int], Field(description="Price level for this skill")
-    ]
+    config_name: Annotated[str | None, Field(description="Config name of the skill")]
+    price_level: Annotated[int | None, Field(description="Price level for this skill")]
     price: Annotated[
         Decimal, Field(description="Price for this skill", default=Decimal("1"))
     ]
@@ -475,11 +473,9 @@ class Skill(BaseModel):
         Decimal,
         Field(description="Price for this skill with self key", default=Decimal("1")),
     ]
-    rate_limit_count: Annotated[Optional[int], Field(description="Rate limit count")]
-    rate_limit_minutes: Annotated[
-        Optional[int], Field(description="Rate limit minutes")
-    ]
-    author: Annotated[Optional[str], Field(description="Author of the skill")]
+    rate_limit_count: Annotated[int | None, Field(description="Rate limit count")]
+    rate_limit_minutes: Annotated[int | None, Field(description="Rate limit minutes")]
+    author: Annotated[str | None, Field(description="Author of the skill")]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this record was created")
     ]
@@ -488,7 +484,7 @@ class Skill(BaseModel):
     ]
 
     @staticmethod
-    async def get(name: str) -> Optional["Skill"]:
+    async def get(name: str) -> "Skill" | None:
         """Get a skill by name with Redis caching.
 
         The skill is cached in Redis for 3 minutes.
@@ -537,7 +533,7 @@ class Skill(BaseModel):
         return None
 
     @staticmethod
-    async def get_by_config_name(category: str, config_name: str) -> Optional["Skill"]:
+    async def get_by_config_name(category: str, config_name: str) -> "Skill" | None:
         """Get a skill by category and config_name.
 
         Args:

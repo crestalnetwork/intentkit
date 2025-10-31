@@ -1,7 +1,6 @@
 """Twitter OAuth2 callback handler."""
 
 from datetime import datetime, timezone
-from typing import Optional
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import tweepy
@@ -37,8 +36,8 @@ def is_valid_url(url: str) -> bool:
 @router.get("/twitter")
 async def twitter_oauth_callback(
     state: str,
-    code: Optional[str] = None,
-    error: Optional[str] = None,
+    code: str | None = None,
+    error: str | None = None,
 ):
     """Handle Twitter OAuth2 callback.
 

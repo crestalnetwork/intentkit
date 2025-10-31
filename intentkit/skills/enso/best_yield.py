@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import Type
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -40,8 +40,8 @@ class YieldOption(BaseModel):
         None, description="Primary contract address for interacting with the protocol"
     )
     apy: float = Field(None, description="Annual Percentage Yield")
-    tvl: Optional[float] = Field(None, description="Total Value Locked in the protocol")
-    underlying_tokens: List[str] = Field(
+    tvl: float | None = Field(None, description="Total Value Locked in the protocol")
+    underlying_tokens: list[str] = Field(
         [], description="List of underlying token symbols"
     )
 
@@ -49,7 +49,7 @@ class YieldOption(BaseModel):
 class EnsoGetBestYieldOutput(BaseModel):
     """Output containing the best yield options."""
 
-    best_options: List[YieldOption] = Field(
+    best_options: list[YieldOption] = Field(
         [], description="List of best yield options sorted by APY (descending)"
     )
     token_symbol: str = Field(None, description="Symbol of the token searched for")

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class FetchNftPortfolioInput(BaseModel):
     """Input for FetchNftPortfolio tool."""
 
     address: str = Field(..., description="Wallet address")
-    chain_id: Optional[int] = Field(
+    chain_id: int | None = Field(
         None,
         description="Chain ID (if not specified, fetches from all supported chains)",
     )
@@ -26,7 +26,7 @@ class FetchNftPortfolioInput(BaseModel):
     solana_network: str = Field(
         default="mainnet", description="Solana network to use (mainnet or devnet)"
     )
-    limit: Optional[int] = Field(100, description="Maximum number of NFTs to return")
+    limit: int | None = Field(100, description="Maximum number of NFTs to return")
     normalize_metadata: bool = Field(
         True, description="Whether to normalize metadata across different standards"
     )
@@ -35,12 +35,12 @@ class FetchNftPortfolioInput(BaseModel):
 class NftMetadata(BaseModel):
     """Model for NFT metadata."""
 
-    name: Optional[str] = Field(None, description="NFT name")
-    description: Optional[str] = Field(None, description="NFT description")
-    image: Optional[str] = Field(None, description="NFT image URL")
-    animation_url: Optional[str] = Field(None, description="NFT animation URL")
-    attributes: Optional[List[Dict]] = Field(None, description="NFT attributes/traits")
-    external_url: Optional[str] = Field(None, description="External URL")
+    name: str | None = Field(None, description="NFT name")
+    description: str | None = Field(None, description="NFT description")
+    image: str | None = Field(None, description="NFT image URL")
+    animation_url: str | None = Field(None, description="NFT animation URL")
+    attributes: list[Dict] | None = Field(None, description="NFT attributes/traits")
+    external_url: str | None = Field(None, description="External URL")
 
 
 class NftItem(BaseModel):
@@ -48,14 +48,14 @@ class NftItem(BaseModel):
 
     token_id: str = Field(..., description="NFT token ID")
     token_address: str = Field(..., description="NFT contract address")
-    contract_type: Optional[str] = Field(
+    contract_type: str | None = Field(
         None, description="NFT contract type (ERC721, ERC1155, etc.)"
     )
-    name: Optional[str] = Field(None, description="NFT name")
-    symbol: Optional[str] = Field(None, description="NFT symbol")
+    name: str | None = Field(None, description="NFT name")
+    symbol: str | None = Field(None, description="NFT symbol")
     owner_of: str = Field(..., description="Owner address")
-    metadata: Optional[NftMetadata] = Field(None, description="NFT metadata")
-    floor_price: Optional[float] = Field(None, description="Floor price if available")
+    metadata: NftMetadata | None = Field(None, description="NFT metadata")
+    floor_price: float | None = Field(None, description="Floor price if available")
     chain: str = Field("eth", description="Blockchain network")
 
 
@@ -63,13 +63,13 @@ class NftPortfolioOutput(BaseModel):
     """Output for FetchNftPortfolio tool."""
 
     address: str = Field(..., description="Wallet address")
-    nfts: List[NftItem] = Field(default_factory=list, description="List of NFT items")
+    nfts: list[NftItem] = Field(default_factory=list, description="List of NFT items")
     total_count: int = Field(0, description="Total count of NFTs")
-    chains: List[str] = Field(
+    chains: list[str] = Field(
         default_factory=list, description="Chains included in the response"
     )
-    cursor: Optional[str] = Field(None, description="Cursor for pagination")
-    error: Optional[str] = Field(None, description="Error message if any")
+    cursor: str | None = Field(None, description="Cursor for pagination")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class FetchNftPortfolio(WalletBaseTool):
@@ -95,7 +95,7 @@ class FetchNftPortfolio(WalletBaseTool):
     async def _arun(
         self,
         address: str,
-        chain_id: Optional[int] = None,
+        chain_id: int | None = None,
         include_solana: bool = False,
         solana_network: str = "mainnet",
         limit: int = 100,

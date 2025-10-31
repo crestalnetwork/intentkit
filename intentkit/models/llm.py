@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from intentkit.config.config import config
 from intentkit.models.app_setting import AppSetting
@@ -24,13 +24,13 @@ _credit_per_usdc = None
 FOURPLACES = Decimal("0.0001")
 
 
-def _parse_bool(value: Optional[str]) -> bool:
+def _parse_bool(value: str | None) -> bool:
     if value is None:
         return False
     return value.strip().lower() in {"true", "1", "yes"}
 
 
-def _parse_optional_int(value: Optional[str]) -> Optional[int]:
+def _parse_optional_int(value: str | None) -> int | None:
     if value is None:
         return None
     value = value.strip()
@@ -173,7 +173,7 @@ class LLMModelInfo(BaseModel):
     enabled: bool = Field(default=True)
     input_price: Decimal  # Price per 1M input tokens in USD
     output_price: Decimal  # Price per 1M output tokens in USD
-    price_level: Optional[int] = Field(
+    price_level: int | None = Field(
         default=None, ge=1, le=5
     )  # Price level rating from 1-5
     context_length: int  # Maximum context length in tokens
@@ -198,9 +198,7 @@ class LLMModelInfo(BaseModel):
     supports_presence_penalty: bool = (
         True  # Whether the model supports presence_penalty parameter
     )
-    api_base: Optional[str] = (
-        None  # Custom API base URL if not using provider's default
-    )
+    api_base: str | None = None  # Custom API base URL if not using provider's default
     timeout: int = 180  # Default timeout in seconds
     created_at: Annotated[
         datetime,

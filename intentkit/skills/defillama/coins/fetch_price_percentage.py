@@ -1,6 +1,6 @@
 """Tool for fetching token price percentage changes via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
+from typing import Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +23,7 @@ Returns price percentage changes:
 class FetchPricePercentageInput(BaseModel):
     """Input schema for fetching token price percentage changes."""
 
-    coins: List[str] = Field(
+    coins: list[str] = Field(
         ..., description="List of token identifiers to fetch price changes for"
     )
 
@@ -35,7 +35,7 @@ class FetchPricePercentageResponse(BaseModel):
         default_factory=dict,
         description="Price percentage changes keyed by token identifier",
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):
@@ -59,7 +59,7 @@ class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):
     description: str = FETCH_PRICE_PERCENTAGE_PROMPT
     args_schema: Type[BaseModel] = FetchPricePercentageInput
 
-    async def _arun(self, coins: List[str]) -> FetchPricePercentageResponse:
+    async def _arun(self, coins: list[str]) -> FetchPricePercentageResponse:
         """Fetch price percentage changes for the given tokens.
 
         Args:

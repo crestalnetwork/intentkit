@@ -17,7 +17,7 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Tuple
 
 import sqlalchemy
 from epyxid import XID
@@ -229,7 +229,7 @@ async def initialize_agent(aid):
         HTTPException: If agent not found (404) or database error (500)
     """
     # get the agent from the database
-    agent: Optional[Agent] = await Agent.get(aid)
+    agent: Agent | None = await Agent.get(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"

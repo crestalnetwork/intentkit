@@ -7,7 +7,7 @@ Uses LLM to detect scheduling patterns and generate proper autonomous configurat
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 from epyxid import XID
 from openai import OpenAI
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 async def generate_autonomous_configuration(
     prompt: str,
     client: OpenAI,
-    llm_logger: Optional["LLMLogger"] = None,
-) -> Optional[Tuple[List[AgentAutonomous], List[str]]]:
+    llm_logger: "LLMLogger" | None = None,
+) -> Tuple[list[AgentAutonomous], list[str]] | None:
     """Generate autonomous configuration from a prompt using AI.
 
     Args:

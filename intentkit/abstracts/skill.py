@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData, AgentQuota
@@ -20,7 +20,7 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
-    async def get_agent_config(agent_id: str) -> Optional[Agent]:
+    async def get_agent_config(agent_id: str) -> Agent | None:
         """Get agent configuration.
 
         Returns:
@@ -30,7 +30,7 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
-    async def get_agent_data(agent_id: str) -> Optional[AgentData]:
+    async def get_agent_data(agent_id: str) -> AgentData | None:
         """Get additional agent data.
 
         Returns:
@@ -51,7 +51,7 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
-    async def get_agent_quota(agent_id: str) -> Optional[AgentQuota]:
+    async def get_agent_quota(agent_id: str) -> AgentQuota | None:
         """Get agent quota information.
 
         Returns:

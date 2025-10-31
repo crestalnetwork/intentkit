@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict
 
 from sqlalchemy import select, text
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class AccountCheckingResult:
     """Result of an account checking operation."""
 
-    def __init__(self, check_type: str, status: bool, details: Optional[Dict] = None):
+    def __init__(self, check_type: str, status: bool, details: Dict | None = None):
         self.check_type = check_type
         self.status = status  # True if check passed, False if failed
         self.details = details or {}
@@ -36,7 +36,7 @@ class AccountCheckingResult:
 
 async def check_account_balance_consistency(
     check_recent_only: bool = True, recent_hours: int = 24
-) -> List[AccountCheckingResult]:
+) -> list[AccountCheckingResult]:
     """Check if all account balances are consistent with their transactions.
 
     This verifies that the total balance in each account matches the sum of all transactions
@@ -261,7 +261,7 @@ async def check_account_balance_consistency(
     return results
 
 
-async def check_transaction_balance() -> List[AccountCheckingResult]:
+async def check_transaction_balance() -> list[AccountCheckingResult]:
     """Check if all credit events have balanced transactions.
 
     For each credit event, the sum of all credit transactions should equal the sum of all debit transactions.
@@ -372,7 +372,7 @@ async def check_transaction_balance() -> List[AccountCheckingResult]:
     return results
 
 
-async def check_orphaned_transactions() -> List[AccountCheckingResult]:
+async def check_orphaned_transactions() -> list[AccountCheckingResult]:
     """Check for orphaned transactions that don't have a corresponding event.
 
     Returns:
@@ -428,7 +428,7 @@ async def check_orphaned_transactions() -> List[AccountCheckingResult]:
     return [check_result]
 
 
-async def check_orphaned_events() -> List[AccountCheckingResult]:
+async def check_orphaned_events() -> list[AccountCheckingResult]:
     """Check for orphaned events that don't have any transactions.
 
     Returns:
@@ -493,7 +493,7 @@ async def check_orphaned_events() -> List[AccountCheckingResult]:
         ]
 
 
-async def check_total_credit_balance() -> List[AccountCheckingResult]:
+async def check_total_credit_balance() -> list[AccountCheckingResult]:
     """Check if the sum of all free_credits, reward_credits, and credits across all accounts is 0.
 
     This verifies that the overall credit system is balanced, with all credits accounted for.
@@ -553,7 +553,7 @@ async def check_total_credit_balance() -> List[AccountCheckingResult]:
     return [result]
 
 
-async def check_transaction_total_balance() -> List[AccountCheckingResult]:
+async def check_transaction_total_balance() -> list[AccountCheckingResult]:
     """Check if the total credit and debit amounts in the CreditTransaction table are balanced.
 
     This verifies that across all transactions in the system, the total credits equal the total debits.
@@ -608,7 +608,7 @@ async def check_transaction_total_balance() -> List[AccountCheckingResult]:
     return [result]
 
 
-async def run_quick_checks() -> Dict[str, List[AccountCheckingResult]]:
+async def run_quick_checks() -> Dict[str, list[AccountCheckingResult]]:
     """Run quick account checking procedures and return results.
 
     These checks are designed to be fast and can be run frequently.
@@ -693,7 +693,7 @@ async def run_quick_checks() -> Dict[str, List[AccountCheckingResult]]:
     return results
 
 
-async def run_slow_checks() -> Dict[str, List[AccountCheckingResult]]:
+async def run_slow_checks() -> Dict[str, list[AccountCheckingResult]]:
     """Run slow account checking procedures and return results.
 
     These checks are more resource-intensive and should be run less frequently.

@@ -1,6 +1,6 @@
 """Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
 
-from typing import ClassVar, List, Type
+from typing import ClassVar, Type
 
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class CryptopanicNewsOutput(BaseModel):
     """Output schema for fetching crypto news (used internally)."""
 
     currency: str = Field(description="Currency news was fetched for")
-    news_items: List[BaseModel] = Field(description="List of news items")
+    news_items: list[BaseModel] = Field(description="List of news items")
     summary: str = Field(description="Summary of fetched news")
 
 

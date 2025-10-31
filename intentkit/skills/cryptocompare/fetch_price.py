@@ -1,7 +1,7 @@
 """Tool for fetching cryptocurrency prices via CryptoCompare API."""
 
 import logging
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,7 @@ class CryptoCompareFetchPriceInput(BaseModel):
         ...,
         description="Base cryptocurrency symbol to get prices for (e.g., 'BTC', 'ETH')",
     )
-    to_symbols: List[str] = Field(
+    to_symbols: list[str] = Field(
         ...,
         description="List of target currencies (fiat or crypto) (e.g., ['USD', 'EUR', 'JPY'])",
     )
@@ -45,9 +45,9 @@ class CryptoCompareFetchPrice(CryptoCompareBaseTool):
     async def _arun(
         self,
         from_symbol: str,
-        to_symbols: List[str],
+        to_symbols: list[str],
         **kwargs,
-    ) -> List[CryptoPrice]:
+    ) -> list[CryptoPrice]:
         """Async implementation of the tool to fetch cryptocurrency prices.
 
         Args:

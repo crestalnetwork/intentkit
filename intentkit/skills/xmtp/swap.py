@@ -1,4 +1,4 @@
-from typing import List, Tuple, Type
+from typing import Tuple, Type
 
 from pydantic import BaseModel, Field
 
@@ -51,7 +51,7 @@ class XmtpSwap(XmtpBaseTool):
         to_token: str,
         from_amount: str,
         slippage_bps: int = 100,
-    ) -> Tuple[str, List[ChatMessageAttachment]]:
+    ) -> Tuple[str, list[ChatMessageAttachment]]:
         # Input validation
         if (
             not from_address

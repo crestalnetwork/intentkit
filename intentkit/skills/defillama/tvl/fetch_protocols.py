@@ -1,6 +1,6 @@
 """Tool for fetching all protocols via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -35,89 +35,83 @@ class Protocol(BaseModel):
     # Basic Info
     id: str = Field(..., description="Protocol unique identifier")
     name: str = Field(..., description="Protocol name")
-    address: Optional[str] = Field(None, description="Protocol's main contract address")
+    address: str | None = Field(None, description="Protocol's main contract address")
     symbol: str = Field(..., description="Protocol token symbol")
-    url: Optional[str] = Field(None, description="Protocol website")
-    description: Optional[str] = Field(None, description="Protocol description")
-    chain: Optional[str] = Field(None, description="Main chain of the protocol")
-    logo: Optional[str] = Field(None, description="URL to protocol logo")
+    url: str | None = Field(None, description="Protocol website")
+    description: str | None = Field(None, description="Protocol description")
+    chain: str | None = Field(None, description="Main chain of the protocol")
+    logo: str | None = Field(None, description="URL to protocol logo")
 
     # Audit Information
     audits: Union[str, int] = Field("0", description="Number of audits")
-    audit_note: Optional[str] = Field(None, description="Additional audit information")
-    audit_links: Optional[List[str]] = Field(None, description="Links to audit reports")
+    audit_note: str | None = Field(None, description="Additional audit information")
+    audit_links: list[str] | None = Field(None, description="Links to audit reports")
 
     # External IDs
-    gecko_id: Optional[str] = Field(None, description="CoinGecko ID")
-    cmcId: Optional[Union[str, int]] = Field(None, description="CoinMarketCap ID")
+    gecko_id: str | None = Field(None, description="CoinGecko ID")
+    cmcId: Union[str, int] | None = Field(None, description="CoinMarketCap ID")
 
     # Classification
     category: str = Field(..., description="Protocol category")
-    chains: List[str] = Field(
+    chains: list[str] = Field(
         default_factory=list, description="Chains the protocol operates on"
     )
 
     # Module and Related Info
     module: str = Field(..., description="Module name in DefiLlama")
-    parentProtocol: Optional[str] = Field(
-        None, description="Parent protocol identifier"
-    )
+    parentProtocol: str | None = Field(None, description="Parent protocol identifier")
 
     # Social and Development
-    twitter: Optional[str] = Field(None, description="Twitter handle")
-    github: Optional[List[str]] = Field(None, description="GitHub organization names")
+    twitter: str | None = Field(None, description="Twitter handle")
+    github: list[str] | None = Field(None, description="GitHub organization names")
 
     # Protocol Relationships
-    oracles: List[str] = Field(default_factory=list, description="Oracle services used")
-    forkedFrom: List[str] = Field(
+    oracles: list[str] = Field(default_factory=list, description="Oracle services used")
+    forkedFrom: list[str] = Field(
         default_factory=list, description="Protocols this one was forked from"
     )
 
     # Additional Metadata
-    methodology: Optional[str] = Field(None, description="TVL calculation methodology")
-    listedAt: Optional[int] = Field(
-        None, description="Timestamp when protocol was listed"
-    )
-    openSource: Optional[bool] = Field(
-        None, description="Whether protocol is open source"
-    )
-    treasury: Optional[str] = Field(None, description="Treasury information")
-    misrepresentedTokens: Optional[bool] = Field(
+    methodology: str | None = Field(None, description="TVL calculation methodology")
+    listedAt: int | None = Field(None, description="Timestamp when protocol was listed")
+    openSource: bool | None = Field(None, description="Whether protocol is open source")
+    treasury: str | None = Field(None, description="Treasury information")
+    misrepresentedTokens: bool | None = Field(
         None, description="Whether tokens are misrepresented"
     )
-    hallmarks: Optional[List[Hallmark]] = Field(
+    hallmarks: list[Hallmark] | None = Field(
         None, description="Significant protocol events"
     )
 
     # TVL Related Data
-    tvl: Optional[float] = Field(None, description="Total Value Locked in USD")
+    tvl: float | None = Field(None, description="Total Value Locked in USD")
     chainTvls: Dict[str, float] = Field(
         default_factory=dict,
         description="TVL breakdown by chain including special types (staking, borrowed, etc.)",
     )
-    change_1h: Optional[float] = Field(None, description="1 hour TVL change percentage")
-    change_1d: Optional[float] = Field(None, description="1 day TVL change percentage")
-    change_7d: Optional[float] = Field(None, description="7 day TVL change percentage")
+    change_1h: float | None = Field(None, description="1 hour TVL change percentage")
+    change_1d: float | None = Field(None, description="1 day TVL change percentage")
+    change_7d: float | None = Field(None, description="7 day TVL change percentage")
 
     # Additional TVL Components
-    staking: Optional[float] = Field(None, description="Value in staking")
-    pool2: Optional[float] = Field(None, description="Value in pool2")
-    borrowed: Optional[float] = Field(None, description="Value borrowed")
+    staking: float | None = Field(None, description="Value in staking")
+    pool2: float | None = Field(None, description="Value in pool2")
+    borrowed: float | None = Field(None, description="Value borrowed")
 
     # Token Information
     tokenBreakdowns: Dict[str, float] = Field(
         default_factory=dict, description="TVL breakdown by token"
     )
-    mcap: Optional[float] = Field(None, description="Market capitalization")
+    mcap: float | None = Field(None, description="Market capitalization")
 
 
 class DefiLlamaProtocolsOutput(BaseModel):
     """Output model for the protocols fetching tool."""
 
-    protocols: List[Protocol] = Field(
+    protocols: list[Protocol] = Field(
         default_factory=list, description="List of fetched protocols"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchProtocols(DefiLlamaBaseTool):

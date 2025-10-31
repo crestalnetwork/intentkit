@@ -1,7 +1,7 @@
 """Wallet Portfolio Skills for IntentKit."""
 
 import logging
-from typing import Dict, List, NotRequired, TypedDict
+from typing import Dict, NotRequired, TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -35,7 +35,7 @@ async def get_skills(
     config: "Config",
     is_private: bool,
     **_,
-) -> List[WalletBaseTool]:
+) -> list[WalletBaseTool]:
     """Get all Wallet Portfolio skills.
 
     Args:

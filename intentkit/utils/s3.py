@@ -5,7 +5,6 @@ S3 utility module for storing and retrieving images from AWS S3.
 import logging
 from enum import Enum
 from io import BytesIO
-from typing import Optional
 
 import boto3
 import filetype
@@ -16,10 +15,10 @@ from mypy_boto3_s3.client import S3Client
 logger = logging.getLogger(__name__)
 
 # Global variables for S3 configuration
-_bucket: Optional[str] = None
-_client: Optional[S3Client] = None
-_prefix: Optional[str] = None
-_cdn_url: Optional[str] = None
+_bucket: str | None = None
+_client: S3Client | None = None
+_prefix: str | None = None
+_cdn_url: str | None = None
 
 
 def init_s3(bucket: str, cdn_url: str, env: str) -> None:
@@ -114,7 +113,7 @@ async def store_image(url: str, key: str) -> str:
 
 
 async def store_image_bytes(
-    image_bytes: bytes, key: str, content_type: Optional[str] = None
+    image_bytes: bytes, key: str, content_type: str | None = None
 ) -> str:
     """
     Store raw image bytes to S3.
@@ -185,8 +184,8 @@ class FileType(str, Enum):
 async def store_file(
     content: bytes,
     key: str,
-    content_type: Optional[str] = None,
-    size: Optional[int] = None,
+    content_type: str | None = None,
+    size: int | None = None,
 ) -> str:
     """Store raw file bytes with automatic content type detection."""
     if not _client or not _bucket or not _prefix or not _cdn_url:
@@ -239,7 +238,7 @@ async def store_file_bytes(
     file_bytes: bytes,
     key: str,
     file_type: FileType,
-    size_limit_bytes: Optional[int] = None,
+    size_limit_bytes: int | None = None,
 ) -> str:
     """
     Store raw file bytes (image, video, sound, pdf) to S3.

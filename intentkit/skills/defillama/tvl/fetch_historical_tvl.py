@@ -1,6 +1,6 @@
 """Tool for fetching total historical TVL via DeFiLlama API."""
 
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,7 @@ class FetchHistoricalTVLInput(BaseModel):
 class FetchHistoricalTVLResponse(BaseModel):
     """Response schema for historical TVL data."""
 
-    data: List[HistoricalTVLDataPoint] = Field(
+    data: list[HistoricalTVLDataPoint] = Field(
         default_factory=list,
         description="List of historical TVL data points across all chains",
     )

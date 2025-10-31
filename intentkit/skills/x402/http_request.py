@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Type, Union
 from urllib.parse import urlparse
 
 import httpx
@@ -18,22 +18,22 @@ class X402HttpRequestInput(BaseModel):
     url: str = Field(
         description="Absolute URL for the request (must include scheme and host)."
     )
-    headers: Optional[Dict[str, str]] = Field(
+    headers: Dict[str, str] | None = Field(
         default=None,
         description="Optional headers to include in the request.",
     )
-    params: Optional[Dict[str, Any]] = Field(
+    params: Dict[str, Any] | None = Field(
         default=None,
         description="Optional query parameters to include in the request.",
     )
-    data: Optional[Union[Dict[str, Any], str]] = Field(
+    data: Union[Dict[str, Any], str] | None = Field(
         default=None,
         description=(
             "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
             "Only supported for POST requests."
         ),
     )
-    timeout: Optional[float] = Field(
+    timeout: float | None = Field(
         default=30.0,
         description="Request timeout in seconds.",
     )
@@ -54,9 +54,9 @@ class X402HttpRequest(X402BaseSkill):
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Union[Dict[str, Any], str]] = None,
+        headers: Dict[str, str] | None = None,
+        params: Dict[str, Any] | None = None,
+        data: Union[Dict[str, Any], str] | None = None,
         timeout: float = 30.0,
         **_: Any,
     ) -> str:

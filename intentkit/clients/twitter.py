@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, NotRequired, Optional, TypedDict
+from typing import Any, Dict, NotRequired, TypedDict
 from urllib.parse import urlencode
 
 import httpx
@@ -29,7 +29,7 @@ class TwitterMedia(BaseModel):
 
     media_key: str
     type: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 class TwitterUser(BaseModel):
@@ -58,10 +58,10 @@ class Tweet(BaseModel):
     id: str
     text: str
     author_id: str
-    author: Optional[TwitterUser] = None
+    author: TwitterUser | None = None
     created_at: datetime
-    referenced_tweets: Optional[List["Tweet"]] = None
-    attachments: Optional[List[TwitterMedia]] = None
+    referenced_tweets: list["Tweet"] | None = None
+    attachments: list[TwitterMedia] | None = None
 
 
 class TwitterClientConfig(TypedDict):
@@ -90,8 +90,8 @@ class TwitterClient(TwitterABC):
             config: Configuration dictionary that may contain API keys
         """
         self.agent_id = agent_id
-        self._client: Optional[AsyncClient] = None
-        self._agent_data: Optional[AgentData] = None
+        self._client: AsyncClient | None = None
+        self._agent_data: AgentData | None = None
         self.use_key = _is_self_key(config)
         self._config = config
 
@@ -197,7 +197,7 @@ class TwitterClient(TwitterABC):
         return self._client
 
     @property
-    def self_id(self) -> Optional[str]:
+    def self_id(self) -> str | None:
         """Get the Twitter user ID.
 
         Returns:
@@ -210,7 +210,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_id
 
     @property
-    def self_username(self) -> Optional[str]:
+    def self_username(self) -> str | None:
         """Get the Twitter username.
 
         Returns:
@@ -223,7 +223,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_username
 
     @property
-    def self_name(self) -> Optional[str]:
+    def self_name(self) -> str | None:
         """Get the Twitter display name.
 
         Returns:
@@ -236,7 +236,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_name
 
     @property
-    def self_is_verified(self) -> Optional[bool]:
+    def self_is_verified(self) -> bool | None:
         """Get the Twitter account verification status.
 
         Returns:
@@ -248,7 +248,7 @@ class TwitterClient(TwitterABC):
             return None
         return self._agent_data.twitter_is_verified
 
-    def process_tweets_response(self, response: Dict[str, Any]) -> List[Tweet]:
+    def process_tweets_response(self, response: Dict[str, Any]) -> list[Tweet]:
         """Process Twitter API response and convert it to a list of Tweet objects.
 
         Args:
@@ -347,7 +347,7 @@ class TwitterClient(TwitterABC):
 
         return result
 
-    async def upload_media(self, agent_id: str, image_url: str) -> List[str]:
+    async def upload_media(self, agent_id: str, image_url: str) -> list[str]:
         """Upload media to Twitter and return the media IDs.
 
         Args:

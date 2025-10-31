@@ -1,7 +1,7 @@
 """Tool for fetching cryptocurrency news via CryptoCompare API."""
 
 import logging
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
         self,
         token: str,
         **kwargs,
-    ) -> List[CryptoNews]:
+    ) -> list[CryptoNews]:
         """Async implementation of the tool to fetch cryptocurrency news.
 
         Args:

@@ -1,6 +1,6 @@
 """Base class for Wallet Portfolio tools."""
 
-from typing import List, Optional, Type
+from typing import Type
 
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -32,7 +32,7 @@ class WalletBaseTool(IntentKitSkill):
     args_schema: Type[BaseModel]
 
     # Optional fields for blockchain providers
-    solana_networks: Optional[List[str]] = Field(
+    solana_networks: list[str] | None = Field(
         default=SOLANA_NETWORKS, description="Supported Solana networks"
     )
 

@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Annotated, Any, Dict, Optional
+from typing import Annotated, Any, Dict
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -94,70 +94,70 @@ class AgentData(BaseModel):
         ),
     ]
     evm_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="EVM wallet address",
         ),
     ] = None
     solana_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Solana wallet address",
         ),
     ] = None
     cdp_wallet_data: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="CDP wallet data",
         ),
     ] = None
     twitter_id: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Twitter user ID",
         ),
     ] = None
     twitter_username: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Twitter username",
         ),
     ] = None
     twitter_name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Twitter display name",
         ),
     ] = None
     twitter_access_token: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Twitter access token",
         ),
     ] = None
     twitter_access_token_expires_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(
             default=None,
             description="Twitter access token expiration time",
         ),
     ] = None
     twitter_refresh_token: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Twitter refresh token",
         ),
     ] = None
     twitter_self_key_refreshed_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(
             default=None,
             description="Twitter self-key userinfo last refresh time",
@@ -171,42 +171,42 @@ class AgentData(BaseModel):
         ),
     ] = None
     telegram_id: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Telegram user ID",
         ),
     ] = None
     telegram_username: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Telegram username",
         ),
     ] = None
     telegram_name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Telegram display name",
         ),
     ] = None
     error_message: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Last error message",
         ),
     ] = None
     api_key: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="API key for the agent",
         ),
     ] = None
     api_key_public: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Public API key for the agent",
@@ -247,7 +247,7 @@ class AgentData(BaseModel):
             return cls.model_construct(id=agent_id)
 
     @classmethod
-    async def get_by_api_key(cls, api_key: str) -> Optional["AgentData"]:
+    async def get_by_api_key(cls, api_key: str) -> "AgentData" | None:
         """Get agent data by API key.
 
         Args:
@@ -409,7 +409,7 @@ class AgentPluginData(BaseModel):
     @classmethod
     async def get(
         cls, agent_id: str, plugin: str, key: str
-    ) -> Optional["AgentPluginData"]:
+    ) -> "AgentPluginData" | None:
         """Get plugin data for an agent.
 
         Args:
@@ -547,7 +547,7 @@ class AgentQuota(BaseModel):
         int, PydanticField(default=99999999, description="Daily message limit")
     ]
     last_message_time: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(default=None, description="Last message timestamp"),
     ]
     autonomous_count_total: Annotated[
@@ -578,7 +578,7 @@ class AgentQuota(BaseModel):
         ),
     ]
     last_autonomous_time: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(default=None, description="Last autonomous operation timestamp"),
     ]
     twitter_count_total: Annotated[
@@ -603,7 +603,7 @@ class AgentQuota(BaseModel):
         PydanticField(default=99999999, description="Daily Twitter operations limit"),
     ]
     last_twitter_time: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(default=None, description="Last Twitter operation timestamp"),
     ]
     free_income_daily: Annotated[

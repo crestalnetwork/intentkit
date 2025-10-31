@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from langchain_core.tools.base import ToolException
 
@@ -156,7 +156,7 @@ class VeniceImageBaseTool(IntentKitSkill):
 
     async def post(
         self, path: str, payload: Dict[str, Any], context
-    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+    ) -> Tuple[Dict[str, Any], Dict[str, Any] | None]:
         """
         Makes a POST request to the Venice AI API using the `make_venice_api_request`
         function from the `skills.venice_image.api` module.

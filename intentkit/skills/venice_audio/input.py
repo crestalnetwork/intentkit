@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,14 +23,14 @@ class VeniceAudioInput(BaseModel):
         description="voice model to used to generate voice from text_to_speech tool."
     )
 
-    speed: Optional[float] = Field(
+    speed: float | None = Field(
         default=1.0,  # As per API docs: default: 1 (using float for consistency)
         description="The speed of the generated audio. 1.0 is normal speed. Allowed range: 0.25 to 4.0.",
         ge=0.25,  # As per API docs: Required range: 0.25 <= x
         le=4.0,  # As per API docs: Required range: x <= 4
     )
 
-    response_format: Optional[AllowedAudioFormat] = Field(
+    response_format: AllowedAudioFormat | None = Field(
         default="mp3",  # As per API docs: default: mp3
         description="The desired audio format for the output file.",
     )

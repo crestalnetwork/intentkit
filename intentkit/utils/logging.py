@@ -4,13 +4,11 @@ Logging configuration module
 
 import json
 import logging
-from typing import Callable, Optional
+from typing import Callable
 
 
 class JsonFormatter(logging.Formatter):
-    def __init__(
-        self, filter_func: Optional[Callable[[logging.LogRecord], bool]] = None
-    ):
+    def __init__(self, filter_func: Callable[[logging.LogRecord], bool] | None = None):
         super().__init__()
         self.filter_func = filter_func
 

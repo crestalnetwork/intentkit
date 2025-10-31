@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 from decimal import Decimal
-from typing import Optional
 
 import httpx
 from pydantic import BaseModel, Field
@@ -139,7 +138,7 @@ async def _build_assets_list(
         return assets
 
     wallet_address = agent_data.evm_wallet_address
-    network_id: Optional[str] = agent.network_id
+    network_id: str | None = agent.network_id
 
     # ETH is always included
     eth_balance = await _get_eth_balance(web3_client, wallet_address)

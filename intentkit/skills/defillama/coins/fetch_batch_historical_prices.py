@@ -1,6 +1,6 @@
 """Tool for fetching batch historical token prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
+from typing import Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +33,7 @@ class TokenPriceHistory(BaseModel):
     """Model representing historical price data for a single token."""
 
     symbol: str = Field(..., description="Token symbol")
-    prices: List[HistoricalPricePoint] = Field(
+    prices: list[HistoricalPricePoint] = Field(
         ..., description="List of historical price points"
     )
 
@@ -41,7 +41,7 @@ class TokenPriceHistory(BaseModel):
 class FetchBatchHistoricalPricesInput(BaseModel):
     """Input schema for fetching batch historical token prices."""
 
-    coins_timestamps: Dict[str, List[int]] = Field(
+    coins_timestamps: Dict[str, list[int]] = Field(
         ..., description="Dictionary mapping token identifiers to lists of timestamps"
     )
 
@@ -53,7 +53,7 @@ class FetchBatchHistoricalPricesResponse(BaseModel):
         default_factory=dict,
         description="Historical token prices keyed by token identifier",
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
@@ -81,7 +81,7 @@ class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
     args_schema: Type[BaseModel] = FetchBatchHistoricalPricesInput
 
     async def _arun(
-        self, coins_timestamps: Dict[str, List[int]]
+        self, coins_timestamps: Dict[str, list[int]]
     ) -> FetchBatchHistoricalPricesResponse:
         """Fetch historical prices for the given tokens at specified timestamps.
 

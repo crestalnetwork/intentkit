@@ -1,6 +1,6 @@
 """Tool for fetching chain TVL data via DeFi Llama API."""
 
-from typing import List, Optional, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -23,14 +23,14 @@ class ChainTVLData(BaseModel):
 
     name: str = Field(..., description="Chain name")
     tvl: float = Field(..., description="Total Value Locked in USD")
-    gecko_id: Optional[str] = Field(None, description="CoinGecko identifier")
-    token_symbol: Optional[str] = Field(
+    gecko_id: str | None = Field(None, description="CoinGecko identifier")
+    token_symbol: str | None = Field(
         None, alias="tokenSymbol", description="Native token symbol"
     )
-    cmc_id: Optional[str] = Field(
+    cmc_id: str | None = Field(
         None, alias="cmcId", description="CoinMarketCap identifier"
     )
-    chain_id: Optional[int | str] = Field(
+    chain_id: int | str | None = Field(
         None, alias="chainId", description="Chain identifier"
     )
 
@@ -48,11 +48,11 @@ class FetchChainsInput(BaseModel):
 class FetchChainsResponse(BaseModel):
     """Response schema for all chains' TVL data."""
 
-    chains: List[ChainTVLData] = Field(
+    chains: list[ChainTVLData] = Field(
         default_factory=list, description="List of chains with their TVL data"
     )
     total_tvl: float = Field(..., description="Total TVL across all chains in USD")
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchChains(DefiLlamaBaseTool):

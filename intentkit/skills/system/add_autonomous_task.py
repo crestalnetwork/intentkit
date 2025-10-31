@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -9,21 +7,21 @@ from intentkit.skills.system.base import SystemBaseTool
 class AddAutonomousTaskInput(BaseModel):
     """Input model for add_autonomous_task skill."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         description="Display name of the autonomous task configuration",
         max_length=50,
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         description="Description of the autonomous task configuration",
         max_length=200,
     )
-    minutes: Optional[int] = Field(
+    minutes: int | None = Field(
         default=None,
         description="Interval in minutes between operations, mutually exclusive with cron",
     )
-    cron: Optional[str] = Field(
+    cron: str | None = Field(
         default=None,
         description="Cron expression for scheduling operations, mutually exclusive with minutes",
     )
@@ -54,10 +52,10 @@ class AddAutonomousTask(SystemBaseTool):
 
     async def _arun(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        minutes: Optional[int] = None,
-        cron: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        minutes: int | None = None,
+        cron: str | None = None,
         prompt: str = "",
         **kwargs,
     ) -> AddAutonomousTaskOutput:

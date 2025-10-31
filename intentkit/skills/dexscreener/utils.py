@@ -5,7 +5,7 @@ Utility functions and constants for DexScreener skills.
 import json
 import logging
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict
 
 from pydantic import ValidationError
 
@@ -175,11 +175,11 @@ def get_sort_function(
 
 
 def sort_pairs_by_criteria(
-    pairs: List[PairModel],
+    pairs: list[PairModel],
     sort_by: SortBy = SortBy.LIQUIDITY,
     volume_timeframe: VolumeTimeframe = VolumeTimeframe.TWENTY_FOUR_HOUR,
     reverse: bool = True,
-) -> List[PairModel]:
+) -> list[PairModel]:
     """
     Sort pairs by the specified criteria.
 
@@ -200,7 +200,7 @@ def sort_pairs_by_criteria(
         return pairs  # Return original list if sorting fails
 
 
-def filter_ticker_pairs(pairs: List[PairModel], target_ticker: str) -> List[PairModel]:
+def filter_ticker_pairs(pairs: list[PairModel], target_ticker: str) -> list[PairModel]:
     """
     Filter pairs to only include those where base token symbol matches target ticker.
 
@@ -222,8 +222,8 @@ def filter_ticker_pairs(pairs: List[PairModel], target_ticker: str) -> List[Pair
 
 
 def filter_address_pairs(
-    pairs: List[PairModel], target_address: str
-) -> List[PairModel]:
+    pairs: list[PairModel], target_address: str
+) -> list[PairModel]:
     """
     Filter pairs to only include those matching the target address.
     Checks pairAddress, baseToken.address, and quoteToken.address.
@@ -256,8 +256,8 @@ def filter_address_pairs(
 def create_error_response(
     error_type: str,
     message: str,
-    details: Optional[str] = None,
-    additional_data: Optional[Dict[str, Any]] = None,
+    details: str | None = None,
+    additional_data: Dict[str, Any] | None = None,
 ) -> str:
     """
     Create a standardized error response in JSON format.
@@ -288,7 +288,7 @@ def create_error_response(
 def create_no_results_response(
     query_info: str,
     reason: str = "no results found",
-    additional_data: Optional[Dict[str, Any]] = None,
+    additional_data: Dict[str, Any] | None = None,
 ) -> str:
     """
     Create a standardized "no results found" response.
@@ -314,7 +314,7 @@ def create_no_results_response(
 
 
 def handle_validation_error(
-    error: ValidationError, query_info: str, data_length: Optional[int] = None
+    error: ValidationError, query_info: str, data_length: int | None = None
 ) -> str:
     """
     Handle validation errors in a standardized way.
@@ -363,7 +363,7 @@ def truncate_large_fields(
     return truncated
 
 
-def group_pairs_by_token(pairs: List[PairModel]) -> Dict[str, List[PairModel]]:
+def group_pairs_by_token(pairs: list[PairModel]) -> Dict[str, list[PairModel]]:
     """
     Group pairs by token address for better organization in multi-token responses.
 

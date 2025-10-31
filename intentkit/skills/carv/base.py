@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Tuple, Type
 
 import httpx  # Ensure httpx is installed: pip install httpx
 from langchain_core.tools.base import ToolException
@@ -39,7 +39,7 @@ class CarvBaseTool(IntentKitSkill):
             skill_config = context.agent.skill_config(self.category)
             api_key_provider = skill_config.get("api_key_provider")
             if api_key_provider == "agent_owner":
-                agent_api_key: Optional[str] = skill_config.get("api_key")
+                agent_api_key: str | None = skill_config.get("api_key")
                 if agent_api_key:
                     logger.debug(
                         f"Using agent-specific CARV API key for skill {self.name} in category {self.category}"
@@ -102,9 +102,9 @@ class CarvBaseTool(IntentKitSkill):
         context,
         endpoint: str,
         method: str = "GET",
-        params: Optional[Dict[str, Any]] = None,
-        payload: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+        params: Dict[str, Any] | None = None,
+        payload: Dict[str, Any] | None = None,
+    ) -> Tuple[Dict[str, Any] | None, Dict[str, Any] | None]:
         """
         Makes a call to the CARV API and returns a tuple of (success, error).
 

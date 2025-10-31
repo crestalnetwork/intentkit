@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -21,35 +21,35 @@ class WalletSwapsInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor for pagination.",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The number of results per page.",
         default=DEFAULT_LIMIT,
     )
-    from_block: Optional[str] = Field(
+    from_block: str | None = Field(
         description="The minimum block number to get transactions from.",
         default=None,
     )
-    to_block: Optional[str] = Field(
+    to_block: str | None = Field(
         description="The maximum block number to get transactions from.",
         default=None,
     )
-    from_date: Optional[str] = Field(
+    from_date: str | None = Field(
         description="The start date to get transactions from (format in seconds or datestring).",
         default=None,
     )
-    to_date: Optional[str] = Field(
+    to_date: str | None = Field(
         description="The end date to get transactions from (format in seconds or datestring).",
         default=None,
     )
-    order: Optional[str] = Field(
+    order: str | None = Field(
         description="The order of the result (ASC or DESC).",
         default=DEFAULT_ORDER,
     )
-    transaction_types: Optional[List[str]] = Field(
+    transaction_types: list[str] | None = Field(
         description="Array of transaction types. Allowed values are 'buy', 'sell'.",
         default=None,
     )
@@ -73,14 +73,14 @@ class WalletSwaps(PortfolioBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = DEFAULT_LIMIT,
-        from_block: Optional[str] = None,
-        to_block: Optional[str] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None,
-        order: Optional[str] = DEFAULT_ORDER,
-        transaction_types: Optional[List[str]] = None,
+        cursor: str | None = None,
+        limit: int | None = DEFAULT_LIMIT,
+        from_block: str | None = None,
+        to_block: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        order: str | None = DEFAULT_ORDER,
+        transaction_types: list[str] | None = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch wallet swap transactions from Moralis.

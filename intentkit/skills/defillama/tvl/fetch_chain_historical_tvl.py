@@ -1,6 +1,6 @@
 """Tool for fetching chain historical TVL via DeFiLlama API."""
 
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +33,7 @@ class FetchChainHistoricalTVLResponse(BaseModel):
     """Response schema for chain-specific historical TVL data."""
 
     chain: str = Field(..., description="Normalized chain name")
-    data: List[HistoricalTVLDataPoint] = Field(
+    data: list[HistoricalTVLDataPoint] = Field(
         default_factory=list, description="List of historical TVL data points"
     )
     error: str | None = Field(default=None, description="Error message if any")

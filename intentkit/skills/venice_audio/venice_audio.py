@@ -1,7 +1,7 @@
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 import httpx
 from pydantic import BaseModel
@@ -38,8 +38,8 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         self,
         voice_input: str,
         voice_model: str,
-        speed: Optional[float] = 1.0,
-        response_format: Optional[AllowedAudioFormat] = "mp3",
+        speed: float | None = 1.0,
+        response_format: AllowedAudioFormat | None = "mp3",
         **kwargs,  # type: ignore
     ) -> Dict[str, Any]:
         """

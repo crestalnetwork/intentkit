@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Type, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -10,12 +10,12 @@ from intentkit.skills.cookiefun.constants import DEFAULT_HEADERS, ENDPOINTS
 class GetAccountDetailsInput(BaseModel):
     """Input for GetAccountDetails tool."""
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         default=None,
         description="Twitter username (either username or userId is required)",
     )
 
-    userId: Optional[str] = Field(
+    userId: str | None = Field(
         default=None,
         description="Twitter user ID (either username or userId is required)",
     )
@@ -30,8 +30,8 @@ class GetAccountDetails(CookieFunBaseTool):
 
     async def _arun(
         self,
-        username: Optional[str] = None,
-        userId: Optional[str] = None,
+        username: str | None = None,
+        userId: str | None = None,
         **kwargs,
     ) -> Union[Dict[str, Any], str]:
         """

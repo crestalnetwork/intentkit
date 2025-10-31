@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional, Type
+from typing import Type
 
 from coinbase_agentkit import CdpEvmWalletProvider
 from langchain_core.tools.base import ToolException
@@ -36,7 +36,7 @@ class EnsoBaseTool(IntentKitSkill):
         provider: CdpEvmWalletProvider = await self.get_wallet_provider(context)
         return provider.get_address()
 
-    def get_chain_provider(self, context: AgentContext) -> Optional[ChainProvider]:
+    def get_chain_provider(self, context: AgentContext) -> ChainProvider | None:
         return config.chain_provider
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
@@ -59,7 +59,7 @@ class EnsoBaseTool(IntentKitSkill):
             )
 
     def resolve_chain_id(
-        self, context: AgentContext, chain_id: Optional[int] = None
+        self, context: AgentContext, chain_id: int | None = None
     ) -> int:
         if chain_id:
             return chain_id
@@ -84,9 +84,7 @@ class EnsoBaseTool(IntentKitSkill):
         return "enso"
 
 
-def format_amount_with_decimals(
-    amount: object, decimals: Optional[int]
-) -> Optional[str]:
+def format_amount_with_decimals(amount: object, decimals: int | None) -> str | None:
     if amount is None or decimals is None:
         return None
 

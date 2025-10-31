@@ -4,7 +4,6 @@ import json
 import logging
 import secrets
 import textwrap
-from typing import List, Optional
 
 from epyxid import XID
 from fastapi import (
@@ -152,13 +151,11 @@ async def debug_chat(
     request: Request,
     aid: str = Path(..., description="Agent ID"),
     q: str = Query(..., description="Query string"),
-    debug: Optional[bool] = Query(None, description="Enable debug mode"),
-    thread: Optional[str] = Query(
+    debug: bool | None = Query(None, description="Enable debug mode"),
+    thread: str | None = Query(
         None, description="Thread ID for conversation tracking", deprecated=True
     ),
-    chat_id: Optional[str] = Query(
-        None, description="Chat ID for conversation tracking"
-    ),
+    chat_id: str | None = Query(None, description="Chat ID for conversation tracking"),
 ) -> str:
     """Debug mode: Chat with an AI agent.
 
@@ -257,16 +254,16 @@ async def debug_agent_prompt(
     "/agents/{aid}/chat/history",
     tags=["Chat"],
     dependencies=[Depends(verify_admin_jwt)],
-    response_model=List[ChatMessage],
+    response_model=list[ChatMessage],
     operation_id="get_chat_history",
     summary="Chat History",
 )
 async def get_chat_history(
     aid: str = Path(..., description="Agent ID"),
     chat_id: str = Query(..., description="Chat ID to get history for"),
-    user_id: Optional[str] = Query(None, description="User ID"),
+    user_id: str | None = Query(None, description="User ID"),
     db: AsyncSession = Depends(get_db),
-) -> List[ChatMessage]:
+) -> list[ChatMessage]:
     """Get last 50 messages for a specific chat.
 
     **Path Parameters:**
@@ -645,7 +642,7 @@ async def create_chat(
 
 @chat_router_readonly.get(
     "/agents/{aid}/chats",
-    response_model=List[Chat],
+    response_model=list[Chat],
     summary="User Chat List",
     tags=["Chat"],
     operation_id="get_agent_chats",
@@ -807,14 +804,14 @@ async def delete_chat(
     "/agents/{aid}/skill/history",
     tags=["Chat"],
     dependencies=[Depends(verify_admin_jwt)],
-    response_model=List[ChatMessage],
+    response_model=list[ChatMessage],
     operation_id="get_skill_history",
     summary="Skill History",
 )
 async def get_skill_history(
     aid: str = Path(..., description="Agent ID"),
     db: AsyncSession = Depends(get_db),
-) -> List[ChatMessage]:
+) -> list[ChatMessage]:
     """Get last 50 skill messages for a specific agent.
 
     **Path Parameters:**
@@ -876,7 +873,7 @@ async def get_skill_history(
 )
 async def get_chat_message(
     message_id: str = Path(..., description="Message ID"),
-    user_id: Optional[str] = Query(None, description="User ID for authorization check"),
+    user_id: str | None = Query(None, description="User ID for authorization check"),
 ) -> ChatMessage:
     """Get a specific chat message by its ID.
 

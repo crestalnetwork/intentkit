@@ -5,7 +5,7 @@ FastAPI endpoints for generating agent schemas from natural language prompts.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
@@ -44,7 +44,7 @@ class AgentGenerateRequest(BaseModel):
         max_length=1000,
     )
 
-    existing_agent: Optional[AgentUpdate] = Field(
+    existing_agent: AgentUpdate | None = Field(
         None,
         description="Existing agent to update. If provided, the LLM will make minimal changes to this agent based on the prompt. If null, a new agent will be created.",
     )
@@ -53,7 +53,7 @@ class AgentGenerateRequest(BaseModel):
         ..., description="User ID for logging and rate limiting purposes"
     )
 
-    project_id: Optional[str] = Field(
+    project_id: str | None = Field(
         None,
         description="Project ID for conversation history. If not provided, a new project will be created.",
     )
@@ -92,17 +92,17 @@ class AgentGenerateResponse(BaseModel):
         ..., description="Human-readable summary of the generated agent"
     )
 
-    tags: List[Dict[str, int]] = Field(
+    tags: list[Dict[str, int]] = Field(
         default_factory=list,
         description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]",
     )
 
-    autonomous_tasks: List[Dict[str, Any]] = Field(
+    autonomous_tasks: list[Dict[str, Any]] = Field(
         default_factory=list,
         description="List of autonomous tasks generated for the agent",
     )
 
-    activated_skills: List[str] = Field(
+    activated_skills: list[str] = Field(
         default_factory=list,
         description="List of skills that were activated based on the prompt",
     )
@@ -111,7 +111,7 @@ class AgentGenerateResponse(BaseModel):
 class GenerationsListRequest(BaseModel):
     """Request model for getting generations list."""
 
-    user_id: Optional[str] = Field(None, description="User ID to filter generations")
+    user_id: str | None = Field(None, description="User ID to filter generations")
 
     limit: int = Field(
         default=50,
@@ -124,7 +124,7 @@ class GenerationsListRequest(BaseModel):
 class GenerationsListResponse(BaseModel):
     """Response model for generations list."""
 
-    projects: List[Dict[str, Any]] = Field(
+    projects: list[Dict[str, Any]] = Field(
         ..., description="List of recent projects with their conversation history"
     )
 
@@ -133,17 +133,17 @@ class GenerationDetailResponse(BaseModel):
     """Response model for single generation detail."""
 
     project_id: str = Field(..., description="Project ID")
-    user_id: Optional[str] = Field(None, description="User ID who owns this project")
-    created_at: Optional[str] = Field(None, description="Project creation timestamp")
-    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    user_id: str | None = Field(None, description="User ID who owns this project")
+    created_at: str | None = Field(None, description="Project creation timestamp")
+    last_activity: str | None = Field(None, description="Last activity timestamp")
     message_count: int = Field(..., description="Number of messages in conversation")
-    last_message: Optional[Dict[str, Any]] = Field(
+    last_message: Dict[str, Any] | None = Field(
         None, description="Last message in conversation"
     )
-    first_message: Optional[Dict[str, Any]] = Field(
+    first_message: Dict[str, Any] | None = Field(
         None, description="First message in conversation"
     )
-    conversation_history: List[Dict[str, Any]] = Field(
+    conversation_history: list[Dict[str, Any]] = Field(
         ..., description="Full conversation history"
     )
 
@@ -288,7 +288,7 @@ async def generate_agent(
     response_model=GenerationsListResponse,
 )
 async def get_generations(
-    user_id: Optional[str] = None, limit: int = 50
+    user_id: str | None = None, limit: int = 50
 ) -> GenerationsListResponse:
     """Get all projects/generations for a user.
 
@@ -331,7 +331,7 @@ async def get_generations(
     response_model=GenerationDetailResponse,
 )
 async def get_generation_detail(
-    project_id: str, user_id: Optional[str] = None
+    project_id: str, user_id: str | None = None
 ) -> GenerationDetailResponse:
     """Get specific project conversation history.
 

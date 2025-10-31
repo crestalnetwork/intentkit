@@ -5,7 +5,7 @@ This module coordinates the skill processing, validation, and AI assistance modu
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Set, Tuple
 
 from openai import OpenAI
 
@@ -32,9 +32,9 @@ logger = logging.getLogger(__name__)
 
 async def generate_agent_schema(
     prompt: str,
-    user_id: Optional[str] = None,
-    existing_agent: Optional[AgentUpdate] = None,
-    llm_logger: Optional["LLMLogger"] = None,
+    user_id: str | None = None,
+    existing_agent: AgentUpdate | None = None,
+    llm_logger: "LLMLogger" | None = None,
 ) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
     """Generate agent schema from a natural language prompt.
 
@@ -89,8 +89,8 @@ async def generate_agent_schema(
 async def _generate_new_agent_schema(
     prompt: str,
     client: OpenAI,
-    user_id: Optional[str] = None,
-    llm_logger: Optional["LLMLogger"] = None,
+    user_id: str | None = None,
+    llm_logger: "LLMLogger" | None = None,
 ) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
     """Generate a completely new agent schema from a prompt.
 
@@ -183,9 +183,9 @@ async def _generate_new_agent_schema(
 # Main generation function with validation and self-correction
 async def generate_validated_agent_schema(
     prompt: str,
-    user_id: Optional[str] = None,
-    existing_agent: Optional[AgentUpdate] = None,
-    llm_logger: Optional["LLMLogger"] = None,
+    user_id: str | None = None,
+    existing_agent: AgentUpdate | None = None,
+    llm_logger: "LLMLogger" | None = None,
 ) -> Tuple[Dict[str, Any], Set[str], str]:
     """Generate and validate agent schema with summary.
 

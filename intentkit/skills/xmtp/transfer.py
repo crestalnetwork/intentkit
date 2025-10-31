@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type
+from typing import Tuple, Type
 
 from pydantic import BaseModel, Field
 from web3.exceptions import ContractLogicError
@@ -16,7 +16,7 @@ class TransferInput(BaseModel):
         description="The amount to transfer in human-readable format (e.g., '1.5' for 1.5 ETH, '100' for 100 USDC). Do NOT multiply by token decimals."
     )
     currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC', 'NATION')")
-    token_contract_address: Optional[str] = Field(
+    token_contract_address: str | None = Field(
         default=None,
         description="Token contract address for ERC20 transfers. Leave empty for ETH transfers.",
     )
@@ -39,8 +39,8 @@ class XmtpTransfer(XmtpBaseTool):
         to_address: str,
         amount: str,
         currency: str,
-        token_contract_address: Optional[str],
-    ) -> Tuple[str, List[ChatMessageAttachment]]:
+        token_contract_address: str | None,
+    ) -> Tuple[str, list[ChatMessageAttachment]]:
         """Create an XMTP transfer transaction request.
 
         Args:

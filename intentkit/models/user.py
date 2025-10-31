@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, Optional, Type, TypeVar
+from typing import Annotated, Type, TypeVar
 
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
@@ -23,8 +23,8 @@ class UserRegistry:
     """Registry for extended model classes."""
 
     def __init__(self):
-        self._user_table_class: Optional[Type[UserTableType]] = None
-        self._user_model_class: Optional[Type[UserModelType]] = None
+        self._user_table_class: Type[UserTableType] | None = None
+        self._user_model_class: Type[UserModelType] | None = None
 
     def register_user_table(self, user_table_class: Type[UserTableType]) -> None:
         """Register extended UserTable class.
@@ -131,27 +131,27 @@ class UserUpdate(BaseModel):
     nft_count: Annotated[
         int, Field(default=0, description="Number of NFTs owned by the user")
     ]
-    email: Annotated[Optional[str], Field(None, description="User's email address")]
+    email: Annotated[str | None, Field(None, description="User's email address")]
     x_username: Annotated[
-        Optional[str], Field(None, description="User's X (Twitter) username")
+        str | None, Field(None, description="User's X (Twitter) username")
     ]
     github_username: Annotated[
-        Optional[str], Field(None, description="User's GitHub username")
+        str | None, Field(None, description="User's GitHub username")
     ]
     telegram_username: Annotated[
-        Optional[str], Field(None, description="User's Telegram username")
+        str | None, Field(None, description="User's Telegram username")
     ]
     extra: Annotated[
-        Optional[dict], Field(None, description="Additional user information")
+        dict | None, Field(None, description="Additional user information")
     ]
     evm_wallet_address: Annotated[
-        Optional[str], Field(None, description="User's EVM wallet address")
+        str | None, Field(None, description="User's EVM wallet address")
     ]
     solana_wallet_address: Annotated[
-        Optional[str], Field(None, description="User's Solana wallet address")
+        str | None, Field(None, description="User's Solana wallet address")
     ]
     linked_accounts: Annotated[
-        Optional[dict], Field(None, description="User's linked accounts information")
+        dict | None, Field(None, description="User's linked accounts information")
     ]
 
     async def _update_quota_for_nft_count(
@@ -286,7 +286,7 @@ class User(UserUpdate):
     ]
 
     @classmethod
-    async def get(cls, user_id: str) -> Optional[UserModelType]:
+    async def get(cls, user_id: str) -> UserModelType | None:
         """Get a user by ID.
 
         Args:
@@ -301,7 +301,7 @@ class User(UserUpdate):
     @classmethod
     async def get_in_session(
         cls, session: AsyncSession, user_id: str
-    ) -> Optional[UserModelType]:
+    ) -> UserModelType | None:
         """Get a user by ID using the provided session.
 
         Args:
@@ -324,7 +324,7 @@ class User(UserUpdate):
         return user_model_class.model_validate(user)
 
     @classmethod
-    async def get_by_tg(cls, telegram_username: str) -> Optional[UserModelType]:
+    async def get_by_tg(cls, telegram_username: str) -> UserModelType | None:
         """Get a user by telegram username.
 
         Args:

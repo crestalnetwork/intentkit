@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class SlackSendMessageSchema(BaseModel):
     text: str = Field(
         description="The text content of the message to send",
     )
-    thread_ts: Optional[str] = Field(
+    thread_ts: str | None = Field(
         None,
         description="The timestamp of the thread to reply to, if sending a thread reply",
     )
@@ -31,7 +31,7 @@ class SlackSendMessage(SlackBaseTool):
         self,
         channel_id: str,
         text: str,
-        thread_ts: Optional[str] = None,
+        thread_ts: str | None = None,
         **kwargs,
     ) -> SlackMessage:
         """Run the tool to send a Slack message.

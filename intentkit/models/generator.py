@@ -5,7 +5,7 @@ including token usage, prompts, AI responses, and generation metadata.
 """
 
 from datetime import datetime, timezone
-from typing import Annotated, Optional
+from typing import Annotated
 
 from epyxid import XID
 from intentkit.models.base import Base
@@ -137,7 +137,7 @@ class AgentGenerationLogCreate(BaseModel):
             description="Unique identifier for the generation log",
         ),
     ]
-    user_id: Optional[str] = Field(
+    user_id: str | None = Field(
         None,
         description="User ID who initiated the generation",
     )
@@ -145,7 +145,7 @@ class AgentGenerationLogCreate(BaseModel):
         ...,
         description="The original prompt used for generation",
     )
-    existing_agent_id: Optional[str] = Field(
+    existing_agent_id: str | None = Field(
         None,
         description="ID of existing agent if this is an update operation",
     )
@@ -164,26 +164,26 @@ class AgentGenerationLog(BaseModel):
     )
 
     id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     prompt: str
-    existing_agent_id: Optional[str] = None
+    existing_agent_id: str | None = None
     is_update: bool = False
-    generated_agent_schema: Optional[dict] = None
-    identified_skills: Optional[dict] = None
-    llm_model: Optional[str] = None
+    generated_agent_schema: dict | None = None
+    identified_skills: dict | None = None
+    llm_model: str | None = None
     total_tokens: int = 0
     input_tokens: int = 0
     cached_input_tokens: int = 0
     output_tokens: int = 0
-    input_tokens_details: Optional[dict] = None
-    completion_tokens_details: Optional[dict] = None
-    generation_time_ms: Optional[int] = None
+    input_tokens_details: dict | None = None
+    completion_tokens_details: dict | None = None
+    generation_time_ms: int | None = None
     retry_count: int = 0
-    validation_errors: Optional[dict] = None
+    validation_errors: dict | None = None
     success: bool = False
-    error_message: Optional[str] = None
+    error_message: str | None = None
     created_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
     @classmethod
     async def create(
@@ -218,20 +218,20 @@ class AgentGenerationLog(BaseModel):
     async def update_completion(
         self,
         session: AsyncSession,
-        generated_agent_schema: Optional[dict] = None,
-        identified_skills: Optional[dict] = None,
-        llm_model: Optional[str] = None,
+        generated_agent_schema: dict | None = None,
+        identified_skills: dict | None = None,
+        llm_model: str | None = None,
         total_tokens: int = 0,
         input_tokens: int = 0,
         cached_input_tokens: int = 0,
         output_tokens: int = 0,
-        input_tokens_details: Optional[dict] = None,
-        completion_tokens_details: Optional[dict] = None,
-        generation_time_ms: Optional[int] = None,
+        input_tokens_details: dict | None = None,
+        completion_tokens_details: dict | None = None,
+        generation_time_ms: int | None = None,
         retry_count: int = 0,
-        validation_errors: Optional[dict] = None,
+        validation_errors: dict | None = None,
         success: bool = False,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> None:
         """Update the log entry with completion data.
 
@@ -300,7 +300,7 @@ class AgentGenerationLog(BaseModel):
         cls,
         session: AsyncSession,
         log_id: str,
-    ) -> Optional["AgentGenerationLog"]:
+    ) -> "AgentGenerationLog" | None:
         """Get an agent generation log by ID.
 
         Args:

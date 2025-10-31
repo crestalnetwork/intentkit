@@ -1,6 +1,6 @@
 """Smart stats skill for Elfa AI API."""
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -18,8 +18,8 @@ class ElfaGetSmartStatsOutput(BaseModel):
     """Output structure for smart stats response."""
 
     success: bool
-    data: Optional[SmartStatsData] = Field(None, description="Smart stats data")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    data: SmartStatsData | None = Field(None, description="Smart stats data")
+    metadata: Dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetSmartStats(ElfaBaseTool):

@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import List, Optional, Tuple
+from typing import Tuple
 
 from epyxid import XID
 from pydantic import BaseModel
@@ -50,7 +50,7 @@ FOURPLACES = Decimal("0.0001")
 async def update_credit_event_note(
     session: AsyncSession,
     event_id: str,
-    note: Optional[str] = None,
+    note: str | None = None,
 ) -> CreditEvent:
     """
     Update the note of a credit event.
@@ -89,7 +89,7 @@ async def recharge(
     user_id: str,
     amount: Decimal,
     upstream_tx_id: str,
-    note: Optional[str] = None,
+    note: str | None = None,
 ) -> CreditAccount:
     """
     Recharge credits to a user account.
@@ -220,7 +220,7 @@ async def withdraw(
     agent_id: str,
     amount: Decimal,
     upstream_tx_id: str,
-    note: Optional[str] = None,
+    note: str | None = None,
 ) -> CreditAccount:
     """
     Withdraw credits from an agent account to platform account.
@@ -385,8 +385,8 @@ async def reward(
     user_id: str,
     amount: Decimal,
     upstream_tx_id: str,
-    note: Optional[str] = None,
-    reward_type: Optional[RewardType] = RewardType.REWARD,
+    note: str | None = None,
+    reward_type: RewardType | None = RewardType.REWARD,
 ) -> CreditAccount:
     """
     Reward a user account with reward credits.
@@ -679,8 +679,8 @@ async def adjustment(
 async def update_daily_quota(
     session: AsyncSession,
     user_id: str,
-    free_quota: Optional[Decimal] = None,
-    refill_amount: Optional[Decimal] = None,
+    free_quota: Decimal | None = None,
+    refill_amount: Decimal | None = None,
     upstream_tx_id: str = "",
     note: str = "",
 ) -> CreditAccount:
@@ -706,11 +706,11 @@ async def update_daily_quota(
 async def list_credit_events_by_user(
     session: AsyncSession,
     user_id: str,
-    direction: Optional[Direction] = None,
-    cursor: Optional[str] = None,
+    direction: Direction | None = None,
+    cursor: str | None = None,
     limit: int = 20,
-    event_type: Optional[EventType] = None,
-) -> Tuple[List[CreditEvent], Optional[str], bool]:
+    event_type: EventType | None = None,
+) -> Tuple[list[CreditEvent], str | None, bool]:
     """
     List credit events for a user account with cursor pagination.
 
@@ -771,13 +771,13 @@ async def list_credit_events_by_user(
 
 async def list_credit_events(
     session: AsyncSession,
-    direction: Optional[Direction] = Direction.EXPENSE,
-    cursor: Optional[str] = None,
+    direction: Direction | None = Direction.EXPENSE,
+    cursor: str | None = None,
     limit: int = 20,
-    event_type: Optional[EventType] = None,
-    start_at: Optional[datetime] = None,
-    end_at: Optional[datetime] = None,
-) -> Tuple[List[CreditEvent], Optional[str], bool]:
+    event_type: EventType | None = None,
+    start_at: datetime | None = None,
+    end_at: datetime | None = None,
+) -> Tuple[list[CreditEvent], str | None, bool]:
     """
     List all credit events with cursor pagination.
 
@@ -841,9 +841,9 @@ async def list_credit_events(
 async def list_fee_events_by_agent(
     session: AsyncSession,
     agent_id: str,
-    cursor: Optional[str] = None,
+    cursor: str | None = None,
     limit: int = 20,
-) -> Tuple[List[CreditEvent], Optional[str], bool]:
+) -> Tuple[list[CreditEvent], str | None, bool]:
     """
     List fee events for an agent with cursor pagination.
     These events represent income for the agent from users' expenses.

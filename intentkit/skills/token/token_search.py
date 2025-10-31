@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -14,15 +14,15 @@ class TokenSearchInput(BaseModel):
     query: str = Field(
         description="Search query - can be token address, token name or token symbol."
     )
-    chains: Optional[List[str]] = Field(
+    chains: list[str] | None = Field(
         description="The chain(s) to query (e.g., 'eth', 'bsc', 'polygon').",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The desired page size of the result.",
         default=None,
     )
-    is_verified_contract: Optional[bool] = Field(
+    is_verified_contract: bool | None = Field(
         description="Whether the contract is verified.",
         default=None,
     )
@@ -49,9 +49,9 @@ class TokenSearch(TokenBaseTool):
     async def _arun(
         self,
         query: str,
-        chains: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        is_verified_contract: Optional[bool] = None,
+        chains: list[str] | None = None,
+        limit: int | None = None,
+        is_verified_contract: bool | None = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Search for tokens using Moralis.

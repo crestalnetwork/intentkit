@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +19,7 @@ class LLMModelInfoWithProviderName(LLMModelInfo):
 
 @metadata_router_readonly.get(
     "/metadata/skills",
-    response_model=List[Skill],
+    response_model=list[Skill],
     summary="Get all skills",
     description="Returns a list of all available skills in the system",
 )
@@ -40,7 +39,7 @@ async def get_skills(db: AsyncSession = Depends(get_db)):
 
 @metadata_router_readonly.get(
     "/metadata/llms",
-    response_model=List[LLMModelInfoWithProviderName],
+    response_model=list[LLMModelInfoWithProviderName],
     summary="Get all LLM models",
     description="Returns a list of all available LLM models in the system",
 )

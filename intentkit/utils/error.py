@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Sequence
+from typing import Sequence
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RateLimitExceeded(Exception):
     """Rate limit exceeded"""
 
-    def __init__(self, message: Optional[str] = "Rate limit exceeded"):
+    def __init__(self, message: str | None = "Rate limit exceeded"):
         self.message = message
         super().__init__(self.message)
 

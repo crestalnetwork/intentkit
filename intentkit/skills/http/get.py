@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 
 import httpx
 from langchain_core.tools import ToolException
@@ -14,15 +14,15 @@ class HttpGetInput(BaseModel):
     """Input for HTTP GET request."""
 
     url: str = Field(description="The URL to send the GET request to")
-    headers: Optional[Dict[str, str]] = Field(
+    headers: Dict[str, str] | None = Field(
         description="Optional headers to include in the request",
         default=None,
     )
-    params: Optional[Dict[str, Any]] = Field(
+    params: Dict[str, Any] | None = Field(
         description="Optional query parameters to include in the request",
         default=None,
     )
-    timeout: Optional[float] = Field(
+    timeout: float | None = Field(
         description="Request timeout in seconds (default: 30)",
         default=30.0,
     )
@@ -52,8 +52,8 @@ class HttpGet(HttpBaseTool):
     async def _arun(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        headers: Dict[str, str] | None = None,
+        params: Dict[str, Any] | None = None,
         timeout: float = 30.0,
         **kwargs,
     ) -> str:

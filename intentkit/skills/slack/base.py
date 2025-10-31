@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import Type
 
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -66,4 +66,4 @@ class SlackMessage(BaseModel):
     text: str
     user: str
     channel: str
-    thread_ts: Optional[str] = None
+    thread_ts: str | None = None

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
@@ -29,14 +29,14 @@ class GetTokensInfoInput(BaseModel):
     chain_id: str = Field(
         description="The blockchain chain ID (e.g., 'ethereum', 'solana', 'bsc', 'polygon', 'arbitrum', 'base', 'avalanche')"
     )
-    token_addresses: List[str] = Field(
+    token_addresses: list[str] = Field(
         description=f"List of token contract addresses to retrieve info for (maximum {MAX_TOKENS_BATCH} addresses). "
         "Each address should be in the format '0x1234...abcd' for Ethereum-based chains."
     )
 
     @field_validator("token_addresses")
     @classmethod
-    def validate_token_addresses(cls, v: List[str]) -> List[str]:
+    def validate_token_addresses(cls, v: list[str]) -> list[str]:
         if not v:
             raise ValueError("At least one token address is required")
         if len(v) > MAX_TOKENS_BATCH:
@@ -69,7 +69,7 @@ class GetTokensInfo(DexScreenerBaseTool):
     async def _arun(
         self,
         chain_id: str,
-        token_addresses: List[str],
+        token_addresses: list[str],
         **kwargs: Any,
     ) -> str:
         """Implementation to get information for multiple tokens."""

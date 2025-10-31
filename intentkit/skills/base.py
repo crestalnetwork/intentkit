@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Literal,
     NotRequired,
-    Optional,
     TypedDict,
     Union,
 )
@@ -61,15 +60,16 @@ class IntentKitSkill(BaseTool):
     """
 
     # overwrite the value of BaseTool
-    handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
+    handle_tool_error: Union[bool, str, Callable[[ToolException], str]] | None = (
         lambda e: f"tool error: {e}"
     )
     """Handle the content of the ToolException thrown."""
 
     # overwrite the value of BaseTool
-    handle_validation_error: Optional[
+    handle_validation_error: (
         Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
-    ] = lambda e: f"validation error: {e}"
+        | None
+    ) = lambda e: f"validation error: {e}"
     """Handle the content of the ValidationError thrown."""
 
     # Logger for the class
@@ -258,7 +258,7 @@ class IntentKitSkill(BaseTool):
     async def get_agent_skill_data(
         self,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active agent."""
         return await self.get_agent_skill_data_raw(self.name, key)
 
@@ -266,7 +266,7 @@ class IntentKitSkill(BaseTool):
         self,
         skill_name: str,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any] | None:
         """Retrieve persisted data for a specific skill scoped to the active agent."""
         context = self.get_context()
         return await AgentSkillData.get(context.agent_id, skill_name, key)
@@ -299,7 +299,7 @@ class IntentKitSkill(BaseTool):
     async def get_thread_skill_data(
         self,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active chat."""
         context = self.get_context()
         return await ChatSkillData.get(context.chat_id, self.name, key)
@@ -321,7 +321,7 @@ async def get_agentkit_actions(
     agent_id: str,
     provider_factories: Sequence[Callable[[], object]],
     *,
-    agent: Optional["Agent"] = None,
+    agent: "Agent" | None = None,
 ) -> list[Action]:
     """Build an AgentKit instance and return its actions."""
 

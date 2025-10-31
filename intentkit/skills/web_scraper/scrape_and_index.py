@@ -1,5 +1,5 @@
 import logging
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ScrapeAndIndexInput(BaseModel):
     """Input for ScrapeAndIndex tool."""
 
-    urls: List[str] = Field(
+    urls: list[str] = Field(
         description="List of URLs to scrape and index. Each URL should be a valid web address starting with http:// or https://",
         min_items=1,
         max_items=25,
@@ -71,7 +71,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
 
     async def _arun(
         self,
-        urls: List[str],
+        urls: list[str],
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         **kwargs,

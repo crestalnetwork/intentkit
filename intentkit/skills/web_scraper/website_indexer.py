@@ -1,5 +1,5 @@
 import logging
-from typing import List, Type
+from typing import Type
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -44,11 +44,11 @@ class WebsiteIndexerInput(BaseModel):
         ge=0,
         le=1000,
     )
-    include_patterns: List[str] = Field(
+    include_patterns: list[str] = Field(
         description="URL patterns to include (e.g., ['/blog/', '/docs/']). If empty, all URLs are included",
         default=[],
     )
-    exclude_patterns: List[str] = Field(
+    exclude_patterns: list[str] = Field(
         description="URL patterns to exclude (e.g., ['/admin/', '/private/'])",
         default=[],
     )
@@ -106,7 +106,7 @@ class WebsiteIndexer(WebScraperBaseTool):
 
     def _extract_sitemaps_from_robots(
         self, robots_content: str, base_url: str
-    ) -> List[str]:
+    ) -> list[str]:
         """Extract sitemap URLs from robots.txt content."""
         sitemaps = []
 
@@ -121,7 +121,7 @@ class WebsiteIndexer(WebScraperBaseTool):
 
         return sitemaps
 
-    def _get_common_sitemap_patterns(self, base_url: str) -> List[str]:
+    def _get_common_sitemap_patterns(self, base_url: str) -> list[str]:
         """Generate common sitemap URL patterns."""
         return [
             urljoin(base_url, "/sitemap.xml"),
@@ -157,7 +157,7 @@ class WebsiteIndexer(WebScraperBaseTool):
                 logger.warning(f"Could not fetch sitemap from {sitemap_url}: {e}")
         return ""
 
-    async def _get_all_sitemap_content(self, base_url: str) -> tuple[str, List[str]]:
+    async def _get_all_sitemap_content(self, base_url: str) -> tuple[str, list[str]]:
         """Get all sitemap content for AI analysis."""
         all_content = []
         found_sitemaps = []
@@ -200,7 +200,7 @@ class WebsiteIndexer(WebScraperBaseTool):
         return combined_xml, found_sitemaps
 
     def _create_ai_extraction_prompt(
-        self, sitemap_xml: str, include_patterns: List[str], exclude_patterns: List[str]
+        self, sitemap_xml: str, include_patterns: list[str], exclude_patterns: list[str]
     ) -> str:
         """Create a prompt for AI to extract URLs from sitemap XML."""
         filter_instructions = ""
@@ -225,7 +225,7 @@ INSTRUCTIONS:
 
 Extract the URLs now:"""
 
-    def _parse_ai_response(self, ai_response: str) -> List[str]:
+    def _parse_ai_response(self, ai_response: str) -> list[str]:
         """Parse AI response to extract clean URLs."""
         urls = []
 
@@ -281,8 +281,8 @@ Extract the URLs now:"""
         max_urls: int = 50,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-        include_patterns: List[str] = None,
-        exclude_patterns: List[str] = None,
+        include_patterns: list[str] = None,
+        exclude_patterns: list[str] = None,
         **kwargs,
     ) -> str:
         """Discover website sitemaps, extract URLs with AI, and delegate to scrape_and_index."""

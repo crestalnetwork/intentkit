@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -19,35 +19,35 @@ class ERC20TransfersInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    contract_addresses: Optional[List[str]] = Field(
+    contract_addresses: list[str] | None = Field(
         description="List of contract addresses of transfers to filter by.",
         default=None,
     )
-    from_block: Optional[int] = Field(
+    from_block: int | None = Field(
         description="The minimum block number from which to get the transactions.",
         default=None,
     )
-    to_block: Optional[int] = Field(
+    to_block: int | None = Field(
         description="The maximum block number from which to get the transactions.",
         default=None,
     )
-    from_date: Optional[str] = Field(
+    from_date: str | None = Field(
         description="The start date from which to get the transactions (any format accepted by momentjs).",
         default=None,
     )
-    to_date: Optional[str] = Field(
+    to_date: str | None = Field(
         description="Get the transactions up to this date (any format accepted by momentjs).",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The desired page size of the result.",
         default=DEFAULT_LIMIT,
     )
-    order: Optional[str] = Field(
+    order: str | None = Field(
         description="The order of the result, in ascending (ASC) or descending (DESC).",
         default=DEFAULT_ORDER,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor returned in the previous response (for pagination).",
         default=None,
     )
@@ -71,14 +71,14 @@ class ERC20Transfers(TokenBaseTool):
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        contract_addresses: Optional[List[str]] = None,
-        from_block: Optional[int] = None,
-        to_block: Optional[int] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None,
-        limit: Optional[int] = DEFAULT_LIMIT,
-        order: Optional[str] = DEFAULT_ORDER,
-        cursor: Optional[str] = None,
+        contract_addresses: list[str] | None = None,
+        from_block: int | None = None,
+        to_block: int | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        limit: int | None = DEFAULT_LIMIT,
+        order: str | None = DEFAULT_ORDER,
+        cursor: str | None = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Fetch ERC20 token transfers for a wallet from Moralis.

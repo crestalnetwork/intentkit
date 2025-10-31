@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +17,7 @@ class VeniceImageEnhanceInput(BaseModel):
         ),
     )
 
-    replication: Optional[float] = Field(
+    replication: float | None = Field(
         default=0.35,
         ge=0.1,
         le=1.0,
