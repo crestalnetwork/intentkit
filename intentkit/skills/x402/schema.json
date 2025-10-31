@@ -4,10 +4,7 @@
   "title": "x402",
   "description": "Interact with other IntentKit agents through the x402 payment protocol.",
   "x-icon": "https://ai.service.crestal.dev/skills/x402/x402.webp",
-  "x-tags": [
-    "Communication",
-    "Infrastructure"
-  ],
+  "x-tags": ["Communication", "Infrastructure"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -21,17 +18,25 @@
         "x402_ask_agent": {
           "type": "string",
           "title": "Ask Agent",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
           "description": "Send a message to another IntentKit agent via the x402 API and return the final agent response.",
+          "default": "disabled"
+        },
+        "x402_http_request": {
+          "type": "string",
+          "title": "HTTP Request",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Perform a signed HTTP GET or POST request via the x402 payment protocol.",
           "default": "disabled"
         }
       }

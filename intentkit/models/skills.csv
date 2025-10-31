@@ -166,6 +166,7 @@ xmtp,xmtp_transfer,xmtp_transfer,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9c
 xmtp,xmtp_swap,xmtp_swap,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 xmtp,xmtp_get_swap_price,xmtp_get_swap_price,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 x402,x402_ask_agent,x402_ask_agent,TRUE,1,1,1,,,0x445750026A4a1906b61302442E085f9cbAfe206a
+x402,x402_http_request,x402_http_request,TRUE,1,1,1,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 casino,deck_shuffle,casino_deck_shuffle,true,1,5,5,,,0x3cdd051eec909f94965f9c1c657f5b70a172b2c0
 casino,deck_draw,casino_deck_draw,true,1,5,5,,,0x3cdd051eec909f94965f9c1c657f5b70a172b2c0
 casino,dice_roll,casino_dice_roll,true,1,5,5,,,0x3cdd051eec909f94965f9c1c657f5b70a172b2c0

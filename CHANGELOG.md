@@ -1,3 +1,17 @@
+## v0.8.16
+
+### Documentation
+- **docs: update x402 documentation and fix icon bug (#885)** - Updated x402 API documentation with latest changes
+- **docs: add x402 api documentation** - Added comprehensive x402 API documentation
+
+### Bug Fixes
+- **fix: icon bug** - Fixed icon-related bug in the application
+
+### Other Changes
+- **doc: changelog** - Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.15...v0.8.16
+
 ## v0.8.15
 
 ### Bug Fixes
