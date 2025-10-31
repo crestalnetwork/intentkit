@@ -105,11 +105,8 @@ async def send_message(
     raw_request: Request,
 ):
     """Send a new message via X402."""
-    # Hardcoded values
-    chat_id = "x402"
-    user_id = "x402"
-
     # Check if request.state exists and has verify_response with payer
+    user_id = "x402"
     if hasattr(raw_request, "state") and hasattr(raw_request.state, "verify_response"):
         verify_response = raw_request.state.verify_response
         if hasattr(verify_response, "payer") and verify_response.payer:
@@ -125,7 +122,7 @@ async def send_message(
     user_message = ChatMessageCreate(
         id=str(XID()),
         agent_id=agent.id,
-        chat_id=chat_id,
+        chat_id=str(XID()),  # change chat id every time
         user_id=user_id,
         author_id=user_id,
         author_type=AuthorType.X402,
