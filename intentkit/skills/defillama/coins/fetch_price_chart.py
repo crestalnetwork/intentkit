@@ -1,6 +1,5 @@
 """Tool for fetching token price charts via DeFi Llama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_price_chart

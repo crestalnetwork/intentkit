@@ -1,6 +1,5 @@
 """Tool for fetching all protocols via DeFi Llama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocols

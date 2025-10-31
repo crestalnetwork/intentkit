@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_cdp_client

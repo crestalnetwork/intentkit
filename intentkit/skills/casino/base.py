@@ -1,6 +1,5 @@
 """Base class for Casino tools."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.base import IntentKitSkill

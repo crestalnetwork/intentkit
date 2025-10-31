@@ -3,7 +3,6 @@
 Fetches all news posts for BTC or ETH, sorted by publication date (newest first).
 """
 
-
 import httpx
 from pydantic import BaseModel, Field
 

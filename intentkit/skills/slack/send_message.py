@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackMessage

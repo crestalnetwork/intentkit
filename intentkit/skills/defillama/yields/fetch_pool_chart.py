@@ -1,6 +1,5 @@
 """Tool for fetching pool chart data via DeFi Llama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pool_chart

@@ -1,6 +1,5 @@
 """Tool for fetching first recorded token prices via DeFi Llama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_first_price

@@ -3,7 +3,6 @@
 Defines the base class and shared utilities for CryptoPanic skills.
 """
 
-
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 

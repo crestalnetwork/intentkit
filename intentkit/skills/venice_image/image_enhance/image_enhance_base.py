@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 
 # Import the generic base and shared input

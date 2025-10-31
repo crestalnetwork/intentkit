@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 from web3.exceptions import ContractLogicError
 

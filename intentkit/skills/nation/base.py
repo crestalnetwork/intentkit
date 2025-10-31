@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config

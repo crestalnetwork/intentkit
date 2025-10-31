@@ -1,6 +1,5 @@
 """Tool for fetching DEX protocol summary data via DeFi Llama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_summary

@@ -1,6 +1,5 @@
 """Base class for Wallet Portfolio tools."""
 
-
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 

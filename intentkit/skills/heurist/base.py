@@ -1,6 +1,5 @@
 """Base class for Heurist AI skills."""
 
-
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 

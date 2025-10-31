@@ -1,6 +1,5 @@
 """Tool for fetching total historical TVL via DeFiLlama API."""
 
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_tvl
