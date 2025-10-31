@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -900,7 +902,7 @@ class AgentCreate(AgentUpdate):
                     message="Upstream id already in use",
                 )
 
-    async def get_by_upstream_id(self) -> "Agent" | None:
+    async def get_by_upstream_id(self) -> Agent | None:
         if not self.upstream_id:
             return None
         async with get_session() as db:

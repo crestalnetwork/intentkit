@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -271,7 +273,7 @@ class AgentData(BaseModel):
             return cls.model_construct(id=agent_id)
 
     @classmethod
-    async def get_by_api_key(cls, api_key: str) -> "AgentData" | None:
+    async def get_by_api_key(cls, api_key: str) -> AgentData | None:
         """Get agent data by API key.
 
         Args:

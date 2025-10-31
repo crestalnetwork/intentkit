@@ -3,7 +3,7 @@ name = "intentkit"
 version = "0.0.1"
 description = "Intent-based AI Agent Platform - Core Package"
 authors = [{ name = "hyacinthus", email = "hyacinthus@gmail.com" }]
-requires-python = ">=3.12"
+requires-python = "==3.13.*"
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["ai", "agent", "intent", "blockchain", "crypto"]
@@ -12,7 +12,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -51,7 +51,6 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.37",
     "tweepy[async]>=4.15.0",
     "uvicorn>=0.34.0,<1.0.0",
-    "bip32>=2.0.0",
     "eth-keys>=0.4.0",
     "eth-utils>=2.1.0",
     "cdp-sdk>=1.31.1",

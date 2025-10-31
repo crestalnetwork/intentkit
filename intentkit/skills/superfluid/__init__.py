@@ -1,9 +1,10 @@
 """Superfluid AgentKit skills."""
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 from coinbase_agentkit import superfluid_action_provider
 
+from intentkit.models.agent import Agent
 from intentkit.skills.base import (
     SkillConfig,
     SkillState,
@@ -11,9 +12,6 @@ from intentkit.skills.base import (
     get_agentkit_actions,
 )
 from intentkit.skills.superfluid.base import SuperfluidBaseTool
-
-if TYPE_CHECKING:
-    from intentkit.models.agent import Agent
 
 
 class SkillStates(TypedDict):
@@ -29,10 +27,10 @@ class Config(SkillConfig):
 
 
 async def get_skills(
-    config: "Config",
+    config: Config,
     is_private: bool,
     agent_id: str,
-    agent: "Agent" | None = None,
+    agent: Agent | None = None,
     **_,
 ) -> list[SuperfluidBaseTool]:
     """Get all Superfluid skills."""

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import json
 import logging
@@ -484,7 +486,7 @@ class Skill(BaseModel):
     ]
 
     @staticmethod
-    async def get(name: str) -> "Skill" | None:
+    async def get(name: str) -> Skill | None:
         """Get a skill by name with Redis caching.
 
         The skill is cached in Redis for 3 minutes.
