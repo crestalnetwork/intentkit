@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Callable, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     NotRequired,
@@ -25,6 +24,7 @@ from redis.exceptions import RedisError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.clients import get_wallet_provider
+from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
 from intentkit.models.skill import (
     AgentSkillData,
@@ -33,9 +33,6 @@ from intentkit.models.skill import (
     ChatSkillDataCreate,
 )
 from intentkit.utils.error import IntentKitAPIError, RateLimitExceeded
-
-if TYPE_CHECKING:
-    from intentkit.models.agent import Agent
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
@@ -317,7 +314,7 @@ async def get_agentkit_actions(
     agent_id: str,
     provider_factories: Sequence[Callable[[], object]],
     *,
-    agent: "Agent" | None = None,
+    agent: Agent | None = None,
 ) -> list[Action]:
     """Build an AgentKit instance and return its actions."""
 

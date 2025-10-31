@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
@@ -528,7 +530,7 @@ class ChatMessage(ChatMessageCreate):
         return ChatMessage.model_validate(sanitized_data)
 
     @classmethod
-    async def get(cls, message_id: str) -> "ChatMessage" | None:
+    async def get(cls, message_id: str) -> ChatMessage | None:
         async with get_session() as db:
             raw = await db.get(ChatMessageTable, message_id)
             if raw:

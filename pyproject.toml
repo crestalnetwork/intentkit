@@ -3,7 +3,7 @@ name = "intentkit-workspace"
 version = "0.5.0"
 description = "Intent-based AI Agent Platform - Workspace"
 authors = [{ name = "Ruihua", email = "ruihua@crestal.network" }]
-requires-python = "==3.12.*"
+requires-python = "==3.13.*"
 readme = "README.md"
 dependencies = [
     "aiogram>=3.17.0",
@@ -60,7 +60,6 @@ dependencies = [
     "telegramify-markdown (>=0.5.0,<0.6.0)",
     "tweepy[async]>=4.15.0",
     "uvicorn>=0.34.0,<1.0.0",
-    "bip32>=2.0.0",
     "eth-keys>=0.4.0",
     "eth-utils>=2.1.0",
     "jsonschema>=4.24.0",

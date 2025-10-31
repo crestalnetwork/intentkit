@@ -1,15 +1,11 @@
 import asyncio
-import json
 import logging
 
-from bip32 import BIP32
 from cdp import CdpClient, EvmServerAccount  # noqa: E402
 from coinbase_agentkit import (  # noqa: E402
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
 )
-from eth_keys.datatypes import PrivateKey
-from eth_utils import to_checksum_address
 
 from intentkit.config.config import config
 from intentkit.models.agent import Agent, AgentTable  # noqa: E402
@@ -21,41 +17,6 @@ _wallet_providers: dict[str, tuple[str, str, CdpEvmWalletProvider]] = {}
 _cdp_client: CdpClient | None = None
 
 logger = logging.getLogger(__name__)
-
-
-def bip39_seed_to_eth_keys(seed_hex: str) -> dict[str, str]:
-    """
-    Converts a BIP39 seed to an Ethereum private key, public key, and address.
-
-    Args:
-        seed_hex: The BIP39 seed in hexadecimal format
-
-    Returns:
-        Dict containing private_key, public_key, and address
-    """
-    # Convert the hex seed to bytes
-    seed_bytes = bytes.fromhex(seed_hex)
-
-    # Derive the master key from the seed
-    bip32 = BIP32.from_seed(seed_bytes)
-
-    # Derive the Ethereum address using the standard derivation path
-    private_key_bytes = bip32.get_privkey_from_path("m/44'/60'/0'/0/0")
-
-    # Create a private key object
-    private_key = PrivateKey(private_key_bytes)
-
-    # Get the public key
-    public_key = private_key.public_key
-
-    # Get the Ethereum address
-    address = public_key.to_address()
-
-    return {
-        "private_key": private_key.to_hex(),
-        "public_key": public_key.to_hex(),
-        "address": to_checksum_address(address),
-    }
 
 
 def get_cdp_client() -> CdpClient:
@@ -94,39 +55,21 @@ async def _ensure_evm_account(
     account: EvmServerAccount | None = None
 
     if not address:
-        if agent_data.cdp_wallet_data:
-            wallet_data = json.loads(agent_data.cdp_wallet_data)
-            if not isinstance(wallet_data, dict):
-                raise ValueError("Invalid wallet data format")
-            if wallet_data.get("default_address_id") and wallet_data.get("seed"):
-                keys = bip39_seed_to_eth_keys(wallet_data["seed"])
-                if keys["address"] != wallet_data["default_address_id"]:
-                    raise ValueError(
-                        "Bad wallet data, seed does not match default_address_id"
-                    )
-                logger.info("Migrating wallet data to v2...")
-                account = await cdp_client.evm.import_account(
-                    name=agent.id,
-                    private_key=keys["private_key"],
-                )
-                address = account.address
-                logger.info("Migrated wallet data to v2 successfully: %s", address)
-        if not address:
-            logger.info("Creating new wallet...")
-            account = await cdp_client.evm.create_account(
-                name=agent.id,
-            )
-            address = account.address
-            logger.info("Created new wallet: %s", address)
+        logger.info("Creating new wallet...")
+        account = await cdp_client.evm.create_account(
+            name=agent.id,
+        )
+        address = account.address
+        logger.info("Created new wallet: %s", address)
 
-        agent_data.evm_wallet_address = address
-        await agent_data.save()
-        if not agent.slug:
-            async with get_session() as db:
-                db_agent = await db.get(AgentTable, agent.id)
-                if db_agent and not db_agent.slug:
-                    db_agent.slug = agent_data.evm_wallet_address
-                    await db.commit()
+    agent_data.evm_wallet_address = address
+    await agent_data.save()
+    if not agent.slug:
+        async with get_session() as db:
+            db_agent = await db.get(AgentTable, agent.id)
+            if db_agent and not db_agent.slug:
+                db_agent.slug = agent_data.evm_wallet_address
+                await db.commit()
 
     if account is None:
         account = await cdp_client.evm.get_account(address=address)
