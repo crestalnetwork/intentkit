@@ -95,7 +95,7 @@ async def get_skill_icon(
     skill: str = PathParam(..., description="Skill name", regex="^[a-zA-Z0-9_-]+$"),
     icon_name: str = PathParam(..., description="Icon name"),
     ext: str = PathParam(
-        ..., description="Icon file extension", regex="^(png|svg|jpg|jpeg)$"
+        ..., description="Icon file extension", regex="^(png|svg|jpg|jpeg|webp)$"
     ),
 ) -> FileResponse:
     """Get the icon for a specific skill.
