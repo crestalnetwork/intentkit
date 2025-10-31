@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Tuple
+from typing import Tuple
 
 from bip32 import BIP32
 from cdp import CdpClient, EvmServerAccount  # noqa: E402
@@ -18,21 +18,20 @@ from intentkit.models.agent_data import AgentData
 from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
-_wallet_providers: Dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
+_wallet_providers: dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
 _cdp_client: CdpClient | None = None
 
 logger = logging.getLogger(__name__)
 
 
-def bip39_seed_to_eth_keys(seed_hex: str) -> Dict[str, str]:
+def bip39_seed_to_eth_keys(seed_hex: str) -> dict[str, str]:
     """
     Converts a BIP39 seed to an Ethereum private key, public key, and address.
 
     Args:
         seed_hex: The BIP39 seed in hexadecimal format
 
-    Returns:
-        Dict containing private_key, public_key, and address
+    Returns: dict[str, Any] containing private_key, public_key, and address
     """
     # Convert the hex seed to bytes
     seed_bytes = bytes.fromhex(seed_hex)

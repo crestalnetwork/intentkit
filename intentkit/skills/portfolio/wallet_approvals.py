@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -52,7 +52,7 @@ class WalletApprovals(PortfolioBaseTool):
         cursor: str | None = None,
         limit: int | None = DEFAULT_LIMIT,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet token approvals from Moralis.
 
         Args:
@@ -62,8 +62,7 @@ class WalletApprovals(PortfolioBaseTool):
             limit: Number of results per page
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet approvals data
+        Returns: dict[str, Any] containing wallet approvals data
         """
         context = self.get_context()
         logger.debug(

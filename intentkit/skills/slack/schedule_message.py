@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class SlackScheduleMessage(SlackBaseTool):
         post_at: str,
         thread_ts: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the tool to schedule a Slack message.
 
         Args:

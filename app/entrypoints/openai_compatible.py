@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from epyxid import XID
 from fastapi import APIRouter, Depends, status
@@ -29,7 +29,7 @@ class OpenAIMessage(BaseModel):
     """OpenAI message format."""
 
     role: str = Field(..., description="The role of the message author")
-    content: str | list[Dict[str, Any]] = Field(
+    content: str | list[dict[str, Any]] = Field(
         ..., description="The content of the message"
     )
 
@@ -65,13 +65,13 @@ class OpenAIChatCompletionRequest(BaseModel):
     frequency_penalty: float | None = Field(
         None, description="Number between -2.0 and 2.0"
     )
-    logit_bias: Dict[str, int] | None = Field(
+    logit_bias: dict[str, int] | None = Field(
         None, description="Modify the likelihood of specified tokens"
     )
     user: str | None = Field(
         None, description="A unique identifier representing your end-user"
     )
-    response_format: Dict[str, Any] | None = Field(
+    response_format: dict[str, Any] | None = Field(
         None, description="An object specifying the format"
     )
 
@@ -145,7 +145,7 @@ class OpenAIChatCompletionResponse(BaseModel):
 
 
 def extract_text_and_images(
-    content: str | list[Dict[str, Any]],
+    content: str | list[dict[str, Any]],
 ) -> tuple[str, list[ChatMessageAttachment]]:
     """Extract text and images from OpenAI message content.
 

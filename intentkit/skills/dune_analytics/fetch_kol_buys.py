@@ -3,7 +3,7 @@
 Uses query ID 4832844 to retrieve a list of KOL buy transactions.
 """
 
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -28,7 +28,7 @@ class KOLBuysInput(BaseModel):
 class KOLBuyData(BaseModel):
     """Data model for KOL buy results."""
 
-    data: Dict[str, Any] = Field(description="KOL buy data from Dune API")
+    data: dict[str, Any] = Field(description="KOL buy data from Dune API")
     error: str = Field(default="", description="Error message if fetch failed")
 
 
@@ -54,7 +54,7 @@ class FetchKOLBuys(DuneBaseTool):
     )
     async def fetch_data(
         self, query_id: int, api_key: str, limit: int = 10
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch data for a specific Dune query.
 
         Args:

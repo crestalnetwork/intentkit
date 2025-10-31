@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ class X402AskAgent(X402BaseSkill):
             if not base_url:
                 raise ToolException("X402 API base URL is not configured.")
             target_url = f"{base_url}/x402"
-            payload: Dict[str, Any] = {
+            payload: dict[str, Any] = {
                 "agent_id": agent_id,
                 "message": message,
                 "app_id": "skill",

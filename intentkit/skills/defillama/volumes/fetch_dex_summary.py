@@ -1,6 +1,6 @@
 """Tool for fetching DEX protocol summary data via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -47,7 +47,7 @@ class FetchDexSummaryResponse(BaseModel):
     module: str | None = Field(None, description="Module name")
     category: str | None = Field(None, description="Protocol category")
     methodologyURL: str | None = Field(None, description="Methodology URL")
-    methodology: Dict | None = Field(None, description="Methodology details")
+    methodology: dict[str, Any] | None = Field(None, description="Methodology details")
     forkedFrom: list[str] | None = Field(None, description="Forked from protocols")
     audits: str | None = Field(None, description="Audit information")
     address: str | None = Field(None, description="Contract address")

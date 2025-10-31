@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -45,7 +45,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
         chain: str = DEFAULT_CHAIN,
         days: str | None = "all",
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet profitability summary from Moralis.
 
         Args:
@@ -54,8 +54,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
             days: Timeframe in days for the summary
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet profitability summary data
+        Returns: dict[str, Any] containing wallet profitability summary data
         """
         context = self.get_context()
         logger.debug(

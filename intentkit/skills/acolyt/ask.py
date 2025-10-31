@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Literal, Type
+from typing import Any, Literal, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -66,14 +66,13 @@ class AcolytAskGpt(AcolytBaseTool):
         """
     args_schema: Type[BaseModel] = AcolytAskGptInput
 
-    async def _arun(self, question: str, **kwargs) -> Dict:
+    async def _arun(self, question: str, **kwargs) -> dict[str, Any]:
         """Run the tool to get answer from Acolyt GPT.
 
         Args:
             question (str): The question body from user.
 
-        Returns:
-            Dict: The response from the API with message content.
+        Returns: dict[str, Any]: The response from the API with message content.
 
         Raises:
             Exception: If there's an error accessing the Acolyt API.

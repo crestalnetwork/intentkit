@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -33,7 +33,7 @@ DEFAULT_SYSTEM_MESSAGES = {
 }
 
 # In-memory cache for app settings
-_cache: Dict[str, Dict[str, Any]] = {}
+_cache: dict[str, dict[str, Any]] = {}
 _cache_ttl = 180  # 3 minutes in seconds
 
 

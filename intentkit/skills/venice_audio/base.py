@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Tuple, Type
+from typing import Tuple, Type
 
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -23,7 +23,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
 
     def validate_voice_model(
         self, context, voice_model: str
-    ) -> Tuple[bool, Dict[str, object] | None]:
+    ) -> Tuple[bool, dict[str, object] | None]:
         config = context.config
 
         selected_model = config.get("voice_model")

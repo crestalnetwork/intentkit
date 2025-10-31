@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -138,7 +138,7 @@ class TokenQuote(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             return f"An unexpected error occurred: {str(e)}"
 
-    def _format_quote_result(self, data: Dict[str, Any]) -> str:
+    def _format_quote_result(self, data: dict[str, Any]) -> str:
         """Format quote result into human-readable text."""
         try:
             # Get basic info

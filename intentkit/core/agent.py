@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import AsyncGenerator, Dict, Tuple
+from typing import AsyncGenerator, Tuple
 
 from sqlalchemy import func, select, text, update
 
@@ -307,7 +307,7 @@ async def deploy_agent(
             raise
 
 
-async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
+async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
     """
     Calculate various action cost metrics for an agent based on past three days of credit events.
 
@@ -323,7 +323,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         agent_id: ID of the agent
 
     Returns:
-        Dict[str, Decimal]: Dictionary containing all calculated cost metrics
+        dict[str, Decimal]: Dictionary containing all calculated cost metrics
     """
     start_time = time.time()
     default_value = Decimal("0")

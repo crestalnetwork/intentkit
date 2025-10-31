@@ -1,7 +1,5 @@
 """Tool for fetching stablecoin data via DeFi Llama API."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoins
@@ -61,7 +59,7 @@ class Stablecoin(BaseModel):
     circulatingPrevMonth: CirculatingAmount = Field(
         ..., description="Total circulating amount from previous month"
     )
-    chainCirculating: Dict[str, ChainCirculating] = Field(
+    chainCirculating: dict[str, ChainCirculating] = Field(
         ..., description="Circulating amounts per chain"
     )
     chains: list[str] = Field(

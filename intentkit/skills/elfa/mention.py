@@ -1,6 +1,6 @@
 """Mention-related skills for Elfa AI API."""
 
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class ElfaGetTopMentionsOutput(BaseModel):
 
     success: bool
     data: list[MentionData] | None = Field(None, description="List of top mentions")
-    metadata: Dict[str, Any] | None = Field(None, description="Response metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetTopMentions(ElfaBaseTool):
@@ -123,7 +123,7 @@ class ElfaSearchMentionsOutput(BaseModel):
     data: list[MentionData] | None = Field(
         None, description="List of matching mentions"
     )
-    metadata: Dict[str, Any] | None = Field(
+    metadata: dict[str, Any] | None = Field(
         None, description="Response metadata with cursor"
     )
 

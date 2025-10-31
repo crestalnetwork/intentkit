@@ -1,7 +1,7 @@
 """fetching Solana wallet portfolio."""
 
 import logging
-from typing import Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -58,7 +58,7 @@ class SolanaNftInfo(BaseModel):
     name: str | None = None
     symbol: str | None = None
     associated_token_address: str
-    metadata: Dict | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class SolanaPortfolioOutput(BaseModel):
@@ -136,7 +136,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
         self,
         address: str,
         network: str,
-        sol_portfolio: Dict,
+        sol_portfolio: dict[str, Any],
         include_nfts: bool,
         include_price_data: bool,
     ) -> SolanaPortfolioOutput:

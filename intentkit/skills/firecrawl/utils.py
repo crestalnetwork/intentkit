@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Tuple
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -81,7 +81,7 @@ class FirecrawlVectorStoreManager:
             openai_api_key=openai_api_key, model="text-embedding-3-small"
         )
 
-    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, str]:
+    def encode_vector_store(self, vector_store: FAISS) -> dict[str, str]:
         """Encode FAISS vector store to base64 for storage (compatible with web_scraper)."""
         import base64
         import os
@@ -106,7 +106,7 @@ class FirecrawlVectorStoreManager:
             raise
 
     def decode_vector_store(
-        self, encoded_files: Dict[str, str], embeddings: OpenAIEmbeddings
+        self, encoded_files: dict[str, str], embeddings: OpenAIEmbeddings
     ) -> FAISS:
         """Decode base64 files back to FAISS vector store (compatible with web_scraper)."""
         import base64
@@ -187,7 +187,7 @@ class FirecrawlMetadataManager:
     @staticmethod
     def create_url_metadata(
         urls: list[str], documents: list[Document], source_type: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create metadata for indexed URLs."""
         return {
             "urls": urls,
@@ -198,7 +198,7 @@ class FirecrawlMetadataManager:
 
     @staticmethod
     @staticmethod
-    async def update_metadata(agent_id: str, new_metadata: Dict[str, Any]) -> None:
+    async def update_metadata(agent_id: str, new_metadata: dict[str, Any]) -> None:
         """Update metadata for an agent."""
         try:
             metadata_key = f"indexed_urls_{agent_id}"

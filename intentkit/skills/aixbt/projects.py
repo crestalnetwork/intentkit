@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from langchain_core.tools import ToolException
@@ -64,7 +64,7 @@ class AIXBTProjects(AIXBTBaseTool):
         minScore: float | None = None,
         chain: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search for cryptocurrency projects using AIXBT API.
 

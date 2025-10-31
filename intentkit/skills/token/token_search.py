@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -53,7 +53,7 @@ class TokenSearch(TokenBaseTool):
         limit: int | None = None,
         is_verified_contract: bool | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Search for tokens using Moralis.
 
         Args:
@@ -63,8 +63,7 @@ class TokenSearch(TokenBaseTool):
             is_verified_contract: Filter for verified contracts
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing token search results
+        Returns: dict[str, Any] containing token search results
         """
         # Extract context from config
         context = self.get_context()

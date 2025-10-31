@@ -5,7 +5,7 @@ FastAPI endpoints for generating agent schemas from natural language prompts.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
@@ -84,7 +84,7 @@ class AgentGenerateRequest(BaseModel):
 class AgentGenerateResponse(BaseModel):
     """Response model for agent generation."""
 
-    agent: Dict[str, Any] = Field(..., description="The generated agent schema")
+    agent: dict[str, Any] = Field(..., description="The generated agent schema")
 
     project_id: str = Field(..., description="Project ID for this conversation session")
 
@@ -92,12 +92,12 @@ class AgentGenerateResponse(BaseModel):
         ..., description="Human-readable summary of the generated agent"
     )
 
-    tags: list[Dict[str, int]] = Field(
+    tags: list[dict[str, int]] = Field(
         default_factory=list,
         description="Generated tags for the agent as ID objects: [{'id': 1}, {'id': 2}]",
     )
 
-    autonomous_tasks: list[Dict[str, Any]] = Field(
+    autonomous_tasks: list[dict[str, Any]] = Field(
         default_factory=list,
         description="List of autonomous tasks generated for the agent",
     )
@@ -124,7 +124,7 @@ class GenerationsListRequest(BaseModel):
 class GenerationsListResponse(BaseModel):
     """Response model for generations list."""
 
-    projects: list[Dict[str, Any]] = Field(
+    projects: list[dict[str, Any]] = Field(
         ..., description="List of recent projects with their conversation history"
     )
 
@@ -137,13 +137,13 @@ class GenerationDetailResponse(BaseModel):
     created_at: str | None = Field(None, description="Project creation timestamp")
     last_activity: str | None = Field(None, description="Last activity timestamp")
     message_count: int = Field(..., description="Number of messages in conversation")
-    last_message: Dict[str, Any] | None = Field(
+    last_message: dict[str, Any] | None = Field(
         None, description="Last message in conversation"
     )
-    first_message: Dict[str, Any] | None = Field(
+    first_message: dict[str, Any] | None = Field(
         None, description="First message in conversation"
     )
-    conversation_history: list[Dict[str, Any]] = Field(
+    conversation_history: list[dict[str, Any]] = Field(
         ..., description="Full conversation history"
     )
 

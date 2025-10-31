@@ -1,6 +1,6 @@
 """Trending tokens skill for Elfa AI API."""
 
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class ElfaGetTrendingTokensOutput(BaseModel):
     data: list[TrendingToken] | None = Field(
         None, description="List of trending tokens"
     )
-    metadata: Dict[str, Any] | None = Field(None, description="Response metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetTrendingTokens(ElfaBaseTool):

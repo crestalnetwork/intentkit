@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any, Dict, Tuple
+from typing import Annotated, Any, Tuple
 
 from epyxid import XID
 from fastapi import HTTPException
@@ -471,7 +471,7 @@ class CreditAccount(BaseModel):
         owner_id: str,
         amount: Decimal,
         event_id: str | None = None,
-    ) -> Tuple["CreditAccount", Dict[CreditType, Decimal]]:
+    ) -> Tuple["CreditAccount", dict[CreditType, Decimal]]:
         """Expense credits and return account and credit type.
         We are not checking balance here, since a conversation may have
         multiple expenses, we can't interrupt the conversation.
@@ -581,7 +581,7 @@ class CreditAccount(BaseModel):
         session: AsyncSession,
         owner_type: OwnerType,
         owner_id: str,
-        amount_details: Dict[CreditType, Decimal],
+        amount_details: dict[CreditType, Decimal],
         event_id: str | None = None,
     ) -> "CreditAccount":
         # check first, create if not exists

@@ -8,7 +8,7 @@ This module handles all validation operations for agent generation including:
 
 import logging
 import re
-from typing import Any, Dict
+from typing import Any
 
 import jsonschema
 from pydantic import BaseModel, Field, ValidationError
@@ -26,7 +26,7 @@ class ValidationResult(BaseModel):
 
 
 async def validate_schema_against_json_schema(
-    data: Dict[str, Any], json_schema: Dict[str, Any]
+    data: dict[str, Any], json_schema: dict[str, Any]
 ) -> ValidationResult:
     """Validate a schema against a JSON schema.
 
@@ -53,7 +53,7 @@ async def validate_schema_against_json_schema(
     return result
 
 
-async def validate_schema(data: Dict[str, Any]) -> ValidationResult:
+async def validate_schema(data: dict[str, Any]) -> ValidationResult:
     """Validate a schema against the agent schema.
 
     Args:
@@ -104,7 +104,7 @@ def _format_validation_error(error: jsonschema.exceptions.ValidationError) -> st
 
 
 async def validate_agent_create(
-    agent_data: Dict[str, Any], user_id: str = None
+    agent_data: dict[str, Any], user_id: str = None
 ) -> ValidationResult:
     """Validate agent data using the same validation as the admin API.
 
@@ -157,8 +157,8 @@ async def validate_agent_create(
 
 
 async def fix_validation_errors(
-    schema: Dict[str, Any], schema_errors: list[str], agent_errors: list[str]
-) -> Dict[str, Any]:
+    schema: dict[str, Any], schema_errors: list[str], agent_errors: list[str]
+) -> dict[str, Any]:
     """Attempt to fix validation errors.
 
     Args:

@@ -1,6 +1,6 @@
 """Tool for fetching token price charts via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -48,7 +48,7 @@ class FetchPriceChartInput(BaseModel):
 class FetchPriceChartResponse(BaseModel):
     """Response schema for token price charts."""
 
-    coins: Dict[str, TokenPriceChart] = Field(
+    coins: dict[str, TokenPriceChart] = Field(
         default_factory=dict, description="Price chart data keyed by token identifier"
     )
     error: str | None = Field(None, description="Error message if any")

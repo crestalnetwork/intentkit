@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -65,7 +65,7 @@ class TokenPrice(TokenBaseTool):
         max_token_inactivity: int | None = None,
         min_pair_side_liquidity_usd: int | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token price from Moralis.
 
         Args:
@@ -78,8 +78,7 @@ class TokenPrice(TokenBaseTool):
             min_pair_side_liquidity_usd: Min liquidity in USD to include
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing token price data
+        Returns: dict[str, Any] containing token price data
         """
         # Extract context from config
         context = self.get_context()

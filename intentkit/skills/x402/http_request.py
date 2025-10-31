@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type, Union
+from typing import Any, Type, Union
 from urllib.parse import urlparse
 
 import httpx
@@ -18,15 +18,15 @@ class X402HttpRequestInput(BaseModel):
     url: str = Field(
         description="Absolute URL for the request (must include scheme and host)."
     )
-    headers: Dict[str, str] | None = Field(
+    headers: dict[str, str] | None = Field(
         default=None,
         description="Optional headers to include in the request.",
     )
-    params: Dict[str, Any] | None = Field(
+    params: dict[str, Any] | None = Field(
         default=None,
         description="Optional query parameters to include in the request.",
     )
-    data: Union[Dict[str, Any], str] | None = Field(
+    data: Union[dict[str, Any], str] | None = Field(
         default=None,
         description=(
             "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
@@ -54,9 +54,9 @@ class X402HttpRequest(X402BaseSkill):
         self,
         method: str,
         url: str,
-        headers: Dict[str, str] | None = None,
-        params: Dict[str, Any] | None = None,
-        data: Union[Dict[str, Any], str] | None = None,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        data: Union[dict[str, Any], str] | None = None,
         timeout: float = 30.0,
         **_: Any,
     ) -> str:
@@ -71,7 +71,7 @@ class X402HttpRequest(X402BaseSkill):
             raise ToolException("URL must include scheme and host (absolute URL).")
 
         request_headers = dict(headers or {})
-        request_kwargs: Dict[str, Any] = {
+        request_kwargs: dict[str, Any] = {
             "url": url,
             "headers": request_headers or None,
             "params": params,

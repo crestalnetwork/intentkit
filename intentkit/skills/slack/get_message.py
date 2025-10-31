@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +39,7 @@ class SlackGetMessage(SlackBaseTool):
         thread_ts: str | None = None,
         limit: int = 10,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the tool to get Slack messages.
 
         Args:
@@ -116,7 +116,7 @@ class SlackGetMessage(SlackBaseTool):
         except Exception as e:
             raise Exception(f"Error getting messages: {str(e)}")
 
-    def _format_message(self, message: Dict[str, Any], channel_id: str) -> SlackMessage:
+    def _format_message(self, message: dict[str, Any], channel_id: str) -> SlackMessage:
         """Format the message data into a SlackMessage model.
 
         Args:

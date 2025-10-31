@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -46,7 +46,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         token_name: str,
         amount: float | None = 1,  # type: ignore
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not ticker:
             return {
                 "error": True,

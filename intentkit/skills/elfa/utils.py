@@ -1,6 +1,6 @@
 """Utility functions for Elfa skills."""
 
-from typing import Any, Dict
+from typing import Any
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -14,13 +14,13 @@ class ElfaResponse(BaseModel):
 
     success: bool
     data: Any = None
-    metadata: Dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 async def make_elfa_request(
     endpoint: str,
     api_key: str,
-    params: Dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
     timeout: int = 30,
 ) -> ElfaResponse:
     """
@@ -122,6 +122,6 @@ class SmartStatsData(BaseModel):
     followerCount: int | None = Field(None, description="Total follower count")
 
 
-def clean_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def clean_params(params: dict[str, Any]) -> dict[str, Any]:
     """Remove None values from parameters dict."""
     return {k: v for k, v in params.items() if v is not None}

@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, Type, Union
+from typing import Any, Type, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -92,7 +92,7 @@ class GetAccountFeed(CookieFunBaseTool):
         sortBy: int | None = None,
         sortOrder: int | None = None,
         **kwargs,
-    ) -> Union[list[Dict[str, Any]], str]:
+    ) -> Union[list[dict[str, Any]], str]:
         """
         Get the feed (tweets) of a Twitter account.
 

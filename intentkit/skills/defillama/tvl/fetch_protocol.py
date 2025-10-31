@@ -1,6 +1,6 @@
 """Tool for fetching specific protocol details via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -24,15 +24,15 @@ class TokenAmount(BaseModel):
     """Model representing token amounts at a specific date."""
 
     date: int = Field(..., description="Unix timestamp")
-    tokens: Dict[str, float] = Field(..., description="Token amounts keyed by symbol")
+    tokens: dict[str, float] = Field(..., description="Token amounts keyed by symbol")
 
 
 class ChainTVLData(BaseModel):
     """Model representing TVL data for a specific chain."""
 
-    tvl: list[Dict[str, float]] = Field(..., description="Historical TVL data points")
-    tokens: Dict[str, float] | None = Field(None, description="Current token amounts")
-    tokensInUsd: Dict[str, float] | None = Field(
+    tvl: list[dict[str, float]] = Field(..., description="Historical TVL data points")
+    tokens: dict[str, float] | None = Field(None, description="Current token amounts")
+    tokensInUsd: dict[str, float] | None = Field(
         None, description="Current token amounts in USD"
     )
 
@@ -85,8 +85,8 @@ class ProtocolDetail(BaseModel):
 
     # Chain Info
     chains: list[str] = Field(default_factory=list, description="Supported chains")
-    currentChainTvls: Dict[str, float] = Field(..., description="Current TVL by chain")
-    chainTvls: Dict[str, ChainTVLData] = Field(
+    currentChainTvls: dict[str, float] = Field(..., description="Current TVL by chain")
+    chainTvls: dict[str, ChainTVLData] = Field(
         ..., description="Historical TVL data by chain"
     )
 
@@ -116,7 +116,9 @@ class ProtocolDetail(BaseModel):
 
     # Market Data
     mcap: float | None = Field(None, description="Market capitalization")
-    metrics: Dict = Field(default_factory=dict, description="Additional metrics")
+    metrics: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metrics"
+    )
 
 
 class DefiLlamaProtocolInput(BaseModel):

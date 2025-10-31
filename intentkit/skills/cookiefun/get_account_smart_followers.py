@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type, Union
+from typing import Any, Type, Union
 
 import httpx
 from pydantic import BaseModel, Field
@@ -33,7 +33,7 @@ class GetAccountSmartFollowers(CookieFunBaseTool):
         username: str | None = None,
         userId: str | None = None,
         **kwargs,
-    ) -> Union[list[Dict[str, Any]], str]:
+    ) -> Union[list[dict[str, Any]], str]:
         """
         Get smart followers for a Twitter account.
 

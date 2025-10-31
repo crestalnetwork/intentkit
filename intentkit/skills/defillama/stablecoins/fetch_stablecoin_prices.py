@@ -1,7 +1,5 @@
 """Tool for fetching stablecoin prices via DeFi Llama API."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_prices
@@ -20,7 +18,7 @@ class PriceDataPoint(BaseModel):
     """Model representing a price data point."""
 
     date: str = Field(..., description="Unix timestamp for the price data")
-    prices: Dict[str, float] = Field(
+    prices: dict[str, float] = Field(
         ..., description="Dictionary of stablecoin prices indexed by identifier"
     )
 

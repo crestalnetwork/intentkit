@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -78,7 +78,7 @@ class WalletNFTs(PortfolioBaseTool):
         media_items: bool | None = False,
         include_prices: bool | None = False,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch NFTs owned by a wallet from Moralis.
 
         Args:
@@ -94,8 +94,7 @@ class WalletNFTs(PortfolioBaseTool):
             include_prices: Include NFT last sale prices
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet NFTs data
+        Returns: dict[str, Any] containing wallet NFTs data
         """
         context = self.get_context()
         logger.debug(f"wallet_nfts.py: Fetching wallet NFTs with context {context}")

@@ -5,7 +5,7 @@ Supports predefined metrics (e.g., total_users, unique_ai_citizens) or direct qu
 
 import difflib
 import re
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -62,14 +62,14 @@ class MetricData(BaseModel):
     """Data model for a single metric result."""
 
     metric: str = Field(description="Metric name or query ID")
-    data: Dict[str, Any] = Field(description="Metric data from Dune API")
+    data: dict[str, Any] = Field(description="Metric data from Dune API")
     error: str = Field(default="", description="Error message if fetch failed")
 
 
 class NationMetricsOutput(BaseModel):
     """Output schema for Crestal Nation metrics."""
 
-    metrics: Dict[str, MetricData] = Field(
+    metrics: dict[str, MetricData] = Field(
         description="Dictionary of metric names or query IDs to their data"
     )
     summary: str = Field(description="Summary of fetched metrics")
@@ -122,7 +122,7 @@ class FetchNationMetrics(DuneBaseTool):
     )
     async def fetch_data(
         self, query_id: int, api_key: str, limit: int = 1000
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch data for a specific Dune query.
 
         Args:

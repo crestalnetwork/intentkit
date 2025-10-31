@@ -1,6 +1,6 @@
 """Tool for fetching historical token prices via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -46,7 +46,7 @@ class FetchHistoricalPricesInput(BaseModel):
 class FetchHistoricalPricesResponse(BaseModel):
     """Response schema for historical token prices."""
 
-    coins: Dict[str, HistoricalTokenPrice] = Field(
+    coins: dict[str, HistoricalTokenPrice] = Field(
         default_factory=dict,
         description="Historical token prices keyed by token identifier",
     )

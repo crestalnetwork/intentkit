@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -77,8 +77,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             from_symbol: Base cryptocurrency symbol to get prices for (e.g., 'BTC', 'ETH')
             to_symbols: List of target currencies (fiat or crypto) (e.g., ['USD', 'EUR', 'JPY'])
 
-        Returns:
-            Dict containing the price data
+        Returns: dict[str, Any] containing the price data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/price"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -109,8 +108,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             api_key: The CryptoCompare API key
             from_symbol: Cryptocurrency symbol to fetch trading signals for (e.g., 'BTC')
 
-        Returns:
-            Dict containing the trading signals data
+        Returns: dict[str, Any] containing the trading signals data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/tradingsignals/intotheblock/latest"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -137,8 +135,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             limit: Number of cryptocurrencies to fetch
             to_symbol: Quote currency for market cap calculation (e.g., 'USD', 'EUR')
 
-        Returns:
-            Dict containing the top market cap data
+        Returns: dict[str, Any] containing the top market cap data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/top/mktcapfull"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -165,8 +162,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             from_symbol: Base cryptocurrency symbol for the trading pair (e.g., 'BTC')
             to_symbol: Quote currency symbol for the trading pair. Defaults to 'USD'
 
-        Returns:
-            Dict containing the top exchanges data
+        Returns: dict[str, Any] containing the top exchanges data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/top/exchanges"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -195,8 +191,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             limit: Number of cryptocurrencies to fetch
             to_symbol: Quote currency for volume calculation. Defaults to 'USD'
 
-        Returns:
-            Dict containing the top volume data
+        Returns: dict[str, Any] containing the top volume data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/top/totalvolfull"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -221,8 +216,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
             token: Token symbol to fetch news for (e.g., BTC, ETH, SOL)
             timestamp: Optional timestamp for fetching news
 
-        Returns:
-            Dict containing the news data
+        Returns: dict[str, Any] containing the news data
         """
         url = f"{CRYPTO_COMPARE_BASE_URL}/data/v2/news/"
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
@@ -263,7 +257,7 @@ class CryptoNews(BaseModel):
     tags: str
     categories: str
     source: str
-    source_info: Dict[str, Any] = Field(default_factory=dict)
+    source_info: dict[str, Any] = Field(default_factory=dict)
 
 
 class CryptoExchange(BaseModel):

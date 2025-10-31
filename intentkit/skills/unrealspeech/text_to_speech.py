@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, Literal, Type
+from typing import Any, Literal, Type
 
 import httpx
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
@@ -68,7 +68,7 @@ class TextToSpeech(UnrealSpeechBaseTool):
         config: Any | None = None,
         run_manager: CallbackManagerForToolRun | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the tool to convert text to speech."""
 
         # Get the API key from context config if available

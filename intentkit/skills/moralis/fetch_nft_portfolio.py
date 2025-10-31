@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +39,9 @@ class NftMetadata(BaseModel):
     description: str | None = Field(None, description="NFT description")
     image: str | None = Field(None, description="NFT image URL")
     animation_url: str | None = Field(None, description="NFT animation URL")
-    attributes: list[Dict] | None = Field(None, description="NFT attributes/traits")
+    attributes: list[dict[str, Any]] | None = Field(
+        None, description="NFT attributes/traits"
+    )
     external_url: str | None = Field(None, description="External URL")
 
 
@@ -156,7 +158,7 @@ class FetchNftPortfolio(WalletBaseTool):
         chain_id: int,
         limit: int,
         normalize_metadata: bool,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Fetch NFTs from an EVM chain.
 
@@ -222,7 +224,7 @@ class FetchNftPortfolio(WalletBaseTool):
             result["nfts"].append(nft_item)
 
     async def _fetch_solana_nfts(
-        self, address: str, network: str, limit: int, result: Dict[str, Any]
+        self, address: str, network: str, limit: int, result: dict[str, Any]
     ) -> None:
         """Fetch NFTs from Solana.
 

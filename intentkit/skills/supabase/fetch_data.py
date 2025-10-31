@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -21,7 +21,7 @@ class SupabaseFetchDataInput(BaseModel):
         default="*",
         description="Comma-separated list of columns to select (default: '*' for all)",
     )
-    filters: Dict[str, Any] | None = Field(
+    filters: dict[str, Any] | None = Field(
         default=None,
         description="Dictionary of filters to apply (e.g., {'column': 'value', 'age': {'gte': 18}})",
     )
@@ -51,7 +51,7 @@ class SupabaseFetchData(SupabaseBaseTool):
         self,
         table: str,
         columns: str | None = "*",
-        filters: Dict[str, Any] | None = None,
+        filters: dict[str, Any] | None = None,
         order_by: str | None = None,
         ascending: bool = True,
         limit: int | None = None,

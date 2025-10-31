@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -90,7 +90,7 @@ class WalletHistory(PortfolioBaseTool):
         nft_metadata: bool | None = None,
         order: str | None = DEFAULT_ORDER,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet transaction history from Moralis.
 
         Args:
@@ -107,8 +107,7 @@ class WalletHistory(PortfolioBaseTool):
             order: Order of results (ASC/DESC)
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing transaction history data
+        Returns: dict[str, Any] containing transaction history data
         """
         context = self.get_context()
         logger.debug(

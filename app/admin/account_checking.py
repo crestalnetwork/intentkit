@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict
+from typing import Any
 
 from sqlalchemy import select, text
 
@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
 class AccountCheckingResult:
     """Result of an account checking operation."""
 
-    def __init__(self, check_type: str, status: bool, details: Dict | None = None):
+    def __init__(
+        self, check_type: str, status: bool, details: dict[str, Any] | None = None
+    ):
         self.check_type = check_type
         self.status = status  # True if check passed, False if failed
         self.details = details or {}
@@ -608,7 +610,7 @@ async def check_transaction_total_balance() -> list[AccountCheckingResult]:
     return [result]
 
 
-async def run_quick_checks() -> Dict[str, list[AccountCheckingResult]]:
+async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
     """Run quick account checking procedures and return results.
 
     These checks are designed to be fast and can be run frequently.
@@ -693,7 +695,7 @@ async def run_quick_checks() -> Dict[str, list[AccountCheckingResult]]:
     return results
 
 
-async def run_slow_checks() -> Dict[str, list[AccountCheckingResult]]:
+async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
     """Run slow account checking procedures and return results.
 
     These checks are more resource-intensive and should be run less frequently.

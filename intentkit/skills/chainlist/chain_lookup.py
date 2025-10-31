@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ class ChainLookup(ChainlistBaseTool):
             return ""
         return text.lower().strip()
 
-    async def _fetch_chains_data(self) -> list[Dict[str, Any]]:
+    async def _fetch_chains_data(self) -> list[dict[str, Any]]:
         """Fetch chains data from Chainlist API."""
         chainlist_api_url = "https://chainlist.org/rpcs.json"
 
@@ -57,12 +57,12 @@ class ChainLookup(ChainlistBaseTool):
 
     def _filter_chains(
         self,
-        chains: list[Dict[str, Any]],
+        chains: list[dict[str, Any]],
         search_term: str | None = None,
         chain_id: int | None = None,
         no_tracking: bool = False,
         limit: int = 5,
-    ) -> list[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Filter chains based on search criteria."""
         filtered_chains = chains
 
@@ -118,7 +118,7 @@ class ChainLookup(ChainlistBaseTool):
 
         return filtered_chains
 
-    def _format_chain(self, chain: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_chain(self, chain: dict[str, Any]) -> dict[str, Any]:
         """Format a chain entry for response."""
         # Format RPC endpoints
         formatted_rpcs = []
@@ -161,7 +161,7 @@ class ChainLookup(ChainlistBaseTool):
         limit: int | None = 5,
         config: Any | None = None,
         **kwargs,
-    ) -> Dict:
+    ) -> dict[str, Any]:
         """Lookup blockchain RPC endpoints from Chainlist."""
         if not search_term and not chain_id:
             return {

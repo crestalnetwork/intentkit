@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -58,7 +58,7 @@ class AgentSkillDataCreate(BaseModel):
     agent_id: Annotated[str, Field(description="ID of the agent this data belongs to")]
     skill: Annotated[str, Field(description="Name of the skill this data is for")]
     key: Annotated[str, Field(description="Key for this specific piece of data")]
-    data: Annotated[Dict[str, Any], Field(description="JSON data stored for this key")]
+    data: Annotated[dict[str, Any], Field(description="JSON data stored for this key")]
 
     async def save(self) -> "AgentSkillData":
         """Save or update skill data.
@@ -245,7 +245,7 @@ class ChatSkillDataCreate(BaseModel):
     skill: Annotated[str, Field(description="Name of the skill this data is for")]
     key: Annotated[str, Field(description="Key for this specific piece of data")]
     agent_id: Annotated[str, Field(description="ID of the agent that owns this chat")]
-    data: Annotated[Dict[str, Any], Field(description="JSON data stored for this key")]
+    data: Annotated[dict[str, Any], Field(description="JSON data stored for this key")]
 
     async def save(self) -> "ChatSkillData":
         """Save or update skill data.

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type, Union
+from typing import Any, Type, Union
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -17,7 +17,7 @@ class SupabaseInsertDataInput(BaseModel):
     """Input for SupabaseInsertData tool."""
 
     table: str = Field(description="The name of the table to insert data into")
-    data: Union[Dict[str, Any], list[Dict[str, Any]]] = Field(
+    data: Union[dict[str, Any], list[dict[str, Any]]] = Field(
         description="The data to insert. Can be a single object or a list of objects"
     )
     returning: str = Field(
@@ -39,7 +39,7 @@ class SupabaseInsertData(SupabaseBaseTool):
     async def _arun(
         self,
         table: str,
-        data: Union[Dict[str, Any], list[Dict[str, Any]]],
+        data: Union[dict[str, Any], list[dict[str, Any]]],
         returning: str = "*",
         **kwargs,
     ):

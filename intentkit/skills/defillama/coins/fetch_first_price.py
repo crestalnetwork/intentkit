@@ -1,6 +1,6 @@
 """Tool for fetching first recorded token prices via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +39,7 @@ class FetchFirstPriceInput(BaseModel):
 class FetchFirstPriceResponse(BaseModel):
     """Response schema for first token prices."""
 
-    coins: Dict[str, FirstPriceData] = Field(
+    coins: dict[str, FirstPriceData] = Field(
         default_factory=dict, description="First price data keyed by token identifier"
     )
     error: str | None = Field(None, description="Error message if any")

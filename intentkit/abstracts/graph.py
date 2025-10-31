@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, Dict, NotRequired
+from typing import Any, Callable, NotRequired
 
 from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
 from pydantic import BaseModel
@@ -23,7 +23,7 @@ class AgentState(BaseAgentState):
 
     context: dict[str, Any]
     error: NotRequired[AgentError]
-    __extra__: NotRequired[Dict[str, Any]]
+    __extra__: NotRequired[dict[str, Any]]
 
 
 class AgentContext(BaseModel):

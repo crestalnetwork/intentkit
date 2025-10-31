@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData, AgentQuota
@@ -40,7 +40,7 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
-    async def set_agent_data(agent_id: str, data: Dict) -> None:
+    async def set_agent_data(agent_id: str, data: dict[str, Any]) -> None:
         """Update agent data.
 
         Args:

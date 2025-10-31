@@ -5,7 +5,7 @@ Utility functions and constants for DexScreener skills.
 import json
 import logging
 from enum import Enum
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 from pydantic import ValidationError
 
@@ -257,7 +257,7 @@ def create_error_response(
     error_type: str,
     message: str,
     details: str | None = None,
-    additional_data: Dict[str, Any] | None = None,
+    additional_data: dict[str, Any] | None = None,
 ) -> str:
     """
     Create a standardized error response in JSON format.
@@ -288,7 +288,7 @@ def create_error_response(
 def create_no_results_response(
     query_info: str,
     reason: str = "no results found",
-    additional_data: Dict[str, Any] | None = None,
+    additional_data: dict[str, Any] | None = None,
 ) -> str:
     """
     Create a standardized "no results found" response.
@@ -342,8 +342,8 @@ def handle_validation_error(
 
 
 def truncate_large_fields(
-    data: Dict[str, Any], max_length: int = 500
-) -> Dict[str, Any]:
+    data: dict[str, Any], max_length: int = 500
+) -> dict[str, Any]:
     """
     Truncate large string fields in error response data to avoid overwhelming the LLM.
 
@@ -363,7 +363,7 @@ def truncate_large_fields(
     return truncated
 
 
-def group_pairs_by_token(pairs: list[PairModel]) -> Dict[str, list[PairModel]]:
+def group_pairs_by_token(pairs: list[PairModel]) -> dict[str, list[PairModel]]:
     """
     Group pairs by token address for better organization in multi-token responses.
 
@@ -406,7 +406,7 @@ def validate_chain_id(chain_id: str) -> bool:
     return chain_id.lower() in SUPPORTED_CHAINS
 
 
-def format_success_response(data: Dict[str, Any]) -> str:
+def format_success_response(data: dict[str, Any]) -> str:
     """
     Format a successful response as JSON string.
 

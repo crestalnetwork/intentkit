@@ -6,7 +6,7 @@ For conversation history, use conversation_service.py instead.
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Any
 
 from .utils import generate_request_id
 
@@ -35,7 +35,7 @@ class LLMLogger:
         is_update: bool = False,
         existing_agent_id: str | None = None,
         llm_model: str | None = None,
-        openai_messages: list[Dict[str, Any]] | None = None,
+        openai_messages: list[dict[str, Any]] | None = None,
     ):
         """Context manager for logging an LLM call.
 
@@ -72,10 +72,10 @@ class LLMLogger:
 
     async def log_successful_call(
         self,
-        call_log: Dict[str, Any],
+        call_log: dict[str, Any],
         response: Any,
-        generated_content: Dict[str, Any] | None = None,
-        openai_messages: list[Dict[str, Any]] | None = None,
+        generated_content: dict[str, Any] | None = None,
+        openai_messages: list[dict[str, Any]] | None = None,
         call_start_time: float | None = None,
     ):
         """Log a successful LLM call completion.

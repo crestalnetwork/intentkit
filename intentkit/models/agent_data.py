@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -388,7 +388,7 @@ class AgentPluginData(BaseModel):
         PydanticField(description="Key for this specific piece of data"),
     ]
     data: Annotated[
-        Dict[str, Any],
+        dict[str, Any],
         PydanticField(default=None, description="JSON data stored for this key"),
     ]
     created_at: Annotated[

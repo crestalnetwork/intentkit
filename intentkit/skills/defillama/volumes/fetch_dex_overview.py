@@ -1,7 +1,5 @@
 """Tool for fetching DEX overview data via DeFi Llama API."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_overview
@@ -45,10 +43,10 @@ class ProtocolInfo(BaseModel):
     change_1m: float | None = Field(None, description="1m change")
     change_7dover7d: float | None = Field(None, description="7d over 7d change")
     change_30dover30d: float | None = Field(None, description="30d over 30d change")
-    breakdown24h: Dict[str, Dict[str, float]] | None = Field(
+    breakdown24h: dict[str, dict[str, float]] | None = Field(
         None, description="24h breakdown by chain"
     )
-    breakdown30d: Dict[str, Dict[str, float]] | None = Field(
+    breakdown30d: dict[str, dict[str, float]] | None = Field(
         None, description="30d breakdown by chain"
     )
     total7DaysAgo: float | None = Field(None, description="Total 7 days ago")
@@ -80,10 +78,10 @@ class FetchDexOverviewResponse(BaseModel):
     totalDataChartBreakdown: list = Field(
         default_factory=list, description="Total data chart breakdown"
     )
-    breakdown24h: Dict[str, Dict[str, float]] | None = Field(
+    breakdown24h: dict[str, dict[str, float]] | None = Field(
         None, description="24h breakdown by chain"
     )
-    breakdown30d: Dict[str, Dict[str, float]] | None = Field(
+    breakdown30d: dict[str, dict[str, float]] | None = Field(
         None, description="30d breakdown by chain"
     )
     chain: str | None = Field(None, description="Specific chain")

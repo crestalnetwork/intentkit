@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class TokenAnalytics(TokenBaseTool):
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token analytics from Moralis.
 
         Args:
@@ -46,8 +46,7 @@ class TokenAnalytics(TokenBaseTool):
             chain: The blockchain to query
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing token analytics data
+        Returns: dict[str, Any] containing token analytics data
         """
         context = self.get_context()
         if context is None:

@@ -10,7 +10,7 @@ import importlib
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Set
+from typing import TYPE_CHECKING, Any
 
 from openai import OpenAI
 
@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 AVAILABLE_SKILL_CATEGORIES = set(available_skill_categories)
 
 # Cache for skill states to avoid repeated imports
-_skill_states_cache: Dict[str, Set[str]] = {}
-_all_skills_cache: Dict[str, Dict[str, Set[str]]] = {}
-_skill_schemas_cache: Dict[str, Dict[str, Any]] = {}
+_skill_states_cache: dict[str, set[str]] = {}
+_all_skills_cache: dict[str, dict[str, set[str]]] = {}
+_skill_schemas_cache: dict[str, dict[str, Any]] = {}
 
 
-def load_skill_schema(skill_name: str) -> Dict[str, Any] | None:
+def load_skill_schema(skill_name: str) -> dict[str, Any] | None:
     """Load schema.json for a specific skill."""
     if skill_name in _skill_schemas_cache:
         return _skill_schemas_cache[skill_name]
@@ -54,7 +54,7 @@ def load_skill_schema(skill_name: str) -> Dict[str, Any] | None:
         return None
 
 
-def get_agent_owner_api_key_skills() -> Set[str]:
+def get_agent_owner_api_key_skills() -> set[str]:
     """Get skills that require agent owner API keys."""
     agent_owner_skills = set()
 
@@ -79,7 +79,7 @@ def get_agent_owner_api_key_skills() -> Set[str]:
     return agent_owner_skills
 
 
-def get_configurable_api_key_skills() -> Set[str]:
+def get_configurable_api_key_skills() -> set[str]:
     """Get skills with configurable API key providers."""
     configurable_skills = set()
 
@@ -104,7 +104,7 @@ def get_configurable_api_key_skills() -> Set[str]:
     return configurable_skills
 
 
-def get_skill_keyword_config() -> Dict[str, list[str]]:
+def get_skill_keyword_config() -> dict[str, list[str]]:
     """Generate skill keyword configuration from schemas."""
     config = {}
 
@@ -188,7 +188,7 @@ def get_skill_default_api_key_provider(skill_name: str) -> str:
         return "platform"
 
 
-def get_skill_states(skill_category: str) -> Set[str]:
+def get_skill_states(skill_category: str) -> set[str]:
     """Get the actual skill states for a given skill category by importing its module."""
     if skill_category in _skill_states_cache:
         return _skill_states_cache[skill_category]
@@ -233,7 +233,7 @@ def get_skill_states(skill_category: str) -> Set[str]:
     return set()
 
 
-def get_all_real_skills() -> Dict[str, Set[str]]:
+def get_all_real_skills() -> dict[str, set[str]]:
     """Get ALL real skills and their states from the codebase."""
     if _all_skills_cache:
         return _all_skills_cache
@@ -249,8 +249,8 @@ def get_all_real_skills() -> Dict[str, Set[str]]:
 
 
 def merge_autonomous_skills(
-    skills_config: Dict[str, Any], autonomous_skills: list[str]
-) -> Dict[str, Any]:
+    skills_config: dict[str, Any], autonomous_skills: list[str]
+) -> dict[str, Any]:
     """Merge autonomous skills into existing skills configuration.
 
     Args:
@@ -302,7 +302,7 @@ def merge_autonomous_skills(
     return skills_config
 
 
-def get_skill_mapping() -> Dict[str, Dict[str, Set[str]]]:
+def get_skill_mapping() -> dict[str, dict[str, set[str]]]:
     """Generate skill mapping dynamically from actual skill implementations."""
     mapping = {}
     all_real_skills = get_all_real_skills()
@@ -336,7 +336,7 @@ def get_skill_mapping() -> Dict[str, Dict[str, Set[str]]]:
     return mapping
 
 
-def add_skill_by_name(prompt: str, skills_config: Dict[str, Any]) -> Dict[str, Any]:
+def add_skill_by_name(prompt: str, skills_config: dict[str, Any]) -> dict[str, Any]:
     """Add skills mentioned by exact name in the prompt."""
     all_real_skills = get_all_real_skills()
     prompt_lower = prompt.lower()
@@ -373,7 +373,7 @@ def add_skill_by_name(prompt: str, skills_config: Dict[str, Any]) -> Dict[str, A
     return skills_config
 
 
-async def validate_skills_exist(skills_config: Dict[str, Any]) -> Dict[str, Any]:
+async def validate_skills_exist(skills_config: dict[str, Any]) -> dict[str, Any]:
     """Validate that all skills in the config actually exist in IntentKit.
 
     Args:
@@ -401,8 +401,8 @@ async def validate_skills_exist(skills_config: Dict[str, Any]) -> Dict[str, Any]
 
 
 async def filter_skills_for_auto_generation(
-    skills_config: Dict[str, Any],
-) -> Dict[str, Any]:
+    skills_config: dict[str, Any],
+) -> dict[str, Any]:
     """Filter out skills that require agent owner API keys from auto-generation.
 
     Args:
@@ -443,7 +443,7 @@ async def filter_skills_for_auto_generation(
 
 async def identify_skills(
     prompt: str, client: OpenAI, llm_logger: "LLMLogger" | None = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Identify relevant skills from the prompt using only real skill data.
 
     Args:
@@ -451,8 +451,7 @@ async def identify_skills(
      client: OpenAI client (not used, kept for compatibility)
      llm_logger: Optional LLM logger for tracking API calls (not used in this implementation)
 
-    Returns:
-     Dict containing skill configurations with only real skill states
+    Returns: dict[str, Any] containing skill configurations with only real skill states
     """
     # Use keyword matching first
     skills_config = keyword_match_skills(prompt)
@@ -462,14 +461,13 @@ async def identify_skills(
     return skills_config
 
 
-def keyword_match_skills(prompt: str) -> Dict[str, Any]:
+def keyword_match_skills(prompt: str) -> dict[str, Any]:
     """Match skills using keyword matching with real skill states only.
 
     Args:
      prompt: The natural language prompt
 
-    Returns:
-     Dict containing skill configurations with real states only
+    Returns: dict[str, Any] containing skill configurations with real states only
     """
     skills_config = {}
     prompt_lower = prompt.lower()

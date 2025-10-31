@@ -1,7 +1,7 @@
 """Tool for fetching cryptocurrency trading signals via CryptoCompare API."""
 
 import logging
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -86,7 +86,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
             if "Data" in signals_data and signals_data["Data"]:
                 for indicator_name, indicator_data in signals_data["Data"].items():
                     if (
-                        isinstance(indicator_data, Dict)
+                        isinstance(indicator_data, dict)
                         and "sentiment" in indicator_data
                     ):
                         result.append(

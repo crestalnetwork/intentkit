@@ -4,7 +4,7 @@ Loads and initializes skills for fetching crypto news and providing market insig
 """
 
 import logging
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 
@@ -13,7 +13,7 @@ from .base import CryptopanicBaseTool
 logger = logging.getLogger(__name__)
 
 # Cache for skill instances
-_skill_cache: Dict[str, CryptopanicBaseTool] = {}
+_skill_cache: dict[str, CryptopanicBaseTool] = {}
 
 
 class SkillStates(TypedDict):

@@ -573,28 +573,27 @@ async def export_agent(
                 for base in all_bases:
                     if hasattr(base, "__annotations__"):
                         for field_name, field_type in base.__annotations__.items():
+                            field_type_str = str(field_type)
                             # Skip fields already set or marked as NotRequired
-                            if field_name in category_config or "NotRequired" in str(
-                                field_type
+                            if (
+                                field_name in category_config
+                                or "notrequired" in field_type_str.lower()
                             ):
                                 continue
                             # Add default value based on type
                             if field_name != "states":  # states already handled above
-                                if "str" in str(field_type):
+                                field_type_lower = field_type_str.lower()
+                                if "str" in field_type_lower:
                                     category_config[field_name] = ""
-                                elif "bool" in str(field_type):
+                                elif "bool" in field_type_lower:
                                     category_config[field_name] = False
-                                elif "int" in str(field_type):
+                                elif "int" in field_type_lower:
                                     category_config[field_name] = 0
-                                elif "float" in str(field_type):
+                                elif "float" in field_type_lower:
                                     category_config[field_name] = 0.0
-                                elif "list" in str(field_type) or "List" in str(
-                                    field_type
-                                ):
+                                elif "list" in field_type_lower:
                                     category_config[field_name] = []
-                                elif "dict" in str(field_type) or "Dict" in str(
-                                    field_type
-                                ):
+                                elif "dict" in field_type_lower:
                                     category_config[field_name] = {}
 
                 # Update the agent's skills config

@@ -1,7 +1,7 @@
 import base64
 import hashlib
 import logging
-from typing import Any, Dict, Literal, Type
+from typing import Any, Literal, Type
 
 from pydantic import BaseModel, Field
 
@@ -46,7 +46,7 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
         cfg_scale: float | None = 7.5,
         style_preset: str | None = "Photographic",
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             context = self.get_context()
             skillConfig = self.getSkillConfig(context)

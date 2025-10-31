@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class WalletStats(PortfolioBaseTool):
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet stats from Moralis.
 
         Args:
@@ -46,8 +46,7 @@ class WalletStats(PortfolioBaseTool):
             chain: The blockchain to query
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet stats data
+        Returns: dict[str, Any] containing wallet stats data
         """
         context = self.get_context()
         logger.debug(f"wallet_stats.py: Fetching wallet stats with context {context}")

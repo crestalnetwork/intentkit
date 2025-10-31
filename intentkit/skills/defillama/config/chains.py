@@ -4,10 +4,8 @@ This module contains the valid chains and their aliases for use with the DeFi Ll
 The VALID_CHAINS dictionary maps primary chain identifiers to their known aliases.
 """
 
-from typing import Dict
-
 # Chain configuration with aliases
-VALID_CHAINS: Dict[str, list[str]] = {
+VALID_CHAINS: dict[str, list[str]] = {
     "ethereum": ["eth", "eth1", "eth2"],
     "solana": ["sol"],
     "bitcoin": ["btc"],

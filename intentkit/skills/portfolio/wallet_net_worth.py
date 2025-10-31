@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class WalletNetWorth(PortfolioBaseTool):
         max_token_inactivity: int | None = 1,
         min_pair_side_liquidity_usd: float | None = 1000,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate wallet net worth from Moralis.
 
         Args:
@@ -69,8 +69,7 @@ class WalletNetWorth(PortfolioBaseTool):
             min_pair_side_liquidity_usd: Exclude tokens with liquidity less than specified
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet net worth data
+        Returns: dict[str, Any] containing wallet net worth data
         """
         context = self.get_context()
         logger.debug(

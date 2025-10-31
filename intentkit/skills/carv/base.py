@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Tuple, Type
 
 import httpx  # Ensure httpx is installed: pip install httpx
 from langchain_core.tools.base import ToolException
@@ -102,9 +102,9 @@ class CarvBaseTool(IntentKitSkill):
         context,
         endpoint: str,
         method: str = "GET",
-        params: Dict[str, Any] | None = None,
-        payload: Dict[str, Any] | None = None,
-    ) -> Tuple[Dict[str, Any] | None, Dict[str, Any] | None]:
+        params: dict[str, Any] | None = None,
+        payload: dict[str, Any] | None = None,
+    ) -> Tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """
         Makes a call to the CARV API and returns a tuple of (success, error).
 

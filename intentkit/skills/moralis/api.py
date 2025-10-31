@@ -1,7 +1,7 @@
 """API interface for wallet data providers (EVM chains and Solana)."""
 
 import logging
-from typing import Dict
+from typing import Any
 
 import httpx
 
@@ -163,7 +163,9 @@ async def fetch_net_worth(api_key: str, address: str) -> dict:
 #############################################
 
 
-async def fetch_solana_api(api_key: str, endpoint: str, params: Dict = None) -> Dict:
+async def fetch_solana_api(
+    api_key: str, endpoint: str, params: dict[str, Any] = None
+) -> dict[str, Any]:
     """Base function for Solana API calls using Moralis.
 
     Args:
@@ -200,7 +202,7 @@ async def fetch_solana_api(api_key: str, endpoint: str, params: Dict = None) -> 
 
 async def get_solana_portfolio(
     api_key: str, address: str, network: str = "mainnet"
-) -> Dict:
+) -> dict[str, Any]:
     """Get complete portfolio for a Solana wallet.
 
     Args:
@@ -217,7 +219,7 @@ async def get_solana_portfolio(
 
 async def get_solana_balance(
     api_key: str, address: str, network: str = "mainnet"
-) -> Dict:
+) -> dict[str, Any]:
     """Get native SOL balance.
 
     Args:
@@ -234,7 +236,7 @@ async def get_solana_balance(
 
 async def get_solana_spl_tokens(
     api_key: str, address: str, network: str = "mainnet"
-) -> Dict:
+) -> dict[str, Any]:
     """Get SPL token balances.
 
     Args:
@@ -249,7 +251,9 @@ async def get_solana_spl_tokens(
     return await fetch_solana_api(api_key, endpoint)
 
 
-async def get_solana_nfts(api_key: str, address: str, network: str = "mainnet") -> Dict:
+async def get_solana_nfts(
+    api_key: str, address: str, network: str = "mainnet"
+) -> dict[str, Any]:
     """Get NFTs owned by a Solana wallet.
 
     Args:
@@ -266,7 +270,7 @@ async def get_solana_nfts(api_key: str, address: str, network: str = "mainnet") 
 
 async def get_token_price(
     api_key: str, token_address: str, network: str = "mainnet"
-) -> Dict:
+) -> dict[str, Any]:
     """Get token price by mint address.
 
     Args:

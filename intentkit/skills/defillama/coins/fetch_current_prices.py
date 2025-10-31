@@ -1,6 +1,6 @@
 """Tool for fetching token prices via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +44,7 @@ class FetchCurrentPricesInput(BaseModel):
 class FetchCurrentPricesResponse(BaseModel):
     """Response schema for current token prices."""
 
-    coins: Dict[str, TokenPrice] = Field(
+    coins: dict[str, TokenPrice] = Field(
         default_factory=dict, description="Token prices keyed by token identifier"
     )
     error: str | None = Field(None, description="Error message if any")

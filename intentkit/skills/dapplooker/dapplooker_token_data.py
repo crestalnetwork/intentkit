@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -205,7 +205,7 @@ class DappLookerTokenData(DappLookerBaseTool):
                 "An error occurred while retrieving token data. Please try again later."
             )
 
-    def _format_token_data(self, data: list[Dict[str, Any]]) -> str:
+    def _format_token_data(self, data: list[dict[str, Any]]) -> str:
         """Format the token data for display.
 
         Args:

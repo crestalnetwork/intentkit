@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type, Union
+from typing import Any, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ class SlackGetChannel(SlackBaseTool):
         channel_id: str | None = None,
         channel_name: str | None = None,
         **kwargs,
-    ) -> Union[SlackChannel, Dict[str, SlackChannel]]:
+    ) -> Union[SlackChannel, dict[str, SlackChannel]]:
         """Run the tool to get information about a Slack channel.
 
         Args:
@@ -88,7 +88,7 @@ class SlackGetChannel(SlackBaseTool):
         except Exception as e:
             raise Exception(f"Error getting channel information: {str(e)}")
 
-    def _format_channel(self, channel: Dict[str, Any]) -> SlackChannel:
+    def _format_channel(self, channel: dict[str, Any]) -> SlackChannel:
         """Format the channel data into a SlackChannel model.
 
         Args:

@@ -9,7 +9,7 @@ This module handles core AI operations for agent generation including:
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, Set, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 from openai import OpenAI
 
@@ -46,7 +46,7 @@ async def enhance_agent(
     client: OpenAI,
     user_id: str | None = None,
     llm_logger: "LLMLogger" | None = None,
-) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
+) -> Tuple[dict[str, Any], set[str], dict[str, Any]]:
     """Generate minimal updates to an existing agent based on a prompt.
 
     This function preserves the existing agent configuration and only makes
@@ -343,11 +343,11 @@ Make minimal changes based on the prompt. If this is part of an ongoing conversa
 
 async def generate_agent_attributes(
     prompt: str,
-    skills_config: Dict[str, Any],
+    skills_config: dict[str, Any],
     client: OpenAI,
     llm_logger: "LLMLogger" | None = None,
     user_id: str | None = None,
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[dict[str, Any], dict[str, Any]]:
     """Generate agent attributes (name, purpose, personality, principles) from prompt.
 
     Args:
@@ -498,7 +498,7 @@ async def generate_validated_agent(
     existing_agent: "AgentUpdate" | None = None,
     llm_logger: "LLMLogger" | None = None,
     max_attempts: int = 3,
-) -> Tuple[Dict[str, Any], Set[str], str]:
+) -> Tuple[dict[str, Any], set[str], str]:
     """Generate agent schema with automatic validation retry and AI self-correction.
 
     This function uses an iterative approach:
@@ -734,14 +734,14 @@ async def generate_validated_agent(
 
 async def fix_agent_schema_with_ai_logged(
     original_prompt: str,
-    failed_schema: Dict[str, Any],
+    failed_schema: dict[str, Any],
     validation_errors: list[str],
     client: OpenAI,
     user_id: str | None = None,
     existing_agent: "AgentUpdate" | None = None,
     llm_logger: "LLMLogger" | None = None,
     retry_count: int = 1,
-) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
+) -> Tuple[dict[str, Any], set[str], dict[str, Any]]:
     """Fix agent schema using AI based on validation errors.
 
     Args:

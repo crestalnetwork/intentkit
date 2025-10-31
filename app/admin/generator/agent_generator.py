@@ -5,7 +5,7 @@ This module coordinates the skill processing, validation, and AI assistance modu
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Set, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 from openai import OpenAI
 
@@ -35,7 +35,7 @@ async def generate_agent_schema(
     user_id: str | None = None,
     existing_agent: AgentUpdate | None = None,
     llm_logger: "LLMLogger" | None = None,
-) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
+) -> Tuple[dict[str, Any], set[str], dict[str, Any]]:
     """Generate agent schema from a natural language prompt.
 
     This is the main entry point for agent generation. It handles both new agent
@@ -91,7 +91,7 @@ async def _generate_new_agent_schema(
     client: OpenAI,
     user_id: str | None = None,
     llm_logger: "LLMLogger" | None = None,
-) -> Tuple[Dict[str, Any], Set[str], Dict[str, Any]]:
+) -> Tuple[dict[str, Any], set[str], dict[str, Any]]:
     """Generate a completely new agent schema from a prompt.
 
     Args:
@@ -186,7 +186,7 @@ async def generate_validated_agent_schema(
     user_id: str | None = None,
     existing_agent: AgentUpdate | None = None,
     llm_logger: "LLMLogger" | None = None,
-) -> Tuple[Dict[str, Any], Set[str], str]:
+) -> Tuple[dict[str, Any], set[str], str]:
     """Generate and validate agent schema with summary.
 
     Args:

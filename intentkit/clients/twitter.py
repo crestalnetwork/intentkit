@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict
 from urllib.parse import urlencode
 
 import httpx
@@ -17,8 +17,8 @@ from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 
-_clients_linked: Dict[str, "TwitterClient"] = {}
-_clients_self_key: Dict[str, "TwitterClient"] = {}
+_clients_linked: dict[str, "TwitterClient"] = {}
+_clients_self_key: dict[str, "TwitterClient"] = {}
 
 _VERIFIER_KEY = "intentkit:twitter:code_verifier"
 _CHALLENGE_KEY = "intentkit:twitter:code_challenge"
@@ -82,7 +82,7 @@ class TwitterClient(TwitterABC):
         config: Configuration dictionary that may contain API keys
     """
 
-    def __init__(self, agent_id: str, config: Dict) -> None:
+    def __init__(self, agent_id: str, config: dict[str, Any]) -> None:
         """Initialize the Twitter client.
 
         Args:
@@ -248,7 +248,7 @@ class TwitterClient(TwitterABC):
             return None
         return self._agent_data.twitter_is_verified
 
-    def process_tweets_response(self, response: Dict[str, Any]) -> list[Tweet]:
+    def process_tweets_response(self, response: dict[str, Any]) -> list[Tweet]:
         """Process Twitter API response and convert it to a list of Tweet objects.
 
         Args:
@@ -428,11 +428,11 @@ class TwitterClient(TwitterABC):
         return media_ids
 
 
-def _is_self_key(config: Dict) -> bool:
+def _is_self_key(config: dict[str, Any]) -> bool:
     return config.get("api_key_provider") == "agent_owner"
 
 
-def get_twitter_client(agent_id: str, config: Dict) -> "TwitterClient":
+def get_twitter_client(agent_id: str, config: dict[str, Any]) -> "TwitterClient":
     if _is_self_key(config):
         if agent_id not in _clients_self_key:
             _clients_self_key[agent_id] = TwitterClient(agent_id, config)

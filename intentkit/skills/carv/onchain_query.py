@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, Literal, Type
+from typing import Any, Literal, Type
 
 from pydantic import BaseModel, Field
 
@@ -65,7 +65,7 @@ class OnchainQueryTool(CarvBaseTool):
         question: str,
         chain: str,  # type: ignore
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Queries the CARV SQL Query API and returns the response.
         """
@@ -104,7 +104,7 @@ class OnchainQueryTool(CarvBaseTool):
             }
 
 
-def _normalize_unit(response_data: Dict[str, Any], chain: str) -> None:
+def _normalize_unit(response_data: dict[str, Any], chain: str) -> None:
     """
     Normalizes the 'value' field in on-chain response data to a human-readable format.
     Adds the corresponding token ticker after the value.

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -80,7 +80,7 @@ class ERC20Transfers(TokenBaseTool):
         order: str | None = DEFAULT_ORDER,
         cursor: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch ERC20 token transfers for a wallet from Moralis.
 
         Args:
@@ -96,8 +96,7 @@ class ERC20Transfers(TokenBaseTool):
             cursor: Pagination cursor
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing ERC20 transfer data
+        Returns: dict[str, Any] containing ERC20 transfer data
         """
         context = self.get_context()
         if context is None:

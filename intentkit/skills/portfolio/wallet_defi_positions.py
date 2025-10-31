@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class WalletDefiPositions(PortfolioBaseTool):
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet DeFi positions from Moralis.
 
         Args:
@@ -46,8 +46,7 @@ class WalletDefiPositions(PortfolioBaseTool):
             chain: The blockchain to query
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing DeFi positions data
+        Returns: dict[str, Any] containing DeFi positions data
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)

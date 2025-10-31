@@ -10,7 +10,7 @@ import base64
 import logging
 import os
 import tempfile
-from typing import Dict, Tuple
+from typing import Any, Tuple
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -85,7 +85,7 @@ class VectorStoreManager:
         metadata_key = f"{METADATA_KEY_PREFIX}_{agent_id}"
         return vector_store_key, metadata_key
 
-    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, str]:
+    def encode_vector_store(self, vector_store: FAISS) -> dict[str, str]:
         """Encode FAISS vector store to base64 for storage."""
         with tempfile.TemporaryDirectory() as temp_dir:
             vector_store.save_local(temp_dir)
@@ -102,7 +102,7 @@ class VectorStoreManager:
             return encoded_files
 
     def decode_vector_store(
-        self, encoded_files: Dict[str, str], embeddings: OpenAIEmbeddings
+        self, encoded_files: dict[str, str], embeddings: OpenAIEmbeddings
     ) -> FAISS:
         """Decode base64 files back to FAISS vector store."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -119,7 +119,7 @@ class VectorStoreManager:
                 allow_dangerous_deserialization=True,
             )
 
-    async def get_existing_vector_store(self, agent_id: str) -> Dict | None:
+    async def get_existing_vector_store(self, agent_id: str) -> dict[str, Any] | None:
         """Get existing vector store data if it exists."""
         vector_store_key, _ = self.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", vector_store_key)
@@ -292,7 +292,7 @@ class DocumentProcessor:
         title: str,
         source: str,
         tags: str = "",
-        extra_metadata: Dict | None = None,
+        extra_metadata: dict[str, Any] | None = None,
     ) -> Document:
         """Create a Document with standardized metadata."""
         cleaned_content = DocumentProcessor.clean_text(content)
@@ -324,7 +324,7 @@ class MetadataManager:
     def __init__(self, vector_manager: VectorStoreManager):
         self._vector_manager = vector_manager
 
-    async def get_existing_metadata(self, agent_id: str) -> Dict:
+    async def get_existing_metadata(self, agent_id: str) -> dict[str, Any]:
         """Get existing metadata for an agent."""
         _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", metadata_key) or {}
@@ -334,8 +334,8 @@ class MetadataManager:
         urls: list[str],
         split_docs: list[Document],
         source_type: str = "web_scraper",
-        extra_fields: Dict | None = None,
-    ) -> Dict:
+        extra_fields: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Create metadata for a list of URLs."""
         metadata = {}
         current_time = str(asyncio.get_event_loop().time())
@@ -363,7 +363,7 @@ class MetadataManager:
         tags: str,
         split_docs: list[Document],
         document_length: int,
-    ) -> Dict:
+    ) -> dict[str, Any]:
         """Create metadata for a document."""
         # Generate unique key
         key = f"document_{title.lower().replace(' ', '_')}"
@@ -382,7 +382,9 @@ class MetadataManager:
             }
         }
 
-    async def update_metadata(self, agent_id: str, new_metadata: Dict) -> None:
+    async def update_metadata(
+        self, agent_id: str, new_metadata: dict[str, Any]
+    ) -> None:
         """Update metadata for an agent."""
         _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
 
@@ -413,7 +415,7 @@ class ResponseFormatter:
         chunk_size: int,
         chunk_overlap: int,
         was_merged: bool,
-        extra_info: Dict | None = None,
+        extra_info: dict[str, Any] | None = None,
         current_size_bytes: int = 0,
         size_limit_reached: bool = False,
         total_requested_urls: int = 0,

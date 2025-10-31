@@ -5,7 +5,7 @@ This is separate from LLM logging which tracks technical API calls.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from intentkit.models.conversation import (
     ConversationMessage,
@@ -38,7 +38,7 @@ class ConversationService:
         return self._project
 
     async def add_user_message(
-        self, content: str, message_metadata: Dict[str, Any] | None = None
+        self, content: str, message_metadata: dict[str, Any] | None = None
     ) -> ConversationMessage:
         """Add a user message to the conversation."""
         return await add_message(
@@ -46,26 +46,26 @@ class ConversationService:
         )
 
     async def add_assistant_message(
-        self, content: str, message_metadata: Dict[str, Any] | None = None
+        self, content: str, message_metadata: dict[str, Any] | None = None
     ) -> ConversationMessage:
         """Add an assistant message to the conversation."""
         return await add_message(
             self.project_id, "assistant", content, message_metadata, self.user_id
         )
 
-    async def get_history(self) -> list[Dict[str, Any]]:
+    async def get_history(self) -> list[dict[str, Any]]:
         """Get the conversation history."""
         try:
             return await get_conversation_history(self.project_id, self.user_id)
         except ValueError:
             return []
 
-    async def get_recent_context(self, max_messages: int = 10) -> list[Dict[str, Any]]:
+    async def get_recent_context(self, max_messages: int = 10) -> list[dict[str, Any]]:
         """Get recent conversation context for the LLM."""
         history = await self.get_history()
         return history[-max_messages:] if history else []
 
-    def format_ai_response(self, content: Dict[str, Any], call_type: str) -> str | None:
+    def format_ai_response(self, content: dict[str, Any], call_type: str) -> str | None:
         """Format AI response content for conversation history.
 
         Args:
@@ -129,7 +129,7 @@ async def add_message(
     project_id: str,
     role: str,
     content: str,
-    message_metadata: Dict[str, Any] | None = None,
+    message_metadata: dict[str, Any] | None = None,
     user_id: str | None = None,
 ) -> ConversationMessage:
     """Add a message to a conversation project."""
@@ -155,7 +155,7 @@ async def add_message(
 
 async def get_conversation_history(
     project_id: str, user_id: str | None = None
-) -> list[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get conversation history for a project."""
     messages = await ConversationMessage.get_by_project(project_id, user_id)
 
@@ -177,7 +177,7 @@ async def get_conversation_history(
 
 async def get_projects_by_user(
     user_id: str | None = None, limit: int = 50
-) -> list[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get projects by user with their conversation history."""
     projects = await ConversationProject.get_by_user(user_id, limit)
 
@@ -210,7 +210,7 @@ async def get_projects_by_user(
     return result
 
 
-async def get_project_metadata(project_id: str) -> Dict[str, Any] | None:
+async def get_project_metadata(project_id: str) -> dict[str, Any] | None:
     """Get project metadata."""
     project = await ConversationProject.get(project_id)
     if not project:

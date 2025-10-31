@@ -1,6 +1,6 @@
 """Tool for fetching token price percentage changes via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class FetchPricePercentageInput(BaseModel):
 class FetchPricePercentageResponse(BaseModel):
     """Response schema for token price percentage changes."""
 
-    coins: Dict[str, float] = Field(
+    coins: dict[str, float] = Field(
         default_factory=dict,
         description="Price percentage changes keyed by token identifier",
     )

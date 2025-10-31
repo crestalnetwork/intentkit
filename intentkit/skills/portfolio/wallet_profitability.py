@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -51,7 +51,7 @@ class WalletProfitability(PortfolioBaseTool):
         days: str | None = "all",
         token_addresses: list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch detailed wallet profitability from Moralis.
 
         Args:
@@ -61,8 +61,7 @@ class WalletProfitability(PortfolioBaseTool):
             token_addresses: List of token addresses to filter results
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet profitability breakdown data
+        Returns: dict[str, Any] containing wallet profitability breakdown data
         """
         context = self.get_context()
         logger.debug(

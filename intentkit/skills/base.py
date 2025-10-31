@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Literal,
     NotRequired,
     TypedDict,
@@ -49,9 +48,9 @@ class SkillConfig(TypedDict):
     """Abstract base class for skill configuration."""
 
     enabled: bool
-    states: Dict[str, SkillState | SkillOwnerState]
+    states: dict[str, SkillState | SkillOwnerState]
     api_key_provider: NotRequired[APIKeyProviderValue]
-    __extra__: NotRequired[Dict[str, Any]]
+    __extra__: NotRequired[dict[str, Any]]
 
 
 class IntentKitSkill(BaseTool):
@@ -258,7 +257,7 @@ class IntentKitSkill(BaseTool):
     async def get_agent_skill_data(
         self,
         key: str,
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active agent."""
         return await self.get_agent_skill_data_raw(self.name, key)
 
@@ -266,12 +265,12 @@ class IntentKitSkill(BaseTool):
         self,
         skill_name: str,
         key: str,
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for a specific skill scoped to the active agent."""
         context = self.get_context()
         return await AgentSkillData.get(context.agent_id, skill_name, key)
 
-    async def save_agent_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+    async def save_agent_skill_data(self, key: str, data: dict[str, Any]) -> None:
         """Persist data for this skill scoped to the active agent."""
         await self.save_agent_skill_data_raw(self.name, key, data)
 
@@ -279,7 +278,7 @@ class IntentKitSkill(BaseTool):
         self,
         skill_name: str,
         key: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> None:
         """Persist data for a specific skill scoped to the active agent."""
         context = self.get_context()
@@ -299,12 +298,12 @@ class IntentKitSkill(BaseTool):
     async def get_thread_skill_data(
         self,
         key: str,
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active chat."""
         context = self.get_context()
         return await ChatSkillData.get(context.chat_id, self.name, key)
 
-    async def save_thread_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+    async def save_thread_skill_data(self, key: str, data: dict[str, Any]) -> None:
         """Persist data for this skill scoped to the active chat."""
         context = self.get_context()
         skill_data = ChatSkillDataCreate(

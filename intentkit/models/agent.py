@@ -6,7 +6,7 @@ import textwrap
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Dict, Literal
+from typing import Annotated, Any, Literal
 
 import jsonref
 import yaml
@@ -258,7 +258,7 @@ class AgentUserInputColumns:
     skills = Column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
-        comment="Dict of skills and their corresponding configurations",
+        comment="Dictionary of skills and their corresponding configurations",
     )
 
     # Additional fields from AgentUserInput
@@ -550,10 +550,10 @@ class AgentCore(BaseModel):
         ),
     ]
     skills: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
-            description="Dict of skills and their corresponding configurations",
+            description="Dictionary of skills and their corresponding configurations",
         ),
     ]
 
@@ -676,7 +676,7 @@ class AgentUpdate(AgentUserInput):
         ),
     ]
     upstream_extra: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Additional data store for upstream use",
@@ -1000,7 +1000,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     public_extra: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Public extra data of the agent",
@@ -1064,14 +1064,14 @@ class Agent(AgentCreate, AgentPublicInfo):
         ),
     ]
     statistics: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Statistics of the agent, update every 1 hour for query",
         ),
     ]
     assets: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Assets of the agent, update every 1 hour for query",
@@ -1085,7 +1085,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         ),
     ]
     extra: Annotated[
-        Dict[str, Any] | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Other helper data fields for query, come from agent and agent data",
@@ -1335,7 +1335,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         return deserialized
 
     @staticmethod
-    def _serialize_autonomous(tasks: list[AgentAutonomous]) -> list[Dict[str, Any]]:
+    def _serialize_autonomous(tasks: list[AgentAutonomous]) -> list[dict[str, Any]]:
         return [task.model_dump() for task in tasks]
 
     @staticmethod
@@ -1426,11 +1426,11 @@ class Agent(AgentCreate, AgentPublicInfo):
         self.autonomous = rewritten_tasks
         return updated_task
 
-    def skill_config(self, category: str) -> Dict[str, Any]:
+    def skill_config(self, category: str) -> dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}
 
     @staticmethod
-    def _is_agent_owner_only_skill(skill_schema: Dict[str, Any]) -> bool:
+    def _is_agent_owner_only_skill(skill_schema: dict[str, Any]) -> bool:
         """Check if a skill requires agent owner API keys only based on its resolved schema."""
         if (
             skill_schema
@@ -1449,7 +1449,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         cls,
         db: AsyncSession = None,
         filter_owner_api_skills: bool = False,
-    ) -> Dict:
+    ) -> dict[str, Any]:
         """Get the JSON schema for Agent model with all $ref references resolved.
 
         This is the shared function that handles admin configuration filtering
@@ -1459,8 +1459,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             db: Database session (optional, will create if not provided)
             filter_owner_api_skills: Whether to filter out skills that require agent owner API keys
 
-        Returns:
-            Dict containing the complete JSON schema for the Agent model
+        Returns: dict[str, Any] containing the complete JSON schema for the Agent model
         """
         # Get database session if not provided
         if db is None:

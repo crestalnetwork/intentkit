@@ -1,6 +1,6 @@
 """Tool for fetching options overview data via DeFi Llama API."""
 
-from typing import Dict, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -53,10 +53,10 @@ class Protocol(BaseModel):
     methodology: ProtocolMethodology | None = Field(
         None, description="Protocol methodology"
     )
-    breakdown24h: Dict[str, Dict[str, float]] | None = Field(
+    breakdown24h: dict[str, dict[str, float]] | None = Field(
         None, description="24-hour breakdown by chain"
     )
-    breakdown30d: Dict[str, Dict[str, float]] | None = Field(
+    breakdown30d: dict[str, dict[str, float]] | None = Field(
         None, description="30-day breakdown by chain"
     )
 

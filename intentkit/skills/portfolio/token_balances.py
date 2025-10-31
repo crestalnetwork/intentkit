@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -86,7 +86,7 @@ class TokenBalances(PortfolioBaseTool):
         max_token_inactivity: int | None = None,
         min_pair_side_liquidity_usd: float | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token balances from Moralis.
 
         Args:
@@ -103,8 +103,7 @@ class TokenBalances(PortfolioBaseTool):
             min_pair_side_liquidity_usd: Exclude tokens with liquidity less than specified
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing token balances data
+        Returns: dict[str, Any] containing token balances data
         """
         context = self.get_context()
         logger.debug(

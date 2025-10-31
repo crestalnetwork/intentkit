@@ -1,6 +1,6 @@
 """Tool for fetching all protocols via DeFi Llama API."""
 
-from typing import Dict, Type, Union
+from typing import Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -85,7 +85,7 @@ class Protocol(BaseModel):
 
     # TVL Related Data
     tvl: float | None = Field(None, description="Total Value Locked in USD")
-    chainTvls: Dict[str, float] = Field(
+    chainTvls: dict[str, float] = Field(
         default_factory=dict,
         description="TVL breakdown by chain including special types (staking, borrowed, etc.)",
     )
@@ -99,7 +99,7 @@ class Protocol(BaseModel):
     borrowed: float | None = Field(None, description="Value borrowed")
 
     # Token Information
-    tokenBreakdowns: Dict[str, float] = Field(
+    tokenBreakdowns: dict[str, float] = Field(
         default_factory=dict, description="TVL breakdown by token"
     )
     mcap: float | None = Field(None, description="Market capitalization")

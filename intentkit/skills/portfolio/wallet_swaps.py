@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field
 
@@ -82,7 +82,7 @@ class WalletSwaps(PortfolioBaseTool):
         order: str | None = DEFAULT_ORDER,
         transaction_types: list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet swap transactions from Moralis.
 
         Args:
@@ -98,8 +98,7 @@ class WalletSwaps(PortfolioBaseTool):
             transaction_types: Types of transactions to include ('buy', 'sell')
             config: The configuration for the tool call
 
-        Returns:
-            Dict containing wallet swaps data
+        Returns: dict[str, Any] containing wallet swaps data
         """
         context = self.get_context()
         logger.debug(f"wallet_swaps.py: Fetching wallet swaps with context {context}")
