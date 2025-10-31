@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -46,7 +45,7 @@ class EnsoGetNetworks(EnsoBaseTool):
 
     name: str = "enso_get_networks"
     description: str = "Retrieve networks supported by the Enso API"
-    args_schema: Type[BaseModel] = EnsoGetNetworksInput
+    args_schema: type[BaseModel] = EnsoGetNetworksInput
 
     async def _arun(self, **kwargs) -> EnsoGetNetworksOutput:
         """

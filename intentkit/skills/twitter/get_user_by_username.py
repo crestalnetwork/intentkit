@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -35,7 +34,7 @@ class TwitterGetUserByUsername(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterGetUserByUsernameInput
+    args_schema: type[BaseModel] = TwitterGetUserByUsernameInput
 
     async def _arun(self, username: str, **kwargs):
         context = self.get_context()

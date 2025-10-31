@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -36,8 +36,8 @@ class FirecrawlDocumentProcessor:
 
     @staticmethod
     def split_documents(
-        documents: List[Document], chunk_size: int = 1000, chunk_overlap: int = 200
-    ) -> List[Document]:
+        documents: list[Document], chunk_size: int = 1000, chunk_overlap: int = 200
+    ) -> list[Document]:
         """Split documents into smaller chunks for better indexing."""
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -63,7 +63,7 @@ class FirecrawlDocumentProcessor:
 class FirecrawlVectorStoreManager:
     """Manages vector store operations for Firecrawl content."""
 
-    def __init__(self, embedding_api_key: Optional[str] = None):
+    def __init__(self, embedding_api_key: str | None = None):
         self._embedding_api_key = embedding_api_key
 
     def _resolve_api_key(self) -> str:
@@ -81,7 +81,7 @@ class FirecrawlVectorStoreManager:
             openai_api_key=openai_api_key, model="text-embedding-3-small"
         )
 
-    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, str]:
+    def encode_vector_store(self, vector_store: FAISS) -> dict[str, str]:
         """Encode FAISS vector store to base64 for storage (compatible with web_scraper)."""
         import base64
         import os
@@ -106,7 +106,7 @@ class FirecrawlVectorStoreManager:
             raise
 
     def decode_vector_store(
-        self, encoded_files: Dict[str, str], embeddings: OpenAIEmbeddings
+        self, encoded_files: dict[str, str], embeddings: OpenAIEmbeddings
     ) -> FAISS:
         """Decode base64 files back to FAISS vector store (compatible with web_scraper)."""
         import base64
@@ -131,7 +131,7 @@ class FirecrawlVectorStoreManager:
             logger.error(f"Error decoding vector store: {e}")
             raise
 
-    async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
+    async def load_vector_store(self, agent_id: str) -> FAISS | None:
         """Load existing vector store for an agent."""
         try:
             vector_store_key = f"vector_store_{agent_id}"
@@ -186,8 +186,8 @@ class FirecrawlMetadataManager:
 
     @staticmethod
     def create_url_metadata(
-        urls: List[str], documents: List[Document], source_type: str
-    ) -> Dict[str, Any]:
+        urls: list[str], documents: list[Document], source_type: str
+    ) -> dict[str, Any]:
         """Create metadata for indexed URLs."""
         return {
             "urls": urls,
@@ -198,7 +198,7 @@ class FirecrawlMetadataManager:
 
     @staticmethod
     @staticmethod
-    async def update_metadata(agent_id: str, new_metadata: Dict[str, Any]) -> None:
+    async def update_metadata(agent_id: str, new_metadata: dict[str, Any]) -> None:
         """Update metadata for an agent."""
         try:
             metadata_key = f"indexed_urls_{agent_id}"
@@ -215,12 +215,12 @@ class FirecrawlMetadataManager:
 
 
 async def index_documents(
-    documents: List[Document],
+    documents: list[Document],
     agent_id: str,
     vector_manager: FirecrawlVectorStoreManager,
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
-) -> Tuple[int, bool]:
+) -> tuple[int, bool]:
     """
     Index documents into the Firecrawl vector store.
 
@@ -281,7 +281,7 @@ async def query_indexed_content(
     agent_id: str,
     vector_manager: FirecrawlVectorStoreManager,
     max_results: int = 4,
-) -> List[Document]:
+) -> list[Document]:
     """
     Query the Firecrawl indexed content.
 

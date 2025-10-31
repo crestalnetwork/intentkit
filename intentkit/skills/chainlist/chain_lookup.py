@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 class ChainLookupInput(BaseModel):
     """Input for ChainLookup tool."""
 
-    search_term: Optional[str] = Field(
+    search_term: str | None = Field(
         description="Term to search for (chain name, symbol, or chain ID)",
         default=None,
     )
-    chain_id: Optional[int] = Field(
+    chain_id: int | None = Field(
         description="Specific chain ID to look up",
         default=None,
     )
-    no_tracking: Optional[bool] = Field(
+    no_tracking: bool | None = Field(
         description="Whether to return only RPC endpoints with no tracking",
         default=False,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="Limit the number of results returned",
         default=5,
     )
@@ -38,7 +38,7 @@ class ChainLookup(ChainlistBaseTool):
         "Look up blockchain RPC endpoints and details by chain name, symbol, or chain ID.\n"
         "Returns information about blockchains including RPC endpoints, native currency, and explorers."
     )
-    args_schema: Type[BaseModel] = ChainLookupInput
+    args_schema: type[BaseModel] = ChainLookupInput
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text for searching (lowercase, remove spaces)."""
@@ -46,7 +46,7 @@ class ChainLookup(ChainlistBaseTool):
             return ""
         return text.lower().strip()
 
-    async def _fetch_chains_data(self) -> List[Dict[str, Any]]:
+    async def _fetch_chains_data(self) -> list[dict[str, Any]]:
         """Fetch chains data from Chainlist API."""
         chainlist_api_url = "https://chainlist.org/rpcs.json"
 
@@ -57,12 +57,12 @@ class ChainLookup(ChainlistBaseTool):
 
     def _filter_chains(
         self,
-        chains: List[Dict[str, Any]],
-        search_term: Optional[str] = None,
-        chain_id: Optional[int] = None,
+        chains: list[dict[str, Any]],
+        search_term: str | None = None,
+        chain_id: int | None = None,
         no_tracking: bool = False,
         limit: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Filter chains based on search criteria."""
         filtered_chains = chains
 
@@ -118,7 +118,7 @@ class ChainLookup(ChainlistBaseTool):
 
         return filtered_chains
 
-    def _format_chain(self, chain: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_chain(self, chain: dict[str, Any]) -> dict[str, Any]:
         """Format a chain entry for response."""
         # Format RPC endpoints
         formatted_rpcs = []
@@ -155,13 +155,13 @@ class ChainLookup(ChainlistBaseTool):
 
     async def _arun(
         self,
-        search_term: Optional[str] = None,
-        chain_id: Optional[int] = None,
-        no_tracking: Optional[bool] = False,
-        limit: Optional[int] = 5,
-        config: Optional[Any] = None,
+        search_term: str | None = None,
+        chain_id: int | None = None,
+        no_tracking: bool | None = False,
+        limit: int | None = 5,
+        config: Any | None = None,
         **kwargs,
-    ) -> Dict:
+    ) -> dict:
         """Lookup blockchain RPC endpoints from Chainlist."""
         if not search_term and not chain_id:
             return {

@@ -1,7 +1,5 @@
 """Tool for fetching protocol TVL via DeFiLlama API."""
 
-from typing import Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol_current_tvl
@@ -47,7 +45,7 @@ class DefiLlamaFetchProtocolCurrentTvl(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_protocol_tvl"
     description: str = FETCH_TVL_PROMPT
-    args_schema: Type[BaseModel] = FetchProtocolCurrentTVLInput
+    args_schema: type[BaseModel] = FetchProtocolCurrentTVLInput
 
     async def _arun(self, protocol: str) -> FetchProtocolCurrentTVLResponse:
         """Fetch current TVL for the given protocol.

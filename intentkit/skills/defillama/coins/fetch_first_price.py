@@ -1,7 +1,5 @@
 """Tool for fetching first recorded token prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_first_price
@@ -31,7 +29,7 @@ class FirstPriceData(BaseModel):
 class FetchFirstPriceInput(BaseModel):
     """Input schema for fetching first token prices."""
 
-    coins: List[str] = Field(
+    coins: list[str] = Field(
         ..., description="List of token identifiers to fetch first prices for"
     )
 
@@ -39,10 +37,10 @@ class FetchFirstPriceInput(BaseModel):
 class FetchFirstPriceResponse(BaseModel):
     """Response schema for first token prices."""
 
-    coins: Dict[str, FirstPriceData] = Field(
+    coins: dict[str, FirstPriceData] = Field(
         default_factory=dict, description="First price data keyed by token identifier"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
@@ -64,9 +62,9 @@ class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_first_price"
     description: str = FETCH_FIRST_PRICE_PROMPT
-    args_schema: Type[BaseModel] = FetchFirstPriceInput
+    args_schema: type[BaseModel] = FetchFirstPriceInput
 
-    async def _arun(self, coins: List[str]) -> FetchFirstPriceResponse:
+    async def _arun(self, coins: list[str]) -> FetchFirstPriceResponse:
         """Fetch first recorded prices for the given tokens.
 
         Args:

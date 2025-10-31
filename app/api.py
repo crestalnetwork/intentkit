@@ -53,7 +53,6 @@ from app.services.twitter.oauth2_callback import router as twitter_callback_rout
 
 logger = logging.getLogger(__name__)
 
-
 if config.sentry_dsn:
     sentry_sdk.init(
         dsn=config.sentry_dsn,
@@ -75,7 +74,7 @@ def _load_agent_api_docs() -> str:
         docs_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "docs", "agent_api.md"
         )
-        with open(docs_path, "r", encoding="utf-8") as f:
+        with open(docs_path, encoding="utf-8") as f:
             doc_str = f.read()
             if config.open_api_base_url:
                 doc_str = doc_str.replace(
@@ -128,7 +127,6 @@ agent_app.add_middleware(
 agent_app.include_router(agent_api_rw)
 agent_app.include_router(agent_api_ro)
 agent_app.include_router(openai_router)
-
 
 # Create X402 sub-application with payment middleware
 x402_app = FastAPI(
@@ -240,7 +238,6 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     },
 )
-
 
 app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
 app.exception_handler(RequestValidationError)(request_validation_exception_handler)

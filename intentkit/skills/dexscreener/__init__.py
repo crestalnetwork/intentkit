@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
@@ -74,7 +74,7 @@ async def get_skills(
 
 def get_dexscreener_skills(
     name: str,
-) -> Optional[DexScreenerBaseTool]:
+) -> DexScreenerBaseTool | None:
     """Get a DexScreener skill by name.
 
     Args:

@@ -2,7 +2,7 @@
 
 import base64
 import logging
-from typing import Literal, Type
+from typing import Literal
 
 import openai
 from epyxid import XID
@@ -54,7 +54,7 @@ class GPTImageGeneration(OpenAIBaseTool):
         "high-quality images from text descriptions.\n"
         "You can specify size, quality, and background parameters for more control.\n"
     )
-    args_schema: Type[BaseModel] = GPTImageGenerationInput
+    args_schema: type[BaseModel] = GPTImageGenerationInput
 
     async def _arun(
         self,
@@ -71,7 +71,6 @@ class GPTImageGeneration(OpenAIBaseTool):
             size: Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto
             quality: Quality of the generated image. Options: high, medium, low, auto
             background: Background transparency. Options: transparent, opaque, auto
-
 
         Returns:
             str: URL of the generated image.

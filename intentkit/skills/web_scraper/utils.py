@@ -10,7 +10,6 @@ import base64
 import logging
 import os
 import tempfile
-from typing import Dict, List, Optional, Tuple
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -63,7 +62,7 @@ METADATA_KEY_PREFIX = "indexed_urls"
 class VectorStoreManager:
     """Manages vector store operations including creation, saving, loading, and merging."""
 
-    def __init__(self, embedding_api_key: Optional[str] = None):
+    def __init__(self, embedding_api_key: str | None = None):
         self._embedding_api_key = embedding_api_key
 
     def _resolve_api_key(self) -> str:
@@ -79,13 +78,13 @@ class VectorStoreManager:
         api_key = self._resolve_api_key()
         return OpenAIEmbeddings(api_key=api_key)
 
-    def get_storage_keys(self, agent_id: str) -> Tuple[str, str]:
+    def get_storage_keys(self, agent_id: str) -> tuple[str, str]:
         """Get storage keys for vector store and metadata."""
         vector_store_key = f"{VECTOR_STORE_KEY_PREFIX}_{agent_id}"
         metadata_key = f"{METADATA_KEY_PREFIX}_{agent_id}"
         return vector_store_key, metadata_key
 
-    def encode_vector_store(self, vector_store: FAISS) -> Dict[str, str]:
+    def encode_vector_store(self, vector_store: FAISS) -> dict[str, str]:
         """Encode FAISS vector store to base64 for storage."""
         with tempfile.TemporaryDirectory() as temp_dir:
             vector_store.save_local(temp_dir)
@@ -102,7 +101,7 @@ class VectorStoreManager:
             return encoded_files
 
     def decode_vector_store(
-        self, encoded_files: Dict[str, str], embeddings: OpenAIEmbeddings
+        self, encoded_files: dict[str, str], embeddings: OpenAIEmbeddings
     ) -> FAISS:
         """Decode base64 files back to FAISS vector store."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -119,18 +118,18 @@ class VectorStoreManager:
                 allow_dangerous_deserialization=True,
             )
 
-    async def get_existing_vector_store(self, agent_id: str) -> Optional[Dict]:
+    async def get_existing_vector_store(self, agent_id: str) -> dict | None:
         """Get existing vector store data if it exists."""
         vector_store_key, _ = self.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", vector_store_key)
 
     async def merge_with_existing(
         self,
-        new_documents: List[Document],
+        new_documents: list[Document],
         agent_id: str,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-    ) -> Tuple[FAISS, bool]:
+    ) -> tuple[FAISS, bool]:
         """
         Merge new documents with existing vector store or create new one.
 
@@ -205,7 +204,7 @@ class VectorStoreManager:
             logger.error(f"[{agent_id}] Failed to save vector store: {e}")
             raise
 
-    async def load_vector_store(self, agent_id: str) -> Optional[FAISS]:
+    async def load_vector_store(self, agent_id: str) -> FAISS | None:
         """Load vector store for an agent."""
         stored_data = await self.get_existing_vector_store(agent_id)
 
@@ -250,10 +249,10 @@ class DocumentProcessor:
 
     @staticmethod
     def create_chunks(
-        documents: List[Document],
+        documents: list[Document],
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Split documents into chunks."""
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -292,7 +291,7 @@ class DocumentProcessor:
         title: str,
         source: str,
         tags: str = "",
-        extra_metadata: Optional[Dict] = None,
+        extra_metadata: dict | None = None,
     ) -> Document:
         """Create a Document with standardized metadata."""
         cleaned_content = DocumentProcessor.clean_text(content)
@@ -324,18 +323,18 @@ class MetadataManager:
     def __init__(self, vector_manager: VectorStoreManager):
         self._vector_manager = vector_manager
 
-    async def get_existing_metadata(self, agent_id: str) -> Dict:
+    async def get_existing_metadata(self, agent_id: str) -> dict:
         """Get existing metadata for an agent."""
         _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
         return await AgentSkillData.get(agent_id, "web_scraper", metadata_key) or {}
 
     def create_url_metadata(
         self,
-        urls: List[str],
-        split_docs: List[Document],
+        urls: list[str],
+        split_docs: list[Document],
         source_type: str = "web_scraper",
-        extra_fields: Optional[Dict] = None,
-    ) -> Dict:
+        extra_fields: dict | None = None,
+    ) -> dict:
         """Create metadata for a list of URLs."""
         metadata = {}
         current_time = str(asyncio.get_event_loop().time())
@@ -361,9 +360,9 @@ class MetadataManager:
         title: str,
         source: str,
         tags: str,
-        split_docs: List[Document],
+        split_docs: list[Document],
         document_length: int,
-    ) -> Dict:
+    ) -> dict:
         """Create metadata for a document."""
         # Generate unique key
         key = f"document_{title.lower().replace(' ', '_')}"
@@ -382,7 +381,7 @@ class MetadataManager:
             }
         }
 
-    async def update_metadata(self, agent_id: str, new_metadata: Dict) -> None:
+    async def update_metadata(self, agent_id: str, new_metadata: dict) -> None:
         """Update metadata for an agent."""
         _, metadata_key = self._vector_manager.get_storage_keys(agent_id)
 
@@ -408,12 +407,12 @@ class ResponseFormatter:
     @staticmethod
     def format_indexing_response(
         operation_type: str,
-        urls_or_content: List[str] | str,
+        urls_or_content: list[str] | str,
         total_chunks: int,
         chunk_size: int,
         chunk_overlap: int,
         was_merged: bool,
-        extra_info: Optional[Dict] = None,
+        extra_info: dict | None = None,
         current_size_bytes: int = 0,
         size_limit_reached: bool = False,
         total_requested_urls: int = 0,
@@ -481,13 +480,13 @@ class ResponseFormatter:
 
 
 async def scrape_and_index_urls(
-    urls: List[str],
+    urls: list[str],
     agent_id: str,
     vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
     requests_per_second: int = DEFAULT_REQUESTS_PER_SECOND,
-) -> Tuple[int, bool, List[str]]:
+) -> tuple[int, bool, list[str]]:
     """
     Scrape URLs and index their content into vector store with size limits.
 
@@ -636,12 +635,12 @@ async def scrape_and_index_urls(
 
 # Convenience function that combines all operations
 async def index_documents(
-    documents: List[Document],
+    documents: list[Document],
     agent_id: str,
     vector_manager: VectorStoreManager,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-) -> Tuple[int, bool]:
+) -> tuple[int, bool]:
     """
     Complete document indexing workflow.
 

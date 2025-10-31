@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -65,7 +64,7 @@ class DocumentIndexer(WebScraperBaseTool):
         "Perfect for adding content from Google Docs, Notion pages, PDFs, or any other document sources. "
         "The indexed content can then be queried using the query_indexed_content tool."
     )
-    args_schema: Type[BaseModel] = DocumentIndexerInput
+    args_schema: type[BaseModel] = DocumentIndexerInput
 
     async def _arun(
         self,

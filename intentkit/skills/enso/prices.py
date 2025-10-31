@@ -1,5 +1,3 @@
-from typing import Type
-
 import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -36,7 +34,7 @@ class EnsoGetPrices(EnsoBaseTool):
 
     name: str = "enso_get_prices"
     description: str = "Retrieve the price of a token by chain ID and contract address"
-    args_schema: Type[BaseModel] = EnsoGetPricesInput
+    args_schema: type[BaseModel] = EnsoGetPricesInput
 
     async def _arun(
         self,

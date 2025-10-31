@@ -1,7 +1,5 @@
 """Tool for fetching current block data via DeFi Llama API."""
 
-from typing import Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_block
@@ -34,9 +32,9 @@ class FetchBlockResponse(BaseModel):
     """Response schema for block data."""
 
     chain: str = Field(..., description="Normalized chain name")
-    height: Optional[int] = Field(None, description="Block height number")
-    timestamp: Optional[int] = Field(None, description="Unix timestamp of the block")
-    error: Optional[str] = Field(None, description="Error message if any")
+    height: int | None = Field(None, description="Block height number")
+    timestamp: int | None = Field(None, description="Unix timestamp of the block")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchBlock(DefiLlamaBaseTool):
@@ -55,7 +53,7 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_block"
     description: str = FETCH_BLOCK_PROMPT
-    args_schema: Type[BaseModel] = FetchBlockInput
+    args_schema: type[BaseModel] = FetchBlockInput
 
     async def _arun(self, chain: str) -> FetchBlockResponse:
         """Fetch current block data for the given chain.

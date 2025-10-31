@@ -84,7 +84,7 @@ class TestDefiLlamaAPI(unittest.TestCase):
             return self.loop.run_until_complete(
                 asyncio.wait_for(coro, timeout=self.timeout)
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(f"Test timed out after {self.timeout} seconds")
         except Exception as e:
             raise AssertionError(f"Test failed with exception: {str(e)}")

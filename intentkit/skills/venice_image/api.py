@@ -8,7 +8,7 @@ of concerns keeps the core skill logic cleaner and easier to maintain.
 
 import hashlib
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import httpx
 
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 async def make_venice_api_request(
     api_key: str,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     category: str,
     tool_name: str,
-) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """
     Makes a POST request to the Venice AI API, handling all aspects
     of the API interaction.  This includes:
@@ -84,7 +84,7 @@ async def make_venice_api_request(
 
 async def _handle_response(
     response: httpx.Response, category: str, tool_name: str
-) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """
     Handles the API response, differentiating between JSON and image responses.
 

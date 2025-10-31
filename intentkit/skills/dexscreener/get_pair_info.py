@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +39,7 @@ class GetPairInfo(DexScreenerBaseTool):
         "market cap, FDV, transaction counts, and social links. "
         "Use this tool when you have a specific pair address and need detailed trading metrics."
     )
-    args_schema: Type[BaseModel] = GetPairInfoInput
+    args_schema: type[BaseModel] = GetPairInfoInput
 
     async def _arun(
         self,

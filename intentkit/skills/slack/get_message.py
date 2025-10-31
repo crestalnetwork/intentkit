@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,15 +11,15 @@ class SlackGetMessageSchema(BaseModel):
     channel_id: str = Field(
         description="The ID of the channel containing the message",
     )
-    ts: Optional[str] = Field(
+    ts: str | None = Field(
         None,
         description="The timestamp of a specific message to retrieve. If not provided, returns recent messages.",
     )
-    thread_ts: Optional[str] = Field(
+    thread_ts: str | None = Field(
         None,
         description="If provided, retrieve messages from this thread instead of the channel.",
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         10,
         description="The maximum number of messages to return (1-100, default 10).",
     )
@@ -30,16 +30,16 @@ class SlackGetMessage(SlackBaseTool):
 
     name: str = "slack_get_message"
     description: str = "Get messages from a Slack channel or thread"
-    args_schema: Type[BaseModel] = SlackGetMessageSchema
+    args_schema: type[BaseModel] = SlackGetMessageSchema
 
     async def _arun(
         self,
         channel_id: str,
-        ts: Optional[str] = None,
-        thread_ts: Optional[str] = None,
+        ts: str | None = None,
+        thread_ts: str | None = None,
         limit: int = 10,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the tool to get Slack messages.
 
         Args:
@@ -116,7 +116,7 @@ class SlackGetMessage(SlackBaseTool):
         except Exception as e:
             raise Exception(f"Error getting messages: {str(e)}")
 
-    def _format_message(self, message: Dict[str, Any], channel_id: str) -> SlackMessage:
+    def _format_message(self, message: dict[str, Any], channel_id: str) -> SlackMessage:
         """Format the message data into a SlackMessage model.
 
         Args:

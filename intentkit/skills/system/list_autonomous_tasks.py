@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -15,7 +13,7 @@ class ListAutonomousTasksInput(BaseModel):
 class ListAutonomousTasksOutput(BaseModel):
     """Output model for list_autonomous_tasks skill."""
 
-    tasks: List[AgentAutonomous] = Field(
+    tasks: list[AgentAutonomous] = Field(
         description="List of autonomous task configurations for the agent"
     )
 

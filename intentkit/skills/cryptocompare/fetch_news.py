@@ -1,7 +1,6 @@
 """Tool for fetching cryptocurrency news via CryptoCompare API."""
 
 import logging
-from typing import List, Type
 
 from pydantic import BaseModel, Field
 
@@ -32,13 +31,13 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_news"
     description: str = "Fetch the latest cryptocurrency news for a specific token"
-    args_schema: Type[BaseModel] = CryptoCompareFetchNewsInput
+    args_schema: type[BaseModel] = CryptoCompareFetchNewsInput
 
     async def _arun(
         self,
         token: str,
         **kwargs,
-    ) -> List[CryptoNews]:
+    ) -> list[CryptoNews]:
         """Async implementation of the tool to fetch cryptocurrency news.
 
         Args:
@@ -46,7 +45,7 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
             config: The configuration for the runnable, containing agent context.
 
         Returns:
-            List[CryptoNews]: A list of cryptocurrency news articles.
+            list[CryptoNews]: A list of cryptocurrency news articles.
 
         Raises:
             Exception: If there's an error accessing the CryptoCompare API.

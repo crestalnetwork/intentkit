@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,39 +20,39 @@ class TokenBalancesInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    to_block: Optional[int] = Field(
+    to_block: int | None = Field(
         description="The block number up to which the balances will be checked.",
         default=None,
     )
-    token_addresses: Optional[List[str]] = Field(
+    token_addresses: list[str] | None = Field(
         description="The specific token addresses to get balances for.",
         default=None,
     )
-    exclude_spam: Optional[bool] = Field(
+    exclude_spam: bool | None = Field(
         description="Exclude spam tokens from the result.",
         default=True,
     )
-    exclude_unverified_contracts: Optional[bool] = Field(
+    exclude_unverified_contracts: bool | None = Field(
         description="Exclude unverified contracts from the result.",
         default=True,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor for pagination.",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The number of results per page.",
         default=DEFAULT_LIMIT,
     )
-    exclude_native: Optional[bool] = Field(
+    exclude_native: bool | None = Field(
         description="Exclude native balance from the result.",
         default=None,
     )
-    max_token_inactivity: Optional[int] = Field(
+    max_token_inactivity: int | None = Field(
         description="Exclude tokens inactive for more than the given amount of days.",
         default=None,
     )
-    min_pair_side_liquidity_usd: Optional[float] = Field(
+    min_pair_side_liquidity_usd: float | None = Field(
         description="Exclude tokens with liquidity less than the specified amount in USD.",
         default=None,
     )
@@ -70,23 +70,23 @@ class TokenBalances(PortfolioBaseTool):
         "Get token balances for a specific wallet address and their token prices in USD. "
         "Includes options to exclude spam and unverified contracts."
     )
-    args_schema: Type[BaseModel] = TokenBalancesInput
+    args_schema: type[BaseModel] = TokenBalancesInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        to_block: Optional[int] = None,
-        token_addresses: Optional[List[str]] = None,
-        exclude_spam: Optional[bool] = True,
-        exclude_unverified_contracts: Optional[bool] = True,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = DEFAULT_LIMIT,
-        exclude_native: Optional[bool] = None,
-        max_token_inactivity: Optional[int] = None,
-        min_pair_side_liquidity_usd: Optional[float] = None,
+        to_block: int | None = None,
+        token_addresses: list[str] | None = None,
+        exclude_spam: bool | None = True,
+        exclude_unverified_contracts: bool | None = True,
+        cursor: str | None = None,
+        limit: int | None = DEFAULT_LIMIT,
+        exclude_native: bool | None = None,
+        max_token_inactivity: int | None = None,
+        min_pair_side_liquidity_usd: float | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token balances from Moralis.
 
         Args:

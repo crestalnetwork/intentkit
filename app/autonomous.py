@@ -2,7 +2,6 @@ import asyncio
 import logging
 import signal
 from datetime import datetime
-from typing import Dict
 
 import sentry_sdk
 from apscheduler.jobstores.redis import RedisJobStore
@@ -25,7 +24,7 @@ from app.entrypoints.autonomous import run_autonomous_task
 logger = logging.getLogger(__name__)
 
 # Global dictionary to store task_id and last updated time
-autonomous_tasks_updated_at: Dict[str, datetime] = {}
+autonomous_tasks_updated_at: dict[str, datetime] = {}
 
 # Global scheduler instance
 jobstores = {}
@@ -42,7 +41,6 @@ scheduler = AsyncIOScheduler(jobstores=jobstores)
 
 # Head job ID, it schedules the other jobs
 HEAD_JOB_ID = "head"
-
 
 if config.sentry_dsn:
     sentry_sdk.init(

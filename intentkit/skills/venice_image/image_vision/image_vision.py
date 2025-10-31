@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Type
+from typing import Any
 
 from pydantic import BaseModel, HttpUrl
 
@@ -27,7 +27,7 @@ class ImageVision(VeniceImageVisionBaseTool):
         "Provide the public URL of the image to describe.\n"
         "Returns a descriptive text of the image."
     )
-    args_schema: Type[BaseModel] = VeniceImageVision
+    args_schema: type[BaseModel] = VeniceImageVision
     # No model_id needed for the generic vision endpoint currently
 
     async def _arun(

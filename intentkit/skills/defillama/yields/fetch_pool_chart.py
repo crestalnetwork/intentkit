@@ -1,7 +1,5 @@
 """Tool for fetching pool chart data via DeFi Llama API."""
 
-from typing import List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pool_chart
@@ -23,11 +21,11 @@ class PoolDataPoint(BaseModel):
 
     timestamp: str = Field(..., description="ISO formatted timestamp of the data point")
     tvlUsd: float = Field(..., description="Total Value Locked in USD")
-    apy: Optional[float] = Field(None, description="Total APY including rewards")
-    apyBase: Optional[float] = Field(None, description="Base APY without rewards")
-    apyReward: Optional[float] = Field(None, description="Additional APY from rewards")
-    il7d: Optional[float] = Field(None, description="7-day impermanent loss")
-    apyBase7d: Optional[float] = Field(None, description="7-day base APY")
+    apy: float | None = Field(None, description="Total APY including rewards")
+    apyBase: float | None = Field(None, description="Base APY without rewards")
+    apyReward: float | None = Field(None, description="Additional APY from rewards")
+    il7d: float | None = Field(None, description="7-day impermanent loss")
+    apyBase7d: float | None = Field(None, description="7-day base APY")
 
 
 class FetchPoolChartInput(BaseModel):
@@ -40,10 +38,10 @@ class FetchPoolChartResponse(BaseModel):
     """Response schema for pool chart data."""
 
     status: str = Field("success", description="Response status")
-    data: List[PoolDataPoint] = Field(
+    data: list[PoolDataPoint] = Field(
         default_factory=list, description="List of historical data points"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
@@ -65,7 +63,7 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_pool_chart"
     description: str = FETCH_POOL_CHART_PROMPT
-    args_schema: Type[BaseModel] = FetchPoolChartInput
+    args_schema: type[BaseModel] = FetchPoolChartInput
 
     async def _arun(self, pool_id: str) -> FetchPoolChartResponse:
         """Fetch historical chart data for the given pool.

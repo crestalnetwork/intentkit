@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -12,28 +10,28 @@ class EditAutonomousTaskInput(BaseModel):
     task_id: str = Field(
         description="The unique identifier of the autonomous task to edit"
     )
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         description="Display name of the autonomous task configuration",
         max_length=50,
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         description="Description of the autonomous task configuration",
         max_length=200,
     )
-    minutes: Optional[int] = Field(
+    minutes: int | None = Field(
         default=None,
         description="Interval in minutes between operations, mutually exclusive with cron",
     )
-    cron: Optional[str] = Field(
+    cron: str | None = Field(
         default=None,
         description="Cron expression for scheduling operations, mutually exclusive with minutes",
     )
-    prompt: Optional[str] = Field(
+    prompt: str | None = Field(
         default=None, description="Special prompt used during autonomous operation"
     )
-    enabled: Optional[bool] = Field(
+    enabled: bool | None = Field(
         default=None, description="Whether the autonomous task is enabled"
     )
 
@@ -61,12 +59,12 @@ class EditAutonomousTask(SystemBaseTool):
     async def _arun(
         self,
         task_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        minutes: Optional[int] = None,
-        cron: Optional[str] = None,
-        prompt: Optional[str] = None,
-        enabled: Optional[bool] = None,
+        name: str | None = None,
+        description: str | None = None,
+        minutes: int | None = None,
+        cron: str | None = None,
+        prompt: str | None = None,
+        enabled: bool | None = None,
         **kwargs,
     ) -> EditAutonomousTaskOutput:
         """Edit an autonomous task for the agent.

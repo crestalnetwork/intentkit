@@ -1,7 +1,6 @@
 """Tool for fetching top cryptocurrencies by trading volume via CryptoCompare API."""
 
 import logging
-from typing import List, Type
 
 from pydantic import BaseModel, Field
 
@@ -38,14 +37,14 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_top_volume"
     description: str = "Fetch top cryptocurrencies ranked by 24-hour trading volume"
-    args_schema: Type[BaseModel] = CryptoCompareFetchTopVolumeInput
+    args_schema: type[BaseModel] = CryptoCompareFetchTopVolumeInput
 
     async def _arun(
         self,
         to_symbol: str = "USD",
         limit: int = 10,
         **kwargs,
-    ) -> List[CryptoCurrency]:
+    ) -> list[CryptoCurrency]:
         """Async implementation of the tool to fetch top cryptocurrencies by trading volume.
 
         Args:
@@ -54,7 +53,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
             config: The configuration for the runnable, containing agent context.
 
         Returns:
-            List[CryptoCurrency]: A list of top cryptocurrencies by trading volume.
+            list[CryptoCurrency]: A list of top cryptocurrencies by trading volume.
 
         Raises:
             Exception: If there's an error accessing the CryptoCompare API.

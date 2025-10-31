@@ -3,8 +3,6 @@
 Defines the base class and shared utilities for CryptoPanic skills.
 """
 
-from typing import Type
-
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -22,7 +20,7 @@ class CryptopanicBaseTool(IntentKitSkill):
 
     name: str = Field(description="Tool name")
     description: str = Field(description="Tool description")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     def get_api_key(self) -> str:
         """Retrieve the CryptoPanic API key from context.

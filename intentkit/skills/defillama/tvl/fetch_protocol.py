@@ -1,7 +1,5 @@
 """Tool for fetching specific protocol details via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol
@@ -24,17 +22,15 @@ class TokenAmount(BaseModel):
     """Model representing token amounts at a specific date."""
 
     date: int = Field(..., description="Unix timestamp")
-    tokens: Dict[str, float] = Field(..., description="Token amounts keyed by symbol")
+    tokens: dict[str, float] = Field(..., description="Token amounts keyed by symbol")
 
 
 class ChainTVLData(BaseModel):
     """Model representing TVL data for a specific chain."""
 
-    tvl: List[Dict[str, float]] = Field(..., description="Historical TVL data points")
-    tokens: Optional[Dict[str, float]] = Field(
-        None, description="Current token amounts"
-    )
-    tokensInUsd: Optional[Dict[str, float]] = Field(
+    tvl: list[dict[str, float]] = Field(..., description="Historical TVL data points")
+    tokens: dict[str, float] | None = Field(None, description="Current token amounts")
+    tokensInUsd: dict[str, float] | None = Field(
         None, description="Current token amounts in USD"
     )
 
@@ -53,17 +49,17 @@ class Raise(BaseModel):
     name: str = Field(..., description="Protocol name")
     round: str = Field(..., description="Funding round type")
     amount: float = Field(..., description="Amount raised in millions")
-    chains: List[str] = Field(..., description="Chains involved")
+    chains: list[str] = Field(..., description="Chains involved")
     sector: str = Field(..., description="Business sector")
     category: str = Field(..., description="Protocol category")
     categoryGroup: str = Field(..., description="Category group")
     source: str = Field(..., description="Information source")
-    leadInvestors: List[str] = Field(default_factory=list, description="Lead investors")
-    otherInvestors: List[str] = Field(
+    leadInvestors: list[str] = Field(default_factory=list, description="Lead investors")
+    otherInvestors: list[str] = Field(
         default_factory=list, description="Other investors"
     )
-    valuation: Optional[float] = Field(None, description="Valuation at time of raise")
-    defillamaId: Optional[str] = Field(None, description="DefiLlama ID")
+    valuation: float | None = Field(None, description="Valuation at time of raise")
+    defillamaId: str | None = Field(None, description="DefiLlama ID")
 
 
 class Hallmark(BaseModel):
@@ -79,48 +75,46 @@ class ProtocolDetail(BaseModel):
     # Basic Info
     id: str = Field(..., description="Protocol unique identifier")
     name: str = Field(..., description="Protocol name")
-    address: Optional[str] = Field(None, description="Protocol address")
+    address: str | None = Field(None, description="Protocol address")
     symbol: str = Field(..., description="Protocol token symbol")
     url: str = Field(..., description="Protocol website")
     description: str = Field(..., description="Protocol description")
     logo: str = Field(..., description="Logo URL")
 
     # Chain Info
-    chains: List[str] = Field(default_factory=list, description="Supported chains")
-    currentChainTvls: Dict[str, float] = Field(..., description="Current TVL by chain")
-    chainTvls: Dict[str, ChainTVLData] = Field(
+    chains: list[str] = Field(default_factory=list, description="Supported chains")
+    currentChainTvls: dict[str, float] = Field(..., description="Current TVL by chain")
+    chainTvls: dict[str, ChainTVLData] = Field(
         ..., description="Historical TVL data by chain"
     )
 
     # Identifiers
-    gecko_id: Optional[str] = Field(None, description="CoinGecko ID")
-    cmcId: Optional[str] = Field(None, description="CoinMarketCap ID")
+    gecko_id: str | None = Field(None, description="CoinGecko ID")
+    cmcId: str | None = Field(None, description="CoinMarketCap ID")
 
     # Social & Development
-    twitter: Optional[str] = Field(None, description="Twitter handle")
-    treasury: Optional[str] = Field(None, description="Treasury information")
-    governanceID: Optional[List[str]] = Field(
-        None, description="Governance identifiers"
-    )
-    github: Optional[List[str]] = Field(None, description="GitHub repositories")
+    twitter: str | None = Field(None, description="Twitter handle")
+    treasury: str | None = Field(None, description="Treasury information")
+    governanceID: list[str] | None = Field(None, description="Governance identifiers")
+    github: list[str] | None = Field(None, description="GitHub repositories")
 
     # Protocol Relationships
-    isParentProtocol: Optional[bool] = Field(
+    isParentProtocol: bool | None = Field(
         None, description="Whether this is a parent protocol"
     )
-    otherProtocols: Optional[List[str]] = Field(None, description="Related protocols")
+    otherProtocols: list[str] | None = Field(None, description="Related protocols")
 
     # Historical Data
-    tokens: List[TokenAmount] = Field(
+    tokens: list[TokenAmount] = Field(
         default_factory=list, description="Historical token amounts"
     )
-    tvl: List[HistoricalTVL] = Field(..., description="Historical TVL data points")
-    raises: Optional[List[Raise]] = Field(None, description="Funding rounds")
-    hallmarks: Optional[List[Hallmark]] = Field(None, description="Significant events")
+    tvl: list[HistoricalTVL] = Field(..., description="Historical TVL data points")
+    raises: list[Raise] | None = Field(None, description="Funding rounds")
+    hallmarks: list[Hallmark] | None = Field(None, description="Significant events")
 
     # Market Data
-    mcap: Optional[float] = Field(None, description="Market capitalization")
-    metrics: Dict = Field(default_factory=dict, description="Additional metrics")
+    mcap: float | None = Field(None, description="Market capitalization")
+    metrics: dict = Field(default_factory=dict, description="Additional metrics")
 
 
 class DefiLlamaProtocolInput(BaseModel):
@@ -132,8 +126,8 @@ class DefiLlamaProtocolInput(BaseModel):
 class DefiLlamaProtocolOutput(BaseModel):
     """Output model for the protocol fetching tool."""
 
-    protocol: Optional[ProtocolDetail] = Field(None, description="Protocol details")
-    error: Optional[str] = Field(None, description="Error message if any")
+    protocol: ProtocolDetail | None = Field(None, description="Protocol details")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchProtocol(DefiLlamaBaseTool):
@@ -153,7 +147,7 @@ class DefiLlamaFetchProtocol(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_protocol"
     description: str = FETCH_PROTOCOL_PROMPT
-    args_schema: Type[BaseModel] = DefiLlamaProtocolInput
+    args_schema: type[BaseModel] = DefiLlamaProtocolInput
 
     async def _arun(self, protocol: str) -> DefiLlamaProtocolOutput:
         """Fetch detailed information about a specific protocol.

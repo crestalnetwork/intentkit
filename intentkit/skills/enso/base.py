@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional, Type
 
 from coinbase_agentkit import CdpEvmWalletProvider
 from langchain_core.tools.base import ToolException
@@ -19,7 +18,7 @@ class EnsoBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     async def get_wallet_provider(self, context: AgentContext) -> CdpEvmWalletProvider:
         """Get the wallet provider from the CDP client.
@@ -28,7 +27,7 @@ class EnsoBaseTool(IntentKitSkill):
             context: The skill context containing agent information.
 
         Returns:
-            Optional[CdpEvmWalletProvider]: The wallet provider if available.
+            CdpEvmWalletProvider | None: The wallet provider if available.
         """
         return await get_agent_wallet_provider(context.agent)
 
@@ -36,7 +35,7 @@ class EnsoBaseTool(IntentKitSkill):
         provider: CdpEvmWalletProvider = await self.get_wallet_provider(context)
         return provider.get_address()
 
-    def get_chain_provider(self, context: AgentContext) -> Optional[ChainProvider]:
+    def get_chain_provider(self, context: AgentContext) -> ChainProvider | None:
         return config.chain_provider
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
@@ -59,7 +58,7 @@ class EnsoBaseTool(IntentKitSkill):
             )
 
     def resolve_chain_id(
-        self, context: AgentContext, chain_id: Optional[int] = None
+        self, context: AgentContext, chain_id: int | None = None
     ) -> int:
         if chain_id:
             return chain_id
@@ -84,9 +83,7 @@ class EnsoBaseTool(IntentKitSkill):
         return "enso"
 
 
-def format_amount_with_decimals(
-    amount: object, decimals: Optional[int]
-) -> Optional[str]:
+def format_amount_with_decimals(amount: object, decimals: int | None) -> str | None:
     if amount is None or decimals is None:
         return None
 

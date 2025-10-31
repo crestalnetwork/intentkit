@@ -1,6 +1,6 @@
 """Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
 
-from typing import ClassVar, List, Type
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class CryptopanicNewsOutput(BaseModel):
     """Output schema for fetching crypto news (used internally)."""
 
     currency: str = Field(description="Currency news was fetched for")
-    news_items: List[BaseModel] = Field(description="List of news items")
+    news_items: list[BaseModel] = Field(description="List of news items")
     summary: str = Field(description="Summary of fetched news")
 
 
@@ -43,7 +43,7 @@ class FetchCryptoSentiment(CryptopanicBaseTool):
         "with all posts sorted by recency. Triggered by 'sentiment' or 'market state' queries. "
         "Defaults to BTC."
     )
-    args_schema: Type[BaseModel] = CryptopanicSentimentInput
+    args_schema: type[BaseModel] = CryptopanicSentimentInput
 
     INSIGHTS_PROMPT: ClassVar[str] = """
 CryptoPanic Headlines for {currency}:

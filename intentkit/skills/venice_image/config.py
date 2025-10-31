@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -25,11 +23,11 @@ class VeniceImageConfig(BaseModel):
         default="(worst quality: 1.4), bad quality, nsfw",
         description="The default negative prompt used when no other prompt is provided.",
     )
-    rate_limit_number: Optional[int] = Field(
+    rate_limit_number: int | None = Field(
         default=None,
         description="Maximum number of allowed calls within the specified time window.",
     )
-    rate_limit_minutes: Optional[int] = Field(
+    rate_limit_minutes: int | None = Field(
         default=None,
         description="Duration of the time window (in minutes) for rate limiting.",
     )

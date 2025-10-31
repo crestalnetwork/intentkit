@@ -1,21 +1,20 @@
 """Redis client module for IntentKit."""
 
 import logging
-from typing import Optional
 
 from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
 # Global Redis client instance
-_redis_client: Optional[Redis] = None
+_redis_client: Redis | None = None
 
 
 async def init_redis(
     host: str,
     port: int = 6379,
     db: int = 0,
-    password: Optional[str] = None,
+    password: str | None = None,
     ssl: bool = False,
     encoding: str = "utf-8",
     decode_responses: bool = True,

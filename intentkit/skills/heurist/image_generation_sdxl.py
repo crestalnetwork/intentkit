@@ -1,5 +1,4 @@
 import logging
-from typing import Optional, Type
 
 import httpx
 from epyxid import XID
@@ -18,16 +17,16 @@ class ImageGenerationSDXLInput(BaseModel):
     prompt: str = Field(
         description="Text prompt describing the image to generate.",
     )
-    neg_prompt: Optional[str] = Field(
+    neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
         description="Negative prompt describing what to avoid in the generated image.",
     )
-    width: Optional[int] = Field(
+    width: int | None = Field(
         default=1024,
         le=1024,
         description="Width of the generated image.",
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=1024,
         le=1024,
         description="Height of the generated image.",
@@ -53,14 +52,14 @@ class ImageGenerationSDXL(HeuristBaseTool):
         "SDXL is a versatile, general-purpose model capable of generating high-quality images in any style.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: Type[BaseModel] = ImageGenerationSDXLInput
+    args_schema: type[BaseModel] = ImageGenerationSDXLInput
 
     async def _arun(
         self,
         prompt: str,
-        neg_prompt: Optional[str] = "(worst quality: 1.4), bad quality, nsfw",
-        width: Optional[int] = 1024,
-        height: Optional[int] = 680,
+        neg_prompt: str | None = "(worst quality: 1.4), bad quality, nsfw",
+        width: int | None = 1024,
+        height: int | None = 680,
         **kwargs,
     ) -> str:
         """Implementation of the tool to generate images using Heurist AI's SDXL model.

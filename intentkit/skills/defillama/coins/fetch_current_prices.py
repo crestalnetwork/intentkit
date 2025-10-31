@@ -1,7 +1,5 @@
 """Tool for fetching token prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_current_prices
@@ -29,13 +27,13 @@ class TokenPrice(BaseModel):
     symbol: str = Field(..., description="Token symbol")
     timestamp: int = Field(..., description="Unix timestamp of last price update")
     confidence: float = Field(..., description="Confidence score for the price data")
-    decimals: Optional[int] = Field(None, description="Token decimals, if available")
+    decimals: int | None = Field(None, description="Token decimals, if available")
 
 
 class FetchCurrentPricesInput(BaseModel):
     """Input schema for fetching current token prices with a 4-hour search window."""
 
-    coins: List[str] = Field(
+    coins: list[str] = Field(
         ...,
         description="List of token identifiers (e.g. 'ethereum:0x...', 'coingecko:ethereum')",
     )
@@ -44,10 +42,10 @@ class FetchCurrentPricesInput(BaseModel):
 class FetchCurrentPricesResponse(BaseModel):
     """Response schema for current token prices."""
 
-    coins: Dict[str, TokenPrice] = Field(
+    coins: dict[str, TokenPrice] = Field(
         default_factory=dict, description="Token prices keyed by token identifier"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
@@ -69,9 +67,9 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_current_prices"
     description: str = FETCH_PRICES_PROMPT
-    args_schema: Type[BaseModel] = FetchCurrentPricesInput
+    args_schema: type[BaseModel] = FetchCurrentPricesInput
 
-    async def _arun(self, coins: List[str]) -> FetchCurrentPricesResponse:
+    async def _arun(self, coins: list[str]) -> FetchCurrentPricesResponse:
         """Fetch current prices for the given tokens.
 
         Args:

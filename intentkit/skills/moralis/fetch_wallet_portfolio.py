@@ -1,7 +1,6 @@
 """fetching a complete wallet portfolio (EVM + Solana)."""
 
 import logging
-from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +23,7 @@ class FetchWalletPortfolioInput(BaseModel):
     address: str = Field(
         ..., description="Wallet address to analyze (Ethereum or Solana)"
     )
-    chains: Optional[List[int]] = Field(
+    chains: list[int] | None = Field(
         default=None,
         description="List of EVM chain IDs to check (default: all supported)",
     )
@@ -51,9 +50,9 @@ class PortfolioOutput(BaseModel):
 
     address: str
     total_net_worth: float
-    chains: Dict[str, float]
-    tokens: List[TokenBalance]
-    error: Optional[str] = None
+    chains: dict[str, float]
+    tokens: list[TokenBalance]
+    error: str | None = None
 
 
 class FetchWalletPortfolio(WalletBaseTool):
@@ -73,12 +72,12 @@ class FetchWalletPortfolio(WalletBaseTool):
         "Use this tool whenever the user asks about their crypto holdings, portfolio value, "
         "or wallet contents across multiple blockchains."
     )
-    args_schema: Type[BaseModel] = FetchWalletPortfolioInput
+    args_schema: type[BaseModel] = FetchWalletPortfolioInput
 
     async def _arun(
         self,
         address: str,
-        chains: Optional[List[int]] = None,
+        chains: list[int] | None = None,
         include_solana: bool = True,
         solana_network: str = "mainnet",
         **kwargs,
@@ -119,7 +118,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_evm_portfolio(
-        self, address: str, chains: Optional[List[int]], portfolio: Dict
+        self, address: str, chains: list[int] | None, portfolio: dict
     ) -> None:
         """Fetch portfolio data for EVM chains.
 
@@ -165,7 +164,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_solana_portfolio(
-        self, address: str, network: str, portfolio: Dict
+        self, address: str, network: str, portfolio: dict
     ) -> None:
         """Fetch portfolio data for Solana.
 

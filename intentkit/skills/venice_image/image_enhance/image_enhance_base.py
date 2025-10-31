@@ -1,5 +1,3 @@
-from typing import Type
-
 from pydantic import BaseModel, Field
 
 # Import the generic base and shared input
@@ -16,7 +14,7 @@ class VeniceImageEnhanceBaseTool(VeniceImageBaseTool):
     /image/upscale endpoint
     """
 
-    args_schema: Type[BaseModel] = VeniceImageEnhanceInput
+    args_schema: type[BaseModel] = VeniceImageEnhanceInput
     name: str = Field(description="The unique name of the image Enchanching tool.")
     description: str = Field(
         description="A description of what the image Enchanching tool does."

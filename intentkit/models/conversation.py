@@ -5,7 +5,7 @@ related to agent generation sessions.
 """
 
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from epyxid import XID
 from intentkit.models.base import Base
@@ -103,7 +103,7 @@ class ConversationProjectCreate(BaseModel):
         ),
     ]
     user_id: Annotated[
-        Optional[str],
+        str | None,
         Field(None, description="User ID associated with this project"),
     ]
 
@@ -144,7 +144,7 @@ class ConversationProject(ConversationProjectCreate):
     ]
 
     @classmethod
-    async def get(cls, project_id: str) -> Optional["ConversationProject"]:
+    async def get(cls, project_id: str) -> "ConversationProject" | None:
         """Get a conversation project by ID."""
         async with get_session() as db:
             result = await db.execute(
@@ -179,8 +179,8 @@ class ConversationProject(ConversationProjectCreate):
 
     @classmethod
     async def get_by_user(
-        cls, user_id: Optional[str] = None, limit: int = 50
-    ) -> List["ConversationProject"]:
+        cls, user_id: str | None = None, limit: int = 50
+    ) -> list["ConversationProject"]:
         """Get conversation projects by user ID."""
         async with get_session() as db:
             query = select(ConversationProjectTable).order_by(
@@ -213,7 +213,7 @@ class ConversationMessageCreate(BaseModel):
     role: Annotated[str, Field(description="Role of the message sender")]
     content: Annotated[str, Field(description="Content of the message")]
     message_metadata: Annotated[
-        Optional[dict],
+        dict | None,
         Field(None, description="Additional metadata for the message"),
     ]
 
@@ -255,8 +255,8 @@ class ConversationMessage(ConversationMessageCreate):
 
     @classmethod
     async def get_by_project(
-        cls, project_id: str, user_id: Optional[str] = None
-    ) -> List["ConversationMessage"]:
+        cls, project_id: str, user_id: str | None = None
+    ) -> list["ConversationMessage"]:
         """Get conversation messages for a project."""
         async with get_session() as db:
             # First check if project exists and user has access

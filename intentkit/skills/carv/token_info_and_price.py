@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class TokenInfoAndPriceInput(BaseModel):
     token_name: str = Field(
         description="The token name (e.g ethereum, bitcoin, solana, ripple)"
     )
-    amount: Optional[float] = Field(
+    amount: float | None = Field(
         description="(optional) amount of token, fill this if user asking for how much x amount of specific token worth"
     )
 
@@ -38,15 +38,15 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         "Useful for understanding a token's identity, ecosystem, and market value"
         "Use this tool when you need comprehensive token data and live pricing from CARV."
     )
-    args_schema: Type[BaseModel] = TokenInfoAndPriceInput
+    args_schema: type[BaseModel] = TokenInfoAndPriceInput
 
     async def _arun(
         self,
         ticker: str,
         token_name: str,
-        amount: Optional[float] = 1,  # type: ignore
+        amount: float | None = 1,  # type: ignore
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not ticker:
             return {
                 "error": True,

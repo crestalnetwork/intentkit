@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Optional, Tuple
 
 from bip32 import BIP32
 from cdp import CdpClient, EvmServerAccount  # noqa: E402
@@ -18,13 +17,13 @@ from intentkit.models.agent_data import AgentData
 from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
-_wallet_providers: Dict[str, Tuple[str, str, CdpEvmWalletProvider]] = {}
-_cdp_client: Optional[CdpClient] = None
+_wallet_providers: dict[str, tuple[str, str, CdpEvmWalletProvider]] = {}
+_cdp_client: CdpClient | None = None
 
 logger = logging.getLogger(__name__)
 
 
-def bip39_seed_to_eth_keys(seed_hex: str) -> Dict[str, str]:
+def bip39_seed_to_eth_keys(seed_hex: str) -> dict[str, str]:
     """
     Converts a BIP39 seed to an Ethereum private key, public key, and address.
 
@@ -88,11 +87,11 @@ def _assert_cdp_wallet_provider(agent: Agent) -> None:
 
 async def _ensure_evm_account(
     agent: Agent, agent_data: AgentData | None = None
-) -> Tuple[EvmServerAccount, AgentData]:
+) -> tuple[EvmServerAccount, AgentData]:
     cdp_client = get_cdp_client()
     agent_data = agent_data or await AgentData.get(agent.id)
     address = agent_data.evm_wallet_address
-    account: Optional[EvmServerAccount] = None
+    account: EvmServerAccount | None = None
 
     if not address:
         if agent_data.cdp_wallet_data:

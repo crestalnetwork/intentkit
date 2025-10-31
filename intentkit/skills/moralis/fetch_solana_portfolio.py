@@ -1,7 +1,6 @@
 """fetching Solana wallet portfolio."""
 
 import logging
-from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -48,17 +47,17 @@ class SolanaTokenBalance(BaseModel):
     token_info: SolanaTokenInfo
     amount: float
     amount_raw: str
-    usd_value: Optional[float] = 0.0
+    usd_value: float | None = 0.0
 
 
 class SolanaNftInfo(BaseModel):
     """Model for Solana NFT information."""
 
     mint: str
-    name: Optional[str] = None
-    symbol: Optional[str] = None
+    name: str | None = None
+    symbol: str | None = None
     associated_token_address: str
-    metadata: Optional[Dict] = None
+    metadata: dict | None = None
 
 
 class SolanaPortfolioOutput(BaseModel):
@@ -67,12 +66,12 @@ class SolanaPortfolioOutput(BaseModel):
     address: str
     sol_balance: float
     sol_balance_lamports: int
-    sol_price_usd: Optional[float] = None
-    sol_value_usd: Optional[float] = None
-    tokens: List[SolanaTokenBalance] = []
-    nfts: List[SolanaNftInfo] = []
+    sol_price_usd: float | None = None
+    sol_value_usd: float | None = None
+    tokens: list[SolanaTokenBalance] = []
+    nfts: list[SolanaNftInfo] = []
     total_value_usd: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class FetchSolanaPortfolio(WalletBaseTool):
@@ -91,7 +90,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
         "- USD values of assets\n"
         "Use this tool whenever the user asks specifically about Solana holdings."
     )
-    args_schema: Type[BaseModel] = SolanaPortfolioInput
+    args_schema: type[BaseModel] = SolanaPortfolioInput
 
     async def _arun(
         self,
@@ -136,7 +135,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
         self,
         address: str,
         network: str,
-        sol_portfolio: Dict,
+        sol_portfolio: dict,
         include_nfts: bool,
         include_price_data: bool,
     ) -> SolanaPortfolioOutput:

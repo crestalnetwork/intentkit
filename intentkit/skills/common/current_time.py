@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from typing import Type
 
 import pytz
 from pydantic import BaseModel, Field
@@ -36,7 +35,7 @@ class CurrentTime(CommonBaseTool):
         "Get the current time, converted to a specified timezone.\n"
         "You must call this tool whenever the user asks for the time."
     )
-    args_schema: Type[BaseModel] = CurrentTimeInput
+    args_schema: type[BaseModel] = CurrentTimeInput
 
     async def _arun(self, timezone: str, **kwargs) -> str:
         """Implementation of the tool to get the current time.

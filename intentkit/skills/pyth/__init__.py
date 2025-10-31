@@ -1,6 +1,6 @@
 """Pyth AgentKit skills."""
 
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from coinbase_agentkit import pyth_action_provider
 
@@ -31,7 +31,7 @@ async def get_skills(
     config: "Config",
     is_private: bool,
     agent_id: str,
-    agent: Optional["Agent"] = None,
+    agent: "Agent" | None = None,
     **_,
 ) -> list[PythBaseTool]:
     """Get all Pyth skills."""

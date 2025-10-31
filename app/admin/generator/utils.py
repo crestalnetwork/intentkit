@@ -7,7 +7,7 @@ import json
 import logging
 import random
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from epyxid import XID
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def extract_token_usage(response) -> Dict[str, Any]:
+def extract_token_usage(response) -> dict[str, Any]:
     """Extract token usage information from OpenAI response.
 
     Args:
@@ -82,10 +82,10 @@ def generate_request_id() -> str:
 
 
 async def generate_agent_summary(
-    schema: Dict[str, Any],
-    identified_skills: Set[str],
+    schema: dict[str, Any],
+    identified_skills: set[str],
     client: OpenAI,
-    llm_logger: Optional["LLMLogger"] = None,
+    llm_logger: "LLMLogger" | None = None,
 ) -> str:
     """Generate a human-readable summary of the created agent.
 
@@ -208,12 +208,12 @@ ALLOWED_MODELS = [
 
 
 async def generate_tags_from_nation_api(
-    agent_schema: Dict[str, Any], prompt: str
-) -> List[Dict[str, int]]:
+    agent_schema: dict[str, Any], prompt: str
+) -> list[dict[str, int]]:
     """Generate tags using Crestal API and LLM selection."""
 
     # Simple fallback tags if everything fails - randomized to add variety
-    def get_default_tags() -> List[Dict[str, int]]:
+    def get_default_tags() -> list[dict[str, int]]:
         fallback_sets = [
             [{"id": 28}, {"id": 23}, {"id": 20}],  # Analytics, Social Media, Automation
             [{"id": 3}, {"id": 11}, {"id": 53}],  # Trading, Gaming, API
@@ -339,8 +339,8 @@ async def generate_tags_from_nation_api(
 
 
 async def select_tags_with_llm(
-    agent_schema: Dict[str, Any], prompt: str, categories: Dict[str, List[str]]
-) -> List[str]:
+    agent_schema: dict[str, Any], prompt: str, categories: dict[str, list[str]]
+) -> list[str]:
     """Use LLM to select appropriate tag names."""
     try:
         if not config.openai_api_key:

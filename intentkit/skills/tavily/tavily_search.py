@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -50,7 +49,7 @@ class TavilySearch(TavilyBaseTool):
         "You must call this tool whenever the user asks for information that may not be in your training data,"
         " requires current data, or when you're unsure about facts."
     )
-    args_schema: Type[BaseModel] = TavilySearchInput
+    args_schema: type[BaseModel] = TavilySearchInput
 
     async def _arun(
         self,
@@ -67,7 +66,6 @@ class TavilySearch(TavilyBaseTool):
             max_results: Maximum number of search results to return (1-10).
             include_images: Whether to include image URLs in the results.
             include_raw_content: Whether to include raw HTML content in the results.
-
 
         Returns:
             str: Formatted search results with titles, snippets, and URLs.

@@ -1,7 +1,6 @@
 """Card drawing skill using Deck of Cards API."""
 
 import logging
-from typing import Type
 
 try:
     import httpx
@@ -49,7 +48,7 @@ class CasinoDeckDraw(CasinoBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = CasinoDeckDrawInput
+    args_schema: type[BaseModel] = CasinoDeckDrawInput
 
     async def _arun(self, count: int = 1, **kwargs) -> dict:
         try:

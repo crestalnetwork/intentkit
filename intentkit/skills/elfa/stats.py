@@ -1,6 +1,6 @@
 """Smart stats skill for Elfa AI API."""
 
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,8 +18,8 @@ class ElfaGetSmartStatsOutput(BaseModel):
     """Output structure for smart stats response."""
 
     success: bool
-    data: Optional[SmartStatsData] = Field(None, description="Smart stats data")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    data: SmartStatsData | None = Field(None, description="Smart stats data")
+    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetSmartStats(ElfaBaseTool):
@@ -43,7 +43,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
     description: str = """Get comprehensive social media metrics for a username including smart following count, 
     engagement scores, and follower analytics. Use this for competitor analysis, influencer identification, 
     and social media performance audits."""
-    args_schema: Type[BaseModel] = ElfaGetSmartStatsInput
+    args_schema: type[BaseModel] = ElfaGetSmartStatsInput
 
     async def _arun(self, username: str, **kwargs) -> ElfaGetSmartStatsOutput:
         """

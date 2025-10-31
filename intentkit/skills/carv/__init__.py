@@ -1,5 +1,5 @@
 import logging
-from typing import List, Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.carv.base import CarvBaseTool
@@ -8,7 +8,6 @@ from intentkit.skills.carv.onchain_query import OnchainQueryTool
 from intentkit.skills.carv.token_info_and_price import TokenInfoAndPriceTool
 
 logger = logging.getLogger(__name__)
-
 
 _cache: dict[str, CarvBaseTool] = {}
 
@@ -28,14 +27,14 @@ class SkillStates(TypedDict):
 class Config(SkillConfig):
     enabled: bool
     states: SkillStates  # type: ignore
-    api_key_provider: Optional[Literal["agent_owner", "platform"]]
+    api_key_provider: Literal["agent_owner", "platform"] | None
 
     # conditionally required
-    api_key: Optional[str]
+    api_key: str | None
 
     # optional
-    rate_limit_number: Optional[int]
-    rate_limit_minutes: Optional[int]
+    rate_limit_number: int | None
+    rate_limit_minutes: int | None
 
 
 async def get_skills(
@@ -57,7 +56,7 @@ async def get_skills(
     if not config.get("enabled", False):
         return []
 
-    available_skills: List[CarvBaseTool] = []
+    available_skills: list[CarvBaseTool] = []
     skill_states = config.get("states", {})
 
     # Iterate through all known skills defined in the map
@@ -81,7 +80,7 @@ async def get_skills(
 
 def get_carv_skill(
     name: str,
-) -> Optional[CarvBaseTool]:
+) -> CarvBaseTool | None:
     """
     Factory function to retrieve a cached CARV skill instance by name.
 

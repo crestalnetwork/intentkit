@@ -1,6 +1,6 @@
 import importlib
 import logging
-from typing import Annotated, Optional, TypedDict
+from typing import Annotated, TypedDict
 
 from fastapi import (
     APIRouter,
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 )
 async def validate_agent_create(
     user_id: Annotated[
-        Optional[str], Query(description="Optional user ID for authorization check")
+        str | None, Query(description="Optional user ID for authorization check")
     ] = None,
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
 ) -> Response:
@@ -107,7 +107,7 @@ async def validate_agent_create(
 async def validate_agent_update(
     agent_id: Annotated[str, Path(description="Agent ID")],
     user_id: Annotated[
-        Optional[str], Query(description="Optional user ID for authorization check")
+        str | None, Query(description="Optional user ID for authorization check")
     ] = None,
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
 ) -> Response:

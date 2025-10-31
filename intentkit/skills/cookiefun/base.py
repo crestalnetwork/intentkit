@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -14,7 +13,7 @@ class CookieFunBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     @property
     def category(self) -> str:

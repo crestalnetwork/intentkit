@@ -1,7 +1,6 @@
 """DALL-E image generation skill for OpenAI."""
 
 import logging
-from typing import Type
 
 import openai
 from epyxid import XID
@@ -53,7 +52,7 @@ class DALLEImageGeneration(OpenAIBaseTool):
         "high-quality images from text descriptions.\n"
         "You can specify size, quality, and style parameters for more control.\n"
     )
-    args_schema: Type[BaseModel] = DALLEImageGenerationInput
+    args_schema: type[BaseModel] = DALLEImageGenerationInput
 
     async def _arun(
         self,
@@ -70,7 +69,6 @@ class DALLEImageGeneration(OpenAIBaseTool):
             size: Size of the generated image. Options: 1024x1024, 1024x1792, 1792x1024
             quality: Quality of the generated image. Options: standard, hd
             style: Style of the generated image. Options: vivid, natural
-
 
         Returns:
             str: URL of the generated image.

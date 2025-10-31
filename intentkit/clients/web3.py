@@ -1,12 +1,10 @@
-from typing import Dict
-
 from web3 import Web3
 
 from intentkit.config.config import config
 from intentkit.utils.chain import ChainProvider
 
 # Global cache for Web3 clients by network_id
-_web3_client_cache: Dict[str, Web3] = {}
+_web3_client_cache: dict[str, Web3] = {}
 
 
 def get_web3_client(network_id: str) -> Web3:

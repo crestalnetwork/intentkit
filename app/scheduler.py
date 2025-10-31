@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import signal
-from typing import Dict
 
 import sentry_sdk
 from apscheduler.jobstores.base import BaseJobStore
@@ -34,7 +33,6 @@ if config.sentry_dsn:
         release=config.release,
         server_name="intent-scheduler",
     )
-
 
 if __name__ == "__main__":
 
@@ -84,7 +82,7 @@ if __name__ == "__main__":
                 logger.error(f"Error cleaning up heartbeat: {e}")
 
         # Initialize scheduler
-        jobstores: Dict[str, BaseJobStore] = {}
+        jobstores: dict[str, BaseJobStore] = {}
         jobstores["default"] = MemoryJobStore()
         logger.info("scheduler using in-memory job store")
 

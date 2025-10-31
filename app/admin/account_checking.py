@@ -1,8 +1,7 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 from sqlalchemy import select, text
 
@@ -23,11 +22,11 @@ logger = logging.getLogger(__name__)
 class AccountCheckingResult:
     """Result of an account checking operation."""
 
-    def __init__(self, check_type: str, status: bool, details: Optional[Dict] = None):
+    def __init__(self, check_type: str, status: bool, details: dict | None = None):
         self.check_type = check_type
         self.status = status  # True if check passed, False if failed
         self.details = details or {}
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
 
     def __str__(self) -> str:
         status_str = "PASSED" if self.status else "FAILED"
@@ -36,7 +35,7 @@ class AccountCheckingResult:
 
 async def check_account_balance_consistency(
     check_recent_only: bool = True, recent_hours: int = 24
-) -> List[AccountCheckingResult]:
+) -> list[AccountCheckingResult]:
     """Check if all account balances are consistent with their transactions.
 
     This verifies that the total balance in each account matches the sum of all transactions
@@ -63,7 +62,7 @@ async def check_account_balance_consistency(
     # Calculate time threshold for recent updates if needed
     time_threshold = None
     if check_recent_only:
-        time_threshold = datetime.now(timezone.utc) - timedelta(hours=recent_hours)
+        time_threshold = datetime.now(UTC) - timedelta(hours=recent_hours)
 
     while True:
         # Create a new session for each batch to prevent timeouts
@@ -261,7 +260,7 @@ async def check_account_balance_consistency(
     return results
 
 
-async def check_transaction_balance() -> List[AccountCheckingResult]:
+async def check_transaction_balance() -> list[AccountCheckingResult]:
     """Check if all credit events have balanced transactions.
 
     For each credit event, the sum of all credit transactions should equal the sum of all debit transactions.
@@ -277,7 +276,7 @@ async def check_transaction_balance() -> List[AccountCheckingResult]:
     last_id = ""  # Starting ID for pagination (empty string comes before all valid IDs)
 
     # Time window for events (last 3 days for performance)
-    three_days_ago = datetime.now(timezone.utc) - timedelta(hours=4)
+    three_days_ago = datetime.now(UTC) - timedelta(hours=4)
 
     while True:
         # Create a new session for each batch to prevent timeouts
@@ -372,7 +371,7 @@ async def check_transaction_balance() -> List[AccountCheckingResult]:
     return results
 
 
-async def check_orphaned_transactions() -> List[AccountCheckingResult]:
+async def check_orphaned_transactions() -> list[AccountCheckingResult]:
     """Check for orphaned transactions that don't have a corresponding event.
 
     Returns:
@@ -428,7 +427,7 @@ async def check_orphaned_transactions() -> List[AccountCheckingResult]:
     return [check_result]
 
 
-async def check_orphaned_events() -> List[AccountCheckingResult]:
+async def check_orphaned_events() -> list[AccountCheckingResult]:
     """Check for orphaned events that don't have any transactions.
 
     Returns:
@@ -493,7 +492,7 @@ async def check_orphaned_events() -> List[AccountCheckingResult]:
         ]
 
 
-async def check_total_credit_balance() -> List[AccountCheckingResult]:
+async def check_total_credit_balance() -> list[AccountCheckingResult]:
     """Check if the sum of all free_credits, reward_credits, and credits across all accounts is 0.
 
     This verifies that the overall credit system is balanced, with all credits accounted for.
@@ -553,7 +552,7 @@ async def check_total_credit_balance() -> List[AccountCheckingResult]:
     return [result]
 
 
-async def check_transaction_total_balance() -> List[AccountCheckingResult]:
+async def check_transaction_total_balance() -> list[AccountCheckingResult]:
     """Check if the total credit and debit amounts in the CreditTransaction table are balanced.
 
     This verifies that across all transactions in the system, the total credits equal the total debits.
@@ -608,7 +607,7 @@ async def check_transaction_total_balance() -> List[AccountCheckingResult]:
     return [result]
 
 
-async def run_quick_checks() -> Dict[str, List[AccountCheckingResult]]:
+async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
     """Run quick account checking procedures and return results.
 
     These checks are designed to be fast and can be run frequently.
@@ -693,7 +692,7 @@ async def run_quick_checks() -> Dict[str, List[AccountCheckingResult]]:
     return results
 
 
-async def run_slow_checks() -> Dict[str, List[AccountCheckingResult]]:
+async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
     """Run slow account checking procedures and return results.
 
     These checks are more resource-intensive and should be run less frequently.

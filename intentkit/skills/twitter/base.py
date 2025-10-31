@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta, timezone
-from typing import Type
+from datetime import UTC, datetime, timedelta
 
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -14,7 +13,7 @@ class TwitterBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     def get_api_key(self) -> dict:
         context = self.get_context()
@@ -73,7 +72,7 @@ class TwitterBaseTool(IntentKitSkill):
         """
         rate_limit = await self.get_agent_skill_data("rate_limit")
 
-        current_time = datetime.now(tz=timezone.utc)
+        current_time = datetime.now(tz=UTC)
 
         if (
             rate_limit

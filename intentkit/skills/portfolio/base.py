@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from abc import ABC
-from typing import Any, Dict, Type
+from typing import Any
 
 import aiohttp
 from langchain_core.tools import ToolException
@@ -21,7 +21,7 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     def get_api_key(self) -> str:
         context = self.get_context()
@@ -40,7 +40,7 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
     def category(self) -> str:
         return "portfolio"
 
-    def _prepare_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert boolean values to lowercase strings for API compatibility.
 
         Args:
@@ -65,9 +65,9 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
         method: str,
         endpoint: str,
         api_key: str,
-        params: Dict[str, Any] = None,
-        data: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
+        params: dict[str, Any] = None,
+        data: dict[str, Any] = None,
+    ) -> dict[str, Any]:
         """Make a request to the Moralis API.
 
         Args:

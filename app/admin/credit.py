@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, status
 from pydantic import BaseModel, Field, model_validator
@@ -50,23 +50,23 @@ credit_router_readonly = APIRouter(prefix="/credit", tags=["Credit"])
 class CreditEventsResponse(BaseModel):
     """Response model for credit events with pagination."""
 
-    data: List[CreditEvent] = Field(description="List of credit events")
+    data: list[CreditEvent] = Field(description="List of credit events")
     has_more: bool = Field(description="Indicates if there are more items")
-    next_cursor: Optional[str] = Field(None, description="Cursor for next page")
+    next_cursor: str | None = Field(None, description="Cursor for next page")
 
 
 class CreditTransactionResp(CreditTransaction):
     """Credit transaction response model with event data."""
 
-    event: Optional[CreditEvent] = Field(None, description="Associated credit event")
+    event: CreditEvent | None = Field(None, description="Associated credit event")
 
 
 class CreditTransactionsResponse(BaseModel):
     """Response model for credit transactions with pagination."""
 
-    data: List[CreditTransactionResp] = Field(description="List of credit transactions")
+    data: list[CreditTransactionResp] = Field(description="List of credit transactions")
     has_more: bool = Field(description="Indicates if there are more items")
-    next_cursor: Optional[str] = Field(None, description="Cursor for next page")
+    next_cursor: str | None = Field(None, description="Cursor for next page")
 
 
 # ===== Input models =====
@@ -79,7 +79,7 @@ class RechargeRequest(BaseModel):
     user_id: Annotated[str, Field(description="ID of the user to recharge")]
     amount: Annotated[Decimal, Field(gt=Decimal("0"), description="Amount to recharge")]
     note: Annotated[
-        Optional[str], Field(None, description="Optional note for the recharge")
+        str | None, Field(None, description="Optional note for the recharge")
     ]
 
 
@@ -91,11 +91,9 @@ class RewardRequest(BaseModel):
     ]
     user_id: Annotated[str, Field(description="ID of the user to reward")]
     amount: Annotated[Decimal, Field(gt=Decimal("0"), description="Amount to reward")]
-    note: Annotated[
-        Optional[str], Field(None, description="Optional note for the reward")
-    ]
+    note: Annotated[str | None, Field(None, description="Optional note for the reward")]
     reward_type: Annotated[
-        Optional[RewardType],
+        RewardType | None,
         Field(RewardType.REWARD, description="Type of reward event"),
     ]
 
@@ -109,7 +107,7 @@ class WithdrawRequest(BaseModel):
     agent_id: Annotated[str, Field(description="ID of the agent to withdraw from")]
     amount: Annotated[Decimal, Field(gt=Decimal("0"), description="Amount to withdraw")]
     note: Annotated[
-        Optional[str], Field(None, description="Optional note for the withdraw")
+        str | None, Field(None, description="Optional note for the withdraw")
     ]
 
 
@@ -134,13 +132,13 @@ class UpdateDailyQuotaRequest(BaseModel):
         str, Field(str, description="Upstream transaction ID, idempotence Check")
     ]
     free_quota: Annotated[
-        Optional[Decimal],
+        Decimal | None,
         Field(
             None, gt=Decimal("0"), description="New daily quota value for the account"
         ),
     ]
     refill_amount: Annotated[
-        Optional[Decimal],
+        Decimal | None,
         Field(
             None,
             ge=Decimal("0"),
@@ -165,7 +163,7 @@ class UpdateDailyQuotaRequest(BaseModel):
 class UpdateEventNoteRequest(BaseModel):
     """Request model for updating event note."""
 
-    note: Annotated[Optional[str], Field(None, description="New note for the event")]
+    note: Annotated[str | None, Field(None, description="New note for the event")]
 
 
 # ===== API Endpoints =====
@@ -373,8 +371,8 @@ async def get_agent_statistics(
 )
 async def list_user_events(
     user_id: str,
-    event_type: Annotated[Optional[EventType], Query(description="Event type")] = None,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    event_type: Annotated[EventType | None, Query(description="Event type")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
@@ -448,7 +446,7 @@ async def update_event_note(
 )
 async def list_user_expense_events(
     user_id: str,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
@@ -490,12 +488,12 @@ async def list_user_expense_events(
 async def list_transactions(
     user_id: Annotated[str, Query(description="ID of the user")],
     tx_type: Annotated[
-        Optional[List[TransactionType]], Query(description="Transaction types")
+        list[TransactionType] | None, Query(description="Transaction types")
     ] = None,
     credit_debit: Annotated[
-        Optional[CreditDebit], Query(description="Credit or debit")
+        CreditDebit | None, Query(description="Credit or debit")
     ] = None,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of transactions to return", ge=1, le=100)
     ] = 20,
@@ -613,8 +611,8 @@ async def list_transactions(
 )
 async def list_user_income_events(
     user_id: str,
-    event_type: Annotated[Optional[EventType], Query(description="Event type")] = None,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    event_type: Annotated[EventType | None, Query(description="Event type")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
@@ -657,7 +655,7 @@ async def list_user_income_events(
 )
 async def list_agent_income_events(
     agent_id: str,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
@@ -733,7 +731,7 @@ async def fetch_credit_event(
 async def fetch_credit_event_by_id_endpoint(
     event_id: Annotated[str, Path(description="Credit event ID")],
     user_id: Annotated[
-        Optional[str], Query(description="Optional user ID for authorization check")
+        str | None, Query(description="Optional user ID for authorization check")
     ] = None,
     db: AsyncSession = Depends(get_db),
 ) -> CreditEvent:
@@ -784,20 +782,20 @@ async def fetch_credit_event_by_id_endpoint(
 )
 async def list_all_credit_events(
     direction: Annotated[
-        Optional[Direction],
+        Direction | None,
         Query(description="Direction of credit events (income or expense)"),
     ] = Direction.EXPENSE,
-    event_type: Annotated[Optional[EventType], Query(description="Event type")] = None,
-    cursor: Annotated[Optional[str], Query(description="Cursor for pagination")] = None,
+    event_type: Annotated[EventType | None, Query(description="Event type")] = None,
+    cursor: Annotated[str | None, Query(description="Cursor for pagination")] = None,
     limit: Annotated[
         int, Query(description="Maximum number of events to return", ge=1, le=100)
     ] = 20,
     start_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         Query(description="Start datetime for filtering events, inclusive"),
     ] = None,
     end_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         Query(description="End datetime for filtering events, exclusive"),
     ] = None,
     db: AsyncSession = Depends(get_db),

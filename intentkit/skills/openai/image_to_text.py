@@ -1,6 +1,5 @@
 import io
 import logging
-from typing import Type
 
 import aiohttp
 import openai
@@ -46,7 +45,7 @@ class ImageToText(OpenAIBaseTool):
         "Provide a URL to the image to analyze and get a comprehensive textual description.\n"
         "Optimized for DALL-E generated images and preserves as many details as possible."
     )
-    args_schema: Type[BaseModel] = ImageToTextInput
+    args_schema: type[BaseModel] = ImageToTextInput
 
     async def _arun(self, image: str, **kwargs) -> ImageToTextOutput:
         """Implementation of the tool to convert images to text.

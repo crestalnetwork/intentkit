@@ -1,8 +1,8 @@
 import logging
 import os
 import tempfile
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, NotRequired, Optional, TypedDict
+from datetime import UTC, datetime, timedelta
+from typing import Any, NotRequired, TypedDict
 from urllib.parse import urlencode
 
 import httpx
@@ -17,8 +17,8 @@ from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 
-_clients_linked: Dict[str, "TwitterClient"] = {}
-_clients_self_key: Dict[str, "TwitterClient"] = {}
+_clients_linked: dict[str, "TwitterClient"] = {}
+_clients_self_key: dict[str, "TwitterClient"] = {}
 
 _VERIFIER_KEY = "intentkit:twitter:code_verifier"
 _CHALLENGE_KEY = "intentkit:twitter:code_challenge"
@@ -29,7 +29,7 @@ class TwitterMedia(BaseModel):
 
     media_key: str
     type: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 class TwitterUser(BaseModel):
@@ -58,10 +58,10 @@ class Tweet(BaseModel):
     id: str
     text: str
     author_id: str
-    author: Optional[TwitterUser] = None
+    author: TwitterUser | None = None
     created_at: datetime
-    referenced_tweets: Optional[List["Tweet"]] = None
-    attachments: Optional[List[TwitterMedia]] = None
+    referenced_tweets: list["Tweet"] | None = None
+    attachments: list[TwitterMedia] | None = None
 
 
 class TwitterClientConfig(TypedDict):
@@ -82,7 +82,7 @@ class TwitterClient(TwitterABC):
         config: Configuration dictionary that may contain API keys
     """
 
-    def __init__(self, agent_id: str, config: Dict) -> None:
+    def __init__(self, agent_id: str, config: dict) -> None:
         """Initialize the Twitter client.
 
         Args:
@@ -90,8 +90,8 @@ class TwitterClient(TwitterABC):
             config: Configuration dictionary that may contain API keys
         """
         self.agent_id = agent_id
-        self._client: Optional[AsyncClient] = None
-        self._agent_data: Optional[AgentData] = None
+        self._client: AsyncClient | None = None
+        self._agent_data: AgentData | None = None
         self.use_key = _is_self_key(config)
         self._config = config
 
@@ -130,7 +130,7 @@ class TwitterClient(TwitterABC):
                 # refresh userinfo if needed
                 if not agent_data.twitter_self_key_refreshed_at or (
                     agent_data.twitter_self_key_refreshed_at
-                    < datetime.now(tz=timezone.utc) - timedelta(days=1)
+                    < datetime.now(tz=UTC) - timedelta(days=1)
                 ):
                     me = await self._client.get_me(
                         user_auth=self.use_key,
@@ -144,9 +144,7 @@ class TwitterClient(TwitterABC):
                                 "twitter_username": me["data"]["username"],
                                 "twitter_name": me["data"]["name"],
                                 "twitter_is_verified": me["data"]["verified"],
-                                "twitter_self_key_refreshed_at": datetime.now(
-                                    tz=timezone.utc
-                                ),
+                                "twitter_self_key_refreshed_at": datetime.now(tz=UTC),
                             },
                         )
                     agent_data = await self._refresh_agent_data()
@@ -166,9 +164,7 @@ class TwitterClient(TwitterABC):
                 raise Exception(
                     f"[{self.agent_id}] Twitter access token expiration not found"
                 )
-            if agent_data.twitter_access_token_expires_at <= datetime.now(
-                tz=timezone.utc
-            ):
+            if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
                 raise Exception(f"[{self.agent_id}] Twitter access token has expired")
             self._client = AsyncClient(
                 bearer_token=agent_data.twitter_access_token,
@@ -178,13 +174,9 @@ class TwitterClient(TwitterABC):
 
         if not self.use_key:
             # check if access token has expired
-            if agent_data.twitter_access_token_expires_at <= datetime.now(
-                tz=timezone.utc
-            ):
+            if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
                 agent_data = await self._refresh_agent_data()
-                if agent_data.twitter_access_token_expires_at <= datetime.now(
-                    tz=timezone.utc
-                ):
+                if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
                     raise Exception(
                         f"[{self.agent_id}] Twitter access token has expired"
                     )
@@ -197,7 +189,7 @@ class TwitterClient(TwitterABC):
         return self._client
 
     @property
-    def self_id(self) -> Optional[str]:
+    def self_id(self) -> str | None:
         """Get the Twitter user ID.
 
         Returns:
@@ -210,7 +202,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_id
 
     @property
-    def self_username(self) -> Optional[str]:
+    def self_username(self) -> str | None:
         """Get the Twitter username.
 
         Returns:
@@ -223,7 +215,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_username
 
     @property
-    def self_name(self) -> Optional[str]:
+    def self_name(self) -> str | None:
         """Get the Twitter display name.
 
         Returns:
@@ -236,7 +228,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_name
 
     @property
-    def self_is_verified(self) -> Optional[bool]:
+    def self_is_verified(self) -> bool | None:
         """Get the Twitter account verification status.
 
         Returns:
@@ -248,14 +240,14 @@ class TwitterClient(TwitterABC):
             return None
         return self._agent_data.twitter_is_verified
 
-    def process_tweets_response(self, response: Dict[str, Any]) -> List[Tweet]:
+    def process_tweets_response(self, response: dict[str, Any]) -> list[Tweet]:
         """Process Twitter API response and convert it to a list of Tweet objects.
 
         Args:
             response: Raw Twitter API response containing tweets data and includes.
 
         Returns:
-            List[Tweet]: List of processed Tweet objects.
+            list[Tweet]: List of processed Tweet objects.
         """
         result = []
         if not response.get("data"):
@@ -347,7 +339,7 @@ class TwitterClient(TwitterABC):
 
         return result
 
-    async def upload_media(self, agent_id: str, image_url: str) -> List[str]:
+    async def upload_media(self, agent_id: str, image_url: str) -> list[str]:
         """Upload media to Twitter and return the media IDs.
 
         Args:
@@ -355,7 +347,7 @@ class TwitterClient(TwitterABC):
             image_url: The URL of the image to upload.
 
         Returns:
-            List[str]: A list of media IDs for the uploaded media.
+            list[str]: A list of media IDs for the uploaded media.
 
         Raises:
             ValueError: If there's an error uploading the media.
@@ -428,11 +420,11 @@ class TwitterClient(TwitterABC):
         return media_ids
 
 
-def _is_self_key(config: Dict) -> bool:
+def _is_self_key(config: dict) -> bool:
     return config.get("api_key_provider") == "agent_owner"
 
 
-def get_twitter_client(agent_id: str, config: Dict) -> "TwitterClient":
+def get_twitter_client(agent_id: str, config: dict) -> "TwitterClient":
     if _is_self_key(config):
         if agent_id not in _clients_self_key:
             _clients_self_key[agent_id] = TwitterClient(agent_id, config)

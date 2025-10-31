@@ -1,82 +1,80 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 
 class TokenModel(BaseModel):
-    address: Optional[str] = None
-    name: Optional[str] = None
-    symbol: Optional[str] = None
+    address: str | None = None
+    name: str | None = None
+    symbol: str | None = None
 
 
 class TxnsDetailsModel(BaseModel):
-    buys: Optional[int] = None
-    sells: Optional[int] = None
+    buys: int | None = None
+    sells: int | None = None
 
 
 class TxnsModel(BaseModel):
-    m5: Optional[TxnsDetailsModel] = None
-    h1: Optional[TxnsDetailsModel] = None
-    h6: Optional[TxnsDetailsModel] = None
-    h24: Optional[TxnsDetailsModel] = None
+    m5: TxnsDetailsModel | None = None
+    h1: TxnsDetailsModel | None = None
+    h6: TxnsDetailsModel | None = None
+    h24: TxnsDetailsModel | None = None
 
 
 class VolumeModel(BaseModel):
-    h24: Optional[float] = None
-    h6: Optional[float] = None
-    h1: Optional[float] = None
-    m5: Optional[float] = None
+    h24: float | None = None
+    h6: float | None = None
+    h1: float | None = None
+    m5: float | None = None
 
 
 class PriceChangeModel(BaseModel):
-    m5: Optional[float] = None
-    h1: Optional[float] = None
-    h6: Optional[float] = None
-    h24: Optional[float] = None
+    m5: float | None = None
+    h1: float | None = None
+    h6: float | None = None
+    h24: float | None = None
 
 
 class LiquidityModel(BaseModel):
-    usd: Optional[float] = None
-    base: Optional[float] = None
-    quote: Optional[float] = None
+    usd: float | None = None
+    base: float | None = None
+    quote: float | None = None
 
 
 class WebsiteModel(BaseModel):
-    label: Optional[str] = None
-    url: Optional[str] = None
+    label: str | None = None
+    url: str | None = None
 
 
 class SocialModel(BaseModel):
-    type: Optional[str] = None
-    url: Optional[str] = None
+    type: str | None = None
+    url: str | None = None
 
 
 class InfoModel(BaseModel):
-    imageUrl: Optional[str] = None
-    websites: Optional[List[Optional[WebsiteModel]]] = None
-    socials: Optional[List[Optional[SocialModel]]] = None
+    imageUrl: str | None = None
+    websites: list[WebsiteModel | None] | None = None
+    socials: list[SocialModel | None] | None = None
 
 
 class PairModel(BaseModel):
-    chainId: Optional[str] = None
-    dexId: Optional[str] = None
-    url: Optional[str] = None
-    pairAddress: Optional[str] = None
-    labels: Optional[List[Optional[str]]] = None
-    baseToken: Optional[TokenModel] = None
-    quoteToken: Optional[TokenModel] = None
-    priceNative: Optional[str] = None
-    priceUsd: Optional[str] = None
-    txns: Optional[TxnsModel] = None
-    volume: Optional[VolumeModel] = None
-    priceChange: Optional[PriceChangeModel] = None
-    liquidity: Optional[LiquidityModel] = None
-    fdv: Optional[float] = None
-    marketCap: Optional[float] = None
-    pairCreatedAt: Optional[int] = None
-    info: Optional[InfoModel] = None
+    chainId: str | None = None
+    dexId: str | None = None
+    url: str | None = None
+    pairAddress: str | None = None
+    labels: list[str | None] | None = None
+    baseToken: TokenModel | None = None
+    quoteToken: TokenModel | None = None
+    priceNative: str | None = None
+    priceUsd: str | None = None
+    txns: TxnsModel | None = None
+    volume: VolumeModel | None = None
+    priceChange: PriceChangeModel | None = None
+    liquidity: LiquidityModel | None = None
+    fdv: float | None = None
+    marketCap: float | None = None
+    pairCreatedAt: int | None = None
+    info: InfoModel | None = None
 
 
 class SearchTokenResponseModel(BaseModel):
-    schemaVersion: Optional[str] = None
-    pairs: Optional[List[Optional[PairModel]]] = None
+    schemaVersion: str | None = None
+    pairs: list[PairModel | None] | None = None

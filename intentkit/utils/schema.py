@@ -5,10 +5,10 @@ resolving $defs references and generating nested schemas.
 """
 
 import copy
-from typing import Any, Dict
+from typing import Any
 
 
-def resolve_schema_refs(schema: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_schema_refs(schema: dict[str, Any]) -> dict[str, Any]:
     """Recursively resolve $defs references in a JSON schema.
 
     This function takes a JSON schema with $defs references and returns
@@ -44,7 +44,7 @@ def resolve_schema_refs(schema: Dict[str, Any]) -> Dict[str, Any]:
     # Extract $defs if they exist
     defs = resolved_schema.pop("$defs", {})
 
-    def resolve_refs(obj: Any, defs_dict: Dict[str, Any]) -> Any:
+    def resolve_refs(obj: Any, defs_dict: dict[str, Any]) -> Any:
         """Recursively resolve $ref in an object."""
         if isinstance(obj, dict):
             if "$ref" in obj:
@@ -78,8 +78,8 @@ def resolve_schema_refs(schema: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def create_array_schema(
-    item_schema: Dict[str, Any], resolve_refs: bool = True
-) -> Dict[str, Any]:
+    item_schema: dict[str, Any], resolve_refs: bool = True
+) -> dict[str, Any]:
     """Create an array schema with the given item schema.
 
     Args:

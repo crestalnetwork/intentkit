@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -42,7 +41,7 @@ class TavilyExtract(TavilyBaseTool):
         "This tool is useful when you need to get the full text content from a webpage. "
         "You must call this tool whenever the user asks to extract or scrape content from a specific URL."
     )
-    args_schema: Type[BaseModel] = TavilyExtractInput
+    args_schema: type[BaseModel] = TavilyExtractInput
 
     async def _arun(
         self,

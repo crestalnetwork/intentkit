@@ -1,7 +1,7 @@
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -32,16 +32,16 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         "Requires input text. Optional parameters include speed (0.25-4.0, default 1.0) "
         "and audio format (mp3, opus, aac, flac, wav, pcm, default mp3)."
     )
-    args_schema: Type[BaseModel] = VeniceAudioInput
+    args_schema: type[BaseModel] = VeniceAudioInput
 
     async def _arun(
         self,
         voice_input: str,
         voice_model: str,
-        speed: Optional[float] = 1.0,
-        response_format: Optional[AllowedAudioFormat] = "mp3",
+        speed: float | None = 1.0,
+        response_format: AllowedAudioFormat | None = "mp3",
         **kwargs,  # type: ignore
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generates audio using the configured voice model via Venice AI TTS /audio/speech endpoint.
         Stores the resulting audio using the generic S3 helper.
@@ -92,7 +92,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
             await self.apply_rate_limit(context)
 
             # --- Prepare API Call ---
-            payload: Dict[str, Any] = {
+            payload: dict[str, Any] = {
                 "model": tts_model_id,
                 "input": voice_input,
                 "voice": voice_model,

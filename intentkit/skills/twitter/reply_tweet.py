@@ -1,5 +1,4 @@
 import logging
-from typing import Optional, Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -25,7 +24,7 @@ class TwitterReplyTweetInput(BaseModel):
         description="Tweet text (280 chars for regular users, 25,000 bytes for verified)",
         max_length=25000,
     )
-    image: Optional[str] = Field(
+    image: str | None = Field(
         default=None, description="Optional URL of an image to attach to the reply"
     )
 
@@ -43,13 +42,13 @@ class TwitterReplyTweet(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterReplyTweetInput
+    args_schema: type[BaseModel] = TwitterReplyTweetInput
 
     async def _arun(
         self,
         tweet_id: str,
         text: str,
-        image: Optional[str] = None,
+        image: str | None = None,
         **kwargs,
     ):
         context = self.get_context()

@@ -1,7 +1,5 @@
 """Tool for fetching total historical TVL via DeFiLlama API."""
 
-from typing import List, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_tvl
@@ -34,7 +32,7 @@ class FetchHistoricalTVLInput(BaseModel):
 class FetchHistoricalTVLResponse(BaseModel):
     """Response schema for historical TVL data."""
 
-    data: List[HistoricalTVLDataPoint] = Field(
+    data: list[HistoricalTVLDataPoint] = Field(
         default_factory=list,
         description="List of historical TVL data points across all chains",
     )
@@ -59,7 +57,7 @@ class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_total_historical_tvl"
     description: str = FETCH_TOTAL_HISTORICAL_TVL_PROMPT
-    args_schema: Type[BaseModel] = FetchHistoricalTVLInput
+    args_schema: type[BaseModel] = FetchHistoricalTVLInput
 
     async def _arun(self, **kwargs) -> FetchHistoricalTVLResponse:
         """Fetch historical TVL data across all chains.

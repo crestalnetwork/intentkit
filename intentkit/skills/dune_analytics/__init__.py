@@ -4,7 +4,7 @@ Loads and initializes skills for fetching data from Dune Analytics API.
 """
 
 import logging
-from typing import Dict, List, Optional, TypedDict
+from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dune_analytics.base import DuneBaseTool
@@ -12,7 +12,7 @@ from intentkit.skills.dune_analytics.base import DuneBaseTool
 logger = logging.getLogger(__name__)
 
 # Cache for skill instances
-_skill_cache: Dict[str, DuneBaseTool] = {}
+_skill_cache: dict[str, DuneBaseTool] = {}
 
 
 class SkillStates(TypedDict):
@@ -33,7 +33,7 @@ async def get_skills(
     config: Config,
     is_private: bool,
     **kwargs,
-) -> List[DuneBaseTool]:
+) -> list[DuneBaseTool]:
     """Load Dune Analytics skills based on configuration.
 
     Args:
@@ -67,7 +67,7 @@ async def get_skills(
     return loaded_skills
 
 
-def get_dune_skill(name: str) -> Optional[DuneBaseTool]:
+def get_dune_skill(name: str) -> DuneBaseTool | None:
     """Retrieve a Dune Analytics skill instance by name.
 
     Args:

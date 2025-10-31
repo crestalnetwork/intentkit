@@ -5,7 +5,7 @@ Common utilities and helper functions for LiFi token transfer skills.
 """
 
 from decimal import ROUND_DOWN, Decimal, InvalidOperation
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import httpx
 from web3 import Web3
@@ -72,8 +72,8 @@ def validate_inputs(
     to_token: str,
     from_amount: str,
     slippage: float,
-    allowed_chains: Optional[List[str]] = None,
-) -> Optional[str]:
+    allowed_chains: list[str] | None = None,
+) -> str | None:
     """
     Validate all input parameters for LiFi operations.
 
@@ -180,7 +180,7 @@ def handle_api_response(
     from_chain: str,
     to_token: str,
     to_chain: str,
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+) -> tuple[dict[str, Any] | None, str | None]:
     """
     Handle LiFi API response and return data or error message.
 
@@ -341,8 +341,8 @@ def build_quote_params(
     to_token: str,
     from_amount: str,
     slippage: float,
-    from_address: Optional[str] = None,
-) -> Dict[str, Any]:
+    from_address: str | None = None,
+) -> dict[str, Any]:
     """
     Build parameters for LiFi quote API request.
 
@@ -385,7 +385,7 @@ def is_native_token(token_address: str) -> bool:
     )
 
 
-def _convert_hex_or_decimal(value: Any) -> Optional[int]:
+def _convert_hex_or_decimal(value: Any) -> int | None:
     """Convert LiFi transaction numeric values into integers."""
 
     if value is None:
@@ -409,9 +409,9 @@ def _convert_hex_or_decimal(value: Any) -> Optional[int]:
 
 
 def prepare_transaction_params(
-    transaction_request: Dict[str, Any],
-    wallet_address: Optional[str] = None,
-) -> Dict[str, Any]:
+    transaction_request: dict[str, Any],
+    wallet_address: str | None = None,
+) -> dict[str, Any]:
     """Prepare transaction parameters for the CDP wallet provider."""
 
     to_address = transaction_request.get("to")
@@ -421,7 +421,7 @@ def prepare_transaction_params(
     if not to_address:
         raise Exception("Transaction request is missing destination address")
 
-    tx_params: Dict[str, Any] = {
+    tx_params: dict[str, Any] = {
         "to": Web3.to_checksum_address(to_address),
         "data": data,
     }
@@ -465,7 +465,7 @@ def prepare_transaction_params(
     return tx_params
 
 
-def format_quote_basic_info(data: Dict[str, Any]) -> Dict[str, Any]:
+def format_quote_basic_info(data: dict[str, Any]) -> dict[str, Any]:
     """
     Extract and format basic quote information.
 
@@ -503,7 +503,7 @@ def format_quote_basic_info(data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
+def format_fees_and_gas(data: dict[str, Any]) -> tuple[str, str]:
     """
     Format fee and gas cost information from quote data.
 
@@ -517,7 +517,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
 
     # Extract gas and fee costs
     gas_costs = estimate.get("gasCosts", [])
-    fee_costs: List[Dict[str, Any]] = []
+    fee_costs: list[dict[str, Any]] = []
 
     # Collect fee information from included steps
     for step in data.get("includedSteps", []):
@@ -584,7 +584,7 @@ def format_fees_and_gas(data: Dict[str, Any]) -> Tuple[str, str]:
     return fees_text, gas_text
 
 
-def format_route_info(data: Dict[str, Any]) -> str:
+def format_route_info(data: dict[str, Any]) -> str:
     """
     Format routing information from quote data.
 
@@ -681,7 +681,7 @@ def get_explorer_url(chain_id: int, tx_hash: str) -> str:
 
 
 def format_transaction_result(
-    tx_hash: str, chain_id: int, token_info: Optional[Dict[str, str]] = None
+    tx_hash: str, chain_id: int, token_info: dict[str, str] | None = None
 ) -> str:
     """
     Format transaction result with explorer link.

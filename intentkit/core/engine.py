@@ -17,7 +17,6 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
-from typing import Optional, Tuple
 
 import sqlalchemy
 from epyxid import XID
@@ -60,7 +59,6 @@ from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
-
 
 # Global variable to cache all agent executors
 _agents: dict[str, CompiledStateGraph] = {}
@@ -229,7 +227,7 @@ async def initialize_agent(aid):
         HTTPException: If agent not found (404) or database error (500)
     """
     # get the agent from the database
-    agent: Optional[Agent] = await Agent.get(aid)
+    agent: Agent | None = await Agent.get(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -243,7 +241,7 @@ async def initialize_agent(aid):
     _agents_updated[aid] = agent.deployed_at if agent.deployed_at else agent.updated_at
 
 
-async def agent_executor(agent_id: str) -> Tuple[CompiledStateGraph, float]:
+async def agent_executor(agent_id: str) -> tuple[CompiledStateGraph, float]:
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:

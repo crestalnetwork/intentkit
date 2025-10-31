@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import HttpUrl
 
@@ -32,7 +32,7 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
         self,
         image_url: HttpUrl,
         scale: Literal[2, 4],
-        replication: Optional[float] = 0.35,
+        replication: float | None = 0.35,
         **kwargs,
     ) -> dict:
         """
@@ -41,7 +41,7 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
         Args:
             image_url (HttpUrl): The public URL of the image to upscale.
             scale (Literal[2, 4]): The scale factor for upscaling (2x or 4x).
-            replication (Optional[float]): The replication factor for the upscale process, defaults to 0.35.
+            replication (float | None): The replication factor for the upscale process, defaults to 0.35.
             config (RunnableConfig, optional): Configuration for the runnable, if any.
             **kwargs: Additional keyword arguments.
 

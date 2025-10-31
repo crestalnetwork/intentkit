@@ -1,7 +1,7 @@
 """Database migration utilities."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from intentkit.models.base import Base
 from sqlalchemy import Column, MetaData, inspect, text
@@ -40,7 +40,7 @@ async def add_column_if_not_exists(
                         default_value = str(default_value).lower()
                     elif isinstance(default_value, str):
                         default_value = f"'{default_value}'"
-                    elif isinstance(default_value, (list, dict)):
+                    elif isinstance(default_value, list | dict):
                         default_value = "'{}'"
                     column_def += f" DEFAULT {default_value}"
 

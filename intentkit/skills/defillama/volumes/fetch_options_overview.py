@@ -1,7 +1,5 @@
 """Tool for fetching options overview data via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_options_overview
@@ -20,16 +18,14 @@ Returns detailed metrics including:
 class ProtocolMethodology(BaseModel):
     """Model representing protocol methodology data."""
 
-    UserFees: Optional[str] = Field(None, description="User fees description")
-    Fees: Optional[str] = Field(None, description="Fees description")
-    Revenue: Optional[str] = Field(None, description="Revenue description")
-    ProtocolRevenue: Optional[str] = Field(
+    UserFees: str | None = Field(None, description="User fees description")
+    Fees: str | None = Field(None, description="Fees description")
+    Revenue: str | None = Field(None, description="Revenue description")
+    ProtocolRevenue: str | None = Field(
         None, description="Protocol revenue description"
     )
-    HoldersRevenue: Optional[str] = Field(
-        None, description="Holders revenue description"
-    )
-    SupplySideRevenue: Optional[str] = Field(
+    HoldersRevenue: str | None = Field(None, description="Holders revenue description")
+    SupplySideRevenue: str | None = Field(
         None, description="Supply side revenue description"
     )
 
@@ -42,23 +38,23 @@ class Protocol(BaseModel):
     defillamaId: str = Field(..., description="DeFi Llama ID")
     category: str = Field(..., description="Protocol category")
     logo: str = Field(..., description="Logo URL")
-    chains: List[str] = Field(..., description="Supported chains")
+    chains: list[str] = Field(..., description="Supported chains")
     module: str = Field(..., description="Protocol module")
-    total24h: Optional[float] = Field(None, description="24-hour total")
-    total7d: Optional[float] = Field(None, description="7-day total")
-    total30d: Optional[float] = Field(None, description="30-day total")
-    total1y: Optional[float] = Field(None, description="1-year total")
-    totalAllTime: Optional[float] = Field(None, description="All-time total")
-    change_1d: Optional[float] = Field(None, description="24-hour change percentage")
-    change_7d: Optional[float] = Field(None, description="7-day change percentage")
-    change_1m: Optional[float] = Field(None, description="30-day change percentage")
-    methodology: Optional[ProtocolMethodology] = Field(
+    total24h: float | None = Field(None, description="24-hour total")
+    total7d: float | None = Field(None, description="7-day total")
+    total30d: float | None = Field(None, description="30-day total")
+    total1y: float | None = Field(None, description="1-year total")
+    totalAllTime: float | None = Field(None, description="All-time total")
+    change_1d: float | None = Field(None, description="24-hour change percentage")
+    change_7d: float | None = Field(None, description="7-day change percentage")
+    change_1m: float | None = Field(None, description="30-day change percentage")
+    methodology: ProtocolMethodology | None = Field(
         None, description="Protocol methodology"
     )
-    breakdown24h: Optional[Dict[str, Dict[str, float]]] = Field(
+    breakdown24h: dict[str, dict[str, float]] | None = Field(
         None, description="24-hour breakdown by chain"
     )
-    breakdown30d: Optional[Dict[str, Dict[str, float]]] = Field(
+    breakdown30d: dict[str, dict[str, float]] | None = Field(
         None, description="30-day breakdown by chain"
     )
 
@@ -73,9 +69,9 @@ class FetchOptionsOverviewResponse(BaseModel):
     change_1d: float = Field(..., description="24-hour change percentage")
     change_7d: float = Field(..., description="7-day change percentage")
     change_1m: float = Field(..., description="30-day change percentage")
-    allChains: List[str] = Field(..., description="List of all chains")
-    protocols: List[Protocol] = Field(..., description="List of protocols")
-    error: Optional[str] = Field(None, description="Error message if any")
+    allChains: list[str] = Field(..., description="List of all chains")
+    protocols: list[Protocol] = Field(..., description="List of protocols")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
@@ -101,7 +97,7 @@ class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
 
         pass
 
-    args_schema: Type[BaseModel] = EmptyArgsSchema
+    args_schema: type[BaseModel] = EmptyArgsSchema
 
     async def _arun(self, **kwargs) -> FetchOptionsOverviewResponse:
         """Fetch overview data for all options protocols.

@@ -1,6 +1,5 @@
 import logging
 from enum import Enum
-from typing import Type
 
 import httpx
 from pydantic import BaseModel, Field
@@ -54,7 +53,7 @@ class GitHubSearch(GitHubBaseTool):
         "- Code snippets across GitHub repositories\n"
         "You must call this tool whenever the user asks about finding something on GitHub."
     )
-    args_schema: Type[BaseModel] = GitHubSearchInput
+    args_schema: type[BaseModel] = GitHubSearchInput
 
     async def _arun(
         self,

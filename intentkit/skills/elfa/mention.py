@@ -1,6 +1,6 @@
 """Mention-related skills for Elfa AI API."""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -12,19 +12,19 @@ class ElfaGetTopMentionsInput(BaseModel):
     """Input parameters for top mentions."""
 
     ticker: str = Field(description="Stock ticker symbol (e.g., ETH, $ETH, BTC, $BTC)")
-    timeWindow: Optional[str] = Field(
+    timeWindow: str | None = Field(
         "1h", description="Time window (e.g., '1h', '24h', '7d')"
     )
-    page: Optional[int] = Field(1, description="Page number for pagination")
-    pageSize: Optional[int] = Field(10, description="Number of items per page")
+    page: int | None = Field(1, description="Page number for pagination")
+    pageSize: int | None = Field(10, description="Number of items per page")
 
 
 class ElfaGetTopMentionsOutput(BaseModel):
     """Output structure for top mentions response."""
 
     success: bool
-    data: Optional[List[MentionData]] = Field(None, description="List of top mentions")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    data: list[MentionData] | None = Field(None, description="List of top mentions")
+    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ElfaGetTopMentions(ElfaBaseTool):
@@ -46,7 +46,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
     Updated hourly. Returns engagement metrics and account information for market sentiment analysis.
     
     Use this to track public opinion, identify trending news, and monitor investor discussions."""
-    args_schema: Type[BaseModel] = ElfaGetTopMentionsInput
+    args_schema: type[BaseModel] = ElfaGetTopMentionsInput
 
     async def _arun(
         self,
@@ -102,30 +102,28 @@ class ElfaGetTopMentions(ElfaBaseTool):
 class ElfaSearchMentionsInput(BaseModel):
     """Input parameters for search mentions."""
 
-    keywords: Optional[str] = Field(
+    keywords: str | None = Field(
         None,
         description="Up to 5 keywords to search for, separated by commas. Phrases accepted",
     )
-    accountName: Optional[str] = Field(
+    accountName: str | None = Field(
         None,
         description="Account username to filter by (optional if keywords provided)",
     )
-    timeWindow: Optional[str] = Field("7d", description="Time window for search")
-    limit: Optional[int] = Field(20, description="Number of results to return (max 30)")
-    searchType: Optional[str] = Field(
-        "or", description="Type of search ('and' or 'or')"
-    )
-    cursor: Optional[str] = Field(None, description="Cursor for pagination")
+    timeWindow: str | None = Field("7d", description="Time window for search")
+    limit: int | None = Field(20, description="Number of results to return (max 30)")
+    searchType: str | None = Field("or", description="Type of search ('and' or 'or')")
+    cursor: str | None = Field(None, description="Cursor for pagination")
 
 
 class ElfaSearchMentionsOutput(BaseModel):
     """Output structure for search mentions response."""
 
     success: bool
-    data: Optional[List[MentionData]] = Field(
+    data: list[MentionData] | None = Field(
         None, description="List of matching mentions"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         None, description="Response metadata with cursor"
     )
 
@@ -150,16 +148,16 @@ class ElfaSearchMentions(ElfaBaseTool):
     Updated every 5 minutes. Access 30 days of recent data or historical archives.
     
     Use this for market research, brand monitoring, opinion tracking, and competitive analysis."""
-    args_schema: Type[BaseModel] = ElfaSearchMentionsInput
+    args_schema: type[BaseModel] = ElfaSearchMentionsInput
 
     async def _arun(
         self,
-        keywords: Optional[str] = None,
-        accountName: Optional[str] = None,
+        keywords: str | None = None,
+        accountName: str | None = None,
         timeWindow: str = "7d",
         limit: int = 20,
         searchType: str = "or",
-        cursor: Optional[str] = None,
+        cursor: str | None = None,
         **kwargs,
     ) -> ElfaSearchMentionsOutput:
         """

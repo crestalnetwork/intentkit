@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, Literal, Optional, Type
+from typing import Any, Literal
 
 import httpx
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
@@ -31,7 +31,7 @@ class TextToSpeechInput(BaseModel):
         default=0.0,
     )
 
-    timestamp_type: Optional[Literal["word", "sentence"]] = Field(
+    timestamp_type: Literal["word", "sentence"] | None = Field(
         description="The type of timestamps to include in the response. 'word' for word-level timestamps, 'sentence' for sentence-level, or None for no timestamps.",
         default="word",
     )
@@ -52,9 +52,9 @@ class TextToSpeech(UnrealSpeechBaseTool):
         "Returns URLs to the generated audio file and word-level timestamps.\n"
         "Provides various voice options and speech customization parameters."
     )
-    args_schema: Type[BaseModel] = TextToSpeechInput
+    args_schema: type[BaseModel] = TextToSpeechInput
 
-    def get_env_var(self, env_var_name: str) -> Optional[str]:
+    def get_env_var(self, env_var_name: str) -> str | None:
         """Helper method to get environment variables."""
         return os.environ.get(env_var_name)
 
@@ -64,11 +64,11 @@ class TextToSpeech(UnrealSpeechBaseTool):
         voice_id: str = "af_sarah",
         bitrate: str = "192k",
         speed: float = 0.0,
-        timestamp_type: Optional[Literal["word", "sentence"]] = "word",
-        config: Optional[Any] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        timestamp_type: Literal["word", "sentence"] | None = "word",
+        config: Any | None = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the tool to convert text to speech."""
 
         # Get the API key from context config if available

@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import jwt
 from fastapi import Depends, Request, status
@@ -24,7 +23,7 @@ class AgentToken(BaseModel):
 
 async def verify_admin_jwt(
     request: Request,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> str:
     """Verify JWT token from Authorization header and return the subject claim.
 

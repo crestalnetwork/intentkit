@@ -1,5 +1,3 @@
-from typing import List, Tuple, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_cdp_client
@@ -42,7 +40,7 @@ class XmtpSwap(XmtpBaseTool):
         "Returns a wallet_sendCalls payload that can include an optional approval call and the swap call. "
         "Supports Ethereum, Base, Arbitrum, and Optimism mainnet networks."
     )
-    args_schema: Type[BaseModel] = SwapInput
+    args_schema: type[BaseModel] = SwapInput
 
     async def _arun(
         self,
@@ -51,7 +49,7 @@ class XmtpSwap(XmtpBaseTool):
         to_token: str,
         from_amount: str,
         slippage_bps: int = 100,
-    ) -> Tuple[str, List[ChatMessageAttachment]]:
+    ) -> tuple[str, list[ChatMessageAttachment]]:
         # Input validation
         if (
             not from_address

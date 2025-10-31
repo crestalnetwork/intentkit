@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -24,39 +24,39 @@ class WalletHistoryInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The desired page size of the result.",
         default=DEFAULT_LIMIT,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor returned in the previous response (for pagination).",
         default=None,
     )
-    from_block: Optional[int] = Field(
+    from_block: int | None = Field(
         description="The minimum block number to get transactions from.",
         default=None,
     )
-    to_block: Optional[int] = Field(
+    to_block: int | None = Field(
         description="The maximum block number to get transactions from.",
         default=None,
     )
-    from_date: Optional[str] = Field(
+    from_date: str | None = Field(
         description="The start date to get transactions from (format in seconds or datestring).",
         default=None,
     )
-    to_date: Optional[str] = Field(
+    to_date: str | None = Field(
         description="The end date to get transactions from (format in seconds or datestring).",
         default=None,
     )
-    include_internal_transactions: Optional[bool] = Field(
+    include_internal_transactions: bool | None = Field(
         description="If the result should contain the internal transactions.",
         default=None,
     )
-    nft_metadata: Optional[bool] = Field(
+    nft_metadata: bool | None = Field(
         description="If the result should contain the NFT metadata.",
         default=None,
     )
-    order: Optional[str] = Field(
+    order: str | None = Field(
         description="The order of the result, in ascending (ASC) or descending (DESC).",
         default=DEFAULT_ORDER,
     )
@@ -74,23 +74,23 @@ class WalletHistory(PortfolioBaseTool):
         "Retrieve the full transaction history of a specified wallet address, including sends, "
         "receives, token and NFT transfers, and contract interactions."
     )
-    args_schema: Type[BaseModel] = WalletHistoryInput
+    args_schema: type[BaseModel] = WalletHistoryInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        limit: Optional[int] = DEFAULT_LIMIT,
-        cursor: Optional[str] = None,
-        from_block: Optional[int] = None,
-        to_block: Optional[int] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None,
-        include_internal_transactions: Optional[bool] = None,
-        nft_metadata: Optional[bool] = None,
-        order: Optional[str] = DEFAULT_ORDER,
+        limit: int | None = DEFAULT_LIMIT,
+        cursor: str | None = None,
+        from_block: int | None = None,
+        to_block: int | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        include_internal_transactions: bool | None = None,
+        nft_metadata: bool | None = None,
+        order: str | None = DEFAULT_ORDER,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet transaction history from Moralis.
 
         Args:

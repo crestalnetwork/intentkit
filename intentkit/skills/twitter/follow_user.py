@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -34,7 +33,7 @@ class TwitterFollowUser(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterFollowUserInput
+    args_schema: type[BaseModel] = TwitterFollowUserInput
 
     async def _arun(self, user_id: str, **kwargs) -> bool:
         context = self.get_context()

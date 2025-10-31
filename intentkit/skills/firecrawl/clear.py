@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +30,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
         "This will permanently delete all indexed content and cannot be undone.\n"
         "Use this tool when you want to start fresh with new content."
     )
-    args_schema: Type[BaseModel] = FirecrawlClearInput
+    args_schema: type[BaseModel] = FirecrawlClearInput
 
     async def _arun(
         self,

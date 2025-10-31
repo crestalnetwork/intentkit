@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from pydantic import HttpUrl
 
@@ -30,8 +29,8 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
         self,
         image_url: HttpUrl,
         enhancePrompt: str,
-        replication: Optional[float] = 0.35,
-        enhanceCreativity: Optional[float] = 0.5,
+        replication: float | None = 0.35,
+        enhanceCreativity: float | None = 0.5,
         **kwargs,
     ) -> dict:
         """

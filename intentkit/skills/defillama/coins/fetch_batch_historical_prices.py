@@ -1,7 +1,5 @@
 """Tool for fetching batch historical token prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_batch_historical_prices
@@ -33,7 +31,7 @@ class TokenPriceHistory(BaseModel):
     """Model representing historical price data for a single token."""
 
     symbol: str = Field(..., description="Token symbol")
-    prices: List[HistoricalPricePoint] = Field(
+    prices: list[HistoricalPricePoint] = Field(
         ..., description="List of historical price points"
     )
 
@@ -41,7 +39,7 @@ class TokenPriceHistory(BaseModel):
 class FetchBatchHistoricalPricesInput(BaseModel):
     """Input schema for fetching batch historical token prices."""
 
-    coins_timestamps: Dict[str, List[int]] = Field(
+    coins_timestamps: dict[str, list[int]] = Field(
         ..., description="Dictionary mapping token identifiers to lists of timestamps"
     )
 
@@ -49,11 +47,11 @@ class FetchBatchHistoricalPricesInput(BaseModel):
 class FetchBatchHistoricalPricesResponse(BaseModel):
     """Response schema for batch historical token prices."""
 
-    coins: Dict[str, TokenPriceHistory] = Field(
+    coins: dict[str, TokenPriceHistory] = Field(
         default_factory=dict,
         description="Historical token prices keyed by token identifier",
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
@@ -78,10 +76,10 @@ class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_batch_historical_prices"
     description: str = FETCH_BATCH_HISTORICAL_PRICES_PROMPT
-    args_schema: Type[BaseModel] = FetchBatchHistoricalPricesInput
+    args_schema: type[BaseModel] = FetchBatchHistoricalPricesInput
 
     async def _arun(
-        self, coins_timestamps: Dict[str, List[int]]
+        self, coins_timestamps: dict[str, list[int]]
     ) -> FetchBatchHistoricalPricesResponse:
         """Fetch historical prices for the given tokens at specified timestamps.
 
