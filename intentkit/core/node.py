@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (

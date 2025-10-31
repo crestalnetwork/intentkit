@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -32,7 +31,7 @@ class TwitterRetweet(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterRetweetInput
+    args_schema: type[BaseModel] = TwitterRetweetInput
 
     async def _arun(self, tweet_id: str, **kwargs):
         context = self.get_context()

@@ -1,7 +1,6 @@
 """Tool for fetching top cryptocurrencies by market cap via CryptoCompare API."""
 
 import logging
-from typing import List, Type
 
 from pydantic import BaseModel, Field
 
@@ -39,14 +38,14 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_top_market_cap"
     description: str = "Fetch top cryptocurrencies ranked by market capitalization"
-    args_schema: Type[BaseModel] = CryptoCompareFetchTopMarketCapInput
+    args_schema: type[BaseModel] = CryptoCompareFetchTopMarketCapInput
 
     async def _arun(
         self,
         to_symbol: str = "USD",
         limit: int = 10,
         **kwargs,
-    ) -> List[CryptoCurrency]:
+    ) -> list[CryptoCurrency]:
         """Async implementation of the tool to fetch top cryptocurrencies by market cap.
 
         Args:
@@ -55,7 +54,7 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
             config: The configuration for the runnable, containing agent context.
 
         Returns:
-            List[CryptoCurrency]: A list of top cryptocurrencies by market cap.
+            list[CryptoCurrency]: A list of top cryptocurrencies by market cap.
 
         Raises:
             Exception: If there's an error accessing the CryptoCompare API.

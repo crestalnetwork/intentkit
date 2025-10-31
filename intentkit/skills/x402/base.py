@@ -1,7 +1,8 @@
 import logging
 import threading
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 from coinbase_agentkit.wallet_providers.evm_wallet_provider import (
     EvmWalletSigner as CoinbaseEvmWalletSigner,

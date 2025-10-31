@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramUnauthorizedError
@@ -9,7 +9,7 @@ from aiogram.utils.token import TokenValidationError, validate_token
 god_router = Router()
 
 
-def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
+def is_bot_token(value: str) -> bool | dict[str, Any]:
     try:
         validate_token(value)
     except TokenValidationError:

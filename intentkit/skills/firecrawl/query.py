@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -37,7 +36,7 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
         "Use this tool to search through content that was previously scraped and indexed using Firecrawl tools.\n"
         "This tool can help answer questions based on the indexed web content from Firecrawl scraping/crawling."
     )
-    args_schema: Type[BaseModel] = FirecrawlQueryInput
+    args_schema: type[BaseModel] = FirecrawlQueryInput
 
     async def _arun(
         self,

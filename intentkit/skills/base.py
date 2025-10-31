@@ -1,15 +1,11 @@
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
     Literal,
     NotRequired,
-    Optional,
     TypedDict,
-    Union,
 )
 
 from coinbase_agentkit import (
@@ -50,9 +46,9 @@ class SkillConfig(TypedDict):
     """Abstract base class for skill configuration."""
 
     enabled: bool
-    states: Dict[str, SkillState | SkillOwnerState]
+    states: dict[str, SkillState | SkillOwnerState]
     api_key_provider: NotRequired[APIKeyProviderValue]
-    __extra__: NotRequired[Dict[str, Any]]
+    __extra__: NotRequired[dict[str, Any]]
 
 
 class IntentKitSkill(BaseTool):
@@ -61,15 +57,15 @@ class IntentKitSkill(BaseTool):
     """
 
     # overwrite the value of BaseTool
-    handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
+    handle_tool_error: bool | str | Callable[[ToolException], str] | None = (
         lambda e: f"tool error: {e}"
     )
     """Handle the content of the ToolException thrown."""
 
     # overwrite the value of BaseTool
-    handle_validation_error: Optional[
-        Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
-    ] = lambda e: f"validation error: {e}"
+    handle_validation_error: (
+        bool | str | Callable[[ValidationError | ValidationErrorV1], str] | None
+    ) = lambda e: f"validation error: {e}"
     """Handle the content of the ValidationError thrown."""
 
     # Logger for the class
@@ -258,7 +254,7 @@ class IntentKitSkill(BaseTool):
     async def get_agent_skill_data(
         self,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active agent."""
         return await self.get_agent_skill_data_raw(self.name, key)
 
@@ -266,12 +262,12 @@ class IntentKitSkill(BaseTool):
         self,
         skill_name: str,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for a specific skill scoped to the active agent."""
         context = self.get_context()
         return await AgentSkillData.get(context.agent_id, skill_name, key)
 
-    async def save_agent_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+    async def save_agent_skill_data(self, key: str, data: dict[str, Any]) -> None:
         """Persist data for this skill scoped to the active agent."""
         await self.save_agent_skill_data_raw(self.name, key, data)
 
@@ -279,7 +275,7 @@ class IntentKitSkill(BaseTool):
         self,
         skill_name: str,
         key: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> None:
         """Persist data for a specific skill scoped to the active agent."""
         context = self.get_context()
@@ -299,12 +295,12 @@ class IntentKitSkill(BaseTool):
     async def get_thread_skill_data(
         self,
         key: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Retrieve persisted data for this skill scoped to the active chat."""
         context = self.get_context()
         return await ChatSkillData.get(context.chat_id, self.name, key)
 
-    async def save_thread_skill_data(self, key: str, data: Dict[str, Any]) -> None:
+    async def save_thread_skill_data(self, key: str, data: dict[str, Any]) -> None:
         """Persist data for this skill scoped to the active chat."""
         context = self.get_context()
         skill_data = ChatSkillDataCreate(
@@ -321,7 +317,7 @@ async def get_agentkit_actions(
     agent_id: str,
     provider_factories: Sequence[Callable[[], object]],
     *,
-    agent: Optional["Agent"] = None,
+    agent: "Agent" | None = None,
 ) -> list[Action]:
     """Build an AgentKit instance and return its actions."""
 

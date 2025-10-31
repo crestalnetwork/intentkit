@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -34,11 +34,11 @@ class SearchTokenInput(BaseModel):
     query: str = Field(
         description="The search query string (e.g., token symbol 'WIF', pair address, token address '0x...', token name 'Dogwifhat', or ticker '$WIF'). Prefixing with '$' filters results to match the base token symbol exactly (case-insensitive)."
     )
-    sort_by: Optional[SortBy] = Field(
+    sort_by: SortBy | None = Field(
         default=SortBy.LIQUIDITY,
         description="Sort preference for the results. Options: 'liquidity' (default) or 'volume'",
     )
-    volume_timeframe: Optional[VolumeTimeframe] = Field(
+    volume_timeframe: VolumeTimeframe | None = Field(
         default=VolumeTimeframe.TWENTY_FOUR_HOUR,
         description="Define which timeframe should we use if the 'sort_by' is 'volume'. Available options: '5_minutes', '1_hour', '6_hour', '24_hour'",
     )
@@ -59,13 +59,13 @@ class SearchToken(DexScreenerBaseTool):
         f"limited to the top {MAX_SEARCH_RESULTS}. "
         f"Use this tool to find token information based on user queries."
     )
-    args_schema: Type[BaseModel] = SearchTokenInput
+    args_schema: type[BaseModel] = SearchTokenInput
 
     async def _arun(
         self,
         query: str,
-        sort_by: Optional[SortBy] = SortBy.LIQUIDITY,
-        volume_timeframe: Optional[VolumeTimeframe] = VolumeTimeframe.TWENTY_FOUR_HOUR,
+        sort_by: SortBy | None = SortBy.LIQUIDITY,
+        volume_timeframe: VolumeTimeframe | None = VolumeTimeframe.TWENTY_FOUR_HOUR,
         **kwargs: Any,
     ) -> str:
         """Implementation to search token, with filtering based on query type."""

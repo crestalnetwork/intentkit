@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -8,11 +8,11 @@ from intentkit.skills.slack.base import SlackBaseTool, SlackChannel
 class SlackGetChannelSchema(BaseModel):
     """Input schema for SlackGetChannel."""
 
-    channel_id: Optional[str] = Field(
+    channel_id: str | None = Field(
         None,
         description="The ID of the channel to get information about. Provide either channel_id or channel_name.",
     )
-    channel_name: Optional[str] = Field(
+    channel_name: str | None = Field(
         None,
         description="The name of the channel to get information about. Provide either channel_id or channel_name.",
     )
@@ -23,14 +23,14 @@ class SlackGetChannel(SlackBaseTool):
 
     name: str = "slack_get_channel"
     description: str = "Get information about a Slack channel by ID or name"
-    args_schema: Type[BaseModel] = SlackGetChannelSchema
+    args_schema: type[BaseModel] = SlackGetChannelSchema
 
     async def _arun(
         self,
-        channel_id: Optional[str] = None,
-        channel_name: Optional[str] = None,
+        channel_id: str | None = None,
+        channel_name: str | None = None,
         **kwargs,
-    ) -> Union[SlackChannel, Dict[str, SlackChannel]]:
+    ) -> SlackChannel | dict[str, SlackChannel]:
         """Run the tool to get information about a Slack channel.
 
         Args:
@@ -88,7 +88,7 @@ class SlackGetChannel(SlackBaseTool):
         except Exception as e:
             raise Exception(f"Error getting channel information: {str(e)}")
 
-    def _format_channel(self, channel: Dict[str, Any]) -> SlackChannel:
+    def _format_channel(self, channel: dict[str, Any]) -> SlackChannel:
         """Format the channel data into a SlackChannel model.
 
         Args:

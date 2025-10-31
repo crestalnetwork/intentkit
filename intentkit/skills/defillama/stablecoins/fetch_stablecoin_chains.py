@@ -1,7 +1,5 @@
 """Tool for fetching stablecoin chains data via DeFi Llama API."""
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_chains
@@ -19,16 +17,16 @@ Returns:
 class CirculatingUSD(BaseModel):
     """Model representing circulating amounts in different pegs."""
 
-    peggedUSD: Optional[float] = Field(None, description="Amount pegged to USD")
-    peggedEUR: Optional[float] = Field(None, description="Amount pegged to EUR")
-    peggedVAR: Optional[float] = Field(None, description="Amount in variable pegs")
-    peggedJPY: Optional[float] = Field(None, description="Amount pegged to JPY")
-    peggedCHF: Optional[float] = Field(None, description="Amount pegged to CHF")
-    peggedCAD: Optional[float] = Field(None, description="Amount pegged to CAD")
-    peggedGBP: Optional[float] = Field(None, description="Amount pegged to GBP")
-    peggedAUD: Optional[float] = Field(None, description="Amount pegged to AUD")
-    peggedCNY: Optional[float] = Field(None, description="Amount pegged to CNY")
-    peggedREAL: Optional[float] = Field(
+    peggedUSD: float | None = Field(None, description="Amount pegged to USD")
+    peggedEUR: float | None = Field(None, description="Amount pegged to EUR")
+    peggedVAR: float | None = Field(None, description="Amount in variable pegs")
+    peggedJPY: float | None = Field(None, description="Amount pegged to JPY")
+    peggedCHF: float | None = Field(None, description="Amount pegged to CHF")
+    peggedCAD: float | None = Field(None, description="Amount pegged to CAD")
+    peggedGBP: float | None = Field(None, description="Amount pegged to GBP")
+    peggedAUD: float | None = Field(None, description="Amount pegged to AUD")
+    peggedCNY: float | None = Field(None, description="Amount pegged to CNY")
+    peggedREAL: float | None = Field(
         None, description="Amount pegged to Brazilian Real"
     )
 
@@ -36,21 +34,21 @@ class CirculatingUSD(BaseModel):
 class ChainData(BaseModel):
     """Model representing stablecoin data for a single chain."""
 
-    gecko_id: Optional[str] = Field(None, description="CoinGecko ID of the chain")
+    gecko_id: str | None = Field(None, description="CoinGecko ID of the chain")
     totalCirculatingUSD: CirculatingUSD = Field(
         ..., description="Total circulating amounts in different pegs"
     )
-    tokenSymbol: Optional[str] = Field(None, description="Native token symbol")
+    tokenSymbol: str | None = Field(None, description="Native token symbol")
     name: str = Field(..., description="Chain name")
 
 
 class FetchStablecoinChainsResponse(BaseModel):
     """Response schema for stablecoin chains data."""
 
-    chains: List[ChainData] = Field(
+    chains: list[ChainData] = Field(
         default_factory=list, description="List of chains with their stablecoin data"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchStablecoinChains(DefiLlamaBaseTool):

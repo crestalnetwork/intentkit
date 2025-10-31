@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,14 +31,14 @@ class WalletStats(PortfolioBaseTool):
         "Get statistical information about a wallet, including the number of NFTs, "
         "collections, and transaction counts."
     )
-    args_schema: Type[BaseModel] = WalletStatsInput
+    args_schema: type[BaseModel] = WalletStatsInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet stats from Moralis.
 
         Args:

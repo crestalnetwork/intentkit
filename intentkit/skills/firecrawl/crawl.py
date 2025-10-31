@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import List, Optional, Type
 
 import httpx
 from langchain_core.documents import Document
@@ -20,19 +19,19 @@ class FirecrawlCrawlInput(BaseModel):
     limit: int = Field(
         description="Maximum number of pages to crawl", default=10, ge=1, le=1000
     )
-    formats: List[str] = Field(
+    formats: list[str] = Field(
         description="Output formats to include in the response. Options: 'markdown', 'html', 'rawHtml', 'screenshot', 'links', 'json'",
         default=["markdown"],
     )
-    include_paths: Optional[List[str]] = Field(
+    include_paths: list[str] | None = Field(
         description="Regex patterns to include in the crawl (e.g., ['^/blog/.*$'])",
         default=None,
     )
-    exclude_paths: Optional[List[str]] = Field(
+    exclude_paths: list[str] | None = Field(
         description="Regex patterns to exclude from the crawl (e.g., ['^/admin/.*$'])",
         default=None,
     )
-    max_depth: Optional[int] = Field(
+    max_depth: int | None = Field(
         description="Maximum depth to crawl from the base URL",
         default=None,
         ge=1,
@@ -91,16 +90,16 @@ class FirecrawlCrawl(FirecrawlBaseTool):
         "Optionally indexes all crawled content for later querying using the firecrawl_query_indexed_content tool. "
         "Use this when you need to gather comprehensive information from a website."
     )
-    args_schema: Type[BaseModel] = FirecrawlCrawlInput
+    args_schema: type[BaseModel] = FirecrawlCrawlInput
 
     async def _arun(
         self,
         url: str,
         limit: int = 10,
-        formats: List[str] = None,
-        include_paths: Optional[List[str]] = None,
-        exclude_paths: Optional[List[str]] = None,
-        max_depth: Optional[int] = None,
+        formats: list[str] = None,
+        include_paths: list[str] | None = None,
+        exclude_paths: list[str] | None = None,
+        max_depth: int | None = None,
         allow_backward_links: bool = False,
         allow_external_links: bool = False,
         allow_subdomains: bool = False,

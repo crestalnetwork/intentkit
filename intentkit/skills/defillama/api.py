@@ -1,7 +1,6 @@
 """DeFi Llama API implementation and shared schemas."""
 
 from datetime import datetime
-from typing import List, Optional
 
 import httpx
 
@@ -75,7 +74,7 @@ async def fetch_chains() -> dict:
 
 
 # Coins API Functions
-async def fetch_current_prices(coins: List[str]) -> dict:
+async def fetch_current_prices(coins: list[str]) -> dict:
     """Get current prices of tokens by contract address using a 4-hour search window."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/current/{coins_str}?searchWidth=4h"
@@ -87,7 +86,7 @@ async def fetch_current_prices(coins: List[str]) -> dict:
     return response.json()
 
 
-async def fetch_historical_prices(timestamp: int, coins: List[str]) -> dict:
+async def fetch_historical_prices(timestamp: int, coins: list[str]) -> dict:
     """Get historical prices of tokens by contract address using a 4-hour search window."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/historical/{timestamp}/{coins_str}?searchWidth=4h"
@@ -112,7 +111,7 @@ async def fetch_batch_historical_prices(coins_timestamps: dict) -> dict:
     return response.json()
 
 
-async def fetch_price_chart(coins: List[str]) -> dict:
+async def fetch_price_chart(coins: list[str]) -> dict:
     """Get historical price chart data from the past day for multiple tokens."""
     coins_str = ",".join(coins)
     start_time = int(datetime.now().timestamp()) - 86400  # now - 1 day
@@ -127,7 +126,7 @@ async def fetch_price_chart(coins: List[str]) -> dict:
     return response.json()
 
 
-async def fetch_price_percentage(coins: List[str]) -> dict:
+async def fetch_price_percentage(coins: list[str]) -> dict:
     """Get price percentage changes for multiple tokens over a 24h period."""
     coins_str = ",".join(coins)
     current_timestamp = int(datetime.now().timestamp())
@@ -142,7 +141,7 @@ async def fetch_price_percentage(coins: List[str]) -> dict:
     return response.json()
 
 
-async def fetch_first_price(coins: List[str]) -> dict:
+async def fetch_first_price(coins: list[str]) -> dict:
     """Get first recorded price data for multiple tokens."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/first/{coins_str}"
@@ -179,9 +178,7 @@ async def fetch_stablecoins() -> dict:
     return response.json()
 
 
-async def fetch_stablecoin_charts(
-    stablecoin_id: str, chain: Optional[str] = None
-) -> dict:
+async def fetch_stablecoin_charts(stablecoin_id: str, chain: str | None = None) -> dict:
     """Get historical circulating supply data for a stablecoin."""
     base_url = f"{DEFILLAMA_STABLECOINS_BASE_URL}/stablecoincharts"
 

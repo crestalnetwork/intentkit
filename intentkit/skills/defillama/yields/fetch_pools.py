@@ -1,7 +1,5 @@
 """Tool for fetching pool data via DeFi Llama API."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pools
@@ -21,13 +19,13 @@ Returns data including:
 class PredictionData(BaseModel):
     """Model representing prediction data for a pool."""
 
-    predictedClass: Optional[str] = Field(
+    predictedClass: str | None = Field(
         None, description="Predicted direction of APY movement"
     )
-    predictedProbability: Optional[float] = Field(
+    predictedProbability: float | None = Field(
         None, description="Probability of the prediction"
     )
-    binnedConfidence: Optional[int] = Field(None, description="Confidence level bucket")
+    binnedConfidence: int | None = Field(None, description="Confidence level bucket")
 
 
 class PoolData(BaseModel):
@@ -37,38 +35,36 @@ class PoolData(BaseModel):
     project: str = Field(..., description="Protocol or project name")
     symbol: str = Field(..., description="Token or pool symbol")
     tvlUsd: float = Field(..., description="Total Value Locked in USD")
-    apyBase: Optional[float] = Field(None, description="Base APY without rewards")
-    apyReward: Optional[float] = Field(None, description="Additional APY from rewards")
-    apy: Optional[float] = Field(None, description="Total APY including rewards")
-    rewardTokens: Optional[list[str]] = Field(
+    apyBase: float | None = Field(None, description="Base APY without rewards")
+    apyReward: float | None = Field(None, description="Additional APY from rewards")
+    apy: float | None = Field(None, description="Total APY including rewards")
+    rewardTokens: list[str] | None = Field(
         None, description="List of reward token addresses"
     )
-    pool: Optional[str] = Field(None, description="Pool identifier")
-    apyPct1D: Optional[float] = Field(None, description="1-day APY percentage change")
-    apyPct7D: Optional[float] = Field(None, description="7-day APY percentage change")
-    apyPct30D: Optional[float] = Field(None, description="30-day APY percentage change")
+    pool: str | None = Field(None, description="Pool identifier")
+    apyPct1D: float | None = Field(None, description="1-day APY percentage change")
+    apyPct7D: float | None = Field(None, description="7-day APY percentage change")
+    apyPct30D: float | None = Field(None, description="30-day APY percentage change")
     stablecoin: bool = Field(False, description="Whether pool involves stablecoins")
     ilRisk: str = Field("no", description="Impermanent loss risk assessment")
     exposure: str = Field("single", description="Asset exposure type")
-    predictions: Optional[PredictionData] = Field(
+    predictions: PredictionData | None = Field(
         None, description="APY movement predictions"
     )
-    poolMeta: Optional[str] = Field(None, description="Additional pool metadata")
-    mu: Optional[float] = Field(None, description="Mean APY value")
-    sigma: Optional[float] = Field(None, description="APY standard deviation")
-    count: Optional[int] = Field(None, description="Number of data points")
+    poolMeta: str | None = Field(None, description="Additional pool metadata")
+    mu: float | None = Field(None, description="Mean APY value")
+    sigma: float | None = Field(None, description="APY standard deviation")
+    count: int | None = Field(None, description="Number of data points")
     outlier: bool = Field(False, description="Whether pool is an outlier")
-    underlyingTokens: Optional[list[str]] = Field(
+    underlyingTokens: list[str] | None = Field(
         None, description="List of underlying token addresses"
     )
-    il7d: Optional[float] = Field(None, description="7-day impermanent loss")
-    apyBase7d: Optional[float] = Field(None, description="7-day base APY")
-    apyMean30d: Optional[float] = Field(None, description="30-day mean APY")
-    volumeUsd1d: Optional[float] = Field(None, description="24h volume in USD")
-    volumeUsd7d: Optional[float] = Field(None, description="7-day volume in USD")
-    apyBaseInception: Optional[float] = Field(
-        None, description="Base APY since inception"
-    )
+    il7d: float | None = Field(None, description="7-day impermanent loss")
+    apyBase7d: float | None = Field(None, description="7-day base APY")
+    apyMean30d: float | None = Field(None, description="30-day mean APY")
+    volumeUsd1d: float | None = Field(None, description="24h volume in USD")
+    volumeUsd7d: float | None = Field(None, description="7-day volume in USD")
+    apyBaseInception: float | None = Field(None, description="Base APY since inception")
 
 
 class FetchPoolsResponse(BaseModel):
@@ -76,7 +72,7 @@ class FetchPoolsResponse(BaseModel):
 
     status: str = Field("success", description="Response status")
     data: list[PoolData] = Field(default_factory=list, description="List of pool data")
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchPools(DefiLlamaBaseTool):

@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Dict, NotRequired, Optional
+from typing import Any, NotRequired
 
 from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
 from pydantic import BaseModel
@@ -23,20 +24,20 @@ class AgentState(BaseAgentState):
 
     context: dict[str, Any]
     error: NotRequired[AgentError]
-    __extra__: NotRequired[Dict[str, Any]]
+    __extra__: NotRequired[dict[str, Any]]
 
 
 class AgentContext(BaseModel):
     agent_id: str
     get_agent: Callable[[], Agent]
     chat_id: str
-    user_id: Optional[str] = None
-    app_id: Optional[str] = None
+    user_id: str | None = None
+    app_id: str | None = None
     entrypoint: AuthorType
     is_private: bool
     search: bool = False
     thinking: bool = False
-    payer: Optional[str] = None
+    payer: str | None = None
 
     @property
     def agent(self) -> Agent:

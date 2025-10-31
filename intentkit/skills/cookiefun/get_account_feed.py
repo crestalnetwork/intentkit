@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -33,42 +33,42 @@ class SortOrder(IntEnum):
 class GetAccountFeedInput(BaseModel):
     """Input for GetAccountFeed tool."""
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         default=None,
         description="Twitter username (either username or userId is required)",
     )
 
-    userId: Optional[str] = Field(
+    userId: str | None = Field(
         default=None,
         description="Twitter user ID (either username or userId is required)",
     )
 
-    startDate: Optional[str] = Field(
+    startDate: str | None = Field(
         default=None,
         description="Start date for filtering in format dd/mm/yyyy (default: 30 days ago)",
     )
 
-    endDate: Optional[str] = Field(
+    endDate: str | None = Field(
         default=None,
         description="End date for filtering in format dd/mm/yyyy (default: now)",
     )
 
-    type: Optional[int] = Field(
+    type: int | None = Field(
         default=None,
         description="Type of tweets to filter: 0 for Original, 1 for Reply, 2 for Quote (leave empty for all types)",
     )
 
-    hasMedia: Optional[bool] = Field(
+    hasMedia: bool | None = Field(
         default=None,
         description="Filter to only include tweets with media if true",
     )
 
-    sortBy: Optional[int] = Field(
+    sortBy: int | None = Field(
         default=None,
         description="Sort by: 0 for CreatedDate, 1 for Impressions",
     )
 
-    sortOrder: Optional[int] = Field(
+    sortOrder: int | None = Field(
         default=None,
         description="Sort order: 0 for Ascending, 1 for Descending",
     )
@@ -79,20 +79,20 @@ class GetAccountFeed(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_feed"
     description: str = "Retrieves a list of tweets for a specific Twitter account with various filtering options."
-    args_schema: Type[BaseModel] = GetAccountFeedInput
+    args_schema: type[BaseModel] = GetAccountFeedInput
 
     async def _arun(
         self,
-        username: Optional[str] = None,
-        userId: Optional[str] = None,
-        startDate: Optional[str] = None,
-        endDate: Optional[str] = None,
-        type: Optional[int] = None,
-        hasMedia: Optional[bool] = None,
-        sortBy: Optional[int] = None,
-        sortOrder: Optional[int] = None,
+        username: str | None = None,
+        userId: str | None = None,
+        startDate: str | None = None,
+        endDate: str | None = None,
+        type: int | None = None,
+        hasMedia: bool | None = None,
+        sortBy: int | None = None,
+        sortOrder: int | None = None,
         **kwargs,
-    ) -> Union[List[Dict[str, Any]], str]:
+    ) -> list[dict[str, Any]] | str:
         """
         Get the feed (tweets) of a Twitter account.
 

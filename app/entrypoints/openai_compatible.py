@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from epyxid import XID
 from fastapi import APIRouter, Depends, status
@@ -29,7 +29,7 @@ class OpenAIMessage(BaseModel):
     """OpenAI message format."""
 
     role: str = Field(..., description="The role of the message author")
-    content: str | List[Dict[str, Any]] = Field(
+    content: str | list[dict[str, Any]] = Field(
         ..., description="The content of the message"
     )
 
@@ -38,40 +38,40 @@ class OpenAIChatCompletionRequest(BaseModel):
     """OpenAI Chat Completion API request format."""
 
     model: str = Field(..., description="ID of the model to use")
-    messages: List[OpenAIMessage] = Field(
+    messages: list[OpenAIMessage] = Field(
         ..., description="A list of messages comprising the conversation"
     )
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         None, description="The maximum number of tokens to generate"
     )
-    temperature: Optional[float] = Field(
+    temperature: float | None = Field(
         None, description="What sampling temperature to use"
     )
-    top_p: Optional[float] = Field(
+    top_p: float | None = Field(
         None, description="An alternative to sampling with temperature"
     )
-    n: Optional[int] = Field(
+    n: int | None = Field(
         None, description="How many chat completion choices to generate"
     )
-    stream: Optional[bool] = Field(
+    stream: bool | None = Field(
         None, description="If set, partial message deltas will be sent"
     )
-    stop: Optional[str | List[str]] = Field(
+    stop: str | list[str] | None = Field(
         None, description="Up to 4 sequences where the API will stop generating"
     )
-    presence_penalty: Optional[float] = Field(
+    presence_penalty: float | None = Field(
         None, description="Number between -2.0 and 2.0"
     )
-    frequency_penalty: Optional[float] = Field(
+    frequency_penalty: float | None = Field(
         None, description="Number between -2.0 and 2.0"
     )
-    logit_bias: Optional[Dict[str, int]] = Field(
+    logit_bias: dict[str, int] | None = Field(
         None, description="Modify the likelihood of specified tokens"
     )
-    user: Optional[str] = Field(
+    user: str | None = Field(
         None, description="A unique identifier representing your end-user"
     )
-    response_format: Optional[Dict[str, Any]] = Field(
+    response_format: dict[str, Any] | None = Field(
         None, description="An object specifying the format"
     )
 
@@ -87,8 +87,8 @@ class OpenAIUsage(BaseModel):
 class OpenAIDelta(BaseModel):
     """OpenAI delta object for streaming."""
 
-    role: Optional[str] = Field(None, description="The role of the message author")
-    content: Optional[str] = Field(None, description="The content of the message")
+    role: str | None = Field(None, description="The role of the message author")
+    content: str | None = Field(None, description="The content of the message")
 
 
 class OpenAIChoiceDelta(BaseModel):
@@ -96,7 +96,7 @@ class OpenAIChoiceDelta(BaseModel):
 
     index: int = Field(0, description="The index of the choice")
     delta: OpenAIDelta = Field(..., description="The delta object")
-    finish_reason: Optional[str] = Field(
+    finish_reason: str | None = Field(
         None, description="The reason the model stopped generating tokens"
     )
 
@@ -110,10 +110,10 @@ class OpenAIChatCompletionChunk(BaseModel):
         ..., description="The Unix timestamp when the chat completion was created"
     )
     model: str = Field(..., description="The model used for the chat completion")
-    choices: List[OpenAIChoiceDelta] = Field(
+    choices: list[OpenAIChoiceDelta] = Field(
         ..., description="A list of chat completion choices"
     )
-    system_fingerprint: Optional[str] = Field(None, description="System fingerprint")
+    system_fingerprint: str | None = Field(None, description="System fingerprint")
 
 
 class OpenAIChoice(BaseModel):
@@ -135,18 +135,18 @@ class OpenAIChatCompletionResponse(BaseModel):
         ..., description="The Unix timestamp when the chat completion was created"
     )
     model: str = Field(..., description="The model used for the chat completion")
-    choices: List[OpenAIChoice] = Field(
+    choices: list[OpenAIChoice] = Field(
         ..., description="A list of chat completion choices"
     )
     usage: OpenAIUsage = Field(
         ..., description="Usage statistics for the completion request"
     )
-    system_fingerprint: Optional[str] = Field(None, description="System fingerprint")
+    system_fingerprint: str | None = Field(None, description="System fingerprint")
 
 
 def extract_text_and_images(
-    content: str | List[Dict[str, Any]],
-) -> tuple[str, List[ChatMessageAttachment]]:
+    content: str | list[dict[str, Any]],
+) -> tuple[str, list[ChatMessageAttachment]]:
     """Extract text and images from OpenAI message content.
 
     Args:
@@ -249,7 +249,7 @@ def create_streaming_response(content: str, request_id: str, model: str, created
 
 
 def create_streaming_response_batched(
-    content_parts: List[str], request_id: str, model: str, created: int
+    content_parts: list[str], request_id: str, model: str, created: int
 ):
     """Create a streaming response generator for OpenAI-compatible streaming with batched content.
 

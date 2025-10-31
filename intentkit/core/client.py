@@ -3,7 +3,7 @@
 This module provides client functions for core API endpoints with environment-aware routing.
 """
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import httpx
 

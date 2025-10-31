@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -19,23 +19,23 @@ class TokenPriceInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    include: Optional[str] = Field(
+    include: str | None = Field(
         description="If the result should contain the 24hr percent change (use 'percent_change').",
         default=None,
     )
-    exchange: Optional[str] = Field(
+    exchange: str | None = Field(
         description="The factory name or address of the token exchange.",
         default=None,
     )
-    to_block: Optional[int] = Field(
+    to_block: int | None = Field(
         description="The block number from which the token price should be checked.",
         default=None,
     )
-    max_token_inactivity: Optional[int] = Field(
+    max_token_inactivity: int | None = Field(
         description="Exclude tokens inactive for more than the given amount of days.",
         default=None,
     )
-    min_pair_side_liquidity_usd: Optional[int] = Field(
+    min_pair_side_liquidity_usd: int | None = Field(
         description="Exclude tokens with liquidity less than the specified amount in USD.",
         default=None,
     )
@@ -53,19 +53,19 @@ class TokenPrice(TokenBaseTool):
         "Get the token price denominated in the blockchain's native token and USD for a given token contract address. "
         "Returns price, token information and exchange data."
     )
-    args_schema: Type[BaseModel] = TokenPriceInput
+    args_schema: type[BaseModel] = TokenPriceInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        include: Optional[str] = None,
-        exchange: Optional[str] = None,
-        to_block: Optional[int] = None,
-        max_token_inactivity: Optional[int] = None,
-        min_pair_side_liquidity_usd: Optional[int] = None,
+        include: str | None = None,
+        exchange: str | None = None,
+        to_block: int | None = None,
+        max_token_inactivity: int | None = None,
+        min_pair_side_liquidity_usd: int | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token price from Moralis.
 
         Args:

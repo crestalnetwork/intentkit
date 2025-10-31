@@ -6,7 +6,7 @@ For conversation history, use conversation_service.py instead.
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .utils import generate_request_id
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class LLMLogger:
     """Logger for tracking LLM API calls and costs."""
 
-    def __init__(self, request_id: str, user_id: Optional[str] = None):
+    def __init__(self, request_id: str, user_id: str | None = None):
         """Initialize the LLM logger.
 
         Args:
@@ -33,9 +33,9 @@ class LLMLogger:
         prompt: str,
         retry_count: int = 0,
         is_update: bool = False,
-        existing_agent_id: Optional[str] = None,
-        llm_model: Optional[str] = None,
-        openai_messages: Optional[List[Dict[str, Any]]] = None,
+        existing_agent_id: str | None = None,
+        llm_model: str | None = None,
+        openai_messages: list[dict[str, Any]] | None = None,
     ):
         """Context manager for logging an LLM call.
 
@@ -72,11 +72,11 @@ class LLMLogger:
 
     async def log_successful_call(
         self,
-        call_log: Dict[str, Any],
+        call_log: dict[str, Any],
         response: Any,
-        generated_content: Optional[Dict[str, Any]] = None,
-        openai_messages: Optional[List[Dict[str, Any]]] = None,
-        call_start_time: Optional[float] = None,
+        generated_content: dict[str, Any] | None = None,
+        openai_messages: list[dict[str, Any]] | None = None,
+        call_start_time: float | None = None,
     ):
         """Log a successful LLM call completion.
 
@@ -95,7 +95,7 @@ class LLMLogger:
         # This logger now only tracks LLM call metrics and costs
 
 
-def create_llm_logger(user_id: Optional[str] = None) -> LLMLogger:
+def create_llm_logger(user_id: str | None = None) -> LLMLogger:
     """Create a new LLM logger with a unique request ID.
 
     Args:

@@ -1,8 +1,8 @@
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import AsyncGenerator, Dict, Optional, Tuple
 
 from sqlalchemy import func, select, text, update
 
@@ -193,8 +193,8 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
 
 
 async def override_agent(
-    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
-) -> Tuple[Agent, AgentData]:
+    agent_id: str, agent: AgentUpdate, owner: str | None = None
+) -> tuple[Agent, AgentData]:
     """Override an existing agent with new configuration.
 
     This function updates an existing agent with the provided configuration.
@@ -234,7 +234,7 @@ async def override_agent(
     return latest_agent, agent_data
 
 
-async def create_agent(agent: AgentCreate) -> Tuple[Agent, AgentData]:
+async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     """Create a new agent with the provided configuration.
 
     This function creates a new agent instance with the given configuration,
@@ -271,8 +271,8 @@ async def create_agent(agent: AgentCreate) -> Tuple[Agent, AgentData]:
 
 
 async def deploy_agent(
-    agent_id: str, agent: AgentUpdate, owner: Optional[str] = None
-) -> Tuple[Agent, AgentData]:
+    agent_id: str, agent: AgentUpdate, owner: str | None = None
+) -> tuple[Agent, AgentData]:
     """Deploy an agent by first attempting to override, then creating if not found.
 
     This function first tries to override an existing agent. If the agent is not found
@@ -307,7 +307,7 @@ async def deploy_agent(
             raise
 
 
-async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
+async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
     """
     Calculate various action cost metrics for an agent based on past three days of credit events.
 
@@ -323,7 +323,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
         agent_id: ID of the agent
 
     Returns:
-        Dict[str, Decimal]: Dictionary containing all calculated cost metrics
+        dict[str, Decimal]: Dictionary containing all calculated cost metrics
     """
     start_time = time.time()
     default_value = Decimal("0")
@@ -336,7 +336,7 @@ async def agent_action_cost(agent_id: str) -> Dict[str, Decimal]:
 
     async with get_session() as session:
         # Calculate the date 3 days ago from now
-        three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
+        three_days_ago = datetime.now(UTC) - timedelta(days=3)
 
         # First, count the number of distinct start_message_ids to determine if we have enough data
         count_query = select(
@@ -489,7 +489,7 @@ async def _iterate_agent_id_batches(
 ) -> AsyncGenerator[list[str], None]:
     """Yield agent IDs in ascending batches to limit memory usage."""
 
-    last_id: Optional[str] = None
+    last_id: str | None = None
     while True:
         async with get_session() as session:
             query = select(AgentTable.id).order_by(AgentTable.id)
@@ -679,18 +679,18 @@ async def update_agents_assets(batch_size: int = 100) -> None:
 
 
 async def update_agents_statistics(
-    *, end_time: Optional[datetime] = None, batch_size: int = 100
+    *, end_time: datetime | None = None, batch_size: int = 100
 ) -> None:
     """Refresh cached statistics for every agent."""
 
     from intentkit.core.statistics import get_agent_statistics
 
     if end_time is None:
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
     elif end_time.tzinfo is None:
-        end_time = end_time.replace(tzinfo=timezone.utc)
+        end_time = end_time.replace(tzinfo=UTC)
     else:
-        end_time = end_time.astimezone(timezone.utc)
+        end_time = end_time.astimezone(UTC)
 
     logger.info("Starting update of agent statistics using end_time %s", end_time)
     start_time = time.time()

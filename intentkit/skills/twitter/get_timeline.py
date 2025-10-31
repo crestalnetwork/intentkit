@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from pydantic import BaseModel
 
@@ -34,7 +33,7 @@ class TwitterGetTimeline(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterGetTimelineInput
+    args_schema: type[BaseModel] = TwitterGetTimelineInput
 
     async def _arun(self, **kwargs):
         context = self.get_context()

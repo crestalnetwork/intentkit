@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -20,9 +20,9 @@ class GetSectors(CookieFunBaseTool):
     description: str = (
         "Returns a list of all available sectors in the CookieFun system."
     )
-    args_schema: Type[BaseModel] = GetSectorsInput
+    args_schema: type[BaseModel] = GetSectorsInput
 
-    async def _arun(self, **kwargs) -> List[Dict[str, Any]]:
+    async def _arun(self, **kwargs) -> list[dict[str, Any]]:
         """
         Get all available sectors from the CookieFun API.
 

@@ -1,7 +1,7 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, Optional, Type, TypeVar
+from typing import Annotated, TypeVar
 
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
-
 # TypeVar for User model constraint
 UserModelType = TypeVar("UserModelType", bound="User")
 UserTableType = TypeVar("UserTableType", bound="UserTable")
@@ -23,10 +22,10 @@ class UserRegistry:
     """Registry for extended model classes."""
 
     def __init__(self):
-        self._user_table_class: Optional[Type[UserTableType]] = None
-        self._user_model_class: Optional[Type[UserModelType]] = None
+        self._user_table_class: type[UserTableType] | None = None
+        self._user_model_class: type[UserModelType] | None = None
 
-    def register_user_table(self, user_table_class: Type[UserTableType]) -> None:
+    def register_user_table(self, user_table_class: type[UserTableType]) -> None:
         """Register extended UserTable class.
 
         Args:
@@ -34,11 +33,11 @@ class UserRegistry:
         """
         self._user_table_class = user_table_class
 
-    def get_user_table_class(self) -> Type[UserTableType]:
+    def get_user_table_class(self) -> type[UserTableType]:
         """Get registered UserTable class or default."""
         return self._user_table_class or UserTable
 
-    def register_user_model(self, user_model_class: Type[UserModelType]) -> None:
+    def register_user_model(self, user_model_class: type[UserModelType]) -> None:
         """Register extended UserModel class.
 
         Args:
@@ -46,7 +45,7 @@ class UserRegistry:
         """
         self._user_model_class = user_model_class
 
-    def get_user_model_class(self) -> Type[UserModelType]:
+    def get_user_model_class(self) -> type[UserModelType]:
         """Get registered UserModel class or default."""
         return self._user_model_class or User
 
@@ -114,7 +113,7 @@ class UserTable(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -131,27 +130,27 @@ class UserUpdate(BaseModel):
     nft_count: Annotated[
         int, Field(default=0, description="Number of NFTs owned by the user")
     ]
-    email: Annotated[Optional[str], Field(None, description="User's email address")]
+    email: Annotated[str | None, Field(None, description="User's email address")]
     x_username: Annotated[
-        Optional[str], Field(None, description="User's X (Twitter) username")
+        str | None, Field(None, description="User's X (Twitter) username")
     ]
     github_username: Annotated[
-        Optional[str], Field(None, description="User's GitHub username")
+        str | None, Field(None, description="User's GitHub username")
     ]
     telegram_username: Annotated[
-        Optional[str], Field(None, description="User's Telegram username")
+        str | None, Field(None, description="User's Telegram username")
     ]
     extra: Annotated[
-        Optional[dict], Field(None, description="Additional user information")
+        dict | None, Field(None, description="Additional user information")
     ]
     evm_wallet_address: Annotated[
-        Optional[str], Field(None, description="User's EVM wallet address")
+        str | None, Field(None, description="User's EVM wallet address")
     ]
     solana_wallet_address: Annotated[
-        Optional[str], Field(None, description="User's Solana wallet address")
+        str | None, Field(None, description="User's Solana wallet address")
     ]
     linked_accounts: Annotated[
-        Optional[dict], Field(None, description="User's linked accounts information")
+        dict | None, Field(None, description="User's linked accounts information")
     ]
 
     async def _update_quota_for_nft_count(
@@ -165,7 +164,7 @@ class UserUpdate(BaseModel):
             new_nft_count: Current NFT count
         """
         # Generate upstream_tx_id
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         upstream_tx_id = f"nft_{id}_{timestamp}"
 
         # Calculate new quota values based on nft_count
@@ -286,7 +285,7 @@ class User(UserUpdate):
     ]
 
     @classmethod
-    async def get(cls, user_id: str) -> Optional[UserModelType]:
+    async def get(cls, user_id: str) -> UserModelType | None:
         """Get a user by ID.
 
         Args:
@@ -301,7 +300,7 @@ class User(UserUpdate):
     @classmethod
     async def get_in_session(
         cls, session: AsyncSession, user_id: str
-    ) -> Optional[UserModelType]:
+    ) -> UserModelType | None:
         """Get a user by ID using the provided session.
 
         Args:
@@ -324,7 +323,7 @@ class User(UserUpdate):
         return user_model_class.model_validate(user)
 
     @classmethod
-    async def get_by_tg(cls, telegram_username: str) -> Optional[UserModelType]:
+    async def get_by_tg(cls, telegram_username: str) -> UserModelType | None:
         """Get a user by telegram username.
 
         Args:

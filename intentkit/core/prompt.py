@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from eth_utils import is_address
 from langchain_core.messages import BaseMessage
@@ -34,7 +34,6 @@ Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_
 user confirmation before broadcasting any approval transactions for security reasons.
 
 """
-
 
 # ============================================================================
 # CORE PROMPT BUILDING FUNCTIONS
@@ -328,7 +327,7 @@ def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
     return f"{task_info}. "
 
 
-async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Optional[str]:
+async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> str | None:
     """
     Build entrypoint-specific prompt based on context.
 
@@ -341,7 +340,7 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> Option
         context: The agent context containing entrypoint information
 
     Returns:
-        Optional[str]: The entrypoint-specific prompt, or None if no entrypoint
+        str | None: The entrypoint-specific prompt, or None if no entrypoint
     """
     if not context.entrypoint:
         return None

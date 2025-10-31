@@ -1,6 +1,5 @@
 """Tool for fetching stablecoin charts via DeFi Llama API."""
 
-from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +43,7 @@ class FetchStablecoinChartsInput(BaseModel):
     stablecoin_id: str = Field(
         ..., description="ID of the stablecoin to fetch data for"
     )
-    chain: Optional[str] = Field(
+    chain: str | None = Field(
         None, description="Optional chain name for chain-specific data"
     )
 
@@ -52,13 +51,13 @@ class FetchStablecoinChartsInput(BaseModel):
 class FetchStablecoinChartsResponse(BaseModel):
     """Response schema for stablecoin chart data."""
 
-    data: List[StablecoinDataPoint] = Field(
+    data: list[StablecoinDataPoint] = Field(
         default_factory=list, description="List of historical data points"
     )
-    chain: Optional[str] = Field(
+    chain: str | None = Field(
         None, description="Chain name if chain-specific data was requested"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
@@ -81,10 +80,10 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_stablecoin_charts"
     description: str = FETCH_STABLECOIN_CHARTS_PROMPT
-    args_schema: Type[BaseModel] = FetchStablecoinChartsInput
+    args_schema: type[BaseModel] = FetchStablecoinChartsInput
 
     async def _arun(
-        self, stablecoin_id: str, chain: Optional[str] = None
+        self, stablecoin_id: str, chain: str | None = None
     ) -> FetchStablecoinChartsResponse:
         """Fetch historical chart data for the given stablecoin.
 

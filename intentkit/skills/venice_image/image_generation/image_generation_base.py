@@ -1,7 +1,7 @@
 import base64
 import hashlib
 import logging
-from typing import Any, Dict, Literal, Optional, Type
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
     """
 
     # --- Attributes specific to Image Generation ---
-    args_schema: Type[BaseModel] = VeniceImageGenerationInput
+    args_schema: type[BaseModel] = VeniceImageGenerationInput
 
     # --- Attributes Subclasses MUST Define ---
     name: str = Field(description="The unique name of the image generation tool/model.")
@@ -38,15 +38,15 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
     async def _arun(
         self,
         prompt: str,
-        seed: Optional[int] = None,
-        negative_prompt: Optional[str] = None,
-        width: Optional[int] = 1024,
-        height: Optional[int] = 1024,
+        seed: int | None = None,
+        negative_prompt: str | None = None,
+        width: int | None = 1024,
+        height: int | None = 1024,
         format: Literal["png", "jpeg", "webp"] = "png",
-        cfg_scale: Optional[float] = 7.5,
-        style_preset: Optional[str] = "Photographic",
+        cfg_scale: float | None = 7.5,
+        style_preset: str | None = "Photographic",
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             context = self.get_context()
             skillConfig = self.getSkillConfig(context)

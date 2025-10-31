@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 class DappLookerTokenDataInput(BaseModel):
     """Input for DappLooker token data tool."""
 
-    token_tickers: Optional[str] = Field(
+    token_tickers: str | None = Field(
         description="Comma-separated list of AI agent token tickers (e.g., 'aixbt,vader'). "
         "Either token_tickers or token_addresses must be provided.",
         default=None,
     )
-    token_addresses: Optional[str] = Field(
+    token_addresses: str | None = Field(
         description="Comma-separated list of AI agent token contract addresses (e.g., '0x4F9Fd6Be4a90f2620860d680c0d4d5Fb53d1A825'). "
         "Either token_tickers or token_addresses must be provided.",
         default=None,
@@ -50,12 +50,12 @@ class DappLookerTokenData(DappLookerBaseTool):
         "Note that this tool is specialized for AI agent tokens and may not return data for general cryptocurrencies like ETH, BTC, or SOL.\n"
         "Either token_tickers or token_addresses must be provided."
     )
-    args_schema: Type[BaseModel] = DappLookerTokenDataInput
+    args_schema: type[BaseModel] = DappLookerTokenDataInput
 
     async def _arun(
         self,
-        token_tickers: Optional[str] = None,
-        token_addresses: Optional[str] = None,
+        token_tickers: str | None = None,
+        token_addresses: str | None = None,
         chain: str = "base",
         **kwargs,
     ) -> str:
@@ -205,7 +205,7 @@ class DappLookerTokenData(DappLookerBaseTool):
                 "An error occurred while retrieving token data. Please try again later."
             )
 
-    def _format_token_data(self, data: List[Dict[str, Any]]) -> str:
+    def _format_token_data(self, data: list[dict[str, Any]]) -> str:
         """Format the token data for display.
 
         Args:

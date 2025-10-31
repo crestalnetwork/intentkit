@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,14 +31,14 @@ class WalletDefiPositions(PortfolioBaseTool):
         "Get the DeFi positions summary of a wallet address. "
         "Returns information about liquidity positions, staking, lending, and other DeFi activities."
     )
-    args_schema: Type[BaseModel] = WalletDefiPositionsInput
+    args_schema: type[BaseModel] = WalletDefiPositionsInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet DeFi positions from Moralis.
 
         Args:

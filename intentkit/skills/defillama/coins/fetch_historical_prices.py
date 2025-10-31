@@ -1,6 +1,5 @@
 """Tool for fetching historical token prices via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -26,9 +25,9 @@ class HistoricalTokenPrice(BaseModel):
     """Model representing historical token price data."""
 
     price: float = Field(..., description="Token price in USD at the specified time")
-    symbol: Optional[str] = Field(None, description="Token symbol")
+    symbol: str | None = Field(None, description="Token symbol")
     timestamp: int = Field(..., description="Unix timestamp of the price data")
-    decimals: Optional[int] = Field(None, description="Token decimals, if available")
+    decimals: int | None = Field(None, description="Token decimals, if available")
 
 
 class FetchHistoricalPricesInput(BaseModel):
@@ -37,7 +36,7 @@ class FetchHistoricalPricesInput(BaseModel):
     timestamp: int = Field(
         ..., description="Unix timestamp for historical price lookup"
     )
-    coins: List[str] = Field(
+    coins: list[str] = Field(
         ...,
         description="List of token identifiers (e.g. 'ethereum:0x...', 'coingecko:ethereum')",
     )
@@ -46,11 +45,11 @@ class FetchHistoricalPricesInput(BaseModel):
 class FetchHistoricalPricesResponse(BaseModel):
     """Response schema for historical token prices."""
 
-    coins: Dict[str, HistoricalTokenPrice] = Field(
+    coins: dict[str, HistoricalTokenPrice] = Field(
         default_factory=dict,
         description="Historical token prices keyed by token identifier",
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
@@ -73,10 +72,10 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_historical_prices"
     description: str = FETCH_HISTORICAL_PRICES_PROMPT
-    args_schema: Type[BaseModel] = FetchHistoricalPricesInput
+    args_schema: type[BaseModel] = FetchHistoricalPricesInput
 
     async def _arun(
-        self, timestamp: int, coins: List[str]
+        self, timestamp: int, coins: list[str]
     ) -> FetchHistoricalPricesResponse:
         """Fetch historical prices for the given tokens at the specified time.
 

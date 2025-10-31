@@ -1,4 +1,4 @@
-from typing import Callable, List
+from collections.abc import Callable
 
 from pydantic import BaseModel
 
@@ -12,19 +12,19 @@ class AgentMessageInput(BaseModel):
 
     Attributes:
         text (str): The main text content of the message or query
-        images (List[str]): List of image references/URLs to be processed by the agent.
+        images (list[str]): List of image references/URLs to be processed by the agent.
                            Empty list if no images are provided.
     """
 
     text: str  # required
     """The main text content or query to be processed by the agent"""
 
-    images: List[str] = []  # optional, defaults to empty list
+    images: list[str] = []  # optional, defaults to empty list
     """List of image references or URLs for multimodal processing"""
 
 
 # Define a type hint for the callback that takes three strings and returns a list of strings
-AgentExecutionCallback = Callable[[str, AgentMessageInput, str], List[str]]
+AgentExecutionCallback = Callable[[str, AgentMessageInput, str], list[str]]
 """Callback function type for agent execution.
 
 Args:
@@ -33,6 +33,6 @@ Args:
     thread_id (str): The thread ID for tracking the conversation context
 
 Returns:
-    List[str]: A list of formatted response lines from the agent execution. Each line
+    list[str]: A list of formatted response lines from the agent execution. Each line
         typically contains input/output markers, agent responses, and timing information.
 """

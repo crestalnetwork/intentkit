@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import httpx
 
@@ -10,7 +10,7 @@ from intentkit.skills.dexscreener.utils import DEXSCREENER_BASE_URL
 logger = logging.getLogger(__name__)
 
 # ApiResult still represents (success_data, error_data)
-ApiResult = Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]
+ApiResult = tuple[dict[str, Any] | None, dict[str, Any] | None]
 
 
 class DexScreenerBaseTool(IntentKitSkill):
@@ -28,7 +28,7 @@ class DexScreenerBaseTool(IntentKitSkill):
     async def _get(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> ApiResult:
         """
         Makes an asynchronous GET request to the DexScreener API.

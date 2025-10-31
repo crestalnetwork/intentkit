@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -21,11 +21,11 @@ class WalletApprovalsInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         description="The cursor for pagination.",
         default=None,
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         description="The number of results per page.",
         default=DEFAULT_LIMIT,
     )
@@ -43,16 +43,16 @@ class WalletApprovals(PortfolioBaseTool):
         "Retrieve active ERC20 token approvals for the specified wallet address. "
         "This helps identify which contracts have permission to spend tokens."
     )
-    args_schema: Type[BaseModel] = WalletApprovalsInput
+    args_schema: type[BaseModel] = WalletApprovalsInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = DEFAULT_LIMIT,
+        cursor: str | None = None,
+        limit: int | None = DEFAULT_LIMIT,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch wallet token approvals from Moralis.
 
         Args:

@@ -1,6 +1,5 @@
 """Tool for fetching token price charts via DeFi Llama API."""
 
-from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -33,14 +32,14 @@ class TokenPriceChart(BaseModel):
 
     symbol: str = Field(..., description="Token symbol")
     confidence: float = Field(..., description="Confidence score for the price data")
-    decimals: Optional[int] = Field(None, description="Token decimals")
-    prices: List[PricePoint] = Field(..., description="List of historical price points")
+    decimals: int | None = Field(None, description="Token decimals")
+    prices: list[PricePoint] = Field(..., description="List of historical price points")
 
 
 class FetchPriceChartInput(BaseModel):
     """Input schema for fetching token price charts."""
 
-    coins: List[str] = Field(
+    coins: list[str] = Field(
         ..., description="List of token identifiers to fetch price charts for"
     )
 
@@ -48,10 +47,10 @@ class FetchPriceChartInput(BaseModel):
 class FetchPriceChartResponse(BaseModel):
     """Response schema for token price charts."""
 
-    coins: Dict[str, TokenPriceChart] = Field(
+    coins: dict[str, TokenPriceChart] = Field(
         default_factory=dict, description="Price chart data keyed by token identifier"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
@@ -73,9 +72,9 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_price_chart"
     description: str = FETCH_PRICE_CHART_PROMPT
-    args_schema: Type[BaseModel] = FetchPriceChartInput
+    args_schema: type[BaseModel] = FetchPriceChartInput
 
-    async def _arun(self, coins: List[str]) -> FetchPriceChartResponse:
+    async def _arun(self, coins: list[str]) -> FetchPriceChartResponse:
         """Fetch price charts for the given tokens.
 
         Args:

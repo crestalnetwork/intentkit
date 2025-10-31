@@ -2,7 +2,6 @@ import inspect
 import json
 import logging
 from datetime import datetime
-from typing import List
 
 import telegramify_markdown
 from aiogram import Router
@@ -70,7 +69,7 @@ async def cache_message(chat_id: int, agent_id: str, message: Message) -> None:
         logger.warning(f"Failed to cache message: {e}")
 
 
-async def get_cached_context(chat_id: int, agent_id: str) -> List[dict]:
+async def get_cached_context(chat_id: int, agent_id: str) -> list[dict]:
     """Retrieve cached messages for context.
 
     Args:
@@ -240,14 +239,12 @@ async def gp_process_message(message: Message) -> None:
             message_text = remove_bot_name(bot.username, message.text)
             if len(message_text) > 65535:
                 send_slack_message(
-                    (
-                        "Message too long from telegram.\n"
-                        f"length: {len(message_text)}\n"
-                        f"chat_id:{message.chat.id}\n"
-                        f"agent:{cached_bot_item.agent_id}\n"
-                        f"user:{user_id}\n"
-                        f"content:{message_text[:100]}..."
-                    )
+                    "Message too long from telegram.\n"
+                    f"length: {len(message_text)}\n"
+                    f"chat_id:{message.chat.id}\n"
+                    f"agent:{cached_bot_item.agent_id}\n"
+                    f"user:{user_id}\n"
+                    f"content:{message_text[:100]}..."
                 )
 
             # Wrap message with group context and username
@@ -360,14 +357,12 @@ async def process_message(message: Message) -> None:
     try:
         if len(message.text) > 65535:
             send_slack_message(
-                (
-                    "Message too long from telegram.\n"
-                    f"length: {len(message.text)}\n"
-                    f"chat_id:{message.chat.id}\n"
-                    f"agent:{cached_bot_item.agent_id}\n"
-                    f"user:{user_id}\n"
-                    f"content:{message.text[:100]}..."
-                )
+                "Message too long from telegram.\n"
+                f"length: {len(message.text)}\n"
+                f"chat_id:{message.chat.id}\n"
+                f"agent:{cached_bot_item.agent_id}\n"
+                f"user:{user_id}\n"
+                f"content:{message.text[:100]}..."
             )
 
         input = ChatMessageCreate(

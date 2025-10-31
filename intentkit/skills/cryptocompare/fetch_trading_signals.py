@@ -1,7 +1,6 @@
 """Tool for fetching cryptocurrency trading signals via CryptoCompare API."""
 
 import logging
-from typing import Dict, List, Type
 
 from pydantic import BaseModel, Field
 
@@ -43,13 +42,13 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_trading_signals"
     description: str = "Fetch the latest trading signals for a specific cryptocurrency"
-    args_schema: Type[BaseModel] = CryptoCompareFetchTradingSignalsInput
+    args_schema: type[BaseModel] = CryptoCompareFetchTradingSignalsInput
 
     async def _arun(
         self,
         from_symbol: str,
         **kwargs,
-    ) -> List[TradingSignal]:
+    ) -> list[TradingSignal]:
         """Async implementation of the tool to fetch cryptocurrency trading signals.
 
         Args:
@@ -57,7 +56,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
             config: The configuration for the runnable, containing agent context.
 
         Returns:
-            List[TradingSignal]: A list of trading signals for the specified cryptocurrency.
+            list[TradingSignal]: A list of trading signals for the specified cryptocurrency.
 
         Raises:
             Exception: If there's an error accessing the CryptoCompare API.
@@ -86,7 +85,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
             if "Data" in signals_data and signals_data["Data"]:
                 for indicator_name, indicator_data in signals_data["Data"].items():
                     if (
-                        isinstance(indicator_data, Dict)
+                        isinstance(indicator_data, dict)
                         and "sentiment" in indicator_data
                     ):
                         result.append(

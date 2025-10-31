@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 import httpx
 from langchain_core.tools import ToolException
@@ -17,23 +17,23 @@ class ProjectsInput(BaseModel):
         default=10,
         description="Number of projects to return (max 50)",
     )
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         description="Filter projects by name (case-insensitive regex match)",
     )
-    ticker: Optional[str] = Field(
+    ticker: str | None = Field(
         default=None,
         description="Filter projects by ticker symbol (case-insensitive match)",
     )
-    xHandle: Optional[str] = Field(
+    xHandle: str | None = Field(
         default=None,
         description="Filter projects by X/Twitter handle",
     )
-    minScore: Optional[float] = Field(
+    minScore: float | None = Field(
         default=None,
         description="Minimum score threshold",
     )
-    chain: Optional[str] = Field(
+    chain: str | None = Field(
         default=None,
         description="Filter projects by blockchain",
     )
@@ -53,18 +53,18 @@ class AIXBTProjects(AIXBTBaseTool):
         "detailed information on recent developments. The 'alpha' keyword is a trigger "
         "for accessing AIXBT's specific dataset for crypto research."
     )
-    args_schema: Type[BaseModel] = ProjectsInput
+    args_schema: type[BaseModel] = ProjectsInput
 
     async def _arun(
         self,
         limit: int = 10,
-        name: Optional[str] = None,
-        ticker: Optional[str] = None,
-        xHandle: Optional[str] = None,
-        minScore: Optional[float] = None,
-        chain: Optional[str] = None,
+        name: str | None = None,
+        ticker: str | None = None,
+        xHandle: str | None = None,
+        minScore: float | None = None,
+        chain: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search for cryptocurrency projects using AIXBT API.
 

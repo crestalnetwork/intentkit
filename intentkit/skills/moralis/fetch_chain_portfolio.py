@@ -1,7 +1,6 @@
 """fetching wallet portfolio for a specific blockchain."""
 
 import logging
-from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +26,7 @@ class ChainTokenBalance(BaseModel):
     contract_address: str = Field(..., description="Token contract address")
     symbol: str = Field(..., description="Token symbol")
     name: str = Field(..., description="Token name")
-    logo: Optional[str] = Field(None, description="Token logo URL")
+    logo: str | None = Field(None, description="Token logo URL")
     decimals: int = Field(..., description="Token decimals")
     balance: float = Field(..., description="Token balance")
     balance_raw: str = Field(..., description="Raw token balance")
@@ -38,12 +37,12 @@ class TokenApproval(BaseModel):
     """Model for token approval."""
 
     token_address: str = Field(..., description="Token contract address")
-    token_symbol: Optional[str] = Field(None, description="Token symbol")
-    token_name: Optional[str] = Field(None, description="Token name")
+    token_symbol: str | None = Field(None, description="Token symbol")
+    token_name: str | None = Field(None, description="Token name")
     spender: str = Field(..., description="Spender address (contract)")
-    spender_name: Optional[str] = Field(None, description="Spender name if known")
+    spender_name: str | None = Field(None, description="Spender name if known")
     allowance: str = Field(..., description="Raw approval amount")
-    allowance_formatted: Optional[float] = Field(
+    allowance_formatted: float | None = Field(
         None, description="Formatted approval amount"
     )
     unlimited: bool = Field(False, description="Whether the approval is unlimited")
@@ -55,17 +54,17 @@ class ChainPortfolioOutput(BaseModel):
     address: str = Field(..., description="Wallet address")
     chain_id: int = Field(..., description="Chain ID")
     chain_name: str = Field(..., description="Chain name")
-    native_token: Optional[ChainTokenBalance] = Field(
+    native_token: ChainTokenBalance | None = Field(
         None, description="Native token balance"
     )
-    tokens: List[ChainTokenBalance] = Field(
+    tokens: list[ChainTokenBalance] = Field(
         default_factory=list, description="List of token balances"
     )
     total_usd_value: float = Field(0.0, description="Total USD value on this chain")
-    approvals: Optional[List[TokenApproval]] = Field(
+    approvals: list[TokenApproval] | None = Field(
         None, description="Token approvals if requested"
     )
-    error: Optional[str] = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message if any")
 
 
 class FetchChainPortfolio(WalletBaseTool):
@@ -87,7 +86,7 @@ class FetchChainPortfolio(WalletBaseTool):
         "- Token approvals (optional)\n"
         "Use this tool whenever a user wants to see their holdings on a specific blockchain."
     )
-    args_schema: Type[BaseModel] = FetchChainPortfolioInput
+    args_schema: type[BaseModel] = FetchChainPortfolioInput
 
     async def _arun(
         self, address: str, chain_id: int, include_approvals: bool = False, **kwargs

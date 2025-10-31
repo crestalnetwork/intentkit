@@ -1,7 +1,6 @@
 """Deck shuffling skill using Deck of Cards API."""
 
 import logging
-from typing import Type
 
 try:
     import httpx
@@ -53,7 +52,7 @@ class CasinoDeckShuffle(CasinoBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = CasinoDeckShuffleInput
+    args_schema: type[BaseModel] = CasinoDeckShuffleInput
 
     async def _arun(
         self, deck_count: int = 1, jokers_enabled: bool = False, **kwargs

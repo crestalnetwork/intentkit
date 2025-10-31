@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import httpx
 from coinbase_agentkit import CdpEvmWalletProvider
@@ -63,19 +63,19 @@ class TokenExecute(LiFiBaseTool):
         "Use token_quote first to check rates and fees before executing.\n"
         "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
     )
-    args_schema: Type[BaseModel] = TokenExecuteInput
+    args_schema: type[BaseModel] = TokenExecuteInput
     api_url: str = LIFI_API_URL
 
     # Configuration options
     default_slippage: float = 0.03
-    allowed_chains: Optional[List[str]] = None
+    allowed_chains: list[str] | None = None
     max_execution_time: int = 300
-    quote_tool: Optional[TokenQuote] = Field(default=None, exclude=True)
+    quote_tool: TokenQuote | None = Field(default=None, exclude=True)
 
     def __init__(
         self,
         default_slippage: float = 0.03,
-        allowed_chains: Optional[List[str]] = None,
+        allowed_chains: list[str] | None = None,
         max_execution_time: int = 300,
     ) -> None:
         """Initialize the TokenExecute skill with configuration options."""
@@ -90,7 +90,7 @@ class TokenExecute(LiFiBaseTool):
                 allowed_chains=allowed_chains,
             )
 
-    def _format_quote_result(self, data: Dict[str, Any]) -> str:
+    def _format_quote_result(self, data: dict[str, Any]) -> str:
         """Format the quote result in a readable format."""
         if self.quote_tool is None:
             raise RuntimeError("Quote tool is not initialized")
@@ -104,7 +104,7 @@ class TokenExecute(LiFiBaseTool):
         from_token: str,
         to_token: str,
         from_amount: str,
-        slippage: Optional[float] = None,
+        slippage: float | None = None,
         **kwargs,
     ) -> str:
         """Execute a token transfer."""
@@ -208,7 +208,7 @@ class TokenExecute(LiFiBaseTool):
         from_amount: str,
         slippage: float,
         from_address: str,
-    ) -> Dict[str, Any] | str:
+    ) -> dict[str, Any] | str:
         """Get quote from LiFi API."""
         api_params = build_quote_params(
             from_chain,
@@ -250,8 +250,8 @@ class TokenExecute(LiFiBaseTool):
         return data
 
     async def _handle_token_approval(
-        self, wallet_provider: CdpEvmWalletProvider, quote_data: Dict[str, Any]
-    ) -> Optional[str]:
+        self, wallet_provider: CdpEvmWalletProvider, quote_data: dict[str, Any]
+    ) -> str | None:
         """Handle ERC20 token approval if needed."""
         estimate = quote_data.get("estimate", {})
         approval_address = estimate.get("approvalAddress")
@@ -276,7 +276,7 @@ class TokenExecute(LiFiBaseTool):
     async def _execute_transfer_transaction(
         self,
         wallet_provider: CdpEvmWalletProvider,
-        quote_data: Dict[str, Any],
+        quote_data: dict[str, Any],
         from_address: str,
     ) -> str:
         """Execute the main transfer transaction."""
@@ -310,7 +310,7 @@ class TokenExecute(LiFiBaseTool):
         tx_hash: str,
         from_chain: str,
         to_chain: str,
-        quote_data: Dict[str, Any],
+        quote_data: dict[str, Any],
     ) -> str:
         """Finalize transfer and return formatted result."""
         self.logger.info(f"Transaction sent: {tx_hash}")
@@ -417,7 +417,7 @@ class TokenExecute(LiFiBaseTool):
         token_address: str,
         approval_address: str,
         amount: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Check if token allowance is sufficient and set approval if needed."""
         try:
             # Normalize addresses

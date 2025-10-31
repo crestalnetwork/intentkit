@@ -1,4 +1,3 @@
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +12,7 @@ class NationBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     def get_api_key(self) -> str:
         return config.nation_api_key

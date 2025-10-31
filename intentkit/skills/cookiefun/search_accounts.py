@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -38,17 +38,17 @@ class SearchAccountsInput(BaseModel):
         description="Search query to find Twitter accounts that authored tweets matching the criteria"
     )
 
-    type: Optional[int] = Field(
+    type: int | None = Field(
         default=None,
         description="Type of tweets to search for: 0 for Original, 1 for Reply, 2 for Quote (leave empty for all types)",
     )
 
-    sortBy: Optional[int] = Field(
+    sortBy: int | None = Field(
         default=None,
         description="Sort by: 0 for SmartEngagementPoints, 1 for Impressions, 2 for MatchingTweetsCount",
     )
 
-    sortOrder: Optional[int] = Field(
+    sortOrder: int | None = Field(
         default=None,
         description="Sort order: 0 for Ascending, 1 for Descending",
     )
@@ -59,16 +59,16 @@ class SearchAccounts(CookieFunBaseTool):
 
     name: str = "cookiefun_search_accounts"
     description: str = "Searches for Twitter accounts that authored tweets matching specified search criteria."
-    args_schema: Type[BaseModel] = SearchAccountsInput
+    args_schema: type[BaseModel] = SearchAccountsInput
 
     async def _arun(
         self,
         searchQuery: str,
-        type: Optional[int] = None,
-        sortBy: Optional[int] = None,
-        sortOrder: Optional[int] = None,
+        type: int | None = None,
+        sortBy: int | None = None,
+        sortOrder: int | None = None,
         **kwargs,
-    ) -> Union[List[Dict[str, Any]], str]:
+    ) -> list[dict[str, Any]] | str:
         """
         Search for Twitter accounts based on tweet content.
 

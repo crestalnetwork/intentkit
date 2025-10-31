@@ -1,12 +1,11 @@
 import logging
-from typing import List, Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.venice_audio import VeniceAudioTool
 
 logger = logging.getLogger(__name__)
-
 
 _cache: dict[str, VeniceAudioBaseTool] = {}
 
@@ -24,15 +23,15 @@ class Config(SkillConfig):
     enabled: bool
     voice_model: Literal["af_heart", "bm_lewis", "custom"]
     states: SkillStates  # type: ignore
-    api_key_provider: Optional[Literal["agent_owner"]]
+    api_key_provider: Literal["agent_owner"] | None
 
     # conditionally required
-    api_key: Optional[str]
-    voice_model_custom: Optional[list[str]]
+    api_key: str | None
+    voice_model_custom: list[str] | None
 
     # optional
-    rate_limit_number: Optional[int]
-    rate_limit_minutes: Optional[int]
+    rate_limit_number: int | None
+    rate_limit_minutes: int | None
 
 
 async def get_skills(
@@ -54,7 +53,7 @@ async def get_skills(
     if not config.get("enabled", False):
         return []
 
-    available_skills: List[VeniceAudioBaseTool] = []
+    available_skills: list[VeniceAudioBaseTool] = []
     skill_states = config.get("states", {})
 
     # Iterate through all known skills defined in the map
@@ -79,7 +78,7 @@ async def get_skills(
 
 def get_venice_audio_skill(
     name: str,
-) -> Optional[VeniceAudioBaseTool]:
+) -> VeniceAudioBaseTool | None:
     """
     Factory function to get a cached Venice Audio skill instance by name.
 

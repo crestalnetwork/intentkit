@@ -1,6 +1,5 @@
 import datetime
 import logging
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +32,7 @@ class TwitterSearchTweets(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterSearchTweetsInput
+    args_schema: type[BaseModel] = TwitterSearchTweetsInput
 
     async def _arun(self, query: str, **kwargs):
         context = self.get_context()

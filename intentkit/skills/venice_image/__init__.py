@@ -1,5 +1,5 @@
 import logging
-from typing import NotRequired, Optional, TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.skills.base import (
     SkillConfig,
@@ -61,12 +61,12 @@ class Config(SkillConfig):
     enabled: bool  # Keep standard enabled flag
     states: SkillStates
     api_key_provider: str = "agent_owner"
-    api_key: NotRequired[Optional[str]]  # Explicitly Optional
+    api_key: NotRequired[str | None]  # Explicitly Optional
     safe_mode: NotRequired[bool]  # Defaults handled in base or usage
     hide_watermark: NotRequired[bool]  # Defaults handled in base or usage
     negative_prompt: NotRequired[str]  # Defaults handled in base or usage
-    rate_limit_number: NotRequired[Optional[int]]  # Explicitly Optional
-    rate_limit_minutes: NotRequired[Optional[int]]  # Explicitly Optional
+    rate_limit_number: NotRequired[int | None]  # Explicitly Optional
+    rate_limit_minutes: NotRequired[int | None]  # Explicitly Optional
 
 
 _SKILL_NAME_TO_CLASS_MAP: dict[str, type[VeniceImageBaseTool]] = {
@@ -122,7 +122,7 @@ async def get_skills(
 def get_venice_image_skill(
     name: str,
     config: "Config",
-) -> Optional[VeniceImageBaseTool]:
+) -> VeniceImageBaseTool | None:
     """
     Factory function to get a cached Venice Image skill instance by name.
 

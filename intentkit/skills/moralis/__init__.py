@@ -1,7 +1,7 @@
 """Wallet Portfolio Skills for IntentKit."""
 
 import logging
-from typing import Dict, List, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -28,14 +28,14 @@ class Config(SkillConfig):
 
     api_key: str
     states: SkillStates
-    supported_chains: NotRequired[Dict[str, bool]] = {"evm": True, "solana": True}
+    supported_chains: NotRequired[dict[str, bool]] = {"evm": True, "solana": True}
 
 
 async def get_skills(
     config: "Config",
     is_private: bool,
     **_,
-) -> List[WalletBaseTool]:
+) -> list[WalletBaseTool]:
     """Get all Wallet Portfolio skills.
 
     Args:

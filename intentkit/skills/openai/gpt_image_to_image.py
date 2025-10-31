@@ -3,7 +3,7 @@
 import base64
 import logging
 from io import BytesIO
-from typing import Literal, Type
+from typing import Literal
 
 import httpx
 import openai
@@ -55,7 +55,7 @@ class GPTImageToImage(OpenAIBaseTool):
         "based on text descriptions.\n"
         "You can specify size and quality parameters for more control.\n"
     )
-    args_schema: Type[BaseModel] = GPTImageToImageInput
+    args_schema: type[BaseModel] = GPTImageToImageInput
 
     async def _arun(
         self,
@@ -72,7 +72,6 @@ class GPTImageToImage(OpenAIBaseTool):
             prompt: Text prompt describing the desired edits to the image.
             size: Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto
             quality: Quality of the generated image. Options: high, medium, low, auto
-
 
         Returns:
             str: URL of the edited image.

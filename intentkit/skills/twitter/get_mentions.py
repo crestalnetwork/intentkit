@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Type
+from datetime import UTC, datetime, timedelta
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel
@@ -38,7 +37,7 @@ class TwitterGetMentions(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = TwitterGetMentionsInput
+    args_schema: type[BaseModel] = TwitterGetMentionsInput
 
     async def _arun(self, **kwargs) -> list[Tweet]:
         context = self.get_context()
@@ -68,7 +67,7 @@ class TwitterGetMentions(TwitterBaseTool):
                 max_results = 30
 
             # Always get mentions for the last day
-            start_time = datetime.now(tz=timezone.utc) - timedelta(days=1)
+            start_time = datetime.now(tz=UTC) - timedelta(days=1)
 
             user_id = twitter.self_id
             if not user_id:

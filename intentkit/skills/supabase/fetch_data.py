@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -17,22 +17,22 @@ class SupabaseFetchDataInput(BaseModel):
     """Input for SupabaseFetchData tool."""
 
     table: str = Field(description="The name of the table to fetch data from")
-    columns: Optional[str] = Field(
+    columns: str | None = Field(
         default="*",
         description="Comma-separated list of columns to select (default: '*' for all)",
     )
-    filters: Optional[Dict[str, Any]] = Field(
+    filters: dict[str, Any] | None = Field(
         default=None,
         description="Dictionary of filters to apply (e.g., {'column': 'value', 'age': {'gte': 18}})",
     )
-    order_by: Optional[str] = Field(default=None, description="Column to order by")
+    order_by: str | None = Field(default=None, description="Column to order by")
     ascending: bool = Field(
         default=True, description="Whether to order in ascending order (default: True)"
     )
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         default=None, description="Maximum number of records to return"
     )
-    offset: Optional[int] = Field(
+    offset: int | None = Field(
         default=None, description="Number of records to skip for pagination"
     )
 
@@ -45,17 +45,17 @@ class SupabaseFetchData(SupabaseBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = SupabaseFetchDataInput
+    args_schema: type[BaseModel] = SupabaseFetchDataInput
 
     async def _arun(
         self,
         table: str,
-        columns: Optional[str] = "*",
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[str] = None,
+        columns: str | None = "*",
+        filters: dict[str, Any] | None = None,
+        order_by: str | None = None,
         ascending: bool = True,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         **kwargs,
     ):
         try:

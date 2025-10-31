@@ -1,7 +1,7 @@
 """Base class for token-related skills."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 import aiohttp
 
@@ -35,7 +35,7 @@ class TokenBaseTool(IntentKitSkill):
             return skill_config.get("api_key")
         return config.moralis_api_key
 
-    def _prepare_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert boolean values to lowercase strings for API compatibility.
 
         Args:
@@ -60,9 +60,9 @@ class TokenBaseTool(IntentKitSkill):
         method: str,
         endpoint: str,
         api_key: str,
-        params: Dict[str, Any] = None,
-        data: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
+        params: dict[str, Any] = None,
+        data: dict[str, Any] = None,
+    ) -> dict[str, Any]:
         """Make a request to the Moralis API.
 
         Args:

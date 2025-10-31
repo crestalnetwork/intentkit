@@ -1,7 +1,6 @@
 """CryptoCompare API implementation and shared schemas."""
 
 import time
-from typing import List
 
 import httpx
 from pydantic import BaseModel, Field
@@ -25,7 +24,7 @@ class FetchPriceInput(BaseModel):
         ...,
         description="Base cryptocurrency symbol to get prices for (e.g., 'BTC', 'ETH')",
     )
-    to_symbols: List[str] = Field(
+    to_symbols: list[str] = Field(
         ...,
         description="List of target currencies (fiat or crypto) (e.g., ['USD', 'EUR', 'JPY'])",
     )
@@ -70,7 +69,7 @@ class FetchTopVolumeInput(BaseModel):
 
 
 # API Functions
-async def fetch_price(api_key: str, from_symbol: str, to_symbols: List[str]) -> dict:
+async def fetch_price(api_key: str, from_symbol: str, to_symbols: list[str]) -> dict:
     """
     Fetch current price for a cryptocurrency in multiple currencies.
     """

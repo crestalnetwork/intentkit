@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -17,10 +17,10 @@ class SupabaseInvokeFunctionInput(BaseModel):
     """Input for SupabaseInvokeFunction tool."""
 
     function_name: str = Field(description="The name of the Edge Function to invoke")
-    parameters: Optional[Dict[str, Any]] = Field(
+    parameters: dict[str, Any] | None = Field(
         default=None, description="Optional parameters to pass to the function"
     )
-    headers: Optional[Dict[str, str]] = Field(
+    headers: dict[str, str] | None = Field(
         default=None, description="Optional headers to include in the request"
     )
 
@@ -33,13 +33,13 @@ class SupabaseInvokeFunction(SupabaseBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = SupabaseInvokeFunctionInput
+    args_schema: type[BaseModel] = SupabaseInvokeFunctionInput
 
     async def _arun(
         self,
         function_name: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         **kwargs,
     ):
         try:

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,14 +31,14 @@ class TokenAnalytics(TokenBaseTool):
         "Get analytics for a token by token address. "
         "Returns trading volumes, number of buyers/sellers, and liquidity information over various time periods."
     )
-    args_schema: Type[BaseModel] = TokenAnalyticsInput
+    args_schema: type[BaseModel] = TokenAnalyticsInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch token analytics from Moralis.
 
         Args:

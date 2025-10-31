@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -46,8 +45,8 @@ class AgentStatistics(BaseModel):
 async def get_agent_statistics(
     agent_id: str,
     *,
-    end_time: Optional[datetime] = None,
-    session: Optional[AsyncSession] = None,
+    end_time: datetime | None = None,
+    session: AsyncSession | None = None,
 ) -> AgentStatistics:
     """Calculate statistics for an agent credit account.
 
@@ -64,11 +63,11 @@ async def get_agent_statistics(
 
     managed_session = session is None
     if end_time is None:
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
     elif end_time.tzinfo is None:
-        end_time = end_time.replace(tzinfo=timezone.utc)
+        end_time = end_time.replace(tzinfo=UTC)
     else:
-        end_time = end_time.astimezone(timezone.utc)
+        end_time = end_time.astimezone(UTC)
 
     async def _compute(session: AsyncSession) -> AgentStatistics:
         account = await CreditAccount.get_or_create_in_session(

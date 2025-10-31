@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -18,22 +18,22 @@ class X402HttpRequestInput(BaseModel):
     url: str = Field(
         description="Absolute URL for the request (must include scheme and host)."
     )
-    headers: Optional[Dict[str, str]] = Field(
+    headers: dict[str, str] | None = Field(
         default=None,
         description="Optional headers to include in the request.",
     )
-    params: Optional[Dict[str, Any]] = Field(
+    params: dict[str, Any] | None = Field(
         default=None,
         description="Optional query parameters to include in the request.",
     )
-    data: Optional[Union[Dict[str, Any], str]] = Field(
+    data: dict[str, Any] | str | None = Field(
         default=None,
         description=(
             "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
             "Only supported for POST requests."
         ),
     )
-    timeout: Optional[float] = Field(
+    timeout: float | None = Field(
         default=30.0,
         description="Request timeout in seconds.",
     )
@@ -48,15 +48,15 @@ class X402HttpRequest(X402BaseSkill):
         "Provide the method, absolute URL, optional headers, query parameters, and request body. "
         "Returns the response status and body text."
     )
-    args_schema: Type[BaseModel] = X402HttpRequestInput
+    args_schema: type[BaseModel] = X402HttpRequestInput
 
     async def _arun(
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Union[Dict[str, Any], str]] = None,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | str | None = None,
         timeout: float = 30.0,
         **_: Any,
     ) -> str:
@@ -71,7 +71,7 @@ class X402HttpRequest(X402BaseSkill):
             raise ToolException("URL must include scheme and host (absolute URL).")
 
         request_headers = dict(headers or {})
-        request_kwargs: Dict[str, Any] = {
+        request_kwargs: dict[str, Any] = {
             "url": url,
             "headers": request_headers or None,
             "params": params,

@@ -1,4 +1,4 @@
-from typing import Literal, Type
+from typing import Literal
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -57,7 +57,6 @@ class AlloraGetPrice(AlloraBaseTool):
     The Allora Price Prediction Feed tool fetches the price prediction feed from the Allora API.
     Ethereum (ETH) or Bitcoin (BTC) price predictions (5-minute, 8-hour)
 
-
     Attributes:
         name (str): Name of the tool, specifically "get_price_prediction".
         description (str): Comprehensive description of the tool's purpose and functionality.
@@ -69,7 +68,7 @@ class AlloraGetPrice(AlloraBaseTool):
         The Allora Price Prediction Feed tool fetches the price prediction feed from the Allora API.
         Ethereum (ETH) or Bitcoin (BTC) price predictions (5-minute, 8-hour)
         """
-    args_schema: Type[BaseModel] = AlloraGetPriceInput
+    args_schema: type[BaseModel] = AlloraGetPriceInput
 
     def _run(self, question: str) -> AlloraGetPriceOutput:
         """Run the tool to get the token price prediction from Allora API.

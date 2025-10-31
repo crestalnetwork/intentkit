@@ -1,7 +1,7 @@
 """x402 skill category."""
 
 import logging
-from typing import Type, TypedDict
+from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.x402.ask_agent import X402AskAgent
@@ -24,7 +24,7 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-_SKILL_BUILDERS: dict[str, Type[X402BaseSkill]] = {
+_SKILL_BUILDERS: dict[str, type[X402BaseSkill]] = {
     "x402_ask_agent": X402AskAgent,
     "x402_http_request": X402HttpRequest,
 }

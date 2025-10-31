@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -10,12 +10,12 @@ from intentkit.skills.cookiefun.constants import DEFAULT_HEADERS, ENDPOINTS
 class GetAccountDetailsInput(BaseModel):
     """Input for GetAccountDetails tool."""
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         default=None,
         description="Twitter username (either username or userId is required)",
     )
 
-    userId: Optional[str] = Field(
+    userId: str | None = Field(
         default=None,
         description="Twitter user ID (either username or userId is required)",
     )
@@ -26,14 +26,14 @@ class GetAccountDetails(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_details"
     description: str = "Retrieves detailed information about a Twitter account including followers, following, posts, metrics, and engagement data."
-    args_schema: Type[BaseModel] = GetAccountDetailsInput
+    args_schema: type[BaseModel] = GetAccountDetailsInput
 
     async def _arun(
         self,
-        username: Optional[str] = None,
-        userId: Optional[str] = None,
+        username: str | None = None,
+        userId: str | None = None,
         **kwargs,
-    ) -> Union[Dict[str, Any], str]:
+    ) -> dict[str, Any] | str:
         """
         Get detailed information about a Twitter account.
 

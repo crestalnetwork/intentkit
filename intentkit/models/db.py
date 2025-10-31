@@ -1,5 +1,6 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncGenerator, Optional
+from typing import Annotated
 from urllib.parse import quote_plus
 
 from intentkit.models.db_mig import safe_migrate
@@ -12,7 +13,7 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 engine = None
-_langgraph_checkpointer: Optional[Checkpointer] = None
+_langgraph_checkpointer: Checkpointer | None = None
 
 
 async def check_connection(conn):
@@ -28,11 +29,11 @@ async def check_connection(conn):
 
 
 async def init_db(
-    host: Optional[str],
-    username: Optional[str],
-    password: Optional[str],
-    dbname: Optional[str],
-    port: Annotated[Optional[str], Field(default="5432", description="Database port")],
+    host: str | None,
+    username: str | None,
+    password: str | None,
+    dbname: str | None,
+    port: Annotated[str | None, Field(default="5432", description="Database port")],
     auto_migrate: Annotated[
         bool, Field(default=True, description="Whether to run migrations automatically")
     ],

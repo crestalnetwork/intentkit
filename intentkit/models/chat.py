@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, List, NotRequired, Optional, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from epyxid import XID
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -66,7 +66,7 @@ class ChatMessageAttachment(TypedDict):
         ),
     ]
     url: Annotated[
-        Optional[str],
+        str | None,
         Field(
             ...,
             description="URL of the attachment",
@@ -74,7 +74,7 @@ class ChatMessageAttachment(TypedDict):
         ),
     ]
     json: Annotated[
-        Optional[dict],
+        dict | None,
         Field(
             None,
             description="JSON data of the attachment",
@@ -115,7 +115,7 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
     app_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
             None,
             description="Optional application identifier",
@@ -142,21 +142,21 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
     search_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable search mode",
         ),
     ]
     super_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable super mode",
         ),
     ]
     attachments: Annotated[
-        Optional[List[ChatMessageAttachment]],
+        list[ChatMessageAttachment] | None,
         Field(
             None,
             description="Optional list of attachments (links, images, or files)",
@@ -310,29 +310,29 @@ class ChatMessageCreate(BaseModel):
     ]
     chat_id: Annotated[str, Field(description="ID of the chat this message belongs to")]
     user_id: Annotated[
-        Optional[str],
+        str | None,
         Field(description="ID of the user this message belongs to or reply to"),
     ]
     author_id: Annotated[str, Field(description="ID of the message author")]
     author_type: Annotated[AuthorType, Field(description="Type of the message author")]
     model: Annotated[
-        Optional[str], Field(None, description="LLM model used if applicable")
+        str | None, Field(None, description="LLM model used if applicable")
     ]
     thread_type: Annotated[
-        Optional[AuthorType],
+        AuthorType | None,
         Field(None, description="Author Type of the message thread start"),
     ]
     reply_to: Annotated[
-        Optional[str],
+        str | None,
         Field(None, description="ID of the message this message is a reply to"),
     ]
     message: Annotated[str, Field(description="Content of the message")]
     attachments: Annotated[
-        Optional[List[ChatMessageAttachment]],
+        list[ChatMessageAttachment] | None,
         Field(None, description="List of attachments in the message"),
     ]
     skill_calls: Annotated[
-        Optional[List[ChatMessageSkillCall]],
+        list[ChatMessageSkillCall] | None,
         Field(None, description="Skill call details"),
     ]
     input_tokens: Annotated[
@@ -345,11 +345,11 @@ class ChatMessageCreate(BaseModel):
         float, Field(0.0, description="Time cost for the message in seconds")
     ]
     credit_event_id: Annotated[
-        Optional[str],
+        str | None,
         Field(None, description="ID of the credit event for this message"),
     ]
     credit_cost: Annotated[
-        Optional[Decimal],
+        Decimal | None,
         Field(None, description="Credit cost for the message in credits"),
     ]
     cold_start_cost: Annotated[
@@ -357,19 +357,19 @@ class ChatMessageCreate(BaseModel):
         Field(0.0, description="Cost for the cold start of the message in seconds"),
     ]
     app_id: Annotated[
-        Optional[str],
+        str | None,
         Field(None, description="Optional application identifier"),
     ]
     search_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(None, description="Optional flag to enable search mode"),
     ]
     super_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(None, description="Optional flag to enable super mode"),
     ]
     error_type: Annotated[
-        Optional[SystemMessageType],
+        SystemMessageType | None,
         Field(None, description="Optional error type, used when author_type is system"),
     ]
 
@@ -528,7 +528,7 @@ class ChatMessage(ChatMessageCreate):
         return ChatMessage.model_validate(sanitized_data)
 
     @classmethod
-    async def get(cls, message_id: str) -> Optional["ChatMessage"]:
+    async def get(cls, message_id: str) -> "ChatMessage" | None:
         async with get_session() as db:
             raw = await db.get(ChatMessageTable, message_id)
             if raw:
@@ -571,7 +571,7 @@ class ChatTable(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -626,7 +626,7 @@ class Chat(ChatCreate):
     ]
 
     @classmethod
-    async def get(cls, id: str) -> Optional["Chat"]:
+    async def get(cls, id: str) -> "Chat" | None:
         """Get a chat by its ID.
 
         Args:
@@ -690,7 +690,7 @@ class Chat(ChatCreate):
             return self
 
     @classmethod
-    async def get_by_agent_user(cls, agent_id: str, user_id: str) -> List["Chat"]:
+    async def get_by_agent_user(cls, agent_id: str, user_id: str) -> list["Chat"]:
         """Get all chats for a specific agent and user.
 
         Args:

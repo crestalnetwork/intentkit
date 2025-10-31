@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -20,11 +20,11 @@ class WalletProfitabilityInput(BaseModel):
         description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
         default=DEFAULT_CHAIN,
     )
-    days: Optional[str] = Field(
+    days: str | None = Field(
         description="Timeframe in days for which profitability is calculated. Options: 'all', '7', '30', '60', '90'.",
         default="all",
     )
-    token_addresses: Optional[List[str]] = Field(
+    token_addresses: list[str] | None = Field(
         description="The token addresses list to filter the result with.",
         default=None,
     )
@@ -42,16 +42,16 @@ class WalletProfitability(PortfolioBaseTool):
         "Retrieve detailed profitability breakdown for a wallet, including profit/loss per token, "
         "average buy/sell prices, and realized profits. Can be filtered by specific tokens."
     )
-    args_schema: Type[BaseModel] = WalletProfitabilityInput
+    args_schema: type[BaseModel] = WalletProfitabilityInput
 
     async def _arun(
         self,
         address: str,
         chain: str = DEFAULT_CHAIN,
-        days: Optional[str] = "all",
-        token_addresses: Optional[List[str]] = None,
+        days: str | None = "all",
+        token_addresses: list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch detailed wallet profitability from Moralis.
 
         Args:

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
@@ -23,10 +23,8 @@ async def get_expiring_tokens(minutes_threshold: int = 10) -> list[AgentDataTabl
     Returns:
         List of AgentData records with expiring tokens
     """
-    expiration_threshold = datetime.now(timezone.utc) + timedelta(
-        minutes=minutes_threshold
-    )
-    broken = datetime.now(timezone.utc) - timedelta(days=1)
+    expiration_threshold = datetime.now(UTC) + timedelta(minutes=minutes_threshold)
+    broken = datetime.now(UTC) - timedelta(days=1)
 
     async with get_session() as db:
         result = await db.execute(
@@ -61,7 +59,7 @@ async def refresh_token(agent_data_record: AgentDataTable):
         agent_data.twitter_refresh_token = token.get("refresh_token")
         if "expires_at" in token:
             agent_data.twitter_access_token_expires_at = datetime.fromtimestamp(
-                token["expires_at"], timezone.utc
+                token["expires_at"], UTC
             )
 
         await agent_data.save()

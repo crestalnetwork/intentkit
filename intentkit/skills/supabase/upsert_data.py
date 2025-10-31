@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Type, Union
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -19,7 +19,7 @@ class SupabaseUpsertDataInput(BaseModel):
     """Input for SupabaseUpsertData tool."""
 
     table: str = Field(description="The name of the table to upsert data into")
-    data: Union[Dict[str, Any], List[Dict[str, Any]]] = Field(
+    data: dict[str, Any] | list[dict[str, Any]] = Field(
         description="The data to upsert. Can be a single object or a list of objects"
     )
     on_conflict: str = Field(
@@ -38,12 +38,12 @@ class SupabaseUpsertData(SupabaseBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = SupabaseUpsertDataInput
+    args_schema: type[BaseModel] = SupabaseUpsertDataInput
 
     async def _arun(
         self,
         table: str,
-        data: Union[Dict[str, Any], List[Dict[str, Any]]],
+        data: dict[str, Any] | list[dict[str, Any]],
         on_conflict: str,
         returning: str = "*",
         **kwargs,

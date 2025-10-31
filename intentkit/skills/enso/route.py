@@ -1,4 +1,3 @@
-from typing import Type
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -155,7 +154,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
     name: str = "enso_route_shortcut"
     description: str = "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId."
-    args_schema: Type[BaseModel] = EnsoRouteShortcutInput
+    args_schema: type[BaseModel] = EnsoRouteShortcutInput
 
     async def _arun(
         self,

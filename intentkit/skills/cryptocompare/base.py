@@ -1,8 +1,8 @@
 """Base class for all CryptoCompare tools."""
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Type
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -25,7 +25,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: Type[BaseModel]
+    args_schema: type[BaseModel]
 
     @property
     def category(self) -> str:
@@ -43,7 +43,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         """
         rate_limit = await self.get_agent_skill_data("rate_limit")
 
-        current_time = datetime.now(tz=timezone.utc)
+        current_time = datetime.now(tz=UTC)
 
         if (
             rate_limit
@@ -68,7 +68,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         return
 
     async def fetch_price(
-        self, api_key: str, from_symbol: str, to_symbols: List[str]
+        self, api_key: str, from_symbol: str, to_symbols: list[str]
     ) -> dict:
         """Fetch current price for a cryptocurrency in multiple currencies.
 
@@ -263,7 +263,7 @@ class CryptoNews(BaseModel):
     tags: str
     categories: str
     source: str
-    source_info: Dict[str, Any] = Field(default_factory=dict)
+    source_info: dict[str, Any] = Field(default_factory=dict)
 
 
 class CryptoExchange(BaseModel):

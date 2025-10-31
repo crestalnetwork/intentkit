@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional, Type
 
 import httpx
 from langchain_core.documents import Document
@@ -16,7 +15,7 @@ class FirecrawlScrapeInput(BaseModel):
     url: str = Field(
         description="The URL to scrape. Must be a valid HTTP or HTTPS URL."
     )
-    formats: List[str] = Field(
+    formats: list[str] = Field(
         description="Output formats to include in the response. Options: 'markdown', 'html', 'rawHtml', 'screenshot', 'links', 'json'",
         default=["markdown"],
     )
@@ -24,11 +23,11 @@ class FirecrawlScrapeInput(BaseModel):
         description="Whether to extract only the main content (excluding headers, footers, navigation, etc.)",
         default=True,
     )
-    include_tags: Optional[List[str]] = Field(
+    include_tags: list[str] | None = Field(
         description="HTML tags, classes, or IDs to include in the response (e.g., ['h1', 'p', '.main-content'])",
         default=None,
     )
-    exclude_tags: Optional[List[str]] = Field(
+    exclude_tags: list[str] | None = Field(
         description="HTML tags, classes, or IDs to exclude from the response (e.g., ['#ad', '#footer'])",
         default=None,
     )
@@ -81,15 +80,15 @@ class FirecrawlScrape(FirecrawlBaseTool):
         "This tool can handle JavaScript-rendered content, PDFs, and dynamic websites. "
         "Use this when you want to refresh/update content from a URL that was previously scraped."
     )
-    args_schema: Type[BaseModel] = FirecrawlScrapeInput
+    args_schema: type[BaseModel] = FirecrawlScrapeInput
 
     async def _arun(
         self,
         url: str,
-        formats: List[str] = None,
+        formats: list[str] = None,
         only_main_content: bool = True,
-        include_tags: Optional[List[str]] = None,
-        exclude_tags: Optional[List[str]] = None,
+        include_tags: list[str] | None = None,
+        exclude_tags: list[str] | None = None,
         wait_for: int = 0,
         timeout: int = 30000,
         index_content: bool = True,

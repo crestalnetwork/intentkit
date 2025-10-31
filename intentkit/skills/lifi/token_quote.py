@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -52,17 +52,17 @@ class TokenQuote(LiFiBaseTool):
         "Use this tool to check rates, fees, and estimated time for token transfers without executing them.\n"
         "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
     )
-    args_schema: Type[BaseModel] = TokenQuoteInput
+    args_schema: type[BaseModel] = TokenQuoteInput
     api_url: str = LIFI_API_URL
 
     # Configuration options
     default_slippage: float = 0.03
-    allowed_chains: Optional[List[str]] = None
+    allowed_chains: list[str] | None = None
 
     def __init__(
         self,
         default_slippage: float = 0.03,
-        allowed_chains: Optional[List[str]] = None,
+        allowed_chains: list[str] | None = None,
     ) -> None:
         """Initialize the TokenQuote skill with configuration options."""
         super().__init__()
@@ -76,7 +76,7 @@ class TokenQuote(LiFiBaseTool):
         from_token: str,
         to_token: str,
         from_amount: str,
-        slippage: Optional[float] = None,
+        slippage: float | None = None,
         **kwargs,
     ) -> str:
         """Get a quote for token transfer."""
@@ -138,7 +138,7 @@ class TokenQuote(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             return f"An unexpected error occurred: {str(e)}"
 
-    def _format_quote_result(self, data: Dict[str, Any]) -> str:
+    def _format_quote_result(self, data: dict[str, Any]) -> str:
         """Format quote result into human-readable text."""
         try:
             # Get basic info

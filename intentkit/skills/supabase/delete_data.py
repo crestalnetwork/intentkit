@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any
 
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
@@ -17,7 +17,7 @@ class SupabaseDeleteDataInput(BaseModel):
     """Input for SupabaseDeleteData tool."""
 
     table: str = Field(description="The name of the table to delete data from")
-    filters: Dict[str, Any] = Field(
+    filters: dict[str, Any] = Field(
         description="Dictionary of filters to identify which records to delete (e.g., {'id': 123})"
     )
     returning: str = Field(
@@ -34,12 +34,12 @@ class SupabaseDeleteData(SupabaseBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: Type[BaseModel] = SupabaseDeleteDataInput
+    args_schema: type[BaseModel] = SupabaseDeleteDataInput
 
     async def _arun(
         self,
         table: str,
-        filters: Dict[str, Any],
+        filters: dict[str, Any],
         returning: str = "*",
         **kwargs,
     ):

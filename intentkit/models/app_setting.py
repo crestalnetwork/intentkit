@@ -1,8 +1,8 @@
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -33,7 +33,7 @@ DEFAULT_SYSTEM_MESSAGES = {
 }
 
 # In-memory cache for app settings
-_cache: Dict[str, Dict[str, Any]] = {}
+_cache: dict[str, dict[str, Any]] = {}
 _cache_ttl = 180  # 3 minutes in seconds
 
 
@@ -59,7 +59,7 @@ class AppSettingTable(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -117,7 +117,7 @@ class PaymentSettings(BaseModel):
         Field(default=False, description="Whether agent whitelist is enabled"),
     ]
     agent_whitelist: Annotated[
-        List[str],
+        list[str],
         Field(default_factory=list, description="List of whitelisted agent IDs"),
     ]
 
@@ -133,7 +133,7 @@ class PaymentSettings(BaseModel):
         """Round decimal values to 4 decimal places."""
         if isinstance(v, Decimal):
             return v.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
-        elif isinstance(v, (int, float)):
+        elif isinstance(v, int | float):
             return Decimal(str(v)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
         return v
 

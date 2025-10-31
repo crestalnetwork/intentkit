@@ -2,7 +2,7 @@
 
 import logging
 import textwrap
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from epyxid import XID
 from fastapi import (
@@ -43,7 +43,7 @@ router_ro = APIRouter()
 
 
 def get_real_user_id(
-    agent_token: AgentToken, user_id: Optional[str], agent_owner: Optional[str]
+    agent_token: AgentToken, user_id: str | None, agent_owner: str | None
 ) -> str:
     """Generate real user_id based on agent token and user_id.
 
@@ -70,9 +70,9 @@ def get_real_user_id(
 class ChatMessagesResponse(BaseModel):
     """Response model for chat messages with pagination."""
 
-    data: List[ChatMessage]
+    data: list[ChatMessage]
     has_more: bool = False
-    next_cursor: Optional[str] = None
+    next_cursor: str | None = None
 
     model_config = ConfigDict(
         use_enum_values=True,
@@ -110,7 +110,7 @@ class ChatMessageRequest(BaseModel):
     """
 
     user_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
             None,
             description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
@@ -118,7 +118,7 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
     app_id: Annotated[
-        Optional[str],
+        str | None,
         Field(
             None,
             description="Optional application identifier",
@@ -136,28 +136,28 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
     stream: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Whether to stream the response",
         ),
     ]
     search_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable search mode",
         ),
     ]
     super_mode: Annotated[
-        Optional[bool],
+        bool | None,
         Field(
             None,
             description="Optional flag to enable super mode",
         ),
     ]
     attachments: Annotated[
-        Optional[List[ChatMessageAttachment]],
+        list[ChatMessageAttachment] | None,
         Field(
             None,
             description="Optional list of attachments (links, images, or files)",
@@ -187,14 +187,14 @@ class ChatMessageRequest(BaseModel):
 
 @router_ro.get(
     "/chats",
-    response_model=List[Chat],
+    response_model=list[Chat],
     operation_id="list_chats",
     summary="List chat threads",
     description="Retrieve all chat threads for the current user.",
     tags=["Thread"],
 )
 async def get_chats(
-    user_id: Optional[str] = Query(
+    user_id: str | None = Query(
         None,
         description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
     ),
@@ -222,7 +222,7 @@ async def get_chats(
     tags=["Thread"],
 )
 async def create_chat(
-    user_id: Optional[str] = Query(
+    user_id: str | None = Query(
         None,
         description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
     ),
@@ -263,7 +263,7 @@ async def create_chat(
 )
 async def get_chat(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: Optional[str] = Query(
+    user_id: str | None = Query(
         None,
         description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
     ),
@@ -349,9 +349,7 @@ async def get_messages(
     chat_id: str = Path(..., description="Chat ID"),
     agent_token: AgentToken = Depends(verify_agent_token),
     db: AsyncSession = Depends(get_db),
-    cursor: Optional[str] = Query(
-        None, description="Cursor for pagination (message id)"
-    ),
+    cursor: str | None = Query(None, description="Cursor for pagination (message id)"),
     limit: int = Query(
         20, ge=1, le=100, description="Maximum number of messages to return"
     ),
@@ -393,7 +391,7 @@ async def get_messages(
 
 @router_rw.post(
     "/chats/{chat_id}/messages",
-    response_model=List[ChatMessage],
+    response_model=list[ChatMessage],
     operation_id="send_message_to_chat",
     summary="Send a message to a chat thread",
     description=(
@@ -481,7 +479,7 @@ async def send_message(
 
 @router_rw.post(
     "/chats/{chat_id}/messages/retry",
-    response_model=List[ChatMessage],
+    response_model=list[ChatMessage],
     operation_id="retry_message_in_chat",
     summary="Retry a message in a chat thread",
     description="Retry sending the last message in a specific chat thread. If the last message is from the system, returns all messages after the last user message. If the last message is from a user, generates a new response. Only works with non-streaming mode.",
@@ -489,7 +487,7 @@ async def send_message(
 )
 async def retry_message(
     chat_id: str = Path(..., description="Chat ID"),
-    user_id: Optional[str] = Query(
+    user_id: str | None = Query(
         None,
         description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
     ),
@@ -634,7 +632,7 @@ async def retry_message(
 )
 async def get_message(
     message_id: str = Path(..., description="Message ID"),
-    user_id: Optional[str] = Query(
+    user_id: str | None = Query(
         None,
         description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
     ),

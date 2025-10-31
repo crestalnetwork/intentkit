@@ -3,10 +3,10 @@ import json
 import logging
 import re
 import textwrap
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import jsonref
 import yaml
@@ -57,7 +57,7 @@ class AgentAutonomous(BaseModel):
         ),
     ]
     name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Display name of the autonomous configuration",
@@ -68,7 +68,7 @@ class AgentAutonomous(BaseModel):
         ),
     ]
     description: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Description of the autonomous configuration",
@@ -79,7 +79,7 @@ class AgentAutonomous(BaseModel):
         ),
     ]
     minutes: Annotated[
-        Optional[int],
+        int | None,
         PydanticField(
             default=None,
             description="Interval in minutes between operations, mutually exclusive with cron",
@@ -89,7 +89,7 @@ class AgentAutonomous(BaseModel):
         ),
     ]
     cron: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Cron expression for scheduling operations, mutually exclusive with minutes",
@@ -109,7 +109,7 @@ class AgentAutonomous(BaseModel):
         ),
     ]
     enabled: Annotated[
-        Optional[bool],
+        bool | None,
         PydanticField(
             default=False,
             description="Whether the autonomous configuration is enabled",
@@ -432,7 +432,7 @@ class AgentTable(Base, AgentUserInputColumns):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
         comment="Timestamp when the agent was last updated",
     )
 
@@ -441,7 +441,7 @@ class AgentCore(BaseModel):
     """Agent core model."""
 
     name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             title="Name",
@@ -450,14 +450,14 @@ class AgentCore(BaseModel):
         ),
     ]
     picture: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Avatar of the agent",
         ),
     ]
     purpose: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Purpose or role of the agent",
@@ -465,7 +465,7 @@ class AgentCore(BaseModel):
         ),
     ]
     personality: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Personality traits of the agent",
@@ -473,7 +473,7 @@ class AgentCore(BaseModel):
         ),
     ]
     principles: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Principles or values of the agent",
@@ -489,7 +489,7 @@ class AgentCore(BaseModel):
         ),
     ]
     prompt: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Base system prompt that defines the agent's behavior and capabilities",
@@ -497,7 +497,7 @@ class AgentCore(BaseModel):
         ),
     ]
     prompt_append: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Additional system prompt that has higher priority than the base prompt",
@@ -505,7 +505,7 @@ class AgentCore(BaseModel):
         ),
     ]
     temperature: Annotated[
-        Optional[float],
+        float | None,
         PydanticField(
             default=0.7,
             description="The randomness of the generated results is such that the higher the number, the more creative the results will be. However, this also makes them wilder and increases the likelihood of errors. For creative tasks, you can adjust it to above 1, but for rigorous tasks, such as quantitative trading, it's advisable to set it lower, around 0.2. (0.0~2.0)",
@@ -514,7 +514,7 @@ class AgentCore(BaseModel):
         ),
     ]
     frequency_penalty: Annotated[
-        Optional[float],
+        float | None,
         PydanticField(
             default=0.0,
             description="The frequency penalty is a measure of how much the AI is allowed to repeat itself. A lower value means the AI is more likely to repeat previous responses, while a higher value means the AI is more likely to generate new content. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
@@ -523,7 +523,7 @@ class AgentCore(BaseModel):
         ),
     ]
     presence_penalty: Annotated[
-        Optional[float],
+        float | None,
         PydanticField(
             default=0.0,
             description="The presence penalty is a measure of how much the AI is allowed to deviate from the topic. A higher value means the AI is more likely to deviate from the topic, while a lower value means the AI is more likely to follow the topic. For creative tasks, you can adjust it to 1 or a bit higher. (-2.0~2.0)",
@@ -532,37 +532,36 @@ class AgentCore(BaseModel):
         ),
     ]
     wallet_provider: Annotated[
-        Optional[Literal["cdp", "readonly", "none"]],
+        Literal["cdp", "readonly", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
         ),
     ]
     readonly_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     network_id: Annotated[
-        Optional[
-            Literal[
-                "base-mainnet",
-                "ethereum-mainnet",
-                "polygon-mainnet",
-                "arbitrum-mainnet",
-                "optimism-mainnet",
-                "solana",
-            ]
-        ],
+        Literal[
+            "base-mainnet",
+            "ethereum-mainnet",
+            "polygon-mainnet",
+            "arbitrum-mainnet",
+            "optimism-mainnet",
+            "solana",
+        ]
+        | None,
         PydanticField(
             default="base-mainnet",
             description="Network identifier",
         ),
     ]
     skills: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Dict of skills and their corresponding configurations",
@@ -608,7 +607,7 @@ class AgentUserInput(AgentCore):
     )
 
     short_term_memory_strategy: Annotated[
-        Optional[Literal["trim", "summarize"]],
+        Literal["trim", "summarize"] | None,
         PydanticField(
             default="trim",
             description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
@@ -616,7 +615,7 @@ class AgentUserInput(AgentCore):
     ]
     # autonomous mode
     autonomous: Annotated[
-        Optional[List[AgentAutonomous]],
+        list[AgentAutonomous] | None,
         PydanticField(
             default=None,
             description=(
@@ -637,14 +636,14 @@ class AgentUserInput(AgentCore):
     ]
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled: Annotated[
-        Optional[bool],
+        bool | None,
         PydanticField(
             default=False,
             description="Whether the agent can play telegram bot",
         ),
     ]
     telegram_entrypoint_prompt: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Extra prompt for telegram entrypoint",
@@ -652,14 +651,14 @@ class AgentUserInput(AgentCore):
         ),
     ]
     telegram_config: Annotated[
-        Optional[dict],
+        dict | None,
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
         ),
     ]
     discord_entrypoint_enabled: Annotated[
-        Optional[bool],
+        bool | None,
         PydanticField(
             default=False,
             description="Whether the agent can play discord bot",
@@ -669,7 +668,7 @@ class AgentUserInput(AgentCore):
         ),
     ]
     discord_config: Annotated[
-        Optional[dict],
+        dict | None,
         PydanticField(
             default=None,
             description="Discord integration configuration settings including token, whitelists, and behavior settings",
@@ -679,7 +678,7 @@ class AgentUserInput(AgentCore):
         ),
     ]
     xmtp_entrypoint_prompt: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Extra prompt for xmtp entrypoint, xmtp support is in beta",
@@ -700,7 +699,7 @@ class AgentUpdate(AgentUserInput):
     )
 
     upstream_id: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="External reference ID for idempotent operations",
@@ -708,7 +707,7 @@ class AgentUpdate(AgentUserInput):
         ),
     ]
     upstream_extra: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Additional data store for upstream use",
@@ -720,7 +719,7 @@ class AgentUpdate(AgentUserInput):
 
     @field_validator("purpose", "personality", "principles", "prompt", "prompt_append")
     @classmethod
-    def validate_no_level1_level2_headings(cls, v: Optional[str]) -> Optional[str]:
+    def validate_no_level1_level2_headings(cls, v: str | None) -> str | None:
         """Validate that the text doesn't contain level 1 or level 2 headings."""
         if v is None:
             return v
@@ -879,7 +878,7 @@ class AgentCreate(AgentUpdate):
         ),
     ]
     owner: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Owner identifier of the agent, used for access control",
@@ -901,7 +900,7 @@ class AgentCreate(AgentUpdate):
                     message="Upstream id already in use",
                 )
 
-    async def get_by_upstream_id(self) -> Optional["Agent"]:
+    async def get_by_upstream_id(self) -> "Agent" | None:
         if not self.upstream_id:
             return None
         async with get_session() as db:
@@ -944,7 +943,7 @@ class AgentPublicInfo(BaseModel):
     )
 
     description: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Description of the agent, for public view, not contained in prompt",
@@ -954,7 +953,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     external_website: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Link of external website of the agent, if you have one",
@@ -965,7 +964,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     ticker: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Ticker symbol of the agent",
@@ -977,7 +976,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     token_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Token address of the agent",
@@ -988,7 +987,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     token_pool: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Pool of the agent token",
@@ -999,7 +998,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     fee_percentage: Annotated[
-        Optional[Decimal],
+        Decimal | None,
         PydanticField(
             default=None,
             description="Fee percentage of the agent",
@@ -1010,7 +1009,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     example_intro: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Introduction of the example",
@@ -1021,7 +1020,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     examples: Annotated[
-        Optional[List[AgentExample]],
+        list[AgentExample] | None,
         PydanticField(
             default=None,
             description="List of example prompts for the agent",
@@ -1032,7 +1031,7 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
     public_extra: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Public extra data of the agent",
@@ -1080,7 +1079,7 @@ class Agent(AgentCreate, AgentPublicInfo):
     model_config = ConfigDict(from_attributes=True)
 
     slug: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Slug of the agent, used for URL generation",
@@ -1089,49 +1088,49 @@ class Agent(AgentCreate, AgentPublicInfo):
         ),
     ]
     version: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Version hash of the agent",
         ),
     ]
     statistics: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Statistics of the agent, update every 1 hour for query",
         ),
     ]
     assets: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Assets of the agent, update every 1 hour for query",
         ),
     ]
     account_snapshot: Annotated[
-        Optional[CreditAccount],
+        CreditAccount | None,
         PydanticField(
             default=None,
             description="Account snapshot of the agent, update every 1 hour for query",
         ),
     ]
     extra: Annotated[
-        Optional[Dict[str, Any]],
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Other helper data fields for query, come from agent and agent data",
         ),
     ]
     deployed_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(
             default=None,
             description="Timestamp when the agent was deployed",
         ),
     ]
     public_info_updated_at: Annotated[
-        Optional[datetime],
+        datetime | None,
         PydanticField(
             default=None,
             description="Timestamp when the agent public info was last updated",
@@ -1269,7 +1268,7 @@ class Agent(AgentCreate, AgentPublicInfo):
                     )
                     yaml_lines.append(yaml_value.rstrip())
             elif isinstance(value, list) and value and hasattr(value[0], "model_dump"):
-                # Handle list of Pydantic models (e.g., List[AgentAutonomous])
+                # Handle list of Pydantic models (e.g., list[AgentAutonomous])
                 yaml_lines.append(f"{field_name}:")
                 # Convert each Pydantic model to dict
                 model_dicts = [item.model_dump(exclude_none=True) for item in value]
@@ -1315,7 +1314,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             return await db.scalar(select(func.count(AgentTable.id)))
 
     @classmethod
-    async def get(cls, agent_id: str) -> Optional["Agent"]:
+    async def get(cls, agent_id: str) -> "Agent" | None:
         async with get_session() as db:
             item = await db.scalar(select(AgentTable).where(AgentTable.id == agent_id))
             if item is None:
@@ -1323,7 +1322,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             return cls.model_validate(item)
 
     @classmethod
-    async def get_by_id_or_slug(cls, agent_id: str) -> Optional["Agent"]:
+    async def get_by_id_or_slug(cls, agent_id: str) -> "Agent" | None:
         """Get agent by ID or slug.
 
         First tries to get by ID if agent_id length <= 20,
@@ -1353,12 +1352,12 @@ class Agent(AgentCreate, AgentPublicInfo):
 
     @staticmethod
     def _deserialize_autonomous(
-        autonomous_data: Optional[List[Any]],
-    ) -> List[AgentAutonomous]:
+        autonomous_data: list[Any] | None,
+    ) -> list[AgentAutonomous]:
         if not autonomous_data:
             return []
 
-        deserialized: List[AgentAutonomous] = []
+        deserialized: list[AgentAutonomous] = []
         for entry in autonomous_data:
             if isinstance(entry, AgentAutonomous):
                 deserialized.append(entry)
@@ -1367,7 +1366,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         return deserialized
 
     @staticmethod
-    def _serialize_autonomous(tasks: List[AgentAutonomous]) -> List[Dict[str, Any]]:
+    def _serialize_autonomous(tasks: list[AgentAutonomous]) -> list[dict[str, Any]]:
         return [task.model_dump() for task in tasks]
 
     @staticmethod
@@ -1378,7 +1377,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             "Only deployed agents can call this feature.",
         )
 
-    async def list_autonomous_tasks(self) -> List[AgentAutonomous]:
+    async def list_autonomous_tasks(self) -> list[AgentAutonomous]:
         persisted = await Agent.get(self.id)
         if persisted is None:
             raise self._autonomous_not_allowed_error()
@@ -1434,8 +1433,8 @@ class Agent(AgentCreate, AgentPublicInfo):
 
             current_tasks = self._deserialize_autonomous(db_agent.autonomous)
 
-            updated_task: Optional[AgentAutonomous] = None
-            rewritten_tasks: List[AgentAutonomous] = []
+            updated_task: AgentAutonomous | None = None
+            rewritten_tasks: list[AgentAutonomous] = []
             for task in current_tasks:
                 if task.id == task_id:
                     task_dict = task.model_dump()
@@ -1458,11 +1457,11 @@ class Agent(AgentCreate, AgentPublicInfo):
         self.autonomous = rewritten_tasks
         return updated_task
 
-    def skill_config(self, category: str) -> Dict[str, Any]:
+    def skill_config(self, category: str) -> dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}
 
     @staticmethod
-    def _is_agent_owner_only_skill(skill_schema: Dict[str, Any]) -> bool:
+    def _is_agent_owner_only_skill(skill_schema: dict[str, Any]) -> bool:
         """Check if a skill requires agent owner API keys only based on its resolved schema."""
         if (
             skill_schema
@@ -1481,7 +1480,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         cls,
         db: AsyncSession = None,
         filter_owner_api_skills: bool = False,
-    ) -> Dict:
+    ) -> dict:
         """Get the JSON schema for Agent model with all $ref references resolved.
 
         This is the shared function that handles admin configuration filtering
@@ -1669,35 +1668,35 @@ class AgentResponse(Agent):
     )
 
     # Override privacy fields to exclude them from JSON schema
-    purpose: SkipJsonSchema[Optional[str]] = None
-    personality: SkipJsonSchema[Optional[str]] = None
-    principles: SkipJsonSchema[Optional[str]] = None
-    prompt: SkipJsonSchema[Optional[str]] = None
-    prompt_append: SkipJsonSchema[Optional[str]] = None
-    temperature: SkipJsonSchema[Optional[float]] = None
-    frequency_penalty: SkipJsonSchema[Optional[float]] = None
-    telegram_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
-    telegram_config: SkipJsonSchema[Optional[dict]] = None
-    discord_config: SkipJsonSchema[Optional[dict]] = None
-    xmtp_entrypoint_prompt: SkipJsonSchema[Optional[str]] = None
+    purpose: SkipJsonSchema[str | None] = None
+    personality: SkipJsonSchema[str | None] = None
+    principles: SkipJsonSchema[str | None] = None
+    prompt: SkipJsonSchema[str | None] = None
+    prompt_append: SkipJsonSchema[str | None] = None
+    temperature: SkipJsonSchema[float | None] = None
+    frequency_penalty: SkipJsonSchema[float | None] = None
+    telegram_entrypoint_prompt: SkipJsonSchema[str | None] = None
+    telegram_config: SkipJsonSchema[dict | None] = None
+    discord_config: SkipJsonSchema[dict | None] = None
+    xmtp_entrypoint_prompt: SkipJsonSchema[str | None] = None
 
     # Additional fields specific to AgentResponse
     cdp_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="CDP wallet address of the agent",
         ),
     ]
     evm_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="EVM wallet address of the agent",
         ),
     ]
     solana_wallet_address: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Solana wallet address of the agent",
@@ -1711,14 +1710,14 @@ class AgentResponse(Agent):
         ),
     ]
     linked_twitter_username: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Linked Twitter username",
         ),
     ]
     linked_twitter_name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Linked Twitter display name",
@@ -1739,14 +1738,14 @@ class AgentResponse(Agent):
         ),
     ]
     linked_telegram_username: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Linked Telegram username",
         ),
     ]
     linked_telegram_name: Annotated[
-        Optional[str],
+        str | None,
         PydanticField(
             default=None,
             description="Linked Telegram display name",
@@ -1785,7 +1784,7 @@ class AgentResponse(Agent):
 
     @classmethod
     async def from_agent(
-        cls, agent: Agent, agent_data: Optional[AgentData] = None
+        cls, agent: Agent, agent_data: AgentData | None = None
     ) -> "AgentResponse":
         """Create an AgentResponse from an Agent instance.
 
@@ -1810,8 +1809,7 @@ class AgentResponse(Agent):
             linked_twitter_name = agent_data.twitter_name
             if agent_data.twitter_access_token_expires_at:
                 has_twitter_linked = (
-                    agent_data.twitter_access_token_expires_at
-                    > datetime.now(timezone.utc)
+                    agent_data.twitter_access_token_expires_at > datetime.now(UTC)
                 )
             else:
                 has_twitter_linked = True

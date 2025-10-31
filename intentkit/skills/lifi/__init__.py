@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, TypedDict
+from typing import Any, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.lifi.base import LiFiBaseTool
@@ -22,9 +22,9 @@ class Config(SkillConfig):
     """Configuration for LiFi skills."""
 
     states: SkillStates
-    default_slippage: Optional[float] = 0.03
-    allowed_chains: Optional[List[str]] = None
-    max_execution_time: Optional[int] = 300
+    default_slippage: float | None = 0.03
+    allowed_chains: list[str] | None = None
+    max_execution_time: int | None = 300
 
 
 async def get_skills(

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Type
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -44,7 +44,7 @@ class GetTokenPairs(DexScreenerBaseTool):
         "DEX information, liquidity, volume, and pricing data for each pair. "
         "Use this tool to analyze all available trading venues and liquidity sources for a specific token."
     )
-    args_schema: Type[BaseModel] = GetTokenPairsInput
+    args_schema: type[BaseModel] = GetTokenPairsInput
 
     async def _arun(
         self,

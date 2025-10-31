@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from tweepy.asynchronous import AsyncClient
 
@@ -15,7 +14,7 @@ class TwitterABC(ABC):
     use_key = False
 
     @abstractmethod
-    async def get_client(self) -> Optional[AsyncClient]:
+    async def get_client(self) -> AsyncClient | None:
         """Get a configured Tweepy client.
 
         Returns:
@@ -25,7 +24,7 @@ class TwitterABC(ABC):
 
     @property
     @abstractmethod
-    def self_id(self) -> Optional[str]:
+    def self_id(self) -> str | None:
         """Get the Twitter user ID.
 
         Returns:
@@ -35,7 +34,7 @@ class TwitterABC(ABC):
 
     @property
     @abstractmethod
-    def self_username(self) -> Optional[str]:
+    def self_username(self) -> str | None:
         """Get the Twitter username.
 
         Returns:
@@ -45,7 +44,7 @@ class TwitterABC(ABC):
 
     @property
     @abstractmethod
-    def self_name(self) -> Optional[str]:
+    def self_name(self) -> str | None:
         """Get the Twitter display name.
 
         Returns:

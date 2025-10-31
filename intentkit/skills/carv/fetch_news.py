@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -29,12 +29,12 @@ class FetchNewsTool(CarvBaseTool):
         "Fetches the latest news articles from the CARV API. "
         "Returns a list of news items, each with a title, URL, and a short summary (card_text)."
     )
-    args_schema: Type[BaseModel] = CarvNewsInput
+    args_schema: type[BaseModel] = CarvNewsInput
 
     async def _arun(
         self,  # type: ignore
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetches news from the CARV API and returns the response.
         The expected successful response structure is a dictionary containing an "infos" key,

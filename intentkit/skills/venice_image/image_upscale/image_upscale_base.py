@@ -1,4 +1,3 @@
-from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +15,7 @@ class VeniceImageUpscaleBaseTool(VeniceImageBaseTool):
     /image/upscale endpoint
     """
 
-    args_schema: Type[BaseModel] = VeniceImageUpscaleInput
+    args_schema: type[BaseModel] = VeniceImageUpscaleInput
     name: str = Field(description="The unique name of the image upscaling tool.")
     description: str = Field(
         description="A description of what the image upscaling tool does."

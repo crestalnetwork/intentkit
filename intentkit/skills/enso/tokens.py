@@ -1,4 +1,3 @@
-from typing import Type
 
 import httpx
 from langchain_core.tools.base import ToolException
@@ -133,7 +132,7 @@ class EnsoGetTokens(EnsoBaseTool):
         "Enso Finance Token Information Tool: Retrieves detailed token information from the Enso Finance API, "
         "including APY, symbol, address, protocol slug, token type, and underlying tokens."
     )
-    args_schema: Type[BaseModel] = EnsoGetTokensInput
+    args_schema: type[BaseModel] = EnsoGetTokensInput
 
     async def _arun(
         self,

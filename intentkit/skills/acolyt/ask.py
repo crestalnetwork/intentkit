@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Literal, Type
+from typing import Literal
 
 import httpx
 from pydantic import BaseModel, Field
@@ -48,7 +48,6 @@ class AcolytAskGpt(AcolytBaseTool):
     - DEX & Trading: Get the 24-hour trading volume for tokens, Identify which DEX has the highest liquidity for tokens, Obtain the buy/sell ratio for tokens over specific time periods. Compare price changes across different timeframes for tokens. List trading pairs with over a value in liquidity for tokens.
     - Overall Metrics: Identify projects with the highest smart engagement relative to their market cap, Determine which agents have the best mindshare relative to their market cap. Compare the percentage of smart followers across the top n AI agents by market cap
 
-
     Attributes:
         name (str): Name of the tool, specifically "acolyt_ask_gpt".
         description (str): Comprehensive description of the tool's purpose and functionality.
@@ -64,9 +63,9 @@ class AcolytAskGpt(AcolytBaseTool):
         DEX & Trading: 24h volume, top DEX liquidity, buy/sell ratio, price change comparison, high liquidity pairs.
         Overall: Smart engagement/market cap ratio, mindshare/market cap ratio, smart follower percentage comparison across top AI agents.
         """
-    args_schema: Type[BaseModel] = AcolytAskGptInput
+    args_schema: type[BaseModel] = AcolytAskGptInput
 
-    async def _arun(self, question: str, **kwargs) -> Dict:
+    async def _arun(self, question: str, **kwargs) -> dict:
         """Run the tool to get answer from Acolyt GPT.
 
         Args:

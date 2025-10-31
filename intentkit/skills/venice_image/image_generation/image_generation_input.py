@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -118,22 +118,22 @@ class VeniceImageGenerationInput(BaseModel):
     prompt: str = Field(
         description="The main text prompt describing what should be included in the generated image."
     )
-    seed: Optional[int] = Field(
+    seed: int | None = Field(
         default=None,
         description="Random seed value to control image generation randomness. "
         "Use the same seed to reproduce identical results. If not set, a random seed will be used.",
     )
-    negative_prompt: Optional[str] = Field(
+    negative_prompt: str | None = Field(
         default=None,
         description="Text describing what should be excluded from the generated image. "
         "If not provided, the default agent configuration will be used.",
     )
-    width: Optional[int] = Field(
+    width: int | None = Field(
         default=1024,
         le=2048,
         description="Width of the generated image in pixels. Maximum allowed is 2048. Default is 1024.",
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=1024,
         le=2048,
         description="Height of the generated image in pixels. Maximum allowed is 2048. Default is 1024.",
@@ -142,15 +142,15 @@ class VeniceImageGenerationInput(BaseModel):
         default="png",
         description="Output image format. Options are 'png', 'jpeg', or 'webp'. Defaults to 'png'.",
     )
-    cfg_scale: Optional[float] = Field(
+    cfg_scale: float | None = Field(
         default=7.5,
         description="Classifier-Free Guidance (CFG) scale controls how closely the image follows the prompt. "
         "Higher values (1-20) result in more adherence. Default is 7.5.",
     )
-    style_preset: Optional[str] = Field(
+    style_preset: str | None = Field(
         default="Photographic", description=STYLE_PRESETS_DESCRIPTION
     )
-    inpainting: Optional[Inpaint] = Field(
+    inpainting: Inpaint | None = Field(
         default=None,
         description="Optional inpainting operation that allows modification of specific objects within an image. "
         "Requires an original image url, a strength value (0-100), and detailed mask instructions "
