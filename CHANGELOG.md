@@ -1,3 +1,16 @@
+## v0.8.18
+
+### Features
+- Updated OpenAI image generation skills configuration
+- Enhanced image generation capabilities
+
+### Changes
+- Updated `intentkit/skills/openai/gpt_avatar_generator.py`
+- Updated `intentkit/skills/openai/gpt_image_mini_generator.py`
+- Added changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.17...v0.8.18
+
 ## v0.8.17
 
 ### Features
