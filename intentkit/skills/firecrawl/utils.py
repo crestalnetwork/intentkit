@@ -4,10 +4,10 @@ import logging
 import re
 from typing import Any
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from intentkit.config.config import config
 from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
