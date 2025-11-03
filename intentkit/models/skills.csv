@@ -99,6 +99,8 @@ moralis,fetch_wallet_portfolio,moralis_fetch_wallet_portfolio,TRUE,1,5,5,,,0xd1a
 nation,nft_check,nft_check,FALSE,1,5,5,,,0x275960ad41DbE218bBf72cDF612F88b5C6f40648
 openai,dalle_image_generation,dalle_image_generation,TRUE,4,200,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 openai,gpt_image_generation,gpt_image_generation,TRUE,5,400,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
+openai,gpt_image_mini_generator,gpt_image_mini_generator,TRUE,5,100,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
+openai,gpt_avatar_generator,gpt_avatar_generator,TRUE,5,50,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 openai,gpt_image_to_image,gpt_image_to_image,TRUE,5,400,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 openai,image_to_text,image_to_text,TRUE,4,200,15,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 portfolio,token_balances,portfolio_token_balances,TRUE,1,5,5,,,0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0
