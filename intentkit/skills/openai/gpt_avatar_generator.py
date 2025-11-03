@@ -32,10 +32,7 @@ class GPTAvatarGenerator(OpenAIBaseTool):
 
     name: str = "gpt_avatar_generator"
     description: str = (
-        "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model.\n"
-        "Provide a description of the avatar you'd like to create and the tool optimizes the prompt "
-        "for flattering, centered profile imagery.\n"
-        "Outputs are fixed to 1024x1024 resolution with medium quality and an opaque background for immediate use.\n"
+        "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model."
     )
     args_schema = GPTAvatarGeneratorInput
 
