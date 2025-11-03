@@ -1285,16 +1285,16 @@ async def skill_cost(
     skill = await Skill.get(skill_name)
     if not skill:
         raise ValueError(f"The price of {skill_name} not set yet")
-    agent_skill_config = agent.skills.get(skill.category)
-    if (
-        agent_skill_config
-        and agent_skill_config.get("api_key_provider") == "agent_owner"
-    ):
-        base_skill_amount = skill.price_self_key.quantize(
-            FOURPLACES, rounding=ROUND_HALF_UP
-        )
-    else:
-        base_skill_amount = skill.price.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    base_skill_amount = skill.price.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    if agent.skills:
+        agent_skill_config = agent.skills.get(skill.category)
+        if (
+            agent_skill_config
+            and agent_skill_config.get("api_key_provider") == "agent_owner"
+        ):
+            base_skill_amount = skill.price_self_key.quantize(
+                FOURPLACES, rounding=ROUND_HALF_UP
+            )
     # Get payment settings
     payment_settings = await AppSetting.payment()
 
