@@ -34,7 +34,7 @@ class GPTAvatarGenerator(OpenAIBaseTool):
     description: str = (
         "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model."
     )
-    args_schema = GPTAvatarGeneratorInput
+    args_schema: type[BaseModel] = GPTAvatarGeneratorInput
 
     async def _arun(self, prompt: str, **kwargs) -> str:
         """Generate avatar-friendly images using OpenAI's GPT-Image-1-Mini model."""
