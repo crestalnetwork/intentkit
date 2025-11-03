@@ -1,3 +1,18 @@
+## v0.8.17
+
+### Features
+- **feat: update openai gpt avatar generator and skills metadata** - Enhanced OpenAI GPT avatar generator functionality with improved skills metadata
+- **feat: add gpt avatar generator skill** - Added new GPT avatar generator skill to the OpenAI skills collection
+
+### Bug Fixes
+- **fix: a import bug** - Fixed import issue in the codebase
+
+### Other Changes
+- Updated dependency lock file (uv.lock)
+- Code formatting and linting improvements
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.16...v0.8.17
+
 ## v0.8.16
 
 ### Documentation
