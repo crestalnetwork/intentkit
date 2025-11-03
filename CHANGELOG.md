@@ -1,3 +1,16 @@
+## v0.8.19
+
+### Bug Fixes
+- **Credit System**: Updated credit system logic in core credit module
+- **Skill Author Handling**: Fixed skill author handling in credit calculations
+
+### Technical Details
+- Updated `intentkit/core/credit.py` with improved logic
+- All linting checks passed
+- No breaking changes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.18...v0.8.19
+
 ## v0.8.18
 
 ### Features
