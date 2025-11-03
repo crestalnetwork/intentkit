@@ -13,9 +13,9 @@ from intentkit.utils.s3 import store_image_bytes
 logger = logging.getLogger(__name__)
 
 AVATAR_PROMPT_PREFIX = (
-    "Create a single, centered portrait that works perfectly as a profile avatar. "
-    "Use flattering, even lighting, a simple soft-focus background, and a composition from shoulders up. "
-    "Avoid text, logos, watermarks, and distracting elements so the result feels polished and personable."
+    "Create an image suitable for a profile picture, with a clean background but not pure white, "
+    "and a clear subject that is recognizable even at small sizes. If there are no style requirements "
+    "in the subsequent description, use anime style. The content is as follows:"
 )
 
 
