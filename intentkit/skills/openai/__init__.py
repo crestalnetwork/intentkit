@@ -6,7 +6,9 @@ from typing import TypedDict
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.openai.base import OpenAIBaseTool
 from intentkit.skills.openai.dalle_image_generation import DALLEImageGeneration
+from intentkit.skills.openai.gpt_avatar_generator import GPTAvatarGenerator
 from intentkit.skills.openai.gpt_image_generation import GPTImageGeneration
+from intentkit.skills.openai.gpt_image_mini_generator import GPTImageMiniGenerator
 from intentkit.skills.openai.gpt_image_to_image import GPTImageToImage
 from intentkit.skills.openai.image_to_text import ImageToText
 
@@ -20,6 +22,8 @@ class SkillStates(TypedDict):
     image_to_text: SkillState
     dalle_image_generation: SkillState
     gpt_image_generation: SkillState
+    gpt_image_mini_generator: SkillState
+    gpt_avatar_generator: SkillState
     gpt_image_to_image: SkillState
 
 
@@ -84,6 +88,14 @@ def get_openai_skill(
     elif name == "gpt_image_generation":
         if name not in _cache:
             _cache[name] = GPTImageGeneration()
+        return _cache[name]
+    elif name == "gpt_image_mini_generator":
+        if name not in _cache:
+            _cache[name] = GPTImageMiniGenerator()
+        return _cache[name]
+    elif name == "gpt_avatar_generator":
+        if name not in _cache:
+            _cache[name] = GPTAvatarGenerator()
         return _cache[name]
     elif name == "gpt_image_to_image":
         if name not in _cache:

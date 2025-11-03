@@ -66,6 +66,38 @@
           "description": "Generate images using OpenAI's GPT-Image-1 model based on text prompts",
           "default": "private"
         },
+        "gpt_image_mini_generator": {
+          "type": "string",
+          "title": "Image Generation by GPT Mini",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate images using OpenAI's GPT-Image-1-Mini model based on text prompts",
+          "default": "private"
+        },
+        "gpt_avatar_generator": {
+          "type": "string",
+          "title": "Avatar Generation by GPT Mini",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model",
+          "default": "private"
+        },
         "gpt_image_to_image": {
           "type": "string",
           "title": "Image Editing by GPT",
