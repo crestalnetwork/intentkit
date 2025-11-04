@@ -5,9 +5,6 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, Any
 
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import (
@@ -21,6 +18,10 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 

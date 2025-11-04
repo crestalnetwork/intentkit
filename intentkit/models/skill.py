@@ -8,9 +8,6 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any
 
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
@@ -25,6 +22,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 

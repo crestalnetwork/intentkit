@@ -3,8 +3,9 @@
 import logging
 from collections.abc import Callable
 
-from intentkit.models.base import Base
 from sqlalchemy import Column, MetaData, inspect, text
+
+from intentkit.models.base import Base
 
 logger = logging.getLogger(__name__)
 
