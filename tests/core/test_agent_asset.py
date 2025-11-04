@@ -74,7 +74,8 @@ async def test_agent_asset_success(monkeypatch):
     async def mock_build_assets_list(agent_obj, agent_data_obj, web3_client):
         return [Asset(symbol="ETH", balance=Decimal("1"))]
 
-    async def mock_get_wallet_net_worth(wallet):
+    async def mock_get_wallet_net_worth(wallet, network_id):
+        assert network_id == "base-mainnet"
         return "123.45"
 
     monkeypatch.setattr(asset_module, "Agent", DummyAgent)
