@@ -1,6 +1,5 @@
 include README.md
 include LICENSE
-include pyproject.toml
 recursive-include abstracts *.py
 recursive-include clients *.py
 recursive-include config *.py

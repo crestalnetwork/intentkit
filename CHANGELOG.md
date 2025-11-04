@@ -1,3 +1,11 @@
+## v0.8.21
+
+### Bug Fixes
+- Fixed moralis assets bug in core/asset.py
+- Updated related tests in tests/core/test_agent_asset.py
+- Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.20...v0.8.21
 ## v0.8.20
 
 ### Features

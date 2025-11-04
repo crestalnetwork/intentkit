@@ -6,10 +6,6 @@ from typing import Annotated, Any
 
 from epyxid import XID
 from fastapi import HTTPException
-from intentkit.models.app_setting import AppSetting
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     ARRAY,
@@ -24,6 +20,11 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from intentkit.models.app_setting import AppSetting
+from intentkit.models.base import Base
+from intentkit.models.db import get_session
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 

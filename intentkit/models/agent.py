@@ -14,13 +14,6 @@ import jsonref
 import yaml
 from cron_validator import CronValidator
 from epyxid import XID
-from intentkit.models.agent_data import AgentData
-from intentkit.models.base import Base
-from intentkit.models.credit import CreditAccount
-from intentkit.models.db import get_session
-from intentkit.models.llm import LLMModelInfo, LLMProvider
-from intentkit.models.skill import Skill
-from intentkit.utils.error import IntentKitAPIError
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
@@ -38,6 +31,14 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from intentkit.models.agent_data import AgentData
+from intentkit.models.base import Base
+from intentkit.models.credit import CreditAccount
+from intentkit.models.db import get_session
+from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.skill import Skill
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -653,7 +654,7 @@ class AgentUserInput(AgentCore):
         ),
     ]
     telegram_config: Annotated[
-        dict | None,
+        dict[str, object] | None,
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
