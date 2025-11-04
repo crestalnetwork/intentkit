@@ -1,3 +1,15 @@
+## v0.8.20
+
+### Features
+- Updated changelog with latest changes
+- Improvements to GPT avatar generator functionality
+
+### Technical Details
+- Enhanced GPT avatar generator with better error handling and functionality
+- Updated changelog documentation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.19...v0.8.20
+
 ## v0.8.19
 
 ### Bug Fixes

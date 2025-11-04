@@ -33,6 +33,14 @@ USDC_ADDRESSES = {
 # NATION token address for base-mainnet
 NATION_ADDRESS = "0x2f74f818e81685c8086dd783837a4605a90474b8"
 
+MORALIS_CHAIN_BY_NETWORK = {
+    "ethereum-mainnet": "eth",
+    "base-mainnet": "base",
+    "polygon-mainnet": "polygon",
+    "arbitrum-mainnet": "arbitrum",
+    "optimism-mainnet": "optimism",
+}
+
 
 class Asset(BaseModel):
     """Model for individual asset with symbol and balance."""
@@ -101,8 +109,12 @@ async def _get_eth_balance(web3_client: Web3, wallet_address: str) -> Decimal:
         return Decimal("0")
 
 
-async def _get_wallet_net_worth(wallet_address: str) -> str:
+async def _get_wallet_net_worth(wallet_address: str, network_id: str | None) -> str:
     """Get wallet net worth using Moralis API."""
+    moralis_chain = MORALIS_CHAIN_BY_NETWORK.get(network_id or "")
+    if not moralis_chain:
+        return "0"
+
     try:
         async with httpx.AsyncClient() as client:
             url = (
@@ -116,7 +128,7 @@ async def _get_wallet_net_worth(wallet_address: str) -> str:
             params = {
                 "exclude_spam": "true",
                 "exclude_unverified_contracts": "true",
-                "chains": ["eth", "base", "polygon", "arbitrum", "optimism"],
+                "chains": [moralis_chain],
             }
 
             response = await client.get(url, headers=headers, params=params)
@@ -206,7 +218,9 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         try:
             web3_client = get_web3_client(str(agent.network_id))
             tokens = await _build_assets_list(agent, agent_data, web3_client)
-            net_worth = await _get_wallet_net_worth(agent_data.evm_wallet_address)
+            net_worth = await _get_wallet_net_worth(
+                agent_data.evm_wallet_address, str(agent.network_id)
+            )
             assets_result = AgentAssets(net_worth=net_worth, tokens=tokens)
         except IntentKitAPIError:
             raise
