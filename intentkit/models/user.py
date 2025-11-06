@@ -142,7 +142,7 @@ class UserUpdate(BaseModel):
         str | None, Field(None, description="User's Telegram username")
     ]
     extra: Annotated[
-        dict | None, Field(None, description="Additional user information")
+        dict[str, object] | None, Field(None, description="Additional user information")
     ]
     evm_wallet_address: Annotated[
         str | None, Field(None, description="User's EVM wallet address")
@@ -151,7 +151,8 @@ class UserUpdate(BaseModel):
         str | None, Field(None, description="User's Solana wallet address")
     ]
     linked_accounts: Annotated[
-        dict | None, Field(None, description="User's linked accounts information")
+        dict[str, object] | None,
+        Field(None, description="User's linked accounts information"),
     ]
 
     async def _update_quota_for_nft_count(
@@ -348,3 +349,26 @@ class User(UserUpdate):
             if user is None:
                 return None
             return user_model_class.model_validate(user)
+
+    @classmethod
+    async def get_by_evm_wallet(cls, evm_wallet_address: str) -> UserModelType | None:
+        """Get a user by EVM wallet address or matching ID."""
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(
+                    user_table_class.evm_wallet_address == evm_wallet_address
+                )
+            )
+            user = result.scalars().first()
+            if user is not None:
+                return user_model_class.model_validate(user)
+
+            fallback_user = await session.get(user_table_class, evm_wallet_address)
+            if fallback_user is None:
+                return None
+            return user_model_class.model_validate(fallback_user)
