@@ -26,7 +26,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
     Fetches detailed information and the current USD price of a cryptocurrency token from the CARV API,
     given its ticker symbol (e.g., 'eth', 'btc', 'aave').
     Returns metadata including the token's name, symbol, platform, category tags, and contract addresses
-    Useful for understanding a token's identity, ecosystem, and market valu
+    Useful for understanding a token's identity, ecosystem, and market value
     Use this tool when you need comprehensive token data and live pricing from CARV
     """
 
