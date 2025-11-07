@@ -995,7 +995,7 @@ This release focuses on improving the x402 integration with better error handlin
 ## 2025-01-26
 
 ### Improvements
-- If you open the jwt verify of admin api, it now ignore the reqest come from internal network
+- If you open the jwt verify of admin api, it now ignore the request come from internal network
 - Improve the docker compose tutorial, comment the twitter and tg entrypoint service by default
 
 ### Break Changes
