@@ -38,9 +38,16 @@ from intentkit.models.credit import CreditAccount
 from intentkit.models.db import get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import Skill
+from intentkit.utils.ens import resolve_ens_to_address
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
+
+
+ENS_NAME_PATTERN = re.compile(
+    r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:eth|base\.eth)$",
+    re.IGNORECASE,
+)
 
 
 class AgentAutonomous(BaseModel):
@@ -1337,16 +1344,20 @@ class Agent(AgentCreate, AgentPublicInfo):
         Returns:
             Agent if found, None otherwise
         """
+        query_id = agent_id
+        if ENS_NAME_PATTERN.fullmatch(agent_id):
+            query_id = await resolve_ens_to_address(agent_id)
+
         async with get_session() as db:
             agent = None
 
             # Try to get by ID if length <= 20
-            if len(agent_id) <= 20:
-                agent = await Agent.get(agent_id)
+            if len(query_id) <= 20 or query_id.startswith("0x"):
+                agent = await Agent.get(query_id)
 
             # If not found, try to get by slug
             if agent is None:
-                slug_stmt = select(AgentTable).where(AgentTable.slug == agent_id)
+                slug_stmt = select(AgentTable).where(AgentTable.slug == query_id)
                 agent_row = await db.scalar(slug_stmt)
                 if agent_row is not None:
                     agent = Agent.model_validate(agent_row)
