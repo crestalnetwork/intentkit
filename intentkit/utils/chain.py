@@ -1,7 +1,10 @@
+import logging
 from abc import ABC, abstractmethod
 from enum import IntEnum, StrEnum
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class Chain(StrEnum):
@@ -54,7 +57,7 @@ class Chain(StrEnum):
     Frontera = "frontera"
 
 
-class Network(StrEnum):
+class QuickNodeNetwork(StrEnum):
     """
     Enum of well-known blockchain network names, based on QuickNode API.
 
@@ -65,9 +68,9 @@ class Network(StrEnum):
     """
 
     # Ethereum Mainnet and Testnets
-    EthereumMainnet = "ethereum-mainnet"
-    EthereumGoerli = "ethereum-goerli"  # Goerli Testnet (deprecated, Sepolia preferred)
-    EthereumSepolia = "ethereum-sepolia"
+    EthereumMainnet = "mainnet"
+    EthereumGoerli = "goerli"  # Goerli Testnet (deprecated, Sepolia preferred)
+    EthereumSepolia = "sepolia"
 
     # Layer 2s on Ethereum
     ArbitrumMainnet = "arbitrum-mainnet"
@@ -150,49 +153,121 @@ class NetworkId(IntEnum):
     BeraMainnet = 80094
 
 
-# Mapping of Network enum members to their corresponding NetworkId enum members.
+# Mapping of QuickNodeNetwork enum members to their corresponding NetworkId enum members.
 # This dictionary facilitates efficient lookup of network IDs given a network name.
 # Note: SolanaMainnet is intentionally excluded as it does not have a numeric chain ID.
 #       Always refer to the official documentation for the most up-to-date mappings.
-network_to_id: dict[Network, NetworkId] = {
-    Network.ArbitrumMainnet: NetworkId.ArbitrumMainnet,
-    Network.AvalancheMainnet: NetworkId.AvalancheMainnet,
-    Network.BaseMainnet: NetworkId.BaseMainnet,
-    Network.BaseSepolia: NetworkId.BaseSepolia,
-    Network.BeraMainnet: NetworkId.BeraMainnet,
-    Network.BinanceMainnet: NetworkId.BinanceMainnet,
-    Network.EthereumMainnet: NetworkId.EthereumMainnet,
-    Network.EthereumSepolia: NetworkId.EthereumSepolia,
-    Network.GnosisMainnet: NetworkId.GnosisMainnet,
-    Network.LineaMainnet: NetworkId.LineaMainnet,
-    Network.OptimismMainnet: NetworkId.OptimismMainnet,
-    Network.PolygonMainnet: NetworkId.PolygonMainnet,
-    Network.SonicMainnet: NetworkId.SonicMainnet,
-    Network.ZkSyncMainnet: NetworkId.ZkSyncMainnet,
+network_to_id: dict[QuickNodeNetwork, NetworkId] = {
+    QuickNodeNetwork.ArbitrumMainnet: NetworkId.ArbitrumMainnet,
+    QuickNodeNetwork.AvalancheMainnet: NetworkId.AvalancheMainnet,
+    QuickNodeNetwork.BaseMainnet: NetworkId.BaseMainnet,
+    QuickNodeNetwork.BaseSepolia: NetworkId.BaseSepolia,
+    QuickNodeNetwork.BeraMainnet: NetworkId.BeraMainnet,
+    QuickNodeNetwork.BinanceMainnet: NetworkId.BinanceMainnet,
+    QuickNodeNetwork.EthereumMainnet: NetworkId.EthereumMainnet,
+    QuickNodeNetwork.EthereumSepolia: NetworkId.EthereumSepolia,
+    QuickNodeNetwork.GnosisMainnet: NetworkId.GnosisMainnet,
+    QuickNodeNetwork.LineaMainnet: NetworkId.LineaMainnet,
+    QuickNodeNetwork.OptimismMainnet: NetworkId.OptimismMainnet,
+    QuickNodeNetwork.PolygonMainnet: NetworkId.PolygonMainnet,
+    QuickNodeNetwork.SonicMainnet: NetworkId.SonicMainnet,
+    QuickNodeNetwork.ZkSyncMainnet: NetworkId.ZkSyncMainnet,
 }
 
 # Mapping of NetworkId enum members (chain IDs) to their corresponding
-# Network enum members (network names). This dictionary allows for reverse
+# QuickNodeNetwork enum members (network names). This dictionary allows for reverse
 # lookup, enabling retrieval of the network name given a chain ID.
 # Note:  Solana is not included here as it does not use a standard numeric
 #       chain ID.  Always consult official documentation for the most
 #       up-to-date mappings.
-id_to_network: dict[NetworkId, Network] = {
-    NetworkId.ArbitrumMainnet: Network.ArbitrumMainnet,
-    NetworkId.AvalancheMainnet: Network.AvalancheMainnet,
-    NetworkId.BaseMainnet: Network.BaseMainnet,
-    NetworkId.BaseSepolia: Network.BaseSepolia,
-    NetworkId.BeraMainnet: Network.BeraMainnet,
-    NetworkId.BinanceMainnet: Network.BinanceMainnet,
-    NetworkId.EthereumMainnet: Network.EthereumMainnet,
-    NetworkId.EthereumSepolia: Network.EthereumSepolia,
-    NetworkId.GnosisMainnet: Network.GnosisMainnet,
-    NetworkId.LineaMainnet: Network.LineaMainnet,
-    NetworkId.OptimismMainnet: Network.OptimismMainnet,
-    NetworkId.PolygonMainnet: Network.PolygonMainnet,
-    NetworkId.SonicMainnet: Network.SonicMainnet,
-    NetworkId.ZkSyncMainnet: Network.ZkSyncMainnet,
+id_to_network: dict[NetworkId, QuickNodeNetwork] = {
+    NetworkId.ArbitrumMainnet: QuickNodeNetwork.ArbitrumMainnet,
+    NetworkId.AvalancheMainnet: QuickNodeNetwork.AvalancheMainnet,
+    NetworkId.BaseMainnet: QuickNodeNetwork.BaseMainnet,
+    NetworkId.BaseSepolia: QuickNodeNetwork.BaseSepolia,
+    NetworkId.BeraMainnet: QuickNodeNetwork.BeraMainnet,
+    NetworkId.BinanceMainnet: QuickNodeNetwork.BinanceMainnet,
+    NetworkId.EthereumMainnet: QuickNodeNetwork.EthereumMainnet,
+    NetworkId.EthereumSepolia: QuickNodeNetwork.EthereumSepolia,
+    NetworkId.GnosisMainnet: QuickNodeNetwork.GnosisMainnet,
+    NetworkId.LineaMainnet: QuickNodeNetwork.LineaMainnet,
+    NetworkId.OptimismMainnet: QuickNodeNetwork.OptimismMainnet,
+    NetworkId.PolygonMainnet: QuickNodeNetwork.PolygonMainnet,
+    NetworkId.SonicMainnet: QuickNodeNetwork.SonicMainnet,
+    NetworkId.ZkSyncMainnet: QuickNodeNetwork.ZkSyncMainnet,
 }
+
+# Mapping of agent-level network identifiers to QuickNode network names.
+# Agent configuration often uses human-friendly identifiers such as
+# "ethereum-mainnet" or "solana" while QuickNode expects the canonical
+# network strings defined in `QuickNodeNetwork`.  This mapping bridges the two.
+AGENT_NETWORK_TO_QUICKNODE_NETWORK: dict[str, QuickNodeNetwork] = {
+    "arbitrum-mainnet": QuickNodeNetwork.ArbitrumMainnet,
+    "avalanche-mainnet": QuickNodeNetwork.AvalancheMainnet,
+    "aurora-mainnet": QuickNodeNetwork.AuroraMainnet,
+    "axelar-mainnet": QuickNodeNetwork.AxelarMainnet,
+    "base-mainnet": QuickNodeNetwork.BaseMainnet,
+    "base-sepolia": QuickNodeNetwork.BaseSepolia,
+    "bera-mainnet": QuickNodeNetwork.BeraMainnet,
+    "binance-mainnet": QuickNodeNetwork.BinanceMainnet,
+    "bsc-mainnet": QuickNodeNetwork.BinanceMainnet,
+    "celo-mainnet": QuickNodeNetwork.CeloMainnet,
+    "ethereum": QuickNodeNetwork.EthereumMainnet,
+    "ethereum-mainnet": QuickNodeNetwork.EthereumMainnet,
+    "ethereum-sepolia": QuickNodeNetwork.EthereumSepolia,
+    "evmos-mainnet": QuickNodeNetwork.EvmosMainnet,
+    "fantom-mainnet": QuickNodeNetwork.FantomMainnet,
+    "frontera-mainnet": QuickNodeNetwork.FronteraMainnet,
+    "gnosis": QuickNodeNetwork.GnosisMainnet,
+    "gnosis-mainnet": QuickNodeNetwork.GnosisMainnet,
+    "goerli": QuickNodeNetwork.EthereumGoerli,
+    "kava-mainnet": QuickNodeNetwork.KavaMainnet,
+    "linea-mainnet": QuickNodeNetwork.LineaMainnet,
+    "matic": QuickNodeNetwork.PolygonMainnet,
+    "matic-mainnet": QuickNodeNetwork.PolygonMainnet,
+    "moonbeam-mainnet": QuickNodeNetwork.MoonbeamMainnet,
+    "near-mainnet": QuickNodeNetwork.NearMainnet,
+    "optimism-mainnet": QuickNodeNetwork.OptimismMainnet,
+    "persistence-mainnet": QuickNodeNetwork.PersistenceMainnet,
+    "polygon": QuickNodeNetwork.PolygonMainnet,
+    "polygon-mainnet": QuickNodeNetwork.PolygonMainnet,
+    "secret-mainnet": QuickNodeNetwork.SecretMainnet,
+    "sepolia": QuickNodeNetwork.EthereumSepolia,
+    "solana": QuickNodeNetwork.SolanaMainnet,
+    "solana-mainnet": QuickNodeNetwork.SolanaMainnet,
+    "sonic-mainnet": QuickNodeNetwork.SonicMainnet,
+    "stargaze-mainnet": QuickNodeNetwork.StargazeMainnet,
+    "terra-mainnet": QuickNodeNetwork.TerraMainnet,
+    "xdai": QuickNodeNetwork.GnosisMainnet,
+    "zksync-mainnet": QuickNodeNetwork.ZkSyncMainnet,
+}
+
+
+def resolve_quicknode_network(agent_network_id: str) -> QuickNodeNetwork:
+    """Resolve an agent-level network identifier to a QuickNode network.
+
+    Args:
+        agent_network_id: Network identifier stored on the agent model.
+
+    Returns:
+        The corresponding `QuickNodeNetwork` enum value.
+
+    Raises:
+        ValueError: If the agent network identifier is empty or unmapped.
+    """
+
+    normalized = (agent_network_id or "").strip().lower()
+    if not normalized:
+        raise ValueError("agent network_id must be provided")
+
+    mapped_network = AGENT_NETWORK_TO_QUICKNODE_NETWORK.get(normalized)
+    if mapped_network:
+        return mapped_network
+
+    try:
+        return QuickNodeNetwork(normalized)
+    except ValueError as exc:  # pragma: no cover - defensive guard
+        raise ValueError(f"unsupported agent network_id: {agent_network_id}") from exc
 
 
 class ChainConfig:
@@ -206,7 +281,7 @@ class ChainConfig:
     def __init__(
         self,
         chain: Chain,
-        network: Network,
+        network: QuickNodeNetwork,
         rpc_url: str,
         ens_url: str,
         wss_url: str,
@@ -216,7 +291,7 @@ class ChainConfig:
 
         Args:
             chain: The Chain enum member representing the blockchain type (e.g., Ethereum, Solana).
-            network: The Network enum member representing the specific network (e.g., EthereumMainnet).
+            network: The QuickNodeNetwork enum member representing the specific network (e.g., EthereumMainnet).
             rpc_url: The URL for the RPC endpoint of the blockchain.
             ens_url: The URL for the ENS (Ethereum Name Service) endpoint (can be None if not applicable).
             wss_url: The URL for the WebSocket endpoint of the blockchain (can be None if not applicable).
@@ -236,9 +311,9 @@ class ChainConfig:
         return self._chain
 
     @property
-    def network(self) -> Network:
+    def network(self) -> QuickNodeNetwork:
         """
-        Returns the Network enum member.
+        Returns the QuickNodeNetwork enum member.
         """
         return self._network
 
@@ -287,14 +362,14 @@ class ChainProvider(ABC):
 
         Sets up an empty dictionary `chain_configs` to store the configurations.
         """
-        self.chain_configs: dict[Network, ChainConfig] = {}
+        self.chain_configs: dict[QuickNodeNetwork, ChainConfig] = {}
 
-    def get_chain_config(self, network: Network) -> ChainConfig:
+    def get_chain_config(self, network_id: str) -> ChainConfig:
         """
-        Retrieves the chain configuration for a specific network.
+        Retrieves the chain configuration for a specific agent network identifier.
 
         Args:
-            network: The `Network` enum member representing the desired network.
+            network_id: The agent-level network identifier (e.g., "base-mainnet").
 
         Returns:
             The `ChainConfig` object associated with the given network.
@@ -302,17 +377,27 @@ class ChainProvider(ABC):
         Raises:
             Exception: If no chain configuration is found for the specified network.
         """
-        chain_config = self.chain_configs.get(network)
+        try:
+            quicknode_network = resolve_quicknode_network(network_id)
+        except ValueError as exc:
+            raise Exception(f"unsupported network_id: {network_id}") from exc
+
+        return self._get_chain_config_by_quicknode_network(quicknode_network)
+
+    def _get_chain_config_by_quicknode_network(
+        self, quicknode_network: QuickNodeNetwork
+    ) -> ChainConfig:
+        chain_config = self.chain_configs.get(quicknode_network)
         if not chain_config:
-            raise Exception(f"chain config for network {network} not found")
+            raise Exception(f"chain config for network {quicknode_network} not found")
         return chain_config
 
     def get_chain_config_by_id(self, network_id: NetworkId) -> ChainConfig:
         """
         Retrieves the chain configuration by network ID.
 
-        This method first looks up the `Network` enum member associated with the
-        provided `NetworkId` and then uses `get_chain_config` to retrieve the
+        This method first looks up the `QuickNodeNetwork` enum member associated
+        with the provided `NetworkId` and then retrieves the corresponding
         configuration.
 
         Args:
@@ -328,10 +413,10 @@ class ChainProvider(ABC):
         network = id_to_network.get(network_id)
         if not network:
             raise Exception(f"network with id {network_id} not found")
-        return self.get_chain_config(network)
+        return self._get_chain_config_by_quicknode_network(network)
 
     @abstractmethod
-    def init_chain_configs(self, api_key: str) -> dict[Network, ChainConfig]:
+    def init_chain_configs(self, *_, **__) -> dict[QuickNodeNetwork, ChainConfig]:
         """
         Initializes the chain configurations.
 
@@ -340,11 +425,8 @@ class ChainProvider(ABC):
         `ChainConfig` objects, typically using the provided `api_key` to fetch
         or generate the necessary configuration data.
 
-        Args:
-            api_key: The API key used for initializing chain configurations.
-
         Returns:
-            A dictionary mapping `Network` enum members to `ChainConfig` objects.
+            A dictionary mapping `QuickNodeNetwork` enum members to `ChainConfig` objects.
         """
         raise NotImplementedError
 
@@ -369,7 +451,7 @@ class QuicknodeChainProvider(ChainProvider):
 
     def init_chain_configs(
         self, limit: int = 100, offset: int = 0
-    ) -> dict[Network, ChainConfig]:
+    ) -> dict[QuickNodeNetwork, ChainConfig]:
         """
         Initializes chain configurations by fetching data from the QuickNode API.
 
@@ -382,7 +464,7 @@ class QuicknodeChainProvider(ChainProvider):
             offset: The number of endpoints to skip (default: 0).
 
         Returns:
-            A dictionary mapping `Network` enum members to `ChainConfig` objects.
+            A dictionary mapping `QuickNodeNetwork` enum members to `ChainConfig` objects.
 
         Raises:
             Exception: If an error occurs during the API request or processing
@@ -408,10 +490,19 @@ class QuicknodeChainProvider(ChainProvider):
                 for item in json_dict["data"]:
                     # Assuming 'item' contains 'chain', 'network', 'http_url', 'wss_url'
                     # and that these values can be used to construct the ChainConfig object
-                    chain = Chain(item["chain"])
-                    network = Network(item["network"])
+                    try:
+                        chain = Chain(item["chain"])
+                    except ValueError:
+                        logger.debug("Skipping unsupported chain value: %s", item)
+                        continue
 
-                    self.chain_configs[item["network"]] = ChainConfig(
+                    try:
+                        network = QuickNodeNetwork(item["network"])
+                    except ValueError:
+                        logger.debug("Skipping unsupported network value: %s", item)
+                        continue
+
+                    self.chain_configs[network] = ChainConfig(
                         chain,
                         network,
                         item["http_url"],
