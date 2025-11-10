@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated, ClassVar, NotRequired, TypedDict, final
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -77,7 +77,7 @@ class ChatMessageAttachment(TypedDict):
         ),
     ]
     json: Annotated[
-        dict | None,
+        dict[str, object] | None,
         Field(
             None,
             description="JSON data of the attachment",
@@ -90,7 +90,7 @@ class ChatMessageSkillCall(TypedDict):
 
     id: NotRequired[str]
     name: str
-    parameters: dict
+    parameters: dict[str, object]
     success: bool
     response: NotRequired[
         str
@@ -167,32 +167,27 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_schema_extra={
             "example": {
                 "chat_id": "chat-123",
                 "app_id": "app-789",
                 "user_id": "user-456",
-                "message": "Hello, how can you help me today?",
-                "search_mode": True,
+                "message": "Hello, what can you do?",
+                "search_mode": False,
                 "super_mode": False,
-                "attachments": [
-                    {
-                        "type": "link",
-                        "url": "https://example.com",
-                    }
-                ],
             }
         },
     )
 
 
+@final
 class ChatMessageTable(Base):
     """Chat message database table model."""
 
     __tablename__ = "chat_messages"
-    __table_args__ = (
+    __table_args__ = (  # pyright: ignore[reportAny]
         Index("ix_chat_messages_chat_id", "chat_id"),
         Index("ix_chat_messages_agent_id_author_type", "agent_id", "author_type"),
         Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
@@ -254,7 +249,7 @@ class ChatMessageTable(Base):
         Integer,
         default=0,
     )
-    time_cost = Column(
+    time_cost: Column[float] = Column(
         Float,
         default=0,
     )
@@ -266,7 +261,7 @@ class ChatMessageTable(Base):
         Numeric(22, 4),
         nullable=True,
     )
-    cold_start_cost = Column(
+    cold_start_cost: Column[float] = Column(
         Float,
         default=0,
     )
@@ -296,7 +291,7 @@ class ChatMessageTable(Base):
 class ChatMessageCreate(BaseModel):
     """Base model for creating chat messages with fields needed for creation."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
     )
@@ -320,61 +315,61 @@ class ChatMessageCreate(BaseModel):
     author_type: Annotated[AuthorType, Field(description="Type of the message author")]
     model: Annotated[
         str | None, Field(None, description="LLM model used if applicable")
-    ]
+    ] = None
     thread_type: Annotated[
         AuthorType | None,
         Field(None, description="Author Type of the message thread start"),
-    ]
+    ] = None
     reply_to: Annotated[
         str | None,
         Field(None, description="ID of the message this message is a reply to"),
-    ]
+    ] = None
     message: Annotated[str, Field(description="Content of the message")]
     attachments: Annotated[
         list[ChatMessageAttachment] | None,
         Field(None, description="List of attachments in the message"),
-    ]
+    ] = None
     skill_calls: Annotated[
         list[ChatMessageSkillCall] | None,
         Field(None, description="Skill call details"),
-    ]
+    ] = None
     input_tokens: Annotated[
         int, Field(0, description="Number of tokens in the input message")
-    ]
+    ] = 0
     output_tokens: Annotated[
         int, Field(0, description="Number of tokens in the output message")
-    ]
+    ] = 0
     time_cost: Annotated[
         float, Field(0.0, description="Time cost for the message in seconds")
-    ]
+    ] = 0.0
     credit_event_id: Annotated[
         str | None,
         Field(None, description="ID of the credit event for this message"),
-    ]
+    ] = None
     credit_cost: Annotated[
         Decimal | None,
         Field(None, description="Credit cost for the message in credits"),
-    ]
+    ] = None
     cold_start_cost: Annotated[
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
-    ]
+    ] = 0.0
     app_id: Annotated[
         str | None,
         Field(None, description="Optional application identifier"),
-    ]
+    ] = None
     search_mode: Annotated[
         bool | None,
         Field(None, description="Optional flag to enable search mode"),
-    ]
+    ] = None
     super_mode: Annotated[
         bool | None,
         Field(None, description="Optional flag to enable super mode"),
-    ]
+    ] = None
     error_type: Annotated[
         SystemMessageType | None,
         Field(None, description="Optional error type, used when author_type is system"),
-    ]
+    ] = None
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
@@ -438,7 +433,7 @@ class ChatMessageCreate(BaseModel):
 class ChatMessage(ChatMessageCreate):
     """Chat message model with all fields including server-generated ones."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_encoders={
             datetime: lambda v: v.isoformat(timespec="milliseconds"),
