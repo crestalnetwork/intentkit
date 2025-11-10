@@ -22,8 +22,8 @@ class DummyChainProvider(ChainProvider):
             )
         }
 
-    def init_chain_configs(self, api_key: str):
-        return self.chain_configs
+    def init_chain_configs(self, api_key: str = ""):
+        self.api_key = api_key
 
 
 def test_chain_config_properties():
@@ -69,3 +69,9 @@ def test_chain_provider_missing_network_id():
         provider.get_chain_config_by_id(NetworkId.GnosisMainnet)
 
     assert "chain config for network" in str(exc.value)
+
+
+def test_init_chain_configs_returns_none():
+    provider = DummyChainProvider()
+
+    assert provider.init_chain_configs("dummy-key") is None

@@ -416,7 +416,7 @@ class ChainProvider(ABC):
         return self._get_chain_config_by_quicknode_network(network)
 
     @abstractmethod
-    def init_chain_configs(self, *_, **__) -> dict[QuickNodeNetwork, ChainConfig]:
+    def init_chain_configs(self, *_, **__) -> None:
         """
         Initializes the chain configurations.
 
@@ -425,8 +425,8 @@ class ChainProvider(ABC):
         `ChainConfig` objects, typically using the provided `api_key` to fetch
         or generate the necessary configuration data.
 
-        Returns:
-            A dictionary mapping `QuickNodeNetwork` enum members to `ChainConfig` objects.
+        The method must mutate `self.chain_configs` in-place and does not need
+        to return anything.
         """
         raise NotImplementedError
 
@@ -449,27 +449,18 @@ class QuicknodeChainProvider(ChainProvider):
         super().__init__()
         self.api_key = api_key
 
-    def init_chain_configs(
-        self, limit: int = 100, offset: int = 0
-    ) -> dict[QuickNodeNetwork, ChainConfig]:
+    def init_chain_configs(self, limit: int = 100, offset: int = 0) -> None:
         """
         Initializes chain configurations by fetching data from the QuickNode API.
 
         This method retrieves a list of QuickNode endpoints using the provided
         API key and populates the `chain_configs` dictionary with `ChainConfig`
-        objects.
+        objects.  Errors are logged and do not raise exceptions so that any
+        successful configurations remain available.
 
         Args:
             limit: The maximum number of endpoints to retrieve (default: 100).
             offset: The number of endpoints to skip (default: 0).
-
-        Returns:
-            A dictionary mapping `QuickNodeNetwork` enum members to `ChainConfig` objects.
-
-        Raises:
-            Exception: If an error occurs during the API request or processing
-                       the response.  More specific exception types are used
-                       for HTTP errors and request errors.
         """
         url = "https://api.quicknode.com/v0/endpoints"
         headers = {
@@ -481,47 +472,67 @@ class QuicknodeChainProvider(ChainProvider):
             "offset": offset,
         }
 
-        with httpx.Client(timeout=30) as client:  # Set a timeout for the request
+        with httpx.Client(timeout=30) as client:
             try:
                 response = client.get(url, timeout=30, headers=headers, params=params)
-                response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+                response.raise_for_status()
                 json_dict = response.json()
-
-                for item in json_dict["data"]:
-                    # Assuming 'item' contains 'chain', 'network', 'http_url', 'wss_url'
-                    # and that these values can be used to construct the ChainConfig object
-                    try:
-                        chain = Chain(item["chain"])
-                    except ValueError:
-                        logger.debug("Skipping unsupported chain value: %s", item)
-                        continue
-
-                    try:
-                        network = QuickNodeNetwork(item["network"])
-                    except ValueError:
-                        logger.debug("Skipping unsupported network value: %s", item)
-                        continue
-
-                    self.chain_configs[network] = ChainConfig(
-                        chain,
-                        network,
-                        item["http_url"],
-                        item[
-                            "http_url"
-                        ],  # ens_url is the same as http_url in this case.
-                        item["wss_url"],
-                    )
-
             except httpx.HTTPStatusError as http_err:
-                raise Exception(f"Quicknode API HTTP Error: {http_err}")
-            except httpx.RequestError as req_err:
-                raise Exception(f"Quicknode API Request Error: {req_err}")
-            except (
-                KeyError,
-                TypeError,
-            ) as e:  # Handle potential data issues in the API response
-                raise Exception(
-                    f"Error processing QuickNode API response: {e}. Check the API response format."
+                logger.error(
+                    "QuickNode API HTTP error while initializing chain configs: %s",
+                    http_err,
                 )
-            except Exception as e:
-                raise Exception(f"Quicknode API An unexpected error occurred: {e}")
+                return
+            except httpx.RequestError as req_err:
+                logger.error(
+                    "QuickNode API request error while initializing chain configs: %s",
+                    req_err,
+                )
+                return
+            except Exception as exc:
+                logger.exception(
+                    "Unexpected error while fetching QuickNode chain configs: %s", exc
+                )
+                return
+
+        data = json_dict.get("data", [])
+        if not isinstance(data, list):
+            logger.error(
+                "QuickNode chain configs response 'data' is not a list: %s", data
+            )
+            return
+
+        for item in data:
+            if not isinstance(item, dict):
+                logger.error("Skipping malformed QuickNode chain entry: %s", item)
+                continue
+
+            try:
+                chain_value = item["chain"]
+                network_value = item["network"]
+                rpc_url = item["http_url"]
+                chain = Chain(chain_value)
+                network = QuickNodeNetwork(network_value)
+                ens_url = item.get("ens_url", rpc_url)
+                wss_url = item.get("wss_url")
+            except ValueError as exc:
+                logger.debug("Skipping unsupported QuickNode entry %s: %s", item, exc)
+                continue
+            except KeyError as exc:
+                logger.error(
+                    "Missing field %s in QuickNode chain config item %s", exc, item
+                )
+                continue
+            except Exception as exc:
+                logger.error(
+                    "Failed processing QuickNode chain config item %s: %s", item, exc
+                )
+                continue
+
+            self.chain_configs[network] = ChainConfig(
+                chain,
+                network,
+                rpc_url,
+                ens_url,
+                wss_url,
+            )
