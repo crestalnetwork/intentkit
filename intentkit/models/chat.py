@@ -23,6 +23,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.app_setting import AppSetting, SystemMessageType
 from intentkit.models.base import Base
@@ -193,95 +194,41 @@ class ChatMessageTable(Base):
         Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
     )
 
-    id = Column(
-        String,
-        primary_key=True,
-    )
-    agent_id = Column(
-        String,
-        nullable=False,
-    )
-    chat_id = Column(
-        String,
-        nullable=False,
-    )
-    user_id = Column(
-        String,
-        nullable=True,
-    )
-    author_id = Column(
-        String,
-        nullable=False,
-    )
-    author_type = Column(
-        String,
-        nullable=False,
-    )
-    model = Column(
-        String,
-        nullable=True,
-    )
-    thread_type = Column(
-        String,
-        nullable=True,
-    )
-    reply_to = Column(
-        String,
-        nullable=True,
-    )
-    message = Column(
-        String,
-        nullable=False,
-    )
-    attachments = Column(
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String, nullable=False)
+    chat_id: Mapped[str] = mapped_column(String, nullable=False)
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    author_id: Mapped[str] = mapped_column(String, nullable=False)
+    author_type: Mapped[str] = mapped_column(String, nullable=False)
+    model: Mapped[str | None] = mapped_column(String, nullable=True)
+    thread_type: Mapped[AuthorType | None] = mapped_column(String, nullable=True)
+    reply_to: Mapped[str | None] = mapped_column(String, nullable=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    attachments: Mapped[list[ChatMessageAttachment] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    skill_calls = Column(
+    skill_calls: Mapped[list[ChatMessageSkillCall] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    input_tokens = Column(
-        Integer,
-        default=0,
-    )
-    output_tokens = Column(
-        Integer,
-        default=0,
-    )
-    time_cost: Column[float] = Column(
-        Float,
-        default=0,
-    )
-    credit_event_id = Column(
-        String,
-        nullable=True,
-    )
-    credit_cost = Column(
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    time_cost: Mapped[float] = mapped_column(Float, default=0)
+    credit_event_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    credit_cost: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    cold_start_cost: Column[float] = Column(
-        Float,
-        default=0,
-    )
-    app_id = Column(
+    cold_start_cost: Mapped[float] = mapped_column(Float, default=0)
+    app_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    search_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    super_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    error_type: Mapped[SystemMessageType | None] = mapped_column(
         String,
         nullable=True,
     )
-    search_mode = Column(
-        Boolean,
-        nullable=True,
-    )
-    super_mode = Column(
-        Boolean,
-        nullable=True,
-    )
-    error_type = Column(
-        String,
-        nullable=True,
-    )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
