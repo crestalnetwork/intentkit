@@ -7,7 +7,7 @@ import logging
 
 from ens import ENS
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 from intentkit.config.config import config
 from intentkit.models.redis import get_redis
@@ -22,6 +22,8 @@ _NETWORKS_BY_SUFFIX: dict[str, tuple[str, ...]] = {
     ".base.eth": ("base-mainnet", "ethereum-mainnet"),
     ".eth": ("ethereum-mainnet",),
 }
+
+_POA_NETWORK_PREFIXES: tuple[str, ...] = ("base",)
 
 
 async def resolve_ens_to_address(name: str) -> str:
@@ -85,6 +87,18 @@ def _networks_for_name(name: str) -> tuple[str, ...]:
     return tuple()
 
 
+def _requires_poa_middleware(network: str) -> bool:
+    return network.startswith(_POA_NETWORK_PREFIXES)
+
+
+def _build_ens_client(rpc_url: str, network: str) -> ENS:
+    web3_client = Web3(Web3.HTTPProvider(rpc_url))
+    if _requires_poa_middleware(network):
+        web3_client.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+
+    return ENS.from_web3(web3_client)
+
+
 async def _resolve_on_network(name: str, network: str) -> str | None:
     chain_provider = getattr(config, "chain_provider", None)
     if chain_provider is None:
@@ -103,11 +117,7 @@ async def _resolve_on_network(name: str, network: str) -> str | None:
         return None
 
     def _resolve() -> str | None:
-        web3_client = Web3(Web3.HTTPProvider(rpc_url))
-        if network.startswith("base"):
-            web3_client.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-        ens_client = ENS.from_web3(web3_client)
+        ens_client = _build_ens_client(rpc_url, network)
         try:
             resolved = ens_client.address(name)
         except Exception as exc:  # pragma: no cover - dependent on external provider

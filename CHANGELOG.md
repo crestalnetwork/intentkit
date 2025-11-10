@@ -1,3 +1,27 @@
+## v0.8.22
+
+### Features
+- **feat: get user by wallet** - Added functionality to retrieve user by wallet address
+- Enhanced user model with wallet lookup capabilities
+- Added comprehensive tests for wallet-based user retrieval
+
+### Improvements
+- **refactor**: restructure to root only pyproject config for better project organization
+- **chore**: update uv.lock dependencies for latest security and performance updates
+- **build**: updated build configuration and package files
+
+### Documentation
+- Updated x402 documentation with demo information
+- Enhanced changelog documentation
+
+### Technical Details
+- Updated `intentkit/models/user.py` with wallet lookup functionality
+- Added comprehensive tests in `tests/models/test_user.py`
+- Multiple model updates for better structure and organization
+- Updated build workflows and configuration files
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.21...v0.8.22
+
 ## v0.8.21
 
 ### Bug Fixes

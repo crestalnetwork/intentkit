@@ -151,9 +151,6 @@ class Config:
             )
         if hasattr(self, "chain_provider"):
             self.chain_provider.init_chain_configs()
-        self.rpc_networks = self.load(
-            "RPC_NETWORKS", "base-mainnet,base-sepolia,ethereum-sepolia,solana-mainnet"
-        )
 
         # Nation
         self.nation_api_key = self.load("NATION_API_KEY")

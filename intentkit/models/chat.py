@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated, ClassVar, NotRequired, TypedDict, final
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,6 +23,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.app_setting import AppSetting, SystemMessageType
 from intentkit.models.base import Base
@@ -77,7 +78,7 @@ class ChatMessageAttachment(TypedDict):
         ),
     ]
     json: Annotated[
-        dict | None,
+        dict[str, object] | None,
         Field(
             None,
             description="JSON data of the attachment",
@@ -90,7 +91,7 @@ class ChatMessageSkillCall(TypedDict):
 
     id: NotRequired[str]
     name: str
-    parameters: dict
+    parameters: dict[str, object]
     success: bool
     response: NotRequired[
         str
@@ -167,126 +168,67 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_schema_extra={
             "example": {
                 "chat_id": "chat-123",
                 "app_id": "app-789",
                 "user_id": "user-456",
-                "message": "Hello, how can you help me today?",
-                "search_mode": True,
+                "message": "Hello, what can you do?",
+                "search_mode": False,
                 "super_mode": False,
-                "attachments": [
-                    {
-                        "type": "link",
-                        "url": "https://example.com",
-                    }
-                ],
             }
         },
     )
 
 
+@final
 class ChatMessageTable(Base):
     """Chat message database table model."""
 
     __tablename__ = "chat_messages"
-    __table_args__ = (
+    __table_args__ = (  # pyright: ignore[reportAny]
         Index("ix_chat_messages_chat_id", "chat_id"),
         Index("ix_chat_messages_agent_id_author_type", "agent_id", "author_type"),
         Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
     )
 
-    id = Column(
-        String,
-        primary_key=True,
-    )
-    agent_id = Column(
-        String,
-        nullable=False,
-    )
-    chat_id = Column(
-        String,
-        nullable=False,
-    )
-    user_id = Column(
-        String,
-        nullable=True,
-    )
-    author_id = Column(
-        String,
-        nullable=False,
-    )
-    author_type = Column(
-        String,
-        nullable=False,
-    )
-    model = Column(
-        String,
-        nullable=True,
-    )
-    thread_type = Column(
-        String,
-        nullable=True,
-    )
-    reply_to = Column(
-        String,
-        nullable=True,
-    )
-    message = Column(
-        String,
-        nullable=False,
-    )
-    attachments = Column(
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String, nullable=False)
+    chat_id: Mapped[str] = mapped_column(String, nullable=False)
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    author_id: Mapped[str] = mapped_column(String, nullable=False)
+    author_type: Mapped[str] = mapped_column(String, nullable=False)
+    model: Mapped[str | None] = mapped_column(String, nullable=True)
+    thread_type: Mapped[AuthorType | None] = mapped_column(String, nullable=True)
+    reply_to: Mapped[str | None] = mapped_column(String, nullable=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    attachments: Mapped[list[ChatMessageAttachment] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    skill_calls = Column(
+    skill_calls: Mapped[list[ChatMessageSkillCall] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    input_tokens = Column(
-        Integer,
-        default=0,
-    )
-    output_tokens = Column(
-        Integer,
-        default=0,
-    )
-    time_cost = Column(
-        Float,
-        default=0,
-    )
-    credit_event_id = Column(
-        String,
-        nullable=True,
-    )
-    credit_cost = Column(
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    time_cost: Mapped[float] = mapped_column(Float, default=0)
+    credit_event_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    credit_cost: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    cold_start_cost = Column(
-        Float,
-        default=0,
-    )
-    app_id = Column(
+    cold_start_cost: Mapped[float] = mapped_column(Float, default=0)
+    app_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    search_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    super_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    error_type: Mapped[SystemMessageType | None] = mapped_column(
         String,
         nullable=True,
     )
-    search_mode = Column(
-        Boolean,
-        nullable=True,
-    )
-    super_mode = Column(
-        Boolean,
-        nullable=True,
-    )
-    error_type = Column(
-        String,
-        nullable=True,
-    )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -296,7 +238,7 @@ class ChatMessageTable(Base):
 class ChatMessageCreate(BaseModel):
     """Base model for creating chat messages with fields needed for creation."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
     )
@@ -320,61 +262,61 @@ class ChatMessageCreate(BaseModel):
     author_type: Annotated[AuthorType, Field(description="Type of the message author")]
     model: Annotated[
         str | None, Field(None, description="LLM model used if applicable")
-    ]
+    ] = None
     thread_type: Annotated[
         AuthorType | None,
         Field(None, description="Author Type of the message thread start"),
-    ]
+    ] = None
     reply_to: Annotated[
         str | None,
         Field(None, description="ID of the message this message is a reply to"),
-    ]
+    ] = None
     message: Annotated[str, Field(description="Content of the message")]
     attachments: Annotated[
         list[ChatMessageAttachment] | None,
         Field(None, description="List of attachments in the message"),
-    ]
+    ] = None
     skill_calls: Annotated[
         list[ChatMessageSkillCall] | None,
         Field(None, description="Skill call details"),
-    ]
+    ] = None
     input_tokens: Annotated[
         int, Field(0, description="Number of tokens in the input message")
-    ]
+    ] = 0
     output_tokens: Annotated[
         int, Field(0, description="Number of tokens in the output message")
-    ]
+    ] = 0
     time_cost: Annotated[
         float, Field(0.0, description="Time cost for the message in seconds")
-    ]
+    ] = 0.0
     credit_event_id: Annotated[
         str | None,
         Field(None, description="ID of the credit event for this message"),
-    ]
+    ] = None
     credit_cost: Annotated[
         Decimal | None,
         Field(None, description="Credit cost for the message in credits"),
-    ]
+    ] = None
     cold_start_cost: Annotated[
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
-    ]
+    ] = 0.0
     app_id: Annotated[
         str | None,
         Field(None, description="Optional application identifier"),
-    ]
+    ] = None
     search_mode: Annotated[
         bool | None,
         Field(None, description="Optional flag to enable search mode"),
-    ]
+    ] = None
     super_mode: Annotated[
         bool | None,
         Field(None, description="Optional flag to enable super mode"),
-    ]
+    ] = None
     error_type: Annotated[
         SystemMessageType | None,
         Field(None, description="Optional error type, used when author_type is system"),
-    ]
+    ] = None
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
@@ -438,7 +380,7 @@ class ChatMessageCreate(BaseModel):
 class ChatMessage(ChatMessageCreate):
     """Chat message model with all fields including server-generated ones."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_encoders={
             datetime: lambda v: v.isoformat(timespec="milliseconds"),
