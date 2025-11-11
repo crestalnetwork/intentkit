@@ -1,3 +1,16 @@
+## v0.8.24 - 2025-11-11
+
+### Configuration Updates
+- Updated uv.lock dependencies with 243 changes
+- Enhanced configuration system in `intentkit/config/config.py`
+- Updated LLM model configurations in `intentkit/models/llm.csv`
+- Added new LLM model support in `intentkit/models/llm.py`
+
+### Documentation
+- Updated CHANGELOG.md with recent changes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.23...v0.8.24
+
 ## v0.8.23 - 2025-11-10
 
 ### Bug Fixes
