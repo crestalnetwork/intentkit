@@ -1,10 +1,9 @@
 id,name,provider,enabled,input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,supports_skill_calls,supports_structured_output,has_reasoning,supports_search,supports_temperature,supports_frequency_penalty,supports_presence_penalty,api_base,timeout
-minimax/minimax-m2:free,MiniMax M2,gatewayz,TRUE,0,0,1,204800,131000,4,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
-qwen/qwen3-235b-a22b-2507,Qwen3 235B A22B Instruct 2507,gatewayz,TRUE,0.1,0.6,1,262000,262000,3,3,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
-qwen/qwen3-max,Qwen3 Max,gatewayz,TRUE,1.2,6,4,128000,32000,4,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
-google/gemini-2.5-flash,Gemini 2.5 Flash,gatewayz,TRUE,0.3,2.5,2,1050000,65000,3,4,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
-google/gemini-2.5-pro,Gemini 2.5 Pro,gatewayz,TRUE,1.25,10,4,1050000,65000,4,2,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
-anthropic/claude-sonnet-4.5,Anthropic Claude Sonnet 4.5,gatewayz,TRUE,3,15,5,200000,64000,5,1,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+minimax/minimax-m2:free,MiniMax M2,gatewayz,FALSE,0,0,1,204800,131000,4,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+qwen/qwen3-coder:exacto,Qwen3 Coder,gatewayz,FALSE,0.38,1.53,2,262000,262000,3,3,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+google/gemini-2.5-flash,Gemini 2.5 Flash,gatewayz,FALSE,0.3,2.5,2,1050000,65000,3,4,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+google/gemini-2.5-pro,Gemini 2.5 Pro,gatewayz,FALSE,1.25,10,4,1050000,65000,4,2,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
+anthropic/claude-sonnet-4.5,Anthropic Claude Sonnet 4.5,gatewayz,FALSE,3,15,5,200000,64000,5,1,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,https://api.gatewayz.ai/v1,300
 gpt-5-nano,GPT-5 Nano,openai,TRUE,0.05,0.4,1,400000,128000,3,5,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,,180
 gpt-5-mini,GPT-5 Mini,openai,TRUE,0.25,2,2,400000,128000,4,4,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,,180
 gpt-5,GPT-5,openai,TRUE,1.25,10,4,400000,128000,5,3,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,,180

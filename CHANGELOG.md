@@ -1,3 +1,25 @@
+## v0.8.23 - 2025-11-10
+
+### Bug Fixes
+- Enhanced chain utility functions with better error handling
+- Improved ENS resolution with fallback mechanisms
+- Updated logging and error reporting
+- Fixed various bugs in utility functions
+
+### Features
+- Added comprehensive test coverage for chain utilities
+- Enhanced ENS utilities for improved reliability
+- Improved agent and chat model functionality
+- Updated configuration handling
+
+### Improvements
+- Refactored chain utility functions for better performance
+- Enhanced error handling in various components
+- Dependency updates and optimizations
+- Improved code organization and structure
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.22...v0.8.23
+
 ## v0.8.22
 
 ### Features
@@ -262,7 +284,7 @@ This release focuses on improving the x402 integration with better error handlin
 - **Improved @clear command matching**: Enhanced the @clear command with case-insensitive regex matching and support for both @clear and /clear formats
   - Case-insensitive matching: Now supports @Clear, @CLEAR, /Clear, /CLEAR, etc.
   - Multiple formats: Added support for both @clear and /clear commands
-  - Word boundary matching: Uses regex with \b to ensure exact word matching
+  - Word boundary matching: Uses regex with  to ensure exact word matching
   - Trim support: Messages are trimmed before matching to handle whitespace
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.1...v0.8.2
