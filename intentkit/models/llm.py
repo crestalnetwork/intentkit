@@ -83,6 +83,8 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     created_at=timestamp,
                     updated_at=timestamp,
                 )
+                if not model.enabled:
+                    continue
             except Exception as exc:
                 logger.error(
                     "Failed to load default LLM model %s: %s", row.get("id"), exc
