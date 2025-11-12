@@ -9,8 +9,9 @@ from typing import Annotated, Any
 
 from langchain.chat_models.base import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Boolean, Column, DateTime, Integer, Numeric, String, func, select
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.config import config
 from intentkit.models.app_setting import AppSetting
@@ -123,37 +124,59 @@ class LLMModelInfoTable(Base):
 
     __tablename__ = "llm_models"
 
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    provider = Column(String, nullable=False)  # Stored as string enum value
-    enabled = Column(Boolean, nullable=False, default=True)
-    input_price = Column(
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    provider: Mapped[str] = mapped_column(String, nullable=False)  # Stored as enum
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    input_price: Mapped[Decimal] = mapped_column(
         Numeric(22, 4), nullable=False
     )  # Price per 1M input tokens in USD
-    output_price = Column(
+    output_price: Mapped[Decimal] = mapped_column(
         Numeric(22, 4), nullable=False
     )  # Price per 1M output tokens in USD
-    price_level = Column(Integer, nullable=True)  # Price level rating from 1-5
-    context_length = Column(Integer, nullable=False)  # Maximum context length in tokens
-    output_length = Column(Integer, nullable=False)  # Maximum output length in tokens
-    intelligence = Column(Integer, nullable=False)  # Intelligence rating from 1-5
-    speed = Column(Integer, nullable=False)  # Speed rating from 1-5
-    supports_image_input = Column(Boolean, nullable=False, default=False)
-    supports_skill_calls = Column(Boolean, nullable=False, default=False)
-    supports_structured_output = Column(Boolean, nullable=False, default=False)
-    has_reasoning = Column(Boolean, nullable=False, default=False)
-    supports_search = Column(Boolean, nullable=False, default=False)
-    supports_temperature = Column(Boolean, nullable=False, default=True)
-    supports_frequency_penalty = Column(Boolean, nullable=False, default=True)
-    supports_presence_penalty = Column(Boolean, nullable=False, default=True)
-    api_base = Column(String, nullable=True)  # Custom API base URL
-    timeout = Column(Integer, nullable=False, default=180)  # Default timeout in seconds
-    created_at = Column(
+    price_level: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )  # Price level rating
+    context_length: Mapped[int] = mapped_column(
+        Integer, nullable=False
+    )  # Context length
+    output_length: Mapped[int] = mapped_column(Integer, nullable=False)  # Output length
+    intelligence: Mapped[int] = mapped_column(
+        Integer, nullable=False
+    )  # Intelligence rating
+    speed: Mapped[int] = mapped_column(Integer, nullable=False)  # Speed rating
+    supports_image_input: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    supports_skill_calls: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    supports_structured_output: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    has_reasoning: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    supports_search: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    supports_temperature: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+    supports_frequency_penalty: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+    supports_presence_penalty: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+    api_base: Mapped[str | None] = mapped_column(String, nullable=True)
+    timeout: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=180
+    )  # Timeout seconds
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

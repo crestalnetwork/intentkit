@@ -4,9 +4,10 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Column, DateTime, Index, Integer, String, func, select
+from sqlalchemy import DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
@@ -64,53 +65,53 @@ class UserTable(Base):
         Index("ix_users_telegram_username", "telegram_username"),
     )
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    nft_count = Column(
+    nft_count: Mapped[int] = mapped_column(
         Integer,
         default=0,
         nullable=False,
     )
-    email = Column(
+    email: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    x_username = Column(
+    x_username: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    github_username = Column(
+    github_username: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    telegram_username = Column(
+    telegram_username: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    extra = Column(
+    extra: Mapped[dict[str, object] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    evm_wallet_address = Column(
+    evm_wallet_address: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    solana_wallet_address = Column(
+    solana_wallet_address: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    linked_accounts = Column(
+    linked_accounts: Mapped[dict[str, object] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

@@ -5,8 +5,9 @@ from enum import Enum
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import Column, DateTime, String, func, select
+from sqlalchemy import DateTime, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -43,20 +44,20 @@ class AppSettingTable(Base):
 
     __tablename__ = "app_settings"
 
-    key = Column(
+    key: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    value = Column(
+    value: Mapped[Any] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=False,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

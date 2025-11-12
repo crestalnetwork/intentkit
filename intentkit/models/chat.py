@@ -9,7 +9,6 @@ from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Float,
     Index,
@@ -487,32 +486,32 @@ class ChatTable(Base):
     __tablename__ = "chats"
     __table_args__ = (Index("ix_chats_agent_user", "agent_id", "user_id"),)
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    agent_id = Column(
+    agent_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    user_id = Column(
+    user_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    summary = Column(
+    summary: Mapped[str] = mapped_column(
         String,
         default="",
     )
-    rounds = Column(
+    rounds: Mapped[int] = mapped_column(
         Integer,
         default=0,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

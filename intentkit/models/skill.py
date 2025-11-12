@@ -11,7 +11,6 @@ from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Integer,
     Numeric,
@@ -22,6 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -35,17 +35,19 @@ class AgentSkillDataTable(Base):
 
     __tablename__ = "agent_skill_data"
 
-    agent_id = Column(String, primary_key=True)
-    skill = Column(String, primary_key=True)
-    key = Column(String, primary_key=True)
-    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
-    size = Column(Integer, nullable=False, default=0)
-    created_at = Column(
+    agent_id: Mapped[str] = mapped_column(String, primary_key=True)
+    skill: Mapped[str] = mapped_column(String, primary_key=True)
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
+    size: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -221,17 +223,19 @@ class ChatSkillDataTable(Base):
 
     __tablename__ = "chat_skill_data"
 
-    chat_id = Column(String, primary_key=True)
-    skill = Column(String, primary_key=True)
-    key = Column(String, primary_key=True)
-    agent_id = Column(String, nullable=False)
-    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
-    created_at = Column(
+    chat_id: Mapped[str] = mapped_column(String, primary_key=True)
+    skill: Mapped[str] = mapped_column(String, primary_key=True)
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String, nullable=False)
+    data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -431,22 +435,24 @@ class SkillTable(Base):
 
     __tablename__ = "skills"
 
-    name = Column(String, primary_key=True)
-    enabled = Column(Boolean, nullable=False, default=True)
-    category = Column(String, nullable=False)
-    config_name = Column(String, nullable=True)
-    price_level = Column(Integer, nullable=True)
-    price = Column(Numeric(22, 4), nullable=False, default=1)
-    price_self_key = Column(Numeric(22, 4), nullable=False, default=1)
-    rate_limit_count = Column(Integer, nullable=True)
-    rate_limit_minutes = Column(Integer, nullable=True)
-    author = Column(String, nullable=True)
-    created_at = Column(
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    category: Mapped[str] = mapped_column(String, nullable=False)
+    config_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    price_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    price: Mapped[Decimal] = mapped_column(Numeric(22, 4), nullable=False, default=1)
+    price_self_key: Mapped[Decimal] = mapped_column(
+        Numeric(22, 4), nullable=False, default=1
+    )
+    rate_limit_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rate_limit_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    author: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
