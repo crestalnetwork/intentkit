@@ -361,6 +361,7 @@ async def stream_agent_raw(
             AuthorType.TELEGRAM,
             AuthorType.TWITTER,
             AuthorType.API,
+            AuthorType.X402,
         ]:
             payer = agent.owner
         # user account

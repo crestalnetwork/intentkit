@@ -430,6 +430,11 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Timestamp when the agent public info was last updated",
     )
+    x402_price = Column(
+        Float,
+        nullable=True,
+        comment="Price of the x402 request",
+    )
 
     # auto timestamp
     created_at = Column(
@@ -952,6 +957,18 @@ class AgentPublicInfo(BaseModel):
         from_attributes=True,
     )
 
+    x402_price: Annotated[
+        float | None,
+        PydanticField(
+            default=None,
+            description="Price($) of the x402 request",
+            ge=0.01,
+            le=1.0,
+            json_schema_extra={
+                "x-placeholder": "Enter agent price",
+            },
+        ),
+    ]
     description: Annotated[
         str | None,
         PydanticField(
