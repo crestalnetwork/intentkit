@@ -67,6 +67,29 @@ _agents: dict[str, CompiledStateGraph] = {}
 _agents_updated: dict[str, datetime] = {}
 
 
+def _extract_text_content(content: object) -> str:
+    if isinstance(content, list):
+        texts: list[str] = []
+        for item in content:
+            if isinstance(item, dict):
+                t = item.get("text")
+                ty = item.get("type")
+                if t is not None and (ty == "text" or ty is None):
+                    texts.append(t)
+            elif isinstance(item, str):
+                texts.append(item)
+        return "".join(texts)
+    if isinstance(content, dict):
+        if content.get("type") == "text" and "text" in content:
+            return content["text"]
+        if "text" in content:
+            return content["text"]
+        return ""
+    if isinstance(content, str):
+        return content
+    return ""
+
+
 async def build_agent(
     agent: Agent, agent_data: AgentData, custom_skills: list[BaseTool] = []
 ) -> CompiledStateGraph:
@@ -149,8 +172,8 @@ async def build_agent(
                 if llm_model.info.provider == LLMProvider.OPENAI:
                     tools.append({"type": "web_search"})
                     private_tools.append({"type": "web_search"})
-                    if agent.model.startswith("gpt-5-"):
-                        llm_params["reasoning_effort"] = "low"
+                    if llm_model.info.model_name == "gpt-5-mini":
+                        llm_params["reasoning_effort"] = "medium"
                 if llm_model.info.provider == LLMProvider.XAI:
                     llm_params["search_parameters"] = {"mode": "auto"}
             # TODO: else use a search skill
@@ -431,31 +454,30 @@ async def stream_agent_raw(
 
     # super mode
     recursion_limit = 30
-    if re.search(r"\b@super\b", input_message) or user_message.super_mode:
+    if re.search(r"@super\b", input_message) or user_message.super_mode:
         recursion_limit = 300
         # Remove @super from the message
-        input_message = re.sub(r"\b@super\b", "", input_message).strip()
+        input_message = re.sub(r"@super\b", "", input_message).strip()
 
     # llm native search
     search = user_message.search_mode if user_message.search_mode is not None else False
-    if re.search(r"\b@search\b", input_message) or re.search(
-        r"\b@web\b", input_message
-    ):
+    if re.search(r"@search\b", input_message) or re.search(r"@web\b", input_message):
         search = True
         if model.supports_search:
             input_message = re.sub(
-                r"\b@search\b",
+                r"@search\b",
                 "(You have native search tool, you can use it to get more recent information)",
                 input_message,
             ).strip()
             input_message = re.sub(
-                r"\b@web\b",
+                r"@web\b",
                 "(You have native search tool, you can use it to get more recent information)",
                 input_message,
             ).strip()
         else:
-            input_message = re.sub(r"\b@search\b", "", input_message).strip()
-            input_message = re.sub(r"\b@web\b", "", input_message).strip()
+            search = False
+            input_message = re.sub(r"@search\b", "", input_message).strip()
+            input_message = re.sub(r"@web\b", "", input_message).strip()
 
     # content to llm
     messages = [
@@ -526,16 +548,7 @@ async def stream_agent_raw(
                     # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
                 if hasattr(msg, "content") and msg.content:
-                    content = msg.content
-                    if isinstance(msg.content, list):
-                        # in new version, content item maybe a list
-                        content = msg.content[0]
-                    if isinstance(content, dict):
-                        if "text" in content:
-                            content = content["text"]
-                        else:
-                            content = str(content)
-                            logger.error(f"unexpected content type: {content}")
+                    content = _extract_text_content(msg.content)
                     # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
