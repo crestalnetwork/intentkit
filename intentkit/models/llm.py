@@ -403,6 +403,7 @@ class OpenAILLM(LLMModel):
             "model_name": self.model_name,
             "openai_api_key": config.openai_api_key,
             "timeout": info.timeout,
+            "use_responses_api": True,
         }
 
         # Add optional parameters based on model support
@@ -418,10 +419,12 @@ class OpenAILLM(LLMModel):
         if info.api_base:
             kwargs["openai_api_base"] = info.api_base
 
-        if self.model_name.startswith("gpt-5-"):
+        if self.model_name == "gpt-5-mini" or self.model_name == "gpt-5-nano":
             kwargs["reasoning_effort"] = "minimal"
         elif self.model_name == "gpt-5":
-            kwargs["reasoning_effort"] = "low"
+            kwargs["reasoning_effort"] = "medium"
+        elif self.model_name == "gpt-5-codex":
+            kwargs["reasoning_effort"] = "high"
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
