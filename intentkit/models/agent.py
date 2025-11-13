@@ -1197,6 +1197,32 @@ class Agent(AgentCreate, AgentPublicInfo):
         except Exception:
             return False
 
+    def has_search(self) -> bool:
+        texts = [
+            self.prompt,
+            self.prompt_append,
+            self.purpose,
+            self.personality,
+            self.principles,
+        ]
+        for t in texts:
+            if t and (re.search(r"@search\b", t) or re.search(r"@web\b", t)):
+                return True
+        return False
+
+    def has_super(self) -> bool:
+        texts = [
+            self.prompt,
+            self.prompt_append,
+            self.purpose,
+            self.personality,
+            self.principles,
+        ]
+        for t in texts:
+            if t and re.search(r"@super\b", t):
+                return True
+        return False
+
     def to_yaml(self) -> str:
         """
         Dump the agent model to YAML format with field descriptions as comments.

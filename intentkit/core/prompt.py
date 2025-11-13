@@ -240,35 +240,19 @@ def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
 
 
 async def explain_prompt(message: str) -> str:
-    """
-    Process message to replace @skill:*:* patterns with (call skill xxxxx) format.
-
-    Args:
-        message (str): The input message to process
-
-    Returns:
-        str: The processed message with @skill patterns replaced
-    """
-    # Pattern to match @skill:category:config_name with word boundaries
     pattern = r"@skill:([^:]+):([^\s]+)\b"
 
     async def replace_skill_pattern(match):
         category = match.group(1)
         config_name = match.group(2)
 
-        # Get skill by category and config_name
         skill = await Skill.get_by_config_name(category, config_name)
-
         if skill:
             return f"(call skill {skill.name})"
         else:
-            # If skill not found, keep original pattern
             return match.group(0)
 
-    # Find all matches
     matches = list(re.finditer(pattern, message))
-
-    # Process matches in reverse order to maintain string positions
     result = message
     for match in reversed(matches):
         replacement = await replace_skill_pattern(match)
@@ -362,9 +346,6 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> str | 
     elif entrypoint == AuthorType.TRIGGER.value:
         entrypoint_prompt = "\n\n" + _build_autonomous_task_prompt(agent, context)
 
-    if entrypoint_prompt:
-        entrypoint_prompt = await explain_prompt(entrypoint_prompt)
-
     return entrypoint_prompt
 
 
@@ -422,7 +403,7 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
     async def formatted_prompt(
         state: AgentState, runtime: Runtime[AgentContext]
     ) -> list[BaseMessage]:
-        # Get base prompt (with potential admin LLM skill control processing)
+        # Base prompt
         final_system_prompt = await get_base_prompt()
 
         context = runtime.context
@@ -430,8 +411,9 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
         # Add entrypoint prompt if applicable
         entrypoint_prompt = await build_entrypoint_prompt(agent, context)
         if entrypoint_prompt:
+            processed_entrypoint = await explain_prompt(entrypoint_prompt)
             final_system_prompt = (
-                f"{final_system_prompt}## Entrypoint rules{entrypoint_prompt}\n\n"
+                f"{final_system_prompt}## Entrypoint rules{processed_entrypoint}\n\n"
             )
 
         # Add user info if user_id is a valid EVM wallet address
@@ -444,7 +426,6 @@ def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Cal
         final_system_prompt = f"{final_system_prompt}{internal_info}"
 
         if agent.prompt_append:
-            # Find the system message in prompt_array and process it
             for i, (role, content) in enumerate(prompt_array):
                 if role == "system":
                     processed_append = await explain_prompt(content)

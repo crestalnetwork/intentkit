@@ -167,7 +167,7 @@ async def build_agent(
     ) -> BaseChatModel:
         llm_params = {}
         context = runtime.context
-        if context.search:
+        if context.search or agent.has_search():
             if llm_model.info.supports_search:
                 if llm_model.info.provider == LLMProvider.OPENAI:
                     tools.append({"type": "web_search"})
@@ -454,30 +454,18 @@ async def stream_agent_raw(
 
     # super mode
     recursion_limit = 30
-    if re.search(r"@super\b", input_message) or user_message.super_mode:
+    if (
+        re.search(r"@super\b", input_message)
+        or user_message.super_mode
+        or agent.has_super()
+    ):
         recursion_limit = 300
-        # Remove @super from the message
         input_message = re.sub(r"@super\b", "", input_message).strip()
 
     # llm native search
     search = user_message.search_mode if user_message.search_mode is not None else False
     if re.search(r"@search\b", input_message) or re.search(r"@web\b", input_message):
         search = True
-        if model.supports_search:
-            input_message = re.sub(
-                r"@search\b",
-                "(You have native search tool, you can use it to get more recent information)",
-                input_message,
-            ).strip()
-            input_message = re.sub(
-                r"@web\b",
-                "(You have native search tool, you can use it to get more recent information)",
-                input_message,
-            ).strip()
-        else:
-            search = False
-            input_message = re.sub(r"@search\b", "", input_message).strip()
-            input_message = re.sub(r"@web\b", "", input_message).strip()
 
     # content to llm
     messages = [
