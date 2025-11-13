@@ -958,6 +958,7 @@ class AgentPublicInfo(BaseModel):
             le=1.0,
             json_schema_extra={
                 "x-placeholder": "Enter agent price",
+                "x-step": 0.01,
             },
         ),
     ]
