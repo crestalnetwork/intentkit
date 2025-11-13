@@ -1,3 +1,13 @@
+## v0.8.30 - 2025-11-13
+
+### Features
+- System prompt now support search and super functionality
+
+### Documentation
+- Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.29...v0.8.30
+
 ## v0.8.29 - 2025-11-13
 
 ### Bug Fixes
