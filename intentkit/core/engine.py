@@ -431,13 +431,13 @@ async def stream_agent_raw(
 
     # super mode
     recursion_limit = 30
-    if re.search(r"\b@super\b", input_message):
+    if re.search(r"\b@super\b", input_message) or user_message.super_mode:
         recursion_limit = 300
         # Remove @super from the message
         input_message = re.sub(r"\b@super\b", "", input_message).strip()
 
     # llm native search
-    search = False
+    search = user_message.search_mode if user_message.search_mode is not None else False
     if re.search(r"\b@search\b", input_message) or re.search(
         r"\b@web\b", input_message
     ):
