@@ -172,7 +172,7 @@ async def build_agent(
                 if llm_model.info.provider == LLMProvider.OPENAI:
                     tools.append({"type": "web_search"})
                     private_tools.append({"type": "web_search"})
-                    if llm_model.info.model_name == "gpt-5-mini":
+                    if llm_model.model_name == "gpt-5-mini":
                         llm_params["reasoning_effort"] = "medium"
                 if llm_model.info.provider == LLMProvider.XAI:
                     llm_params["search_parameters"] = {"mode": "auto"}

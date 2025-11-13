@@ -1,3 +1,11 @@
+## v0.8.28 - 2025-11-13
+
+### Changes
+- chore: release prep
+- chore: uv sync
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.27...v0.8.28
+
 ## v0.8.24 - 2025-11-11
 
 ### Configuration Updates
