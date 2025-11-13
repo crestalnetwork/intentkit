@@ -5,22 +5,14 @@ related to agent generation sessions.
 """
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Index,
-    String,
-    Text,
-    desc,
-    func,
-    select,
-)
+from sqlalchemy import DateTime, Index, String, Text, desc, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -35,20 +27,20 @@ class ConversationProjectTable(Base):
         Index("ix_generator_conversation_projects_created_at", "created_at"),
     )
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    user_id = Column(
+    user_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    last_activity = Column(
+    last_activity: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -64,27 +56,27 @@ class ConversationMessageTable(Base):
         Index("ix_generator_conversation_messages_created_at", "created_at"),
     )
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    project_id = Column(
+    project_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    role = Column(
+    role: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    content = Column(
+    content: Mapped[str] = mapped_column(
         Text,
         nullable=False,
     )
-    message_metadata = Column(
+    message_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

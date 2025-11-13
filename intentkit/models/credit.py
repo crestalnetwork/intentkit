@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import (
     ARRAY,
     JSON,
-    Column,
     DateTime,
     Index,
     Numeric,
@@ -20,6 +19,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.base import Base
@@ -71,102 +71,102 @@ class CreditAccountTable(Base):
     __tablename__ = "credit_accounts"
     __table_args__ = (Index("ix_credit_accounts_owner", "owner_type", "owner_id"),)
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    owner_type = Column(
+    owner_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    owner_id = Column(
+    owner_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    free_quota = Column(
+    free_quota: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    refill_amount = Column(
+    refill_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    free_credits = Column(
+    free_credits: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    reward_credits = Column(
+    reward_credits: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    credits = Column(
+    credits: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    income_at = Column(
+    income_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    expense_at = Column(
+    expense_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    last_event_id = Column(
+    last_event_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
     # Total statistics fields
-    total_income = Column(
+    total_income: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_free_income = Column(
+    total_free_income: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_reward_income = Column(
+    total_reward_income: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_permanent_income = Column(
+    total_permanent_income: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_expense = Column(
+    total_expense: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_free_expense = Column(
+    total_free_expense: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_reward_expense = Column(
+    total_reward_expense: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    total_permanent_expense = Column(
+    total_permanent_expense: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -926,199 +926,199 @@ class CreditEventTable(Base):
         Index("ix_credit_events_created_at", "created_at"),
     )
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    account_id = Column(
+    account_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    event_type = Column(
+    event_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    user_id = Column(
+    user_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    upstream_type = Column(
+    upstream_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    upstream_tx_id = Column(
+    upstream_tx_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    agent_id = Column(
+    agent_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    agent_wallet_address = Column(
+    agent_wallet_address: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    start_message_id = Column(
+    start_message_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    message_id = Column(
+    message_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    model = Column(
+    model: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    skill_call_id = Column(
+    skill_call_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    skill_name = Column(
+    skill_name: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    direction = Column(
+    direction: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    total_amount = Column(
+    total_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    credit_type = Column(
+    credit_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    credit_types = Column(
+    credit_types: Mapped[list[str] | None] = mapped_column(
         JSON().with_variant(ARRAY(String), "postgresql"),
         nullable=True,
     )
-    balance_after = Column(
+    balance_after: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
         default=None,
     )
-    base_amount = Column(
+    base_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    base_discount_amount = Column(
+    base_discount_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_original_amount = Column(
+    base_original_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_llm_amount = Column(
+    base_llm_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_skill_amount = Column(
+    base_skill_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_free_amount = Column(
+    base_free_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_reward_amount = Column(
+    base_reward_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    base_permanent_amount = Column(
+    base_permanent_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    fee_platform_amount = Column(
+    fee_platform_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    fee_platform_free_amount = Column(
+    fee_platform_free_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_platform_reward_amount = Column(
+    fee_platform_reward_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_platform_permanent_amount = Column(
+    fee_platform_permanent_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_dev_account = Column(
+    fee_dev_account: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    fee_dev_amount = Column(
+    fee_dev_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    fee_dev_free_amount = Column(
+    fee_dev_free_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_dev_reward_amount = Column(
+    fee_dev_reward_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_dev_permanent_amount = Column(
+    fee_dev_permanent_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_agent_account = Column(
+    fee_agent_account: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    fee_agent_amount = Column(
+    fee_agent_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    fee_agent_free_amount = Column(
+    fee_agent_free_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_agent_reward_amount = Column(
+    fee_agent_reward_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    fee_agent_permanent_amount = Column(
+    fee_agent_permanent_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         nullable=True,
     )
-    free_amount = Column(
-        Numeric(22, 4),
-        default=0,
-        nullable=True,
-    )
-    reward_amount = Column(
+    free_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    permanent_amount = Column(
+    reward_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=True,
     )
-    note = Column(
+    permanent_amount: Mapped[Decimal | None] = mapped_column(
+        Numeric(22, 4),
+        default=0,
+        nullable=True,
+    )
+    note: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -1420,51 +1420,51 @@ class CreditTransactionTable(Base):
         Index("ix_credit_transactions_event_id", "event_id"),
     )
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    account_id = Column(
+    account_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    event_id = Column(
+    event_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    tx_type = Column(
+    tx_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    credit_debit = Column(
+    credit_debit: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    change_amount = Column(
+    change_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    free_amount = Column(
+    free_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    reward_amount = Column(
+    reward_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    permanent_amount = Column(
+    permanent_amount: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    credit_type = Column(
+    credit_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -1556,33 +1556,33 @@ class CreditPriceTable(Base):
 
     __tablename__ = "credit_prices"
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    price_entity = Column(
+    price_entity: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    price_entity_id = Column(
+    price_entity_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    discount_type = Column(
+    discount_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    price = Column(
+    price: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         default=0,
         nullable=False,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -1644,31 +1644,31 @@ class CreditPriceLogTable(Base):
 
     __tablename__ = "credit_price_logs"
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
-    price_id = Column(
+    price_id: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    old_price = Column(
+    old_price: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         nullable=False,
     )
-    new_price = Column(
+    new_price: Mapped[Decimal] = mapped_column(
         Numeric(22, 4),
         nullable=False,
     )
-    note = Column(
+    note: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
-    modified_by = Column(
+    modified_by: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
-    modified_at = Column(
+    modified_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

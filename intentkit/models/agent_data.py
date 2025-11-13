@@ -7,17 +7,9 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    Numeric,
-    String,
-    func,
-    select,
-)
+from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
 from intentkit.models.db import get_session
@@ -31,55 +23,83 @@ class AgentDataTable(Base):
 
     __tablename__ = "agent_data"
 
-    id = Column(String, primary_key=True, comment="Same as Agent.id")
-    evm_wallet_address = Column(String, nullable=True, comment="EVM wallet address")
-    solana_wallet_address = Column(
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True, comment="Same as Agent.id"
+    )
+    evm_wallet_address: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="EVM wallet address"
+    )
+    solana_wallet_address: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Solana wallet address"
     )
-    cdp_wallet_data = Column(String, nullable=True, comment="CDP wallet data")
-    twitter_id = Column(String, nullable=True, comment="Twitter user ID")
-    twitter_username = Column(String, nullable=True, comment="Twitter username")
-    twitter_name = Column(String, nullable=True, comment="Twitter display name")
-    twitter_access_token = Column(String, nullable=True, comment="Twitter access token")
-    twitter_access_token_expires_at = Column(
+    cdp_wallet_data: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="CDP wallet data"
+    )
+    twitter_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Twitter user ID"
+    )
+    twitter_username: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Twitter username"
+    )
+    twitter_name: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Twitter display name"
+    )
+    twitter_access_token: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Twitter access token"
+    )
+    twitter_access_token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Twitter access token expiration time",
     )
-    twitter_refresh_token = Column(
+    twitter_refresh_token: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Twitter refresh token"
     )
-    twitter_self_key_refreshed_at = Column(
+    twitter_self_key_refreshed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Twitter self-key userinfo last refresh time",
     )
-    twitter_is_verified = Column(
+    twitter_is_verified: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         comment="Whether the Twitter account is verified",
     )
-    telegram_id = Column(String, nullable=True, comment="Telegram user ID")
-    telegram_username = Column(String, nullable=True, comment="Telegram username")
-    telegram_name = Column(String, nullable=True, comment="Telegram display name")
-    discord_id = Column(String, nullable=True, comment="Discord user ID")
-    discord_username = Column(String, nullable=True, comment="Discord username")
-    discord_name = Column(String, nullable=True, comment="Discord display name")
-    error_message = Column(String, nullable=True, comment="Last error message")
-    api_key = Column(
+    telegram_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Telegram user ID"
+    )
+    telegram_username: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Telegram username"
+    )
+    telegram_name: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Telegram display name"
+    )
+    discord_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Discord user ID"
+    )
+    discord_username: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Discord username"
+    )
+    discord_name: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Discord display name"
+    )
+    error_message: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Last error message"
+    )
+    api_key: Mapped[str | None] = mapped_column(
         String, nullable=True, unique=True, comment="API key for the agent"
     )
-    api_key_public = Column(
+    api_key_public: Mapped[str | None] = mapped_column(
         String, nullable=True, unique=True, comment="Public API key for the agent"
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
         comment="Timestamp when the agent data was created",
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -370,16 +390,18 @@ class AgentPluginDataTable(Base):
 
     __tablename__ = "agent_plugin_data"
 
-    agent_id = Column(String, primary_key=True)
-    plugin = Column(String, primary_key=True)
-    key = Column(String, primary_key=True)
-    data = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
-    created_at = Column(
+    agent_id: Mapped[str] = mapped_column(String, primary_key=True)
+    plugin: Mapped[str] = mapped_column(String, primary_key=True)
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
@@ -503,40 +525,46 @@ class AgentQuotaTable(Base):
 
     __tablename__ = "agent_quotas"
 
-    id = Column(String, primary_key=True)
-    plan = Column(String, default="self-hosted")
-    message_count_total = Column(BigInteger, default=0)
-    message_limit_total = Column(BigInteger, default=99999999)
-    message_count_monthly = Column(BigInteger, default=0)
-    message_limit_monthly = Column(BigInteger, default=99999999)
-    message_count_daily = Column(BigInteger, default=0)
-    message_limit_daily = Column(BigInteger, default=99999999)
-    last_message_time = Column(DateTime(timezone=True), default=None, nullable=True)
-    autonomous_count_total = Column(BigInteger, default=0)
-    autonomous_limit_total = Column(BigInteger, default=99999999)
-    autonomous_count_monthly = Column(BigInteger, default=0)
-    autonomous_limit_monthly = Column(BigInteger, default=99999999)
-    last_autonomous_time = Column(DateTime(timezone=True), default=None, nullable=True)
-    twitter_count_total = Column(BigInteger, default=0)
-    twitter_limit_total = Column(BigInteger, default=99999999)
-    twitter_count_monthly = Column(BigInteger, default=0)
-    twitter_limit_monthly = Column(BigInteger, default=99999999)
-    twitter_count_daily = Column(BigInteger, default=0)
-    twitter_limit_daily = Column(BigInteger, default=99999999)
-    last_twitter_time = Column(DateTime(timezone=True), default=None, nullable=True)
-    free_income_daily = Column(Numeric(22, 4), default=0)
-    avg_action_cost = Column(Numeric(22, 4), default=0)
-    min_action_cost = Column(Numeric(22, 4), default=0)
-    max_action_cost = Column(Numeric(22, 4), default=0)
-    low_action_cost = Column(Numeric(22, 4), default=0)
-    medium_action_cost = Column(Numeric(22, 4), default=0)
-    high_action_cost = Column(Numeric(22, 4), default=0)
-    created_at = Column(
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    plan: Mapped[str] = mapped_column(String, default="self-hosted")
+    message_count_total: Mapped[int] = mapped_column(BigInteger, default=0)
+    message_limit_total: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    message_count_monthly: Mapped[int] = mapped_column(BigInteger, default=0)
+    message_limit_monthly: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    message_count_daily: Mapped[int] = mapped_column(BigInteger, default=0)
+    message_limit_daily: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    last_message_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None, nullable=True
+    )
+    autonomous_count_total: Mapped[int] = mapped_column(BigInteger, default=0)
+    autonomous_limit_total: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    autonomous_count_monthly: Mapped[int] = mapped_column(BigInteger, default=0)
+    autonomous_limit_monthly: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    last_autonomous_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None, nullable=True
+    )
+    twitter_count_total: Mapped[int] = mapped_column(BigInteger, default=0)
+    twitter_limit_total: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    twitter_count_monthly: Mapped[int] = mapped_column(BigInteger, default=0)
+    twitter_limit_monthly: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    twitter_count_daily: Mapped[int] = mapped_column(BigInteger, default=0)
+    twitter_limit_daily: Mapped[int] = mapped_column(BigInteger, default=99999999)
+    last_twitter_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None, nullable=True
+    )
+    free_income_daily: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    avg_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    min_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    max_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    low_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    medium_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    high_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),

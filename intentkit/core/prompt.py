@@ -250,7 +250,7 @@ async def explain_prompt(message: str) -> str:
         str: The processed message with @skill patterns replaced
     """
     # Pattern to match @skill:category:config_name with word boundaries
-    pattern = r"\b@skill:([^:]+):([^\s]+)\b"
+    pattern = r"@skill:([^:]+):([^\s]+)\b"
 
     async def replace_skill_pattern(match):
         category = match.group(1)
