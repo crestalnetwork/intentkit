@@ -1,3 +1,13 @@
+## v0.8.29 - 2025-11-13
+
+### Bug Fixes
+- Fixed engine.py with latest changes
+
+### Documentation
+- Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.28...v0.8.29
+
 ## v0.8.28 - 2025-11-13
 
 ### Changes
