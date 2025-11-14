@@ -1,4 +1,9 @@
-from intentkit.clients.cdp import get_cdp_client, get_evm_account, get_wallet_provider
+from intentkit.clients.cdp import (
+    get_cdp_client,
+    get_evm_account,
+    get_wallet_provider,
+    get_cdp_network,
+)
 from intentkit.clients.twitter import (
     TwitterClient,
     TwitterClientConfig,
@@ -13,5 +18,6 @@ __all__ = [
     "get_evm_account",
     "get_cdp_client",
     "get_wallet_provider",
+    "get_cdp_network",
     "get_web3_client",
 ]
