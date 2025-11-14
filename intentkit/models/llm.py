@@ -421,9 +421,7 @@ class OpenAILLM(LLMModel):
 
         if self.model_name == "gpt-5-mini" or self.model_name == "gpt-5-nano":
             kwargs["reasoning_effort"] = "minimal"
-        elif self.model_name == "gpt-5":
-            kwargs["reasoning_effort"] = "medium"
-        elif self.model_name == "gpt-5-codex":
+        elif self.model_name == "gpt-5.1-codex":
             kwargs["reasoning_effort"] = "high"
 
         # Update kwargs with params to allow overriding
