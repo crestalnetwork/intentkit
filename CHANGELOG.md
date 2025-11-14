@@ -1,3 +1,14 @@
+## v0.8.33 - 2025-11-14
+
+### Bug Fixes
+- Fixed lifi bug in token execution
+- Updated code formatting with ruff
+
+### Documentation
+- Updated changelog
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.32...v0.8.33
+
 ## v0.8.32 - 2025-11-14
 
 ### Fixes
