@@ -1,3 +1,20 @@
+## v0.8.31 - 2025-11-14
+
+### Changes
+- Updated multiple dependencies to latest versions
+- Enhanced LLM model configurations
+- Updated agent model definitions
+
+**Dependency Updates:**
+- langchain-mcp-adapters: 0.1.12 → 0.1.13
+- langgraph-prebuilt: 1.0.2 → 1.0.4  
+- MCP: 1.21.0 → 1.21.1
+- OpenAI: 2.7.2 → 2.8.0
+- Ruff: 0.14.4 → 0.14.5
+- Slack SDK: 3.37.0 → 3.38.0
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.30...v0.8.31
+
 ## v0.8.30 - 2025-11-13
 
 ### Features
