@@ -952,12 +952,12 @@ class AgentPublicInfo(BaseModel):
     x402_price: Annotated[
         float | None,
         PydanticField(
-            default=None,
+            default=0.01,
             description="Price($) of the x402 request",
             ge=0.01,
             le=1.0,
             json_schema_extra={
-                "x-placeholder": "Enter agent price",
+                "x-placeholder": "USDC price per request",
                 "x-step": 0.01,
             },
         ),
