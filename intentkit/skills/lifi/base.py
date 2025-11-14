@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class LiFiBaseTool(IntentKitSkill):
+class LiFiBaseTool(IntentKitOnChainSkill):
     """Base class for LiFi tools."""
 
     name: str = Field(description="The name of the tool")
