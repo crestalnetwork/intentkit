@@ -1,3 +1,15 @@
+## v0.8.32 - 2025-11-14
+
+### Fixes
+- Add default value to x402 price field in agent model
+- Update changelog documentation
+
+**Changes:**
+- Changed x402_price default from None to 0.01 in AgentPublicInfo model
+- Updated changelog with v0.8.31 release notes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.31...v0.8.32
+
 ## v0.8.31 - 2025-11-14
 
 ### Changes

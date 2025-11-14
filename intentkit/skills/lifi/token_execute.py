@@ -133,6 +133,12 @@ class TokenExecute(LiFiBaseTool):
             if not network_id:
                 return "Agent network ID is not configured. Please set it before executing on-chain transactions."
 
+            try:
+                cdp_network = self.get_cdp_network()
+            except Exception as e:
+                self.logger.error("LiFi_CDP_Network_Error: %s", str(e))
+                return f"Invalid agent network for CDP: {str(e)}"
+
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
             )
@@ -173,7 +179,7 @@ class TokenExecute(LiFiBaseTool):
                     evm_account,
                     quote_data,
                     web3,
-                    network_id,
+                    cdp_network,
                     from_address,
                 )
                 if approval_result:
@@ -184,7 +190,7 @@ class TokenExecute(LiFiBaseTool):
                     evm_account,
                     quote_data,
                     from_address,
-                    network_id,
+                    cdp_network,
                     web3,
                 )
 
