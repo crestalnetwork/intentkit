@@ -2,12 +2,11 @@ import asyncio
 from typing import Any
 
 import httpx
-from coinbase_agentkit import CdpEvmWalletProvider
+from cdp import EvmServerAccount, TransactionRequestEIP1559
 from pydantic import BaseModel, Field
 from web3 import Web3
+from web3.exceptions import TimeExhausted
 
-from intentkit.clients import get_wallet_provider as get_agent_wallet_provider
-from intentkit.models.agent import Agent
 from intentkit.skills.lifi.base import LiFiBaseTool
 from intentkit.skills.lifi.token_quote import TokenQuote
 from intentkit.skills.lifi.utils import (
@@ -23,6 +22,7 @@ from intentkit.skills.lifi.utils import (
     prepare_transaction_params,
     validate_inputs,
 )
+from intentkit.utils.error import IntentKitAPIError
 
 
 class TokenExecuteInput(BaseModel):
@@ -52,7 +52,7 @@ class TokenExecuteInput(BaseModel):
 class TokenExecute(LiFiBaseTool):
     """Tool for executing token transfers across chains using LiFi.
 
-    This tool executes actual token transfers and swaps using the CDP wallet provider.
+    This tool executes actual token transfers and swaps using the CDP EVM account.
     Requires a properly configured CDP wallet to work.
     """
 
@@ -129,20 +129,28 @@ class TokenExecute(LiFiBaseTool):
             # Get agent context for CDP wallet
             context = self.get_context()
             agent = context.agent
+            network_id = agent.network_id
+            if not network_id:
+                return "Agent network ID is not configured. Please set it before executing on-chain transactions."
 
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
             )
 
-            # Get CDP wallet provider
-            cdp_wallet_provider = await self._get_cdp_wallet_provider(agent)
-            if isinstance(cdp_wallet_provider, str):  # Error message
-                return cdp_wallet_provider
+            # Get CDP EVM account and web3 client
+            evm_account = await self._get_evm_account()
+            if isinstance(evm_account, str):  # Error message
+                return evm_account
 
-            # Get wallet address
-            from_address = cdp_wallet_provider.get_address()
+            from_address = evm_account.address
             if not from_address:
                 return "No wallet address available. Please check your CDP wallet configuration."
+
+            try:
+                web3 = self.web3_client()
+            except Exception as e:
+                self.logger.error("LiFi_Web3_Error: %s", str(e))
+                return "Unable to initialize Web3 client. Please verify the agent's network configuration."
 
             # Get quote and execute transfer
             async with httpx.AsyncClient() as client:
@@ -162,16 +170,22 @@ class TokenExecute(LiFiBaseTool):
 
                 # Step 2: Handle token approval if needed
                 approval_result = await self._handle_token_approval(
-                    cdp_wallet_provider, quote_data
+                    evm_account,
+                    quote_data,
+                    web3,
+                    network_id,
+                    from_address,
                 )
                 if approval_result:
                     self.logger.info(f"Token approval completed: {approval_result}")
 
                 # Step 3: Execute transaction
                 tx_hash = await self._execute_transfer_transaction(
-                    cdp_wallet_provider,
+                    evm_account,
                     quote_data,
                     from_address,
+                    network_id,
+                    web3,
                 )
 
                 # Step 4: Monitor status and return result
@@ -183,17 +197,18 @@ class TokenExecute(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             return f"An unexpected error occurred: {str(e)}"
 
-    async def _get_cdp_wallet_provider(
-        self, agent: Agent
-    ) -> CdpEvmWalletProvider | str:
-        """Get CDP wallet provider with error handling."""
+    async def _get_evm_account(self) -> EvmServerAccount | str:
+        """Get CDP EVM account with error handling."""
         try:
-            cdp_wallet_provider = await get_agent_wallet_provider(agent)
-            if not cdp_wallet_provider:
-                return "CDP wallet provider not configured. Please set up your agent's CDP wallet first."
+            evm_account = await self.get_evm_account()
+            if not evm_account:
+                return "CDP wallet account not configured. Please set up your agent's CDP wallet first."
 
-            return cdp_wallet_provider
+            return evm_account
 
+        except IntentKitAPIError as e:
+            self.logger.error("LiFi_CDP_Error: %s", str(e))
+            return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
         except Exception as e:
             self.logger.error("LiFi_CDP_Error: %s", str(e))
             return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
@@ -250,7 +265,12 @@ class TokenExecute(LiFiBaseTool):
         return data
 
     async def _handle_token_approval(
-        self, wallet_provider: CdpEvmWalletProvider, quote_data: dict[str, Any]
+        self,
+        evm_account: EvmServerAccount,
+        quote_data: dict[str, Any],
+        web3: Web3,
+        network_id: str,
+        wallet_address: str,
     ) -> str | None:
         """Handle ERC20 token approval if needed."""
         estimate = quote_data.get("estimate", {})
@@ -267,7 +287,13 @@ class TokenExecute(LiFiBaseTool):
 
         try:
             return await self._check_and_set_allowance(
-                wallet_provider, from_token_address, approval_address, from_amount
+                evm_account,
+                from_token_address,
+                approval_address,
+                from_amount,
+                web3,
+                network_id,
+                wallet_address,
             )
         except Exception as e:
             self.logger.error("LiFi_Token_Approval_Error: %s", str(e))
@@ -275,9 +301,11 @@ class TokenExecute(LiFiBaseTool):
 
     async def _execute_transfer_transaction(
         self,
-        wallet_provider: CdpEvmWalletProvider,
+        evm_account: EvmServerAccount,
         quote_data: dict[str, Any],
         from_address: str,
+        network_id: str,
+        web3: Web3,
     ) -> str:
         """Execute the main transfer transaction."""
         transaction_request = quote_data.get("transactionRequest")
@@ -286,16 +314,17 @@ class TokenExecute(LiFiBaseTool):
             tx_params = prepare_transaction_params(
                 transaction_request, wallet_address=from_address
             )
+            tx_request = self._build_transaction_request(tx_params)
             self.logger.info(
-                f"Sending transaction to {tx_params['to']} with value {tx_params['value']}"
+                f"Sending transaction to {tx_params['to']} with value {tx_params.get('value', 0)}"
             )
 
             # Send transaction
-            tx_hash = wallet_provider.send_transaction(tx_params)
+            tx_hash = await evm_account.send_transaction(tx_request, network=network_id)
 
             # Wait for confirmation
-            receipt = wallet_provider.wait_for_transaction_receipt(tx_hash)
-            if not receipt or receipt.get("status") == 0:
+            receipt = await self._wait_for_receipt(web3, tx_hash)
+            if not receipt or receipt.get("status") != 1:
                 raise Exception(f"Transaction failed: {tx_hash}")
 
             return tx_hash
@@ -303,6 +332,52 @@ class TokenExecute(LiFiBaseTool):
         except Exception as e:
             self.logger.error("LiFi_Execution_Error: %s", str(e))
             raise Exception(f"Failed to execute transaction: {str(e)}")
+
+    def _build_transaction_request(
+        self, tx_params: dict[str, Any]
+    ) -> TransactionRequestEIP1559:
+        """Convert prepared transaction parameters to an EIP-1559 request."""
+        request_kwargs: dict[str, Any] = {
+            "to": Web3.to_checksum_address(tx_params["to"]),
+            "data": tx_params.get("data", "0x"),
+        }
+
+        for key in ("value", "gas", "maxPriorityFeePerGas", "nonce", "chainId"):
+            value = tx_params.get(key)
+            if value is not None:
+                request_kwargs[key] = value
+
+        max_fee_per_gas = tx_params.get("maxFeePerGas") or tx_params.get("gasPrice")
+        if max_fee_per_gas is not None:
+            request_kwargs["maxFeePerGas"] = max_fee_per_gas
+
+        return TransactionRequestEIP1559(**request_kwargs)
+
+    async def _wait_for_receipt(
+        self, web3: Web3, tx_hash: str
+    ) -> dict[str, Any] | None:
+        """Wait for a transaction receipt using Web3 in a non-blocking way."""
+
+        try:
+            receipt = await asyncio.to_thread(
+                web3.eth.wait_for_transaction_receipt, tx_hash
+            )
+        except TimeExhausted as exc:
+            self.logger.error("LiFi_Execution_Error: %s", str(exc))
+            raise Exception(
+                f"Transaction not confirmed before timeout: {tx_hash}"
+            ) from exc
+        except Exception as exc:
+            self.logger.error("LiFi_Execution_Error: %s", str(exc))
+            raise
+
+        if receipt is None:
+            return None
+
+        if isinstance(receipt, dict):
+            return receipt
+
+        return dict(receipt)
 
     async def _finalize_transfer(
         self,
@@ -413,25 +488,27 @@ class TokenExecute(LiFiBaseTool):
 
     async def _check_and_set_allowance(
         self,
-        wallet_provider: CdpEvmWalletProvider,
+        evm_account: EvmServerAccount,
         token_address: str,
         approval_address: str,
         amount: str,
+        web3: Web3,
+        network_id: str,
+        wallet_address: str,
     ) -> str | None:
         """Check if token allowance is sufficient and set approval if needed."""
         try:
             # Normalize addresses
             token_address = Web3.to_checksum_address(token_address)
             approval_address = Web3.to_checksum_address(approval_address)
-            wallet_address = wallet_provider.get_address()
+            wallet_checksum = Web3.to_checksum_address(wallet_address)
+
+            contract = web3.eth.contract(address=token_address, abi=ERC20_ABI)
 
             # Check current allowance
             try:
-                current_allowance = wallet_provider.read_contract(
-                    contract_address=token_address,
-                    abi=ERC20_ABI,
-                    function_name="allowance",
-                    args=[wallet_address, approval_address],
+                current_allowance = await asyncio.to_thread(
+                    contract.functions.allowance(wallet_checksum, approval_address).call
                 )
 
                 required_amount = int(amount)
@@ -453,20 +530,21 @@ class TokenExecute(LiFiBaseTool):
 
             # Create approval transaction
             approve_data = create_erc20_approve_data(approval_address, amount)
+            approval_request = TransactionRequestEIP1559(
+                to=token_address,
+                data=approve_data,
+                value=0,
+            )
 
             # Send approval transaction
-            approval_tx_hash = wallet_provider.send_transaction(
-                {
-                    "to": token_address,
-                    "data": approve_data,
-                    "value": 0,
-                }
+            approval_tx_hash = await evm_account.send_transaction(
+                approval_request, network=network_id
             )
 
             # Wait for approval transaction confirmation
-            receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash)
+            receipt = await self._wait_for_receipt(web3, approval_tx_hash)
 
-            if not receipt or receipt.get("status") == 0:
+            if not receipt or receipt.get("status") != 1:
                 raise Exception(f"Approval transaction failed: {approval_tx_hash}")
 
             return approval_tx_hash
