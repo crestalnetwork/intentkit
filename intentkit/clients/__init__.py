@@ -1,8 +1,8 @@
 from intentkit.clients.cdp import (
     get_cdp_client,
+    get_cdp_network,
     get_evm_account,
     get_wallet_provider,
-    get_cdp_network,
 )
 from intentkit.clients.twitter import (
     TwitterClient,

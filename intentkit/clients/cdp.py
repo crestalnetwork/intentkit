@@ -82,9 +82,14 @@ async def get_evm_account(agent: Agent) -> EvmServerAccount:
     account, _ = await _ensure_evm_account(agent)
     return account
 
+
 def get_cdp_network(agent: Agent) -> str:
     if not agent.network_id:
-        raise IntentKitAPIError(400, "BadNetworkID", "Your agent network ID is not set. Please set it in the agent config.")
+        raise IntentKitAPIError(
+            400,
+            "BadNetworkID",
+            "Your agent network ID is not set. Please set it in the agent config.",
+        )
     mapping = {
         "ethereum-mainnet": "ethereum",
         "base-mainnet": "base",
@@ -94,11 +99,16 @@ def get_cdp_network(agent: Agent) -> str:
         "base-sepolia": "base-sepolia",
     }
     if agent.network_id == "solana":
-        raise IntentKitAPIError(400, "BadNetworkID", "Solana is not supported by CDP EVM.")
+        raise IntentKitAPIError(
+            400, "BadNetworkID", "Solana is not supported by CDP EVM."
+        )
     cdp_network = mapping.get(agent.network_id)
     if not cdp_network:
-        raise IntentKitAPIError(400, "BadNetworkID", f"Unsupported network ID: {agent.network_id}")
+        raise IntentKitAPIError(
+            400, "BadNetworkID", f"Unsupported network ID: {agent.network_id}"
+        )
     return cdp_network
+
 
 async def get_wallet_provider(agent: Agent) -> CdpEvmWalletProvider:
     _assert_cdp_wallet_provider(agent)

@@ -1,8 +1,8 @@
 from cdp import EvmServerAccount
 from web3 import Web3
 
-from intentkit.clients import get_evm_account as fetch_evm_account
 from intentkit.clients import get_cdp_network as resolve_cdp_network
+from intentkit.clients import get_evm_account as fetch_evm_account
 from intentkit.clients.web3 import get_web3_client
 from intentkit.skills.base import IntentKitSkill
 
