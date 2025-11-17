@@ -1058,6 +1058,46 @@ class AgentPublicInfo(BaseModel):
         ),
     ]
 
+    async def update(self, agent_id: str) -> "Agent":
+        """Update agent public info with only the fields that are explicitly provided.
+
+        This method only updates fields that are explicitly set in this instance,
+        leaving other fields unchanged. This is more efficient than override as it
+        reduces context usage and minimizes the risk of accidentally changing fields.
+
+        Args:
+            agent_id: The ID of the agent to update
+
+        Returns:
+            The updated Agent instance
+        """
+        async with get_session() as session:
+            # Get the agent from database
+            result = await session.execute(
+                select(AgentTable).where(AgentTable.id == agent_id)
+            )
+            db_agent = result.scalar_one_or_none()
+
+            if not db_agent:
+                raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
+
+            # Get only the fields that are explicitly provided (exclude_unset=True)
+            update_data = self.model_dump(exclude_unset=True)
+
+            # Apply the updates to the database agent
+            for key, value in update_data.items():
+                if hasattr(db_agent, key):
+                    setattr(db_agent, key, value)
+
+            # Update public_info_updated_at timestamp
+            db_agent.public_info_updated_at = func.now()
+
+            # Commit changes
+            await session.commit()
+            await session.refresh(db_agent)
+
+            return Agent.model_validate(db_agent)
+
     async def override(self, agent_id: str) -> "Agent":
         """Override agent public info with all fields from this instance.
 
