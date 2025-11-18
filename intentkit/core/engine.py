@@ -35,7 +35,7 @@ from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
-from intentkit.core.node import (
+from intentkit.core.middleware import (
     CreditCheckMiddleware,
     DynamicPromptMiddleware,
     SummarizationMiddleware,
