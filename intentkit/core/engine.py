@@ -514,6 +514,10 @@ async def stream_agent_raw(
             this_time = time.perf_counter()
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
 
+            if isinstance(chunk, tuple) and len(chunk) == 2:
+                event_kind, payload = chunk
+                chunk = payload
+
             if isinstance(chunk, dict) and "credit_check" in chunk:
                 credit_payload = chunk.get("credit_check", {})
                 content = credit_payload.get("message")
@@ -561,10 +565,15 @@ async def stream_agent_raw(
                         extra={"thread_id": thread_id},
                     )
                 msg = chunk["model"]["messages"][0]
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                has_tools = hasattr(msg, "tool_calls") and bool(msg.tool_calls)
+                if has_tools:
                     cached_tool_step = msg
-                if hasattr(msg, "content") and msg.content:
-                    content = _extract_text_content(msg.content)
+                content = (
+                    _extract_text_content(msg.content)
+                    if hasattr(msg, "content")
+                    else ""
+                )
+                if content and not has_tools:
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
                         agent_id=user_message.agent_id,
@@ -655,7 +664,8 @@ async def stream_agent_raw(
                                 "parameters": call["args"],
                                 "success": True,
                             }
-                            if msg.status == "error":
+                            status = getattr(msg, "status", None)
+                            if status == "error":
                                 skill_call["success"] = False
                                 skill_call["error_message"] = str(msg.content)
                             else:
@@ -665,8 +675,9 @@ async def stream_agent_raw(
                                     skill_call["response"] = textwrap.shorten(
                                         str(msg.content), width=1000, placeholder="..."
                                     )
-                                if msg.artifact:
-                                    cached_attachments.extend(msg.artifact)
+                                artifact = getattr(msg, "artifact", None)
+                                if artifact:
+                                    cached_attachments.extend(artifact)
                             skill_calls.append(skill_call)
                             break
                 skill_message_create = ChatMessageCreate(
