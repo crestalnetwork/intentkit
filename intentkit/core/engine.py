@@ -20,7 +20,7 @@ from datetime import datetime
 
 import sqlalchemy
 from epyxid import XID
-from langchain_core.language_models import BaseChatModel
+from langchain.agents import create_agent as create_langchain_agent
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -28,8 +28,6 @@ from langchain_core.messages import (
 from langchain_core.tools import BaseTool
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import create_react_agent
-from langgraph.runtime import Runtime
 from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -37,11 +35,14 @@ from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
-from intentkit.core.node import PreModelNode, post_model_node
-from intentkit.core.prompt import (
-    create_formatted_prompt_function,
-    explain_prompt,
+from intentkit.core.node import (
+    CreditCheckMiddleware,
+    DynamicPromptMiddleware,
+    SummarizationMiddleware,
+    ToolBindingMiddleware,
+    TrimMessagesMiddleware,
 )
+from intentkit.core.prompt import explain_prompt
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -53,7 +54,7 @@ from intentkit.models.chat import (
 )
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.db import get_langgraph_checkpointer, get_session
-from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
+from intentkit.models.llm import LLMModelInfo, create_llm_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
@@ -158,53 +159,37 @@ async def build_agent(
     tools = list({tool.name: tool for tool in tools}.values())
     private_tools = list({tool.name: tool for tool in private_tools}.values())
 
-    # Create the formatted_prompt function using the refactored prompt module
-    formatted_prompt = create_formatted_prompt_function(agent, agent_data)
-
-    # bind tools to llm
-    async def select_model(
-        state: AgentState, runtime: Runtime[AgentContext]
-    ) -> BaseChatModel:
-        llm_params = {}
-        context = runtime.context
-        if context.search or agent.has_search():
-            if llm_model.info.supports_search:
-                if llm_model.info.provider == LLMProvider.OPENAI:
-                    tools.append({"type": "web_search"})
-                    private_tools.append({"type": "web_search"})
-                    if llm_model.model_name == "gpt-5-mini":
-                        llm_params["reasoning_effort"] = "medium"
-                if llm_model.info.provider == LLMProvider.XAI:
-                    llm_params["search_parameters"] = {"mode": "auto"}
-            # TODO: else use a search skill
-        # build llm now
-        llm = await llm_model.create_instance(llm_params)
-        if context.is_private:
-            return llm.bind_tools(private_tools)
-        return llm.bind_tools(tools)
-
     for tool in private_tools:
         logger.info(
             f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
         )
 
-    # Pre model hook
-    summarize_llm = await create_llm_model(model_name="gpt-5-mini")
-    summarize_model = await summarize_llm.create_instance()
-    pre_model_hook = PreModelNode(
-        model=summarize_model,
-        short_term_memory_strategy=agent.short_term_memory_strategy,
-        max_tokens=llm_model.info.context_length // 2,
-        max_summary_tokens=2048,
-    )
+    base_model = await llm_model.create_instance()
 
-    # Create ReAct Agent using the LLM and CDP Agentkit tools.
-    executor = create_react_agent(
-        model=select_model,
+    middleware = [
+        ToolBindingMiddleware(llm_model, tools, private_tools),
+        DynamicPromptMiddleware(agent, agent_data),
+    ]
+
+    if agent.short_term_memory_strategy == "trim":
+        middleware.append(TrimMessagesMiddleware(max_summary_tokens=2048))
+    elif agent.short_term_memory_strategy == "summarize":
+        summarize_llm = await create_llm_model(model_name="gpt-5-mini")
+        summarize_model = await summarize_llm.create_instance()
+        middleware.append(
+            SummarizationMiddleware(
+                model=summarize_model,
+                max_tokens_before_summary=llm_model.info.context_length // 2,
+            )
+        )
+
+    if config.payment_enabled:
+        middleware.append(CreditCheckMiddleware())
+
+    executor = create_langchain_agent(
+        model=base_model,
         tools=private_tools,
-        prompt=formatted_prompt,
-        pre_model_hook=pre_model_hook,
-        post_model_hook=post_model_node if config.payment_enabled else None,
+        middleware=middleware,
         state_schema=AgentState,
         context_schema=AgentContext,
         checkpointer=memory,
@@ -521,23 +506,65 @@ async def stream_agent_raw(
     cached_tool_step = None
     try:
         async for chunk in executor.astream(
-            {"messages": messages}, context=context, config=stream_config
+            {"messages": messages},
+            context=context,
+            config=stream_config,
+            stream_mode=["updates", "custom"],
         ):
             this_time = time.perf_counter()
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
-            if "agent" in chunk and "messages" in chunk["agent"]:
-                if len(chunk["agent"]["messages"]) != 1:
+
+            if isinstance(chunk, dict) and "credit_check" in chunk:
+                credit_payload = chunk.get("credit_check", {})
+                content = credit_payload.get("message")
+                if content:
+                    credit_message_create = ChatMessageCreate(
+                        id=str(XID()),
+                        agent_id=user_message.agent_id,
+                        chat_id=user_message.chat_id,
+                        user_id=user_message.user_id,
+                        author_id=user_message.agent_id,
+                        author_type=AuthorType.AGENT,
+                        model=agent.model,
+                        thread_type=user_message.author_type,
+                        reply_to=user_message.id,
+                        message=content,
+                        input_tokens=0,
+                        output_tokens=0,
+                        time_cost=this_time - last,
+                    )
+                    last = this_time
+                    credit_message = await credit_message_create.save()
+                    yield credit_message
+
+                    error_message_create = await ChatMessageCreate.from_system_message(
+                        SystemMessageType.INSUFFICIENT_BALANCE,
+                        agent_id=user_message.agent_id,
+                        chat_id=user_message.chat_id,
+                        user_id=user_message.user_id,
+                        author_id=user_message.agent_id,
+                        thread_type=user_message.author_type,
+                        reply_to=user_message.id,
+                        time_cost=0,
+                    )
+                    error_message = await error_message_create.save()
+                    yield error_message
+                return
+
+            if not isinstance(chunk, dict):
+                continue
+
+            if "model" in chunk and "messages" in chunk["model"]:
+                if len(chunk["model"]["messages"]) != 1:
                     logger.error(
-                        "unexpected agent message: " + str(chunk["agent"]["messages"]),
+                        "unexpected model message: " + str(chunk["model"]["messages"]),
                         extra={"thread_id": thread_id},
                     )
-                msg = chunk["agent"]["messages"][0]
+                msg = chunk["model"]["messages"][0]
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    # tool calls, save for later use, if it is deleted by post_model_hook, will not be used.
                     cached_tool_step = msg
                 if hasattr(msg, "content") and msg.content:
                     content = _extract_text_content(msg.content)
-                    # agent message
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
                         agent_id=user_message.agent_id,
@@ -562,16 +589,13 @@ async def stream_agent_raw(
                         time_cost=this_time - last,
                     )
                     last = this_time
-                    # handle message and payment in one transaction
                     async with get_session() as session:
-                        # payment
                         if payment_enabled:
                             amount = await model.calculate_cost(
                                 chat_message_create.input_tokens,
                                 chat_message_create.output_tokens,
                             )
 
-                            # Check for web_search_call in additional_kwargs
                             if (
                                 hasattr(msg, "additional_kwargs")
                                 and msg.additional_kwargs
@@ -675,10 +699,8 @@ async def stream_agent_raw(
                     time_cost=this_time - last,
                 )
                 last = this_time
-                # save message and credit in one transaction
                 async with get_session() as session:
                     if payment_enabled:
-                        # message payment, only first call in a group has message bill
                         if have_first_call_in_cache:
                             message_amount = await model.calculate_cost(
                                 skill_message_create.input_tokens,
@@ -698,7 +720,6 @@ async def stream_agent_raw(
                             skill_message_create.credit_cost = (
                                 message_payment_event.total_amount
                             )
-                        # skill payment
                         for skill_call in skill_calls:
                             if not skill_call["success"]:
                                 continue
@@ -723,42 +744,40 @@ async def stream_agent_raw(
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     yield skill_message
-            elif "pre_model_hook" in chunk:
-                pass
-            elif "post_model_hook" in chunk:
-                logger.debug(
-                    f"post_model_hook: {chunk}",
-                    extra={"thread_id": thread_id},
-                )
-                if chunk["post_model_hook"] and "error" in chunk["post_model_hook"]:
+            else:
+                for node_name, update in chunk.items():
                     if (
-                        chunk["post_model_hook"]["error"]
-                        == AgentError.INSUFFICIENT_CREDITS
+                        node_name.endswith("CreditCheckMiddleware.after_model")
+                        and isinstance(update, dict)
+                        and update.get("error") == AgentError.INSUFFICIENT_CREDITS
                     ):
-                        if "messages" in chunk["post_model_hook"]:
-                            msg = chunk["post_model_hook"]["messages"][-1]
-                            content = msg.content
-                            if isinstance(msg.content, list):
-                                # in new version, content item maybe a list
-                                content = msg.content[0]
-                            post_model_message_create = ChatMessageCreate(
-                                id=str(XID()),
-                                agent_id=user_message.agent_id,
-                                chat_id=user_message.chat_id,
-                                user_id=user_message.user_id,
-                                author_id=user_message.agent_id,
-                                author_type=AuthorType.AGENT,
-                                model=agent.model,
-                                thread_type=user_message.author_type,
-                                reply_to=user_message.id,
-                                message=content,
-                                input_tokens=0,
-                                output_tokens=0,
-                                time_cost=this_time - last,
-                            )
-                            last = this_time
-                            post_model_message = await post_model_message_create.save()
-                            yield post_model_message
+                        ai_messages = [
+                            message
+                            for message in update.get("messages", [])
+                            if isinstance(message, BaseMessage)
+                        ]
+                        content = ""
+                        if ai_messages:
+                            content = _extract_text_content(ai_messages[-1].content)
+                        post_model_message_create = ChatMessageCreate(
+                            id=str(XID()),
+                            agent_id=user_message.agent_id,
+                            chat_id=user_message.chat_id,
+                            user_id=user_message.user_id,
+                            author_id=user_message.agent_id,
+                            author_type=AuthorType.AGENT,
+                            model=agent.model,
+                            thread_type=user_message.author_type,
+                            reply_to=user_message.id,
+                            message=content,
+                            input_tokens=0,
+                            output_tokens=0,
+                            time_cost=this_time - last,
+                        )
+                        last = this_time
+                        post_model_message = await post_model_message_create.save()
+                        yield post_model_message
+
                         error_message_create = (
                             await ChatMessageCreate.from_system_message(
                                 SystemMessageType.INSUFFICIENT_BALANCE,
@@ -773,12 +792,7 @@ async def stream_agent_raw(
                         )
                         error_message = await error_message_create.save()
                         yield error_message
-            else:
-                error_traceback = traceback.format_exc()
-                logger.error(
-                    f"unexpected message type: {str(chunk)}\n{error_traceback}",
-                    extra={"thread_id": thread_id},
-                )
+                        return
     except SQLAlchemyError as e:
         error_traceback = traceback.format_exc()
         logger.error(

@@ -1,12 +1,8 @@
 import re
-from collections.abc import Callable
 
 from eth_utils import is_address
-from langchain_core.messages import BaseMessage
-from langchain_core.prompts import ChatPromptTemplate
-from langgraph.runtime import Runtime
 
-from intentkit.abstracts.graph import AgentContext, AgentState
+from intentkit.abstracts.graph import AgentContext
 from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -365,79 +361,30 @@ def build_internal_info_prompt(context: AgentContext) -> str:
 # ============================================================================
 
 
-def create_formatted_prompt_function(agent: Agent, agent_data: AgentData) -> Callable:
-    """
-    Create the formatted_prompt function with agent-specific configuration.
+async def build_system_prompt(
+    agent: Agent, agent_data: AgentData, context: AgentContext
+) -> str:
+    """Construct the final system prompt for an agent run."""
 
-    This is the main factory function that creates a prompt formatting function
-    tailored to a specific agent. The returned function will be used by the
-    agent's runtime to format prompts for each conversation.
+    base_prompt = build_agent_prompt(agent, agent_data)
+    final_system_prompt = await explain_prompt(escape_prompt(base_prompt))
 
-    Args:
-        agent: The agent configuration
-        agent_data: The agent's runtime data
-
-    Returns:
-        Callable: An async function that formats prompts based on agent state and context
-    """
-    # Build base prompt using the new function name
-    prompt = build_agent_prompt(agent, agent_data)
-    escaped_prompt = escape_prompt(prompt)
-
-    async def get_base_prompt():
-        return await explain_prompt(escaped_prompt)
-
-    # Build prompt array
-    prompt_array = [
-        ("placeholder", "{system_prompt}"),
-        ("placeholder", "{messages}"),
-    ]
-
-    if agent.prompt_append:
-        # Escape any curly braces in prompt_append
-        escaped_append = escape_prompt(agent.prompt_append)
-        prompt_array.append(("system", escaped_append))
-
-    prompt_temp = ChatPromptTemplate.from_messages(prompt_array)
-
-    async def formatted_prompt(
-        state: AgentState, runtime: Runtime[AgentContext]
-    ) -> list[BaseMessage]:
-        # Base prompt
-        final_system_prompt = await get_base_prompt()
-
-        context = runtime.context
-
-        # Add entrypoint prompt if applicable
-        entrypoint_prompt = await build_entrypoint_prompt(agent, context)
-        if entrypoint_prompt:
-            processed_entrypoint = await explain_prompt(entrypoint_prompt)
-            final_system_prompt = (
-                f"{final_system_prompt}## Entrypoint rules{processed_entrypoint}\n\n"
-            )
-
-        # Add user info if user_id is a valid EVM wallet address
-        user_info = await _build_user_info_section(context)
-        if user_info:
-            final_system_prompt = f"{final_system_prompt}{user_info}"
-
-        # Add internal info
-        internal_info = build_internal_info_prompt(context)
-        final_system_prompt = f"{final_system_prompt}{internal_info}"
-
-        if agent.prompt_append:
-            for i, (role, content) in enumerate(prompt_array):
-                if role == "system":
-                    processed_append = await explain_prompt(content)
-                    prompt_array[i] = ("system", processed_append)
-                    break
-
-        system_prompt = [("system", final_system_prompt)]
-        return prompt_temp.invoke(
-            {
-                "messages": state["messages"],
-                "system_prompt": system_prompt,
-            }
+    entrypoint_prompt = await build_entrypoint_prompt(agent, context)
+    if entrypoint_prompt:
+        processed_entrypoint = await explain_prompt(entrypoint_prompt)
+        final_system_prompt = (
+            f"{final_system_prompt}## Entrypoint rules{processed_entrypoint}\n\n"
         )
 
-    return formatted_prompt
+    user_info = await _build_user_info_section(context)
+    if user_info:
+        final_system_prompt = f"{final_system_prompt}{user_info}"
+
+    internal_info = build_internal_info_prompt(context)
+    final_system_prompt = f"{final_system_prompt}{internal_info}"
+
+    if agent.prompt_append:
+        processed_append = await explain_prompt(agent.prompt_append)
+        final_system_prompt = f"{final_system_prompt}{processed_append}"
+
+    return final_system_prompt
