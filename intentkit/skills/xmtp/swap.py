@@ -108,7 +108,7 @@ class XmtpSwap(XmtpBaseTool):
         # Get CDP client from the global helper (server-side credentials)
         cdp_client = get_cdp_client()
 
-        # Call CDP to create swap quote and extract call datas
+        # Call CDP to create swap quote and extract call data
         # Be permissive with response shape across SDK versions
         try:
             # Attempt the canonical method per CDP SDK examples
