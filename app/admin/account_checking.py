@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import select, text
 
@@ -22,7 +23,9 @@ logger = logging.getLogger(__name__)
 class AccountCheckingResult:
     """Result of an account checking operation."""
 
-    def __init__(self, check_type: str, status: bool, details: dict | None = None):
+    def __init__(
+        self, check_type: str, status: bool, details: dict[str, Any] | None = None
+    ):
         self.check_type = check_type
         self.status = status  # True if check passed, False if failed
         self.details = details or {}
@@ -150,16 +153,21 @@ async def check_account_balance_consistency(
                     )
                 tx_data = tx_result.fetchone()
 
-                credits = tx_data.credits or Decimal("0")
-                debits = tx_data.debits or Decimal("0")
+                if tx_data is None:
+                    credits = Decimal("0")
+                    debits = Decimal("0")
+                    expected_free_credits = Decimal("0")
+                    expected_reward_credits = Decimal("0")
+                    expected_permanent_credits = Decimal("0")
+                else:
+                    credits = tx_data.credits or Decimal("0")
+                    debits = tx_data.debits or Decimal("0")
+                    expected_free_credits = tx_data.free_credits_sum or Decimal("0")
+                    expected_reward_credits = tx_data.reward_credits_sum or Decimal("0")
+                    expected_permanent_credits = (
+                        tx_data.permanent_credits_sum or Decimal("0")
+                    )
                 expected_balance = credits - debits
-
-                # Calculate expected balances for each credit type
-                expected_free_credits = tx_data.free_credits_sum or Decimal("0")
-                expected_reward_credits = tx_data.reward_credits_sum or Decimal("0")
-                expected_permanent_credits = tx_data.permanent_credits_sum or Decimal(
-                    "0"
-                )
 
                 # Compare total balances and individual credit type balances with tolerance
                 tolerance = Decimal("0.01")

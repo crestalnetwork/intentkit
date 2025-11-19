@@ -48,8 +48,10 @@ def _validate_chat_history(messages: Sequence[BaseMessage]) -> None:
     if not tool_calls_without_results:
         return
 
-    message = "Found AIMessages with tool_calls that do not have a corresponding ToolMessage. "
-    f"Here are the first few of those tool calls: {tool_calls_without_results[:3]}"
+    message = (
+        "Found AIMessages with tool_calls that do not have a corresponding ToolMessage. "
+        f"Here are the first few of those tool calls: {tool_calls_without_results[:3]}"
+    )
     raise ValueError(message)
 
 

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from intentkit.models.db_mig import safe_migrate
 
-engine = None
+engine: AsyncEngine | None = None
 _langgraph_checkpointer: Checkpointer | None = None
 
 
@@ -99,6 +99,7 @@ async def init_db(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    assert engine is not None, "Database engine not initialized. Call init_db first."
     async with AsyncSession(engine) as session:
         yield session
 
@@ -121,6 +122,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         # session is automatically closed
         ```
     """
+    assert engine is not None, "Database engine not initialized. Call init_db first."
     session = AsyncSession(engine)
     try:
         yield session
@@ -134,6 +136,7 @@ def get_engine() -> AsyncEngine:
     Returns:
         AsyncEngine: The SQLAlchemy async engine
     """
+    assert engine is not None, "Database engine not initialized. Call init_db first."
     return engine
 
 

@@ -5,6 +5,7 @@ Logging configuration module
 import json
 import logging
 from collections.abc import Callable
+from typing import override
 
 
 class JsonFormatter(logging.Formatter):
@@ -12,7 +13,8 @@ class JsonFormatter(logging.Formatter):
         super().__init__()
         self.filter_func = filter_func
 
-    def format(self, record):
+    @override
+    def format(self, record: logging.LogRecord) -> str:
         if self.filter_func and not self.filter_func(record):
             return ""
 
@@ -22,17 +24,15 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "message": record.getMessage(),
         }
-        # Include any extra attributes
-        if hasattr(record, "extra"):
-            log_obj.update(record.extra)
-        elif record.__dict__.get("extra"):
-            log_obj.update(record.__dict__["extra"])
+        extra = record.__dict__.get("extra")
+        if isinstance(extra, dict):
+            log_obj.update(extra)
         if record.exc_info:
             log_obj["exc_info"] = self.formatException(record.exc_info)
         return json.dumps(log_obj)
 
 
-def setup_logging(env: str, debug: bool = False):
+def setup_logging(env: str, debug: bool = False) -> None:
     """
     Setup global logging configuration.
 
