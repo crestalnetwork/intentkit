@@ -8,7 +8,7 @@ from langchain_core.tools import tool
 from intentkit.core.engine import build_agent, stream_agent_raw
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.chat import AuthorType, ChatMessageCreate
+from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
 from intentkit.models.llm import AVAILABLE_MODELS, LLMModelInfo, LLMProvider
 
 
@@ -136,8 +136,26 @@ async def test_local_agent_tool_call():
             )
 
             # Mock save methods
-            with patch(
-                "intentkit.models.chat.ChatMessageCreate.save", return_value=message
+            # Mock save_in_session to return a ChatMessage with created_at
+            async def mock_save_in_session(self, session):
+                data = self.model_dump()
+                data["created_at"] = datetime.now()
+                return ChatMessage(**data)
+
+            async def mock_save(self):
+                return await mock_save_in_session(self, None)
+
+            with (
+                patch(
+                    "intentkit.models.chat.ChatMessageCreate.save_in_session",
+                    side_effect=mock_save_in_session,
+                    autospec=True,
+                ),
+                patch(
+                    "intentkit.models.chat.ChatMessageCreate.save",
+                    side_effect=mock_save,
+                    autospec=True,
+                ),
             ):
                 # 4. Run stream_agent_raw
                 responses = []
@@ -160,31 +178,178 @@ async def test_local_agent_tool_call():
                     print(f"Tool Call: {resp.skill_calls}")
                     # Verify correct tool and args
                     call = resp.skill_calls[0]
-                    if call["name"] == "calculator":
-                        # Args might be parsed differently depending on model, but check basics
-                        pass
+                    assert call["name"] == "calculator"
+                    # Args might be parsed differently depending on model, but check basics
+                    # We expect arguments to be roughly {'operation': 'add', 'a': 5, 'b': 3}
+                    # Some models might return strings, so be flexible if needed, but for now expect correct types if pydantic handles it
+                    args = call["parameters"]
+                    assert args.get("operation") == "add"
+                    assert int(args.get("a")) == 5
+                    assert int(args.get("b")) == 3
 
                 if resp.author_type == AuthorType.SKILL:
                     # This is the output of the tool
-                    # Note: In the current engine implementation, the tool output might be yielded
-                    # as part of the tool node execution or subsequent steps.
-                    # Let's look at the engine code again.
-                    # stream_agent_raw yields:
-                    # - credit checks
-                    # - model messages (which contain tool calls)
-                    # - tool messages (which contain tool outputs)
-                    pass
+                    has_tool_output = True
+                    # Check skill_calls for response
+                    if resp.skill_calls:
+                        for call in resp.skill_calls:
+                            if call["name"] == "calculator":
+                                print(f"Tool Output: {call.get('response')}")
+                                assert "8" in str(call.get("response"))
 
-                if resp.message and not resp.skill_calls:
+                if (
+                    resp.message
+                    and not resp.skill_calls
+                    and resp.author_type == AuthorType.AGENT
+                ):
                     final_answer += resp.message
 
             print(f"Final Answer: {final_answer}")
 
-            # Check if we got a reasonable answer
-            # Note: 0.5B model might be flaky, but with temperature 0 it should be deterministic enough for simple math
-            # if it calls the tool correctly.
+            assert has_tool_call, "Agent did not call the tool"
+            assert has_tool_output, "Agent did not receive tool output"
+            # assert "8" in final_answer # Final answer might vary, but tool call is the critical part for this test
 
-            # If the model is too small/dumb to call the tool, this test might fail on logic
-            # but succeed on infrastructure (it ran).
-            # For now, we just want to ensure it runs without crashing.
-            assert len(responses) > 0
+
+@pytest.mark.asyncio
+async def test_local_agent_system_tool_call():
+    """Test that a local agent can be built and execute a system tool call (current_time)."""
+
+    # Define a local model
+    local_model_id = "qwen3:0.6b"
+    local_model_info = LLMModelInfo(
+        id=local_model_id,
+        name=local_model_id,
+        provider=LLMProvider.OLLAMA,
+        enabled=True,
+        input_price=0,
+        output_price=0,
+        context_length=32000,
+        output_length=4096,
+        intelligence=3,
+        speed=5,
+        supports_skill_calls=True,
+        api_base="http://localhost:11434",
+    )
+
+    # Patch AVAILABLE_MODELS to include our local model
+    with patch.dict(AVAILABLE_MODELS, {local_model_id: local_model_info}):
+        # 1. Setup Agent
+        agent = Agent(
+            id="test-agent-system",
+            name="Test Agent System",
+            model=local_model_id,
+            owner="user_1",
+            temperature=0.0,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            skills={
+                "common": {
+                    "enabled": True,
+                    "states": {"current_time": "public"},
+                }
+            },
+        )
+
+        agent_data = AgentData(
+            id="test-agent-system",
+            system_message="You are a helpful assistant. Use the common_current_time tool when asked for the time.",
+        )
+
+        # Mock DB returns
+        with (
+            patch(
+                "intentkit.models.llm.LLMModelInfo.get", return_value=local_model_info
+            ),
+            patch("intentkit.models.agent.Agent.get", return_value=agent),
+            patch("intentkit.models.agent_data.AgentData.get", return_value=agent_data),
+            patch(
+                "intentkit.core.engine.get_langgraph_checkpointer", return_value=None
+            ),
+            patch("intentkit.core.engine.get_session"),
+            patch("intentkit.core.engine.config.payment_enabled", False),
+            patch("intentkit.models.user.User.get", return_value=None),
+            patch(
+                "intentkit.models.app_setting.AppSetting.error_message",
+                return_value="Error occurred",
+            ),
+            patch("intentkit.core.engine.clear_thread_memory"),
+        ):
+            # 2. Build Agent with system tool
+            # Note: build_agent accepts custom_skills, we can pass the initialized tool instance
+            executor = await build_agent(agent, agent_data)
+
+            assert executor is not None
+
+            # 3. Create a message to trigger the tool
+            message = ChatMessageCreate(
+                id=str(XID()),
+                agent_id=agent.id,
+                chat_id="test_chat_system",
+                user_id="user_1",
+                message="What time is it in UTC?",
+                author_type=AuthorType.WEB,
+                author_id="user_1",
+            )
+
+            # Mock save methods
+            # Mock save_in_session to return a ChatMessage with created_at
+            async def mock_save_in_session(self, session):
+                data = self.model_dump()
+                data["created_at"] = datetime.now()
+                return ChatMessage(**data)
+
+            async def mock_save(self):
+                return await mock_save_in_session(self, None)
+
+            with (
+                patch(
+                    "intentkit.models.chat.ChatMessageCreate.save_in_session",
+                    side_effect=mock_save_in_session,
+                    autospec=True,
+                ),
+                patch(
+                    "intentkit.models.chat.ChatMessageCreate.save",
+                    side_effect=mock_save,
+                    autospec=True,
+                ),
+            ):
+                # 4. Run stream_agent_raw
+                responses = []
+                async for response in stream_agent_raw(message, agent, executor):
+                    responses.append(response)
+
+            # 5. Verify results
+            has_tool_call = False
+            has_tool_output = False
+            final_answer = ""
+
+            for resp in responses:
+                if resp.skill_calls:
+                    has_tool_call = True
+                    print(f"Tool Call: {resp.skill_calls}")
+                    # Verify correct tool
+                    call = resp.skill_calls[0]
+                    assert call["name"] == "common_current_time"
+
+                if resp.author_type == AuthorType.SKILL:
+                    # This is the output of the tool
+                    has_tool_output = True
+                    # Check skill_calls for response
+                    if resp.skill_calls:
+                        for call in resp.skill_calls:
+                            if call["name"] == "common_current_time":
+                                print(f"Tool Output: {call.get('response')}")
+                                assert "Current time:" in str(call.get("response"))
+
+                if (
+                    resp.message
+                    and not resp.skill_calls
+                    and resp.author_type == AuthorType.AGENT
+                ):
+                    final_answer += resp.message
+
+            print(f"Final Answer: {final_answer}")
+
+            assert has_tool_call, "Agent did not call the tool"
+            assert has_tool_output, "Agent did not receive tool output"
