@@ -66,7 +66,7 @@ async def test_local_agent_tool_call():
     """Test that a local agent can be built and execute a tool call."""
 
     # Define a local model
-    local_model_id = "qwen2.5:0.5b"
+    local_model_id = "qwen3:0.6b"
     local_model_info = LLMModelInfo(
         id=local_model_id,
         name=local_model_id,

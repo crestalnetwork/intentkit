@@ -12,7 +12,7 @@ class BotPoolAgentItem:
             raise ValueError("Token cannot be empty for agent item")
 
         self._id = agent.id
-        self._updated_at = agent.updated_at
+        self._updated_at = agent.deployed_at or agent.updated_at
 
     @property
     def id(self):

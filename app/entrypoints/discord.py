@@ -50,7 +50,8 @@ class AgentScheduler:
                 else:
                     # Check for updates
                     cached = agent_by_id(agent.id)
-                    if cached.updated_at != agent.updated_at:
+                    updated_at = agent.deployed_at or agent.updated_at
+                    if cached.updated_at != updated_at:
                         if not agent.discord_entrypoint_enabled:
                             await self.bot_pool.stop_bot(agent.id)
                         else:

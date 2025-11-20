@@ -67,7 +67,8 @@ class AgentScheduler:
                         await agent_data.save()
                 else:
                     cached_agent = pool._agent_bots[agent.id]
-                    if cached_agent.updated_at != agent.updated_at:
+                    updated_at = agent.deployed_at or agent.updated_at
+                    if cached_agent.updated_at != updated_at:
                         if agent.telegram_config.get("token") not in pool._bots:
                             await self.bot_pool.change_bot_token(agent)
                             await asyncio.sleep(2)
