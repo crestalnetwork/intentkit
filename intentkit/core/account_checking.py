@@ -6,7 +6,6 @@ from typing import Any
 
 from sqlalchemy import select, text
 
-from intentkit.config.config import config
 from intentkit.models.credit import (
     CreditAccount,
     CreditAccountTable,
@@ -15,7 +14,8 @@ from intentkit.models.credit import (
     CreditTransaction,
     CreditTransactionTable,
 )
-from intentkit.models.db import get_session, init_db
+from intentkit.models.db import get_session
+from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -655,9 +655,6 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
             f"Quick account checking summary: {failed_count} checks failed - see logs for details"
         )
 
-    # Send summary to Slack
-    from intentkit.utils.slack_alert import send_slack_message
-
     # Create a summary message with color based on status
     total_checks = sum(len(check_results) for check_results in results.values())
 
@@ -737,7 +734,6 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
         )
 
     # Send summary to Slack
-    from intentkit.utils.slack_alert import send_slack_message
 
     # Create a summary message with color based on status
     total_checks = sum(len(check_results) for check_results in results.values())
@@ -804,44 +800,3 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
     )
 
     return results
-
-
-async def main():
-    """Main entry point for running account checks."""
-    await init_db(**config.db)
-    logger.info("Starting account balance consistency check (permanent mode)")
-
-    # Test the modified check_account_balance_consistency function with permanent checking
-    results = await check_account_balance_consistency(check_recent_only=False)
-
-    # Print summary of results
-    total_accounts = len(results)
-    failed_accounts = sum(1 for result in results if not result.status)
-    passed_accounts = total_accounts - failed_accounts
-
-    logger.info("Account balance consistency check completed:")
-    logger.info(f"  Total accounts checked: {total_accounts}")
-    logger.info(f"  Passed: {passed_accounts}")
-    logger.info(f"  Failed: {failed_accounts}")
-
-    if failed_accounts > 0:
-        logger.warning(f"Found {failed_accounts} accounts with balance inconsistencies")
-        # Log details of first few failed accounts for debugging
-        for i, result in enumerate([r for r in results if not r.status][:5]):
-            details = result.details
-            logger.warning(
-                f"  Account {i + 1}: {details['account_id']} - "
-                f"Total: {details['current_total_balance']} vs {details['expected_total_balance']}, "
-                f"Free: {details['free_credits']} vs {details['expected_free_credits']}, "
-                f"Reward: {details['reward_credits']} vs {details['expected_reward_credits']}, "
-                f"Permanent: {details['permanent_credits']} vs {details['expected_permanent_credits']}"
-            )
-    else:
-        logger.info("All accounts have consistent balances!")
-
-    return results
-
-
-if __name__ == "__main__":
-    # Run the main function
-    asyncio.run(main())
