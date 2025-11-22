@@ -45,6 +45,7 @@ class OwnerType(str, Enum):
 
     USER = "user"
     AGENT = "agent"
+    TEAM = "team"
     PLATFORM = "platform"
 
 
@@ -942,6 +943,10 @@ class CreditEventTable(Base):
         String,
         nullable=True,
     )
+    team_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
     upstream_type: Mapped[str] = mapped_column(
         String,
         nullable=False,
@@ -1149,6 +1154,9 @@ class CreditEvent(BaseModel):
     event_type: Annotated[EventType, Field(description="Type of the event")]
     user_id: Annotated[
         str | None, Field(None, description="ID of the user if applicable")
+    ]
+    team_id: Annotated[
+        str | None, Field(None, description="ID of the team if applicable")
     ]
     upstream_type: Annotated[
         UpstreamType, Field(description="Type of upstream transaction")
