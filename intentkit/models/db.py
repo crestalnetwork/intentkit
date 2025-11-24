@@ -181,12 +181,26 @@ async def cleanup_checkpoints() -> None:
     """)
 
     # SQL to clean up blobs that are not referenced by any remaining checkpoint
-    # Checkpoints store channel versions in the 'channel_versions' field of the checkpoint JSON
+    # Optimized using NOT EXISTS instead of NOT IN for better performance
+    # Using CTE to materialize active channel versions first
     cleanup_blobs_sql = text("""
-        DELETE FROM checkpoint_blobs
-        WHERE (thread_id, checkpoint_ns, channel, version) NOT IN (
-            SELECT thread_id, checkpoint_ns, key as channel, value as version
-            FROM checkpoints, jsonb_each_text(checkpoint -> 'channel_versions')
+        WITH active_versions AS (
+            SELECT DISTINCT 
+                thread_id, 
+                checkpoint_ns, 
+                key as channel, 
+                value as version
+            FROM checkpoints, 
+                 jsonb_each_text(checkpoint -> 'channel_versions')
+        )
+        DELETE FROM checkpoint_blobs cb
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM active_versions av
+            WHERE av.thread_id = cb.thread_id
+              AND av.checkpoint_ns = cb.checkpoint_ns
+              AND av.channel = cb.channel
+              AND av.version = cb.version
         );
     """)
 
