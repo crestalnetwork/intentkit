@@ -9,6 +9,7 @@ from langgraph.types import Checkpointer
 from psycopg import OperationalError
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from intentkit.models.db_mig import safe_migrate
@@ -149,3 +150,52 @@ def get_langgraph_checkpointer() -> Checkpointer:
     if _langgraph_checkpointer is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
     return _langgraph_checkpointer
+
+
+async def cleanup_checkpoints() -> None:
+    """
+    Clean up old checkpoints, writes, and blobs, keeping only the latest one for each thread.
+    This helps reduce database size while maintaining the current state of agents.
+    """
+    assert engine is not None, "Database engine not initialized. Call init_db first."
+
+    # SQL to keep only the latest checkpoint for each thread
+    # We assume checkpoint_id is sortable (ULID/UUIDv7 style which LangGraph uses)
+    cleanup_checkpoints_sql = text("""
+        DELETE FROM checkpoints
+        WHERE (thread_id, checkpoint_ns, checkpoint_id) NOT IN (
+            SELECT DISTINCT ON (thread_id, checkpoint_ns)
+                thread_id, checkpoint_ns, checkpoint_id
+            FROM checkpoints
+            ORDER BY thread_id, checkpoint_ns, checkpoint_id DESC
+        );
+    """)
+
+    # SQL to clean up writes that reference deleted checkpoints
+    cleanup_writes_sql = text("""
+        DELETE FROM checkpoint_writes
+        WHERE (thread_id, checkpoint_ns, checkpoint_id) NOT IN (
+            SELECT thread_id, checkpoint_ns, checkpoint_id
+            FROM checkpoints
+        );
+    """)
+
+    # SQL to clean up blobs that are not referenced by any remaining checkpoint
+    # Checkpoints store channel versions in the 'channel_versions' field of the checkpoint JSON
+    cleanup_blobs_sql = text("""
+        DELETE FROM checkpoint_blobs
+        WHERE (thread_id, checkpoint_ns, channel, version) NOT IN (
+            SELECT thread_id, checkpoint_ns, key as channel, value as version
+            FROM checkpoints, jsonb_each_text(checkpoint -> 'channel_versions')
+        );
+    """)
+
+    async with AsyncSession(engine) as session:
+        try:
+            await session.execute(cleanup_checkpoints_sql)
+            await session.execute(cleanup_writes_sql)
+            await session.execute(cleanup_blobs_sql)
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise e
