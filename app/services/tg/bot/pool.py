@@ -266,7 +266,7 @@ class BotPool:
         try:
             old_bot_item = bot_by_token(old_agent_item.bot_token)
             old_bot_item.update_conf(agent.telegram_config)
-            old_agent_item.updated_at = agent.updated_at
+            old_agent_item.updated_at = agent.deployed_at or agent.updated_at
 
             # if old_bot_item.kind != agent.telegram_config.get("kind"):
             #     await self.stop_bot(agent.id, token)

@@ -329,6 +329,11 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Owner identifier of the agent, used for access control",
     )
+    team_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Team identifier of the agent, used for access control",
+    )
     upstream_id: Mapped[str | None] = mapped_column(
         String,
         index=True,
@@ -889,6 +894,14 @@ class AgentCreate(AgentUpdate):
         PydanticField(
             default=None,
             description="Owner identifier of the agent, used for access control",
+            max_length=50,
+        ),
+    ]
+    team_id: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Team identifier of the agent",
             max_length=50,
         ),
     ]

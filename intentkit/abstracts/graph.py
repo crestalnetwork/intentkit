@@ -2,7 +2,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import Any, NotRequired
 
-from langgraph.prebuilt.chat_agent_executor import AgentState as BaseAgentState
+from langchain.agents import AgentState as BaseAgentState
 from pydantic import BaseModel
 
 from intentkit.models.agent import Agent

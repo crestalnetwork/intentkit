@@ -140,9 +140,9 @@ jobs:
           kubectl version
           kubectl set image -n testnet-dev deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/intent-readonly intent-readonly=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-dev deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-dev deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-dev deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-dev deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-dev deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-dev deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/sandbox-open sandbox-open=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/sandbox-autonomous sandbox-autonomous=crestal/intentkit:${VERSION_NO_V}

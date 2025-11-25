@@ -98,9 +98,10 @@ async def schedule_agent_autonomous_tasks():
                 planned_jobs.append(task_id)
 
                 # Check if task exists and needs updating
+                updated_at = agent.deployed_at or agent.updated_at
                 if (
                     task_id in autonomous_tasks_updated_at
-                    and autonomous_tasks_updated_at[task_id] >= agent.updated_at
+                    and autonomous_tasks_updated_at[task_id] >= updated_at
                 ):
                     # Task exists and agent hasn't been updated, skip
                     continue
@@ -150,7 +151,9 @@ async def schedule_agent_autonomous_tasks():
                     )
 
                 # Update the last updated time
-                autonomous_tasks_updated_at[task_id] = agent.updated_at
+                autonomous_tasks_updated_at[task_id] = (
+                    agent.deployed_at or agent.updated_at
+                )
 
     # Delete jobs not in the list
     logger.debug(f"Current jobs: {planned_jobs}")

@@ -104,6 +104,7 @@ class LLMProvider(str, Enum):
     ETERNAL = "eternal"
     REIGENT = "reigent"
     VENICE = "venice"
+    OLLAMA = "ollama"
 
     def display_name(self) -> str:
         """Return user-friendly display name for the provider."""
@@ -115,6 +116,7 @@ class LLMProvider(str, Enum):
             self.ETERNAL: "Eternal",
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
+            self.OLLAMA: "Ollama",
         }
         return display_names.get(self, self.value)
 
@@ -615,6 +617,36 @@ class VeniceLLM(LLMModel):
 
 
 # Factory function to create the appropriate LLM model based on the model name
+class OllamaLLM(LLMModel):
+    """Ollama LLM configuration."""
+
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatOllama instance."""
+        from langchain_ollama import ChatOllama
+
+        info = await self.model_info()
+
+        kwargs = {
+            "model": self.model_name,
+            "base_url": info.api_base or "http://localhost:11434",
+            "temperature": self.temperature,
+            # Ollama specific parameters
+            "keep_alive": -1,  # Keep the model loaded indefinitely
+        }
+
+        if info.supports_frequency_penalty:
+            kwargs["frequency_penalty"] = self.frequency_penalty
+
+        if info.supports_presence_penalty:
+            kwargs["presence_penalty"] = self.presence_penalty
+
+        # Update kwargs with params to allow overriding
+        kwargs.update(params)
+
+        return ChatOllama(**kwargs)
+
+
+# Factory function to create the appropriate LLM model based on the model name
 async def create_llm_model(
     model_name: str,
     temperature: float = 0.7,
@@ -657,6 +689,8 @@ async def create_llm_model(
         return VeniceLLM(**base_params)
     elif provider == LLMProvider.GATEWAYZ:
         return GatewayzLLM(**base_params)
+    elif provider == LLMProvider.OLLAMA:
+        return OllamaLLM(**base_params)
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)

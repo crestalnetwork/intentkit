@@ -152,7 +152,7 @@ class BotPool:
             bot_item = bot_by_token(agent_item.token)
             if bot_item:
                 bot_item.update_conf(agent.discord_config or {})
-                agent_item.updated_at = agent.updated_at
+                agent_item.updated_at = agent.deployed_at or agent.updated_at
                 logger.info(f"Config updated for agent {agent.id}")
         except Exception as e:
             logger.error(f"Failed to update config for agent {agent.id}: {e}")

@@ -60,6 +60,11 @@ class AgentDraftTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Owner identifier of the agent, used for access control",
     )
+    team_id = Column(
+        String,
+        nullable=True,
+        comment="Team identifier of the agent, used for access control",
+    )
     version = Column(
         String,
         nullable=True,
@@ -129,6 +134,14 @@ class AgentDraft(AgentUserInput):
         Field(
             default=None,
             description="Owner identifier of the agent, used for access control",
+            max_length=50,
+        ),
+    ]
+    team_id: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Team identifier of the agent, used for access control",
             max_length=50,
         ),
     ]

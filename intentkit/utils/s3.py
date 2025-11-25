@@ -5,6 +5,7 @@ S3 utility module for storing and retrieving images from AWS S3.
 import logging
 from enum import Enum
 from io import BytesIO
+from typing import cast
 
 import boto3
 import filetype
@@ -43,7 +44,7 @@ def init_s3(bucket: str, cdn_url: str, env: str) -> None:
     _bucket = bucket
     _cdn_url = cdn_url
     _prefix = f"{env}/intentkit/"
-    _client = boto3.client("s3")
+    _client = cast(S3Client, boto3.client("s3"))
 
     logger.info(f"S3 initialized with bucket: {bucket}, prefix: {_prefix}")
 
