@@ -26,6 +26,8 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.tools import BaseTool
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres.shallow import AsyncShallowPostgresSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy import func, update
@@ -53,7 +55,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import get_langgraph_checkpointer, get_session
+from intentkit.models.db import get_connection_pool, get_session
 from intentkit.models.llm import LLMModelInfo, create_llm_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User
@@ -121,7 +123,11 @@ async def build_agent(
     )
 
     # ==== Store buffered conversation history in memory.
-    memory = get_langgraph_checkpointer()
+    try:
+        pool = get_connection_pool()
+        memory = AsyncShallowPostgresSaver(pool)
+    except RuntimeError:
+        memory = InMemorySaver()
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []

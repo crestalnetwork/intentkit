@@ -3,19 +3,16 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from urllib.parse import quote_plus
 
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from langgraph.types import Checkpointer
+from langgraph.checkpoint.postgres.shallow import AsyncShallowPostgresSaver
 from psycopg import OperationalError
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from intentkit.models.db_mig import safe_migrate
 
 engine: AsyncEngine | None = None
-_langgraph_checkpointer: Checkpointer | None = None
+_connection_pool: AsyncConnectionPool | None = None
 
 
 async def check_connection(conn):
@@ -54,9 +51,9 @@ async def init_db(
         auto_migrate: Whether to run migrations automatically (default: True)
         pool_size: Database connection pool size (default: 3)
     """
-    global engine, _langgraph_checkpointer
-    # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
-    if _langgraph_checkpointer is None:
+    global engine, _connection_pool
+    # Initialize psycopg pool and AsyncShallowPostgresSaver if not already initialized
+    if _connection_pool is None:
         if host:
             conn_string = (
                 f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}"
@@ -72,13 +69,16 @@ async def init_db(
                 # Set connection max lifetime to prevent stale connections
                 max_lifetime=3600,  # 1 hour
             )
-            _langgraph_checkpointer = AsyncPostgresSaver(pool)
+            _connection_pool = pool
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
-                async with AsyncPostgresSaver.from_conn_string(conn_string) as saver:
+                async with AsyncShallowPostgresSaver.from_conn_string(
+                    conn_string
+                ) as saver:
                     await saver.setup()
         else:
-            _langgraph_checkpointer = InMemorySaver()
+            # For in-memory, we don't need a pool, but we need to handle it if requested
+            pass
     # Initialize SQLAlchemy engine with pool settings
     if engine is None:
         if host:
@@ -141,75 +141,12 @@ def get_engine() -> AsyncEngine:
     return engine
 
 
-def get_langgraph_checkpointer() -> Checkpointer:
-    """Get the AsyncPostgresSaver instance for langgraph.
+def get_connection_pool() -> AsyncConnectionPool:
+    """Get the AsyncConnectionPool instance.
 
     Returns:
-        AsyncPostgresSaver: The AsyncPostgresSaver instance
+        AsyncConnectionPool: The AsyncConnectionPool instance
     """
-    if _langgraph_checkpointer is None:
+    if _connection_pool is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
-    return _langgraph_checkpointer
-
-
-async def cleanup_checkpoints() -> None:
-    """
-    Clean up old checkpoints, writes, and blobs, keeping only the latest one for each thread.
-    This helps reduce database size while maintaining the current state of agents.
-    """
-    assert engine is not None, "Database engine not initialized. Call init_db first."
-
-    # SQL to keep only the latest checkpoint for each thread
-    # We assume checkpoint_id is sortable (ULID/UUIDv7 style which LangGraph uses)
-    cleanup_checkpoints_sql = text("""
-        DELETE FROM checkpoints
-        WHERE (thread_id, checkpoint_ns, checkpoint_id) NOT IN (
-            SELECT DISTINCT ON (thread_id, checkpoint_ns)
-                thread_id, checkpoint_ns, checkpoint_id
-            FROM checkpoints
-            ORDER BY thread_id, checkpoint_ns, checkpoint_id DESC
-        );
-    """)
-
-    # SQL to clean up writes that reference deleted checkpoints
-    cleanup_writes_sql = text("""
-        DELETE FROM checkpoint_writes
-        WHERE (thread_id, checkpoint_ns, checkpoint_id) NOT IN (
-            SELECT thread_id, checkpoint_ns, checkpoint_id
-            FROM checkpoints
-        );
-    """)
-
-    # SQL to clean up blobs that are not referenced by any remaining checkpoint
-    # Optimized using NOT EXISTS instead of NOT IN for better performance
-    # Using CTE to materialize active channel versions first
-    cleanup_blobs_sql = text("""
-        WITH active_versions AS (
-            SELECT DISTINCT 
-                thread_id, 
-                checkpoint_ns, 
-                key as channel, 
-                value as version
-            FROM checkpoints, 
-                 jsonb_each_text(checkpoint -> 'channel_versions')
-        )
-        DELETE FROM checkpoint_blobs cb
-        WHERE NOT EXISTS (
-            SELECT 1 
-            FROM active_versions av
-            WHERE av.thread_id = cb.thread_id
-              AND av.checkpoint_ns = cb.checkpoint_ns
-              AND av.channel = cb.channel
-              AND av.version = cb.version
-        );
-    """)
-
-    async with AsyncSession(engine) as session:
-        try:
-            await session.execute(cleanup_checkpoints_sql)
-            await session.execute(cleanup_writes_sql)
-            await session.execute(cleanup_blobs_sql)
-            await session.commit()
-        except Exception as e:
-            await session.rollback()
-            raise e
+    return _connection_pool

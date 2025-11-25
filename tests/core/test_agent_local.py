@@ -20,7 +20,10 @@ def mock_db_models():
         patch("intentkit.models.agent_data.AgentData.get") as mock_agent_data_get,
         patch("intentkit.models.llm.LLMModelInfo.get") as mock_llm_get,
         patch("intentkit.models.llm.create_llm_model") as mock_create_llm,
-        patch("intentkit.core.engine.get_langgraph_checkpointer") as mock_checkpointer,
+        patch(
+            "intentkit.core.engine.AsyncShallowPostgresSaver"
+        ) as mock_checkpointer_cls,
+        patch("intentkit.core.engine.get_connection_pool") as mock_pool,
         patch("intentkit.core.engine.get_session") as mock_session,
         patch("intentkit.core.engine.expense_message") as mock_expense,
         patch("intentkit.core.engine.expense_skill") as mock_expense_skill,
@@ -34,7 +37,8 @@ def mock_db_models():
             "agent_data_get": mock_agent_data_get,
             "llm_get": mock_llm_get,
             "create_llm": mock_create_llm,
-            "checkpointer": mock_checkpointer,
+            "checkpointer_cls": mock_checkpointer_cls,
+            "pool": mock_pool,
             "session": mock_session_ctx,
             "expense": mock_expense,
             "expense_skill": mock_expense_skill,
@@ -107,8 +111,9 @@ async def test_local_agent_tool_call():
             ),
             patch("intentkit.models.agent.Agent.get", return_value=agent),
             patch("intentkit.models.agent_data.AgentData.get", return_value=agent_data),
+            patch("intentkit.core.engine.AsyncShallowPostgresSaver"),
             patch(
-                "intentkit.core.engine.get_langgraph_checkpointer", return_value=None
+                "intentkit.core.engine.get_connection_pool", side_effect=RuntimeError
             ),
             patch("intentkit.core.engine.get_session"),
             patch("intentkit.core.engine.config.payment_enabled", False),
@@ -263,8 +268,9 @@ async def test_local_agent_system_tool_call():
             ),
             patch("intentkit.models.agent.Agent.get", return_value=agent),
             patch("intentkit.models.agent_data.AgentData.get", return_value=agent_data),
+            patch("intentkit.core.engine.AsyncShallowPostgresSaver"),
             patch(
-                "intentkit.core.engine.get_langgraph_checkpointer", return_value=None
+                "intentkit.core.engine.get_connection_pool", side_effect=RuntimeError
             ),
             patch("intentkit.core.engine.get_session"),
             patch("intentkit.core.engine.config.payment_enabled", False),
