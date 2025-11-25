@@ -6,9 +6,7 @@ including clearing thread history using LangGraph's checkpointer.
 
 import logging
 
-from langgraph.checkpoint.postgres.shallow import AsyncShallowPostgresSaver
-
-from intentkit.models.db import get_connection_pool
+from intentkit.models.db import get_checkpointer
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -36,8 +34,7 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
         thread_id = f"{agent_id}-{chat_id}"
 
         # Get the LangGraph checkpointer instance
-        pool = get_connection_pool()
-        checkpointer = AsyncShallowPostgresSaver(pool)
+        checkpointer = get_checkpointer()
 
         # Use the official LangGraph method to delete all thread content
         await checkpointer.adelete_thread(thread_id)
