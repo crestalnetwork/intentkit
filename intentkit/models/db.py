@@ -13,6 +13,7 @@ from intentkit.models.db_mig import safe_migrate
 
 engine: AsyncEngine | None = None
 _connection_pool: AsyncConnectionPool | None = None
+_checkpointer: AsyncShallowPostgresSaver | None = None
 
 
 async def check_connection(conn):
@@ -51,7 +52,7 @@ async def init_db(
         auto_migrate: Whether to run migrations automatically (default: True)
         pool_size: Database connection pool size (default: 3)
     """
-    global engine, _connection_pool
+    global engine, _connection_pool, _checkpointer
     # Initialize psycopg pool and AsyncShallowPostgresSaver if not already initialized
     if _connection_pool is None:
         if host:
@@ -70,6 +71,7 @@ async def init_db(
                 max_lifetime=3600,  # 1 hour
             )
             _connection_pool = pool
+            _checkpointer = AsyncShallowPostgresSaver(pool)
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
                 async with AsyncShallowPostgresSaver.from_conn_string(
@@ -150,3 +152,14 @@ def get_connection_pool() -> AsyncConnectionPool:
     if _connection_pool is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
     return _connection_pool
+
+
+def get_checkpointer() -> AsyncShallowPostgresSaver:
+    """Get the AsyncShallowPostgresSaver instance.
+
+    Returns:
+        AsyncShallowPostgresSaver: The AsyncShallowPostgresSaver instance
+    """
+    if _checkpointer is None:
+        raise RuntimeError("Database pool not initialized. Call init_db first.")
+    return _checkpointer

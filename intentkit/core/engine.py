@@ -27,7 +27,6 @@ from langchain_core.messages import (
 )
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.postgres.shallow import AsyncShallowPostgresSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy import func, update
@@ -55,7 +54,10 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import get_connection_pool, get_session
+from intentkit.models.db import (
+    get_checkpointer,
+    get_session,
+)
 from intentkit.models.llm import LLMModelInfo, create_llm_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User
@@ -124,10 +126,9 @@ async def build_agent(
 
     # ==== Store buffered conversation history in memory.
     try:
-        pool = get_connection_pool()
-        memory = AsyncShallowPostgresSaver(pool)
+        checkpointer = get_checkpointer()
     except RuntimeError:
-        memory = InMemorySaver()
+        checkpointer = InMemorySaver()
 
     # ==== Load skills
     tools: list[BaseTool | dict] = []
@@ -198,7 +199,7 @@ async def build_agent(
         middleware=middleware,
         state_schema=AgentState,
         context_schema=AgentContext,
-        checkpointer=memory,
+        checkpointer=checkpointer,
         debug=config.debug_checkpoint,
         name=agent.id,
     )
@@ -373,6 +374,7 @@ async def stream_agent_raw(
         payer = user_message.user_id
         if user_message.author_type in [
             AuthorType.TELEGRAM,
+            AuthorType.DISCORD,
             AuthorType.TWITTER,
             AuthorType.API,
             AuthorType.X402,

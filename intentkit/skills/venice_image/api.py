@@ -12,7 +12,7 @@ from typing import Any
 
 import httpx
 
-from intentkit.utils.s3 import store_image_bytes
+from intentkit.clients.s3 import store_image_bytes
 
 logger = logging.getLogger(__name__)
 
