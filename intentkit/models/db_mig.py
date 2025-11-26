@@ -120,31 +120,14 @@ async def migrate_checkpoints_table(conn) -> None:
         if table not in existing_tables:
             continue
 
-        # 1. Add checkpoint_ns column
+        # Step 1: Add checkpoint_ns column
         await conn.execute(
             text(
                 f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS checkpoint_ns TEXT DEFAULT ''"
             )
         )
 
-        # 2. Drop columns that ShallowPostgresSaver doesn't use
-        if table == "checkpoints":
-            # ShallowPostgresSaver doesn't use checkpoint_id or parent_checkpoint_id
-            await conn.execute(
-                text("ALTER TABLE checkpoints DROP COLUMN IF EXISTS checkpoint_id")
-            )
-            await conn.execute(
-                text(
-                    "ALTER TABLE checkpoints DROP COLUMN IF EXISTS parent_checkpoint_id"
-                )
-            )
-        elif table == "checkpoint_blobs":
-            # ShallowPostgresSaver doesn't use version column
-            await conn.execute(
-                text("ALTER TABLE checkpoint_blobs DROP COLUMN IF EXISTS version")
-            )
-
-        # 3. Update Primary Key
+        # Step 2: Check current and expected Primary Key
         def _check_pk(connection, table_name=table):
             insp = inspect(connection)
             return insp.get_pk_constraint(table_name)
@@ -171,15 +154,15 @@ async def migrate_checkpoints_table(conn) -> None:
             }
             pk_cols = "thread_id, checkpoint_ns, checkpoint_id, task_id, idx"
 
+        # Step 3: Handle duplicates BEFORE dropping columns (so we can use checkpoint_id, version, etc.)
         if current_cols != expected_cols:
             logger.info(f"Migrating {table} PK from {current_cols} to {expected_cols}")
 
-            # If migrating checkpoints to (thread_id, checkpoint_ns), we need to handle duplicates
             if table == "checkpoints" and expected_cols == {
                 "thread_id",
                 "checkpoint_ns",
             }:
-                # Keep only the latest checkpoint for each (thread_id, checkpoint_ns) based on checkpoint_id (time-ordered)
+                # Keep only the latest checkpoint based on MAX(checkpoint_id)
                 await conn.execute(
                     text("""
                     DELETE FROM checkpoints
@@ -191,14 +174,12 @@ async def migrate_checkpoints_table(conn) -> None:
                 """)
                 )
 
-            # If migrating checkpoint_blobs to (thread_id, checkpoint_ns, channel), we need to handle duplicates
             elif table == "checkpoint_blobs" and expected_cols == {
                 "thread_id",
                 "checkpoint_ns",
                 "channel",
             }:
-                # Keep only blobs that are referenced by the remaining checkpoints
-                # The relationship is: checkpoints.checkpoint -> 'channel_versions' ->> blob.channel = blob.version
+                # Keep only blobs referenced by checkpoints via channel_versions
                 await conn.execute(
                     text("""
                     DELETE FROM checkpoint_blobs cb
@@ -212,9 +193,27 @@ async def migrate_checkpoints_table(conn) -> None:
                 """)
                 )
 
+        # Step 4: Update Primary Key FIRST (before dropping columns)
+        if current_cols != expected_cols:
             if pk.get("name"):
                 await conn.execute(
                     text(f"ALTER TABLE {table} DROP CONSTRAINT {pk['name']}")
                 )
 
             await conn.execute(text(f"ALTER TABLE {table} ADD PRIMARY KEY ({pk_cols})"))
+
+        # Step 5: Drop columns that ShallowPostgresSaver doesn't use
+        # (Can only drop AFTER removing from PK)
+        if table == "checkpoints":
+            await conn.execute(
+                text("ALTER TABLE checkpoints DROP COLUMN IF EXISTS checkpoint_id")
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE checkpoints DROP COLUMN IF EXISTS parent_checkpoint_id"
+                )
+            )
+        elif table == "checkpoint_blobs":
+            await conn.execute(
+                text("ALTER TABLE checkpoint_blobs DROP COLUMN IF EXISTS version")
+            )
