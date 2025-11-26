@@ -138,7 +138,7 @@ jobs:
           VERSION_NO_V=${VERSION#v}
           aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_DEV_CLUSTER }}
           kubectl version
-          kubectl set image -n testnet-dev deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-dev deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/intent-readonly intent-readonly=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-dev deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
@@ -154,11 +154,11 @@ jobs:
           VERSION_NO_V=${VERSION#v}
           aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_PROD_CLUSTER }}
           kubectl version
-          kubectl set image -n testnet-prod deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-prod deployment/intent-api intent-api=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-prod deployment/intent-readonly intent-readonly=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-prod deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-prod deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
-          kubectl set image -n testnet-prod deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-prod deployment/intent-autonomous intent-autonomous=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-prod deployment/intent-tg intent-tg=crestal/intentkit:${VERSION_NO_V}
+          #kubectl set image -n testnet-prod deployment/intent-checker intent-checker=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-prod deployment/intent-singleton intent-singleton=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-prod deployment/sandbox-open sandbox-open=crestal/intentkit:${VERSION_NO_V}
           #kubectl set image -n testnet-prod deployment/sandbox-autonomous sandbox-autonomous=crestal/intentkit:${VERSION_NO_V}
