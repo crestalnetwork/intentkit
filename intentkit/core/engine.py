@@ -374,6 +374,7 @@ async def stream_agent_raw(
         payer = user_message.user_id
         if user_message.author_type in [
             AuthorType.TELEGRAM,
+            AuthorType.DISCORD,
             AuthorType.TWITTER,
             AuthorType.API,
             AuthorType.X402,

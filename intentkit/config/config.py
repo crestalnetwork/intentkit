@@ -95,7 +95,6 @@ class Config:
         self.debug_password: str | None = self.load("DEBUG_PASSWORD")
         # Payment
         self.payment_enabled: bool = self.load("PAYMENT_ENABLED", "false") == "true"
-        self.x402_fee_address: str | None = self.load("X402_FEE_ADDRESS")
         # Open API for agent
         self.open_api_base_url: str = self.load(
             "OPEN_API_BASE_URL", "http://localhost:8000"

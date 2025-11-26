@@ -4,7 +4,6 @@ import logging
 from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
-from intentkit.skills.x402.ask_agent import X402AskAgent
 from intentkit.skills.x402.base import X402BaseSkill
 from intentkit.skills.x402.http_request import X402HttpRequest
 
@@ -14,7 +13,6 @@ _cache: dict[str, X402BaseSkill] = {}
 
 
 class SkillStates(TypedDict):
-    x402_ask_agent: SkillState
     x402_http_request: SkillState
 
 
@@ -25,7 +23,6 @@ class Config(SkillConfig):
 
 
 _SKILL_BUILDERS: dict[str, type[X402BaseSkill]] = {
-    "x402_ask_agent": X402AskAgent,
     "x402_http_request": X402HttpRequest,
 }
 

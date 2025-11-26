@@ -10,7 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -19,7 +19,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from intentkit.config.config import config
 from intentkit.core.api import core_router
 from intentkit.models.agent import AgentTable
-from intentkit.models.chat import ChatMessage
 from intentkit.models.db import get_session, init_db
 from intentkit.models.redis import init_redis
 from intentkit.utils.error import (
@@ -29,7 +28,6 @@ from intentkit.utils.error import (
     intentkit_other_error_handler,
     request_validation_exception_handler,
 )
-from intentkit.utils.schema import create_array_schema, resolve_schema_refs
 
 from app.admin import (
     admin_router,
@@ -46,7 +44,6 @@ from app.entrypoints.agent_api import router_ro as agent_api_ro
 from app.entrypoints.agent_api import router_rw as agent_api_rw
 from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router, chat_router_readonly
-from app.entrypoints.x402 import X402MessageRequest, x402_router
 from app.services.twitter.oauth2 import router as twitter_oauth2_router
 from app.services.twitter.oauth2_callback import router as twitter_callback_router
 
@@ -127,69 +124,6 @@ agent_app.include_router(agent_api_rw)
 agent_app.include_router(agent_api_ro)
 agent_app.include_router(openai_router)
 
-# Create X402 sub-application with payment middleware
-x402_app = FastAPI(
-    title="IntentKit X402 API",
-    description="X402 Payment Protocol API for IntentKit",
-    version=config.release,
-    contact={
-        "name": "IntentKit Team",
-        "url": "https://github.com/crestalnetwork/intentkit",
-    },
-    license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT",
-    },
-)
-
-# Add exception handlers to the X402 sub-application
-x402_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
-x402_app.exception_handler(RequestValidationError)(request_validation_exception_handler)
-x402_app.exception_handler(StarletteHTTPException)(http_exception_handler)
-x402_app.exception_handler(Exception)(intentkit_other_error_handler)
-
-# Add CORS middleware to the X402 sub-application
-x402_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
-
-# Add X402 payment middleware if fee address is configured
-if config.x402_fee_address:
-    logger.info(f"X402 fee address: {config.x402_fee_address}")
-    from cdp.x402 import create_facilitator_config
-    from x402.fastapi.middleware import require_payment
-    from x402.types import HTTPInputSchema
-
-    facilitator_config = create_facilitator_config(
-        api_key_id=config.cdp_api_key_id,
-        api_key_secret=config.cdp_api_key_secret,
-    )
-
-    x402_app.middleware("http")(
-        require_payment(
-            # path="/x402",
-            price="$0.01",  # Default price, can be overridden per route
-            pay_to_address=config.x402_fee_address,
-            network="base",
-            facilitator_config=facilitator_config,
-            discoverable=True if config.env == "testnet-prod" else False,
-            description="Crestal nation.fun Agent API",
-            input_schema=HTTPInputSchema(
-                body_type="json",
-                body_fields=resolve_schema_refs(X402MessageRequest.model_json_schema()),
-            ),
-            output_schema=create_array_schema(
-                ChatMessage.model_json_schema(), resolve_refs=True
-            ),
-        )
-    )
-
-# Add routers to the X402 sub-application
-x402_app.include_router(x402_router)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -252,25 +186,8 @@ app.add_middleware(
 )
 
 
-@app.middleware("http")
-async def normalize_x402_path(request: Request, call_next):
-    """Ensure `/x402` requests hit the mounted X402 app without redirect."""
-    scope = request.scope
-    if scope.get("type") == "http" and scope.get("path") == "/x402":
-        scope["path"] = "/x402/"
-        query_string = scope.get("query_string", b"")
-        raw_path = b"/x402/"
-        if query_string:
-            raw_path += b"?" + query_string
-        scope["raw_path"] = raw_path
-    return await call_next(request)
-
-
 # Mount the Agent API sub-application
 app.mount("/v1", agent_app)
-
-# Mount the X402 sub-application
-app.mount("/x402", x402_app)
 
 app.include_router(chat_router)
 app.include_router(chat_router_readonly)
