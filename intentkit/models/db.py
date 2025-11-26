@@ -161,5 +161,5 @@ def get_checkpointer() -> AsyncShallowPostgresSaver:
         AsyncShallowPostgresSaver: The AsyncShallowPostgresSaver instance
     """
     if _checkpointer is None:
-        raise RuntimeError("Database pool not initialized. Call init_db first.")
+        raise RuntimeError("Database checkpointer not initialized. Call init_db first.")
     return _checkpointer

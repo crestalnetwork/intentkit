@@ -76,7 +76,6 @@ class ImageGenerationArthemyReal(HeuristBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        skill_config = skill_config
 
         # Get the Heurist API key from configuration
         if "api_key" in skill_config and skill_config["api_key"]:
