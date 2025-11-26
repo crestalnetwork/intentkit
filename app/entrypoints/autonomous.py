@@ -2,7 +2,7 @@ import logging
 
 from epyxid import XID
 
-from intentkit.core.engine import execute_agent
+from intentkit.core.client import execute_agent
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
 logger = logging.getLogger(__name__)
