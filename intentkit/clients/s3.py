@@ -13,6 +13,8 @@ import httpx
 from botocore.exceptions import ClientError
 from mypy_boto3_s3.client import S3Client
 
+from intentkit.config.config import config
+
 logger = logging.getLogger(__name__)
 
 # Global variables for S3 configuration
@@ -22,31 +24,32 @@ _prefix: str | None = None
 _cdn_url: str | None = None
 
 
-def init_s3(bucket: str, cdn_url: str, env: str) -> None:
+def get_s3_client() -> S3Client | None:
     """
-    Initialize S3 configuration.
-
-    Args:
-        bucket: S3 bucket name
-        cdn_url: CDN URL for the S3 bucket
-        env: Environment name for the prefix
-
-    Raises:
-        ValueError: If bucket or cdn_url is empty
+    Get or initialize S3 client and configuration.
+    Returns None if configuration is missing.
     """
     global _bucket, _client, _prefix, _cdn_url
 
-    if not bucket:
-        raise ValueError("S3 bucket name cannot be empty")
-    if not cdn_url:
-        raise ValueError("S3 CDN URL cannot be empty")
+    if _client is not None:
+        return _client
 
-    _bucket = bucket
-    _cdn_url = cdn_url
-    _prefix = f"{env}/intentkit/"
-    _client = cast(S3Client, boto3.client("s3"))
+    if not config.aws_s3_bucket or not config.aws_s3_cdn_url:
+        # Only log once or if needed, but here we just return None
+        # The calling functions usually log "S3 not initialized"
+        return None
 
-    logger.info(f"S3 initialized with bucket: {bucket}, prefix: {_prefix}")
+    _bucket = config.aws_s3_bucket
+    _cdn_url = config.aws_s3_cdn_url
+    _prefix = f"{config.env}/intentkit/"
+
+    try:
+        _client = cast(S3Client, boto3.client("s3"))
+        logger.info(f"S3 initialized with bucket: {_bucket}, prefix: {_prefix}")
+        return _client
+    except Exception as e:
+        logger.error(f"Failed to initialize S3 client: {e}")
+        return None
 
 
 async def store_image(url: str, key: str) -> str:
@@ -64,15 +67,16 @@ async def store_image(url: str, key: str) -> str:
         ClientError: If the upload fails
         httpx.HTTPError: If the download fails
     """
-    if not _client or not _bucket or not _prefix or not _cdn_url:
+    client = get_s3_client()
+    if not client or not _bucket or not _prefix or not _cdn_url:
         # If S3 is not initialized, log and return the original URL
         logger.info("S3 not initialized. Returning original URL.")
         return url
 
     try:
         # Download the image from the URL asynchronously
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, follow_redirects=True)
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.get(url, follow_redirects=True)
             response.raise_for_status()
 
             # Prepare the S3 key with prefix
@@ -93,7 +97,7 @@ async def store_image(url: str, key: str) -> str:
                     content_type = "image/jpeg"
 
             # Upload to S3
-            _client.upload_fileobj(
+            client.upload_fileobj(
                 file_obj,
                 _bucket,
                 prefixed_key,
@@ -131,7 +135,8 @@ async def store_image_bytes(
         ClientError: If the upload fails
         ValueError: If S3 is not initialized or image_bytes is empty
     """
-    if not _client or not _bucket or not _prefix or not _cdn_url:
+    client = get_s3_client()
+    if not client or not _bucket or not _prefix or not _cdn_url:
         # If S3 is not initialized, log and return empty string
         logger.info("S3 not initialized. Cannot store image bytes.")
         return ""
@@ -158,7 +163,7 @@ async def store_image_bytes(
 
         logger.info("uploading image to s3")
         # Upload to S3
-        _client.upload_fileobj(
+        client.upload_fileobj(
             file_obj,
             _bucket,
             prefixed_key,
@@ -189,7 +194,8 @@ async def store_file(
     size: int | None = None,
 ) -> str:
     """Store raw file bytes with automatic content type detection."""
-    if not _client or not _bucket or not _prefix or not _cdn_url:
+    client = get_s3_client()
+    if not client or not _bucket or not _prefix or not _cdn_url:
         logger.info("S3 not initialized. Cannot store file bytes.")
         return ""
 
@@ -220,7 +226,7 @@ async def store_file(
         effective_size,
     )
 
-    _client.upload_fileobj(
+    client.upload_fileobj(
         file_obj,
         _bucket,
         prefixed_key,
@@ -257,7 +263,8 @@ async def store_file_bytes(
         ClientError: If the upload fails
         ValueError: If S3 is not initialized, file_bytes is empty, or file exceeds size limit
     """
-    if not _client or not _bucket or not _prefix or not _cdn_url:
+    client = get_s3_client()
+    if not client or not _bucket or not _prefix or not _cdn_url:
         logger.info("S3 not initialized. Cannot store file bytes.")
         return ""
     if not file_bytes:
@@ -303,7 +310,7 @@ async def store_file_bytes(
         logger.info(f"Uploading {file_type} to S3 with content type {content_type}")
 
         # Upload to S3
-        _client.upload_fileobj(
+        client.upload_fileobj(
             file_obj,
             _bucket,
             prefixed_key,

@@ -8,9 +8,9 @@ import openai
 from epyxid import XID
 from pydantic import BaseModel
 
+from intentkit.clients.s3 import store_image_bytes
 from intentkit.skills.openai.base import OpenAIBaseTool
 from intentkit.skills.openai.gpt_image_generation import GPTImageGenerationInput
-from intentkit.utils.s3 import store_image_bytes
 
 logger = logging.getLogger(__name__)
 

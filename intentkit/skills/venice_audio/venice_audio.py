@@ -6,9 +6,9 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
+from intentkit.clients.s3 import store_file
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
-from intentkit.utils.s3 import store_file
 
 logger = logging.getLogger(__name__)
 

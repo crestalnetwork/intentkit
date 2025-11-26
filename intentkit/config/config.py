@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
-from intentkit.utils.s3 import init_s3
 from intentkit.utils.slack_alert import init_slack
 
 SecretsMap = dict[str, str | int]
@@ -71,9 +70,16 @@ class Config:
         self.redis_host: str | None = self.load("REDIS_HOST")
         self.redis_port: int = self.load_int("REDIS_PORT", 6379)
         self.redis_db: int = self.load_int("REDIS_DB", 0)
-        # AWS
+        # AWS S3
         self.aws_s3_bucket: str | None = self.load("AWS_S3_BUCKET")
         self.aws_s3_cdn_url: str | None = self.load("AWS_S3_CDN_URL")
+        # If using custom S3 endpoint
+        self.aws_s3_endpoint_url: str | None = self.load("AWS_S3_ENDPOINT_URL")
+        self.aws_s3_region_name: str | None = self.load("AWS_S3_REGION_NAME")
+        self.aws_s3_access_key_id: str | None = self.load("AWS_S3_ACCESS_KEY_ID")
+        self.aws_s3_secret_access_key: str | None = self.load(
+            "AWS_S3_SECRET_ACCESS_KEY"
+        )
         # Internal API
         self.internal_base_url: str = self.load(
             "INTERNAL_BASE_URL", "http://intent-api"
@@ -183,9 +189,6 @@ class Config:
         # If the slack alert token exists, init it
         if self.slack_alert_token and self.slack_alert_channel:
             init_slack(self.slack_alert_token, self.slack_alert_channel)
-        # If the AWS S3 bucket and CDN URL exist, init it
-        if self.aws_s3_bucket and self.aws_s3_cdn_url:
-            init_s3(self.aws_s3_bucket, self.aws_s3_cdn_url, self.env)
 
     @overload
     def load(self, key: str) -> str | None: ...  # noqa: F811

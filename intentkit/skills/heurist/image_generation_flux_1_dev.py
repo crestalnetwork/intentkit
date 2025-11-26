@@ -4,9 +4,9 @@ import httpx
 from epyxid import XID
 from pydantic import BaseModel, Field
 
+from intentkit.clients.s3 import store_image
 from intentkit.config.config import config
 from intentkit.skills.heurist.base import HeuristBaseTool
-from intentkit.utils.s3 import store_image
 
 logger = logging.getLogger(__name__)
 

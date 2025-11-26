@@ -6,8 +6,8 @@ import openai
 from epyxid import XID
 from pydantic import BaseModel, Field
 
+from intentkit.clients.s3 import store_image
 from intentkit.skills.openai.base import OpenAIBaseTool
-from intentkit.utils.s3 import store_image
 
 logger = logging.getLogger(__name__)
 
