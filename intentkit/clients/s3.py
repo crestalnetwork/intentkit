@@ -44,8 +44,23 @@ def get_s3_client() -> S3Client | None:
     _prefix = f"{config.env}/intentkit/"
 
     try:
-        _client = cast(S3Client, boto3.client("s3"))
-        logger.info(f"S3 initialized with bucket: {_bucket}, prefix: {_prefix}")
+        if config.aws_s3_endpoint_url:
+            _client = cast(
+                S3Client,
+                boto3.client(
+                    "s3",
+                    endpoint_url=config.aws_s3_endpoint_url,
+                    region_name=config.aws_s3_region_name,
+                    aws_access_key_id=config.aws_s3_access_key_id,
+                    aws_secret_access_key=config.aws_s3_secret_access_key,
+                ),
+            )
+            logger.info(
+                f"S3 initialized with custom endpoint: {config.aws_s3_endpoint_url}, bucket: {_bucket}, prefix: {_prefix}"
+            )
+        else:
+            _client = cast(S3Client, boto3.client("s3"))
+            logger.info(f"S3 initialized with bucket: {_bucket}, prefix: {_prefix}")
         return _client
     except Exception as e:
         logger.error(f"Failed to initialize S3 client: {e}")
