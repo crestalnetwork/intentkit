@@ -13,6 +13,7 @@ from intentkit.core.agent import (
     update_agents_account_snapshot,
     update_agents_statistics,
 )
+from intentkit.core.cleanup import cleanup_checkpoints
 from intentkit.core.credit import refill_all_free_credits
 from intentkit.models.agent_data import AgentQuota
 
@@ -137,6 +138,18 @@ def create_scheduler(
         ),  # Run 2 times a day
         id="slow_account_checks",
         name="Slow Account Consistency Checks",
+        replace_existing=True,
+    )
+
+    # Cleanup old checkpoints daily at UTC 2:20
+    # Cleanup old checkpoints daily at UTC 2:20
+
+    scheduler.add_job(
+        cleanup_checkpoints,
+        trigger=CronTrigger(hour=2, minute=20, timezone="UTC"),
+        id="cleanup_checkpoints",
+        name="Cleanup old checkpoints",
+        kwargs={"days": 90, "dry_run": False},
         replace_existing=True,
     )
 
