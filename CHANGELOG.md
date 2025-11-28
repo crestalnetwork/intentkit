@@ -1,9 +1,9 @@
 ## v0.8.34 - 2025-11-28
 
 ### Features
-- Add LangGraph 2.0 checkpoints table migration by @muninn in #921
-- Add dev and prod docker image tags for releases by @muninn in #922
-- Keep short memory only 90 days by @muninn in #924
+- Add LangGraph 2.0 checkpoints table migration
+- Add dev and prod docker image tags for releases
+- Keep short memory only 90 days
 - Add daily scheduled task to clean up old LangGraph checkpoints, writes, and blobs
 - Team model support
 - Add draft functionality and manager module
@@ -13,7 +13,7 @@
 - Move checker to core
 
 ### Fixes
-- Reorder checkpoint migration steps to drop columns after pk update by @muninn in #923
+- Reorder checkpoint migration steps to drop columns after pk update
 - Cache checkpointer
 - Improve checkpointer clean
 - Clean old generator model
@@ -23,14 +23,14 @@
 - Add basedpyright to llm.md
 
 ### Refactoring
-- Migrate checkpointer to shallow saver implementation by @muninn in #919
-- Migrate langchain agent middleware by @muninn in #917
+- Migrate checkpointer to shallow saver implementation
+- Migrate langchain agent middleware
 - Move s3 to clients
 
 ### Chores
-- Remove EKS deployment steps from CI workflow by @muninn in #924
-- Disable kubectl deployments in build workflow by @muninn in #920
-- Disable autonomous, telegram, and checker deployments in testnet-dev by @muninn in #918
+- Remove EKS deployment steps from CI workflow
+- Disable kubectl deployments in build workflow
+- Disable autonomous, telegram, and checker deployments in testnet-dev
 - Remove x402 server
 - Upgrade dependencies (uv sync --upgrade)
 
