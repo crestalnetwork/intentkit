@@ -1,5 +1,7 @@
 """Tool for fetching DEX overview data via DeFi Llama API."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_overview
@@ -72,10 +74,10 @@ class ProtocolInfo(BaseModel):
 class FetchDexOverviewResponse(BaseModel):
     """Response schema for DEX overview data."""
 
-    totalDataChart: list = Field(
+    totalDataChart: list[Any] = Field(
         default_factory=list, description="Total data chart points"
     )
-    totalDataChartBreakdown: list = Field(
+    totalDataChartBreakdown: list[Any] = Field(
         default_factory=list, description="Total data chart breakdown"
     )
     breakdown24h: dict[str, dict[str, float]] | None = Field(

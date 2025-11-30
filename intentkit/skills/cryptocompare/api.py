@@ -1,6 +1,7 @@
 """CryptoCompare API implementation and shared schemas."""
 
 import time
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -69,7 +70,9 @@ class FetchTopVolumeInput(BaseModel):
 
 
 # API Functions
-async def fetch_price(api_key: str, from_symbol: str, to_symbols: list[str]) -> dict:
+async def fetch_price(
+    api_key: str, from_symbol: str, to_symbols: list[str]
+) -> dict[str, Any]:
     """
     Fetch current price for a cryptocurrency in multiple currencies.
     """
@@ -83,7 +86,7 @@ async def fetch_price(api_key: str, from_symbol: str, to_symbols: list[str]) -> 
     return response.json()
 
 
-async def fetch_trading_signals(api_key: str, from_symbol: str) -> dict:
+async def fetch_trading_signals(api_key: str, from_symbol: str) -> dict[str, Any]:
     """
     Fetch the latest trading signals.
     """
@@ -99,7 +102,7 @@ async def fetch_trading_signals(api_key: str, from_symbol: str) -> dict:
 
 async def fetch_top_market_cap(
     api_key: str, limit: int, to_symbol: str = "USD"
-) -> dict:
+) -> dict[str, Any]:
     """
     Fetch top cryptocurrencies by market cap.
     """
@@ -115,7 +118,7 @@ async def fetch_top_market_cap(
 
 async def fetch_top_exchanges(
     api_key: str, from_symbol: str, to_symbol: str = "USD"
-) -> dict:
+) -> dict[str, Any]:
     """
     Fetch top exchanges for a cryptocurrency pair.
     """
@@ -129,7 +132,9 @@ async def fetch_top_exchanges(
     return response.json()
 
 
-async def fetch_top_volume(api_key: str, limit: int, to_symbol: str = "USD") -> dict:
+async def fetch_top_volume(
+    api_key: str, limit: int, to_symbol: str = "USD"
+) -> dict[str, Any]:
     """
     Fetch top cryptocurrencies by total volume.
     """
@@ -143,7 +148,9 @@ async def fetch_top_volume(api_key: str, limit: int, to_symbol: str = "USD") -> 
     return response.json()
 
 
-async def fetch_news(api_key: str, token: str, timestamp: int = None) -> dict:
+async def fetch_news(
+    api_key: str, token: str, timestamp: int | None = None
+) -> dict[str, Any]:
     """
     Fetch news for a specific token and timestamp.
     """

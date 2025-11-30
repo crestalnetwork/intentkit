@@ -10,7 +10,7 @@ for platform fees, dev fees, agent fees, and total amounts.
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,10 +34,10 @@ class CreditEventConsistencyChecker:
             0  # Cases where detail sum is 0 but total is not 0
         )
         self.zero_sum_inconsistent_details: List[
-            Dict
+            Dict[str, Any]
         ] = []  # Cases where detail sum is 0 but total is not 0
         self.non_zero_sum_inconsistent_details: List[
-            Dict
+            Dict[str, Any]
         ] = []  # Unexpected errors where details are non-zero but still unequal
 
     def check_record_consistency(

@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import HttpUrl
 
@@ -34,7 +34,7 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
         scale: Literal[2, 4],
         replication: float | None = 0.35,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Asynchronously upscales an image from the provided URL using the Venice AI API.
 

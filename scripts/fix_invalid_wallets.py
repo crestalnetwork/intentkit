@@ -16,7 +16,7 @@ import json
 import logging
 import os
 import sys
-from typing import List, Optional
+from typing import Any, List, Optional
 
 # Add the parent directory to the path to import intentkit modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -74,7 +74,7 @@ class WalletFixer:
 
     async def find_agents_with_invalid_wallets(
         self, agent_id: Optional[str] = None
-    ) -> List[dict]:
+    ) -> List[dict[str, Any]]:
         """Find agents with CDP wallet addresses that don't exist."""
         invalid_agents = []
 
@@ -124,7 +124,7 @@ class WalletFixer:
 
         return invalid_agents
 
-    async def fix_agent_wallet(self, agent_info: dict) -> bool:
+    async def fix_agent_wallet(self, agent_info: dict[str, Any]) -> bool:
         """Fix a single agent by clearing invalid wallet data."""
         agent_id = agent_info["id"]
 

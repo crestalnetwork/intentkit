@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContentTypeFilter(BaseFilter):
-    def __init__(self, content_types: ContentType | list):
+    def __init__(self, content_types: ContentType | list[ContentType]):
         self.content_types = content_types
 
     async def __call__(self, message: Message) -> bool:

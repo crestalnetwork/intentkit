@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Any, Literal
 
 import httpx
 from pydantic import BaseModel, Field
@@ -65,7 +65,7 @@ class AcolytAskGpt(AcolytBaseTool):
         """
     args_schema: type[BaseModel] = AcolytAskGptInput
 
-    async def _arun(self, question: str, **kwargs) -> dict:
+    async def _arun(self, question: str, **kwargs) -> dict[str, Any]:
         """Run the tool to get answer from Acolyt GPT.
 
         Args:

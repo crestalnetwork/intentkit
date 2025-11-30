@@ -2,6 +2,7 @@ import inspect
 import json
 import logging
 from datetime import datetime
+from typing import Any
 
 import telegramify_markdown
 from aiogram import Router
@@ -69,7 +70,7 @@ async def cache_message(chat_id: int, agent_id: str, message: Message) -> None:
         logger.warning(f"Failed to cache message: {e}")
 
 
-async def get_cached_context(chat_id: int, agent_id: str) -> list[dict]:
+async def get_cached_context(chat_id: int, agent_id: str) -> list[dict[str, Any]]:
     """Retrieve cached messages for context.
 
     Args:

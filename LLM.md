@@ -39,7 +39,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 - API framework: fastapi, Doc in https://fastapi.tiangolo.com/
 - DB ORM: SQLAlchemy 2.0, please check the 2.0 api for use, do not use the legacy way. Doc in https://docs.sqlalchemy.org/en/20/
 - Model: Pydantic V2, Also be careful not to use the obsolete V1 interface. Doc in https://docs.pydantic.dev/latest/
-- Testing Framework: pytest
+- Testing Framework: pytest, run `pytest` after your final edit.
 
 ## Rules
 

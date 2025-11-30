@@ -680,7 +680,7 @@ class AgentUserInput(AgentCore):
         ),
     ]
     discord_config: Annotated[
-        dict | None,
+        dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Discord integration configuration settings including token, whitelists, and behavior settings",
@@ -1527,7 +1527,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         self.autonomous = updated_tasks
 
     async def update_autonomous_task(
-        self, task_id: str, task_updates: dict
+        self, task_id: str, task_updates: dict[str, Any]
     ) -> AgentAutonomous:
         async with get_session() as session:
             db_agent = await session.get(AgentTable, self.id)
@@ -1583,7 +1583,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         cls,
         db: AsyncSession = None,
         filter_owner_api_skills: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Get the JSON schema for Agent model with all $ref references resolved.
 
         This is the shared function that handles admin configuration filtering
@@ -1779,8 +1779,8 @@ class AgentResponse(Agent):
     temperature: SkipJsonSchema[float | None] = None
     frequency_penalty: SkipJsonSchema[float | None] = None
     telegram_entrypoint_prompt: SkipJsonSchema[str | None] = None
-    telegram_config: SkipJsonSchema[dict | None] = None
-    discord_config: SkipJsonSchema[dict | None] = None
+    telegram_config: SkipJsonSchema[dict[str, Any] | None] = None
+    discord_config: SkipJsonSchema[dict[str, Any] | None] = None
     xmtp_entrypoint_prompt: SkipJsonSchema[str | None] = None
 
     # Additional fields specific to AgentResponse

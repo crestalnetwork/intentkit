@@ -126,7 +126,7 @@ class GetPairInfo(DexScreenerBaseTool):
                 e, f"{chain_id}/{pair_address}"
             )
 
-    async def _handle_error_response(self, error_details: dict) -> str:
+    async def _handle_error_response(self, error_details: dict[str, Any]) -> str:
         """Formats error details (from _get) into a JSON string."""
         if error_details.get("error_type") in [
             "connection_error",

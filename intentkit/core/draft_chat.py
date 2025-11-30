@@ -3,12 +3,13 @@
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.engine import build_agent, stream_agent_raw
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -20,7 +21,7 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 
-_draft_executors: dict[str, CompiledStateGraph] = {}
+_draft_executors: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
 _draft_updated_at: dict[str, datetime] = {}
 _draft_cached_at: dict[str, datetime] = {}
 
@@ -85,7 +86,7 @@ def _agent_from_draft(draft: AgentDraft) -> Agent:
 
 async def _get_draft_executor(
     agent: Agent, draft: AgentDraft
-) -> tuple[CompiledStateGraph, float]:
+) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], float]:
     now = datetime.now(timezone.utc)
     _cleanup_cache(now)
 

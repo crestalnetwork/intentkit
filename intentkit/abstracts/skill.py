@@ -40,7 +40,7 @@ class SkillStoreABC(ABC):
 
     @staticmethod
     @abstractmethod
-    async def set_agent_data(agent_id: str, data: dict) -> None:
+    async def set_agent_data(agent_id: str, data: dict[str, Any]) -> None:
         """Update agent data.
 
         Args:

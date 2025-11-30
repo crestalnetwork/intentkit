@@ -17,6 +17,7 @@ import textwrap
 import time
 import traceback
 from datetime import datetime
+from typing import Any
 
 import sqlalchemy
 from epyxid import XID
@@ -66,7 +67,7 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 # Global variable to cache all agent executors
-_agents: dict[str, CompiledStateGraph] = {}
+_agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
 
 # Global dictionaries to cache agent update times
 _agents_updated: dict[str, datetime] = {}
@@ -97,7 +98,7 @@ def _extract_text_content(content: object) -> str:
 
 async def build_agent(
     agent: Agent, agent_data: AgentData, custom_skills: list[BaseTool] = []
-) -> CompiledStateGraph:
+) -> CompiledStateGraph[AgentState, AgentContext, Any, Any]:
     """Build an AI agent with specified configuration and tools.
 
     This function:
@@ -119,9 +120,13 @@ async def build_agent(
     # Create the LLM model instance
     llm_model = await create_llm_model(
         model_name=agent.model,
-        temperature=agent.temperature,
-        frequency_penalty=agent.frequency_penalty,
-        presence_penalty=agent.presence_penalty,
+        temperature=agent.temperature if agent.temperature is not None else 0.7,
+        frequency_penalty=(
+            agent.frequency_penalty if agent.frequency_penalty is not None else 0.0
+        ),
+        presence_penalty=(
+            agent.presence_penalty if agent.presence_penalty is not None else 0.0
+        ),
     )
 
     # ==== Store buffered conversation history in memory.
@@ -131,8 +136,8 @@ async def build_agent(
         checkpointer = InMemorySaver()
 
     # ==== Load skills
-    tools: list[BaseTool | dict] = []
-    private_tools: list[BaseTool | dict] = []
+    tools: list[BaseTool | dict[str, Any]] = []
+    private_tools: list[BaseTool | dict[str, Any]] = []
 
     if agent.skills:
         for k, v in agent.skills.items():
@@ -207,7 +212,9 @@ async def build_agent(
     return executor
 
 
-async def create_agent(agent: Agent) -> CompiledStateGraph:
+async def create_agent(
+    agent: Agent,
+) -> CompiledStateGraph[AgentState, AgentContext, Any, Any]:
     """Create an AI agent with specified configuration and tools.
 
     This function maintains backward compatibility by calling build_agent internally.
@@ -256,7 +263,9 @@ async def initialize_agent(aid):
     _agents_updated[aid] = agent.deployed_at if agent.deployed_at else agent.updated_at
 
 
-async def agent_executor(agent_id: str) -> tuple[CompiledStateGraph, float]:
+async def agent_executor(
+    agent_id: str,
+) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], float]:
     start = time.perf_counter()
     agent = await Agent.get(agent_id)
     if not agent:
@@ -303,7 +312,9 @@ async def stream_agent(message: ChatMessageCreate):
 
 
 async def stream_agent_raw(
-    message: ChatMessageCreate, agent: Agent, executor: CompiledStateGraph
+    message: ChatMessageCreate,
+    agent: Agent,
+    executor: CompiledStateGraph[AgentState, AgentContext, Any, Any],
 ):
     start = time.perf_counter()
     # make sure reply_to is set

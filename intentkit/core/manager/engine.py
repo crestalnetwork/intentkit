@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from langgraph.graph.state import CompiledStateGraph
 
+from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.engine import build_agent, stream_agent_raw
 from intentkit.core.manager.skills import (
     get_agent_latest_draft_skill,
@@ -25,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 _MANAGER_CACHE_TTL = timedelta(hours=1)
 
-_manager_executors: dict[str, CompiledStateGraph] = {}
+_manager_executors: dict[
+    str, CompiledStateGraph[AgentState, AgentContext, Any, Any]
+] = {}
 _manager_agents: dict[str, Agent] = {}
 _manager_cached_at: dict[str, datetime] = {}
 
@@ -165,7 +168,7 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
 
 async def _get_manager_executor(
     agent_id: str, user_id: str
-) -> tuple[CompiledStateGraph, Agent, float]:
+) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], Agent, float]:
     now = datetime.now(timezone.utc)
     _cleanup_cache(now)
 

@@ -18,7 +18,7 @@ Usage:
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +61,7 @@ class CreditEventConsistencyChecker:
         self.base_amount_errors = 0
         self.fee_breakdown_errors = 0
         self.base_fee_total_errors = 0
-        self.inconsistent_records: List[Dict] = []
+        self.inconsistent_records: List[Dict[str, Any]] = []
 
     async def check_all_events(self) -> None:
         """Check all credit events for consistency using cursor-based pagination."""

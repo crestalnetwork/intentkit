@@ -39,7 +39,9 @@ class NftMetadata(BaseModel):
     description: str | None = Field(None, description="NFT description")
     image: str | None = Field(None, description="NFT image URL")
     animation_url: str | None = Field(None, description="NFT animation URL")
-    attributes: list[dict] | None = Field(None, description="NFT attributes/traits")
+    attributes: list[dict[str, Any]] | None = Field(
+        None, description="NFT attributes/traits"
+    )
     external_url: str | None = Field(None, description="External URL")
 
 

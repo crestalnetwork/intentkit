@@ -161,7 +161,7 @@ class ChainLookup(ChainlistBaseTool):
         limit: int | None = 5,
         config: Any | None = None,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Lookup blockchain RPC endpoints from Chainlist."""
         if not search_term and not chain_id:
             return {

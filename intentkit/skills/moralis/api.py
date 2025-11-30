@@ -1,6 +1,7 @@
 """API interface for wallet data providers (EVM chains and Solana)."""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -14,8 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 async def fetch_moralis_data(
-    api_key: str, endpoint: str, address: str, chain_id: int = None, params: dict = None
-) -> dict:
+    api_key: str,
+    endpoint: str,
+    address: str,
+    chain_id: int = None,
+    params: dict[str, Any] = None,
+) -> dict[str, Any]:
     """Base function for Moralis API calls.
 
     Args:
@@ -58,7 +63,7 @@ async def fetch_moralis_data(
 # Wallet Balances
 async def fetch_wallet_balances(
     api_key: str, address: str, chain_id: int = None
-) -> dict:
+) -> dict[str, Any]:
     """Get token balances with prices.
 
     Args:
@@ -75,8 +80,11 @@ async def fetch_wallet_balances(
 
 # NFT Balances
 async def fetch_nft_data(
-    api_key: str, address: str, chain_id: int = None, params: dict = None
-) -> dict:
+    api_key: str,
+    address: str,
+    chain_id: int = None,
+    params: dict[str, Any] = None,
+) -> dict[str, Any]:
     """Get NFT balances.
 
     Args:
@@ -104,7 +112,7 @@ async def fetch_transaction_history(
     chain_id: int = None,
     cursor: str = None,
     limit: int = 100,
-) -> dict:
+) -> dict[str, Any]:
     """Get wallet transaction history.
 
     Args:
@@ -127,7 +135,7 @@ async def fetch_transaction_history(
 # Token Approvals
 async def fetch_token_approvals(
     api_key: str, address: str, chain_id: int = None
-) -> dict:
+) -> dict[str, Any]:
     """Get token approvals.
 
     Args:
@@ -143,7 +151,7 @@ async def fetch_token_approvals(
 
 
 # Net Worth
-async def fetch_net_worth(api_key: str, address: str) -> dict:
+async def fetch_net_worth(api_key: str, address: str) -> dict[str, Any]:
     """Get wallet net worth.
 
     Args:
@@ -162,7 +170,9 @@ async def fetch_net_worth(api_key: str, address: str) -> dict:
 #############################################
 
 
-async def fetch_solana_api(api_key: str, endpoint: str, params: dict = None) -> dict:
+async def fetch_solana_api(
+    api_key: str, endpoint: str, params: dict[str, Any] = None
+) -> dict[str, Any]:
     """Base function for Solana API calls using Moralis.
 
     Args:
@@ -199,7 +209,7 @@ async def fetch_solana_api(api_key: str, endpoint: str, params: dict = None) -> 
 
 async def get_solana_portfolio(
     api_key: str, address: str, network: str = "mainnet"
-) -> dict:
+) -> dict[str, Any]:
     """Get complete portfolio for a Solana wallet.
 
     Args:
@@ -216,7 +226,7 @@ async def get_solana_portfolio(
 
 async def get_solana_balance(
     api_key: str, address: str, network: str = "mainnet"
-) -> dict:
+) -> dict[str, Any]:
     """Get native SOL balance.
 
     Args:
@@ -233,7 +243,7 @@ async def get_solana_balance(
 
 async def get_solana_spl_tokens(
     api_key: str, address: str, network: str = "mainnet"
-) -> dict:
+) -> dict[str, Any]:
     """Get SPL token balances.
 
     Args:
@@ -248,7 +258,9 @@ async def get_solana_spl_tokens(
     return await fetch_solana_api(api_key, endpoint)
 
 
-async def get_solana_nfts(api_key: str, address: str, network: str = "mainnet") -> dict:
+async def get_solana_nfts(
+    api_key: str, address: str, network: str = "mainnet"
+) -> dict[str, Any]:
     """Get NFTs owned by a Solana wallet.
 
     Args:
@@ -265,7 +277,7 @@ async def get_solana_nfts(api_key: str, address: str, network: str = "mainnet") 
 
 async def get_token_price(
     api_key: str, token_address: str, network: str = "mainnet"
-) -> dict:
+) -> dict[str, Any]:
     """Get token price by mint address.
 
     Args:

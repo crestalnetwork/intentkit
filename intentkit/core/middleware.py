@@ -118,8 +118,8 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     def __init__(
         self,
         llm_model: LLMModelInfo,
-        public_tools: list[BaseTool | dict],
-        private_tools: list[BaseTool | dict],
+        public_tools: list[BaseTool | dict[str, Any]],
+        private_tools: list[BaseTool | dict[str, Any]],
     ) -> None:
         super().__init__()
         self.llm_model = llm_model
@@ -130,7 +130,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         context = request.runtime.context
 
         llm_params: dict[str, Any] = {}
-        tools: list[BaseTool | dict] = (
+        tools: list[BaseTool | dict[str, Any]] = (
             self.private_tools if context.is_private else self.public_tools
         )
         tools = list(

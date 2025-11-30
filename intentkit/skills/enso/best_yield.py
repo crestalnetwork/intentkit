@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -198,7 +200,7 @@ class EnsoGetBestYield(EnsoBaseTool):
             except Exception:
                 return "Unknown"
 
-    async def _get_protocols(self, api_token: str, chain_id: int) -> list:
+    async def _get_protocols(self, api_token: str, chain_id: int) -> list[Any]:
         """
         Get all protocols available on a specific chain.
 
@@ -236,7 +238,7 @@ class EnsoGetBestYield(EnsoBaseTool):
 
     async def _get_protocol_tokens(
         self, api_token: str, chain_id: int, protocol_slug: str, token_symbol: str
-    ) -> list:
+    ) -> list[Any]:
         """
         Get tokens for a specific protocol that involve the target token.
 

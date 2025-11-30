@@ -349,7 +349,7 @@ class AgentData(BaseModel):
             await db.commit()
 
     @staticmethod
-    async def patch(id: str, data: dict) -> "AgentData":
+    async def patch(id: str, data: dict[str, Any]) -> "AgentData":
         """Update agent data.
 
         Args:

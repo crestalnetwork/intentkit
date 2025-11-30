@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Sequence
+from typing import Any
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
@@ -7,7 +8,7 @@ from langchain_core.tools.base import ToolException
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
     )
 
 
-def format_validation_errors(errors: Sequence) -> str:
+def format_validation_errors(errors: Sequence[Any]) -> str:
     """Format validation errors into a more readable string."""
     formatted_errors = []
 
@@ -109,7 +110,7 @@ async def request_validation_exception_handler(
 ) -> JSONResponse:
     formatted_msg = format_validation_errors(exc.errors())
     return JSONResponse(
-        status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=HTTP_422_UNPROCESSABLE_CONTENT,
         content={"error": "ValidationError", "msg": formatted_msg},
     )
 
