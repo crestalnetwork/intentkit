@@ -31,6 +31,10 @@ IntentKit is an autonomous agent framework that enables creation and management 
    - API server testing in `tests/api/`
    - Skill integration testing in `tests/skills/`
 
+5. **Frontend** (`frontend/`)
+   - The frontend/ folder contains the Next.js application for managing agents.
+   - See `intentkit/frontend/AGENTS.md` for detailed architecture and development guidelines.
+
 ## Technology Stack
 - Package manager: uv
 - Virtual environment: .venv, please use `source .venv/bin/activate` at least once to active virtual environment before running any command.
