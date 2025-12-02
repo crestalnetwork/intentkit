@@ -43,7 +43,6 @@ from app.auth import verify_admin_jwt
 logger = logging.getLogger(__name__)
 
 credit_router = APIRouter(prefix="/credit", tags=["Credit"])
-credit_router_readonly = APIRouter(prefix="/credit", tags=["Credit"])
 
 
 # ===== Models =====
@@ -362,7 +361,7 @@ async def get_agent_statistics(
     return await agent_statistics.get_agent_statistics(agent_id, session=db)
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/users/{user_id}/events",
     response_model=CreditEventsResponse,
     operation_id="list_user_events",
@@ -437,7 +436,7 @@ async def update_event_note(
     )
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/event/users/{user_id}/expense",
     response_model=CreditEventsResponse,
     operation_id="list_user_expense_events",
@@ -478,7 +477,7 @@ async def list_user_expense_events(
     )
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/transactions",
     response_model=CreditTransactionsResponse,
     operation_id="list_transactions",
@@ -602,7 +601,7 @@ async def list_transactions(
     )
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/event/users/{user_id}/income",
     response_model=CreditEventsResponse,
     operation_id="list_user_income_events",
@@ -646,7 +645,7 @@ async def list_user_income_events(
     )
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/event/agents/{agent_id}/income",
     response_model=CreditEventsResponse,
     operation_id="list_agent_income_events",
@@ -686,7 +685,7 @@ async def list_agent_income_events(
     )
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/event",
     response_model=CreditEvent,
     operation_id="fetch_credit_event_by_upstream_tx_id",
@@ -712,7 +711,7 @@ async def fetch_credit_event(
     return await fetch_credit_event_by_upstream_tx_id(db, upstream_tx_id)
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/events/{event_id}",
     response_model=CreditEvent,
     operation_id="fetch_credit_event_by_id",
@@ -774,7 +773,7 @@ async def fetch_credit_event_by_id_endpoint(
     return event
 
 
-@credit_router_readonly.get(
+@credit_router.get(
     "/events",
     operation_id="list_credit_events",
     summary="List Credit Events",

@@ -1,19 +1,16 @@
-from app.admin.api import admin_router, admin_router_readonly
-from app.admin.credit import credit_router, credit_router_readonly
+from app.admin.api import admin_router
+from app.admin.credit import credit_router
 from app.admin.health import health_router
-from app.admin.metadata import metadata_router_readonly
-from app.admin.schema import schema_router_readonly
-from app.admin.user import user_router, user_router_readonly
+from app.admin.metadata import metadata_router
+from app.admin.schema import schema_router
+from app.admin.user import user_router
 
 __all__ = [
     "admin_router",
-    "admin_router_readonly",
     "health_router",
-    "schema_router_readonly",
+    "schema_router",
     "credit_router",
-    "credit_router_readonly",
-    "metadata_router_readonly",
+    "metadata_router",
     "user_router",
-    "user_router_readonly",
     "agent_generator_router",
 ]

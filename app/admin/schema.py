@@ -14,15 +14,13 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 # Create readonly router
-schema_router_readonly = APIRouter()
+schema_router = APIRouter()
 
 # Get the project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
-@schema_router_readonly.get(
-    "/schema/agent", tags=["Schema"], operation_id="get_agent_schema"
-)
+@schema_router.get("/schema/agent", tags=["Schema"], operation_id="get_agent_schema")
 async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     """Get the JSON schema for Agent model with all $ref references resolved.
 
@@ -41,7 +39,7 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     )
 
 
-@schema_router_readonly.get(
+@schema_router.get(
     "/skills/{skill}/schema.json",
     tags=["Schema"],
     operation_id="get_skill_schema",
@@ -81,7 +79,7 @@ async def get_skill_schema(
     return JSONResponse(content=schema, media_type="application/json")
 
 
-@schema_router_readonly.get(
+@schema_router.get(
     "/skills/{skill}/{icon_name}.{ext}",
     tags=["Schema"],
     operation_id="get_skill_icon",

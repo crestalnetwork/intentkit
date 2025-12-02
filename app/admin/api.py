@@ -43,13 +43,12 @@ from intentkit.utils.error import IntentKitAPIError
 
 from app.auth import verify_admin_jwt
 
-admin_router_readonly = APIRouter()
 admin_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
 
-@admin_router_readonly.post(
+@admin_router.post(
     "/agent/validate",
     tags=["Agent"],
     status_code=204,
@@ -98,7 +97,7 @@ async def validate_agent_create(
     return Response(status_code=204)
 
 
-@admin_router_readonly.post(
+@admin_router.post(
     "/agents/{agent_id}/validate",
     tags=["Agent"],
     status_code=204,
@@ -331,7 +330,7 @@ async def override_agent_endpoint(
     )
 
 
-@admin_router_readonly.get(
+@admin_router.get(
     "/agents",
     tags=["Agent"],
     dependencies=[Depends(verify_admin_jwt)],
@@ -365,7 +364,7 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     ]
 
 
-@admin_router_readonly.get(
+@admin_router.get(
     "/agents/{agent_id}",
     tags=["Agent"],
     dependencies=[Depends(verify_admin_jwt)],
@@ -498,7 +497,7 @@ async def clean_memory(
         )
 
 
-@admin_router_readonly.get(
+@admin_router.get(
     "/agents/{agent_id}/export",
     tags=["Agent"],
     operation_id="export_agent",

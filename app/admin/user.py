@@ -11,10 +11,9 @@ from app.auth import verify_admin_jwt
 logger = logging.getLogger(__name__)
 
 user_router = APIRouter(prefix="/users", tags=["User"])
-user_router_readonly = APIRouter(prefix="/users", tags=["User"])
 
 
-@user_router_readonly.get(
+@user_router.get(
     "/{user_id}",
     response_model=User,
     operation_id="get_user",

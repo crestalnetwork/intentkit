@@ -45,7 +45,6 @@ from app.auth import verify_admin_jwt
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
-chat_router_readonly = APIRouter()
 
 # Add security scheme
 security = HTTPBasic()
@@ -81,7 +80,7 @@ def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(securit
     return credentials.username
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/debug/{agent_id}/chats/{chat_id}/memory",
     tags=["Debug"],
     response_class=Response,
@@ -104,7 +103,7 @@ async def debug_chat_memory(
     return Response(content=formatted_json, media_type="application/json")
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/debug/{agent_id}/chats/{chat_id}",
     tags=["Debug"],
     response_class=PlainTextResponse,
@@ -222,7 +221,7 @@ async def debug_chat(
     return resp
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/debug/{agent_id}/prompt",
     tags=["Debug"],
     response_class=PlainTextResponse,
@@ -248,7 +247,7 @@ async def debug_agent_prompt(
     return full_prompt
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/agents/{aid}/chat/history",
     tags=["Chat"],
     dependencies=[Depends(verify_admin_jwt)],
@@ -638,7 +637,7 @@ async def create_chat(
     return [message.sanitize_privacy() for message in response_messages]
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/agents/{aid}/chats",
     response_model=list[Chat],
     summary="User Chat List",
@@ -798,7 +797,7 @@ async def delete_chat(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/agents/{aid}/skill/history",
     tags=["Chat"],
     dependencies=[Depends(verify_admin_jwt)],
@@ -849,7 +848,7 @@ async def get_skill_history(
     return messages
 
 
-@chat_router_readonly.get(
+@chat_router.get(
     "/messages/{message_id}",
     tags=["Chat"],
     dependencies=[Depends(verify_admin_jwt)],

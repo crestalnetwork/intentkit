@@ -14,7 +14,7 @@ from intentkit.utils.error import IntentKitAPIError
 
 from app.services.twitter.oauth2 import oauth2_user_handler
 
-router = APIRouter(prefix="/callback/auth", tags=["Callback"])
+twitter_callback_router = APIRouter(prefix="/callback/auth", tags=["Callback"])
 
 
 def is_valid_url(url: str) -> bool:
@@ -33,7 +33,7 @@ def is_valid_url(url: str) -> bool:
         return False
 
 
-@router.get("/twitter")
+@twitter_callback_router.get("/twitter")
 async def twitter_oauth_callback(
     state: str,
     code: str | None = None,

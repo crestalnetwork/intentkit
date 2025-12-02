@@ -8,7 +8,7 @@ from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import Skill
 
 # Create a readonly router for metadata endpoints
-metadata_router_readonly = APIRouter(tags=["Metadata"])
+metadata_router = APIRouter(tags=["Metadata"])
 
 
 class LLMModelInfoWithProviderName(LLMModelInfo):
@@ -17,7 +17,7 @@ class LLMModelInfoWithProviderName(LLMModelInfo):
     provider_name: str
 
 
-@metadata_router_readonly.get(
+@metadata_router.get(
     "/metadata/skills",
     response_model=list[Skill],
     summary="Get all skills",
@@ -37,7 +37,7 @@ async def get_skills(db: AsyncSession = Depends(get_db)):
         raise
 
 
-@metadata_router_readonly.get(
+@metadata_router.get(
     "/metadata/llms",
     response_model=list[LLMModelInfoWithProviderName],
     summary="Get all LLM models",
