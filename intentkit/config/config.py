@@ -105,6 +105,7 @@ class Config:
         self.cdp_wallet_secret: str | None = self.load("CDP_WALLET_SECRET")
         # LLM providers
         self.openai_api_key: str | None = self.load("OPENAI_API_KEY")
+        self.google_api_key: str | None = self.load("GOOGLE_API_KEY")
         self.deepseek_api_key: str | None = self.load("DEEPSEEK_API_KEY")
         self.xai_api_key: str | None = self.load("XAI_API_KEY")
         self.eternal_api_key: str | None = self.load("ETERNAL_API_KEY")
