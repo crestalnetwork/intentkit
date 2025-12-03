@@ -100,7 +100,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     DEEPSEEK = "deepseek"
     XAI = "xai"
-    GATEWAYZ = "gatewayz"
+    OPENROUTER = "openrouter"
     ETERNAL = "eternal"
     REIGENT = "reigent"
     VENICE = "venice"
@@ -112,7 +112,7 @@ class LLMProvider(str, Enum):
             self.OPENAI: "OpenAI",
             self.DEEPSEEK: "DeepSeek",
             self.XAI: "xAI",
-            self.GATEWAYZ: "Gatewayz",
+            self.OPENROUTER: "OpenRouter",
             self.ETERNAL: "Eternal",
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
@@ -502,19 +502,19 @@ class XAILLM(LLMModel):
         return ChatXAI(**kwargs)
 
 
-class GatewayzLLM(LLMModel):
-    """Gatewayz AI LLM configuration."""
+class OpenRouterLLM(LLMModel):
+    """OpenRouter LLM configuration."""
 
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
-        """Create and return a ChatOpenAI instance configured for Eternal AI."""
+        """Create and return a ChatOpenAI instance configured for OpenRouter."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
         kwargs = {
             "model": self.model_name,
-            "api_key": config.gatewayz_api_key,
-            "base_url": info.api_base,
+            "api_key": config.openrouter_api_key,
+            "base_url": "https://openrouter.ai/api/v1",
             "timeout": info.timeout,
             "max_completion_tokens": 999,
         }
@@ -687,8 +687,8 @@ async def create_llm_model(
         return ReigentLLM(**base_params)
     elif provider == LLMProvider.VENICE:
         return VeniceLLM(**base_params)
-    elif provider == LLMProvider.GATEWAYZ:
-        return GatewayzLLM(**base_params)
+    elif provider == LLMProvider.OPENROUTER:
+        return OpenRouterLLM(**base_params)
     elif provider == LLMProvider.OLLAMA:
         return OllamaLLM(**base_params)
     else:
