@@ -1,3 +1,35 @@
+## v0.8.35 - 2025-01-30
+
+### Features
+- Add GPT-5.2 model with enhanced capabilities (1.75 input pricing, 14 output pricing)
+- Add Gemini 3 Pro Preview model support
+- Add OpenRouter provider integration for additional model access
+- Add DeepSeek 3.2 model support
+- Filter available models based on provider API key presence
+- Initialize frontend application with Next.js
+  - Agent management interface
+  - Dashboard with agent cards
+  - Responsive UI with Tailwind CSS
+- Add checkpoint cleanup functionality in core engine
+- Add cleanup scheduler for automatic maintenance
+
+### Improvements
+- Reorganize llm.csv model entries for better readability
+- Enhanced LLM model filtering logic
+- Add comprehensive tests for LLM model functionality
+
+### Fixes
+- Remove readonly router and service for cleaner architecture
+- Resolve linting errors and deprecation warnings across codebase
+- Fix type hints and import statements
+- Update error handling utilities
+
+### Documentation
+- Add AGENTS.md with detailed frontend architecture guidelines
+- Update CHANGELOG.md with recent changes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.34...v0.8.35
+
 ## v0.8.34 - 2025-11-28
 
 ### Features
