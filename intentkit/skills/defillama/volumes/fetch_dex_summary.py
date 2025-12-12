@@ -1,5 +1,7 @@
 """Tool for fetching DEX protocol summary data via DeFi Llama API."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_summary
@@ -45,7 +47,7 @@ class FetchDexSummaryResponse(BaseModel):
     module: str | None = Field(None, description="Module name")
     category: str | None = Field(None, description="Protocol category")
     methodologyURL: str | None = Field(None, description="Methodology URL")
-    methodology: dict | None = Field(None, description="Methodology details")
+    methodology: dict[str, Any] | None = Field(None, description="Methodology details")
     forkedFrom: list[str] | None = Field(None, description="Forked from protocols")
     audits: str | None = Field(None, description="Audit information")
     address: str | None = Field(None, description="Contract address")
@@ -60,8 +62,10 @@ class FetchDexSummaryResponse(BaseModel):
     total48hto24h: float | None = Field(None, description="48h to 24h total volume")
     total7d: float | None = Field(None, description="7d total volume")
     totalAllTime: float | None = Field(None, description="All time total volume")
-    totalDataChart: list = Field(default_factory=list, description="Total data chart")
-    totalDataChartBreakdown: list = Field(
+    totalDataChart: list[Any] = Field(
+        default_factory=list, description="Total data chart"
+    )
+    totalDataChartBreakdown: list[Any] = Field(
         default_factory=list, description="Chart breakdown"
     )
     change_1d: float | None = Field(None, description="1d change percentage")

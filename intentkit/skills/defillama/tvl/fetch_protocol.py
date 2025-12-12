@@ -1,5 +1,7 @@
 """Tool for fetching specific protocol details via DeFi Llama API."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol
@@ -114,7 +116,9 @@ class ProtocolDetail(BaseModel):
 
     # Market Data
     mcap: float | None = Field(None, description="Market capitalization")
-    metrics: dict = Field(default_factory=dict, description="Additional metrics")
+    metrics: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metrics"
+    )
 
 
 class DefiLlamaProtocolInput(BaseModel):

@@ -69,7 +69,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     async def fetch_price(
         self, api_key: str, from_symbol: str, to_symbols: list[str]
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Fetch current price for a cryptocurrency in multiple currencies.
 
         Args:
@@ -102,7 +102,9 @@ class CryptoCompareBaseTool(IntentKitSkill):
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
-    async def fetch_trading_signals(self, api_key: str, from_symbol: str) -> dict:
+    async def fetch_trading_signals(
+        self, api_key: str, from_symbol: str
+    ) -> dict[str, Any]:
         """Fetch the latest trading signals.
 
         Args:
@@ -129,7 +131,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     async def fetch_top_market_cap(
         self, api_key: str, limit: int, to_symbol: str = "USD"
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Fetch top cryptocurrencies by market cap.
 
         Args:
@@ -157,7 +159,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     async def fetch_top_exchanges(
         self, api_key: str, from_symbol: str, to_symbol: str = "USD"
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Fetch top exchanges for a cryptocurrency pair.
 
         Args:
@@ -187,7 +189,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     async def fetch_top_volume(
         self, api_key: str, limit: int, to_symbol: str = "USD"
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Fetch top cryptocurrencies by total volume.
 
         Args:
@@ -213,7 +215,9 @@ class CryptoCompareBaseTool(IntentKitSkill):
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
-    async def fetch_news(self, api_key: str, token: str, timestamp: int = None) -> dict:
+    async def fetch_news(
+        self, api_key: str, token: str, timestamp: int | None = None
+    ) -> dict[str, Any]:
         """Fetch news for a specific token and timestamp.
 
         Args:

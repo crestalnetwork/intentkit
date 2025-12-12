@@ -4,6 +4,8 @@ Casino Skills Utilities
 Common constants, URLs, and helper functions for Casino skills.
 """
 
+from typing import Any
+
 # API URLs
 DECK_OF_CARDS_API_BASE = "https://www.deckofcardsapi.com/api/deck"
 QRANDOM_API_BASE = "https://qrandom.io/api/random"
@@ -89,7 +91,7 @@ def validate_dice_count(count: int) -> int:
     return max(MIN_DICE_COUNT, min(MAX_DICE_COUNT, count))
 
 
-def format_card_info(card: dict) -> dict:
+def format_card_info(card: dict[str, Any]) -> dict[str, Any]:
     """Format card information for consistent output.
 
     Args:

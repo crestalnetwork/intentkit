@@ -6,6 +6,7 @@ import json
 import logging
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 import jsonref
 from fastapi import status
@@ -76,7 +77,7 @@ def get_skills_hierarchical_text() -> str:
         return "No skills available"
 
     # Group skills by category (x-tags)
-    categories: dict[str, list] = {}
+    categories: dict[str, list[Any]] = {}
 
     for entry in skills_root.iterdir():
         if not entry.is_dir():

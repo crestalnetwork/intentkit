@@ -1,6 +1,7 @@
 """DeFi Llama API implementation and shared schemas."""
 
 from datetime import datetime
+from typing import Any
 
 import httpx
 
@@ -13,7 +14,7 @@ DEFILLAMA_FEES_BASE_URL = "https://api.llama.fi"
 
 
 # TVL API Functions
-async def fetch_protocols() -> dict:
+async def fetch_protocols() -> dict[str, Any]:
     """List all protocols on defillama along with their TVL."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/protocols"
     async with httpx.AsyncClient() as client:
@@ -23,7 +24,7 @@ async def fetch_protocols() -> dict:
     return response.json()
 
 
-async def fetch_protocol(protocol: str) -> dict:
+async def fetch_protocol(protocol: str) -> dict[str, Any]:
     """Get historical TVL of a protocol and breakdowns by token and chain."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/protocol/{protocol}"
     async with httpx.AsyncClient() as client:
@@ -33,7 +34,7 @@ async def fetch_protocol(protocol: str) -> dict:
     return response.json()
 
 
-async def fetch_historical_tvl() -> dict:
+async def fetch_historical_tvl() -> dict[str, Any]:
     """Get historical TVL of DeFi on all chains."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/v2/historicalChainTvl"
     async with httpx.AsyncClient() as client:
@@ -43,7 +44,7 @@ async def fetch_historical_tvl() -> dict:
     return response.json()
 
 
-async def fetch_chain_historical_tvl(chain: str) -> dict:
+async def fetch_chain_historical_tvl(chain: str) -> dict[str, Any]:
     """Get historical TVL of a specific chain."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/v2/historicalChainTvl/{chain}"
     async with httpx.AsyncClient() as client:
@@ -53,7 +54,7 @@ async def fetch_chain_historical_tvl(chain: str) -> dict:
     return response.json()
 
 
-async def fetch_protocol_current_tvl(protocol: str) -> dict:
+async def fetch_protocol_current_tvl(protocol: str) -> dict[str, Any]:
     """Get current TVL of a protocol."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/tvl/{protocol}"
     async with httpx.AsyncClient() as client:
@@ -63,7 +64,7 @@ async def fetch_protocol_current_tvl(protocol: str) -> dict:
     return response.json()
 
 
-async def fetch_chains() -> dict:
+async def fetch_chains() -> dict[str, Any]:
     """Get current TVL of all chains."""
     url = f"{DEFILLAMA_TVL_BASE_URL}/v2/chains"
     async with httpx.AsyncClient() as client:
@@ -74,7 +75,7 @@ async def fetch_chains() -> dict:
 
 
 # Coins API Functions
-async def fetch_current_prices(coins: list[str]) -> dict:
+async def fetch_current_prices(coins: list[str]) -> dict[str, Any]:
     """Get current prices of tokens by contract address using a 4-hour search window."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/current/{coins_str}?searchWidth=4h"
@@ -86,7 +87,7 @@ async def fetch_current_prices(coins: list[str]) -> dict:
     return response.json()
 
 
-async def fetch_historical_prices(timestamp: int, coins: list[str]) -> dict:
+async def fetch_historical_prices(timestamp: int, coins: list[str]) -> dict[str, Any]:
     """Get historical prices of tokens by contract address using a 4-hour search window."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/historical/{timestamp}/{coins_str}?searchWidth=4h"
@@ -98,7 +99,9 @@ async def fetch_historical_prices(timestamp: int, coins: list[str]) -> dict:
     return response.json()
 
 
-async def fetch_batch_historical_prices(coins_timestamps: dict) -> dict:
+async def fetch_batch_historical_prices(
+    coins_timestamps: dict[str, Any],
+) -> dict[str, Any]:
     """Get historical prices for multiple tokens at multiple timestamps."""
     url = f"{DEFILLAMA_COINS_BASE_URL}/batchHistorical"
 
@@ -111,7 +114,7 @@ async def fetch_batch_historical_prices(coins_timestamps: dict) -> dict:
     return response.json()
 
 
-async def fetch_price_chart(coins: list[str]) -> dict:
+async def fetch_price_chart(coins: list[str]) -> dict[str, Any]:
     """Get historical price chart data from the past day for multiple tokens."""
     coins_str = ",".join(coins)
     start_time = int(datetime.now().timestamp()) - 86400  # now - 1 day
@@ -126,7 +129,7 @@ async def fetch_price_chart(coins: list[str]) -> dict:
     return response.json()
 
 
-async def fetch_price_percentage(coins: list[str]) -> dict:
+async def fetch_price_percentage(coins: list[str]) -> dict[str, Any]:
     """Get price percentage changes for multiple tokens over a 24h period."""
     coins_str = ",".join(coins)
     current_timestamp = int(datetime.now().timestamp())
@@ -141,7 +144,7 @@ async def fetch_price_percentage(coins: list[str]) -> dict:
     return response.json()
 
 
-async def fetch_first_price(coins: list[str]) -> dict:
+async def fetch_first_price(coins: list[str]) -> dict[str, Any]:
     """Get first recorded price data for multiple tokens."""
     coins_str = ",".join(coins)
     url = f"{DEFILLAMA_COINS_BASE_URL}/prices/first/{coins_str}"
@@ -153,7 +156,7 @@ async def fetch_first_price(coins: list[str]) -> dict:
     return response.json()
 
 
-async def fetch_block(chain: str) -> dict:
+async def fetch_block(chain: str) -> dict[str, Any]:
     """Get current block data for a specific chain."""
     current_timestamp = int(datetime.now().timestamp())
     url = f"{DEFILLAMA_COINS_BASE_URL}/block/{chain}/{current_timestamp}"
@@ -166,7 +169,7 @@ async def fetch_block(chain: str) -> dict:
 
 
 # Stablecoins API Functions
-async def fetch_stablecoins() -> dict:
+async def fetch_stablecoins() -> dict[str, Any]:
     """Get comprehensive stablecoin data from DeFi Llama."""
     url = f"{DEFILLAMA_STABLECOINS_BASE_URL}/stablecoins"
     params = {"includePrices": "true"}
@@ -178,7 +181,9 @@ async def fetch_stablecoins() -> dict:
     return response.json()
 
 
-async def fetch_stablecoin_charts(stablecoin_id: str, chain: str | None = None) -> dict:
+async def fetch_stablecoin_charts(
+    stablecoin_id: str, chain: str | None = None
+) -> dict[str, Any]:
     """Get historical circulating supply data for a stablecoin."""
     base_url = f"{DEFILLAMA_STABLECOINS_BASE_URL}/stablecoincharts"
 
@@ -193,7 +198,7 @@ async def fetch_stablecoin_charts(stablecoin_id: str, chain: str | None = None) 
     return response.json()
 
 
-async def fetch_stablecoin_chains() -> dict:
+async def fetch_stablecoin_chains() -> dict[str, Any]:
     """Get stablecoin distribution data across all chains."""
     url = f"{DEFILLAMA_STABLECOINS_BASE_URL}/stablecoinchains"
 
@@ -204,7 +209,7 @@ async def fetch_stablecoin_chains() -> dict:
     return response.json()
 
 
-async def fetch_stablecoin_prices() -> dict:
+async def fetch_stablecoin_prices() -> dict[str, Any]:
     """Get current stablecoin price data.
 
     Returns:
@@ -220,7 +225,7 @@ async def fetch_stablecoin_prices() -> dict:
 
 
 # Yields API Functions
-async def fetch_pools() -> dict:
+async def fetch_pools() -> dict[str, Any]:
     """Get comprehensive data for all yield-generating pools."""
     url = f"{DEFILLAMA_YIELDS_BASE_URL}/pools"
 
@@ -231,7 +236,7 @@ async def fetch_pools() -> dict:
     return response.json()
 
 
-async def fetch_pool_chart(pool_id: str) -> dict:
+async def fetch_pool_chart(pool_id: str) -> dict[str, Any]:
     """Get historical chart data for a specific pool."""
     url = f"{DEFILLAMA_YIELDS_BASE_URL}/chart/{pool_id}"
 
@@ -243,7 +248,7 @@ async def fetch_pool_chart(pool_id: str) -> dict:
 
 
 # Volumes API Functions
-async def fetch_dex_overview() -> dict:
+async def fetch_dex_overview() -> dict[str, Any]:
     """Get overview data for DEX protocols."""
     url = f"{DEFILLAMA_VOLUMES_BASE_URL}/overview/dexs"
     params = {
@@ -259,7 +264,7 @@ async def fetch_dex_overview() -> dict:
     return response.json()
 
 
-async def fetch_dex_summary(protocol: str) -> dict:
+async def fetch_dex_summary(protocol: str) -> dict[str, Any]:
     """Get summary data for a specific DEX protocol."""
     url = f"{DEFILLAMA_VOLUMES_BASE_URL}/summary/dexs/{protocol}"
     params = {
@@ -275,7 +280,7 @@ async def fetch_dex_summary(protocol: str) -> dict:
     return response.json()
 
 
-async def fetch_options_overview() -> dict:
+async def fetch_options_overview() -> dict[str, Any]:
     """Get overview data for options protocols from DeFi Llama."""
     url = f"{DEFILLAMA_VOLUMES_BASE_URL}/overview/options"
     params = {
@@ -292,7 +297,7 @@ async def fetch_options_overview() -> dict:
 
 
 # Fees and Revenue API Functions
-async def fetch_fees_overview() -> dict:
+async def fetch_fees_overview() -> dict[str, Any]:
     """Get overview data for fees from DeFi Llama.
 
     Returns:

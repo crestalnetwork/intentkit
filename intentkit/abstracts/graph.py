@@ -19,7 +19,7 @@ class AgentError(str, Enum):
 # This simply involves a list of messages
 # We want steps to return messages to append to the list
 # So we annotate the messages attribute with operator.add
-class AgentState(BaseAgentState):
+class AgentState(BaseAgentState[Any]):
     """The state of the agent."""
 
     context: dict[str, Any]

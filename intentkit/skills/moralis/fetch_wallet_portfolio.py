@@ -1,6 +1,7 @@
 """fetching a complete wallet portfolio (EVM + Solana)."""
 
 import logging
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -118,7 +119,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_evm_portfolio(
-        self, address: str, chains: list[int] | None, portfolio: dict
+        self, address: str, chains: list[int] | None, portfolio: dict[str, Any]
     ) -> None:
         """Fetch portfolio data for EVM chains.
 
@@ -164,7 +165,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_solana_portfolio(
-        self, address: str, network: str, portfolio: dict
+        self, address: str, network: str, portfolio: dict[str, Any]
     ) -> None:
         """Fetch portfolio data for Solana.
 

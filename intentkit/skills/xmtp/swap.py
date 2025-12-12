@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_cdp_client
@@ -128,7 +130,7 @@ class XmtpSwap(XmtpBaseTool):
 
         # Extract transaction data from QuoteSwapResult
         # CDP returns a single transaction object with all necessary data
-        calls: list[dict] = []
+        calls: list[dict[str, Any]] = []
 
         # Validate that we have the required fields from CDP
         if not hasattr(quote, "to") or not hasattr(quote, "data"):

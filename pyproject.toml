@@ -58,6 +58,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "aiosqlite>=0.21.0",
     "langchain-deepseek>=0.1.4",
+    "langchain-google-genai>=3.2.0",
 ]
 keywords = ["ai", "agent", "intent", "blockchain", "crypto"]
 classifiers = [

@@ -38,8 +38,7 @@ from app.auth import AgentToken, verify_agent_token
 
 logger = logging.getLogger(__name__)
 
-router_rw = APIRouter()
-router_ro = APIRouter()
+agent_api_router = APIRouter()
 
 
 def get_real_user_id(
@@ -185,7 +184,7 @@ class ChatMessageRequest(BaseModel):
     )
 
 
-@router_ro.get(
+@agent_api_router.get(
     "/chats",
     response_model=list[Chat],
     operation_id="list_chats",
@@ -213,7 +212,7 @@ async def get_chats(
     return await Chat.get_by_agent_user(agent_id, real_user_id)
 
 
-@router_rw.post(
+@agent_api_router.post(
     "/chats",
     response_model=Chat,
     operation_id="create_chat_thread",
@@ -253,7 +252,7 @@ async def create_chat(
     return full_chat
 
 
-@router_ro.get(
+@agent_api_router.get(
     "/chats/{chat_id}",
     response_model=Chat,
     operation_id="get_chat_thread_by_id",
@@ -287,7 +286,7 @@ async def get_chat(
     return chat
 
 
-@router_rw.patch(
+@agent_api_router.patch(
     "/chats/{chat_id}",
     response_model=Chat,
     operation_id="update_chat_thread",
@@ -314,7 +313,7 @@ async def update_chat(
     return updated_chat
 
 
-@router_rw.delete(
+@agent_api_router.delete(
     "/chats/{chat_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="delete_chat_thread",
@@ -337,7 +336,7 @@ async def delete_chat(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router_ro.get(
+@agent_api_router.get(
     "/chats/{chat_id}/messages",
     response_model=ChatMessagesResponse,
     operation_id="list_messages_in_chat",
@@ -389,7 +388,7 @@ async def get_messages(
     )
 
 
-@router_rw.post(
+@agent_api_router.post(
     "/chats/{chat_id}/messages",
     response_model=list[ChatMessage],
     operation_id="send_message_to_chat",
@@ -477,7 +476,7 @@ async def send_message(
         return [message.sanitize_privacy() for message in response_messages]
 
 
-@router_rw.post(
+@agent_api_router.post(
     "/chats/{chat_id}/messages/retry",
     response_model=list[ChatMessage],
     operation_id="retry_message_in_chat",
@@ -622,7 +621,7 @@ async def retry_message(
     return [message.sanitize_privacy() for message in response_messages]
 
 
-@router_ro.get(
+@agent_api_router.get(
     "/messages/{message_id}",
     response_model=ChatMessage,
     operation_id="get_message_by_id",
@@ -656,7 +655,7 @@ async def get_message(
     return message.sanitize_privacy()
 
 
-@router_ro.get(
+@agent_api_router.get(
     "/agent",
     response_model=AgentResponse,
     operation_id="get_current_agent",

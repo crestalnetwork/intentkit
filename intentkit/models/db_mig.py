@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy import Column, MetaData, inspect, text
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def add_column_if_not_exists(
-    conn, dialect, table_name: str, column: Column
+    conn, dialect, table_name: str, column: Column[Any]
 ) -> None:
     """Add a column to a table if it doesn't exist.
 

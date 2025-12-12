@@ -88,7 +88,6 @@ The project is divided into the core package and the application:
   - [checker.py](app/checker.py): Health and credit checking logic
   - [readonly.py](app/readonly.py): Readonly entrypoint
   - [scheduler.py](app/scheduler.py): Background task scheduler
-  - [singleton.py](app/singleton.py): Singleton agent manager
   - [telegram.py](app/telegram.py): Telegram integration
   - [twitter.py](app/twitter.py): Twitter integration
 

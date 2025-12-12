@@ -41,7 +41,6 @@ async def verify_admin_jwt(
         or host == "127.0.0.1"
         or host == "intent-api"
         or host == "intent-readonly"
-        or host == "intent-singleton"
     ):
         return ""
 

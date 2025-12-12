@@ -1,6 +1,7 @@
 """Quantum dice rolling skill using QRandom API."""
 
 import logging
+from typing import Any
 
 try:
     import httpx
@@ -49,7 +50,7 @@ class CasinoDiceRoll(CasinoBaseTool):
     description: str = PROMPT
     args_schema: type[BaseModel] = CasinoDiceRollInput
 
-    async def _arun(self, dice_count: int = 1, **kwargs) -> dict:
+    async def _arun(self, dice_count: int = 1, **kwargs) -> dict[str, Any]:
         try:
             context = self.get_context()
 

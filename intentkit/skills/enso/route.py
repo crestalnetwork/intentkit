@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -99,7 +101,7 @@ class EnsoRouteShortcutOutput(BaseModel):
     network: str = Field(
         "The network name of the transaction.",
     )
-    amountOut: str | dict | None = Field(
+    amountOut: str | dict[str, Any] | None = Field(
         None,
         description="The final calculated amountOut as an object. you should multiply its value by tokenOut decimals.",
     )

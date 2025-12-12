@@ -1,6 +1,7 @@
 """Base class for all DeFi Llama tools."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -99,7 +100,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
         """
         return f"{self.base_url}/{endpoint.lstrip('/')}"
 
-    def format_error_response(self, status_code: int, message: str) -> dict:
+    def format_error_response(self, status_code: int, message: str) -> dict[str, Any]:
         """Format error responses consistently.
 
         Args:

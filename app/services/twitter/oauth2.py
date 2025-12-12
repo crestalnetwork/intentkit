@@ -33,10 +33,10 @@ class TwitterAuthResponse(BaseModel):
     url: str
 
 
-router = APIRouter(tags=["Auth"])
+twitter_oauth2_router = APIRouter(tags=["Auth"])
 
 
-@router.get(
+@twitter_oauth2_router.get(
     "/auth/twitter",
     response_model=TwitterAuthResponse,
     dependencies=[Depends(verify_admin_jwt)],

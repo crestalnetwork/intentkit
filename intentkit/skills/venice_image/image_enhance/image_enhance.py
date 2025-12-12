@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from pydantic import HttpUrl
 
@@ -32,7 +33,7 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
         replication: float | None = 0.35,
         enhanceCreativity: float | None = 0.5,
         **kwargs,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Applies AI enhancement to an image without changing its size.
         """

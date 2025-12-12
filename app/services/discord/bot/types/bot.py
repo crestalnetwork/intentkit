@@ -1,5 +1,7 @@
 """Discord bot pool item."""
 
+from typing import Any
+
 import discord
 
 from intentkit.models.agent import Agent
@@ -33,7 +35,7 @@ class BotPoolItem:
 
         self.update_conf(agent.discord_config or {})
 
-    def update_conf(self, config: dict):
+    def update_conf(self, config: dict[str, Any]):
         """Update bot configuration from agent config."""
         self._guild_whitelist = config.get("guild_whitelist")
         self._channel_whitelist = config.get("channel_whitelist")

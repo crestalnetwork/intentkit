@@ -7,11 +7,13 @@ from collections import OrderedDict
 from pathlib import Path
 
 # Root directory of the project
+from typing import Any
+
 ROOT_DIR = Path(__file__).parent.parent
 SKILLS_DIR = ROOT_DIR / "skills"
 
 
-def update_enabled_field(schema_path: Path, schema: dict) -> bool:
+def update_enabled_field(schema_path: Path, schema: dict[str, Any]) -> bool:
     """Update the 'enabled' field in the schema.json file.
 
     Args:
@@ -54,7 +56,7 @@ def update_enabled_field(schema_path: Path, schema: dict) -> bool:
     return changes_made
 
 
-def update_states_field(schema_path: Path, schema: dict) -> bool:
+def update_states_field(schema_path: Path, schema: dict[str, Any]) -> bool:
     """Update the 'states' field in the schema.json file.
 
     Args:
@@ -103,7 +105,7 @@ def update_states_field(schema_path: Path, schema: dict) -> bool:
     return changes_made
 
 
-def reorder_properties(schema: dict) -> bool:
+def reorder_properties(schema: dict[str, Any]) -> bool:
     """Reorder properties to place 'enabled' first.
 
     Args:

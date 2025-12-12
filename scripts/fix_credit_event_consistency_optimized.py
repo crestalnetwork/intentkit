@@ -23,7 +23,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -263,7 +263,7 @@ class OptimizedCreditEventConsistencyFixer:
 
     async def process_records_batch(
         self, session: AsyncSession, records: List[CreditEventTable]
-    ) -> Tuple[List[Dict], int, int]:
+    ) -> Tuple[List[Dict[str, Any]], int, int]:
         """Process a batch of records and return updates to be applied.
 
         Returns:
@@ -296,7 +296,9 @@ class OptimizedCreditEventConsistencyFixer:
 
         return updates, fixed_count, failed_count
 
-    def _process_single_record(self, record: CreditEventTable) -> Optional[Dict]:
+    def _process_single_record(
+        self, record: CreditEventTable
+    ) -> Optional[Dict[str, Any]]:
         """Process a single record (CPU-intensive part).
 
         Returns:
@@ -311,7 +313,7 @@ class OptimizedCreditEventConsistencyFixer:
             raise Exception(f"Error processing record {record.id}: {str(e)}")
 
     async def batch_update_records(
-        self, session: AsyncSession, updates: List[Dict]
+        self, session: AsyncSession, updates: List[Dict[str, Any]]
     ) -> Tuple[int, int]:
         """Apply batch updates to the database.
 

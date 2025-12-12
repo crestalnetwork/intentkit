@@ -162,7 +162,7 @@ class AgentSkillData(AgentSkillDataCreate):
             return result or 0
 
     @classmethod
-    async def get(cls, agent_id: str, skill: str, key: str) -> dict | None:
+    async def get(cls, agent_id: str, skill: str, key: str) -> dict[str, Any] | None:
         """Get skill data for an agent.
 
         Args:
@@ -303,7 +303,7 @@ class ChatSkillData(ChatSkillDataCreate):
     ]
 
     @classmethod
-    async def get(cls, chat_id: str, skill: str, key: str) -> dict | None:
+    async def get(cls, chat_id: str, skill: str, key: str) -> dict[str, Any] | None:
         """Get skill data for a chat.
 
         Args:

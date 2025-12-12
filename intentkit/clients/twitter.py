@@ -39,7 +39,7 @@ class TwitterUser(BaseModel):
     name: str
     username: str
     description: str
-    public_metrics: dict = Field(
+    public_metrics: dict[str, Any] = Field(
         description="User metrics including followers_count, following_count, tweet_count, listed_count, like_count, and media_count"
     )
     is_following: bool = Field(
@@ -82,7 +82,7 @@ class TwitterClient(TwitterABC):
         config: Configuration dictionary that may contain API keys
     """
 
-    def __init__(self, agent_id: str, config: dict) -> None:
+    def __init__(self, agent_id: str, config: dict[str, Any]) -> None:
         """Initialize the Twitter client.
 
         Args:
@@ -420,11 +420,11 @@ class TwitterClient(TwitterABC):
         return media_ids
 
 
-def _is_self_key(config: dict) -> bool:
+def _is_self_key(config: dict[str, Any]) -> bool:
     return config.get("api_key_provider") == "agent_owner"
 
 
-def get_twitter_client(agent_id: str, config: dict) -> "TwitterClient":
+def get_twitter_client(agent_id: str, config: dict[str, Any]) -> "TwitterClient":
     if _is_self_key(config):
         if agent_id not in _clients_self_key:
             _clients_self_key[agent_id] = TwitterClient(agent_id, config)

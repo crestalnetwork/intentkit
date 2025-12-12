@@ -86,6 +86,28 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                 )
                 if not model.enabled:
                     continue
+
+                # Check if provider is configured
+                is_configured = True
+                if model.provider == LLMProvider.OPENAI:
+                    is_configured = bool(config.openai_api_key)
+                elif model.provider == LLMProvider.GOOGLE:
+                    is_configured = bool(config.google_api_key)
+                elif model.provider == LLMProvider.DEEPSEEK:
+                    is_configured = bool(config.deepseek_api_key)
+                elif model.provider == LLMProvider.XAI:
+                    is_configured = bool(config.xai_api_key)
+                elif model.provider == LLMProvider.OPENROUTER:
+                    is_configured = bool(config.openrouter_api_key)
+                elif model.provider == LLMProvider.ETERNAL:
+                    is_configured = bool(config.eternal_api_key)
+                elif model.provider == LLMProvider.REIGENT:
+                    is_configured = bool(config.reigent_api_key)
+                elif model.provider == LLMProvider.VENICE:
+                    is_configured = bool(config.venice_api_key)
+
+                if not is_configured:
+                    continue
             except Exception as exc:
                 logger.error(
                     "Failed to load default LLM model %s: %s", row.get("id"), exc
@@ -98,9 +120,10 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
 
 class LLMProvider(str, Enum):
     OPENAI = "openai"
+    GOOGLE = "google"
     DEEPSEEK = "deepseek"
     XAI = "xai"
-    GATEWAYZ = "gatewayz"
+    OPENROUTER = "openrouter"
     ETERNAL = "eternal"
     REIGENT = "reigent"
     VENICE = "venice"
@@ -110,9 +133,10 @@ class LLMProvider(str, Enum):
         """Return user-friendly display name for the provider."""
         display_names = {
             self.OPENAI: "OpenAI",
+            self.GOOGLE: "Google",
             self.DEEPSEEK: "DeepSeek",
             self.XAI: "xAI",
-            self.GATEWAYZ: "Gatewayz",
+            self.OPENROUTER: "OpenRouter",
             self.ETERNAL: "Eternal",
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
@@ -502,19 +526,19 @@ class XAILLM(LLMModel):
         return ChatXAI(**kwargs)
 
 
-class GatewayzLLM(LLMModel):
-    """Gatewayz AI LLM configuration."""
+class OpenRouterLLM(LLMModel):
+    """OpenRouter LLM configuration."""
 
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
-        """Create and return a ChatOpenAI instance configured for Eternal AI."""
+        """Create and return a ChatOpenAI instance configured for OpenRouter."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
         kwargs = {
             "model": self.model_name,
-            "api_key": config.gatewayz_api_key,
-            "base_url": info.api_base,
+            "api_key": config.openrouter_api_key,
+            "base_url": "https://openrouter.ai/api/v1",
             "timeout": info.timeout,
             "max_completion_tokens": 999,
         }
@@ -616,6 +640,31 @@ class VeniceLLM(LLMModel):
         return ChatOpenAI(**kwargs)
 
 
+class GoogleLLM(LLMModel):
+    """Google LLM configuration."""
+
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatGoogleGenerativeAI instance."""
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        info = await self.model_info()
+
+        kwargs = {
+            "model": self.model_name,
+            "google_api_key": config.google_api_key,
+            "timeout": info.timeout,
+        }
+
+        # Add optional parameters based on model support
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        # Update kwargs with params to allow overriding
+        kwargs.update(params)
+
+        return ChatGoogleGenerativeAI(**kwargs)
+
+
 # Factory function to create the appropriate LLM model based on the model name
 class OllamaLLM(LLMModel):
     """Ollama LLM configuration."""
@@ -677,7 +726,9 @@ async def create_llm_model(
 
     provider = info.provider
 
-    if provider == LLMProvider.DEEPSEEK:
+    if provider == LLMProvider.GOOGLE:
+        return GoogleLLM(**base_params)
+    elif provider == LLMProvider.DEEPSEEK:
         return DeepseekLLM(**base_params)
     elif provider == LLMProvider.XAI:
         return XAILLM(**base_params)
@@ -687,8 +738,8 @@ async def create_llm_model(
         return ReigentLLM(**base_params)
     elif provider == LLMProvider.VENICE:
         return VeniceLLM(**base_params)
-    elif provider == LLMProvider.GATEWAYZ:
-        return GatewayzLLM(**base_params)
+    elif provider == LLMProvider.OPENROUTER:
+        return OpenRouterLLM(**base_params)
     elif provider == LLMProvider.OLLAMA:
         return OllamaLLM(**base_params)
     else:
