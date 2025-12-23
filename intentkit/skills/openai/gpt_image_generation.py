@@ -95,7 +95,7 @@ class GPTImageGeneration(OpenAIBaseTool):
 
             # Make the API request to generate the image
             response = client.images.generate(
-                model="gpt-image-1",
+                model="gpt-image-1.5",
                 prompt=prompt,
                 size=size,
                 quality=quality,
