@@ -41,8 +41,6 @@ from intentkit.models.db import get_db
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 
-from app.auth import verify_admin_jwt
-
 admin_router = APIRouter()
 
 logger = logging.getLogger(__name__)
@@ -189,7 +187,6 @@ async def validate_agent_update(
 )
 async def create_agent_endpoint(
     agent: AgentUpdate = Body(AgentUpdate, description="Agent user input"),
-    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Create a new agent.
 
@@ -205,7 +202,7 @@ async def create_agent_endpoint(
         - 500: Database error
     """
     new_agent = AgentCreate.model_validate(agent)
-    new_agent.owner = subject
+    new_agent.owner = "admin"
     latest_agent, agent_data = await create_agent(new_agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
@@ -229,7 +226,6 @@ async def create_agent_endpoint(
 async def update_agent(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
-    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """
     Deprecated, use the put method instead, it will override the agent instead of updating it.
@@ -252,8 +248,7 @@ async def update_agent(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    if subject:
-        agent.owner = subject
+    agent.owner = "admin"
 
     existing_agent = await Agent.get(agent_id)
     if not existing_agent:
@@ -296,7 +291,6 @@ async def update_agent(
 async def override_agent_endpoint(
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
-    subject: str = Depends(verify_admin_jwt),
 ) -> Response:
     """Override an existing agent.
 
@@ -318,7 +312,7 @@ async def override_agent_endpoint(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    latest_agent, agent_data = await override_agent(agent_id, agent, subject)
+    latest_agent, agent_data = await override_agent(agent_id, agent, "admin")
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -333,7 +327,6 @@ async def override_agent_endpoint(
 @admin_router.get(
     "/agents",
     tags=["Agent"],
-    dependencies=[Depends(verify_admin_jwt)],
     operation_id="get_agents",
 )
 async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
@@ -367,7 +360,6 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
 @admin_router.get(
     "/agents/{agent_id}",
     tags=["Agent"],
-    dependencies=[Depends(verify_admin_jwt)],
     operation_id="get_agent",
 )
 async def get_agent(
@@ -424,14 +416,12 @@ class MemCleanRequest(BaseModel):
     "/agent/clean-memory",
     tags=["Agent"],
     status_code=204,
-    dependencies=[Depends(verify_admin_jwt)],
     operation_id="clean_agent_memory",
 )
 @admin_router.post(
     "/agents/clean-memory",
     tags=["Agent"],
     status_code=201,
-    dependencies=[Depends(verify_admin_jwt)],
     operation_id="clean_agent_memory_deprecated",
     deprecated=True,
 )
@@ -501,7 +491,6 @@ async def clean_memory(
     "/agents/{agent_id}/export",
     tags=["Agent"],
     operation_id="export_agent",
-    dependencies=[Depends(verify_admin_jwt)],
 )
 async def export_agent(
     agent_id: str = Path(..., description="ID of the agent to export"),
@@ -620,7 +609,6 @@ async def import_agent(
     file: UploadFile = File(
         ..., description="YAML file containing agent configuration"
     ),
-    subject: str = Depends(verify_admin_jwt),
 ) -> str:
     """Import agent configuration from YAML file.
     Only updates existing agents, will not create new ones.
@@ -663,7 +651,7 @@ async def import_agent(
         raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    latest_agent, agent_data = await deploy_agent(agent_id, agent, subject)
+    latest_agent, agent_data = await deploy_agent(agent_id, agent, "admin")
 
     return "Agent import successful"
 
@@ -672,7 +660,6 @@ async def import_agent(
     "/agents/{agent_id}/twitter/unlink",
     tags=["Agent"],
     operation_id="unlink_twitter",
-    dependencies=[Depends(verify_admin_jwt)],
     response_class=Response,
 )
 async def unlink_twitter_endpoint(

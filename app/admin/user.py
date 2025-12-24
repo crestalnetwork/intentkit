@@ -1,12 +1,10 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Path
 
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
-
-from app.auth import verify_admin_jwt
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +16,6 @@ user_router = APIRouter(prefix="/users", tags=["User"])
     response_model=User,
     operation_id="get_user",
     summary="Get User",
-    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_user(
     user_id: Annotated[str, Path(description="ID of the user")],
@@ -44,7 +41,6 @@ async def get_user(
     response_model=User,
     operation_id="put_user",
     summary="Replace User",
-    dependencies=[Depends(verify_admin_jwt)],
 )
 async def put_user(
     user_id: Annotated[str, Path(description="ID of the user")],
@@ -67,7 +63,6 @@ async def put_user(
     response_model=User,
     operation_id="patch_user",
     summary="Update User",
-    dependencies=[Depends(verify_admin_jwt)],
 )
 async def patch_user(
     user_id: Annotated[str, Path(description="ID of the user")],

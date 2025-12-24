@@ -1,12 +1,10 @@
 """Twitter OAuth2 authentication module."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from intentkit.clients.twitter import OAuth2UserHandler
 from intentkit.config.config import config
-
-from app.auth import verify_admin_jwt
 
 # Initialize Twitter OAuth2 client
 oauth2_user_handler = OAuth2UserHandler(
@@ -39,7 +37,6 @@ twitter_oauth2_router = APIRouter(tags=["Auth"])
 @twitter_oauth2_router.get(
     "/auth/twitter",
     response_model=TwitterAuthResponse,
-    dependencies=[Depends(verify_admin_jwt)],
 )
 async def get_twitter_auth_url(agent_id: str, redirect_uri: str) -> TwitterAuthResponse:
     """Get Twitter OAuth2 authorization URL.

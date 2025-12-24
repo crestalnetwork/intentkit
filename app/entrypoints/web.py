@@ -2,7 +2,6 @@
 
 import json
 import logging
-import secrets
 import textwrap
 
 from epyxid import XID
@@ -16,12 +15,10 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.config.config import config
 from intentkit.core.engine import execute_agent, thread_stats
 from intentkit.core.prompt import agent_prompt
 from intentkit.models.agent import Agent
@@ -39,54 +36,16 @@ from intentkit.models.chat import (
 from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
 
-from app.auth import verify_admin_jwt
-
 # init logger
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
-
-# Add security scheme
-security = HTTPBasic()
-
-
-# Add credentials checker
-def verify_debug_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    from intentkit.config.config import config
-
-    if not config.debug_auth_enabled:
-        return None
-
-    if not config.debug_username or not config.debug_password:
-        raise IntentKitAPIError(
-            status_code=500,
-            key="DebugNotConfigured",
-            message="Debug credentials not configured",
-        )
-
-    is_username_correct = secrets.compare_digest(
-        credentials.username.encode("utf8"), config.debug_username.encode("utf8")
-    )
-    is_password_correct = secrets.compare_digest(
-        credentials.password.encode("utf8"), config.debug_password.encode("utf8")
-    )
-
-    if not (is_username_correct and is_password_correct):
-        raise IntentKitAPIError(
-            status_code=401,
-            key="InvalidCredentials",
-            message="Incorrect username or password",
-        )
-    return credentials.username
 
 
 @chat_router.get(
     "/debug/{agent_id}/chats/{chat_id}/memory",
     tags=["Debug"],
     response_class=Response,
-    dependencies=[Depends(verify_debug_credentials)]
-    if config.debug_auth_enabled
-    else [],
     operation_id="debug_chat_memory",
     summary="Chat Memory",
 )
@@ -107,9 +66,6 @@ async def debug_chat_memory(
     "/debug/{agent_id}/chats/{chat_id}",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)]
-    if config.debug_auth_enabled
-    else [],
     operation_id="debug_chat_history",
     summary="Chat History",
 )
@@ -140,9 +96,6 @@ async def debug_chat_deprecated(
     "/debug/{aid}/chat",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)]
-    if config.debug_auth_enabled
-    else [],
     operation_id="debug_chat",
     summary="Chat",
 )
@@ -225,9 +178,6 @@ async def debug_chat(
     "/debug/{agent_id}/prompt",
     tags=["Debug"],
     response_class=PlainTextResponse,
-    dependencies=[Depends(verify_debug_credentials)]
-    if config.debug_auth_enabled
-    else [],
     operation_id="debug_agent_prompt",
     summary="Agent Prompt",
 )
@@ -250,7 +200,6 @@ async def debug_agent_prompt(
 @chat_router.get(
     "/agents/{aid}/chat/history",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="get_chat_history",
     summary="Chat History",
@@ -317,7 +266,6 @@ async def get_chat_history(
 @chat_router.get(
     "/agents/{aid}/chat/retry",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="retry_chat_deprecated",
     deprecated=True,
@@ -395,7 +343,6 @@ async def retry_chat_deprecated(
 @chat_router.put(
     "/agents/{aid}/chat/retry/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="retry_chat_put_deprecated",
     summary="Retry Chat",
@@ -404,7 +351,6 @@ async def retry_chat_deprecated(
 @chat_router.post(
     "/agents/{aid}/chat/retry/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="retry_chat",
     summary="Retry Chat",
@@ -480,7 +426,6 @@ async def retry_chat(
 @chat_router.post(
     "/agents/{aid}/chat",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="create_chat_deprecated",
     deprecated=True,
@@ -561,7 +506,6 @@ async def create_chat_deprecated(
 @chat_router.post(
     "/agents/{aid}/chat/v2",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="chat",
     summary="Chat",
@@ -800,7 +744,6 @@ async def delete_chat(
 @chat_router.get(
     "/agents/{aid}/skill/history",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=list[ChatMessage],
     operation_id="get_skill_history",
     summary="Skill History",
@@ -851,7 +794,6 @@ async def get_skill_history(
 @chat_router.get(
     "/messages/{message_id}",
     tags=["Chat"],
-    dependencies=[Depends(verify_admin_jwt)],
     response_model=ChatMessage,
     operation_id="get_chat_message",
     summary="Get Chat Message",
