@@ -169,6 +169,7 @@ cython_debug/
 .idea
 .vscode
 .cursor
+.zed
 
 # web3
 wallet_data.txt
