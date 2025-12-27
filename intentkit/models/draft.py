@@ -1,11 +1,12 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Annotated
 
 from epyxid import XID
 from fastapi import status
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, Index, String, func, select
+from sqlalchemy import DateTime, Index, String, func, select
+from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.agent import (
     AgentUserInput,
@@ -45,61 +46,6 @@ class AgentDraftTable(Base, AgentUserInputColumns):
 
     __tablename__ = "agent_drafts"
 
-    id = Column(
-        String,
-        primary_key=True,
-        comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
-    )
-    agent_id = Column(
-        String,
-        nullable=False,
-        comment="Agent id",
-    )
-    owner = Column(
-        String,
-        nullable=True,
-        comment="Owner identifier of the agent, used for access control",
-    )
-    team_id = Column(
-        String,
-        nullable=True,
-        comment="Team identifier of the agent, used for access control",
-    )
-    version = Column(
-        String,
-        nullable=True,
-        comment="Version hash of the agent",
-    )
-    project_id = Column(
-        String,
-        nullable=True,
-        comment="Project ID, forward compatible",
-    )
-    last_draft_id = Column(
-        String,
-        nullable=True,
-        comment="ID of the last draft that was deployed",
-    )
-    deployed_at = Column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="Timestamp when the agent was deployed",
-    )
-    # auto timestamp
-    created_at = Column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        comment="Timestamp when the agent was created",
-    )
-    updated_at = Column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
-        comment="Timestamp when the agent was last updated",
-    )
-
     # Indexes for optimal query performance
     __table_args__ = (
         # Index for queries filtering by agent_id and owner (most common pattern)
@@ -110,6 +56,61 @@ class AgentDraftTable(Base, AgentUserInputColumns):
         Index(
             "idx_agent_drafts_agent_owner_created", "agent_id", "owner", "created_at"
         ),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True,
+        comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
+    )
+    agent_id: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        comment="Agent id",
+    )
+    owner: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Owner identifier of the agent, used for access control",
+    )
+    team_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Team identifier of the agent, used for access control",
+    )
+    version: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Version hash of the agent",
+    )
+    project_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Project ID, forward compatible",
+    )
+    last_draft_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="ID of the last draft that was deployed",
+    )
+    deployed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when the agent was deployed",
+    )
+    # auto timestamp
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Timestamp when the agent was created",
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(UTC),
+        comment="Timestamp when the agent was last updated",
     )
 
 

@@ -84,15 +84,6 @@ class Config:
         self.internal_base_url: str = self.load(
             "INTERNAL_BASE_URL", "http://intent-api"
         )
-        self.admin_auth_enabled: bool = (
-            self.load("ADMIN_AUTH_ENABLED", "false") == "true"
-        )
-        self.admin_jwt_secret: str | None = self.load("ADMIN_JWT_SECRET")
-        self.debug_auth_enabled: bool = (
-            self.load("DEBUG_AUTH_ENABLED", "false") == "true"
-        )
-        self.debug_username: str | None = self.load("DEBUG_USERNAME")
-        self.debug_password: str | None = self.load("DEBUG_PASSWORD")
         # Payment
         self.payment_enabled: bool = self.load("PAYMENT_ENABLED", "false") == "true"
         # Open API for agent

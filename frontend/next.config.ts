@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   },
 
   // Proxy API requests to FastAPI backend during development
+  // Note: You can bypass this proxy by setting NEXT_PUBLIC_API_BASE_URL
+  // in .env.local to directly access the backend (e.g., "http://localhost:8000")
   async rewrites() {
     // Rewrites are not supported in static export, so we only return them in development
     if (process.env.NODE_ENV !== "development") {
@@ -19,7 +21,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        destination: "http://127.0.0.1:8000/:path*",
       },
       {
         source: "/docs",
