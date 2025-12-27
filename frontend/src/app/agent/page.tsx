@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { agentApi, chatApi, generateChatId, generateUserId } from "@/lib/api";
+import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
 import type { UIMessage } from "@/types/chat";
 
 function AgentChatContent() {
@@ -67,13 +68,14 @@ function AgentChatContent() {
       setError(null);
 
       try {
+        // Use the web.py API: POST /agents/{aid}/chat/v2
         const response = await chatApi.sendMessage(agentId, {
           chat_id: chatId,
           user_id: userId,
           message: inputValue,
         });
 
-        // Process response messages
+        // Process response messages - filter out user's own message
         const agentMessages: UIMessage[] = response
           .filter((msg) => msg.author_id !== userId)
           .map((msg) => ({
@@ -208,7 +210,12 @@ function AgentChatContent() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={clearChat}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearChat}
+            disabled={isSending}
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Clear Chat
           </Button>
@@ -311,15 +318,17 @@ function AgentChatContent() {
                       : "bg-muted text-foreground",
                   )}
                 >
+                  {/* Skill Call Badges */}
+                  {msg.skillCalls && msg.skillCalls.length > 0 && (
+                    <div className="mb-2">
+                      <SkillCallBadgeList skillCalls={msg.skillCalls} />
+                    </div>
+                  )}
+
+                  {/* Message Content */}
                   <div className="whitespace-pre-wrap break-words">
                     {msg.content}
                   </div>
-                  {msg.skillCalls && msg.skillCalls.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-border/50 text-xs opacity-70">
-                      <span className="font-medium">Skills used:</span>{" "}
-                      {msg.skillCalls.map((sc) => sc.name).join(", ")}
-                    </div>
-                  )}
                 </div>
               </div>
             ))
@@ -341,19 +350,31 @@ function AgentChatContent() {
         <div className="p-4 border-t bg-background">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <Input
-              placeholder="Type a message..."
+              placeholder={
+                isSending ? "Waiting for response..." : "Type a message..."
+              }
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isSending}
               className="flex-1"
               autoFocus
             />
-            <Button type="submit" disabled={isSending || !inputValue.trim()}>
+            <Button
+              type="submit"
+              disabled={isSending || !inputValue.trim()}
+              title={
+                isSending ? "Please wait for the response" : "Send message"
+              }
+            >
               <Send className="h-4 w-4" />
               <span className="sr-only">Send</span>
             </Button>
           </form>
+          {isSending && (
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Processing your message...
+            </p>
+          )}
         </div>
       </Card>
     </div>
