@@ -18,8 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.core.agent import get_agent
 from intentkit.core.engine import execute_agent, stream_agent
-from intentkit.models.agent import Agent, AgentResponse
+from intentkit.models.agent import AgentResponse
 from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
@@ -202,7 +203,7 @@ async def get_chats(
     """Get a list of chat threads."""
     agent_id = agent_token.agent_id
     # Get agent to access owner
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
@@ -230,7 +231,7 @@ async def create_chat(
     """Create a new chat thread."""
     agent_id = agent_token.agent_id
     # Verify that the entity exists
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404,
@@ -271,7 +272,7 @@ async def get_chat(
     """Get a specific chat thread."""
     agent_id = agent_token.agent_id
     # Get agent to access owner
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
@@ -411,7 +412,7 @@ async def send_message(
 ):
     """Send a new message."""
     agent_id = agent_token.agent_id
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
@@ -501,7 +502,7 @@ async def retry_message(
     """
     agent_id = agent_token.agent_id
     # Get entity and check if exists
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
@@ -640,7 +641,7 @@ async def get_message(
     """Get a specific message."""
     agent_id = agent_token.agent_id
     # Get agent to access owner
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
@@ -676,7 +677,7 @@ async def get_current_agent(
         - 404: Agent not found
     """
     agent_id = agent_token.agent_id
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"

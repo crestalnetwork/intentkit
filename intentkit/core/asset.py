@@ -13,6 +13,7 @@ from web3 import Web3
 
 from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
+from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.models.db import get_session
@@ -195,7 +196,7 @@ async def agent_asset(agent_id: str) -> AgentAssets:
     except Exception as exc:  # pragma: no cover - best effort fallback
         logger.debug("Redis unavailable for agent assets: %s", exc)
 
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(404, "AgentNotFound", "Agent not found")
 

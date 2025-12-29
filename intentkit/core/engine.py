@@ -35,6 +35,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.core.agent import get_agent
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.middleware import (
@@ -249,7 +250,7 @@ async def initialize_agent(aid):
         HTTPException: If agent not found (404) or database error (500)
     """
     # get the agent from the database
-    agent: Agent | None = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -267,7 +268,7 @@ async def agent_executor(
     agent_id: str,
 ) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], float]:
     start = time.perf_counter()
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -304,7 +305,7 @@ async def stream_agent(message: ChatMessageCreate):
     Yields:
         ChatMessage: Individual response messages including timing information
     """
-    agent = await Agent.get(message.agent_id)
+    agent = await get_agent(message.agent_id)
     executor, cold_start_cost = await agent_executor(message.agent_id)
     message.cold_start_cost = cold_start_cost
     async for chat_message in stream_agent_raw(message, agent, executor):

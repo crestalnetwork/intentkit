@@ -11,7 +11,8 @@ from typing import Any
 import jsonref
 from fastapi import status
 
-from intentkit.models.agent import Agent, AgentPublicInfo, AgentUserInput
+from intentkit.core.agent import get_agent
+from intentkit.models.agent import AgentPublicInfo, AgentUserInput
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,7 @@ def _load_skill_schema(schema_path: Path) -> dict[str, object]:
 async def get_latest_public_info(*, agent_id: str, user_id: str) -> AgentPublicInfo:
     """Return the latest public information for a specific agent."""
 
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status.HTTP_404_NOT_FOUND, "AgentNotFound", "Agent not found"

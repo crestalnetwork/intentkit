@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import textwrap
+import warnings
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -1442,6 +1443,17 @@ class Agent(AgentCreate, AgentPublicInfo):
 
     @classmethod
     async def get(cls, agent_id: str) -> "Agent" | None:
+        """Get agent by ID from database.
+
+        .. deprecated::
+            Use :func:`intentkit.core.agent.get_agent` instead.
+            This method will be removed in a future version.
+        """
+        warnings.warn(
+            "Agent.get() is deprecated, use intentkit.core.agent.get_agent() instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         async with get_session() as db:
             item = await db.scalar(select(AgentTable).where(AgentTable.id == agent_id))
             if item is None:

@@ -8,7 +8,7 @@ from fastapi import APIRouter
 from starlette.responses import JSONResponse, RedirectResponse
 
 from intentkit.config.config import config
-from intentkit.models.agent import Agent
+from intentkit.core.agent import get_agent
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
 
@@ -85,7 +85,7 @@ async def twitter_oauth_callback(
                 message="Missing agent_id in state parameter",
             )
 
-        agent = await Agent.get(agent_id)
+        agent = await get_agent(agent_id)
         if not agent:
             raise IntentKitAPIError(
                 status_code=404,

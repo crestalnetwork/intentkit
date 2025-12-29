@@ -7,7 +7,8 @@ from fastapi import status
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.models.agent import Agent, AgentUserInput
+from intentkit.core.agent import get_agent
+from intentkit.models.agent import AgentUserInput
 from intentkit.models.draft import AgentDraft, AgentDraftTable
 from intentkit.utils.error import IntentKitAPIError
 
@@ -160,7 +161,7 @@ async def get_agent_latest_draft(
     if latest_draft:
         return AgentDraft.model_validate(latest_draft)
 
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
 
     if not agent:
         raise IntentKitAPIError(
