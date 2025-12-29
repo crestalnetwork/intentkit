@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import AppSetting
@@ -243,7 +244,7 @@ async def withdraw(
         raise ValueError("Withdraw amount must be positive")
 
     # Get agent to retrieve user_id from agent.owner
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"

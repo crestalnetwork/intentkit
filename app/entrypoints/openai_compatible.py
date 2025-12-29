@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from intentkit.core.agent import get_agent
 from intentkit.core.engine import execute_agent
-from intentkit.models.agent import Agent
 from intentkit.models.chat import (
     AuthorType,
     ChatMessageAttachment,
@@ -382,7 +382,7 @@ async def create_chat_completion(
         )
 
     # Get the agent to access its owner
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"

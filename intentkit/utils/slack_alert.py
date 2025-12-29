@@ -40,7 +40,7 @@ def send_slack_message(
     attachments: Sequence[dict[str, Any]] | None = None,
     thread_ts: str | None = None,
     channel: str | None = None,
-):
+) -> None:
     """
     Send a message to a Slack channel.
 
@@ -66,7 +66,7 @@ def send_slack_message(
         return
 
     try:
-        response = _slack_client.chat_postMessage(
+        _ = _slack_client.chat_postMessage(
             channel=channel or _slack_channel,
             text=message,
             blocks=blocks,
@@ -74,6 +74,5 @@ def send_slack_message(
             thread_ts=thread_ts,
         )
         logger.info(f"Message sent successfully to channel {channel or _slack_channel}")
-        return response
     except SlackApiError as e:
         logger.error(f"Failed to send Slack message: {str(e)}")

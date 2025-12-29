@@ -28,6 +28,9 @@ from intentkit.core.agent import (
     process_agent_wallet,
     send_agent_notification,
 )
+from intentkit.core.agent import (
+    get_agent as get_agent_by_id,
+)
 from intentkit.core.engine import clean_agent_memory
 from intentkit.models.agent import (
     Agent,
@@ -141,7 +144,7 @@ async def validate_agent_update(
     #     raise IntentKitAPIError(
     #         status_code=400, key="BadRequest", message="Fee percentage too high"
     #     )
-    agent = await Agent.get(agent_id)
+    agent = await get_agent_by_id(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
@@ -250,7 +253,7 @@ async def update_agent(
     """
     agent.owner = "admin"
 
-    existing_agent = await Agent.get(agent_id)
+    existing_agent = await get_agent_by_id(agent_id)
     if not existing_agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
@@ -377,7 +380,7 @@ async def get_agent(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await Agent.get(agent_id)
+    agent = await get_agent_by_id(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
@@ -451,7 +454,7 @@ async def clean_memory(
         )
 
     try:
-        agent = await Agent.get(request.agent_id)
+        agent = await get_agent_by_id(request.agent_id)
         if not agent:
             raise IntentKitAPIError(
                 status_code=404,
@@ -507,7 +510,7 @@ async def export_agent(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await Agent.get(agent_id)
+    agent = await get_agent_by_id(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
@@ -629,7 +632,7 @@ async def import_agent(
         - 500: Server error
     """
     # First check if agent exists
-    existing_agent = await Agent.get(agent_id)
+    existing_agent = await get_agent_by_id(agent_id)
     if not existing_agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
@@ -675,7 +678,7 @@ async def unlink_twitter_endpoint(
         - 404: Agent not found
     """
     # Check if agent exists
-    agent = await Agent.get(agent_id)
+    agent = await get_agent_by_id(agent_id)
     if not agent:
         raise IntentKitAPIError(404, "NotFound", "Agent not found")
 

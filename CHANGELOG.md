@@ -1,3 +1,20 @@
+## v0.8.37 - 2025-01-27
+
+### Features
+- Frontend skill box display in chat interface
+- Local frontend development improvements
+- GPT image model updated to version 1.5
+
+### Fixes
+- Docker compose configuration fixes
+- Debug authentication removed
+- Various lint fixes
+
+### Chores
+- Dependency updates
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.36...v0.8.37
+
 ## v0.8.35 - 2025-01-30
 
 ### Features

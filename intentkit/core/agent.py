@@ -8,6 +8,7 @@ from sqlalchemy import func, select, text, update
 
 from intentkit.clients.cdp import get_wallet_provider
 from intentkit.config.config import config
+from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
     AgentCreate,
@@ -27,6 +28,31 @@ from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
+
+
+async def get_agent(agent_id: str) -> Agent | None:
+    """Get an agent by ID and render with template if template_id exists.
+
+    This function retrieves an agent from the database and applies template
+    rendering if the agent has a template_id set.
+
+    Args:
+        agent_id: The unique identifier of the agent
+
+    Returns:
+        Agent | None: The agent with template applied if applicable, or None if not found
+    """
+    async with get_session() as db:
+        item = await db.scalar(select(AgentTable).where(AgentTable.id == agent_id))
+        if item is None:
+            return None
+        agent = Agent.model_validate(item)
+
+    # If agent has a template_id, render it with the template
+    if item.template_id:
+        agent = await render_agent(agent)
+
+    return agent
 
 
 async def process_agent_wallet(
@@ -214,7 +240,7 @@ async def override_agent(
             - 403: Permission denied (if owner mismatch)
             - 400: Invalid configuration or wallet provider change
     """
-    existing_agent = await Agent.get(agent_id)
+    existing_agent = await get_agent(agent_id)
     if not existing_agent:
         raise IntentKitAPIError(
             status_code=404,
@@ -328,7 +354,7 @@ async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
     start_time = time.time()
     default_value = Decimal("0")
 
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
             400, "AgentNotFound", f"Agent with ID {agent_id} does not exist."
@@ -380,7 +406,7 @@ async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
                   AND start_message_id IS NOT NULL
                 GROUP BY start_message_id
             )
-            SELECT 
+            SELECT
                 AVG(action_cost) AS avg_cost,
                 MIN(action_cost) AS min_cost,
                 MAX(action_cost) AS max_cost
@@ -390,8 +416,8 @@ async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
         # Calculate the percentile-based metrics (low, medium, high) using window functions
         percentile_metrics_query = text("""
             WITH action_sums AS (
-                SELECT 
-                    start_message_id, 
+                SELECT
+                    start_message_id,
                     SUM(total_amount) AS action_cost,
                     NTILE(5) OVER (ORDER BY SUM(total_amount)) AS quintile
                 FROM credit_events
@@ -402,7 +428,7 @@ async def agent_action_cost(agent_id: str) -> dict[str, Decimal]:
                   AND start_message_id IS NOT NULL
                 GROUP BY start_message_id
             )
-            SELECT 
+            SELECT
                 (SELECT AVG(action_cost) FROM action_sums WHERE quintile = 1) AS low_cost,
                 (SELECT AVG(action_cost) FROM action_sums WHERE quintile IN (2, 3, 4)) AS medium_cost,
                 (SELECT AVG(action_cost) FROM action_sums WHERE quintile = 5) AS high_cost

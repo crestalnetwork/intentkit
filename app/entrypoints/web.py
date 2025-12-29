@@ -19,9 +19,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.core.agent import get_agent
 from intentkit.core.engine import execute_agent, thread_stats
 from intentkit.core.prompt import agent_prompt
-from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
@@ -140,7 +140,7 @@ async def debug_chat(
         )
 
     # Get agent and validate quota
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
@@ -185,7 +185,7 @@ async def debug_agent_prompt(
     agent_id: str = Path(..., description="Agent id"),
 ) -> str:
     """Get agent's init and append prompts for debugging."""
-    agent = await Agent.get(agent_id)
+    agent = await get_agent(agent_id)
     agent_data = await AgentData.get(agent_id)
 
     init_prompt = agent_prompt(agent, agent_data)
@@ -225,7 +225,7 @@ async def get_chat_history(
     * `404` - Agent not found
     """
     # Get agent and check if exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -296,7 +296,7 @@ async def retry_chat_deprecated(
     * `500` - Internal server error
     """
     # Get agent and check if exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -380,7 +380,7 @@ async def retry_chat(
     * `500` - Internal server error
     """
     # Get agent and check if exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -462,7 +462,7 @@ async def create_chat_deprecated(
     * `500` - Internal server error
     """
     # Get agent and validate quota
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
@@ -541,7 +541,7 @@ async def create_chat(
     * `500` - Internal server error
     """
     # Get agent and validate quota
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
@@ -607,7 +607,7 @@ async def get_agent_chats(
     * `404` - Agent not found
     """
     # Verify agent exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -665,7 +665,7 @@ async def update_chat_summary(
     * `404` - Agent or chat not found
     """
     # Verify agent exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -715,7 +715,7 @@ async def delete_chat(
     * `404` - Agent or chat not found
     """
     # Verify agent exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
@@ -764,7 +764,7 @@ async def get_skill_history(
     * `404` - Agent not found
     """
     # Get agent and check if exists
-    agent = await Agent.get(aid)
+    agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"

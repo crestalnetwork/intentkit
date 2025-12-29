@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import textwrap
+import warnings
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -334,6 +335,17 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Team identifier of the agent, used for access control",
     )
+    template_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Template identifier of the agent",
+    )
+    extra_prompt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Only when the agent is created from a template.",
+        max_length=20000,
+    )
     upstream_id: Mapped[str | None] = mapped_column(
         String,
         index=True,
@@ -543,18 +555,18 @@ class AgentCore(BaseModel):
             le=2.0,
         ),
     ]
+    short_term_memory_strategy: Annotated[
+        Literal["trim", "summarize"] | None,
+        PydanticField(
+            default="trim",
+            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+        ),
+    ]
     wallet_provider: Annotated[
         Literal["cdp", "readonly", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
-        ),
-    ]
-    readonly_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     network_id: Annotated[
@@ -618,11 +630,12 @@ class AgentUserInput(AgentCore):
         },
     )
 
-    short_term_memory_strategy: Annotated[
-        Literal["trim", "summarize"] | None,
+    # only when wallet privder is readonly
+    readonly_wallet_address: Annotated[
+        str | None,
         PydanticField(
-            default="trim",
-            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+            default=None,
+            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     # autonomous mode
@@ -903,6 +916,22 @@ class AgentCreate(AgentUpdate):
             default=None,
             description="Team identifier of the agent",
             max_length=50,
+        ),
+    ]
+    from_template_id: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Template identifier of the agent",
+            max_length=50,
+        ),
+    ]
+    extra_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Only when the agent is created from a template.",
+            max_length=20000,
         ),
     ]
 
@@ -1414,6 +1443,17 @@ class Agent(AgentCreate, AgentPublicInfo):
 
     @classmethod
     async def get(cls, agent_id: str) -> "Agent" | None:
+        """Get agent by ID from database.
+
+        .. deprecated::
+            Use :func:`intentkit.core.agent.get_agent` instead.
+            This method will be removed in a future version.
+        """
+        warnings.warn(
+            "Agent.get() is deprecated, use intentkit.core.agent.get_agent() instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         async with get_session() as db:
             item = await db.scalar(select(AgentTable).where(AgentTable.id == agent_id))
             if item is None:
