@@ -219,12 +219,6 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Additional system prompt that has higher priority than the base prompt",
     )
-    extra_prompt: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Only when the agent is created from a template.",
-        max_length=20000,
-    )
     temperature: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
@@ -339,6 +333,17 @@ class AgentTable(Base, AgentUserInputColumns):
         String,
         nullable=True,
         comment="Team identifier of the agent, used for access control",
+    )
+    template_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Template identifier of the agent",
+    )
+    extra_prompt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Only when the agent is created from a template.",
+        max_length=20000,
     )
     upstream_id: Mapped[str | None] = mapped_column(
         String,
@@ -624,14 +629,6 @@ class AgentUserInput(AgentCore):
         },
     )
 
-    extra_prompt: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Only when the agent is created from a template.",
-            max_length=20000,
-        ),
-    ]
     # only when wallet privder is readonly
     readonly_wallet_address: Annotated[
         str | None,
@@ -918,6 +915,22 @@ class AgentCreate(AgentUpdate):
             default=None,
             description="Team identifier of the agent",
             max_length=50,
+        ),
+    ]
+    from_template_id: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Template identifier of the agent",
+            max_length=50,
+        ),
+    ]
+    extra_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Only when the agent is created from a template.",
+            max_length=20000,
         ),
     ]
 
