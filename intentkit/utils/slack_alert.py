@@ -66,7 +66,7 @@ def send_slack_message(
         return
 
     try:
-        _slack_client.chat_postMessage(
+        _ = _slack_client.chat_postMessage(
             channel=channel or _slack_channel,
             text=message,
             blocks=blocks,
