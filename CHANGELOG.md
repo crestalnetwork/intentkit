@@ -1,3 +1,25 @@
+## v0.8.38 - 2025-01-31
+
+### Features
+- **Template System**: Added comprehensive agent template functionality
+  - New `Template` model for storing reusable agent configurations
+  - Template rendering system that applies template fields to agents
+  - Support for `extra_prompt` field when creating agents from templates
+  - Template management API endpoints in admin interface
+
+### Refactoring
+- **Agent Retrieval Architecture**: Moved template rendering logic from model layer to core layer
+  - Created new `get_agent()` function in `core/agent.py` for centralized agent retrieval with template rendering
+  - Deprecated `Agent.get()` method with backward compatibility maintained
+  - Updated all non-model code to use new `get_agent()` function
+  - Cleaner separation of concerns between data models and business logic
+
+### Improvements
+- Refactored `send_slack_message()` to have no return value for cleaner async handling
+- Enhanced code organization and maintainability
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.37...v0.8.38
+
 ## v0.8.37 - 2025-01-27
 
 ### Features
