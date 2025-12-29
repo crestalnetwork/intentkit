@@ -219,6 +219,12 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Additional system prompt that has higher priority than the base prompt",
     )
+    extra_prompt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Only when the agent is created from a template.",
+        max_length=20000,
+    )
     temperature: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
@@ -543,18 +549,18 @@ class AgentCore(BaseModel):
             le=2.0,
         ),
     ]
+    short_term_memory_strategy: Annotated[
+        Literal["trim", "summarize"] | None,
+        PydanticField(
+            default="trim",
+            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+        ),
+    ]
     wallet_provider: Annotated[
         Literal["cdp", "readonly", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
-        ),
-    ]
-    readonly_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     network_id: Annotated[
@@ -618,11 +624,20 @@ class AgentUserInput(AgentCore):
         },
     )
 
-    short_term_memory_strategy: Annotated[
-        Literal["trim", "summarize"] | None,
+    extra_prompt: Annotated[
+        str | None,
         PydanticField(
-            default="trim",
-            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
+            default=None,
+            description="Only when the agent is created from a template.",
+            max_length=20000,
+        ),
+    ]
+    # only when wallet privder is readonly
+    readonly_wallet_address: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
     ]
     # autonomous mode
