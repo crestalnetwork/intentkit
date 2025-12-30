@@ -38,7 +38,6 @@ from app.admin import (
     user_router,
 )
 from app.entrypoints.agent_api import agent_api_router
-from app.entrypoints.openai_compatible import openai_router
 from app.entrypoints.web import chat_router
 from app.services.twitter.oauth2 import twitter_oauth2_router
 from app.services.twitter.oauth2_callback import twitter_callback_router
@@ -117,7 +116,6 @@ agent_app.add_middleware(
 
 # Add routers to the Agent API sub-application
 agent_app.include_router(agent_api_router)
-agent_app.include_router(openai_router)
 
 
 @asynccontextmanager
