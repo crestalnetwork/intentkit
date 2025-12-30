@@ -1,0 +1,21 @@
+"""System skills for IntentKit agents. 
+
+These skills wrap core functionality and are available to all agents
+without additional configuration.
+"""
+
+from intentkit.core.system_skills.create_activity import CreateActivitySkill
+from intentkit.core.system_skills.create_post import CreatePostSkill
+
+__all__ = [
+    "CreateActivitySkill",
+    "CreatePostSkill",
+]
+
+
+def get_system_skills():
+    """Get all system skills instances."""
+    return [
+        CreateActivitySkill(),
+        CreatePostSkill(),
+    ]
