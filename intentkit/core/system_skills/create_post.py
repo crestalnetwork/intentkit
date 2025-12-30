@@ -1,12 +1,14 @@
 """Skill for creating agent posts."""
 
-from typing import Any
+from typing import cast, override
 
+from langchain_core.tools import BaseTool
+from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent_post import create_agent_post
 from intentkit.models.agent_post import AgentPostCreate
-from intentkit.skills.base import IntentKitSkill
 
 
 class CreatePostInput(BaseModel):
@@ -28,11 +30,11 @@ class CreatePostInput(BaseModel):
     )
 
 
-class CreatePostSkill(IntentKitSkill):
-    """Skill for creating a new agent post. 
+class CreatePostSkill(BaseTool):
+    """Skill for creating a new agent post.
 
     This skill allows an agent to create a post with a title,
-    markdown content, and optional cover image. 
+    markdown content, and optional cover image.
     """
 
     name: str = "create_post"
@@ -41,31 +43,40 @@ class CreatePostSkill(IntentKitSkill):
         "markdown content, and an optional cover image URL. "
         "Use this to publish articles, announcements, or long-form content."
     )
-    args_schema: type[BaseModel] = CreatePostInput
+    args_schema: type[BaseModel] = CreatePostInput  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    @property
-    def category(self) -> str:
-        """Get the category of the skill."""
-        return "system"
+    @override
+    def _run(
+        self,
+        title: str,
+        markdown: str,
+        cover: str | None = None,
+    ) -> str:
+        raise NotImplementedError(
+            "Use _arun instead, IntentKit only supports asynchronous skill calls"
+        )
 
+    @override
     async def _arun(
         self,
         title: str,
         markdown: str,
         cover: str | None = None,
-        **kwargs: Any,
     ) -> str:
         """Create a new agent post.
 
         Args:
-            title: Title of the post. 
+            title: Title of the post.
             markdown: Content of the post in markdown format.
-            cover: Optional URL of the cover image. 
+            cover: Optional URL of the cover image.
 
         Returns:
             A message indicating success with the post ID.
         """
-        context = self.get_context()
+        runtime = get_runtime(AgentContext)
+        context = cast(AgentContext | None, runtime.context)
+        if context is None:
+            raise ValueError("No AgentContext found")
         agent_id = context.agent_id
 
         post_create = AgentPostCreate(

@@ -1,12 +1,14 @@
 """Skill for creating agent activities."""
 
-from typing import Any
+from typing import cast, override
 
+from langchain_core.tools import BaseTool
+from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent_activity import create_agent_activity
 from intentkit.models.agent_activity import AgentActivityCreate
-from intentkit.skills.base import IntentKitSkill
 
 
 class CreateActivityInput(BaseModel):
@@ -30,7 +32,7 @@ class CreateActivityInput(BaseModel):
     )
 
 
-class CreateActivitySkill(IntentKitSkill):
+class CreateActivitySkill(BaseTool):
     """Skill for creating a new agent activity.
 
     This skill allows an agent to create an activity with text content,
@@ -43,33 +45,43 @@ class CreateActivitySkill(IntentKitSkill):
         "images, video, and optionally reference a related post. "
         "Use this to share updates, media content, or announcements."
     )
-    args_schema: type[BaseModel] = CreateActivityInput
+    args_schema: type[BaseModel] = CreateActivityInput  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    @property
-    def category(self) -> str:
-        """Get the category of the skill."""
-        return "system"
+    @override
+    def _run(
+        self,
+        text: str,
+        images: list[str] | None = None,
+        video: str | None = None,
+        post_id: str | None = None,
+    ) -> str:
+        raise NotImplementedError(
+            "Use _arun instead, IntentKit only supports asynchronous skill calls"
+        )
 
+    @override
     async def _arun(
         self,
         text: str,
         images: list[str] | None = None,
         video: str | None = None,
         post_id: str | None = None,
-        **kwargs: Any,
     ) -> str:
         """Create a new agent activity.
 
         Args:
             text: Content of the activity.
-            images: Optional list of image URLs. 
+            images: Optional list of image URLs.
             video: Optional video URL.
-            post_id: Optional ID of a related post. 
+            post_id: Optional ID of a related post.
 
-        Returns: 
-            A message indicating success with the activity ID. 
+        Returns:
+            A message indicating success with the activity ID.
         """
-        context = self.get_context()
+        runtime = get_runtime(AgentContext)
+        context = cast(AgentContext | None, runtime.context)
+        if context is None:
+            raise ValueError("No AgentContext found")
         agent_id = context.agent_id
 
         activity_create = AgentActivityCreate(

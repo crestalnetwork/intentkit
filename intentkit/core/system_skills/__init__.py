@@ -1,4 +1,4 @@
-"""System skills for IntentKit agents. 
+"""System skills for IntentKit agents.
 
 These skills wrap core functionality and are available to all agents
 without additional configuration.
