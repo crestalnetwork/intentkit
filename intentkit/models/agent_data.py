@@ -35,6 +35,9 @@ class AgentDataTable(Base):
     cdp_wallet_data: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="CDP wallet data"
     )
+    privy_wallet_data: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Privy wallet data"
+    )
     twitter_id: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Twitter user ID"
     )
@@ -138,6 +141,13 @@ class AgentData(BaseModel):
         PydanticField(
             default=None,
             description="CDP wallet data",
+        ),
+    ] = None
+    privy_wallet_data: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Privy wallet data",
         ),
     ] = None
     twitter_id: Annotated[

@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -81,7 +82,7 @@ async def process_agent_wallet(
         raise IntentKitAPIError(
             400,
             "WalletProviderChangeNotAllowed",
-            "Cannot change wallet provider between cdp and readonly",
+            "Cannot change wallet provider once set",
         )
 
     # 2. If wallet provider hasn't changed, return existing agent data
@@ -106,6 +107,21 @@ async def process_agent_wallet(
             agent.id,
             {
                 "evm_wallet_address": agent.readonly_wallet_address,
+            },
+        )
+    elif current_wallet_provider == "privy":
+        from intentkit.clients.privy import create_privy_safe_wallet
+
+        wallet_data = await create_privy_safe_wallet(
+            agent_id=agent.id,
+            network_id=agent.network_id or "base-mainnet",
+            weekly_spending_limit_usdc=agent.weekly_spending_limit,
+        )
+        agent_data = await AgentData.patch(
+            agent.id,
+            {
+                "evm_wallet_address": wallet_data["smart_wallet_address"],
+                "privy_wallet_data": json.dumps(wallet_data),
             },
         )
 
