@@ -46,6 +46,7 @@ from intentkit.core.middleware import (
     TrimMessagesMiddleware,
 )
 from intentkit.core.prompt import explain_prompt
+from intentkit.core.system_skills import get_system_skills
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -167,6 +168,9 @@ async def build_agent(
     # add custom skills to private tools
     if custom_skills and len(custom_skills) > 0:
         private_tools.extend(custom_skills)
+
+    # add system skills to private tools
+    private_tools.extend(get_system_skills())
 
     # filter the duplicate tools
     tools = list({tool.name: tool for tool in tools}.values())
