@@ -4,6 +4,7 @@ from typing import cast, override
 
 from epyxid import XID
 from langchain_core.tools import BaseTool
+from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
@@ -63,6 +64,9 @@ class CallAgentSkill(BaseTool):
 
         Returns:
             The response message from the called agent.
+
+        Raises:
+            ToolException: If no response received, or the last message is not from agent.
         """
         # Import here to avoid circular dependency
         # When initializing an agent, it may import this skill,
@@ -72,7 +76,7 @@ class CallAgentSkill(BaseTool):
         runtime = get_runtime(AgentContext)
         context = cast(AgentContext | None, runtime.context)
         if context is None:
-            raise ValueError("No AgentContext found")
+            raise ToolException("No AgentContext found")
 
         # Create a chat message for the called agent
         # Inherit context from the current skill execution
@@ -91,8 +95,28 @@ class CallAgentSkill(BaseTool):
         results = await execute_agent(chat_message)
 
         if not results:
-            return "No response received from the called agent"
+            raise ToolException(
+                f"No response received from the called agent '{agent_id}'"
+            )
 
         # Get the last message from the results
         last_message = results[-1]
-        return last_message.message
+
+        # Check if the last message is from the agent
+        if last_message.author_type == AuthorType.AGENT:
+            return last_message.message
+
+        # If the last message is a system message, include the error details
+        if last_message.author_type == AuthorType.SYSTEM:
+            error_info = ""
+            if last_message.error_type:
+                error_info = f" (error_type: {last_message.error_type})"
+            raise ToolException(
+                f"Agent '{agent_id}' returned a system error{error_info}: {last_message.message}"
+            )
+
+        # For other message types (skill, etc.), raise an exception
+        raise ToolException(
+            f"Agent '{agent_id}' did not return an agent response. "
+            + f"Last message type: {last_message.author_type}"
+        )
