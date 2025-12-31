@@ -1,8 +1,10 @@
 """Skill for creating agent posts."""
 
+import re
 from typing import cast, override
 
 from langchain_core.tools import BaseTool
+from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
@@ -21,7 +23,11 @@ class CreatePostInput(BaseModel):
     )
     markdown: str = Field(
         ...,
-        description="Content of the post in markdown format",
+        description=(
+            "Content of the post in markdown format. "
+            "Do not include the title (h1) in the content, only the body text. "
+            "Use h2 (##) for section headings."
+        ),
     )
     cover: str | None = Field(
         default=None,
@@ -73,10 +79,20 @@ class CreatePostSkill(BaseTool):
         Returns:
             A message indicating success with the post ID.
         """
+        # Check if markdown contains h1 headings (lines starting with single #)
+        # Match lines that start with # followed by a space (but not ## or more)
+        if re.search(r"^#\s", markdown, re.MULTILINE):
+            raise ToolException(
+                (
+                    "Markdown content should not include h1 headings (# title). "
+                    "The title is provided separately. Use h2 (##) for section headings."
+                )
+            )
+
         runtime = get_runtime(AgentContext)
         context = cast(AgentContext | None, runtime.context)
         if context is None:
-            raise ValueError("No AgentContext found")
+            raise ToolException("No AgentContext found")
         agent_id = context.agent_id
 
         post_create = AgentPostCreate(
