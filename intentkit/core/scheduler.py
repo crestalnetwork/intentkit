@@ -27,7 +27,7 @@ def create_scheduler(
     scheduler = AsyncIOScheduler(jobstores=dict(jobstores or {}))
 
     # Reset daily quotas at UTC 00:00
-    scheduler.add_job(
+    _ = scheduler.add_job(
         AgentQuota.reset_daily_quotas,
         trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
         id="reset_daily_quotas",
@@ -36,7 +36,7 @@ def create_scheduler(
     )
 
     # Reset monthly quotas at UTC 00:00 on the first day of each month
-    scheduler.add_job(
+    _ = scheduler.add_job(
         AgentQuota.reset_monthly_quotas,
         trigger=CronTrigger(day=1, hour=0, minute=0, timezone="UTC"),
         id="reset_monthly_quotas",
@@ -45,7 +45,7 @@ def create_scheduler(
     )
 
     # Refill free credits every hour at minute 20
-    scheduler.add_job(
+    _ = scheduler.add_job(
         refill_all_free_credits,
         trigger=CronTrigger(minute="20", timezone="UTC"),
         id="refill_free_credits",
@@ -54,7 +54,7 @@ def create_scheduler(
     )
 
     # Update agent account snapshots hourly
-    scheduler.add_job(
+    _ = scheduler.add_job(
         update_agents_account_snapshot,
         trigger=CronTrigger(minute=0, timezone="UTC"),
         id="update_agent_account_snapshot",
@@ -73,7 +73,7 @@ def create_scheduler(
     # )
 
     # Update agent action costs hourly at minute 40
-    scheduler.add_job(
+    _ = scheduler.add_job(
         update_agent_action_cost,
         trigger=CronTrigger(minute="40", timezone="UTC"),
         id="update_agent_action_cost",
@@ -82,7 +82,7 @@ def create_scheduler(
     )
 
     # Update agent statistics daily at UTC 00:01
-    scheduler.add_job(
+    _ = scheduler.add_job(
         update_agents_statistics,
         trigger=CronTrigger(hour=0, minute=1, timezone="UTC"),
         id="update_agent_statistics",
@@ -120,7 +120,7 @@ def create_scheduler(
         except Exception as e:
             logger.error(f"Error running slow account consistency checks: {e}")
 
-    scheduler.add_job(
+    _ = scheduler.add_job(
         run_quick_account_checks,
         trigger=CronTrigger(
             hour="*/2", minute="30", timezone="UTC"
@@ -131,7 +131,7 @@ def create_scheduler(
     )
 
     # Run slow account consistency checks once a day at midnight UTC
-    scheduler.add_job(
+    _ = scheduler.add_job(
         run_slow_account_checks,
         trigger=CronTrigger(
             hour="0,12", minute="0", timezone="UTC"
@@ -144,7 +144,7 @@ def create_scheduler(
     # Cleanup old checkpoints daily at UTC 2:20
     # Cleanup old checkpoints daily at UTC 2:20
 
-    scheduler.add_job(
+    _ = scheduler.add_job(
         cleanup_checkpoints,
         trigger=CronTrigger(hour=2, minute=20, timezone="UTC"),
         id="cleanup_checkpoints",
