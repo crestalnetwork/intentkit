@@ -41,17 +41,21 @@ class ChatMessageAttachmentType(str, Enum):
 class AuthorType(str, Enum):
     """Type of message author."""
 
+    # output messages
     AGENT = "agent"
-    TRIGGER = "trigger"
     SKILL = "skill"
+    SYSTEM = "system"
+
+    # input messages
+    TRIGGER = "trigger"
     TELEGRAM = "telegram"
     TWITTER = "twitter"
     DISCORD = "discord"
     WEB = "web"
-    SYSTEM = "system"
     API = "api"
     XMTP = "xmtp"
     X402 = "x402"
+    INTERNAL = "internal"  # agent call agent
 
 
 class ChatMessageAttachment(TypedDict):
