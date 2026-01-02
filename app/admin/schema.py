@@ -50,7 +50,7 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     },
 )
 async def get_skill_schema(
-    skill: str = PathParam(..., description="Skill name", regex="^[a-zA-Z0-9_-]+$"),
+    skill: str = PathParam(..., description="Skill name", pattern="^[a-zA-Z0-9_-]+$"),
 ) -> JSONResponse:
     """Get the JSON schema for a specific skill.
 
@@ -90,10 +90,10 @@ async def get_skill_schema(
     },
 )
 async def get_skill_icon(
-    skill: str = PathParam(..., description="Skill name", regex="^[a-zA-Z0-9_-]+$"),
+    skill: str = PathParam(..., description="Skill name", pattern="^[a-zA-Z0-9_-]+$"),
     icon_name: str = PathParam(..., description="Icon name"),
     ext: str = PathParam(
-        ..., description="Icon file extension", regex="^(png|svg|jpg|jpeg|webp)$"
+        ..., description="Icon file extension", pattern="^(png|svg|jpg|jpeg|webp)$"
     ),
 ) -> FileResponse:
     """Get the icon for a specific skill.

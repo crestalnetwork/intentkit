@@ -7,7 +7,6 @@ from decimal import Decimal
 
 from sqlalchemy import func, select, text, update
 
-from intentkit.clients.cdp import get_wallet_provider
 from intentkit.config.config import config
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
@@ -100,7 +99,9 @@ async def process_agent_wallet(
 
     # 4. Initialize wallet based on provider type
     if config.cdp_api_key_id and current_wallet_provider == "cdp":
-        await get_wallet_provider(agent)
+        from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
+
+        await get_cdp_wallet_provider(agent)
         agent_data = await AgentData.get(agent.id)
     elif current_wallet_provider == "readonly":
         agent_data = await AgentData.patch(
@@ -112,9 +113,20 @@ async def process_agent_wallet(
     elif current_wallet_provider == "privy":
         from intentkit.clients.privy import create_privy_safe_wallet
 
+        # Get RPC URL from chain provider if available
+        rpc_url: str | None = None
+        network_id = agent.network_id or "base-mainnet"
+        if config.chain_provider:
+            try:
+                chain_config = config.chain_provider.get_chain_config(network_id)
+                rpc_url = chain_config.rpc_url
+            except Exception as e:
+                logger.warning(f"Failed to get RPC URL from chain provider: {e}")
+
         wallet_data = await create_privy_safe_wallet(
             agent_id=agent.id,
-            network_id=agent.network_id or "base-mainnet",
+            network_id=network_id,
+            rpc_url=rpc_url,
             weekly_spending_limit_usdc=agent.weekly_spending_limit,
         )
         agent_data = await AgentData.patch(

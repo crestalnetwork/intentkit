@@ -18,8 +18,10 @@ from typing import Any
 
 import httpx
 from eth_abi import encode
+from eth_account import Account
 from eth_utils import keccak, to_checksum_address
 from pydantic import BaseModel
+from web3 import AsyncWeb3
 
 from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
@@ -374,8 +376,13 @@ class PrivyClient:
             "Content-Type": "application/json",
         }
 
-    async def create_wallet(self, idempotency_key: str | None = None) -> PrivyWallet:
-        """Create a new server wallet."""
+    async def create_wallet(self) -> PrivyWallet:
+        """Create a new server wallet.
+
+        Note: Privy's create wallet API does not support idempotency keys.
+        Idempotency keys are only supported for transaction APIs via the
+        'privy-idempotency-key' HTTP header.
+        """
         if not self.app_id or not self.app_secret:
             raise IntentKitAPIError(
                 500, "PrivyConfigError", "Privy credentials missing"
@@ -385,8 +392,6 @@ class PrivyClient:
         payload: dict[str, Any] = {
             "chain_type": "ethereum",
         }
-        if idempotency_key:
-            payload["idempotency_key"] = idempotency_key
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -1044,8 +1049,17 @@ class SafeWalletProvider(WalletProvider):
         to: str,
         value: int,
         data: bytes,
+        signature: bytes | None = None,
     ) -> bytes:
-        """Encode a Safe execTransaction call."""
+        """Encode a Safe execTransaction call.
+
+        Args:
+            to: Target address
+            value: ETH value to send
+            data: Call data
+            signature: Optional ECDSA signature. If not provided, uses pre-validated
+                       signature format (requires msg.sender == owner).
+        """
         # execTransaction(address to, uint256 value, bytes data, uint8 operation,
         #                 uint256 safeTxGas, uint256 baseGas, uint256 gasPrice,
         #                 address gasToken, address refundReceiver, bytes signatures)
@@ -1053,13 +1067,17 @@ class SafeWalletProvider(WalletProvider):
             text="execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)"
         )[:4]
 
-        # For owner execution, we use a pre-validated signature
-        # This is the signature format for msg.sender == owner
-        signatures = bytes.fromhex(
-            self.privy_wallet_address[2:].lower().zfill(64)  # r = owner address
-            + "0" * 64  # s = 0
-            + "01"  # v = 1 (indicates approved hash)
-        )
+        if signature is not None:
+            # Use the provided ECDSA signature
+            signatures = signature
+        else:
+            # For owner execution, we use a pre-validated signature
+            # This is the signature format for msg.sender == owner
+            signatures = bytes.fromhex(
+                self.privy_wallet_address[2:].lower().zfill(64)  # r = owner address
+                + "0" * 64  # s = 0
+                + "01"  # v = 1 (indicates approved hash)
+            )
 
         exec_data = encode(
             [
@@ -1292,8 +1310,6 @@ async def deploy_safe_with_allowance(
         # Deploy the Safe
         logger.info(f"Deploying Safe to {predicted_address}")
         deploy_tx_hash = await _deploy_safe(
-            privy_client=privy_client,
-            privy_wallet_id=privy_wallet_id,
             owner_address=owner_address,
             salt_nonce=salt_nonce,
             chain_id=chain_config.chain_id,
@@ -1356,14 +1372,33 @@ async def deploy_safe_with_allowance(
 
 
 async def _deploy_safe(
-    privy_client: PrivyClient,
-    privy_wallet_id: str,
     owner_address: str,
     salt_nonce: int,
     chain_id: int,
     rpc_url: str,
 ) -> str:
-    """Deploy a new Safe via the ProxyFactory."""
+    """Deploy a new Safe via the ProxyFactory using master wallet.
+
+    The master wallet pays for gas, but the Safe is owned by owner_address.
+    This allows creating Safes for Privy wallets without them needing gas.
+
+    Args:
+        owner_address: The address that will own the Safe (Privy wallet address)
+        salt_nonce: Salt for deterministic address generation
+        chain_id: The chain ID to deploy on
+        rpc_url: RPC URL for the chain
+
+    Returns:
+        Transaction hash of the deployment
+    """
+    if not config.master_wallet_private_key:
+        raise IntentKitAPIError(
+            500,
+            "ConfigError",
+            "MASTER_WALLET_PRIVATE_KEY not configured. "
+            "A master wallet is required to pay for Safe deployments.",
+        )
+
     # Build initializer
     safe_client = SafeClient()
     initializer = safe_client._build_safe_initializer(
@@ -1378,16 +1413,56 @@ async def _deploy_safe(
         [SAFE_SINGLETON_ADDRESS, initializer, salt_nonce],
     )
 
-    # Send transaction via Privy
-    tx_hash = await privy_client.send_transaction(
-        wallet_id=privy_wallet_id,
-        chain_id=chain_id,
-        to=SAFE_PROXY_FACTORY_ADDRESS,
-        value=0,
-        data="0x" + create_data.hex(),
+    # Use master wallet to send transaction
+    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
+    master_account = Account.from_key(config.master_wallet_private_key)
+
+    logger.info(
+        f"Deploying Safe for owner {owner_address} using master wallet {master_account.address}"
     )
 
-    return tx_hash
+    # Build transaction
+    nonce = await w3.eth.get_transaction_count(master_account.address)
+    gas_price = await w3.eth.gas_price
+
+    tx: dict[str, Any] = {
+        "from": master_account.address,
+        "to": SAFE_PROXY_FACTORY_ADDRESS,
+        "value": 0,
+        "data": create_data,
+        "nonce": nonce,
+        "chainId": chain_id,
+        "gas": 500000,  # Safe deployment typically needs ~300k gas
+        "gasPrice": gas_price,
+    }
+
+    # Estimate gas
+    try:
+        estimated_gas = await w3.eth.estimate_gas(tx)
+        tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
+        logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+    except Exception as e:
+        logger.warning(f"Gas estimation failed, using default 500000: {e}")
+
+    # Sign and send
+    signed_tx = master_account.sign_transaction(tx)
+    tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+    logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
+
+    # Wait for confirmation
+    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+    if receipt["status"] != 1:
+        raise IntentKitAPIError(
+            500, "DeploymentFailed", "Safe deployment transaction failed"
+        )
+
+    logger.info(
+        f"Safe deployed successfully. Tx hash: {tx_hash.hex()}, "
+        f"Gas used: {receipt['gasUsed']}"
+    )
+
+    return tx_hash.hex()
 
 
 async def _wait_for_deployment(
@@ -1456,6 +1531,155 @@ async def _is_module_enabled(
         return result.endswith("1")
 
 
+def _get_safe_tx_hash(
+    safe_address: str,
+    to: str,
+    value: int,
+    data: bytes,
+    nonce: int,
+    chain_id: int,
+) -> bytes:
+    """Calculate the Safe transaction hash for signing.
+
+    This generates the EIP-712 typed data hash that owners must sign.
+    """
+    # Domain separator
+    domain_type_hash = keccak(
+        text="EIP712Domain(uint256 chainId,address verifyingContract)"
+    )
+    domain_separator = keccak(
+        domain_type_hash
+        + encode(["uint256", "address"], [chain_id, to_checksum_address(safe_address)])
+    )
+
+    # Safe tx type hash
+    safe_tx_type_hash = keccak(
+        text="SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+    )
+
+    # Encode the transaction data
+    data_hash = keccak(data)
+    safe_tx_hash_data = encode(
+        [
+            "bytes32",
+            "address",
+            "uint256",
+            "bytes32",
+            "uint8",
+            "uint256",
+            "uint256",
+            "uint256",
+            "address",
+            "address",
+            "uint256",
+        ],
+        [
+            safe_tx_type_hash,
+            to_checksum_address(to),
+            value,
+            data_hash,
+            0,  # operation
+            0,  # safeTxGas
+            0,  # baseGas
+            0,  # gasPrice
+            "0x0000000000000000000000000000000000000000",  # gasToken
+            "0x0000000000000000000000000000000000000000",  # refundReceiver
+            nonce,
+        ],
+    )
+    struct_hash = keccak(safe_tx_hash_data)
+
+    # Final hash: keccak256("\x19\x01" + domainSeparator + structHash)
+    return keccak(b"\x19\x01" + domain_separator + struct_hash)
+
+
+async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
+    """Get the current nonce of a Safe."""
+    selector = keccak(text="nonce()")[:4]
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            rpc_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "eth_call",
+                "params": [
+                    {"to": safe_address, "data": "0x" + selector.hex()},
+                    "latest",
+                ],
+                "id": 1,
+            },
+            timeout=30.0,
+        )
+
+        if response.status_code != 200:
+            raise IntentKitAPIError(500, "RPCError", "Failed to get Safe nonce")
+
+        result = response.json().get("result", "0x0")
+        return int(result, 16)
+
+
+async def _send_safe_transaction_with_master_wallet(
+    safe_address: str,
+    exec_data: bytes,
+    chain_id: int,
+    rpc_url: str,
+) -> str:
+    """Send a Safe transaction using master wallet to pay for gas.
+
+    This function sends a pre-encoded Safe execTransaction call using the
+    master wallet to pay for gas. The transaction must already be properly
+    signed by the Safe owner.
+
+    Args:
+        safe_address: The Safe contract address
+        exec_data: Encoded execTransaction call data (including signatures)
+        chain_id: Chain ID
+        rpc_url: RPC URL
+
+    Returns:
+        Transaction hash
+    """
+    if not config.master_wallet_private_key:
+        raise IntentKitAPIError(
+            500,
+            "ConfigError",
+            "MASTER_WALLET_PRIVATE_KEY not configured",
+        )
+
+    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
+    master_account = Account.from_key(config.master_wallet_private_key)
+
+    nonce = await w3.eth.get_transaction_count(master_account.address)
+    gas_price = await w3.eth.gas_price
+
+    tx: dict[str, Any] = {
+        "from": master_account.address,
+        "to": safe_address,
+        "value": 0,
+        "data": exec_data,
+        "nonce": nonce,
+        "chainId": chain_id,
+        "gas": 300000,
+        "gasPrice": gas_price,
+    }
+
+    try:
+        estimated_gas = await w3.eth.estimate_gas(tx)
+        tx["gas"] = int(estimated_gas * 1.2)
+    except Exception as e:
+        logger.warning(f"Gas estimation failed for Safe tx, using default: {e}")
+
+    signed_tx = master_account.sign_transaction(tx)
+    tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+    if receipt["status"] != 1:
+        raise IntentKitAPIError(500, "SafeTxFailed", "Safe transaction failed")
+
+    return tx_hash.hex()
+
+
 async def _enable_allowance_module(
     privy_client: PrivyClient,
     privy_wallet_id: str,
@@ -1465,30 +1689,81 @@ async def _enable_allowance_module(
     chain_id: int,
     rpc_url: str,
 ) -> str:
-    """Enable the Allowance Module on a Safe."""
+    """Enable the Allowance Module on a Safe using master wallet for gas.
+
+    The Privy wallet signs the Safe transaction, and the master wallet
+    pays for the gas to submit it on-chain.
+    """
     # enableModule(address module)
     enable_selector = keccak(text="enableModule(address)")[:4]
     enable_data = enable_selector + encode(["address"], [allowance_module_address])
 
-    # Wrap in execTransaction
-    provider = SafeWalletProvider(
-        privy_wallet_id=privy_wallet_id,
-        privy_wallet_address=owner_address,
-        safe_address=safe_address,
-    )
+    # Get Safe nonce for signing
+    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
-    exec_data = provider._encode_safe_exec_transaction(
-        to=safe_address,  # Call Safe itself
+    # Calculate Safe transaction hash
+    safe_tx_hash = _get_safe_tx_hash(
+        safe_address=safe_address,
+        to=safe_address,  # Call Safe itself to enable module
         value=0,
         data=enable_data,
+        nonce=safe_nonce,
+        chain_id=chain_id,
     )
 
-    tx_hash = await privy_client.send_transaction(
-        wallet_id=privy_wallet_id,
+    # Sign the transaction hash with Privy wallet
+    signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
+
+    # Parse signature and adjust v value for Safe
+    sig_bytes = bytes.fromhex(
+        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
+    )
+    r = sig_bytes[:32]
+    s = sig_bytes[32:64]
+    v = sig_bytes[64]
+    # Safe expects v to be 27 or 28, but some signers return 0 or 1
+    if v < 27:
+        v += 27
+    signature = r + s + bytes([v])
+
+    # Encode execTransaction with the signature
+    exec_selector = keccak(
+        text="execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)"
+    )[:4]
+
+    exec_data = exec_selector + encode(
+        [
+            "address",
+            "uint256",
+            "bytes",
+            "uint8",
+            "uint256",
+            "uint256",
+            "uint256",
+            "address",
+            "address",
+            "bytes",
+        ],
+        [
+            to_checksum_address(safe_address),  # to: Safe itself
+            0,  # value
+            enable_data,  # data
+            0,  # operation: 0 = Call
+            0,  # safeTxGas
+            0,  # baseGas
+            0,  # gasPrice
+            "0x0000000000000000000000000000000000000000",  # gasToken
+            "0x0000000000000000000000000000000000000000",  # refundReceiver
+            signature,
+        ],
+    )
+
+    # Use master wallet to send the transaction
+    tx_hash = await _send_safe_transaction_with_master_wallet(
+        safe_address=safe_address,
+        exec_data=exec_data,
         chain_id=chain_id,
-        to=safe_address,
-        value=0,
-        data="0x" + exec_data.hex(),
+        rpc_url=rpc_url,
     )
 
     return tx_hash
@@ -1507,7 +1782,11 @@ async def _set_spending_limit(
     chain_id: int,
     rpc_url: str,
 ) -> str:
-    """Set a spending limit via the Allowance Module."""
+    """Set a spending limit via the Allowance Module using master wallet for gas.
+
+    The Privy wallet signs the Safe transaction, and the master wallet
+    pays for the gas to submit it on-chain.
+    """
     # First, add delegate: addDelegate(address delegate)
     add_delegate_selector = keccak(text="addDelegate(address)")[:4]
     add_delegate_data = add_delegate_selector + encode(["address"], [delegate_address])
@@ -1546,18 +1825,38 @@ async def _set_spending_limit(
     multi_send_selector = keccak(text="multiSend(bytes)")[:4]
     multi_send_data = multi_send_selector + encode(["bytes"], [multi_send_txs])
 
-    # Wrap in execTransaction with DELEGATECALL operation
-    # execTransaction with operation = 1 (DELEGATECALL)
+    # Get Safe nonce for signing
+    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+
+    # Calculate Safe transaction hash for the MultiSend call
+    # Note: We use MULTI_SEND_CALL_ONLY_ADDRESS with DelegateCall
+    safe_tx_hash = _get_safe_tx_hash(
+        safe_address=safe_address,
+        to=MULTI_SEND_CALL_ONLY_ADDRESS,
+        value=0,
+        data=multi_send_data,
+        nonce=safe_nonce,
+        chain_id=chain_id,
+    )
+
+    # Sign the transaction hash with Privy wallet
+    signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
+
+    # Parse signature and adjust v value for Safe
+    sig_bytes = bytes.fromhex(
+        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
+    )
+    r = sig_bytes[:32]
+    s = sig_bytes[32:64]
+    v = sig_bytes[64]
+    if v < 27:
+        v += 27
+    signature = r + s + bytes([v])
+
+    # Encode execTransaction with signature
     exec_selector = keccak(
         text="execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)"
     )[:4]
-
-    # For owner execution, we use a pre-validated signature
-    signatures = bytes.fromhex(
-        owner_address[2:].lower().zfill(64)  # r = owner address
-        + "0" * 64  # s = 0
-        + "01"  # v = 1 (indicates approved hash)
-    )
 
     exec_data = exec_selector + encode(
         [
@@ -1576,22 +1875,22 @@ async def _set_spending_limit(
             MULTI_SEND_CALL_ONLY_ADDRESS,  # to
             0,  # value
             multi_send_data,  # data
-            1,  # operation (DELEGATECALL)
+            1,  # operation: 1 = DelegateCall for MultiSend
             0,  # safeTxGas
             0,  # baseGas
             0,  # gasPrice
             "0x0000000000000000000000000000000000000000",  # gasToken
             "0x0000000000000000000000000000000000000000",  # refundReceiver
-            signatures,
+            signature,
         ],
     )
 
-    tx_hash = await privy_client.send_transaction(
-        wallet_id=privy_wallet_id,
+    # Use master wallet to send the transaction
+    tx_hash = await _send_safe_transaction_with_master_wallet(
+        safe_address=safe_address,
+        exec_data=exec_data,
         chain_id=chain_id,
-        to=safe_address,
-        value=0,
-        data="0x" + exec_data.hex(),
+        rpc_url=rpc_url,
     )
 
     return tx_hash
@@ -1642,7 +1941,7 @@ async def create_privy_safe_wallet(
     privy_client = PrivyClient()
 
     # 1. Create Privy Wallet (EOA that will own the Safe)
-    privy_wallet = await privy_client.create_wallet(idempotency_key=agent_id)
+    privy_wallet = await privy_client.create_wallet()
 
     # 2. Deploy Safe and configure allowance module
     deployment_info = await deploy_safe_with_allowance(
@@ -1688,4 +1987,298 @@ def get_wallet_provider(
         safe_address=privy_wallet_data["smart_wallet_address"],
         network_id=privy_wallet_data.get("network_id", "base-mainnet"),
         rpc_url=rpc_url,
+    )
+
+
+# =============================================================================
+# Privy Wallet Signer (eth_account compatible)
+# =============================================================================
+
+
+class PrivyWalletSigner:
+    """
+    EVM wallet signer that adapts Privy's API to eth_account interface.
+
+    This allows Privy wallets to be used with libraries expecting
+    standard EVM signer interfaces (like x402, web3.py, etc.).
+
+    The signer uses the Privy EOA for signing, which is the actual
+    key holder. For x402 payments, the signature comes from this EOA.
+
+    Note: This class uses threading to run async Privy API calls
+    synchronously, avoiding nested event loop issues when called
+    from within an existing async context.
+    """
+
+    def __init__(
+        self,
+        privy_client: PrivyClient,
+        wallet_id: str,
+        wallet_address: str,
+    ) -> None:
+        """
+        Initialize the Privy wallet signer.
+
+        Args:
+            privy_client: The Privy client for API calls.
+            wallet_id: The Privy wallet ID.
+            wallet_address: The EOA wallet address (used for signing).
+        """
+        self.privy_client = privy_client
+        self.wallet_id = wallet_id
+        self._address = to_checksum_address(wallet_address)
+
+    @property
+    def address(self) -> str:
+        """The wallet address used for signing (EOA address)."""
+        return self._address
+
+    def _run_in_thread(self, coro: Any) -> Any:
+        """
+        Run an async coroutine in a separate thread.
+
+        This avoids nested event loop errors when called from
+        within an existing async context.
+
+        Args:
+            coro: The coroutine to run.
+
+        Returns:
+            The result of the coroutine.
+
+        Raises:
+            Any exception raised by the coroutine.
+        """
+        import asyncio
+        import threading
+
+        result: list[Any] = []
+        error: list[BaseException] = []
+
+        def _target() -> None:
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result.append(loop.run_until_complete(coro))
+                finally:
+                    loop.close()
+            except BaseException as exc:
+                error.append(exc)
+
+        thread = threading.Thread(target=_target, daemon=True)
+        thread.start()
+        thread.join()
+
+        if error:
+            raise error[0]
+        return result[0] if result else None
+
+    def sign_message(self, signable_message: Any) -> Any:
+        """
+        Sign a message (EIP-191 personal_sign).
+
+        Args:
+            signable_message: The message to sign. Can be:
+                - A string message
+                - An eth_account.messages.SignableMessage
+                - A bytes object
+
+        Returns:
+            SignedMessage-like object with v, r, s, and signature attributes.
+        """
+        from eth_account.datastructures import SignedMessage
+        from eth_account.messages import encode_defunct
+
+        # Handle different message types
+        if hasattr(signable_message, "body"):
+            # It's a SignableMessage, extract the body
+            message_text = signable_message.body.decode("utf-8")
+        elif isinstance(signable_message, bytes):
+            message_text = signable_message.decode("utf-8")
+        elif isinstance(signable_message, str):
+            message_text = signable_message
+        else:
+            # Try to convert to string
+            message_text = str(signable_message)
+
+        # Sign via Privy
+        signature_hex = self._run_in_thread(
+            self.privy_client.sign_message(self.wallet_id, message_text)
+        )
+
+        # Parse the signature
+        signature_bytes = bytes.fromhex(signature_hex.replace("0x", ""))
+
+        # Extract v, r, s from signature
+        r = int.from_bytes(signature_bytes[:32], "big")
+        s = int.from_bytes(signature_bytes[32:64], "big")
+        v = signature_bytes[64]
+
+        # Create message hash for the SignedMessage
+        message_for_hash = encode_defunct(text=message_text)
+
+        try:
+            from eth_account.messages import _hash_eip191_message
+
+            message_hash = _hash_eip191_message(message_for_hash)
+        except ImportError:
+            # Fallback for older eth_account versions
+            from eth_account._utils.signing import hash_eip191_message
+
+            message_hash = hash_eip191_message(message_for_hash)
+
+        return SignedMessage(
+            messageHash=message_hash,
+            r=r,
+            s=s,
+            v=v,
+            signature=signature_bytes,
+        )
+
+    def sign_typed_data(
+        self,
+        domain_data: dict[str, Any] | None = None,
+        message_types: dict[str, Any] | None = None,
+        message_data: dict[str, Any] | None = None,
+        full_message: dict[str, Any] | None = None,
+    ) -> Any:
+        """
+        Sign typed data (EIP-712).
+
+        Args:
+            domain_data: The EIP-712 domain data.
+            message_types: The type definitions.
+            message_data: The message data to sign.
+            full_message: Alternative: the complete typed data structure.
+
+        Returns:
+            SignedMessage-like object with signature.
+        """
+        from eth_account.datastructures import SignedMessage
+
+        # Build the typed data structure
+        if full_message is not None:
+            typed_data = full_message
+        else:
+            typed_data = {
+                "domain": domain_data or {},
+                "types": message_types or {},
+                "message": message_data or {},
+                "primaryType": message_types.get("primaryType", "Message")
+                if message_types
+                else "Message",
+            }
+
+        # Sign via Privy
+        signature_hex = self._run_in_thread(
+            self.privy_client.sign_typed_data(self.wallet_id, typed_data)
+        )
+
+        # Parse the signature
+        signature_bytes = bytes.fromhex(signature_hex.replace("0x", ""))
+
+        # Extract v, r, s
+        r = int.from_bytes(signature_bytes[:32], "big")
+        s = int.from_bytes(signature_bytes[32:64], "big")
+        v = signature_bytes[64]
+
+        return SignedMessage(
+            messageHash=b"\x00" * 32,  # Placeholder, actual hash computation is complex
+            r=r,
+            s=s,
+            v=v,
+            signature=signature_bytes,
+        )
+
+    def unsafe_sign_hash(self, message_hash: Any) -> Any:
+        """
+        Sign a raw hash directly (unsafe, use with caution).
+
+        This method signs a hash without any prefix or encoding.
+        It uses personal_sign with the hex-encoded hash as the message.
+
+        Args:
+            message_hash: The 32-byte hash to sign. Can be bytes or HexBytes.
+
+        Returns:
+            SignedMessage-like object with signature.
+        """
+        from eth_account.datastructures import SignedMessage
+
+        # Convert to bytes if needed
+        if hasattr(message_hash, "hex"):
+            hash_bytes = bytes(message_hash)
+        elif isinstance(message_hash, bytes):
+            hash_bytes = message_hash
+        else:
+            hash_bytes = bytes.fromhex(str(message_hash).replace("0x", ""))
+
+        # Sign via Privy using sign_hash
+        signature_hex = self._run_in_thread(
+            self.privy_client.sign_hash(self.wallet_id, hash_bytes)
+        )
+
+        # Parse the signature
+        signature_bytes = bytes.fromhex(signature_hex.replace("0x", ""))
+
+        # Extract v, r, s
+        r = int.from_bytes(signature_bytes[:32], "big")
+        s = int.from_bytes(signature_bytes[32:64], "big")
+        v = signature_bytes[64]
+
+        return SignedMessage(
+            messageHash=hash_bytes,
+            r=r,
+            s=s,
+            v=v,
+            signature=signature_bytes,
+        )
+
+    def sign_transaction(self, transaction_dict: dict[str, Any]) -> Any:
+        """
+        Sign a transaction.
+
+        Note: For Privy with Safe wallets, transactions are typically
+        executed through the Safe rather than signed directly.
+        This method is provided for interface compatibility.
+
+        Args:
+            transaction_dict: The transaction dictionary to sign.
+
+        Returns:
+            Signed transaction.
+
+        Raises:
+            NotImplementedError: Direct transaction signing is not supported.
+                Use SafeWalletProvider.execute_transaction instead.
+        """
+        raise NotImplementedError(
+            "Direct transaction signing is not supported for Privy wallets. "
+            "Use SafeWalletProvider.execute_transaction() to execute transactions "
+            "through the Safe smart account."
+        )
+
+
+def get_wallet_signer(
+    privy_wallet_data: dict[str, Any],
+) -> PrivyWalletSigner:
+    """
+    Create a PrivyWalletSigner from stored wallet data.
+
+    This is used to get a signer for operations that require
+    direct signing (like x402 payments).
+
+    Args:
+        privy_wallet_data: The stored wallet metadata containing
+            privy_wallet_id and privy_wallet_address.
+
+    Returns:
+        PrivyWalletSigner instance ready for signing.
+    """
+    privy_client = PrivyClient()
+    return PrivyWalletSigner(
+        privy_client=privy_client,
+        wallet_id=privy_wallet_data["privy_wallet_id"],
+        wallet_address=privy_wallet_data["privy_wallet_address"],
     )

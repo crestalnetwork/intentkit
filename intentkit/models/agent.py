@@ -346,10 +346,9 @@ class AgentTable(Base, AgentUserInputColumns):
         comment="Template identifier of the agent",
     )
     extra_prompt: Mapped[str | None] = mapped_column(
-        String,
+        String(20000),
         nullable=True,
         comment="Only when the agent is created from a template.",
-        max_length=20000,
     )
     upstream_id: Mapped[str | None] = mapped_column(
         String,
@@ -932,7 +931,7 @@ class AgentCreate(AgentUpdate):
             max_length=50,
         ),
     ]
-    from_template_id: Annotated[
+    template_id: Annotated[
         str | None,
         PydanticField(
             default=None,
