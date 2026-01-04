@@ -2,6 +2,7 @@ import logging
 
 from epyxid import XID
 
+from intentkit.core.chat import clear_thread_memory
 from intentkit.core.client import execute_agent
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
@@ -9,21 +10,39 @@ logger = logging.getLogger(__name__)
 
 
 async def run_autonomous_task(
-    agent_id: str, agent_owner: str, task_id: str, prompt: str
+    agent_id: str,
+    agent_owner: str,
+    task_id: str,
+    prompt: str,
+    has_memory: bool = True,
 ):
     """
     Run a specific autonomous task for an agent.
 
     Args:
         agent_id: The ID of the agent
+        agent_owner: The owner of the agent
         task_id: The ID of the autonomous task
         prompt: The autonomous prompt to execute
+        has_memory: Whether to retain conversation memory between runs.
+                   If False, clears thread memory before execution.
     """
     logger.info(f"Running autonomous task {task_id} for agent {agent_id}")
 
     try:
         # Run the autonomous action
         chat_id = f"autonomous-{task_id}"
+
+        # Clear thread memory if has_memory is False
+        if not has_memory:
+            try:
+                await clear_thread_memory(agent_id, chat_id)
+                logger.debug(
+                    f"Cleared thread memory for task {task_id} (has_memory=False)"
+                )
+            except Exception as e:
+                # Log the error but continue with execution
+                logger.warning(f"Failed to clear thread memory for task {task_id}: {e}")
         message = ChatMessageCreate(
             id=str(XID()),
             agent_id=agent_id,

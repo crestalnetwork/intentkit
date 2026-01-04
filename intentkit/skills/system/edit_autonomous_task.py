@@ -34,6 +34,10 @@ class EditAutonomousTaskInput(BaseModel):
     enabled: bool | None = Field(
         default=None, description="Whether the autonomous task is enabled"
     )
+    has_memory: bool | None = Field(
+        default=None,
+        description="Whether to retain conversation memory between autonomous runs. If False, thread memory is cleared before each run.",
+    )
 
 
 class EditAutonomousTaskOutput(BaseModel):
@@ -65,6 +69,7 @@ class EditAutonomousTask(SystemBaseTool):
         cron: str | None = None,
         prompt: str | None = None,
         enabled: bool | None = None,
+        has_memory: bool | None = None,
         **kwargs,
     ) -> EditAutonomousTaskOutput:
         """Edit an autonomous task for the agent.
@@ -77,6 +82,7 @@ class EditAutonomousTask(SystemBaseTool):
             cron: Cron expression (mutually exclusive with minutes)
             prompt: Special prompt for autonomous operation
             enabled: Whether the task is enabled
+            has_memory: Whether to retain memory between runs
             config: Runtime configuration containing agent context
 
         Returns:
@@ -104,6 +110,8 @@ class EditAutonomousTask(SystemBaseTool):
             task_updates["prompt"] = prompt
         if enabled is not None:
             task_updates["enabled"] = enabled
+        if has_memory is not None:
+            task_updates["has_memory"] = has_memory
 
         updated_task = await agent.update_autonomous_task(task_id, task_updates)
 
