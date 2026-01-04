@@ -1,3 +1,26 @@
+## v0.8.39 - 2026-01-04
+
+### Features
+- **Safe Smart Wallet Integration**: Implemented Safe smart wallet functionality with Privy wallet provider for enhanced security and multi-signature support
+- **Agent Activity & Post Modules**: Added comprehensive agent activity and post modules with complete models, core logic, and unit tests
+- **System Skills**: Introduced system skills for creating posts and activities, enabling agents to interact with the platform
+- **Skill Call Agent**: Implemented skill call agent functionality with improved error handling and validation
+- **Default System Skills**: System skills are now included by default for all agents
+
+### Improvements
+- **Unified Agent API Router**: Refactored auth and openai_compatible endpoints into a unified agent_api router for better organization
+- **Better Error Handling**: Enhanced error messages and handling in call agent skill
+- **Agent Post Skill**: Improved agent post skill functionality
+
+### Testing
+- Added comprehensive unit tests for template functions including `create_template_from_agent` and `render_agent`
+
+### Maintenance
+- Upgraded dependencies to latest versions
+- Fixed various lint issues
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.38...v0.8.39
+
 ## v0.8.38 - 2025-01-31
 
 ### Features
