@@ -21,7 +21,7 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.38...v0.8.39
 
-## v0.8.38 - 2025-01-31
+## v0.8.38 - 2025-12-31
 
 ### Features
 - **Template System**: Added comprehensive agent template functionality
@@ -43,7 +43,7 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.37...v0.8.38
 
-## v0.8.37 - 2025-01-27
+## v0.8.37 - 2025-12-27
 
 ### Features
 - Frontend skill box display in chat interface
@@ -60,7 +60,7 @@
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.36...v0.8.37
 
-## v0.8.35 - 2025-01-30
+## v0.8.35 - 2025-11-30
 
 ### Features
 - Add GPT-5.2 model with enhanced capabilities (1.75 input pricing, 14 output pricing)
