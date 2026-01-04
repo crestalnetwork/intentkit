@@ -110,6 +110,7 @@ default-groups = ["dev"]
 
 [tool.pyright]
 reportMissingTypeStubs = false
+reportCallInDefaultInitializer = false
 
 [build-system]
 requires = ["hatchling"]

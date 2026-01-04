@@ -20,7 +20,7 @@ async def execute(
     message: Annotated[
         ChatMessageCreate, AfterValidator(ChatMessageCreate.model_validate)
     ] = Body(
-        ChatMessageCreate,
+        ...,
         description="The chat message containing agent_id, chat_id and message content",
     ),
 ) -> list[ChatMessage]:
@@ -55,7 +55,7 @@ async def stream(
     message: Annotated[
         ChatMessageCreate, AfterValidator(ChatMessageCreate.model_validate)
     ] = Body(
-        ChatMessageCreate,
+        ...,
         description="The chat message containing agent_id, chat_id and message content",
     ),
 ) -> StreamingResponse:
