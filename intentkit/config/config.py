@@ -94,6 +94,14 @@ class Config:
         self.cdp_api_key_id: str | None = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret: str | None = self.load("CDP_API_KEY_SECRET")
         self.cdp_wallet_secret: str | None = self.load("CDP_WALLET_SECRET")
+        # Privy and Safe
+        self.privy_app_id: str | None = self.load("PRIVY_APP_ID")
+        self.privy_app_secret: str | None = self.load("PRIVY_APP_SECRET")
+        self.safe_api_key: str | None = self.load("SAFE_API_KEY")
+        # Master wallet for gas sponsorship (pays for Safe deployments)
+        self.master_wallet_private_key: str | None = self.load(
+            "MASTER_WALLET_PRIVATE_KEY"
+        )
         # LLM providers
         self.openai_api_key: str | None = self.load("OPENAI_API_KEY")
         self.google_api_key: str | None = self.load("GOOGLE_API_KEY")

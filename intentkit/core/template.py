@@ -3,6 +3,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+from epyxid import XID
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from intentkit.models.agent import Agent, AgentCore, AgentTable
@@ -109,3 +111,63 @@ async def render_agent(agent: Agent) -> Agent:
 
     # Return a new Agent instance with the merged data
     return Agent.model_validate(agent_data)
+
+
+class AgentCreationFromTemplate(BaseModel):
+    """Data structure for creating an agent from a template."""
+
+    template_id: str
+    name: str | None = None
+    picture: str | None = None
+    description: str | None = None
+
+
+async def create_agent_from_template(
+    data: AgentCreationFromTemplate,
+    owner: str | None = None,
+    team_id: str | None = None,
+) -> Agent:
+    """Create a new agent from a template.
+
+    Args:
+        data: The data for creating the agent
+        owner: The owner of the new agent
+        team_id: The team ID of the new agent
+
+    Returns:
+        Agent: The created agent
+    """
+    async with get_session() as db:
+        template_row = await db.scalar(
+            select(TemplateTable).where(TemplateTable.id == data.template_id)
+        )
+        if template_row is None:
+            raise ValueError(f"Template '{data.template_id}' not found")
+
+        template = Template.model_validate(template_row)
+
+        # Prepare core data from template
+        core_data = {}
+        for field_name in AgentCore.model_fields:
+            value = getattr(template, field_name, None)
+            core_data[field_name] = value
+
+        # Override with provided data
+        if data.name:
+            core_data["name"] = data.name
+        if data.picture:
+            core_data["picture"] = data.picture
+
+        # Create new agent
+        db_agent = AgentTable(
+            id=str(XID()),
+            owner=owner,
+            team_id=team_id,
+            template_id=data.template_id,
+            description=data.description,
+            **core_data,
+        )
+        db.add(db_agent)
+        await db.commit()
+        await db.refresh(db_agent)
+        return Agent.model_validate(db_agent)

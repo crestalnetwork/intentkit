@@ -23,7 +23,7 @@ from pydantic.v1 import ValidationError as ValidationErrorV1
 from redis.exceptions import RedisError
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.clients import get_wallet_provider
+from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
 from intentkit.models.agent import Agent
 from intentkit.models.redis import get_redis
 from intentkit.models.skill import (
@@ -336,7 +336,7 @@ async def get_agentkit_actions(
             "The requested agent does not match the active context agent.",
         )
 
-    wallet_provider: CdpEvmWalletProvider = await get_wallet_provider(agent)
+    wallet_provider: CdpEvmWalletProvider = await get_cdp_wallet_provider(agent)
 
     agent_kit = AgentKit(
         AgentKitConfig(

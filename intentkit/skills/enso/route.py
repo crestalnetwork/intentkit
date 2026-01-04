@@ -184,8 +184,11 @@ class EnsoRouteShortcut(EnsoBaseTool):
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
         # Use the wallet provider to send the transaction
-        wallet_provider = await self.get_wallet_provider(context)
+        wallet_provider = await self.get_enso_wallet_provider(context)
+        # Handle both sync (CDP) and async (Privy) address getters
         wallet_address = wallet_provider.get_address()
+        if hasattr(wallet_address, "__await__"):
+            wallet_address = await wallet_address
 
         async with httpx.AsyncClient() as client:
             try:

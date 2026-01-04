@@ -24,7 +24,7 @@ HTTP_STATUS=$(curl -s -w "%{http_code}" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Content-Type: application/json" \
     -d "{\"id\":\"${AGENT_ID}\"}" \
-    "${BASE_URL}/agents" -o "${AGENT_ID}.response")
+    "${BASE_URL}/agents/v2" -o "${AGENT_ID}.response")
 
 if [ $HTTP_STATUS -ge 400 ]; then
     echo "Create failed with HTTP status ${HTTP_STATUS}"

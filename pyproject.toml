@@ -46,6 +46,7 @@ dependencies = [
     "supabase>=2.16.0",
     "tweepy[async]>=4.15.0",
     "uvicorn>=0.34.0,<1.0.0",
+    "eth-abi>=5.0.0",
     "eth-keys>=0.4.0",
     "eth-utils>=2.1.0",
     "cdp-sdk>=1.31.1",
@@ -109,6 +110,7 @@ default-groups = ["dev"]
 
 [tool.pyright]
 reportMissingTypeStubs = false
+reportCallInDefaultInitializer = false
 
 [build-system]
 requires = ["hatchling"]

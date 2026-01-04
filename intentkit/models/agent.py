@@ -250,6 +250,11 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Readonly wallet address of the agent",
     )
+    weekly_spending_limit: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        comment="Weekly spending limit in USDC when wallet_provider is privy",
+    )
     network_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
@@ -341,10 +346,9 @@ class AgentTable(Base, AgentUserInputColumns):
         comment="Template identifier of the agent",
     )
     extra_prompt: Mapped[str | None] = mapped_column(
-        String,
+        String(20000),
         nullable=True,
         comment="Only when the agent is created from a template.",
-        max_length=20000,
     )
     upstream_id: Mapped[str | None] = mapped_column(
         String,
@@ -563,7 +567,7 @@ class AgentCore(BaseModel):
         ),
     ]
     wallet_provider: Annotated[
-        Literal["cdp", "readonly", "none"] | None,
+        Literal["cdp", "readonly", "privy", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
@@ -636,6 +640,15 @@ class AgentUserInput(AgentCore):
         PydanticField(
             default=None,
             description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
+        ),
+    ]
+    # only when wallet provider is privy
+    weekly_spending_limit: Annotated[
+        float | None,
+        PydanticField(
+            default=None,
+            description="Weekly spending limit in USDC when wallet_provider is privy. This limits how much USDC the agent can spend per week.",
+            ge=0.0,
         ),
     ]
     # autonomous mode
@@ -918,7 +931,7 @@ class AgentCreate(AgentUpdate):
             max_length=50,
         ),
     ]
-    from_template_id: Annotated[
+    template_id: Annotated[
         str | None,
         PydanticField(
             default=None,
