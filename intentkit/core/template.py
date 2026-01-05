@@ -7,7 +7,7 @@ from epyxid import XID
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from intentkit.models.agent import Agent, AgentCore, AgentTable
+from intentkit.models.agent import Agent, AgentCore, AgentTable, AgentVisibility
 from intentkit.models.db import get_session
 from intentkit.models.template import Template, TemplateTable
 
@@ -158,6 +158,9 @@ async def create_agent_from_template(
         if data.picture:
             core_data["picture"] = data.picture
 
+        # Set visibility based on team_id
+        visibility = AgentVisibility.TEAM if team_id else AgentVisibility.PRIVATE
+
         # Create new agent
         db_agent = AgentTable(
             id=str(XID()),
@@ -165,6 +168,7 @@ async def create_agent_from_template(
             team_id=team_id,
             template_id=data.template_id,
             description=data.description,
+            visibility=visibility,
             **core_data,
         )
         db.add(db_agent)
