@@ -2,8 +2,10 @@ import logging
 
 from epyxid import XID
 
+from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.client import execute_agent
+from intentkit.models.agent_activity import AgentActivityCreate
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ async def run_autonomous_task(
         # Clear thread memory if has_memory is False
         if not has_memory:
             try:
-                await clear_thread_memory(agent_id, chat_id)
+                _ = await clear_thread_memory(agent_id, chat_id)
                 logger.debug(
                     f"Cleared thread memory for task {task_id} (has_memory=False)"
                 )
@@ -62,7 +64,56 @@ async def run_autonomous_task(
             f"Task {task_id} completed: " + "\n".join(str(m) for m in resp),
             extra={"aid": agent_id},
         )
+
+        # Check response and create error activity if needed
+        if not resp:
+            try:
+                activity = AgentActivityCreate(
+                    agent_id=agent_id,
+                    text="Unexpected result: empty response",
+                )
+                _ = await create_agent_activity(activity)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to create error activity for task {task_id}: {e}",
+                    extra={"aid": agent_id},
+                )
+        else:
+            last_msg = resp[-1]
+            error_text = None
+
+            if last_msg.author_type == AuthorType.AGENT:
+                pass  # Success, do nothing
+            elif last_msg.author_type == AuthorType.SYSTEM:
+                error_text = f"Task execution error: {last_msg.message}"
+            else:
+                error_text = "Unexpected return error"
+
+            if error_text:
+                try:
+                    activity = AgentActivityCreate(
+                        agent_id=agent_id,
+                        text=error_text,
+                    )
+                    _ = await create_agent_activity(activity)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to create error activity for task {task_id}: {e}",
+                        extra={"aid": agent_id},
+                    )
+
     except Exception as e:
         logger.error(
             f"Error in autonomous task {task_id} for agent {agent_id}: {str(e)}"
         )
+        try:
+            activity = AgentActivityCreate(
+                agent_id=agent_id,
+                text=f"Autonomous task exception: {str(e)}",
+            )
+            _ = await create_agent_activity(activity)
+        except Exception as activity_error:
+            logger.warning(
+                f"Failed to create exception activity for task {task_id}: {activity_error}",
+                extra={"aid": agent_id},
+            )
