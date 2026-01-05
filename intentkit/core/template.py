@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from epyxid import XID
 from pydantic import BaseModel
+from pydantic import Field as PydanticField
 from sqlalchemy import select
 
 from intentkit.models.agent import Agent, AgentCore, AgentTable, AgentVisibility
@@ -116,13 +117,30 @@ async def render_agent(agent: Agent) -> Agent:
 class AgentCreationFromTemplate(BaseModel):
     """Data structure for creating an agent from a template."""
 
-    template_id: str
-    name: str | None = None
-    picture: str | None = None
-    description: str | None = None
-    readonly_wallet_address: str | None = None
-    weekly_spending_limit: float | None = None
-    extra_prompt: str | None = None
+    template_id: str = PydanticField(
+        description="ID of the template to create the agent from"
+    )
+    name: str | None = PydanticField(
+        default=None,
+        description="Name of the agent (overrides template name if provided)",
+    )
+    picture: str | None = PydanticField(
+        default=None,
+        description="Picture URL for the agent (overrides template picture if provided)",
+    )
+    description: str | None = PydanticField(
+        default=None, description="Description of the agent"
+    )
+    readonly_wallet_address: str | None = PydanticField(
+        default=None, description="Read-only wallet address for the agent"
+    )
+    weekly_spending_limit: float | None = PydanticField(
+        default=None, description="Weekly spending limit for the agent"
+    )
+    extra_prompt: str | None = PydanticField(
+        default=None,
+        description="Additional prompt text to be injected into the system prompt",
+    )
 
 
 async def create_agent_from_template(
