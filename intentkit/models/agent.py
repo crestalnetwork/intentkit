@@ -8,6 +8,7 @@ import textwrap
 import warnings
 from datetime import UTC, datetime
 from decimal import Decimal
+from enum import IntEnum
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -19,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
 from pydantic.main import IncEx
-from sqlalchemy import Boolean, DateTime, Float, Numeric, String, func, select
+from sqlalchemy import Boolean, DateTime, Float, Integer, Numeric, String, func, select
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,6 +42,20 @@ ENS_NAME_PATTERN = re.compile(
     r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:eth|base\.eth)$",
     re.IGNORECASE,
 )
+
+
+class AgentVisibility(IntEnum):
+    """Agent visibility levels with hierarchical ordering.
+
+    Higher values indicate broader visibility:
+    - PRIVATE (0): Only visible to owner
+    - TEAM (10): Visible to team members
+    - PUBLIC (20): Visible to everyone
+    """
+
+    PRIVATE = 0
+    TEAM = 10
+    PUBLIC = 20
 
 
 class AgentAutonomous(BaseModel):
@@ -458,6 +473,17 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Price of the x402 request",
     )
+    visibility: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        index=True,
+        comment="Visibility level: 0=private, 10=team, 20=public",
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when the agent was archived. NULL means not archived",
+    )
 
     # auto timestamp
     created_at: Mapped[datetime] = mapped_column(
@@ -764,6 +790,28 @@ class AgentUpdate(AgentUserInput):
             },
         ),
     ]
+    extra_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Only when the agent is created from a template.",
+            max_length=20000,
+        ),
+    ]
+    visibility: Annotated[
+        AgentVisibility | None,
+        PydanticField(
+            default=None,
+            description="Visibility level of the agent: PRIVATE(0), TEAM(10), or PUBLIC(20)",
+        ),
+    ]
+    archived_at: Annotated[
+        datetime | None,
+        PydanticField(
+            default=None,
+            description="Timestamp when the agent was archived. NULL means not archived",
+        ),
+    ]
 
     @field_validator("purpose", "personality", "principles", "prompt", "prompt_append")
     @classmethod
@@ -947,14 +995,6 @@ class AgentCreate(AgentUpdate):
             default=None,
             description="Template identifier of the agent",
             max_length=50,
-        ),
-    ]
-    extra_prompt: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Only when the agent is created from a template.",
-            max_length=20000,
         ),
     ]
 
@@ -1261,7 +1301,6 @@ class Agent(AgentCreate, AgentPublicInfo):
             description="Timestamp when the agent public info was last updated",
         ),
     ]
-
     # auto timestamp
     created_at: Annotated[
         datetime,

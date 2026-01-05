@@ -23,10 +23,10 @@ ENSO_SKILLS_GUIDE = """## ENSO Skills Guide
 
 You are integrated with the Enso API. You can use enso_get_tokens to retrieve token information,
 including APY, Protocol Slug, Symbol, Address, Decimals, and underlying tokens. When interacting with token amounts,
-ensure to multiply input amounts by the token's decimal places and divide output amounts by the token's decimals. 
-Utilize enso_route_shortcut to find the best swap or deposit route. Set broadcast_request to True only when the 
-user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause 
-Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit 
+ensure to multiply input amounts by the token's decimal places and divide output amounts by the token's decimals.
+Utilize enso_route_shortcut to find the best swap or deposit route. Set broadcast_request to True only when the
+user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause
+Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit
 user confirmation before broadcasting any approval transactions for security reasons.
 
 """
@@ -208,6 +208,7 @@ def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
     - Wallet information
     - Agent characteristics (purpose, personality, principles)
     - Skills-specific guides
+    - Extra prompt from template
 
     Args:
         agent: The agent configuration
@@ -226,7 +227,13 @@ def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
         _build_skills_guides_section(agent),
     ]
 
-    return "".join(section for section in prompt_sections if section)
+    base_prompt = "".join(section for section in prompt_sections if section)
+
+    # Add extra_prompt from template if present
+    if agent.extra_prompt:
+        base_prompt += f"## Task Details\n\n{agent.extra_prompt}\n\n"
+
+    return base_prompt
 
 
 # Legacy function name for backward compatibility
@@ -385,6 +392,8 @@ async def build_system_prompt(
 
     if agent.prompt_append:
         processed_append = await explain_prompt(agent.prompt_append)
-        final_system_prompt = f"{final_system_prompt}{processed_append}"
+        final_system_prompt = (
+            f"{final_system_prompt}## Additional Instructions\n\n{processed_append}"
+        )
 
     return final_system_prompt

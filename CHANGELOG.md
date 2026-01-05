@@ -1,3 +1,19 @@
+## v0.8.40 - 2025-01-31
+
+### Features
+- **Autonomous Error Tracking**: Added comprehensive error activity tracking for autonomous task execution. The system now automatically creates agent activities when tasks fail, return empty responses, or encounter unexpected errors, improving error visibility and debugging capabilities.
+- **Memory Management**: Added `has_memory` flag support for autonomous tasks, allowing fine-grained control over thread memory persistence per task execution.
+
+### Bug Fixes
+- **Changelog Generation**: Fixed bug in changelog generation process.
+
+### Technical Details
+- Enhanced `run_autonomous_task` function with error detection and activity creation
+- Improved error handling for empty responses, system errors, and exceptions
+- Added proper logging for error activity creation failures
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.39...v0.8.40
+
 ## v0.8.39 - 2026-01-04
 
 ### Features
