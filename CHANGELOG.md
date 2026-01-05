@@ -1,3 +1,17 @@
+## v0.8.42 - 2025-01-31
+
+### Features
+- Added Pydantic field descriptions to `AgentCreationFromTemplate` for better API documentation and clarity
+- Enhanced validation in `AgentUpdate` to include `extra_prompt` field, preventing level 1 and level 2 headings
+
+### Improvements
+- Updated test coverage to verify optional fields (readonly_wallet_address, weekly_spending_limit, extra_prompt) are correctly passed through during agent creation from templates
+
+### Documentation
+- Added descriptive field documentation for all parameters in agent creation from template
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.41...v0.8.42
+
 ## v0.8.41 - 2025-01-29
 
 ### Features
