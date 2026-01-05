@@ -790,6 +790,14 @@ class AgentUpdate(AgentUserInput):
             },
         ),
     ]
+    extra_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Only when the agent is created from a template.",
+            max_length=20000,
+        ),
+    ]
     visibility: Annotated[
         AgentVisibility | None,
         PydanticField(
@@ -987,14 +995,6 @@ class AgentCreate(AgentUpdate):
             default=None,
             description="Template identifier of the agent",
             max_length=50,
-        ),
-    ]
-    extra_prompt: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Only when the agent is created from a template.",
-            max_length=20000,
         ),
     ]
 
