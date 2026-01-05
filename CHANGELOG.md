@@ -1,3 +1,19 @@
+## v0.8.41 - 2025-01-29
+
+### Features
+- **Agent Visibility System**: Added public/private agent visibility controls, allowing agents to be marked as public or private for better access management
+- **Jupiter Skill Integration**: New Jupiter skill for Solana DeFi operations including token price queries and swap functionality
+- **Enhanced Template Creation**: Improved agent template creation with support for visibility settings and additional field mappings
+
+### Improvements
+- **Prompt Structure**: Refined prompt structure and formatting for better clarity and consistency
+- **Template Fields**: Added more comprehensive field support when creating agents from templates
+
+### Bug Fixes
+- **Template Agent Creation**: Fixed field mapping issues in template-based agent creation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.40...v0.8.41
+
 ## v0.8.40 - 2025-01-31
 
 ### Features

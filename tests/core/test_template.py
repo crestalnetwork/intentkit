@@ -121,6 +121,9 @@ async def test_create_agent_from_template_without_team():
         name="Private Agent",
         picture="private_pic.png",
         description="Created without team",
+        readonly_wallet_address="0x1234567890abcdef",
+        weekly_spending_limit=100.0,
+        extra_prompt="Additional task instructions",
     )
 
     # 2. Mock Database
@@ -156,6 +159,11 @@ async def test_create_agent_from_template_without_team():
 
         # Verify visibility is set to PRIVATE when team_id is None
         assert added_agent.visibility == AgentVisibility.PRIVATE
+
+        # Verify new optional fields are correctly passed through
+        assert added_agent.readonly_wallet_address == "0x1234567890abcdef"
+        assert added_agent.weekly_spending_limit == 100.0
+        assert added_agent.extra_prompt == "Additional task instructions"
 
 
 @pytest.mark.asyncio

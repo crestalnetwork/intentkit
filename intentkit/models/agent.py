@@ -813,7 +813,14 @@ class AgentUpdate(AgentUserInput):
         ),
     ]
 
-    @field_validator("purpose", "personality", "principles", "prompt", "prompt_append")
+    @field_validator(
+        "purpose",
+        "personality",
+        "principles",
+        "prompt",
+        "prompt_append",
+        "extra_prompt",
+    )
     @classmethod
     def validate_no_level1_level2_headings(cls, v: str | None) -> str | None:
         """Validate that the text doesn't contain level 1 or level 2 headings."""
