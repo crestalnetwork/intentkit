@@ -314,6 +314,13 @@
             "description": "Turn automation on/off",
             "default": false,
             "x-group": "autonomous"
+          },
+          "has_memory": {
+            "title": "Has Memory",
+            "type": "boolean",
+            "description": "Whether to retain conversation memory between autonomous runs. If disabled, thread memory is cleared before each run.",
+            "default": true,
+            "x-group": "autonomous"
           }
         },
         "required": [

@@ -108,6 +108,12 @@ async def schedule_agent_autonomous_tasks():
 
                 try:
                     # Schedule new job based on minutes or cron
+                    # Default has_memory to True if not set (backward compatibility)
+                    task_has_memory = (
+                        autonomous.has_memory
+                        if autonomous.has_memory is not None
+                        else True
+                    )
                     if autonomous.cron:
                         logger.info(
                             f"Scheduling cron task {task_id} with cron: {autonomous.cron}"
@@ -121,6 +127,7 @@ async def schedule_agent_autonomous_tasks():
                                 agent.owner,
                                 autonomous.id,
                                 autonomous.prompt,
+                                task_has_memory,
                             ],
                             replace_existing=True,
                         )
@@ -137,6 +144,7 @@ async def schedule_agent_autonomous_tasks():
                                 agent.owner,
                                 autonomous.id,
                                 autonomous.prompt,
+                                task_has_memory,
                             ],
                             minutes=autonomous.minutes,
                             replace_existing=True,

@@ -121,6 +121,16 @@ class AgentAutonomous(BaseModel):
             },
         ),
     ]
+    has_memory: Annotated[
+        bool | None,
+        PydanticField(
+            default=True,
+            description="Whether to retain conversation memory between autonomous runs. If False, thread memory is cleared before each run.",
+            json_schema_extra={
+                "x-group": "autonomous",
+            },
+        ),
+    ]
 
     @field_validator("id")
     @classmethod

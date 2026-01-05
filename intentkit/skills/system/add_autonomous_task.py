@@ -26,6 +26,10 @@ class AddAutonomousTaskInput(BaseModel):
         description="Cron expression for scheduling operations, mutually exclusive with minutes",
     )
     prompt: str = Field(description="Special prompt used during autonomous operation")
+    has_memory: bool | None = Field(
+        default=True,
+        description="Whether to retain conversation memory between autonomous runs. If False, thread memory is cleared before each run.",
+    )
 
 
 class AddAutonomousTaskOutput(BaseModel):
@@ -57,6 +61,7 @@ class AddAutonomousTask(SystemBaseTool):
         minutes: int | None = None,
         cron: str | None = None,
         prompt: str = "",
+        has_memory: bool | None = True,
         **kwargs,
     ) -> AddAutonomousTaskOutput:
         """Add an autonomous task to the agent.
@@ -82,6 +87,7 @@ class AddAutonomousTask(SystemBaseTool):
             cron=cron,
             prompt=prompt,
             enabled=True,
+            has_memory=has_memory,
         )
 
         created_task = await agent.add_autonomous_task(task)
