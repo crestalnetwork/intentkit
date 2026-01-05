@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Jupiter Solana Integration",
+  "description": "Swap and Price Check on Solana via Jupiter Aggregator",
+  "x-icon": "https://jup.ag/svg/jupiter-logo.svg",
+  "x-tags": ["Crypto", "DeFi"],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "api_key": {
+      "type": "string",
+      "title": "API Key",
+      "description": "Jupiter API Key (required for higher rate limits or if public API is restricted)",
+      "default": ""
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "jupiter_get_price": {
+          "type": "string",
+          "title": "Jupiter Price Check",
+          "default": "public",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Check token prices on Jupiter"
+        },
+        "jupiter_get_quote": {
+          "type": "string",
+          "title": "Jupiter Swap Quote",
+          "default": "public",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get swap route quotes from Jupiter"
+        }
+      },
+      "required": ["jupiter_get_price", "jupiter_get_quote"]
+    }
+  },
+  "required": ["states", "enabled"]
+}
