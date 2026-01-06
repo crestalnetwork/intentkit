@@ -52,6 +52,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 3. Always use English to search.
 4. Unless I specifically ask you to do so, do not git commit after coding.
 5. Always place imports at the beginning of the file in your new code.
+6. After implementing the functionality, there is no need to write dedicated documentation or example scripts.
 
 ## Dev Guide
 
@@ -61,39 +62,8 @@ IntentKit is an autonomous agent framework that enables creation and management 
 
 ### Skills Development
 
-1. Skills are in the `intentkit/skills/` folder. Each folder is a category. Each skill category can contain multiple skills. A category can be a theme or a brand.
-2. To avoid circular dependencies, Skills can only depend on the contents of models, abstracts, utils, and clients.
-3. The necessary elements in a skill category folder are as follows. For the paradigm of each element, you can refer to existing skills, such as skills/twitter
-   - `base.py`: Base class inherit `IntentKitSkill`. If there are functions that are common to this category, they can also be written in BaseClass. A common example is get_api_key
-   - Then every skill can have it's own file, with the same name as the skill. Key points:
-      - The skill class inherit BaseClass created in base.py
-      - The `name` attribute need a same prefix as the category name, such as `twitter_`, for uniqueness in the system.
-      - The `description` attribute is the description of the skill, which will be used in LLM to select the skill.
-      - The `args_schema` attribute is the pydantic model for the skill arguments.
-      - The `_arun` method is the main logic of the skill. There is special parameter `config: RunnableConfig`, which is used to pass the LangChain runnable config. There is function `context_from_config` in IntentKitSkill, can be used to get the context from the runnable config. In the _arun method, if there is any exception, just raise it, and the exception will be handled by the Agent. If the return value is not a string, you can document it in the description attribute.
-      - The `__init__.py` must have the function `async def get_skills( config: "Config", is_private: bool, **_,) -> list[OpenAIBaseTool]`
-      - Config is inherit from `SkillConfig`, and the `states` is a dict, key is the skill name, value is the skill state. If the skill category have any other config fields need agent creator to set, they can be added to Config.
-      - If the skill is stateless, you can add a global _cache for it, to avoid re-create the skill object every time.
-   - A square image is needed in the category folder.
-   - Add schema.json file for the config, since the Config inherit from SkillConfig, you can check examples in exists skill category to find out the pattern. The x-tags in schema should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search, Social
-   - There is no need to catch exceptions in skills, because the agent has a dedicated module to catch skill exceptions. If you need to add more information to the exception, you can catch it and re-throw the appropriate exception.
+**When you need to develop or modify skills**, read the detailed guide: `agent_docs/skill_development.md`
 
 ## Ops Guide
 
-### Git Commit
-1. Run `ruff format && ruff check --fix` before commit.
-2. When you generate git commit message, always start with one of feat/fix/chore/docs/test/refactor/improve. Title Format: `<type>: <subject>`, subject should start with lowercase. Only one-line needed, do not generate commit message body.
-
-### Github Pull Request
-1. If there are uncommited changes, add them and commit them.
-2. Push to remote branch.
-3. Pull origin/main, so you can summarize the changes for pull request title and description.
-4. Create pull requests with github MCP tools.
-
-### Github Release
-1. Make a `git pull` first.
-2. The release version number rule is follow Semantic Versioning: pre-release is `vA.B.C-devD`, release is `vA.B.C`. When you calculate the next version number, release should +1 to patch version `C`, pre-release should +1 to `D` of `-devD`, but if vA.B.C already released, next pre-release should be restart from next patch version `vA.B.(C+1)-dev1`. For example, next pre-release of v0.1.2-dev3 should be v0.1.2-dev4, but if v0.1.2 production release already published, the next pre-release will restart from v0.1.3-dev1.
-3. Find the last version number in release or pre-release using `git tag --sort=-version:refname | head -15`, diff origin/main with it, summarize the release note to build/changelog.md for later use. Add a diff link to release note too, the from and to should be the version number.
-4. If the release is not pre-release, also insert the release note to the beginning of CHANGELOG.md (This file contains all history release notes, don't use it in gh command), leave this changed CHANGELOG.md in local, don't commit and push it, we will commit it together with next changes.
-5. Construct `gh release create` command, use changelog.md as notes file in gh command.
-6. Use gh to do release only, don't create branch, tag, or pull request, don't switch local branch.
+**When you need to perform Git commits, pull requests, or releases**, read the detailed guide: `agent_docs/ops_guide.md`
