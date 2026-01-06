@@ -1,6 +1,13 @@
 """Core API Router.
 
 This module provides the core API endpoints for agent execution and management.
+
+⚠️ SECURITY WARNING: INTERNAL USE ONLY ⚠️
+These endpoints are designed for internal microservice communication only.
+DO NOT expose these endpoints to the public internet.
+DO NOT include this router in public-facing API documentation.
+These endpoints bypass authentication and authorization checks for performance.
+Use the public API endpoints in app/api.py for external access.
 """
 
 from typing import Annotated
@@ -12,9 +19,15 @@ from pydantic import AfterValidator
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
 
-core_router = APIRouter(prefix="/core", tags=["Core"])
+# ⚠️ INTERNAL API ONLY - DO NOT EXPOSE TO PUBLIC INTERNET ⚠️
+core_router = APIRouter(
+    prefix="/core",
+    tags=["Core"],
+    include_in_schema=False,  # Exclude from OpenAPI documentation
+)
 
 
+# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
 @core_router.post("/execute", response_model=list[ChatMessage])
 async def execute(
     message: Annotated[
@@ -50,6 +63,7 @@ async def execute(
     return await execute_agent(message)
 
 
+# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
 @core_router.post("/stream")
 async def stream(
     message: Annotated[
