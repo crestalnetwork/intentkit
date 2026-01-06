@@ -55,6 +55,7 @@ async def test_recharge_success():
 
         # Run
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         result = await recharge(mock_session, user_id, amount, upstream_tx_id, note)
 
         # Verify
@@ -147,6 +148,7 @@ async def test_withdraw_success():
 
         # Run
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         result = await withdraw(mock_session, agent_id, amount, upstream_tx_id)
 
         assert result == mock_updated_agent_account
@@ -195,6 +197,7 @@ async def test_reward_success():
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         await reward(mock_session, user_id, amount, upstream_tx_id)
 
         # Check user income (reward type)
@@ -241,6 +244,7 @@ async def test_adjustment_income():
         mock_deduction.return_value = mock_platform_account  # Second call for platform
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         await adjustment(
             mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )
@@ -289,6 +293,7 @@ async def test_adjustment_expense():
         mock_income.return_value = mock_platform_account
 
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         await adjustment(
             mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )

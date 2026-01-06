@@ -19,7 +19,7 @@ async def sqlite_engine():
     db_module.engine = test_engine
 
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all, tables=[UserTable.__table__])
 
     try:
         yield test_engine
