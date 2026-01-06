@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -9,20 +10,40 @@ from intentkit.core.asset import AgentAssets, Asset
 from intentkit.utils.error import IntentKitAPIError
 
 
+# Mock get_session globally for this module or per test
+@asynccontextmanager
+async def mock_session_ctx():
+    session = MagicMock()
+    # Ensure commit is async
+    session.commit = MagicMock()
+
+    async def async_commit():
+        pass
+
+    session.commit.side_effect = async_commit
+
+    # Ensure execute is async
+    session.execute = MagicMock()
+
+    async def async_execute(*args, **kwargs):
+        pass
+
+    session.execute.side_effect = async_execute
+
+    yield session
+
+
 @pytest.mark.asyncio
 async def test_agent_asset_missing_agent(monkeypatch):
-    class DummyAgent:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return None
+    async def mock_get_agent(agent_id):
+        return None
 
-    class DummyAgentData:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return SimpleNamespace(evm_wallet_address=None)
-
-    monkeypatch.setattr(asset_module, "Agent", DummyAgent)
-    monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    # We also mock AgentData just in case, though get_agent failure exits early
+    monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
+    # Patch get_session to avoid DB init check
+    monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
+    # Patch get_redis to return None to avoid redis connection
+    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
 
     with pytest.raises(IntentKitAPIError) as exc:
         await asset_module.agent_asset("missing")
@@ -33,20 +54,22 @@ async def test_agent_asset_missing_agent(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_agent_asset_no_wallet(monkeypatch):
-    agent = SimpleNamespace(network_id="base-mainnet", ticker=None, token_address=None)
+    agent = SimpleNamespace(
+        network_id="base-mainnet", ticker=None, token_address=None, id="agent-id"
+    )
 
-    class DummyAgent:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return agent
+    async def mock_get_agent(agent_id):
+        return agent
 
     class DummyAgentData:
         @classmethod
         async def get(cls, agent_id: str):
             return SimpleNamespace(evm_wallet_address=None)
 
-    monkeypatch.setattr(asset_module, "Agent", DummyAgent)
+    monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
+    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
 
     result = await asset_module.agent_asset("agent-id")
 
@@ -58,13 +81,11 @@ async def test_agent_asset_no_wallet(monkeypatch):
 @pytest.mark.asyncio
 async def test_agent_asset_success(monkeypatch):
     agent = SimpleNamespace(
-        network_id="base-mainnet", ticker="WOW", token_address="0xabc"
+        network_id="base-mainnet", ticker="WOW", token_address="0xabc", id="agent-id"
     )
 
-    class DummyAgent:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return agent
+    async def mock_get_agent(agent_id):
+        return agent
 
     class DummyAgentData:
         @classmethod
@@ -78,13 +99,15 @@ async def test_agent_asset_success(monkeypatch):
         assert network_id == "base-mainnet"
         return "123.45"
 
-    monkeypatch.setattr(asset_module, "Agent", DummyAgent)
+    monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
     monkeypatch.setattr(asset_module, "get_web3_client", lambda network: MagicMock())
     monkeypatch.setattr(asset_module, "_build_assets_list", mock_build_assets_list)
     monkeypatch.setattr(
         asset_module, "_get_wallet_net_worth", mock_get_wallet_net_worth
     )
+    monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
+    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
 
     result = await asset_module.agent_asset("agent-id")
 
@@ -95,20 +118,22 @@ async def test_agent_asset_success(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_agent_asset_missing_network(monkeypatch):
-    agent = SimpleNamespace(network_id=None, ticker=None, token_address=None)
+    agent = SimpleNamespace(
+        network_id=None, ticker=None, token_address=None, id="agent-id"
+    )
 
-    class DummyAgent:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return agent
+    async def mock_get_agent(agent_id):
+        return agent
 
     class DummyAgentData:
         @classmethod
         async def get(cls, agent_id: str):
             return SimpleNamespace(evm_wallet_address="0x123")
 
-    monkeypatch.setattr(asset_module, "Agent", DummyAgent)
+    monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
+    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
 
     result = await asset_module.agent_asset("agent-id")
 
