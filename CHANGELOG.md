@@ -1,3 +1,22 @@
+## v0.8.44 - 2026-01-07
+
+### New Features
+- **x402 Payment Protocol Skills**: Added two new skills for working with 402-protected resources:
+  - `x402_check_price`: Check the price of a paid API resource before making a payment
+  - `x402_pay`: Perform paid HTTP requests with configurable maximum payment limits
+
+### Improvements
+- Enhanced agent creation with field descriptions and validation
+- Improved credit and asset management for agents
+- Refined scheduler and engine components
+- Better Privy wallet client integration
+
+### Documentation
+- Clarified documentation on folder structure and local development setup
+- Updated operational guides for release management
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.43...v0.8.44
+
 ## v0.8.43 - 2026-01-07
 
 ### Features
