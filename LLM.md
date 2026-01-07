@@ -10,16 +10,16 @@ IntentKit is an autonomous agent framework that enables creation and management 
 
 1. **IntentKit Package** (`intentkit/`)
    - The intentkit/ folder is published as a pip package.
-   - The core/ folder contains the agent system, driven by LangGraph.
-   - The models/ folder houses the entity models, most of it both have padantic models for memory use and sqlalchemy models for storage.
-   - The config/ folder contains the system level config, like database config, LLM provider api keys and skill provider api keys.
-   - The skills/ folder contains the skills system, driven by LangChain's BaseTool. LLM can call skills to fetch data, perform actions, or interact with the environment.
-   - The utils/ folder contains the utility functions, like logging, formatting, etc.
-   - The abstracts/ folder contains interfaces, for core/ and skills/ use.
+   - The intentkit/core/ folder contains the agent system, driven by LangGraph.
+   - The intentkit/models/ folder houses the entity models, most of it both have padantic models for memory use and sqlalchemy models for storage.
+   - The intentkit/config/ folder contains the system level config, like database config, LLM provider api keys and skill provider api keys.
+   - The intentkit/skills/ folder contains the skills system, driven by LangChain's BaseTool. LLM can call skills to fetch data, perform actions, or interact with the environment.
+   - The intentkit/utils/ folder contains the utility functions, like logging, formatting, etc.
+   - The intentkit/abstracts/ folder contains interfaces, for core/ and skills/ use.
 
 2. **IntentKit App** (`app/`)
-   - The app/ folder contains API server, autonomous runner, and background scheduler.
-   - User can use intentkit package in their own project for customization, or just start the intentkit app for default features.
+   - The app/ folder contains local API server, autonomous runner, and background scheduler.
+   - User can use intentkit package in their own project for customization, or just start the intentkit local API and frontend for local development or single-user use(no-auth).
 
 3. **Operation or Temporary Scripts** (`scripts/`)
    - Agent management scripts
@@ -33,7 +33,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 
 5. **Frontend** (`frontend/`)
    - The frontend/ folder contains the Next.js application for managing agents.
-   - See `intentkit/frontend/AGENTS.md` for detailed architecture and development guidelines.
+   - See `frontend/AGENTS.md` for detailed architecture and development guidelines.
 
 ## Technology Stack
 - Package manager: uv
