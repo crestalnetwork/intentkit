@@ -1,3 +1,12 @@
+## v0.8.45 - 2026-01-08
+
+### New Features
+- **x402 Payment Protocol Skills**: Added two new skills for working with 402-protected resources:
+  - `x402_check_price`: Check the price of a paid API resource before making a payment
+  - `x402_pay`: Perform paid HTTP requests with configurable maximum payment limits
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.44...v0.8.45
+
 ## v0.8.44 - 2026-01-07
 
 ### New Features
