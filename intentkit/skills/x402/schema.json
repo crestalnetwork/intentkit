@@ -33,6 +33,38 @@
           ],
           "description": "Perform a signed HTTP GET or POST request via the x402 payment protocol.",
           "default": "disabled"
+        },
+        "x402_check_price": {
+          "type": "string",
+          "title": "Check Price",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Check the price of a 402-protected resource without making a payment.",
+          "default": "disabled"
+        },
+        "x402_pay": {
+          "type": "string",
+          "title": "Pay Request",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Perform a paid HTTP request with a maximum payment limit via the x402 payment protocol.",
+          "default": "disabled"
         }
       }
     }

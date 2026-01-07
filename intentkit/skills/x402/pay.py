@@ -1,3 +1,8 @@
+"""x402 pay skill.
+
+This skill performs a paid HTTP request with a configurable maximum payment amount.
+"""
+
 import logging
 from typing import Any
 from urllib.parse import urlparse
@@ -12,12 +17,18 @@ from intentkit.skills.x402.base import X402BaseSkill
 logger = logging.getLogger(__name__)
 
 
-class X402HttpRequestInput(BaseModel):
-    """Arguments for a generic x402 HTTP request."""
+class X402PayInput(BaseModel):
+    """Arguments for a paid x402 HTTP request with max value limit."""
 
     method: str = Field(description="HTTP method to use. Supported values: GET, POST.")
     url: str = Field(
         description="Absolute URL for the request (must include scheme and host)."
+    )
+    max_value: int = Field(
+        description=(
+            "Maximum allowed payment amount in base units (e.g., for USDC with 6 decimals, "
+            "1000000 = 1 USDC). The request will fail if the required payment exceeds this limit."
+        ),
     )
     headers: dict[str, str] | None = Field(
         default=None,
@@ -40,21 +51,25 @@ class X402HttpRequestInput(BaseModel):
     )
 
 
-class X402HttpRequest(X402BaseSkill):
-    """Skill that performs signed HTTP requests via the x402 client."""
+class X402Pay(X402BaseSkill):
+    """Skill that performs a paid HTTP request with max payment limit via x402."""
 
-    name: str = "x402_http_request"
+    name: str = "x402_pay"
     description: str = (
-        "Send an HTTP GET or POST request using the x402 payment protocol. "
-        "Provide the method, absolute URL, optional headers, query parameters, and request body. "
-        "Returns the response status and body text."
+        "Send a paid HTTP GET or POST request using the x402 payment protocol "
+        "with a specified maximum payment limit. "
+        "You MUST specify max_value to limit the maximum payment amount in base units. "
+        "For example, with USDC (6 decimals): 1000000 = 1 USDC, 100000 = 0.1 USDC. "
+        "The request will automatically fail if the required payment exceeds max_value. "
+        "Use x402_check_price first to know the exact cost before paying."
     )
-    args_schema: type[BaseModel] = X402HttpRequestInput
+    args_schema: type[BaseModel] = X402PayInput
 
     async def _arun(
         self,
         method: str,
         url: str,
+        max_value: int,
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         data: dict[str, Any] | str | None = None,
@@ -70,6 +85,9 @@ class X402HttpRequest(X402BaseSkill):
         parsed = urlparse(url)
         if not (parsed.scheme and parsed.netloc):
             raise ToolException("URL must include scheme and host (absolute URL).")
+
+        if max_value <= 0:
+            raise ToolException("max_value must be a positive integer.")
 
         request_headers = dict(headers or {})
         request_kwargs: dict[str, Any] = {
@@ -98,12 +116,14 @@ class X402HttpRequest(X402BaseSkill):
             account = await self.get_signer()
             async with x402HttpxClient(
                 account=account,
+                max_value=max_value,
                 timeout=timeout,
             ) as client:
                 response = await client.request(method_upper, **request_kwargs)
                 response.raise_for_status()
                 return f"Status: {response.status_code}\nContent: {response.text}"
         except ValueError as exc:
+            # x402HttpxClient raises ValueError when payment exceeds max_value
             raise ToolException(str(exc)) from exc
         except httpx.TimeoutException as exc:
             raise ToolException(
@@ -118,5 +138,5 @@ class X402HttpRequest(X402BaseSkill):
         except ToolException:
             raise
         except Exception as exc:
-            logger.error("Unexpected error in x402_http_request", exc_info=exc)
+            logger.error("Unexpected error in x402_pay", exc_info=exc)
             raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc

@@ -5,7 +5,9 @@ from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.x402.base import X402BaseSkill
+from intentkit.skills.x402.check_price import X402CheckPrice
 from intentkit.skills.x402.http_request import X402HttpRequest
+from intentkit.skills.x402.pay import X402Pay
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,8 @@ _cache: dict[str, X402BaseSkill] = {}
 
 class SkillStates(TypedDict):
     x402_http_request: SkillState
+    x402_check_price: SkillState
+    x402_pay: SkillState
 
 
 class Config(SkillConfig):
@@ -24,6 +28,8 @@ class Config(SkillConfig):
 
 _SKILL_BUILDERS: dict[str, type[X402BaseSkill]] = {
     "x402_http_request": X402HttpRequest,
+    "x402_check_price": X402CheckPrice,
+    "x402_pay": X402Pay,
 }
 
 
