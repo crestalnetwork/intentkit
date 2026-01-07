@@ -123,11 +123,54 @@ async def process_agent_wallet(
             except Exception as e:
                 logger.warning(f"Failed to get RPC URL from chain provider: {e}")
 
+        # Check for partial wallet creation (Privy wallet created but Safe failed)
+        # This allows recovery without creating duplicate Privy wallets
+        existing_privy_wallet_id: str | None = None
+        existing_privy_wallet_address: str | None = None
+        if agent_data.privy_wallet_data:
+            try:
+                partial_data = json.loads(agent_data.privy_wallet_data)
+                existing_privy_wallet_id = partial_data.get("privy_wallet_id")
+                existing_privy_wallet_address = partial_data.get("privy_wallet_address")
+                if existing_privy_wallet_id and existing_privy_wallet_address:
+                    logger.info(
+                        f"Found partial Privy wallet data for agent {agent.id}, "
+                        + f"attempting recovery with wallet {existing_privy_wallet_id}"
+                    )
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.warning(f"Failed to parse existing privy_wallet_data: {e}")
+
+        # Create Privy wallet first and save immediately to enable recovery
+        if not existing_privy_wallet_id:
+            from intentkit.clients.privy import PrivyClient
+
+            privy_client = PrivyClient()
+            privy_wallet = await privy_client.create_wallet()
+            existing_privy_wallet_id = privy_wallet.id
+            existing_privy_wallet_address = privy_wallet.address
+
+            # Save partial data immediately so we can recover if Safe deployment fails
+            partial_wallet_data = {
+                "privy_wallet_id": existing_privy_wallet_id,
+                "privy_wallet_address": existing_privy_wallet_address,
+                "network_id": network_id,
+                "status": "privy_created",
+            }
+            await AgentData.patch(
+                agent.id,
+                {"privy_wallet_data": json.dumps(partial_wallet_data)},
+            )
+            logger.info(
+                f"Created Privy wallet {existing_privy_wallet_id} for agent {agent.id}"
+            )
+
         wallet_data = await create_privy_safe_wallet(
             agent_id=agent.id,
             network_id=network_id,
             rpc_url=rpc_url,
             weekly_spending_limit_usdc=agent.weekly_spending_limit,
+            existing_privy_wallet_id=existing_privy_wallet_id,
+            existing_privy_wallet_address=existing_privy_wallet_address,
         )
         agent_data = await AgentData.patch(
             agent.id,

@@ -1906,6 +1906,8 @@ async def create_privy_safe_wallet(
     network_id: str = "base-mainnet",
     rpc_url: str | None = None,
     weekly_spending_limit_usdc: float | None = None,
+    existing_privy_wallet_id: str | None = None,
+    existing_privy_wallet_address: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a Privy server wallet and deploy a Safe smart account.
@@ -1913,11 +1915,17 @@ async def create_privy_safe_wallet(
     This is the main entry point for creating a new agent wallet with
     Safe smart account and optional spending limits.
 
+    Supports recovery mode: if a previous attempt created a Privy wallet but
+    failed to deploy the Safe, pass the existing wallet details to resume
+    without creating a duplicate Privy wallet.
+
     Args:
         agent_id: Unique identifier for the agent (used as idempotency key)
         network_id: The network to use (default: base-mainnet)
         rpc_url: Optional RPC URL override
         weekly_spending_limit_usdc: Optional weekly USDC spending limit
+        existing_privy_wallet_id: Existing Privy wallet ID for recovery mode
+        existing_privy_wallet_address: Existing Privy wallet address for recovery mode
 
     Returns:
         dict: Metadata including:
@@ -1940,22 +1948,32 @@ async def create_privy_safe_wallet(
 
     privy_client = PrivyClient()
 
-    # 1. Create Privy Wallet (EOA that will own the Safe)
-    privy_wallet = await privy_client.create_wallet()
+    # 1. Get or create Privy Wallet (EOA that will own the Safe)
+    # Recovery mode: use existing wallet if provided (avoids creating duplicate wallets)
+    if existing_privy_wallet_id and existing_privy_wallet_address:
+        logger.info(
+            f"Recovery mode: using existing Privy wallet {existing_privy_wallet_id}"
+        )
+        privy_wallet_id = existing_privy_wallet_id
+        privy_wallet_address = existing_privy_wallet_address
+    else:
+        privy_wallet = await privy_client.create_wallet()
+        privy_wallet_id = privy_wallet.id
+        privy_wallet_address = privy_wallet.address
 
     # 2. Deploy Safe and configure allowance module
     deployment_info = await deploy_safe_with_allowance(
         privy_client=privy_client,
-        privy_wallet_id=privy_wallet.id,
-        privy_wallet_address=privy_wallet.address,
+        privy_wallet_id=privy_wallet_id,
+        privy_wallet_address=privy_wallet_address,
         network_id=network_id,
         rpc_url=effective_rpc_url,
         weekly_spending_limit_usdc=weekly_spending_limit_usdc,
     )
 
     return {
-        "privy_wallet_id": privy_wallet.id,
-        "privy_wallet_address": privy_wallet.address,
+        "privy_wallet_id": privy_wallet_id,
+        "privy_wallet_address": privy_wallet_address,
         "smart_wallet_address": deployment_info["safe_address"],
         "provider": "safe",
         "network_id": network_id,
