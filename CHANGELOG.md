@@ -1,3 +1,30 @@
+## v0.8.43 - 2026-01-07
+
+### Features
+- Support recovery of partially created Privy wallets
+
+### Fixes
+- Fix core API to hide from public docs
+- Fix test issue
+
+### Tests
+- Add new tests for core engine functionality
+- Add new tests for credit system
+- Add new tests for scheduler
+- Improve agent asset tests
+
+### Documentation
+- Refactor LLM docs
+- Fix ops guide
+- Add skill development guide
+- Add operations guide
+- Update changelog
+
+### Dependencies
+- Upgrade dependencies via uv sync
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.42...v0.8.43
+
 ## v0.8.42 - 2025-01-31
 
 ### Features
