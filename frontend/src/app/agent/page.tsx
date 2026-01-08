@@ -68,7 +68,7 @@ function AgentChatContent() {
       setError(null);
 
       try {
-        // Use the web.py API: POST /agents/{aid}/chat/v2
+        // Use the chat API: POST /agents/{aid}/chat
         const response = await chatApi.sendMessage(agentId, {
           chat_id: chatId,
           user_id: userId,

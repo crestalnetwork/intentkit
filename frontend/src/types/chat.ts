@@ -2,7 +2,19 @@
  * Chat-related TypeScript types for IntentKit frontend
  */
 
-export type AuthorType = "twitter" | "telegram" | "web" | "discord" | "api";
+export type AuthorType =
+  | "agent"
+  | "skill"
+  | "system"
+  | "trigger"
+  | "twitter"
+  | "telegram"
+  | "discord"
+  | "web"
+  | "api"
+  | "xmtp"
+  | "x402"
+  | "internal";
 
 export interface ChatMessageAttachment {
   type: "link" | "image" | "file";

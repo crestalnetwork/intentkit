@@ -16,7 +16,7 @@ export interface Agent {
   temperature: number | null;
   frequency_penalty: number | null;
   presence_penalty: number | null;
-  wallet_provider: "cdp" | "readonly" | "none" | null;
+  wallet_provider: "cdp" | "readonly" | "privy" | "none" | null;
   readonly_wallet_address: string | null;
   network_id: string | null;
   skills: Record<string, unknown> | null;
@@ -29,26 +29,39 @@ export interface Agent {
   public_info_updated_at: string | null;
   created_at: string;
   updated_at: string;
+
+  // Flattened AgentResponse fields
+  linked_twitter_username: string | null;
+  linked_telegram_username: string | null;
+  linked_twitter_name: string | null;
+  linked_telegram_name: string | null;
+  discord_username?: string | null; // Keeping as optional if needed by UI
 }
 
 export interface CreditAccount {
-  balance: number;
-  credit_limit: number;
+  id: string;
+  owner_type: "user" | "agent" | "team" | "platform";
+  owner_id: string;
+  free_quota: string;
+  refill_amount: string;
+  free_credits: string;
+  reward_credits: string;
+  credits: string;
+  total_income: string;
+  total_expense: string;
+  balance?: number; // Kept for backward compatibility if computed in UI
+  credit_limit?: number; // Kept for backward compatibility
 }
 
 export interface AgentQuota {
+  // Deprecated, keeping for temporary compatibility if needed
   daily_quota: number;
   daily_used: number;
   monthly_quota: number;
   monthly_used: number;
 }
 
-export interface AgentResponse extends Agent {
-  quota: AgentQuota | null;
-  twitter_username: string | null;
-  telegram_username: string | null;
-  discord_username: string | null;
-}
+export type AgentResponse = Agent;
 
 // API Error response
 export interface ApiError {
