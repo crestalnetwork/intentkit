@@ -2,18 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bot, MessageSquare, RefreshCw } from "lucide-react";
+import { Bot, RefreshCw } from "lucide-react";
 import { agentApi } from "@/lib/api";
 import type { AgentResponse } from "@/types/agent";
+import { AgentCard } from "@/components/features/AgentCard";
 
 export default function HomePage() {
   const {
@@ -72,70 +70,19 @@ export default function HomePage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {agents?.map((agent: AgentResponse) => (
-            <AgentCard key={agent.id} agent={agent} />
-          ))}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...(agents || [])]
+            .sort(
+              (a, b) =>
+                new Date(b.updated_at).getTime() -
+                new Date(a.updated_at).getTime()
+            )
+            .map((agent: AgentResponse) => (
+              <AgentCard key={agent.id} agent={agent} />
+            ))}
         </div>
       )}
     </div>
   );
 }
 
-function AgentCard({ agent }: { agent: AgentResponse }) {
-  const displayName = agent.name || agent.id;
-  const displayDescription = agent.purpose || "No description available";
-
-  return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {agent.picture ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={agent.picture}
-                alt={displayName}
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Bot className="h-5 w-5 text-primary" />
-              </div>
-            )}
-            <CardTitle className="text-xl">{displayName}</CardTitle>
-          </div>
-        </div>
-        <CardDescription className="line-clamp-2 min-h-[2.5rem] mt-2">
-          {displayDescription}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center justify-between">
-            <span>Model:</span>
-            <span className="font-mono text-xs">{agent.model}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>ID:</span>
-            <span className="font-mono text-xs">{agent.id}</span>
-          </div>
-          {agent.slug && (
-            <div className="flex items-center justify-between">
-              <span>Slug:</span>
-              <span className="font-mono text-xs">{agent.slug}</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button asChild className="w-full" variant="default">
-          <Link href={`/agent?id=${agent.id}`}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Open Chat
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
