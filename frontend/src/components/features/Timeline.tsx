@@ -1,0 +1,117 @@
+
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
+import { Activity, Bell, FileText, MessageSquare, StickyNote, Wallet } from "lucide-react";
+import { activityApi } from "@/lib/api";
+import {
+    Card,
+    CardHeader,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+function getActivityIcon(type: string) {
+    switch (type) {
+        case "post":
+            return <FileText className="h-4 w-4" />;
+        case "chat":
+            return <MessageSquare className="h-4 w-4" />;
+        case "wallet":
+            return <Wallet className="h-4 w-4" />;
+        case "note":
+            return <StickyNote className="h-4 w-4" />;
+        default:
+            return <Activity className="h-4 w-4" />;
+    }
+}
+
+export function Timeline() {
+    const {
+        data: activities,
+        isLoading,
+        error,
+        refetch,
+        isRefetching,
+    } = useQuery({
+        queryKey: ["activities"],
+        queryFn: () => activityApi.getAll(50),
+    });
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                        <CardHeader className="h-20 bg-muted/50" />
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
+                <p className="font-medium">Error loading timeline</p>
+                <Button variant="link" onClick={() => refetch()} className="mt-2">
+                    Try Again
+                </Button>
+            </div>
+        );
+    }
+
+    if (!activities?.length) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                <Bell className="mb-4 h-12 w-12 opacity-20" />
+                <h3 className="text-lg font-semibold">No activities yet</h3>
+                <p className="text-sm">Activities from your agents will appear here.</p>
+                <Button variant="outline" onClick={() => refetch()} className="mt-4">
+                    Refresh
+                </Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-end">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => refetch()}
+                    disabled={isRefetching}
+                    className="text-muted-foreground"
+                >
+                    {isRefetching ? "Refreshing..." : "Refresh Activity"}
+                </Button>
+            </div>
+            <div className="relative border-l border-muted pl-6 ml-4 space-y-8">
+                {activities.map((activity) => (
+                    <div key={activity.id} className="relative">
+                        <span className="absolute -left-[31px] top-1 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                            {getActivityIcon(activity.activity_type)}
+                        </span>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold">{activity.agent_name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                                </span>
+                            </div>
+                            <p className="text-sm text-foreground">{activity.description}</p>
+                            {activity.details && Object.keys(activity.details).length > 0 && (
+                                <div className="rounded-md bg-muted/50 p-3 mt-2 text-xs font-mono">
+                                    <pre className="whitespace-pre-wrap">
+                                        {JSON.stringify(activity.details, null, 2)}
+                                    </pre>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

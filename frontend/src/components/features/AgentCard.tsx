@@ -6,7 +6,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { AgentResponse } from "@/types/agent";
-import { Bot, Cpu, Layers } from "lucide-react";
+import { Bot, Cpu } from "lucide-react";
 import Link from "next/link";
 
 interface AgentCardProps {
@@ -20,7 +20,7 @@ export function AgentCard({ agent }: AgentCardProps) {
     // Extract active skills
     const activeSkills = agent.skills
         ? Object.entries(agent.skills)
-            .filter(([_, config]) => (config as { enabled: boolean }).enabled)
+            .filter(([, config]) => (config as { enabled: boolean }).enabled)
             .map(([category]) => category)
         : [];
 
