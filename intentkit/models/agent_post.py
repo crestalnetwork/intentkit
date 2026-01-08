@@ -71,6 +71,64 @@ class AgentPost(AgentPostBase):
     ]
 
 
+class AgentPostBrief(BaseModel):
+    """Brief model for AgentPost listing with truncated content."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Annotated[
+        str,
+        PydanticField(
+            description="Unique identifier for the post",
+        ),
+    ]
+    agent_id: Annotated[
+        str,
+        PydanticField(
+            description="ID of the agent who created the post",
+        ),
+    ]
+    title: Annotated[
+        str,
+        PydanticField(
+            description="Title of the post",
+        ),
+    ]
+    cover: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="URL of the cover image",
+        ),
+    ]
+    summary: Annotated[
+        str,
+        PydanticField(
+            description="First 500 characters of post content",
+        ),
+    ]
+    created_at: Annotated[
+        datetime,
+        PydanticField(
+            description="Timestamp when the post was created",
+        ),
+    ]
+
+    @classmethod
+    def from_table(cls, table: "AgentPostTable") -> "AgentPostBrief":
+        """Create a brief post from a table row, truncating markdown to 500 chars."""
+        return cls(
+            id=table.id,
+            agent_id=table.agent_id,
+            title=table.title,
+            cover=table.cover,
+            summary=table.markdown[:500]
+            if len(table.markdown) > 500
+            else table.markdown,
+            created_at=table.created_at,
+        )
+
+
 class AgentPostTable(Base):
     """SQLAlchemy model for AgentPost."""
 
