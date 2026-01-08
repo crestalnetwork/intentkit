@@ -121,6 +121,16 @@ class X402Pay(X402BaseSkill):
             ) as client:
                 response = await client.request(method_upper, **request_kwargs)
                 response.raise_for_status()
+
+                # Record the order
+                await self.record_order(
+                    response=response,
+                    skill_name=self.name,
+                    method=method_upper,
+                    url=url,
+                    max_value=max_value,
+                )
+
                 return f"Status: {response.status_code}\nContent: {response.text}"
         except ValueError as exc:
             # x402HttpxClient raises ValueError when payment exceeds max_value
