@@ -15,9 +15,8 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.exc import NoResultFound
 from yaml import safe_load
 
 from intentkit.clients.twitter import unlink_twitter
@@ -25,8 +24,6 @@ from intentkit.core.agent import (
     create_agent,
     deploy_agent,
     override_agent,
-    process_agent_wallet,
-    send_agent_notification,
 )
 from intentkit.core.agent import (
     get_agent as get_agent_by_id,
@@ -44,21 +41,18 @@ from intentkit.models.db import get_db
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 
-admin_router = APIRouter()
+local_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
 
-@admin_router.post(
+@local_router.post(
     "/agent/validate",
     tags=["Agent"],
     status_code=204,
     operation_id="validate_agent_create",
 )
 async def validate_agent_create(
-    user_id: Annotated[
-        str | None, Query(description="Optional user ID for authorization check")
-    ] = None,
     input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
 ) -> Response:
     """Validate agent configuration.
@@ -75,30 +69,11 @@ async def validate_agent_create(
         - 422: Invalid agent configuration from intentkit core
         - 500: Server error
     """
-    # if not input.owner:
-    #     raise IntentKitAPIError(
-    #         status_code=400, key="BadRequest", message="Owner is required"
-    #     )
-    # max_fee = 100
-    # if user_id:
-    #     if input.owner != user_id:
-    #         raise IntentKitAPIError(
-    #             status_code=400,
-    #             key="BadRequest",
-    #             message="Owner does not match user ID",
-    #         )
-    # user = await User.get(user_id)
-    # if user:
-    #     max_fee += user.nft_count * 10
-    # if input.fee_percentage and input.fee_percentage > max_fee:
-    #     raise IntentKitAPIError(
-    #         status_code=400, key="BadRequest", message="Fee percentage too high"
-    #     )
     input.validate_autonomous_schedule()
     return Response(status_code=204)
 
 
-@admin_router.post(
+@local_router.post(
     "/agents/{agent_id}/validate",
     tags=["Agent"],
     status_code=204,
@@ -168,17 +143,7 @@ async def validate_agent_update(
     return Response(status_code=204)
 
 
-@admin_router.post(
-    "/agents/v2",
-    tags=["Agent"],
-    status_code=201,
-    operation_id="create_agent_deprecated",
-    responses={
-        201: {"description": "Agent created successfully"},
-    },
-    deprecated=True,
-)
-@admin_router.post(
+@local_router.post(
     "/agents",
     tags=["Agent"],
     status_code=201,
@@ -205,7 +170,7 @@ async def create_agent_endpoint(
         - 500: Database error
     """
     new_agent = AgentCreate.model_validate(agent)
-    new_agent.owner = "admin"
+    new_agent.owner = "system"
     latest_agent, agent_data = await create_agent(new_agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
@@ -219,72 +184,7 @@ async def create_agent_endpoint(
     )
 
 
-@admin_router.patch(
-    "/agents/{agent_id}",
-    tags=["Agent"],
-    status_code=200,
-    operation_id="update_agent",
-    deprecated=True,
-)
-async def update_agent(
-    agent_id: str = Path(..., description="ID of the agent to update"),
-    agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
-) -> Response:
-    """
-    Deprecated, use the put method instead, it will override the agent instead of updating it.
-
-    Use input to update agent configuration. If some fields are not provided, they will not be changed.
-
-    **Path Parameters:**
-    * `agent_id` - ID of the agent to update
-
-    **Request Body:**
-    * `agent` - Agent update configuration
-
-    **Returns:**
-    * `AgentResponse` - Updated agent configuration with additional processed data
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 400: Invalid agent ID format
-        - 404: Agent not found
-        - 403: Permission denied (if owner mismatch)
-        - 500: Database error
-    """
-    agent.owner = "admin"
-
-    existing_agent = await get_agent_by_id(agent_id)
-    if not existing_agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
-
-    # Update agent
-    latest_agent = await agent.update(agent_id)
-
-    # Process agent wallet with old provider for validation
-    agent_data = await process_agent_wallet(
-        latest_agent, existing_agent.wallet_provider
-    )
-
-    # Send Slack notification
-    slack_message = "Agent Updated"
-    try:
-        send_agent_notification(latest_agent, agent_data, slack_message)
-    except Exception as e:
-        logger.error("Failed to send Slack notification: %s", e)
-
-    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-
-    # Return Response with ETag header
-    return Response(
-        content=agent_response.model_dump_json(),
-        media_type="application/json",
-        headers={"ETag": agent_response.etag()},
-    )
-
-
-@admin_router.put(
+@local_router.put(
     "/agents/{agent_id}",
     tags=["Agent"],
     status_code=200,
@@ -315,7 +215,7 @@ async def override_agent_endpoint(
         - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    latest_agent, agent_data = await override_agent(agent_id, agent, "admin")
+    latest_agent, agent_data = await override_agent(agent_id, agent, "system")
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -327,7 +227,7 @@ async def override_agent_endpoint(
     )
 
 
-@admin_router.get(
+@local_router.get(
     "/agents",
     tags=["Agent"],
     operation_id="get_agents",
@@ -360,7 +260,7 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     ]
 
 
-@admin_router.get(
+@local_router.get(
     "/agents/{agent_id}",
     tags=["Agent"],
     operation_id="get_agent",
@@ -415,18 +315,11 @@ class MemCleanRequest(BaseModel):
     chat_id: str | None = Field("")
 
 
-@admin_router.post(
+@local_router.post(
     "/agent/clean-memory",
     tags=["Agent"],
     status_code=204,
     operation_id="clean_agent_memory",
-)
-@admin_router.post(
-    "/agents/clean-memory",
-    tags=["Agent"],
-    status_code=201,
-    operation_id="clean_agent_memory_deprecated",
-    deprecated=True,
 )
 async def clean_memory(
     request: MemCleanRequest = Body(
@@ -490,7 +383,7 @@ async def clean_memory(
         )
 
 
-@admin_router.get(
+@local_router.get(
     "/agents/{agent_id}/export",
     tags=["Agent"],
     operation_id="export_agent",
@@ -601,7 +494,7 @@ async def export_agent(
     )
 
 
-@admin_router.put(
+@local_router.put(
     "/agents/{agent_id}/import",
     tags=["Agent"],
     operation_id="import_agent",
@@ -659,7 +552,7 @@ async def import_agent(
     return "Agent import successful"
 
 
-@admin_router.put(
+@local_router.put(
     "/agents/{agent_id}/twitter/unlink",
     tags=["Agent"],
     operation_id="unlink_twitter",

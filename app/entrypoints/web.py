@@ -84,15 +84,6 @@ async def debug_chat_history(
 
 
 @chat_router.get(
-    "/{aid}/chat", tags=["Debug"], response_class=PlainTextResponse, deprecated=True
-)
-async def debug_chat_deprecated(
-    aid: str = Path(..., description="Agent ID"),
-) -> str:
-    return f"Deprecated: /{aid}/chat\n\nPlease use /debug/{aid}/chat instead"
-
-
-@chat_router.get(
     "/debug/{aid}/chat",
     tags=["Debug"],
     response_class=PlainTextResponse,
@@ -263,93 +254,8 @@ async def get_chat_history(
     return messages
 
 
-@chat_router.get(
-    "/agents/{aid}/chat/retry",
-    tags=["Chat"],
-    response_model=ChatMessage,
-    operation_id="retry_chat_deprecated",
-    deprecated=True,
-    summary="Retry Chat",
-)
-async def retry_chat_deprecated(
-    aid: str = Path(..., description="Agent ID"),
-    chat_id: str = Query(..., description="Chat ID to retry last message"),
-    db: AsyncSession = Depends(get_db),
-) -> ChatMessage:
-    """Retry the last message in a chat.
-
-    If the last message is from the agent, return it directly.
-    If the last message is from a user, generate a new agent response.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Query Parameters:**
-    * `chat_id` - Chat ID to retry
-
-    **Returns:**
-    * `ChatMessage` - Agent's response message
-
-    **Raises:**
-    * `404` - Agent not found or no messages found
-    * `429` - Quota exceeded
-    * `500` - Internal server error
-    """
-    # Get agent and check if exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get last message
-    last = await db.scalar(
-        select(ChatMessageTable)
-        .where(ChatMessageTable.agent_id == aid, ChatMessageTable.chat_id == chat_id)
-        .order_by(desc(ChatMessageTable.created_at))
-        .limit(1)
-    )
-    if not last:
-        raise IntentKitAPIError(
-            status_code=404, key="MessagesNotFound", message="No messages found"
-        )
-
-    last_message = ChatMessage.model_validate(last)
-
-    # If last message is from agent, return it
-    if (
-        last_message.author_type == AuthorType.AGENT
-        or last_message.author_type == AuthorType.SYSTEM
-    ):
-        return last_message.sanitize_privacy()
-
-    if last_message.author_type == AuthorType.SKILL:
-        error_message_create = await ChatMessageCreate.from_system_message(
-            SystemMessageType.SKILL_INTERRUPTED,
-            agent_id=aid,
-            chat_id=chat_id,
-            user_id=last_message.user_id,
-            author_id=aid,
-            thread_type=last_message.thread_type,
-            reply_to=last_message.id,
-        )
-        error_message = await error_message_create.save()
-        return error_message.sanitize_privacy()
-
-    # If last message is from user, generate a new agent response
-    return await create_chat_deprecated()
-
-
-@chat_router.put(
-    "/agents/{aid}/chat/retry/v2",
-    tags=["Chat"],
-    response_model=list[ChatMessage],
-    operation_id="retry_chat_put_deprecated",
-    summary="Retry Chat",
-    deprecated=True,
-)
 @chat_router.post(
-    "/agents/{aid}/chat/retry/v2",
+    "/agents/{aid}/chat/retry",
     tags=["Chat"],
     response_model=list[ChatMessage],
     operation_id="retry_chat",
@@ -420,91 +326,23 @@ async def retry_chat(
         return [last_message.sanitize_privacy(), error_message.sanitize_privacy()]
 
     # If last message is from user, generate a new agent response
-    return await create_chat()
+    # Re-create and execute the user message with hardcoded user_id
+    user_message = ChatMessageCreate(
+        id=str(XID()),
+        agent_id=aid,
+        chat_id=chat_id,
+        user_id="system",
+        author_id="system",
+        author_type=last_message.author_type or AuthorType.WEB,
+        thread_type=last_message.thread_type or AuthorType.WEB,
+        message=last_message.message or "",
+    )
+    response_messages = await execute_agent(user_message)
+    return [message.sanitize_privacy() for message in response_messages]
 
 
 @chat_router.post(
     "/agents/{aid}/chat",
-    tags=["Chat"],
-    response_model=ChatMessage,
-    operation_id="create_chat_deprecated",
-    deprecated=True,
-    summary="Chat",
-)
-async def create_chat_deprecated(
-    request: ChatMessageRequest,
-    aid: str = Path(..., description="Agent ID"),
-) -> ChatMessage:
-    """Create a private chat message and get agent's response.
-
-    **Process Flow:**
-    1. Validates agent quota
-    2. Creates a thread-specific context
-    3. Executes the agent with the query
-    4. Updates quota usage
-    5. Saves both input and output messages
-
-    > **Note:** This is for internal/private use and may have additional features or fewer
-    > restrictions compared to the public endpoint.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Request Body:**
-    * `request` - Chat message request object
-
-    **Returns:**
-    * `ChatMessage` - Agent's response message
-
-    **Raises:**
-    * `404` - Agent not found
-    * `429` - Quota exceeded
-    * `500` - Internal server error
-    """
-    # Get agent and validate quota
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
-        )
-
-    # Create user message
-    user_message = ChatMessageCreate(
-        id=str(XID()),
-        agent_id=aid,
-        chat_id=request.chat_id,
-        user_id=request.user_id,
-        author_id=request.user_id,
-        author_type=AuthorType.WEB,
-        thread_type=AuthorType.WEB,
-        message=request.message,
-        attachments=request.attachments,
-    )
-
-    # Execute agent
-    response_messages = await execute_agent(user_message)
-
-    # Create or active chat
-    chat = await Chat.get(request.chat_id)
-    if chat:
-        await chat.add_round()
-    else:
-        chat = ChatCreate(
-            id=request.chat_id,
-            agent_id=aid,
-            user_id=request.user_id,
-            summary=textwrap.shorten(request.message, width=20, placeholder="..."),
-            rounds=1,
-        )
-        await chat.save()
-
-    # Sanitize privacy for all messages
-    sanitized_messages = [message.sanitize_privacy() for message in response_messages]
-    return sanitized_messages[-1]
-
-
-@chat_router.post(
-    "/agents/{aid}/chat/v2",
     tags=["Chat"],
     response_model=list[ChatMessage],
     operation_id="chat",
@@ -547,13 +385,14 @@ async def create_chat(
             status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
         )
 
-    # Create user message
+    # Create user message - hardcode user_id to "system" for local single-user mode
+    user_id = "system"
     user_message = ChatMessageCreate(
         id=str(XID()),
         agent_id=aid,
         chat_id=request.chat_id,
-        user_id=request.user_id,
-        author_id=request.user_id,
+        user_id=user_id,
+        author_id=user_id,
         author_type=AuthorType.WEB,
         thread_type=AuthorType.WEB,
         message=request.message,
@@ -571,7 +410,7 @@ async def create_chat(
         chat = ChatCreate(
             id=request.chat_id,
             agent_id=aid,
-            user_id=request.user_id,
+            user_id=user_id,
             summary=textwrap.shorten(request.message, width=20, placeholder="..."),
             rounds=1,
         )
@@ -590,18 +429,14 @@ async def create_chat(
 )
 async def get_agent_chats(
     aid: str = Path(..., description="Agent ID"),
-    user_id: str = Query(..., description="User ID"),
 ):
-    """Get chat list for a specific agent and user.
+    """Get chat list for a specific agent.
 
     **Path Parameters:**
     * `aid` - Agent ID
 
-    **Query Parameters:**
-    * `user_id` - User ID
-
     **Returns:**
-    * `list[Chat]` - List of chats for the specified agent and user
+    * `list[Chat]` - List of chats for the specified agent
 
     **Raises:**
     * `404` - Agent not found
@@ -613,8 +448,8 @@ async def get_agent_chats(
             status_code=404, key="AgentNotFound", message="Agent not found"
         )
 
-    # Get chats by agent and user
-    chats = await Chat.get_by_agent_user(aid, user_id)
+    # Get chats by agent and hardcoded user_id "system"
+    chats = await Chat.get_by_agent_user(aid, "system")
     return chats
 
 
@@ -629,14 +464,6 @@ class ChatSummaryUpdate(BaseModel):
     )
 
 
-@chat_router.put(
-    "/agents/{aid}/chats/{chat_id}",
-    response_model=Chat,
-    summary="Update Chat Summary",
-    tags=["Chat"],
-    deprecated=True,
-    operation_id="update_chat_summary_deprecated",
-)
 @chat_router.patch(
     "/agents/{aid}/chats/{chat_id}",
     response_model=Chat,

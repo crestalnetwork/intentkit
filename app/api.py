@@ -29,16 +29,14 @@ from intentkit.utils.error import (
     request_validation_exception_handler,
 )
 
-from app.admin import (
-    admin_router,
-    credit_router,
-    health_router,
-    metadata_router,
-    schema_router,
-    user_router,
-)
 from app.entrypoints.agent_api import agent_api_router
 from app.entrypoints.web import chat_router
+from app.local import (
+    health_router,
+    local_router,
+    metadata_router,
+    schema_router,
+)
 from app.services.twitter.oauth2 import twitter_oauth2_router
 from app.services.twitter.oauth2_callback import twitter_callback_router
 
@@ -183,11 +181,9 @@ app.add_middleware(
 app.mount("/v1", agent_app)
 
 app.include_router(chat_router)
-app.include_router(admin_router)
+app.include_router(local_router)
 app.include_router(metadata_router)
-app.include_router(credit_router)
 app.include_router(schema_router)
-app.include_router(user_router)
 app.include_router(core_router)
 app.include_router(twitter_callback_router)
 app.include_router(twitter_oauth2_router)
