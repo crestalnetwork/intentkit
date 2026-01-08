@@ -170,6 +170,13 @@ class ChatMessageRequest(BaseModel):
             examples=[[{"type": "link", "url": "https://example.com"}]],
         ),
     ]
+    stream: Annotated[
+        bool | None,
+        Field(
+            None,
+            description="Optional flag to enable streaming response (SSE)",
+        ),
+    ]
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
@@ -181,6 +188,7 @@ class ChatMessageRequest(BaseModel):
                 "message": "Hello, what can you do?",
                 "search_mode": False,
                 "super_mode": False,
+                "stream": False,
             }
         },
     )

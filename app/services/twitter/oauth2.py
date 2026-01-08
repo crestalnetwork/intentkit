@@ -31,7 +31,7 @@ class TwitterAuthResponse(BaseModel):
     url: str
 
 
-twitter_oauth2_router = APIRouter(tags=["Auth"])
+twitter_oauth2_router = APIRouter(tags=["OAuth"])
 
 
 @twitter_oauth2_router.get(

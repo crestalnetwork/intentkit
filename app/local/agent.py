@@ -1,6 +1,6 @@
 import importlib
 import logging
-from typing import Annotated, TypedDict
+from typing import TypedDict
 
 from fastapi import (
     APIRouter,
@@ -8,7 +8,6 @@ from fastapi import (
     Depends,
     File,
     Path,
-    Query,
     Response,
     UploadFile,
 )
@@ -41,109 +40,12 @@ from intentkit.models.db import get_db
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 
-local_router = APIRouter()
+agent_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
 
-@local_router.post(
-    "/agent/validate",
-    tags=["Agent"],
-    status_code=204,
-    operation_id="validate_agent_create",
-)
-async def validate_agent_create(
-    input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
-) -> Response:
-    """Validate agent configuration.
-
-    **Request Body:**
-    * `agent` - Agent configuration
-
-    **Returns:**
-    * `204 No Content` - Agent configuration is valid
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 400: Invalid agent configuration
-        - 422: Invalid agent configuration from intentkit core
-        - 500: Server error
-    """
-    input.validate_autonomous_schedule()
-    return Response(status_code=204)
-
-
-@local_router.post(
-    "/agents/{agent_id}/validate",
-    tags=["Agent"],
-    status_code=204,
-    operation_id="validate_agent_update",
-)
-async def validate_agent_update(
-    agent_id: Annotated[str, Path(description="Agent ID")],
-    user_id: Annotated[
-        str | None, Query(description="Optional user ID for authorization check")
-    ] = None,
-    input: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
-) -> Response:
-    """Validate agent configuration.
-
-    **Request Body:**
-    * `agent` - Agent configuration
-
-    **Returns:**
-    * `204 No Content` - Agent configuration is valid
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 400: Invalid agent configuration
-        - 422: Invalid agent configuration from intentkit core
-        - 500: Server error
-    """
-    # if not input.owner:
-    #     raise IntentKitAPIError(
-    #         status_code=400, key="BadRequest", message="Owner is required"
-    #     )
-    # max_fee = 100
-    # if user_id:
-    #     if input.owner != user_id:
-    #         raise IntentKitAPIError(
-    #             status_code=400,
-    #             key="BadRequest",
-    #             message="Owner does not match user ID",
-    #         )
-    #     user = await User.get(user_id)
-    #     if user:
-    #         max_fee += user.nft_count * 10
-    # if input.fee_percentage and input.fee_percentage > max_fee:
-    #     raise IntentKitAPIError(
-    #         status_code=400, key="BadRequest", message="Fee percentage too high"
-    #     )
-    agent = await get_agent_by_id(agent_id)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="NotFound", message="Agent not found"
-        )
-    # max_fee = 100
-    if user_id:
-        if agent.owner != user_id:
-            raise IntentKitAPIError(
-                status_code=400,
-                key="BadRequest",
-                message="Owner does not match user ID",
-            )
-        # user = await User.get(user_id)
-        #     if user:
-        #         max_fee += user.nft_count * 10
-        # if input.fee_percentage and input.fee_percentage > max_fee:
-        # raise IntentKitAPIError(
-        #     status_code=400, key="BadRequest", message="Fee percentage too high"
-        # )
-    input.validate_autonomous_schedule()
-    return Response(status_code=204)
-
-
-@local_router.post(
+@agent_router.post(
     "/agents",
     tags=["Agent"],
     status_code=201,
@@ -184,7 +86,7 @@ async def create_agent_endpoint(
     )
 
 
-@local_router.put(
+@agent_router.put(
     "/agents/{agent_id}",
     tags=["Agent"],
     status_code=200,
@@ -227,7 +129,7 @@ async def override_agent_endpoint(
     )
 
 
-@local_router.get(
+@agent_router.get(
     "/agents",
     tags=["Agent"],
     operation_id="get_agents",
@@ -260,7 +162,7 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     ]
 
 
-@local_router.get(
+@agent_router.get(
     "/agents/{agent_id}",
     tags=["Agent"],
     operation_id="get_agent",
@@ -315,7 +217,7 @@ class MemCleanRequest(BaseModel):
     chat_id: str | None = Field("")
 
 
-@local_router.post(
+@agent_router.post(
     "/agent/clean-memory",
     tags=["Agent"],
     status_code=204,
@@ -357,7 +259,7 @@ async def clean_memory(
 
         await clean_agent_memory(
             request.agent_id,
-            request.chat_id,
+            request.chat_id or "",
             clean_agent=request.clean_agent_memory,
             clean_skill=request.clean_skills_memory,
         )
@@ -383,14 +285,14 @@ async def clean_memory(
         )
 
 
-@local_router.get(
+@agent_router.get(
     "/agents/{agent_id}/export",
     tags=["Agent"],
     operation_id="export_agent",
 )
 async def export_agent(
     agent_id: str = Path(..., description="ID of the agent to export"),
-) -> str:
+) -> Response:
     """Export agent configuration as YAML.
 
     **Path Parameters:**
@@ -494,7 +396,7 @@ async def export_agent(
     )
 
 
-@local_router.put(
+@agent_router.put(
     "/agents/{agent_id}/import",
     tags=["Agent"],
     operation_id="import_agent",
@@ -552,9 +454,9 @@ async def import_agent(
     return "Agent import successful"
 
 
-@local_router.put(
+@agent_router.put(
     "/agents/{agent_id}/twitter/unlink",
-    tags=["Agent"],
+    tags=["OAuth"],
     operation_id="unlink_twitter",
     response_class=Response,
 )

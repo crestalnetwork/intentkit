@@ -30,10 +30,11 @@ from intentkit.utils.error import (
 )
 
 from app.entrypoints.agent_api import agent_api_router
-from app.entrypoints.web import chat_router
 from app.local import (
+    agent_router,
+    chat_router,
+    debug_router,
     health_router,
-    local_router,
     metadata_router,
     schema_router,
 )
@@ -180,12 +181,13 @@ app.add_middleware(
 # Mount the Agent API sub-application
 app.mount("/v1", agent_app)
 
+app.include_router(agent_router)
 app.include_router(chat_router)
-app.include_router(local_router)
+app.include_router(debug_router)
 app.include_router(metadata_router)
 app.include_router(schema_router)
 app.include_router(core_router)
-app.include_router(twitter_callback_router)
+app.include_router(twitter_callback_router, include_in_schema=False)
 app.include_router(twitter_oauth2_router)
 app.include_router(health_router)
 

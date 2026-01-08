@@ -1,6 +1,9 @@
-"""IntentKit Web API Router."""
+"""IntentKit Local Chat API Router.
 
-import json
+This module provides chat endpoints for local single-user development.
+All user_id values are hardcoded to "system" for local mode.
+"""
+
 import logging
 import textwrap
 
@@ -10,19 +13,16 @@ from fastapi import (
     Depends,
     Path,
     Query,
-    Request,
     Response,
     status,
 )
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.core.agent import get_agent
-from intentkit.core.engine import execute_agent, thread_stats
-from intentkit.core.prompt import agent_prompt
-from intentkit.models.agent_data import AgentData
+from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
@@ -43,152 +43,6 @@ chat_router = APIRouter()
 
 
 @chat_router.get(
-    "/debug/{agent_id}/chats/{chat_id}/memory",
-    tags=["Debug"],
-    response_class=Response,
-    operation_id="debug_chat_memory",
-    summary="Chat Memory",
-)
-async def debug_chat_memory(
-    agent_id: str = Path(..., description="Agent id"),
-    chat_id: str = Path(..., description="Chat id"),
-) -> Response:
-    """Get chat memory for debugging."""
-    messages = await thread_stats(agent_id, chat_id)
-    # Convert messages to format JSON
-    formatted_json = json.dumps(
-        [message.model_dump() for message in messages], indent=4
-    )
-    return Response(content=formatted_json, media_type="application/json")
-
-
-@chat_router.get(
-    "/debug/{agent_id}/chats/{chat_id}",
-    tags=["Debug"],
-    response_class=PlainTextResponse,
-    operation_id="debug_chat_history",
-    summary="Chat History",
-)
-async def debug_chat_history(
-    agent_id: str = Path(..., description="Agent id"),
-    chat_id: str = Path(..., description="Chat id"),
-    db: AsyncSession = Depends(get_db),
-) -> str:
-    resp = f"Agent ID:\t{agent_id}\n\nChat ID:\t{chat_id}\n\n-------------------\n\n"
-    messages = await get_chat_history(agent_id, chat_id, user_id=None, db=db)
-    if messages:
-        resp += "".join(message.debug_format() for message in messages)
-    else:
-        resp += "No messages\n"
-    return resp
-
-
-@chat_router.get(
-    "/debug/{aid}/chat",
-    tags=["Debug"],
-    response_class=PlainTextResponse,
-    operation_id="debug_chat",
-    summary="Chat",
-)
-async def debug_chat(
-    request: Request,
-    aid: str = Path(..., description="Agent ID"),
-    q: str = Query(..., description="Query string"),
-    debug: bool | None = Query(None, description="Enable debug mode"),
-    thread: str | None = Query(
-        None, description="Thread ID for conversation tracking", deprecated=True
-    ),
-    chat_id: str | None = Query(None, description="Chat ID for conversation tracking"),
-) -> str:
-    """Debug mode: Chat with an AI agent.
-
-    **Process Flow:**
-    1. Validates agent quota
-    2. Creates a thread-specific context
-    3. Executes the agent with the query
-    4. Updates quota usage
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Query Parameters:**
-    * `q` - User's input query
-    * `debug` - Enable debug mode (show whole skill response)
-    * `thread` - Thread ID for conversation tracking
-    * `chat_id` - Chat ID for conversation tracking
-
-    **Returns:**
-    * `str` - Formatted chat response
-
-    **Raises:**
-    * `404` - Agent not found
-    * `429` - Quota exceeded
-    * `500` - Internal server error
-    """
-    if not q:
-        raise IntentKitAPIError(
-            status_code=400, key="EmptyQuery", message="Query string cannot be empty"
-        )
-
-    # Get agent and validate quota
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
-        )
-
-    # get thread_id from request ip
-    if not chat_id:
-        chat_id = thread if thread else request.client.host
-    user_input = ChatMessageCreate(
-        id=str(XID()),
-        agent_id=aid,
-        chat_id=chat_id,
-        user_id=agent.owner,
-        author_id="debug",
-        author_type=AuthorType.WEB,
-        thread_type=AuthorType.WEB,
-        message=q,
-    )
-
-    # Execute agent and get response
-    messages = await execute_agent(user_input)
-
-    resp = f"Agent ID:\t{aid}\n\nChat ID:\t{chat_id}\n\n-------------------\n\n"
-    resp += "[ Input: ]\n\n"
-    resp += f" {q} \n\n-------------------\n\n"
-
-    resp += "".join(message.debug_format() for message in messages)
-
-    resp += f"Total time cost: {sum([message.time_cost + message.cold_start_cost for message in messages]):.3f} seconds"
-
-    return resp
-
-
-@chat_router.get(
-    "/debug/{agent_id}/prompt",
-    tags=["Debug"],
-    response_class=PlainTextResponse,
-    operation_id="debug_agent_prompt",
-    summary="Agent Prompt",
-)
-async def debug_agent_prompt(
-    agent_id: str = Path(..., description="Agent id"),
-) -> str:
-    """Get agent's init and append prompts for debugging."""
-    agent = await get_agent(agent_id)
-    agent_data = await AgentData.get(agent_id)
-
-    init_prompt = agent_prompt(agent, agent_data)
-    append_prompt = agent.prompt_append or "None"
-
-    full_prompt = (
-        f"[Init Prompt]\n\n{init_prompt}\n\n[Append Prompt]\n\n{append_prompt}"
-    )
-    return full_prompt
-
-
-@chat_router.get(
     "/agents/{aid}/chat/history",
     tags=["Chat"],
     response_model=list[ChatMessage],
@@ -198,7 +52,6 @@ async def debug_agent_prompt(
 async def get_chat_history(
     aid: str = Path(..., description="Agent ID"),
     chat_id: str = Query(..., description="Chat ID to get history for"),
-    user_id: str | None = Query(None, description="User ID"),
     db: AsyncSession = Depends(get_db),
 ) -> list[ChatMessage]:
     """Get last 50 messages for a specific chat.
@@ -230,20 +83,6 @@ async def get_chat_history(
         .limit(50)
     )
     messages = result.all()
-
-    # If the user_id exists, check if the chat belongs to the user
-    if user_id:
-        for message in messages:
-            if message.user_id == user_id:
-                break
-            if message.author_id == user_id:
-                break
-        else:
-            raise IntentKitAPIError(
-                status_code=403,
-                key="ChatNotOwned",
-                message="Chat does not belong to user",
-            )
 
     # Reverse messages to get chronological order
     messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
@@ -317,9 +156,9 @@ async def retry_chat(
             SystemMessageType.SKILL_INTERRUPTED,
             agent_id=aid,
             chat_id=chat_id,
-            user_id=last_message.user_id,
+            user_id="system",
             author_id=aid,
-            thread_type=last_message.thread_type,
+            thread_type=last_message.thread_type or AuthorType.WEB,
             reply_to=last_message.id,
         )
         error_message = await error_message_create.save()
@@ -347,11 +186,18 @@ async def retry_chat(
     response_model=list[ChatMessage],
     operation_id="chat",
     summary="Chat",
+    description=(
+        "Create a chat message and get agent's response. "
+        "When `stream: true` is set in the request body, the response will be a Server-Sent Events (SSE) stream. "
+        "Each event has the type 'message' and contains a ChatMessage object as JSON data. "
+        "The SSE format follows the standard: `event: message\\ndata: {ChatMessage JSON}\\n\\n`. "
+        "This allows real-time streaming of agent responses as they are generated."
+    ),
 )
 async def create_chat(
     request: ChatMessageRequest,
     aid: str = Path(..., description="Agent ID"),
-) -> list[ChatMessage]:
+) -> list[ChatMessage] | StreamingResponse:
     """Create a chat message and get agent's response.
 
     **Process Flow:**
@@ -361,17 +207,17 @@ async def create_chat(
     4. Updates quota usage
     5. Saves both input and output messages
 
-    > **Note:** This is the public-facing endpoint with appropriate rate limiting
-    > and security measures.
+    > **Note:** This is the local-facing endpoint for single-user mode.
 
     **Path Parameters:**
     * `aid` - Agent ID
 
     **Request Body:**
-    * `request` - Chat message request object
+    * `request` - Chat message request object (includes optional `stream` field)
 
     **Returns:**
     * `list[ChatMessage]` - List of chat messages including both user input and agent response
+    * OR `StreamingResponse` - SSE stream when `stream: true`
 
     **Raises:**
     * `404` - Agent not found
@@ -399,7 +245,20 @@ async def create_chat(
         attachments=request.attachments,
     )
 
-    # Execute agent
+    # Handle streaming mode
+    if request.stream:
+
+        async def stream_gen():
+            async for chunk in stream_agent(user_message):
+                yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+
+        return StreamingResponse(
+            stream_gen(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+        )
+
+    # Execute agent (non-streaming mode)
     response_messages = await execute_agent(user_message)
 
     # Create or active chat
@@ -423,7 +282,7 @@ async def create_chat(
 @chat_router.get(
     "/agents/{aid}/chats",
     response_model=list[Chat],
-    summary="User Chat List",
+    summary="Chat List",
     tags=["Chat"],
     operation_id="get_agent_chats",
 )
@@ -459,7 +318,7 @@ class ChatSummaryUpdate(BaseModel):
     summary: str = Field(
         ...,
         description="New summary text for the chat",
-        examples=["User asked about product features and pricing"],
+        examples=["Asked about product features and pricing"],
         min_length=1,
     )
 
@@ -616,60 +475,3 @@ async def get_skill_history(
     messages = [message.sanitize_privacy() for message in messages]
 
     return messages
-
-
-@chat_router.get(
-    "/messages/{message_id}",
-    tags=["Chat"],
-    response_model=ChatMessage,
-    operation_id="get_chat_message",
-    summary="Get Chat Message",
-    responses={
-        status.HTTP_200_OK: {
-            "description": "Successfully retrieved the chat message",
-            "model": ChatMessage,
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "You don't have permission to access this message",
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Message not found",
-        },
-    },
-)
-async def get_chat_message(
-    message_id: str = Path(..., description="Message ID"),
-    user_id: str | None = Query(None, description="User ID for authorization check"),
-) -> ChatMessage:
-    """Get a specific chat message by its ID.
-
-    **Path Parameters:**
-    * `message_id` - Message ID
-
-    **Query Parameters:**
-    * `user_id` - Optional User ID for authorization check
-
-    **Returns:**
-    * `ChatMessage` - The requested chat message
-
-    **Raises:**
-    * `404` - Message not found
-    * `403` - Forbidden if user_id doesn't match the message's user_id
-    """
-    message = await ChatMessage.get(message_id)
-    if not message:
-        raise IntentKitAPIError(
-            status_code=404,
-            key="MessageNotFound",
-            message=f"Message with ID {message_id} not found",
-        )
-
-    # If user_id is provided, check if it matches the message's user_id
-    if user_id and message.user_id and user_id != message.user_id:
-        raise IntentKitAPIError(
-            status_code=403,
-            key="AccessForbidden",
-            message="You don't have permission to access this message",
-        )
-
-    return message.sanitize_privacy()
