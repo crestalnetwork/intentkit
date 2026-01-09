@@ -52,7 +52,7 @@ class AddAutonomousTask(SystemBaseTool):
         "If the user does not explicitly state that the condition task should be executed continuously, "
         "then add in the task prompt that it will delete itself after successful execution. "
     )
-    args_schema = AddAutonomousTaskInput
+    args_schema: type[AddAutonomousTaskInput] = AddAutonomousTaskInput
 
     async def _arun(
         self,

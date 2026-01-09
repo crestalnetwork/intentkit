@@ -28,7 +28,7 @@ class DeleteAutonomousTask(SystemBaseTool):
         "Delete an autonomous task configuration from the agent. "
         "Requires the task ID to identify which task to remove."
     )
-    args_schema = DeleteAutonomousTaskInput
+    args_schema: type[DeleteAutonomousTaskInput] = DeleteAutonomousTaskInput
 
     async def _arun(
         self,

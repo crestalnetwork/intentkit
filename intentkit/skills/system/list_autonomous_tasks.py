@@ -26,7 +26,7 @@ class ListAutonomousTasks(SystemBaseTool):
         "List all autonomous task configurations for the agent. "
         "Returns details about each task including scheduling, prompts, and status."
     )
-    args_schema = ListAutonomousTasksInput
+    args_schema: type[ListAutonomousTasksInput] = ListAutonomousTasksInput
 
     async def _arun(
         self,

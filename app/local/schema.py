@@ -1,6 +1,8 @@
+import importlib
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
@@ -20,9 +22,65 @@ schema_router = APIRouter()
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
+def _is_skill_category_available(category: str) -> bool:
+    """Check if a skill category is available based on its available() function.
+
+    Args:
+        category: The skill category name
+
+    Returns:
+        True if the skill is available, False otherwise
+    """
+    try:
+        module = importlib.import_module(f"intentkit.skills.{category}")
+        if hasattr(module, "available"):
+            return module.available()
+        # If no available function, assume it's available
+        return True
+    except Exception as e:
+        logger.warning(f"Could not import skill category '{category}': {e}")
+        return False
+
+
+def _simplify_skill_schema(skill_schema: dict[str, Any]) -> dict[str, Any]:
+    """Simplify skill schema to only keep enabled and states fields.
+
+    Args:
+        skill_schema: The original skill schema
+
+    Returns:
+        Simplified schema with only enabled, states, title, description, and type
+    """
+    simplified: dict[str, Any] = {}
+
+    # Keep basic metadata
+    for key in ["title", "description", "type"]:
+        if key in skill_schema:
+            simplified[key] = skill_schema[key]
+
+    # Keep only enabled and states in properties
+    original_properties = skill_schema.get("properties", {})
+    if original_properties:
+        simplified_properties: dict[str, Any] = {}
+        if "enabled" in original_properties:
+            simplified_properties["enabled"] = original_properties["enabled"]
+        if "states" in original_properties:
+            simplified_properties["states"] = original_properties["states"]
+        if simplified_properties:
+            simplified["properties"] = simplified_properties
+
+    return simplified
+
+
 @schema_router.get("/schema/agent", tags=["Schema"], operation_id="get_agent_schema")
 async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     """Get the JSON schema for Agent model with all $ref references resolved.
+
+    For local mode, this function applies additional adaptations:
+    - Filters out skill categories where available() returns False
+    - Simplifies skill schemas to only keep enabled and states fields
+    - Removes autonomous configuration
+    - Removes telegram-related fields
 
     Updates the model property in the schema based on LLMModelInfo.get results.
     For each model in the enum list:
@@ -33,8 +91,44 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     **Returns:**
     * `JSONResponse` - The complete JSON schema for the Agent model with application/json content type
     """
+    schema = await Agent.get_json_schema(db)
+    properties = schema.get("properties", {})
+
+    # Remove autonomous field
+    properties.pop("autonomous", None)
+
+    # Remove telegram-related fields
+    properties.pop("telegram_entrypoint_enabled", None)
+    properties.pop("telegram_entrypoint_prompt", None)
+    properties.pop("telegram_config", None)
+
+    # Remove autonomous group from x-groups
+    if "x-groups" in schema:
+        schema["x-groups"] = [
+            group for group in schema["x-groups"] if group.get("id") != "autonomous"
+        ]
+
+    # Filter and simplify skills
+    skills_property = properties.get("skills", {})
+    if skills_property and "properties" in skills_property:
+        original_skills = skills_property["properties"]
+        filtered_skills: dict[str, Any] = {}
+
+        for category, skill_schema in original_skills.items():
+            # Check if skill category is available
+            if not _is_skill_category_available(category):
+                logger.info(
+                    f"Filtered out skill '{category}': not available in current config"
+                )
+                continue
+
+            # Simplify the skill schema
+            filtered_skills[category] = _simplify_skill_schema(skill_schema)
+
+        skills_property["properties"] = filtered_skills
+
     return JSONResponse(
-        content=await Agent.get_json_schema(db),
+        content=schema,
         media_type="application/json",
     )
 

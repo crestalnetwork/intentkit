@@ -58,7 +58,7 @@ class EditAutonomousTask(SystemBaseTool):
         "Only provided fields will be updated; omitted fields will keep their current values. "
         "The minutes and cron fields are mutually exclusive. Do not provide both of them. "
     )
-    args_schema = EditAutonomousTaskInput
+    args_schema: type[EditAutonomousTaskInput] = EditAutonomousTaskInput
 
     async def _arun(
         self,

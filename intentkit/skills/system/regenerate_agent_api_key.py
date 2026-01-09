@@ -37,7 +37,7 @@ class RegenerateAgentApiKey(SystemBaseTool):
         "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
         "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
-    args_schema = RegenerateAgentApiKeyInput
+    args_schema: type[RegenerateAgentApiKeyInput] = RegenerateAgentApiKeyInput
 
     async def _arun(self, **kwargs) -> RegenerateAgentApiKeyOutput:
         """Generate and set a new API key for the agent."""
