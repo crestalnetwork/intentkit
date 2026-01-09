@@ -36,6 +36,26 @@ export default function RootLayout({
                       IntentKit
                     </span>
                   </Link>
+                  <nav className="flex items-center space-x-6 text-sm font-medium">
+                    <Link
+                      href="/"
+                      className="transition-colors hover:text-foreground/80 text-foreground"
+                    >
+                      Agents
+                    </Link>
+                    <Link
+                      href="/timeline"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                    >
+                      Timeline
+                    </Link>
+                    <Link
+                      href="/posts"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60"
+                    >
+                      Posts
+                    </Link>
+                  </nav>
                 </div>
               </div>
             </header>

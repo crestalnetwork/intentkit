@@ -57,10 +57,10 @@ function PostContent() {
     return (
         <div className="container py-10 max-w-4xl">
             <div className="mb-8">
-                <Link href="/">
+                <Link href="/posts">
                     <Button variant="ghost" className="pl-0 hover:pl-0 hover:bg-transparent text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Home
+                        Back to Posts
                     </Button>
                 </Link>
             </div>
