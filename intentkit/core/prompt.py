@@ -363,6 +363,22 @@ def build_internal_info_prompt(context: AgentContext) -> str:
     return internal_info
 
 
+def _build_system_skills_section(context: AgentContext) -> str:
+    """Build system skills guide section if running in private context."""
+    if not context.is_private:
+        return ""
+
+    return (
+        "## System Skills Guide\n\n"
+        "You have access to several system skills for internal operations:\n"
+        "- call_agent: Call another agent to delegate tasks or request information.\n"
+        "- create_post: Publish long-form content or articles.\n"
+        "- create_activity: Create a new activity on your timeline to record your actions.\n"
+        "- recent_activities: Retrieve your recent activities to maintain context.\n\n"
+        "IMPORTANT: Do not use create_post or create_activity unless the user explicitly asks you to do so.\n\n"
+    )
+
+
 # ============================================================================
 # MAIN PROMPT FACTORY FUNCTION
 # ============================================================================
@@ -375,6 +391,10 @@ async def build_system_prompt(
 
     base_prompt = build_agent_prompt(agent, agent_data)
     final_system_prompt = await explain_prompt(escape_prompt(base_prompt))
+
+    system_skills_guide = _build_system_skills_section(context)
+    if system_skills_guide:
+        final_system_prompt = f"{final_system_prompt}{system_skills_guide}"
 
     entrypoint_prompt = await build_entrypoint_prompt(agent, context)
     if entrypoint_prompt:

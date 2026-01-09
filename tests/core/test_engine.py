@@ -169,9 +169,7 @@ async def test_stream_agent_flow(mock_agent):
         patch("intentkit.models.db.engine", new=MagicMock()),
         patch("intentkit.models.db.AsyncSession", new=MagicMock()) as mock_session_cls,
         patch("intentkit.core.engine.expense_message", new_callable=AsyncMock),
-        patch(
-            "intentkit.core.engine.clear_thread_memory", new_callable=AsyncMock
-        ) as mock_clear_memory,
+        patch("intentkit.core.engine.clear_thread_memory", new_callable=AsyncMock),
     ):
         mock_get_agent.return_value = mock_agent
         mock_executor_func.return_value = (mock_executor_instance, 0.1)
