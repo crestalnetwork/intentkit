@@ -1,7 +1,7 @@
 import json
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 
 from intentkit.models.agent_activity import (
     AgentActivity,
@@ -67,3 +67,24 @@ async def get_agent_activity(activity_id: str) -> AgentActivity | None:
             )
 
     return activity
+
+
+async def get_agent_activities(agent_id: str, limit: int = 10) -> list[AgentActivity]:
+    """Get recent activities for a specific agent.
+
+    Args:
+        agent_id: The ID of the agent.
+        limit: Maximum number of activities to retrieve (default: 10).
+
+    Returns:
+        List of AgentActivity objects, ordered by created_at descending.
+    """
+    async with get_session() as session:
+        result = await session.execute(
+            select(AgentActivityTable)
+            .where(AgentActivityTable.agent_id == agent_id)
+            .order_by(desc(AgentActivityTable.created_at))
+            .limit(limit)
+        )
+        db_activities = result.scalars().all()
+        return [AgentActivity.model_validate(activity) for activity in db_activities]

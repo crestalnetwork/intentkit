@@ -5,7 +5,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 import intentkit.core.agent_activity as agent_activity_module
-from intentkit.core.agent_activity import create_agent_activity, get_agent_activity
+from intentkit.core.agent_activity import (
+    create_agent_activity,
+    get_agent_activities,
+    get_agent_activity,
+)
 from intentkit.models.agent_activity import (
     AgentActivity,
     AgentActivityCreate,
@@ -151,3 +155,67 @@ async def test_get_agent_activity_db_miss(monkeypatch):
 
     assert result is None
     assert not mock_redis.set.called
+
+
+@pytest.mark.asyncio
+async def test_get_agent_activities(monkeypatch):
+    agent_id = "agent-1"
+
+    # Create mock db activities
+    db_activities = [
+        AgentActivityTable(
+            id=f"activity-{i}",
+            agent_id=agent_id,
+            text=f"Activity {i}",
+            images=None,
+            video=None,
+            post_id=None,
+            created_at=datetime.now(),
+        )
+        for i in range(3)
+    ]
+
+    # Mock Session
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = db_activities
+    mock_result.scalars.return_value = mock_scalars
+    mock_session.execute.return_value = mock_result
+
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__aenter__.return_value = mock_session
+    mock_session_ctx.__aexit__.return_value = None
+    monkeypatch.setattr(agent_activity_module, "get_session", lambda: mock_session_ctx)
+
+    result = await get_agent_activities(agent_id, limit=10)
+
+    # Verify
+    mock_session.execute.assert_called_once()
+    assert len(result) == 3
+    for i, activity in enumerate(result):
+        assert isinstance(activity, AgentActivity)
+        assert activity.id == f"activity-{i}"
+        assert activity.text == f"Activity {i}"
+
+
+@pytest.mark.asyncio
+async def test_get_agent_activities_empty(monkeypatch):
+    agent_id = "agent-no-activities"
+
+    # Mock Session with empty result
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = []
+    mock_result.scalars.return_value = mock_scalars
+    mock_session.execute.return_value = mock_result
+
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__aenter__.return_value = mock_session
+    mock_session_ctx.__aexit__.return_value = None
+    monkeypatch.setattr(agent_activity_module, "get_session", lambda: mock_session_ctx)
+
+    result = await get_agent_activities(agent_id)
+
+    assert result == []
