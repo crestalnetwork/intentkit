@@ -58,17 +58,36 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
         skillKey: string,
         value: string
     ) => {
-        const newFormData = {
-            ...currentFormData,
-            [categoryKey]: {
-                ...currentFormData[categoryKey],
-                states: {
-                    ...currentFormData[categoryKey]?.states,
-                    [skillKey]: value,
+        const categoryData = currentFormData[categoryKey] || {};
+        const currentStates = categoryData.states || {};
+        
+        if (value === "disabled") {
+            // When disabling, remove the skill from states using object filter
+            const restStates = Object.fromEntries(
+                Object.entries(currentStates).filter(([key]) => key !== skillKey)
+            );
+            const newFormData = {
+                ...currentFormData,
+                [categoryKey]: {
+                    ...categoryData,
+                    states: restStates,
                 },
-            },
-        };
-        handleChange(newFormData);
+            };
+            handleChange(newFormData);
+        } else {
+            // When enabling (private), add the skill to states
+            const newFormData = {
+                ...currentFormData,
+                [categoryKey]: {
+                    ...categoryData,
+                    states: {
+                        ...currentStates,
+                        [skillKey]: value,
+                    },
+                },
+            };
+            handleChange(newFormData);
+        }
     };
 
     // Sort categories alphabetically by title

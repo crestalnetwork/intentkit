@@ -97,7 +97,7 @@ export function SkillCategoryCard({
                                 key={index}
                                 className="flex items-center justify-between gap-4"
                             >
-                                <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
                                     <label className="text-sm font-medium">
                                         {skill.title}
                                     </label>
@@ -107,17 +107,18 @@ export function SkillCategoryCard({
                                         </p>
                                     )}
                                 </div>
-                                <select
-                                    value={skill.value}
-                                    onChange={(e) => skill.onChange(e.target.value)}
-                                    className="h-8 px-2 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring min-w-[120px]"
+                                {/* Checkbox: checked = private, unchecked = disabled */}
+                                <label
+                                    className="relative inline-flex items-center cursor-pointer"
                                 >
-                                    {skill.options.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={skill.value === "private"}
+                                        onChange={(e) => skill.onChange(e.target.checked ? "private" : "disabled")}
+                                    />
+                                    <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                                </label>
                             </div>
                         ))}
                     </div>

@@ -65,12 +65,49 @@ export default function NewAgentPage() {
 
     const uiSchema = useMemo(() => generateUiSchema(schema), [schema]);
 
+    // Clean up skills data before submission:
+    // - Remove categories where enabled=false
+    // - Remove skill states that are 'disabled'
+    const cleanSkillsData = (data: Record<string, unknown>): Record<string, unknown> => {
+        const skills = data.skills as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
+        if (!skills) return data;
+
+        const cleanedSkills: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
+        for (const [categoryKey, categoryData] of Object.entries(skills)) {
+            // Skip categories that are explicitly disabled
+            if (categoryData.enabled === false) continue;
+
+            // Clean up states - only keep non-disabled skills
+            const states = categoryData.states || {};
+            const cleanedStates: Record<string, string> = {};
+            for (const [skillKey, skillValue] of Object.entries(states)) {
+                if (skillValue !== 'disabled') {
+                    cleanedStates[skillKey] = skillValue;
+                }
+            }
+
+            // Only include category if it's enabled
+            if (categoryData.enabled === true) {
+                cleanedSkills[categoryKey] = {
+                    enabled: true,
+                    states: Object.keys(cleanedStates).length > 0 ? cleanedStates : undefined,
+                };
+            }
+        }
+
+        return {
+            ...data,
+            skills: Object.keys(cleanedSkills).length > 0 ? cleanedSkills : undefined,
+        };
+    };
+
     const handleSubmit = async ({ formData }: IChangeEvent<Record<string, unknown>>) => {
         if (!formData) return;
         setIsSubmitting(true);
         setError(null);
         try {
-            await agentApi.create(formData);
+            const cleanedData = cleanSkillsData(formData);
+            await agentApi.create(cleanedData);
             router.push("/");
         } catch (err) {
             console.error("Error creating agent:", err);

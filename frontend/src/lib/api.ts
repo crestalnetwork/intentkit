@@ -53,7 +53,10 @@ export const agentApi = {
     if (!response.ok) {
       throw new Error(`Failed to fetch agent schema: ${response.statusText}`);
     }
-    return response.json();
+    const schema = await response.json();
+    // Remove $schema field as AJV doesn't support draft-2020-12
+    delete schema.$schema;
+    return schema;
   },
 
   /**
