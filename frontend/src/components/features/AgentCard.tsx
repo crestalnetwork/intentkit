@@ -57,7 +57,7 @@ export function AgentCard({ agent }: AgentCardProps) {
                             </div>
                         </div>
                     </div>
-                    <CardDescription className="line-clamp-2 min-h-[2.5rem] mt-3 text-xs">
+                    <CardDescription className="line-clamp-3 min-h-[3rem] mt-3 text-xs break-words">
                         {displayDescription}
                     </CardDescription>
                 </CardHeader>

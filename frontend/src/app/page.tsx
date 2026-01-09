@@ -1,8 +1,9 @@
 
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, RefreshCw } from "lucide-react";
+import { Bot, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +19,6 @@ export default function HomePage() {
     data: agents,
     isLoading: isAgentsLoading,
     error: agentsError,
-    refetch: refetchAgents,
-    isRefetching: isAgentsRefetching,
   } = useQuery({
     queryKey: ["agents"],
     queryFn: agentApi.getAll,
@@ -35,18 +34,12 @@ export default function HomePage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchAgents()}
-            disabled={isAgentsRefetching}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${isAgentsRefetching ? "animate-spin" : ""
-                }`}
-            />
-            Refresh Agents
-          </Button>
+          <Link href="/agents/new">
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              New Agent
+            </Button>
+          </Link>
         </div>
       </div>
 
