@@ -3,6 +3,7 @@
 import logging
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.tavily.base import TavilyBaseTool
 from intentkit.skills.tavily.tavily_extract import TavilyExtract
@@ -80,3 +81,8 @@ def get_tavily_skill(
     else:
         logger.warning(f"Unknown Tavily skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.tavily_api_key)

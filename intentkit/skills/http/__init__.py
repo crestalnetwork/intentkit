@@ -87,3 +87,8 @@ def get_http_skill(
     else:
         logger.warning(f"Unknown HTTP skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

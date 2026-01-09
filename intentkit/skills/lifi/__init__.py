@@ -134,3 +134,8 @@ def get_lifi_skill(
     else:
         logger.error(f"[LiFi_Skills] Unknown LiFi skill requested: {name}")
         raise ValueError(f"Unknown LiFi skill: {name}")
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

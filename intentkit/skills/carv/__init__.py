@@ -113,3 +113,8 @@ def get_carv_skill(
         # This handles cases where a name might be in config but not in our map
         logger.warning(f"Attempted to get unknown Carv skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

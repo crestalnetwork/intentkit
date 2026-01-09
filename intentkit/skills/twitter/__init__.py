@@ -4,6 +4,7 @@ import logging
 from typing import TypedDict
 
 from intentkit.clients import TwitterClientConfig
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.twitter.base import TwitterBaseTool
 from intentkit.skills.twitter.follow_user import TwitterFollowUser
@@ -120,3 +121,13 @@ def get_twitter_skill(
     else:
         logger.warning(f"Unknown Twitter skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return all(
+        [
+            bool(system_config.twitter_oauth2_client_id),
+            bool(system_config.twitter_oauth2_client_secret),
+        ]
+    )

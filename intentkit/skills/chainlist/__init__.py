@@ -47,3 +47,8 @@ def get_chainlist_skill(
         return _cache[name]
     else:
         raise ValueError(f"Unknown chainlist skill: {name}")
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

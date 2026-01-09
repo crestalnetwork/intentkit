@@ -3,6 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dapplooker.base import DappLookerBaseTool
 from intentkit.skills.dapplooker.dapplooker_token_data import DappLookerTokenData
@@ -74,3 +75,8 @@ def get_dapplooker_skill(
     else:
         logger.warning(f"Unknown DappLooker skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.dapplooker_api_key)

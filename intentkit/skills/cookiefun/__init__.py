@@ -73,3 +73,8 @@ def get_cookiefun_skill(
             raise ValueError(f"Unknown CookieFun skill: {name}")
 
     return _cache[name]
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

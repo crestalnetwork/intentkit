@@ -51,6 +51,14 @@ async def get_skills(
 
 - **Caching**: If the skill is stateless, you can add a global `_cache` for it, to avoid re-create the skill object every time.
 
+- **Availability Check**: The `__init__.py` must also have the function:
+```python
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+```
+This function checks if all required system configuration variables exist. If the skill requires a platform-hosted API key (e.g., `config.tavily_api_key`), return whether that key is present. If the skill has no system config dependencies (e.g., only uses agent-owner provided keys), return `True`.
+
+
 ### 4. Visual Assets
 
 A square image is needed in the category folder.

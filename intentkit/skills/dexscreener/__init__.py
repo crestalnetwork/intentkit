@@ -95,3 +95,8 @@ def get_dexscreener_skills(
 
     _cache[name] = skill_class()
     return _cache[name]
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

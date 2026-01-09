@@ -93,3 +93,8 @@ def get_web_scraper_skill(
     else:
         logger.warning(f"Unknown web scraper skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

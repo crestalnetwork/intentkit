@@ -111,3 +111,8 @@ def get_cryptocompare_skill(
     else:
         logger.warning(f"Unknown CryptoCompare skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

@@ -84,3 +84,8 @@ def get_casino_skill(
         return _cache[name]
     else:
         raise ValueError(f"Unknown Casino skill: {name}")
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

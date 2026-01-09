@@ -3,6 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.heurist.base import HeuristBaseTool
 from intentkit.skills.heurist.image_generation_animagine_xl import (
@@ -122,3 +123,8 @@ def get_heurist_skill(
     else:
         logger.warning(f"Unknown Heurist skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.heurist_api_key)

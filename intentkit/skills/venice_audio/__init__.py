@@ -96,3 +96,8 @@ def get_venice_audio_skill(
     # Cache and return the newly created instance
     _cache[name] = VeniceAudioTool()
     return _cache[name]
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

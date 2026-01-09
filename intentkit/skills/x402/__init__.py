@@ -62,3 +62,8 @@ def _get_skill(name: str) -> X402BaseSkill | None:
         return _cache[name]
     logger.warning("Unknown x402 skill requested: %s", name)
     return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

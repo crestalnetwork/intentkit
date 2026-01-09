@@ -48,3 +48,8 @@ def get_unrealspeech_skill(
         return _cache[name]
     else:
         raise ValueError(f"Unknown UnrealSpeech skill: {name}")
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

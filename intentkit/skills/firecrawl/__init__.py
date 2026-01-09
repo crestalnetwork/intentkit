@@ -3,6 +3,7 @@
 import logging
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
 from intentkit.skills.firecrawl.clear import FirecrawlClearIndexedContent
@@ -92,3 +93,8 @@ def get_firecrawl_skill(
         return _cache[name]
     else:
         raise ValueError(f"Unknown Firecrawl skill: {name}")
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.firecrawl_api_key)

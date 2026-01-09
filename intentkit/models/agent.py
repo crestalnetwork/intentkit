@@ -1690,7 +1690,7 @@ class Agent(AgentCreate, AgentPublicInfo):
     @classmethod
     async def get_json_schema(
         cls,
-        db: AsyncSession = None,
+        db: AsyncSession,
         filter_owner_api_skills: bool = False,
     ) -> dict[str, Any]:
         """Get the JSON schema for Agent model with all $ref references resolved.
@@ -1705,11 +1705,6 @@ class Agent(AgentCreate, AgentPublicInfo):
         Returns:
             Dict containing the complete JSON schema for the Agent model
         """
-        # Get database session if not provided
-        if db is None:
-            async with get_session() as session:
-                return await cls.get_json_schema(session, filter_owner_api_skills)
-
         # Get the schema file path relative to this file
         current_dir = Path(__file__).parent
         agent_schema_path = current_dir / "agent_schema.json"

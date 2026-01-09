@@ -103,3 +103,8 @@ def get_system_skill(
     else:
         logger.warning(f"Unknown system skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

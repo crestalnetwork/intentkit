@@ -19,3 +19,8 @@ async def get_skills(
         JupiterGetPrice(api_key=api_key),
         JupiterGetQuote(api_key=api_key),
     ]
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

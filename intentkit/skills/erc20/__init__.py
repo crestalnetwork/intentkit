@@ -4,6 +4,7 @@ from typing import TypedDict
 
 from coinbase_agentkit import erc20_action_provider
 
+from intentkit.config.config import config as system_config
 from intentkit.models.agent import Agent
 from intentkit.skills.base import (
     SkillConfig,
@@ -48,3 +49,14 @@ async def get_skills(
             if action.name.endswith(skill):
                 tools.append(action_to_structured_tool(action))
     return tools
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return all(
+        [
+            bool(system_config.cdp_api_key_id),
+            bool(system_config.cdp_api_key_secret),
+            bool(system_config.cdp_wallet_secret),
+        ]
+    )

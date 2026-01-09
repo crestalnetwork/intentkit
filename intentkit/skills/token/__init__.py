@@ -100,3 +100,8 @@ def get_token_skill(
         _cache[name] = skill
 
     return skill
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

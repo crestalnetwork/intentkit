@@ -99,3 +99,8 @@ def get_dune_skill(name: str) -> DuneBaseTool | None:
     except ImportError as e:
         logger.error("Failed to import skill %s: %s", name, e)
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True

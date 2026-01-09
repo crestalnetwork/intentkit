@@ -3,6 +3,7 @@
 import logging
 from typing import NotRequired, TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.allora.base import AlloraBaseTool
 from intentkit.skills.allora.price import AlloraGetPrice
 from intentkit.skills.base import SkillConfig, SkillState
@@ -74,3 +75,8 @@ def get_allora_skill(
     else:
         logger.warning(f"Unknown Allora skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.allora_api_key)

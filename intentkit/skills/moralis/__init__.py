@@ -104,3 +104,8 @@ def get_wallet_skill(
     return skill_classes[name](
         api_key=api_key,
     )
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return bool(system_config.moralis_api_key)

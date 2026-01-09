@@ -271,3 +271,8 @@ def get_defillama_skill(
     else:
         logger.warning(f"Unknown DeFi Llama skill: {name}")
         return None
+
+
+def available() -> bool:
+    """Check if this skill category is available based on system config."""
+    return True
