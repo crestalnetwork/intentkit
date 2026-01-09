@@ -131,7 +131,7 @@ class X402Pay(X402BaseSkill):
                     max_value=max_value,
                 )
 
-                return f"Status: {response.status_code}\nContent: {response.text}"
+                return self.format_response(response)
         except ValueError as exc:
             # x402HttpxClient raises ValueError when payment exceeds max_value
             raise ToolException(str(exc)) from exc

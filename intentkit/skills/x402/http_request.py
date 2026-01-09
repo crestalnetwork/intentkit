@@ -111,7 +111,7 @@ class X402HttpRequest(X402BaseSkill):
                     url=url,
                 )
 
-                return f"Status: {response.status_code}\nContent: {response.text}"
+                return self.format_response(response)
         except ValueError as exc:
             raise ToolException(str(exc)) from exc
         except httpx.TimeoutException as exc:

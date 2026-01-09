@@ -17,6 +17,61 @@ from intentkit.skills.onchain import IntentKitOnChainSkill
 
 logger = logging.getLogger(__name__)
 
+# Common HTTP status code descriptions
+HTTP_STATUS_PHRASES: dict[int, str] = {
+    200: "OK",
+    201: "Created",
+    202: "Accepted",
+    204: "No Content",
+    301: "Moved Permanently",
+    302: "Found",
+    304: "Not Modified",
+    400: "Bad Request",
+    401: "Unauthorized",
+    402: "Payment Required",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    408: "Request Timeout",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+}
+
+# Maximum content length to return (in bytes)
+MAX_CONTENT_LENGTH = 1000
+
+
+def get_status_text(status_code: int) -> str:
+    """Get human-readable status text for an HTTP status code."""
+    phrase = HTTP_STATUS_PHRASES.get(status_code)
+    if phrase:
+        return f"{status_code} {phrase}"
+    # Fallback for unknown codes
+    if 100 <= status_code < 200:
+        return f"{status_code} Informational"
+    elif 200 <= status_code < 300:
+        return f"{status_code} Success"
+    elif 300 <= status_code < 400:
+        return f"{status_code} Redirect"
+    elif 400 <= status_code < 500:
+        return f"{status_code} Client Error"
+    elif 500 <= status_code < 600:
+        return f"{status_code} Server Error"
+    return str(status_code)
+
+
+def truncate_content(content: str, max_length: int = MAX_CONTENT_LENGTH) -> str:
+    """Truncate content to max_length bytes, adding ellipsis if truncated."""
+    content_bytes = content.encode("utf-8")
+    if len(content_bytes) <= max_length:
+        return content
+    # Truncate and decode safely (may cut multi-byte chars)
+    truncated = content_bytes[:max_length].decode("utf-8", errors="ignore")
+    return truncated + "... [truncated]"
+
 
 class X402BaseSkill(IntentKitOnChainSkill):
     """
@@ -50,6 +105,43 @@ class X402BaseSkill(IntentKitOnChainSkill):
             A wallet signer compatible with x402 requirements.
         """
         return await self.get_wallet_signer()
+
+    def format_response(self, response: httpx.Response) -> str:
+        """
+        Format an HTTP response for skill output.
+
+        Includes:
+        - Human-readable status code
+        - Chain/network and tx hash from payment response (if available)
+        - Truncated content (max 1000 bytes)
+
+        Args:
+            response: The HTTP response to format
+
+        Returns:
+            Formatted response string
+        """
+        lines = [f"Status: {get_status_text(response.status_code)}"]
+
+        # Extract chain and tx_hash from PAYMENT-RESPONSE header
+        payment_response_header = response.headers.get("payment-response")
+        if payment_response_header:
+            try:
+                payment_data = json.loads(base64.b64decode(payment_response_header))
+                network = payment_data.get("network")
+                tx_hash = payment_data.get("transaction") or payment_data.get("txHash")
+                if network:
+                    lines.append(f"Chain: {network}")
+                if tx_hash:
+                    lines.append(f"TxHash: {tx_hash}")
+            except (json.JSONDecodeError, ValueError):
+                pass  # Ignore parsing errors, just skip tx info
+
+        # Truncate content if too long
+        content = truncate_content(response.text)
+        lines.append(f"Content: {content}")
+
+        return "\n".join(lines)
 
     async def record_order(
         self,
