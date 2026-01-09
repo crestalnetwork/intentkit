@@ -5,12 +5,18 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import validator from "@rjsf/validator-ajv8";
 import Form, { IChangeEvent } from "@rjsf/core";
-import { RJSFSchema } from "@rjsf/utils";
+import { RJSFSchema, RegistryFieldsType } from "@rjsf/utils";
 import { agentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { widgets, BaseInputTemplate } from "./widgets";
 import { templates } from "./templates";
+import { SkillsField } from "./SkillsField";
+
+// Custom fields for RJSF
+const fields: RegistryFieldsType = {
+    SkillsField: SkillsField,
+};
 
 function generateUiSchema(schema: Record<string, unknown> | undefined) {
     const uiSchema: Record<string, unknown> = {
@@ -23,6 +29,11 @@ function generateUiSchema(schema: Record<string, unknown> | undefined) {
         Object.keys(properties).forEach((key) => {
             const property = properties[key];
             const uiProperty: Record<string, unknown> = {};
+
+            // Use custom SkillsField for skills
+            if (key === "skills") {
+                uiProperty["ui:field"] = "SkillsField";
+            }
 
             if (typeof property["x-placeholder"] === "string") {
                 uiProperty["ui:placeholder"] = property["x-placeholder"];
@@ -123,6 +134,7 @@ export default function NewAgentPage() {
                     onError={log("errors")}
                     className="space-y-6"
                     widgets={widgets}
+                    fields={fields}
                     templates={{ ...templates, BaseInputTemplate }}
                 >
                     <div className="flex justify-end pt-4">
