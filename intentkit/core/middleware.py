@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Awaitable, Callable, Sequence
+from typing import TYPE_CHECKING, Any, cast, override
 
 from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
@@ -18,11 +18,16 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from langgraph.types import StreamWriter
 
+if TYPE_CHECKING:
+    from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.core.credit import skill_cost
 from intentkit.core.prompt import build_system_prompt
+from intentkit.models.agent import Agent
+from intentkit.models.agent_data import AgentData
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.llm import LLMModel, LLMProvider
 from intentkit.models.skill import Skill
 
 logger = logging.getLogger(__name__)
@@ -58,17 +63,20 @@ def _validate_chat_history(messages: Sequence[BaseMessage]) -> None:
 class TrimMessagesMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that trims conversation history before invoking the model."""
 
+    max_summary_tokens: int
+
     def __init__(self, *, max_summary_tokens: int) -> None:
         super().__init__()
         self.max_summary_tokens = max_summary_tokens
 
+    @override
     async def abefore_model(
         self, state: AgentState, runtime: Runtime[AgentContext]
     ) -> dict[str, Any]:
         del runtime
         messages = state.get("messages")
         context = state.get("context", {})
-        if messages is None or not isinstance(messages, list) or len(messages) == 0:
+        if not messages:
             raise ValueError("Missing required field `messages` in the input.")
         try:
             _validate_chat_history(messages)
@@ -100,24 +108,36 @@ class TrimMessagesMiddleware(AgentMiddleware[AgentState, AgentContext]):
 class DynamicPromptMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that builds the system prompt dynamically per request."""
 
-    def __init__(self, agent, agent_data) -> None:
+    agent: Agent
+    agent_data: AgentData
+
+    def __init__(self, agent: Agent, agent_data: AgentData) -> None:
         super().__init__()
         self.agent = agent
         self.agent_data = agent_data
 
-    async def awrap_model_call(self, request, handler):  # type: ignore[override]
-        context = request.runtime.context
+    @override
+    async def awrap_model_call(  # type: ignore[override]
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        context = cast(AgentContext, request.runtime.context)
         system_prompt = await build_system_prompt(self.agent, self.agent_data, context)
-        updated_request = request.override(system_prompt=system_prompt)
+        updated_request = request.override(system_prompt=system_prompt)  # pyright: ignore[reportCallIssue]
         return await handler(updated_request)
 
 
 class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that selects tools and model parameters based on context."""
 
+    llm_model: LLMModel
+    public_tools: list[BaseTool | dict[str, Any]]
+    private_tools: list[BaseTool | dict[str, Any]]
+
     def __init__(
         self,
-        llm_model: LLMModelInfo,
+        llm_model: LLMModel,
         public_tools: list[BaseTool | dict[str, Any]],
         private_tools: list[BaseTool | dict[str, Any]],
     ) -> None:
@@ -126,8 +146,13 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         self.public_tools = public_tools
         self.private_tools = private_tools
 
-    async def awrap_model_call(self, request, handler):  # type: ignore[override]
-        context = request.runtime.context
+    @override
+    async def awrap_model_call(  # type: ignore[override]
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        context = cast(AgentContext, request.runtime.context)
 
         llm_params: dict[str, Any] = {}
         tools: list[BaseTool | dict[str, Any]] = (
@@ -167,10 +192,13 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
 class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that validates tool affordability before execution."""
 
+    func_accepts_config: bool
+
     def __init__(self) -> None:
         super().__init__()
         self.func_accepts_config = True
 
+    @override
     async def aafter_model(
         self,
         state: AgentState,
@@ -180,7 +208,7 @@ class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
     ) -> dict[str, Any]:
         context = runtime.context
         messages = state.get("messages")
-        if messages is None or not isinstance(messages, list) or len(messages) == 0:
+        if not messages or len(messages) == 0:
             raise ValueError("Missing required field `messages` in the input.")
 
         payer = context.payer
@@ -190,9 +218,9 @@ class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
         msg = messages[-1]
         agent = context.agent
         account = await CreditAccount.get_or_create(OwnerType.USER, payer)
-        if hasattr(msg, "tool_calls") and msg.tool_calls:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
             for tool_call in msg.tool_calls:
-                skill_meta = await Skill.get(tool_call.get("name"))
+                skill_meta = await Skill.get(tool_call["name"])
                 if not skill_meta:
                     continue
                 skill_cost_info = await skill_cost(skill_meta.name, payer, agent)
@@ -202,10 +230,11 @@ class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
                         "Insufficient credits. Please top up your account. "
                         f"You need {total_paid} credits, but you only have {account.balance} credits."
                     )
+                    msg_id = msg.id if msg.id else ""
                     state_update: dict[str, Any] = {
                         "error": AgentError.INSUFFICIENT_CREDITS,
                         "messages": [
-                            RemoveMessage(id=msg.id),
+                            RemoveMessage(id=msg_id),
                             AIMessage(content=error_message),
                         ],
                     }
