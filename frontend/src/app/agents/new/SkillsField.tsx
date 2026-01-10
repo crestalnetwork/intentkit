@@ -34,13 +34,10 @@ interface SkillsFormData {
  * Each skill category is rendered as a collapsible card.
  */
 export function SkillsField(props: FieldProps<SkillsFormData>) {
-    const { schema, formData = {}, onChange, idSchema } = props;
+    const { schema, formData = {}, onChange, idSchema, fieldPathId } = props;
 
     const skillCategories = (schema.properties || {}) as Record<string, SkillCategorySchema>;
     const currentFormData = formData as SkillsFormData;
-
-    // Type assertion to simplify onChange usage
-    const handleChange = onChange as (data: SkillsFormData) => void;
 
     const handleCategoryEnabledChange = (categoryKey: string, enabled: boolean) => {
         const newFormData = {
@@ -50,7 +47,8 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
                 enabled,
             },
         };
-        handleChange(newFormData);
+        // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
+        onChange(newFormData, fieldPathId.path);
     };
 
     const handleSkillStateChange = (
@@ -73,7 +71,8 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
                     states: restStates,
                 },
             };
-            handleChange(newFormData);
+            // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
+            onChange(newFormData, fieldPathId.path);
         } else {
             // When enabling (private), add the skill to states
             const newFormData = {
@@ -86,7 +85,8 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
                     },
                 },
             };
-            handleChange(newFormData);
+            // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
+            onChange(newFormData, fieldPathId.path);
         }
     };
 
