@@ -214,7 +214,7 @@ export default function EditAgentPage() {
                 description: "Your agent has been updated successfully.",
                 variant: "success",
             });
-            router.push(`/agent?id=${agentId}`);
+            router.push(`/agent/${agentId}`);
         } catch (err) {
             console.error("Error updating agent:", err);
             setError(err instanceof Error ? err.message : "Failed to update agent");

@@ -77,7 +77,7 @@ export function PostList() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (
-                    <Link key={post.id} href={`/posts/view?id=${post.id}`} className="block h-full group">
+                    <Link key={post.id} href={`/posts/${post.id}`} className="block h-full group">
                         <Card className="h-full transition-all hover:border-primary/50 hover:shadow-sm">
                             <CardHeader>
                                 <div className="flex items-start justify-between">

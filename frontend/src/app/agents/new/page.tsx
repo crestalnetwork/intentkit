@@ -142,7 +142,7 @@ export default function NewAgentPage() {
                 description: "Your agent has been created successfully.",
                 variant: "success",
             });
-            router.push(`/agent?id=${newAgent.id}`);
+            router.push(`/agent/${newAgent.id}`);
         } catch (err) {
             console.error("Error creating agent:", err);
             setError(err instanceof Error ? err.message : "Failed to create agent");

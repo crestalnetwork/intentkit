@@ -70,6 +70,16 @@ export interface Chat {
   updated_at: string;
 }
 
+// Alias for consistency with API naming
+export type ChatThread = Chat;
+
+// Response type for paginated message list
+export interface ChatMessagesResponse {
+  data: ChatMessage[];
+  has_more: boolean;
+  next_cursor: string | null;
+}
+
 // UI-specific types
 export interface UIMessage {
   id: string;
@@ -79,3 +89,4 @@ export interface UIMessage {
   isStreaming?: boolean;
   skillCalls?: ChatMessageSkillCall[];
 }
+

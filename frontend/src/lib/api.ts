@@ -1,7 +1,8 @@
 import type {
   ChatMessage,
-  ChatMessageRequest,
+  ChatMessagesResponse,
   ChatMessageSkillCall,
+  ChatThread,
 } from "@/types/chat";
 import type { AgentResponse } from "@/types/agent";
 
@@ -146,122 +147,54 @@ export const agentApi = {
 };
 
 /**
- * Chat API functions
- * Based on web.py endpoints:
- * - POST /agents/{aid}/chat/v2 - Send message and get response
- * - GET /agents/{aid}/chat/history?chat_id={chat_id} - Get chat history
- * - GET /agents/{aid}/chats?user_id={user_id} - Get user's chat list
- * - POST /agents/{aid}/chat/retry/v2?chat_id={chat_id} - Retry last message
+ * Chat API functions for local single-user mode
+ * Based on app/local/chat.py endpoints:
+ * - GET /agents/{aid}/chats - List chat threads
+ * - POST /agents/{aid}/chats - Create new chat thread
+ * - PATCH /agents/{aid}/chats/{chat_id} - Update chat summary
+ * - DELETE /agents/{aid}/chats/{chat_id} - Delete chat thread
+ * - GET /agents/{aid}/chats/{chat_id}/messages - List messages with pagination
+ * - POST /agents/{aid}/chats/{chat_id}/messages - Send message (supports streaming)
  */
 export const chatApi = {
   /**
-   * Send a message and get agent's response
-   * POST /agents/{aid}/chat/v2
-   * The chat is created automatically on first message
+   * List all chat threads for an agent
+   * GET /agents/{aid}/chats
    */
-  async sendMessage(
-    agentId: string,
-    request: ChatMessageRequest,
-  ): Promise<ChatMessage[]> {
-    const response = await fetch(`${API_BASE}/agents/${agentId}/chat/v2`, {
+  async listChats(agentId: string): Promise<ChatThread[]> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/chats`);
+    if (!response.ok) {
+      throw new Error(`Failed to list chats: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Create a new chat thread
+   * POST /agents/{aid}/chats
+   */
+  async createChat(agentId: string): Promise<ChatThread> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/chats`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.message || `Failed to send message: ${response.statusText}`,
+        errorData.message || `Failed to create chat: ${response.statusText}`,
       );
     }
     return response.json();
   },
 
   /**
-   * Get chat history for a specific chat
-   * GET /agents/{aid}/chat/history?chat_id={chat_id}&user_id={user_id}
-   */
-  async getChatHistory(
-    agentId: string,
-    chatId: string,
-    userId?: string,
-  ): Promise<ChatMessage[]> {
-    const params = new URLSearchParams({ chat_id: chatId });
-    if (userId) {
-      params.append("user_id", userId);
-    }
-    const response = await fetch(
-      `${API_BASE}/agents/${agentId}/chat/history?${params.toString()}`,
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get chat history: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  /**
-   * Get all chats for a user with a specific agent
-   * GET /agents/{aid}/chats?user_id={user_id}
-   */
-  async getUserChats(
-    agentId: string,
-    userId: string,
-  ): Promise<
-    {
-      id: string;
-      agent_id: string;
-      user_id: string;
-      summary?: string;
-      rounds: number;
-      created_at: string;
-      updated_at: string;
-    }[]
-  > {
-    const response = await fetch(
-      `${API_BASE}/agents/${agentId}/chats?user_id=${encodeURIComponent(userId)}`,
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get user chats: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  /**
-   * Retry the last message in a chat
-   * POST /agents/{aid}/chat/retry/v2?chat_id={chat_id}
-   */
-  async retryChat(agentId: string, chatId: string): Promise<ChatMessage[]> {
-    const response = await fetch(
-      `${API_BASE}/agents/${agentId}/chat/retry/v2?chat_id=${encodeURIComponent(chatId)}`,
-      {
-        method: "POST",
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to retry chat: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  /**
-   * Update chat summary
+   * Update chat summary (title)
    * PATCH /agents/{aid}/chats/{chat_id}
    */
   async updateChatSummary(
     agentId: string,
     chatId: string,
     summary: string,
-  ): Promise<{
-    id: string;
-    agent_id: string;
-    user_id: string;
-    summary?: string;
-    rounds: number;
-    created_at: string;
-    updated_at: string;
-  }> {
+  ): Promise<ChatThread> {
     const response = await fetch(
       `${API_BASE}/agents/${agentId}/chats/${chatId}`,
       {
@@ -279,7 +212,7 @@ export const chatApi = {
   },
 
   /**
-   * Delete a chat
+   * Delete a chat thread
    * DELETE /agents/{aid}/chats/{chat_id}
    */
   async deleteChat(agentId: string, chatId: string): Promise<void> {
@@ -293,13 +226,204 @@ export const chatApi = {
       throw new Error(`Failed to delete chat: ${response.statusText}`);
     }
   },
+
+  /**
+   * List messages in a chat thread with cursor-based pagination
+   * GET /agents/{aid}/chats/{chat_id}/messages
+   * Returns messages in DESC order (newest first)
+   */
+  async listMessages(
+    agentId: string,
+    chatId: string,
+    cursor?: string,
+    limit: number = 50,
+  ): Promise<ChatMessagesResponse> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) {
+      params.append("cursor", cursor);
+    }
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/chats/${chatId}/messages?${params.toString()}`,
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to list messages: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Send a message to a chat thread (non-streaming)
+   * POST /agents/{aid}/chats/{chat_id}/messages
+   */
+  async sendMessage(
+    agentId: string,
+    chatId: string,
+    message: string,
+  ): Promise<ChatMessage[]> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/chats/${chatId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message, stream: false }),
+      },
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to send message: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  /**
+   * Send a message with streaming response
+   * POST /agents/{aid}/chats/{chat_id}/messages with stream: true
+   * Returns an async generator that yields ChatMessage objects
+   */
+  async *sendMessageStream(
+    agentId: string,
+    chatId: string,
+    message: string,
+  ): AsyncGenerator<ChatMessage, void, unknown> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/chats/${chatId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message, stream: true }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to send message: ${response.statusText}`,
+      );
+    }
+
+    if (!response.body) {
+      throw new Error("No response body for streaming");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        let eventType = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ") && eventType === "message") {
+            const data = line.slice(6);
+            try {
+              const message = JSON.parse(data) as ChatMessage;
+              yield message;
+            } catch {
+              console.warn("Failed to parse SSE message:", data);
+            }
+            eventType = "";
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  },
 };
 
 /**
- * Helper type for streaming state (for future use if streaming is added)
+ * Helper type for streaming state
  */
 export interface StreamingState {
   isStreaming: boolean;
   currentSkillCalls: ChatMessageSkillCall[];
   pendingMessage: string;
 }
+
+/**
+ * Activity type definition
+ */
+export interface ActivityItem {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  activity_type: string;
+  description: string;
+  details?: Record<string, unknown>;
+  created_at: string;
+}
+
+/**
+ * Post type definition
+ */
+export interface PostItem {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  title: string;
+  summary?: string;
+  content?: string;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Activity API functions
+ */
+export const activityApi = {
+  /**
+   * Get all activities
+   */
+  async getAll(limit: number = 50): Promise<ActivityItem[]> {
+    const response = await fetch(`${API_BASE}/activities?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch activities: ${response.statusText}`);
+    }
+    return response.json();
+  },
+};
+
+/**
+ * Post API functions
+ */
+export const postApi = {
+  /**
+   * Get all posts
+   */
+  async getAll(limit: number = 50): Promise<PostItem[]> {
+    const response = await fetch(`${API_BASE}/posts?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch posts: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Get a single post by ID
+   */
+  async getById(postId: string): Promise<PostItem> {
+    const response = await fetch(`${API_BASE}/posts/${postId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch post: ${response.statusText}`);
+    }
+    return response.json();
+  },
+};
