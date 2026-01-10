@@ -275,6 +275,10 @@ export default function AgentChatPage() {
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Check if IME is composing (e.g., inputting Chinese characters)
+    // When isComposing is true, Enter is used to confirm IME selection, not to send message
+    if (e.nativeEvent.isComposing) return;
+    
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -393,13 +397,13 @@ export default function AgentChatPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link href={`/timeline?agent=${agentId}`}>
+                  <Link href={`/agent/${agentId}/activities`}>
                     <Activity className="mr-2 h-4 w-4" />
                     Activities
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/posts?agent=${agentId}`}>
+                  <Link href={`/agent/${agentId}/posts`}>
                     <FileText className="mr-2 h-4 w-4" />
                     Posts
                   </Link>

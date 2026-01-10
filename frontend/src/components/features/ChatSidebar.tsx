@@ -168,6 +168,8 @@ export function ChatSidebar({
                       className="h-7 text-xs"
                       autoFocus
                       onKeyDown={(e) => {
+                        // Check if IME is composing before handling Enter key
+                        if (e.nativeEvent.isComposing) return;
                         if (e.key === "Enter") handleSaveEdit();
                         if (e.key === "Escape") handleCancelEdit();
                       }}

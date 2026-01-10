@@ -26,7 +26,11 @@ function getActivityIcon(type: string) {
     }
 }
 
-export function Timeline() {
+interface TimelineProps {
+    agentId?: string;
+}
+
+export function Timeline({ agentId }: TimelineProps) {
     const {
         data: activities,
         isLoading,
@@ -34,8 +38,8 @@ export function Timeline() {
         refetch,
         isRefetching,
     } = useQuery({
-        queryKey: ["activities"],
-        queryFn: () => activityApi.getAll(50),
+        queryKey: agentId ? ["activities", agentId] : ["activities"],
+        queryFn: () => agentId ? activityApi.getByAgent(agentId, 50) : activityApi.getAll(50),
     });
 
     if (isLoading) {
@@ -91,16 +95,42 @@ export function Timeline() {
                 {activities.map((activity) => (
                     <div key={activity.id} className="relative">
                         <span className="absolute -left-[31px] top-1 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                            {getActivityIcon(activity.activity_type)}
+                            {getActivityIcon(activity.activity_type || "default")}
                         </span>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                                <span className="font-semibold">{activity.agent_name}</span>
+                                <span className="font-semibold">{activity.agent_name || activity.agent_id}</span>
                                 <span className="text-sm text-muted-foreground">
                                     {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                                 </span>
                             </div>
-                            <p className="text-sm text-foreground">{activity.description}</p>
+                            <p className="text-sm text-foreground">{activity.text || activity.description}</p>
+                            
+                            {/* Images */}
+                            {activity.images && activity.images.length > 0 && (
+                                <div className="mt-2 grid grid-cols-2 gap-2 max-w-md">
+                                    {activity.images.map((img, idx) => (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img 
+                                            key={idx} 
+                                            src={img} 
+                                            alt="Activity attachment" 
+                                            className="rounded-md border object-cover w-full h-auto" 
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                             {/* Video */}
+                            {activity.video && (
+                                <div className="mt-2">
+                                    <video controls className="rounded-md border max-w-md w-full">
+                                        <source src={activity.video} />
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            )}
+
                             {activity.details && Object.keys(activity.details).length > 0 && (
                                 <div className="rounded-md bg-muted/50 p-3 mt-2 text-xs font-mono">
                                     <pre className="whitespace-pre-wrap">

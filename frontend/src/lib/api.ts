@@ -363,10 +363,13 @@ export interface StreamingState {
 export interface ActivityItem {
   id: string;
   agent_id: string;
-  agent_name: string;
-  activity_type: string;
-  description: string;
-  details?: Record<string, unknown>;
+  agent_name?: string;
+  activity_type?: string;
+  text: string;
+  images?: string[];
+  video?: string;
+  description?: string; // Deprecated: distinct from text
+  details?: Record<string, unknown>; // Deprecated
   created_at: string;
 }
 
@@ -399,6 +402,18 @@ export const activityApi = {
     }
     return response.json();
   },
+
+  /**
+   * Get activities for a specific agent
+   * GET /agents/{agentId}/activities
+   */
+  async getByAgent(agentId: string, limit: number = 50): Promise<ActivityItem[]> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/activities?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch agent activities: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };
 
 /**
@@ -412,6 +427,18 @@ export const postApi = {
     const response = await fetch(`${API_BASE}/posts?limit=${limit}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch posts: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Get posts for a specific agent
+   * GET /agents/{agentId}/posts
+   */
+  async getByAgent(agentId: string, limit: number = 50): Promise<PostItem[]> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/posts?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch agent posts: ${response.statusText}`);
     }
     return response.json();
   },

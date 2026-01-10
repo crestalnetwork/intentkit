@@ -15,7 +15,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { FileText, Eye } from "lucide-react";
 
-export function PostList() {
+interface PostListProps {
+    agentId?: string;
+}
+
+export function PostList({ agentId }: PostListProps) {
     const {
         data: posts,
         isLoading,
@@ -23,8 +27,8 @@ export function PostList() {
         refetch,
         isRefetching,
     } = useQuery({
-        queryKey: ["posts"],
-        queryFn: () => postApi.getAll(50),
+        queryKey: agentId ? ["posts", agentId] : ["posts"],
+        queryFn: () => agentId ? postApi.getByAgent(agentId, 50) : postApi.getAll(50),
     });
 
     if (isLoading) {
@@ -77,7 +81,11 @@ export function PostList() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (
-                    <Link key={post.id} href={`/posts/${post.id}`} className="block h-full group">
+                    <Link 
+                        key={post.id} 
+                        href={`/post/${post.id}${agentId ? `?agentId=${agentId}` : ''}`} 
+                        className="block h-full group"
+                    >
                         <Card className="h-full transition-all hover:border-primary/50 hover:shadow-sm">
                             <CardHeader>
                                 <div className="flex items-start justify-between">
