@@ -21,7 +21,7 @@ export const FieldTemplate = (props: FieldTemplateProps) => {
     return (
         <div className="mb-4">
             {displayLabel && label && (
-                <label htmlFor={id} className="block text-sm font-bold mb-1">
+                <label htmlFor={id} className="block text-base font-bold mb-1">
                     {label} {required ? "*" : null}
                 </label>
             )}

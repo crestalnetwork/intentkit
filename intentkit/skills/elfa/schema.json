@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to query tweets mentioning a specific stock ticker. The tweets are ranked by view count, providing insight into the most visible and potentially influential discussions surrounding the stock. The results are updated hourly, allowing for real-time monitoring of market sentiment.",
-          "default": "private"
+          "default": "disabled"
         },
         "search_mentions": {
           "type": "string",
@@ -49,7 +49,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to search tweets mentioning up to five keywords or from specific accounts. It can search within the past 30 days of data, which is updated every 5 minutes, or access up to six months of historical tweet data.",
-          "default": "private"
+          "default": "disabled"
         },
         "get_trending_tokens": {
           "type": "string",
@@ -81,7 +81,7 @@
             "Agent Owner Only"
           ],
           "description": "This tool uses the Elfa API to retrieve key social media metrics for a given username. These metrics include Smart Following Count, Engagement Score, and Engagement Ratio.",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each Elfa skill (disabled, public, or private)"

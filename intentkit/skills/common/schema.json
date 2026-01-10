@@ -12,7 +12,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -31,7 +31,7 @@
             "Agent Owner Only"
           ],
           "description": "Provides localized timekeeping with automatic timezone detection using IP geolocation",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each common utility skill (disabled, public, or private)"

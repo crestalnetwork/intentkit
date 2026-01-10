@@ -4,7 +4,10 @@
   "title": "Jupiter Solana Integration",
   "description": "Swap and Price Check on Solana via Jupiter Aggregator",
   "x-icon": "https://jup.ag/svg/jupiter-logo.svg",
-  "x-tags": ["Crypto", "DeFi"],
+  "x-tags": [
+    "Crypto",
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -24,8 +27,12 @@
         "jupiter_get_price": {
           "type": "string",
           "title": "Jupiter Price Check",
-          "default": "public",
-          "enum": ["disabled", "public", "private"],
+          "default": "disabled",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -36,8 +43,12 @@
         "jupiter_get_quote": {
           "type": "string",
           "title": "Jupiter Swap Quote",
-          "default": "public",
-          "enum": ["disabled", "public", "private"],
+          "default": "disabled",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -46,8 +57,14 @@
           "description": "Get swap route quotes from Jupiter"
         }
       },
-      "required": ["jupiter_get_price", "jupiter_get_quote"]
+      "required": [
+        "jupiter_get_price",
+        "jupiter_get_quote"
+      ]
     }
   },
-  "required": ["states", "enabled"]
+  "required": [
+    "states",
+    "enabled"
+  ]
 }

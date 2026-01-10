@@ -30,7 +30,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "default": "public",
+          "default": "disabled",
           "description": "Get token transfer quotes without executing transactions"
         },
         "token_execute": {
@@ -46,7 +46,7 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "default": "private",
+          "default": "disabled",
           "description": "Execute token transfers (requires CDP wallet and cdp skills enabled)"
         }
       },

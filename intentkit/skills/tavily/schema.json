@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "Search the web for real-time information and recent content using Tavily",
-          "default": "private"
+          "default": "disabled"
         },
         "tavily_extract": {
           "type": "string",
@@ -49,7 +49,7 @@
             "Agent Owner Only"
           ],
           "description": "Extract full content from web pages using Tavily Extract API",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each Tavily skill (disabled, public, or private)"

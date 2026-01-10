@@ -29,7 +29,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches a complete wallet portfolio across all chains (EVM + Solana), retrieving detailed information about a wallet's holdings, token balances, USD values, and total portfolio value."
+          "description": "Fetches a complete wallet portfolio across all chains (EVM + Solana), retrieving detailed information about a wallet's holdings, token balances, USD values, and total portfolio value.",
+          "default": "disabled"
         },
         "fetch_chain_portfolio": {
           "type": "string",
@@ -44,7 +45,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches wallet portfolio for a specific blockchain, retrieving detailed information about a wallet's holdings, token balances, USD values, and optionally token approvals."
+          "description": "Fetches wallet portfolio for a specific blockchain, retrieving detailed information about a wallet's holdings, token balances, USD values, and optionally token approvals.",
+          "default": "disabled"
         },
         "fetch_nft_portfolio": {
           "type": "string",
@@ -59,7 +61,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches NFT portfolio for a wallet, retrieving detailed information about NFTs owned by a wallet address, including metadata, media URLs, and floor prices when available."
+          "description": "Fetches NFT portfolio for a wallet, retrieving detailed information about NFTs owned by a wallet address, including metadata, media URLs, and floor prices when available.",
+          "default": "disabled"
         },
         "fetch_solana_portfolio": {
           "type": "string",
@@ -74,7 +77,8 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches Solana wallet portfolio, retrieving detailed information about a Solana wallet's holdings, including native SOL, SPL tokens, and optionally NFTs."
+          "description": "Fetches Solana wallet portfolio, retrieving detailed information about a Solana wallet's holdings, including native SOL, SPL tokens, and optionally NFTs.",
+          "default": "disabled"
         }
       },
       "required": [

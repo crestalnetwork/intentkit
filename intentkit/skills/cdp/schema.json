@@ -13,7 +13,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -48,7 +48,7 @@
             "Agent Owner Only"
           ],
           "description": "Get wallet details using coinbase API",
-          "default": "public"
+          "default": "disabled"
         },
         "WalletActionProvider_native_transfer": {
           "type": "string",

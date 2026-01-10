@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SkillStateOption {
@@ -32,7 +32,12 @@ export function SkillCategoryCard({
     skillStates,
     defaultExpanded = false,
 }: SkillCategoryCardProps) {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [isExpanded, setIsExpanded] = useState(enabled || defaultExpanded);
+
+    // Auto-expand when enabled, auto-collapse when disabled
+    useEffect(() => {
+        setIsExpanded(enabled);
+    }, [enabled]);
 
     // Count active skills (those not set to "disabled")
     const activeSkillsCount = skillStates.filter(
@@ -61,7 +66,7 @@ export function SkillCategoryCard({
                     <div>
                         <h3 className="font-semibold text-sm">{title}</h3>
                         {description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1">
+                            <p className="text-xs font-normal text-muted-foreground line-clamp-1">
                                 {description}
                             </p>
                         )}
@@ -98,11 +103,11 @@ export function SkillCategoryCard({
                                 className="flex items-center justify-between gap-4"
                             >
                             <div className="flex-1 min-w-0">
-                                    <label className="text-sm font-medium">
+                                    <label className="text-xs font-semibold">
                                         {skill.title}
                                     </label>
                                     {skill.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1">
+                                        <p className="text-xs font-normal text-muted-foreground line-clamp-1">
                                             {skill.description}
                                         </p>
                                     )}

@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "Make HTTP GET requests to fetch data from web APIs and websites",
-          "default": "private"
+          "default": "disabled"
         },
         "http_post": {
           "type": "string",
@@ -49,7 +49,7 @@
             "Agent Owner Only"
           ],
           "description": "Make HTTP POST requests to send data to web APIs and submit forms",
-          "default": "private"
+          "default": "disabled"
         },
         "http_put": {
           "type": "string",
@@ -65,7 +65,7 @@
             "Agent Owner Only"
           ],
           "description": "Make HTTP PUT requests to update or replace data on web APIs",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each HTTP client skill (disabled, public, or private)"

@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "allows you to use the nature language to query the on-chain data. Behind the scean, CARV will use LLM model to interpreate the nature language input and convert into the sql query based on the above schemas",
-          "default": "public"
+          "default": "disabled"
         },
         "token_info_and_price": {
           "type": "string",
@@ -49,7 +49,7 @@
             "Agent Owner Only"
           ],
           "description": "Fetches detailed information and current USD price of a cryptocurrency token from CARV API using its ticker symbol (e.g., 'eth', 'btc'), returning metadata like name, symbol, platform, categories, and contract addresses, useful for understanding its identity, ecosystem, market value, and for obtaining comprehensive token data with live pricing.",
-          "default": "public"
+          "default": "disabled"
         },
         "fetch_news": {
           "type": "string",

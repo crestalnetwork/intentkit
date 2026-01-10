@@ -32,7 +32,7 @@
             "Agent Owner Only"
           ],
           "description": "Convert images to detailed text descriptions using OpenAI's GPT-4o model",
-          "default": "private"
+          "default": "disabled"
         },
         "dalle_image_generation": {
           "type": "string",
@@ -64,7 +64,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate images using OpenAI's GPT-Image-1 model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "gpt_image_mini_generator": {
           "type": "string",
@@ -80,7 +80,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate images using OpenAI's GPT-Image-1-Mini model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         },
         "gpt_avatar_generator": {
           "type": "string",
@@ -96,7 +96,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model",
-          "default": "private"
+          "default": "disabled"
         },
         "gpt_image_to_image": {
           "type": "string",
@@ -112,7 +112,7 @@
             "Agent Owner Only"
           ],
           "description": "Edit images using OpenAI's GPT-Image-1 model based on text prompts",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "States for each OpenAI skill (disabled, public, or private)"

@@ -34,7 +34,7 @@
             "Agent Owner Only"
           ],
           "description": "Describes an image provided via URL using the Venice AI API. Ideal for understanding the content of an existing image",
-          "default": "public"
+          "default": "disabled"
         },
         "image_enchance": {
           "type": "string",
@@ -50,7 +50,7 @@
             "Agent Owner Only"
           ],
           "description": "Tool for **Enchance** (modifying specific areas of) an existing image using a selected image model via Venice AI",
-          "default": "public"
+          "default": "disabled"
         },
         "image_upscale": {
           "type": "string",
@@ -82,7 +82,7 @@
             "Agent Owner Only"
           ],
           "description": "Generate images using Venice AI's Flux Dev model (research, art workflows).",
-          "default": "public"
+          "default": "disabled"
         },
         "image_generation_flux_dev_uncensored": {
           "type": "string",

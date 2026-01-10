@@ -33,7 +33,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve the full transaction history of a specified wallet address",
-          "default": "private"
+          "default": "disabled"
         },
         "token_balances": {
           "type": "string",
@@ -49,7 +49,7 @@
             "Agent Owner Only"
           ],
           "description": "Get token balances for a specific wallet address and their token prices in USD",
-          "default": "private"
+          "default": "disabled"
         },
         "wallet_approvals": {
           "type": "string",
@@ -97,7 +97,7 @@
             "Agent Owner Only"
           ],
           "description": "Get the net worth of a wallet in USD across multiple chains",
-          "default": "private"
+          "default": "disabled"
         },
         "wallet_profitability_summary": {
           "type": "string",
@@ -113,7 +113,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve a summary of wallet profitability",
-          "default": "private"
+          "default": "disabled"
         },
         "wallet_profitability": {
           "type": "string",
@@ -129,7 +129,7 @@
             "Agent Owner Only"
           ],
           "description": "Retrieve detailed profitability breakdown for a wallet",
-          "default": "private"
+          "default": "disabled"
         },
         "wallet_stats": {
           "type": "string",

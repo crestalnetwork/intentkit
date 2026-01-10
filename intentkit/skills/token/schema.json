@@ -13,7 +13,7 @@
       "type": "boolean",
       "title": "Enabled",
       "description": "Whether this skill is enabled",
-      "default": true
+      "default": false
     },
     "states": {
       "type": "object",
@@ -32,7 +32,7 @@
             "Agent Owner Only"
           ],
           "description": "Get the token price denominated in the blockchain's native token and USD",
-          "default": "public"
+          "default": "disabled"
         },
         "token_erc20_transfers": {
           "type": "string",
@@ -48,7 +48,7 @@
             "Agent Owner Only"
           ],
           "description": "Get ERC20 token transactions ordered by block number",
-          "default": "public"
+          "default": "disabled"
         },
         "token_search": {
           "type": "string",
@@ -64,7 +64,7 @@
             "Agent Owner Only"
           ],
           "description": "Search for tokens based on contract address, token name or token symbol. Premium endpoint available as an add-on. Requires a Moralis Business plan or Enterprise plan.",
-          "default": "public"
+          "default": "disabled"
         },
         "token_analytics": {
           "type": "string",
@@ -80,7 +80,7 @@
             "Agent Owner Only"
           ],
           "description": "Get analytics for a token by token address",
-          "default": "public"
+          "default": "disabled"
         }
       },
       "description": "States for each token analysis skill (disabled, public, or private)"

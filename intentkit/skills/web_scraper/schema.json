@@ -29,7 +29,7 @@
             "Agent Owner Only"
           ],
           "description": "Scrape content from web URLs and index it into a searchable vector store for later retrieval. Supports multiple URLs, customizable chunking, and persistent storage.",
-          "default": "private"
+          "default": "disabled"
         },
         "query_indexed_content": {
           "type": "string",
@@ -45,7 +45,7 @@
             "Agent Owner Only"
           ],
           "description": "Search and retrieve relevant information from previously indexed web content using semantic similarity. Perfect for answering questions based on scraped documents.",
-          "default": "private"
+          "default": "disabled"
         },
         "website_indexer": {
           "type": "string",
@@ -59,7 +59,7 @@
             "Agent Owner Only"
           ],
           "description": "Index entire websites by discovering and scraping all pages using sitemaps. Automatically finds sitemaps from robots.txt, extracts all URLs, and comprehensively indexes website content.",
-          "default": "private"
+          "default": "disabled"
         },
         "document_indexer": {
           "type": "string",
@@ -73,7 +73,7 @@
             "Agent Owner Only"
           ],
           "description": "Import and index document content directly to the vector database. Perfect for adding content from Google Docs, Notion pages, PDFs, or any other document sources by copy-pasting.",
-          "default": "private"
+          "default": "disabled"
         }
       },
       "description": "Configure the availability of each web scraper skill (disabled, public, or private)"

@@ -98,7 +98,16 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
     });
 
     return (
-        <div id={idSchema?.$id || "skills-field"} className="space-y-3">
+        <div id={idSchema?.$id || "skills-field"} className="space-y-4">
+            {/* Skills section header */}
+            <div className="mb-2">
+                {schema.title && (
+                    <label className="block text-base font-bold mb-1">{schema.title}</label>
+                )}
+                {schema.description && (
+                    <p className="text-xs font-normal text-muted-foreground">{schema.description}</p>
+                )}
+            </div>
             {sortedCategories.map(([categoryKey, categorySchema]) => {
                 const categoryData = currentFormData[categoryKey] || {};
                 const enabled = categoryData.enabled ?? (categorySchema.properties?.enabled?.default || false);
