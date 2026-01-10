@@ -112,14 +112,14 @@ export function SkillCategoryCard({
                                         </p>
                                     )}
                                 </div>
-                                {/* Checkbox: checked = private, unchecked = disabled */}
+                                {/* Checkbox: checked = private/public, unchecked = disabled */}
                                 <label
                                     className="relative inline-flex items-center cursor-pointer"
                                 >
                                     <input
                                         type="checkbox"
                                         className="sr-only peer"
-                                        checked={skill.value === "private"}
+                                        checked={skill.value === "private" || skill.value === "public"}
                                         onChange={(e) => skill.onChange(e.target.checked ? "private" : "disabled")}
                                     />
                                     <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>

@@ -87,6 +87,30 @@ export const agentApi = {
     }
     return response.json();
   },
+
+  /**
+   * Patch an existing agent with partial updates
+   * PATCH /api/agents/{agentId}
+   */
+  async patch(
+    agentId: string,
+    data: Record<string, unknown>,
+  ): Promise<AgentResponse> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to update agent: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
 };
 
 /**

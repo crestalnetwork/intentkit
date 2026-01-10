@@ -7,7 +7,7 @@ import {
   Bot,
   User,
   ArrowLeft,
-  RefreshCw,
+  Pencil,
   Info,
   AlertCircle,
 } from "lucide-react";
@@ -120,10 +120,7 @@ function AgentChatContent() {
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    setError(null);
-  };
+
 
   if (!agentId) {
     return (
@@ -210,14 +207,11 @@ function AgentChatContent() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearChat}
-            disabled={isSending}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Clear Chat
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/agents/${agentId}/edit`}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
           </Button>
         </div>
       </div>
