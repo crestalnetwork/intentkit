@@ -71,30 +71,17 @@ export function Timeline({ agentId }: TimelineProps) {
                 <Bell className="mb-4 h-12 w-12 opacity-20" />
                 <h3 className="text-lg font-semibold">No activities yet</h3>
                 <p className="text-sm">Activities from your agents will appear here.</p>
-                <Button variant="outline" onClick={() => refetch()} className="mt-4">
-                    Refresh
-                </Button>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-end">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => refetch()}
-                    disabled={isRefetching}
-                    className="text-muted-foreground"
-                >
-                    {isRefetching ? "Refreshing..." : "Refresh Activity"}
-                </Button>
-            </div>
+            {/* Refresh button removed */}
             <div className="relative border-l border-muted pl-6 ml-4 space-y-8">
                 {activities.map((activity) => (
                     <div key={activity.id} className="relative">
-                        <span className="absolute -left-[31px] top-1 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                        <span className="absolute -left-4 top-1 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground">
                             {getActivityIcon(activity.activity_type || "default")}
                         </span>
                         <div className="space-y-1">

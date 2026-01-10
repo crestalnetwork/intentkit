@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
+
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Calendar, Eye, User } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { postApi } from "@/lib/api";
+import { postApi, agentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export default function PostPage() {
@@ -24,6 +25,12 @@ export default function PostPage() {
     queryKey: ["post", id],
     queryFn: () => postApi.getById(id),
     enabled: !!id,
+  });
+
+  const { data: agent } = useQuery({
+    queryKey: ["agent", post?.agent_id],
+    queryFn: () => agentApi.getById(post!.agent_id),
+    enabled: !!post?.agent_id,
   });
 
   const handleBack = () => {
@@ -81,7 +88,7 @@ export default function PostPage() {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <div className="flex items-center gap-1">
-                 <span className="font-medium text-foreground">{post.agent_name}</span>
+                 <span className="font-medium text-foreground">{agent?.name ?? post.agent_name}</span>
                  <Link href={`/agent/${post.agent_id}`} className="text-xs underline hover:text-primary">
                     (View Agent)
                  </Link>
@@ -90,10 +97,6 @@ export default function PostPage() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              <span>{post.view_count} views</span>
             </div>
           </div>
         </header>

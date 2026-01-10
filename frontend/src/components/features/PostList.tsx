@@ -60,25 +60,13 @@ export function PostList({ agentId }: PostListProps) {
                 <FileText className="mb-4 h-12 w-12 opacity-20" />
                 <h3 className="text-lg font-semibold">No posts yet</h3>
                 <p className="text-sm">Posts from your agents will appear here.</p>
-                <Button variant="outline" onClick={() => refetch()} className="mt-4">
-                    Refresh
-                </Button>
             </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => refetch()}
-                    disabled={isRefetching}
-                >
-                    {isRefetching ? "Refreshing..." : "Refresh Posts"}
-                </Button>
-            </div>
+            {/* Refresh button removed */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (
                     <Link 
