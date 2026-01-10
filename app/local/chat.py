@@ -2,10 +2,15 @@
 
 This module provides chat endpoints for local single-user development.
 All user_id values are hardcoded to "system" for local mode.
+
+The API is split into two sections:
+- Thread Management: Create, list, update, delete chat threads
+- Message: Send, list, retry messages in a chat thread
 """
 
 import logging
 import textwrap
+from typing import Annotated, ClassVar
 
 from epyxid import XID
 from fastapi import (
@@ -17,7 +22,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,8 +34,8 @@ from intentkit.models.chat import (
     Chat,
     ChatCreate,
     ChatMessage,
+    ChatMessageAttachment,
     ChatMessageCreate,
-    ChatMessageRequest,
     ChatMessageTable,
 )
 from intentkit.models.db import get_db
@@ -41,211 +46,363 @@ logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
 
+# Hardcoded user_id for local single-user mode
+LOCAL_USER_ID = "system"
+
+
+# =============================================================================
+# Response Models
+# =============================================================================
+
+
+class ChatMessagesResponse(BaseModel):
+    """Response model for chat messages with pagination."""
+
+    data: list[ChatMessage]
+    has_more: bool = False
+    next_cursor: str | None = None
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        use_enum_values=True,
+        json_schema_extra={
+            "example": {"data": [], "has_more": False, "next_cursor": None}
+        },
+    )
+
+
+# =============================================================================
+# Request Models
+# =============================================================================
+
+
+class ChatUpdateRequest(BaseModel):
+    """Request model for updating a chat thread."""
+
+    summary: Annotated[
+        str,
+        Field(
+            ...,
+            description="Updated summary for the chat thread",
+            examples=["Updated chat summary"],
+            max_length=500,
+        ),
+    ]
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={"example": {"summary": "Updated chat summary"}},
+    )
+
+
+class LocalChatMessageRequest(BaseModel):
+    """Request model for local chat messages.
+
+    This model represents the request body for creating a new chat message.
+    Simplified for local single-user mode without user_id and app_id.
+    """
+
+    message: Annotated[
+        str,
+        Field(
+            ...,
+            description="Content of the message",
+            examples=["Hello, how can you help me today?"],
+            min_length=1,
+            max_length=65535,
+        ),
+    ]
+    stream: Annotated[
+        bool | None,
+        Field(
+            None,
+            description="Whether to stream the response",
+        ),
+    ]
+    search_mode: Annotated[
+        bool | None,
+        Field(
+            None,
+            description="Optional flag to enable search mode",
+        ),
+    ]
+    super_mode: Annotated[
+        bool | None,
+        Field(
+            None,
+            description="Optional flag to enable super mode",
+        ),
+    ]
+    attachments: Annotated[
+        list[ChatMessageAttachment] | None,
+        Field(
+            None,
+            description="Optional list of attachments (links, images, or files)",
+            examples=[[{"type": "link", "url": "https://example.com"}]],
+        ),
+    ]
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        use_enum_values=True,
+        json_schema_extra={
+            "example": {
+                "message": "Hello, how can you help me today?",
+                "search_mode": True,
+                "super_mode": False,
+                "attachments": [
+                    {
+                        "type": "link",
+                        "url": "https://example.com",
+                    }
+                ],
+            }
+        },
+    )
+
+
+# =============================================================================
+# Thread Management Endpoints
+# =============================================================================
+
 
 @chat_router.get(
-    "/agents/{aid}/chat/history",
-    tags=["Chat"],
-    response_model=list[ChatMessage],
-    operation_id="get_chat_history",
-    summary="Chat History",
+    "/agents/{aid}/chats",
+    response_model=list[Chat],
+    operation_id="list_chats",
+    summary="List chat threads",
+    description="Retrieve all chat threads for the agent.",
+    tags=["Thread"],
 )
-async def get_chat_history(
+async def list_chats(
     aid: str = Path(..., description="Agent ID"),
-    chat_id: str = Query(..., description="Chat ID to get history for"),
-    db: AsyncSession = Depends(get_db),
-) -> list[ChatMessage]:
-    """Get last 50 messages for a specific chat.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Query Parameters:**
-    * `chat_id` - Chat ID to get history for
-
-    **Returns:**
-    * `list[ChatMessage]` - List of chat messages, ordered by creation time ascending
-
-    **Raises:**
-    * `404` - Agent not found
-    """
-    # Get agent and check if exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get chat messages (last 50 in DESC order)
-    result = await db.scalars(
-        select(ChatMessageTable)
-        .where(ChatMessageTable.agent_id == aid, ChatMessageTable.chat_id == chat_id)
-        .order_by(desc(ChatMessageTable.created_at))
-        .limit(50)
-    )
-    messages = result.all()
-
-    # Reverse messages to get chronological order
-    messages = [ChatMessage.model_validate(message) for message in messages[::-1]]
-
-    # Sanitize privacy for all messages
-    messages = [message.sanitize_privacy() for message in messages]
-
-    return messages
-
-
-@chat_router.post(
-    "/agents/{aid}/chat/retry",
-    tags=["Chat"],
-    response_model=list[ChatMessage],
-    operation_id="retry_chat",
-    summary="Retry Chat",
-)
-async def retry_chat(
-    aid: str = Path(..., description="Agent ID"),
-    chat_id: str = Query(..., description="Chat ID to retry last message"),
-    db: AsyncSession = Depends(get_db),
-) -> list[ChatMessage]:
-    """Retry the last message in a chat.
-
-    If the last message is from the agent, return it directly.
-    If the last message is from a user, generate a new agent response.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Query Parameters:**
-    * `chat_id` - Chat ID to retry
-
-    **Returns:**
-    * `list[ChatMessage]` - List of chat messages including the retried response
-
-    **Raises:**
-    * `404` - Agent not found or no messages found
-    * `429` - Quota exceeded
-    * `500` - Internal server error
-    """
-    # Get agent and check if exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get last message
-    last = await db.scalar(
-        select(ChatMessageTable)
-        .where(ChatMessageTable.agent_id == aid, ChatMessageTable.chat_id == chat_id)
-        .order_by(desc(ChatMessageTable.created_at))
-        .limit(1)
-    )
-
-    if not last:
-        raise IntentKitAPIError(
-            status_code=404, key="MessagesNotFound", message="No messages found"
-        )
-
-    last_message = ChatMessage.model_validate(last)
-    if (
-        last_message.author_type == AuthorType.AGENT
-        or last_message.author_type == AuthorType.SYSTEM
-    ):
-        return [last_message.sanitize_privacy()]
-
-    if last_message.author_type == AuthorType.SKILL:
-        error_message_create = await ChatMessageCreate.from_system_message(
-            SystemMessageType.SKILL_INTERRUPTED,
-            agent_id=aid,
-            chat_id=chat_id,
-            user_id="system",
-            author_id=aid,
-            thread_type=last_message.thread_type or AuthorType.WEB,
-            reply_to=last_message.id,
-        )
-        error_message = await error_message_create.save()
-        return [last_message.sanitize_privacy(), error_message.sanitize_privacy()]
-
-    # If last message is from user, generate a new agent response
-    # Re-create and execute the user message with hardcoded user_id
-    user_message = ChatMessageCreate(
-        id=str(XID()),
-        agent_id=aid,
-        chat_id=chat_id,
-        user_id="system",
-        author_id="system",
-        author_type=last_message.author_type or AuthorType.WEB,
-        thread_type=last_message.thread_type or AuthorType.WEB,
-        message=last_message.message or "",
-    )
-    response_messages = await execute_agent(user_message)
-    return [message.sanitize_privacy() for message in response_messages]
-
-
-@chat_router.post(
-    "/agents/{aid}/chat",
-    tags=["Chat"],
-    response_model=list[ChatMessage],
-    operation_id="chat",
-    summary="Chat",
-    description=(
-        "Create a chat message and get agent's response. "
-        "When `stream: true` is set in the request body, the response will be a Server-Sent Events (SSE) stream. "
-        "Each event has the type 'message' and contains a ChatMessage object as JSON data. "
-        "The SSE format follows the standard: `event: message\\ndata: {ChatMessage JSON}\\n\\n`. "
-        "This allows real-time streaming of agent responses as they are generated."
-    ),
-)
-async def create_chat(
-    request: ChatMessageRequest,
-    aid: str = Path(..., description="Agent ID"),
-) -> list[ChatMessage] | StreamingResponse:
-    """Create a chat message and get agent's response.
-
-    **Process Flow:**
-    1. Validates agent quota
-    2. Creates a thread-specific context
-    3. Executes the agent with the query
-    4. Updates quota usage
-    5. Saves both input and output messages
-
-    > **Note:** This is the local-facing endpoint for single-user mode.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Request Body:**
-    * `request` - Chat message request object (includes optional `stream` field)
-
-    **Returns:**
-    * `list[ChatMessage]` - List of chat messages including both user input and agent response
-    * OR `StreamingResponse` - SSE stream when `stream: true`
-
-    **Raises:**
-    * `404` - Agent not found
-    * `429` - Quota exceeded
-    * `500` - Internal server error
-    """
-    # Get agent and validate quota
+):
+    """Get a list of chat threads for an agent."""
     agent = await get_agent(aid)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
         )
 
-    # Create user message - hardcode user_id to "system" for local single-user mode
-    user_id = "system"
+    return await Chat.get_by_agent_user(aid, LOCAL_USER_ID)
+
+
+@chat_router.post(
+    "/agents/{aid}/chats",
+    response_model=Chat,
+    operation_id="create_chat_thread",
+    summary="Create a new chat thread",
+    description="Create a new chat thread for the agent.",
+    tags=["Thread"],
+)
+async def create_chat_thread(
+    aid: str = Path(..., description="Agent ID"),
+):
+    """Create a new chat thread."""
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404,
+            key="AgentNotFound",
+            message=f"Agent {aid} not found",
+        )
+
+    chat = ChatCreate(
+        id=str(XID()),
+        agent_id=aid,
+        user_id=LOCAL_USER_ID,
+        summary="",
+        rounds=0,
+    )
+    _ = await chat.save()
+    # Retrieve the full Chat object with auto-generated fields
+    full_chat = await Chat.get(chat.id)
+    return full_chat
+
+
+@chat_router.patch(
+    "/agents/{aid}/chats/{chat_id}",
+    response_model=Chat,
+    operation_id="update_chat_thread",
+    summary="Update a chat thread",
+    description="Update details of a specific chat thread. Currently only supports updating the summary.",
+    tags=["Thread"],
+)
+async def update_chat_thread(
+    request: ChatUpdateRequest,
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+):
+    """Update a chat thread."""
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
+
+    chat = await Chat.get(chat_id)
+    if not chat or chat.agent_id != aid:
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
+
+    # Update the summary field
+    updated_chat = await chat.update_summary(request.summary)
+    return updated_chat
+
+
+@chat_router.delete(
+    "/agents/{aid}/chats/{chat_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="delete_chat_thread",
+    summary="Delete a chat thread",
+    description="Delete a specific chat thread.",
+    tags=["Thread"],
+)
+async def delete_chat_thread(
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+):
+    """Delete a chat thread."""
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
+
+    chat = await Chat.get(chat_id)
+    if not chat or chat.agent_id != aid:
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
+
+    await chat.delete()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# =============================================================================
+# Message Endpoints
+# =============================================================================
+
+
+@chat_router.get(
+    "/agents/{aid}/chats/{chat_id}/messages",
+    response_model=ChatMessagesResponse,
+    operation_id="list_messages_in_chat",
+    summary="List messages in a chat thread",
+    description="Retrieve the message history for a specific chat thread with cursor-based pagination.",
+    tags=["Message"],
+)
+async def list_messages(
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+    db: AsyncSession = Depends(get_db),
+    cursor: str | None = Query(None, description="Cursor for pagination (message id)"),
+    limit: int = Query(
+        20, ge=1, le=100, description="Maximum number of messages to return"
+    ),
+) -> ChatMessagesResponse:
+    """Get the message history for a chat thread with cursor-based pagination."""
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
+
+    chat = await Chat.get(chat_id)
+    if not chat or chat.agent_id != aid:
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
+
+    stmt = (
+        select(ChatMessageTable)
+        .where(ChatMessageTable.agent_id == aid, ChatMessageTable.chat_id == chat_id)
+        .order_by(desc(ChatMessageTable.id))
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(ChatMessageTable.id < cursor)
+    result = await db.scalars(stmt)
+    messages = result.all()
+    has_more = len(messages) > limit
+    messages_to_return = messages[:limit]
+    next_cursor = (
+        str(messages_to_return[-1].id) if has_more and messages_to_return else None
+    )
+    # Return as ChatMessagesResponse object
+    return ChatMessagesResponse(
+        data=[
+            ChatMessage.model_validate(m).sanitize_privacy() for m in messages_to_return
+        ],
+        has_more=has_more,
+        next_cursor=next_cursor,
+    )
+
+
+@chat_router.post(
+    "/agents/{aid}/chats/{chat_id}/messages",
+    response_model=list[ChatMessage],
+    operation_id="send_message_to_chat",
+    summary="Send a message to a chat thread",
+    description=(
+        "Send a new message to a specific chat thread. The response is a list of messages generated by the agent. "
+        "The response does not include the original user message. It could be skill calls, agent messages, or system error messages.\n\n"
+        "**Stream Mode:**\n"
+        "When `stream: true` is set in the request body, the response will be a Server-Sent Events (SSE) stream. "
+        "Each event has the type 'message' and contains a ChatMessage object as JSON data. "
+        "The SSE format follows the standard: `event: message\\ndata: {ChatMessage JSON}\\n\\n`. "
+        "This allows real-time streaming of agent responses as they are generated, including intermediate skill calls and final responses."
+    ),
+    tags=["Message"],
+)
+async def send_message(
+    request: LocalChatMessageRequest,
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+):
+    """Send a new message to a chat thread."""
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
+
+    # Verify that the chat exists
+    chat = await Chat.get(chat_id)
+    if not chat or chat.agent_id != aid:
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
+
+    # Update summary if it's empty
+    if not chat.summary:
+        summary = textwrap.shorten(request.message, width=20, placeholder="...")
+        _ = await chat.update_summary(summary)
+
+    # Increment the round count
+    await chat.add_round()
+
     user_message = ChatMessageCreate(
         id=str(XID()),
         agent_id=aid,
-        chat_id=request.chat_id,
-        user_id=user_id,
-        author_id=user_id,
+        chat_id=chat_id,
+        user_id=LOCAL_USER_ID,
+        author_id=LOCAL_USER_ID,
         author_type=AuthorType.WEB,
         thread_type=AuthorType.WEB,
         message=request.message,
         attachments=request.attachments,
+        model=None,
+        reply_to=None,
+        skill_calls=None,
+        input_tokens=0,
+        output_tokens=0,
+        time_cost=0.0,
+        credit_event_id=None,
+        credit_cost=None,
+        cold_start_cost=0.0,
+        search_mode=request.search_mode,
+        super_mode=request.super_mode,
     )
 
-    # Handle streaming mode
     if request.stream:
 
         async def stream_gen():
@@ -257,179 +414,155 @@ async def create_chat(
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
         )
-
-    # Execute agent (non-streaming mode)
-    response_messages = await execute_agent(user_message)
-
-    # Create or active chat
-    chat = await Chat.get(request.chat_id)
-    if chat:
-        await chat.add_round()
     else:
-        chat = ChatCreate(
-            id=request.chat_id,
-            agent_id=aid,
-            user_id=user_id,
-            summary=textwrap.shorten(request.message, width=20, placeholder="..."),
-            rounds=1,
-        )
-        await chat.save()
+        response_messages = await execute_agent(user_message)
+        # Return messages list directly for compatibility with stream mode
+        return [message.sanitize_privacy() for message in response_messages]
 
-    # Sanitize privacy for all messages
+
+@chat_router.post(
+    "/agents/{aid}/chats/{chat_id}/messages/retry",
+    response_model=list[ChatMessage],
+    operation_id="retry_message_in_chat",
+    summary="Retry a message in a chat thread",
+    description="Retry sending the last message in a specific chat thread. If the last message is from the system, returns all messages after the last user message. If the last message is from a user, generates a new response. Only works with non-streaming mode.",
+    tags=["Message"],
+)
+async def retry_message(
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retry the last message in a chat thread.
+
+    If the last message is from the system, return all messages after the last user message.
+    If the last message is from a user, generate a new response.
+    Note: Retry only works in non-streaming mode.
+    """
+    agent = await get_agent(aid)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {aid} not found"
+        )
+
+    # Verify that the chat exists
+    chat = await Chat.get(chat_id)
+    if not chat or chat.agent_id != aid:
+        raise IntentKitAPIError(
+            status_code=404, key="ChatNotFound", message="Chat not found"
+        )
+
+    last = await db.scalar(
+        select(ChatMessageTable)
+        .where(ChatMessageTable.agent_id == aid, ChatMessageTable.chat_id == chat_id)
+        .order_by(desc(ChatMessageTable.created_at))
+        .limit(1)
+    )
+
+    if not last:
+        raise IntentKitAPIError(
+            status_code=404, key="NoMessagesFound", message="No messages found"
+        )
+
+    last_message = ChatMessage.model_validate(last)
+
+    # If last message is from system, find all messages after last user message
+    if (
+        last_message.author_type == AuthorType.AGENT
+        or last_message.author_type == AuthorType.SYSTEM
+    ):
+        # Find the last user message
+        last_user_message = await db.scalar(
+            select(ChatMessageTable)
+            .where(
+                ChatMessageTable.agent_id == aid,
+                ChatMessageTable.chat_id == chat_id,
+                ChatMessageTable.author_type == AuthorType.WEB,
+            )
+            .order_by(desc(ChatMessageTable.created_at))
+            .limit(1)
+        )
+
+        if not last_user_message:
+            # If no user message found, just return the last message
+            return [last_message.sanitize_privacy()]
+
+        # Get all messages after the last user message
+        messages_after_user = await db.scalars(
+            select(ChatMessageTable)
+            .where(
+                ChatMessageTable.agent_id == aid,
+                ChatMessageTable.chat_id == chat_id,
+                ChatMessageTable.created_at > last_user_message.created_at,
+            )
+            .order_by(ChatMessageTable.created_at)
+        )
+
+        messages_list = messages_after_user.all()
+        if messages_list:
+            return [
+                ChatMessage.model_validate(msg).sanitize_privacy()
+                for msg in messages_list
+            ]
+        else:
+            # Fallback to just the last message if no messages found after user message
+            return [last_message.sanitize_privacy()]
+
+    # If last message is from skill, provide warning message
+    if last_message.author_type == AuthorType.SKILL:
+        error_message_create = await ChatMessageCreate.from_system_message(
+            SystemMessageType.SKILL_INTERRUPTED,
+            agent_id=aid,
+            chat_id=chat_id,
+            user_id=LOCAL_USER_ID,
+            author_id=aid,
+            thread_type=last_message.thread_type or AuthorType.WEB,
+            reply_to=last_message.id,
+            time_cost=0.0,
+        )
+        error_message = await error_message_create.save()
+        return [last_message.sanitize_privacy(), error_message.sanitize_privacy()]
+
+    # If last message is from user, generate a new response
+    # Create a new user message for retry (non-streaming only)
+    retry_user_message = ChatMessageCreate(
+        id=str(XID()),
+        agent_id=aid,
+        chat_id=chat_id,
+        user_id=LOCAL_USER_ID,
+        author_id=LOCAL_USER_ID,
+        author_type=AuthorType.WEB,
+        thread_type=AuthorType.WEB,
+        message=last_message.message or "",
+        attachments=last_message.attachments,
+        model=None,
+        reply_to=None,
+        skill_calls=None,
+        input_tokens=0,
+        output_tokens=0,
+        time_cost=0.0,
+        credit_event_id=None,
+        credit_cost=None,
+        cold_start_cost=0.0,
+        search_mode=last_message.search_mode,
+        super_mode=last_message.super_mode,
+    )
+
+    # Execute handler (non-streaming mode only)
+    response_messages = await execute_agent(retry_user_message)
+
+    # Return messages list directly for compatibility with send_message
     return [message.sanitize_privacy() for message in response_messages]
 
 
-@chat_router.get(
-    "/agents/{aid}/chats",
-    response_model=list[Chat],
-    summary="Chat List",
-    tags=["Chat"],
-    operation_id="get_agent_chats",
-)
-async def get_agent_chats(
-    aid: str = Path(..., description="Agent ID"),
-):
-    """Get chat list for a specific agent.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-
-    **Returns:**
-    * `list[Chat]` - List of chats for the specified agent
-
-    **Raises:**
-    * `404` - Agent not found
-    """
-    # Verify agent exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get chats by agent and hardcoded user_id "system"
-    chats = await Chat.get_by_agent_user(aid, "system")
-    return chats
-
-
-class ChatSummaryUpdate(BaseModel):
-    """Request model for updating chat summary."""
-
-    summary: str = Field(
-        ...,
-        description="New summary text for the chat",
-        examples=["Asked about product features and pricing"],
-        min_length=1,
-    )
-
-
-@chat_router.patch(
-    "/agents/{aid}/chats/{chat_id}",
-    response_model=Chat,
-    summary="Update Chat Summary",
-    tags=["Chat"],
-    operation_id="update_chat_summary",
-)
-async def update_chat_summary(
-    update_data: ChatSummaryUpdate,
-    aid: str = Path(..., description="Agent ID"),
-    chat_id: str = Path(..., description="Chat ID"),
-):
-    """Update the summary of a specific chat.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-    * `chat_id` - Chat ID
-
-    **Request Body:**
-    * `update_data` - Summary update data (in request body)
-
-    **Returns:**
-    * `Chat` - Updated chat object
-
-    **Raises:**
-    * `404` - Agent or chat not found
-    """
-    # Verify agent exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get chat
-    chat = await Chat.get(chat_id)
-    if not chat:
-        raise IntentKitAPIError(
-            status_code=404, key="ChatNotFound", message="Chat not found"
-        )
-
-    # Verify chat belongs to agent
-    if chat.agent_id != aid:
-        raise IntentKitAPIError(
-            status_code=404,
-            key="ChatNotFound",
-            message="Chat not found for this agent",
-        )
-
-    # Update summary
-    updated_chat = await chat.update_summary(update_data.summary)
-    return updated_chat
-
-
-@chat_router.delete(
-    "/agents/{aid}/chats/{chat_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a Chat",
-    tags=["Chat"],
-    operation_id="delete_chat",
-)
-async def delete_chat(
-    aid: str = Path(..., description="Agent ID"),
-    chat_id: str = Path(..., description="Chat ID"),
-):
-    """Delete a specific chat.
-
-    **Path Parameters:**
-    * `aid` - Agent ID
-    * `chat_id` - Chat ID
-
-    **Returns:**
-    * `204 No Content` - Success
-
-    **Raises:**
-    * `404` - Agent or chat not found
-    """
-    # Verify agent exists
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Get chat
-    chat = await Chat.get(chat_id)
-    if not chat:
-        raise IntentKitAPIError(
-            status_code=404, key="ChatNotFound", message="Chat not found"
-        )
-
-    # Verify chat belongs to agent
-    if chat.agent_id != aid:
-        raise IntentKitAPIError(
-            status_code=404,
-            key="ChatNotFound",
-            message="Chat not found for this agent",
-        )
-
-    # Delete chat
-    await chat.delete()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+# =============================================================================
+# Utility Endpoints
+# =============================================================================
 
 
 @chat_router.get(
     "/agents/{aid}/skill/history",
-    tags=["Chat"],
+    tags=["Utility"],
     response_model=list[ChatMessage],
     operation_id="get_skill_history",
     summary="Skill History",
