@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
   Bot,
@@ -10,19 +10,43 @@ import {
   Pencil,
   Info,
   AlertCircle,
+  MoreVertical,
+  Archive,
+  Activity,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { agentApi, chatApi, generateChatId, generateUserId } from "@/lib/api";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
+import { toast } from "@/hooks/use-toast";
 import type { UIMessage } from "@/types/chat";
 
 function AgentChatContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const agentId = searchParams.get("id");
 
   const {
@@ -41,6 +65,8 @@ function AgentChatContent() {
   const [chatId] = useState(() => generateChatId());
   const [userId] = useState(() => generateUserId());
   const [error, setError] = useState<string | null>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
@@ -213,6 +239,81 @@ function AgentChatContent() {
               Edit
             </Link>
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">More actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/timeline?agent=${agentId}`}>
+                  <Activity className="mr-2 h-4 w-4" />
+                  Activities
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/posts?agent=${agentId}`}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Posts
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowArchiveDialog(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Archive Confirmation Dialog */}
+          <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Archive Agent</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to archive this agent? Archived agents will be hidden from the agent list.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={isArchiving}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setIsArchiving(true);
+                    try {
+                      await agentApi.archive(agentId!);
+                      // Invalidate agents list so it refreshes when returning to home
+                      await queryClient.invalidateQueries({ queryKey: ["agents"] });
+                      toast({
+                        title: "Agent archived",
+                        description: "The agent has been archived.",
+                        variant: "success",
+                      });
+                      router.push("/");
+                    } catch (err) {
+                      toast({
+                        title: "Error",
+                        description: err instanceof Error ? err.message : "Failed to archive agent",
+                        variant: "destructive",
+                      });
+                      setShowArchiveDialog(false);
+                    } finally {
+                      setIsArchiving(false);
+                    }
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isArchiving ? "Archiving..." : "Archive"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

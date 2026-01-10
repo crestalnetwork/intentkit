@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { widgets, BaseInputTemplate } from "./widgets";
 import { templates } from "./templates";
 import { SkillsField } from "./SkillsField";
+import { toast } from "@/hooks/use-toast";
 
 // Custom validator with options to handle optional fields properly
 const validator = customizeValidator({
@@ -135,8 +136,13 @@ export default function NewAgentPage() {
         setError(null);
         try {
             const cleanedData = cleanSkillsData(formData);
-            await agentApi.create(cleanedData);
-            router.push("/");
+            const newAgent = await agentApi.create(cleanedData);
+            toast({
+                title: "Agent created",
+                description: "Your agent has been created successfully.",
+                variant: "success",
+            });
+            router.push(`/agent?id=${newAgent.id}`);
         } catch (err) {
             console.error("Error creating agent:", err);
             setError(err instanceof Error ? err.message : "Failed to create agent");

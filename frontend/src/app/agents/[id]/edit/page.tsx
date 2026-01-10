@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { widgets, BaseInputTemplate } from "../../new/widgets";
 import { templates } from "../../new/templates";
 import { SkillsField } from "../../new/SkillsField";
+import { toast } from "@/hooks/use-toast";
 
 // Custom validator with options to handle optional fields properly
 const validator = customizeValidator({
@@ -208,7 +209,12 @@ export default function EditAgentPage() {
         try {
             const cleanedData = cleanSkillsData(formData, schema);
             await agentApi.patch(agentId, cleanedData);
-            router.push("/");
+            toast({
+                title: "Agent updated",
+                description: "Your agent has been updated successfully.",
+                variant: "success",
+            });
+            router.push(`/agent?id=${agentId}`);
         } catch (err) {
             console.error("Error updating agent:", err);
             setError(err instanceof Error ? err.message : "Failed to update agent");

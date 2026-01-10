@@ -111,6 +111,38 @@ export const agentApi = {
     }
     return response.json();
   },
+
+  /**
+   * Archive an agent
+   * PUT /api/agents/{agentId}/archive
+   */
+  async archive(agentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/archive`, {
+      method: "PUT",
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to archive agent: ${response.statusText}`,
+      );
+    }
+  },
+
+  /**
+   * Reactivate an archived agent
+   * PUT /api/agents/{agentId}/reactivate
+   */
+  async reactivate(agentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/reactivate`, {
+      method: "PUT",
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to reactivate agent: ${response.statusText}`,
+      );
+    }
+  },
 };
 
 /**

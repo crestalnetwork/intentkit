@@ -1,5 +1,6 @@
 import importlib
 import logging
+from datetime import UTC, datetime
 from typing import TypedDict
 
 from fastapi import (
@@ -37,7 +38,7 @@ from intentkit.models.agent import (
     AgentUpdate,
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
-from intentkit.models.db import get_db
+from intentkit.models.db import get_db, get_session
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 
@@ -180,11 +181,15 @@ async def patch_agent_endpoint(
 async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     """Get all agents with their quota information.
 
+    By default, archived agents (with archived_at set) are excluded.
+
     **Returns:**
     * `list[AgentResponse]` - List of agents with their quota information and additional processed data
     """
-    # Query all agents first
-    agents = (await db.scalars(select(AgentTable))).all()
+    # Query all non-archived agents
+    agents = (
+        await db.scalars(select(AgentTable).where(AgentTable.archived_at.is_(None)))
+    ).all()
 
     # Batch get agent data
     agent_ids = [agent.id for agent in agents]
@@ -530,3 +535,79 @@ async def unlink_twitter_endpoint(
         media_type="application/json",
         headers={"ETag": agent_response.etag()},
     )
+
+
+@agent_router.put(
+    "/agents/{agent_id}/archive",
+    tags=["Agent"],
+    status_code=204,
+    operation_id="archive_agent",
+    summary="Archive Agent",
+)
+async def archive_agent(
+    agent_id: str = Path(..., description="ID of the agent to archive"),
+) -> Response:
+    """Archive an agent by setting archived_at timestamp.
+
+    **Path Parameters:**
+    * `agent_id` - ID of the agent to archive
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Agent not found
+        - 500: Database error
+    """
+    # Check if agent exists
+    agent = await get_agent_by_id(agent_id)
+    if not agent:
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+    # Update archived_at in database
+    async with get_session() as db:
+        result = await db.execute(select(AgentTable).where(AgentTable.id == agent_id))
+        agent_row = result.scalar_one_or_none()
+        if not agent_row:
+            raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+        agent_row.archived_at = datetime.now(UTC)
+        await db.commit()
+
+    return Response(status_code=204)
+
+
+@agent_router.put(
+    "/agents/{agent_id}/reactivate",
+    tags=["Agent"],
+    status_code=204,
+    operation_id="reactivate_agent",
+    summary="Reactivate Agent",
+)
+async def reactivate_agent(
+    agent_id: str = Path(..., description="ID of the agent to reactivate"),
+) -> Response:
+    """Reactivate an archived agent by clearing archived_at timestamp.
+
+    **Path Parameters:**
+    * `agent_id` - ID of the agent to reactivate
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Agent not found
+        - 500: Database error
+    """
+    # Check if agent exists
+    agent = await get_agent_by_id(agent_id)
+    if not agent:
+        raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+    # Clear archived_at in database
+    async with get_session() as db:
+        result = await db.execute(select(AgentTable).where(AgentTable.id == agent_id))
+        agent_row = result.scalar_one_or_none()
+        if not agent_row:
+            raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+        agent_row.archived_at = None
+        await db.commit()
+
+    return Response(status_code=204)
