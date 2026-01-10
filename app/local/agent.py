@@ -23,6 +23,7 @@ from intentkit.core.agent import (
     create_agent,
     deploy_agent,
     override_agent,
+    patch_agent,
 )
 from intentkit.core.agent import (
     get_agent as get_agent_by_id,
@@ -118,6 +119,50 @@ async def override_agent_endpoint(
         - 500: Database error
     """
     latest_agent, agent_data = await override_agent(agent_id, agent, "system")
+
+    agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
+
+    # Return Response with ETag header
+    return Response(
+        content=agent_response.model_dump_json(),
+        media_type="application/json",
+        headers={"ETag": agent_response.etag()},
+    )
+
+
+@agent_router.patch(
+    "/agents/{agent_id}",
+    tags=["Agent"],
+    status_code=200,
+    operation_id="patch_agent",
+    summary="Patch Agent",
+)
+async def patch_agent_endpoint(
+    agent_id: str = Path(..., description="ID of the agent to patch"),
+    agent: AgentUpdate = Body(AgentUpdate, description="Agent patch configuration"),
+) -> Response:
+    """Patch an existing agent with partial updates.
+
+    Use input to partially update agent configuration. Only the fields that are provided will be updated,
+    other fields will remain unchanged.
+
+    **Path Parameters:**
+    * `agent_id` - ID of the agent to patch
+
+    **Request Body:**
+    * `agent` - Agent patch configuration (only include fields to update)
+
+    **Returns:**
+    * `AgentResponse` - Updated agent configuration with additional processed data
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 400: Invalid agent ID format
+        - 404: Agent not found
+        - 403: Permission denied (if owner mismatch)
+        - 500: Database error
+    """
+    latest_agent, agent_data = await patch_agent(agent_id, agent, "system")
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 

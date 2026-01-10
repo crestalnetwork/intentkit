@@ -331,6 +331,48 @@ async def override_agent(
     return latest_agent, agent_data
 
 
+async def patch_agent(
+    agent_id: str, agent: AgentUpdate, owner: str | None = None
+) -> tuple[Agent, AgentData]:
+    """Patch an existing agent with partial updates.
+
+    This function updates an existing agent with only the fields that are provided.
+    Fields that are not specified will remain unchanged.
+
+    Args:
+        agent_id: ID of the agent to patch
+        agent: Agent update configuration containing only the fields to update
+        owner: Optional owner for permission validation
+
+    Returns:
+        tuple[Agent, AgentData]: Updated agent configuration and processed agent data
+
+    Raises:
+        IntentKitAPIError:
+            - 404: Agent not found
+            - 403: Permission denied (if owner mismatch)
+            - 400: Invalid configuration or wallet provider change
+    """
+    existing_agent = await get_agent(agent_id)
+    if not existing_agent:
+        raise IntentKitAPIError(
+            status_code=404,
+            key="AgentNotFound",
+            message=f"Agent with ID '{agent_id}' not found",
+        )
+    if owner and owner != existing_agent.owner:
+        raise IntentKitAPIError(403, "Forbidden", "forbidden")
+
+    # Update agent with only provided fields
+    latest_agent = await agent.update(agent_id)
+    agent_data = await process_agent_wallet(
+        latest_agent, existing_agent.wallet_provider
+    )
+    send_agent_notification(latest_agent, agent_data, "Agent Patched")
+
+    return latest_agent, agent_data
+
+
 async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     """Create a new agent with the provided configuration.
 
