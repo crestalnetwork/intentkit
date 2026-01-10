@@ -446,6 +446,11 @@ async def stream_agent_raw(
     is_private = False
     if user_message.user_id == agent.owner:
         is_private = True
+    # Hack for local mode: treat "system" user as private.
+    # This is safe because in authenticated environments,
+    # user_id cannot be "system".
+    if user_message.user_id == "system":
+        is_private = True
 
     last = start
 
