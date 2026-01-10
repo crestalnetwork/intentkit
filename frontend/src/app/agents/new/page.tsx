@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import validator from "@rjsf/validator-ajv8";
+import { customizeValidator } from "@rjsf/validator-ajv8";
 import Form, { IChangeEvent } from "@rjsf/core";
 import { RJSFSchema, RegistryFieldsType } from "@rjsf/utils";
 import { agentApi } from "@/lib/api";
@@ -12,6 +12,34 @@ import { ArrowLeft } from "lucide-react";
 import { widgets, BaseInputTemplate } from "./widgets";
 import { templates } from "./templates";
 import { SkillsField } from "./SkillsField";
+
+// Custom validator with options to handle optional fields properly
+const validator = customizeValidator({
+    ajvOptionsOverrides: {
+        removeAdditional: true,
+    },
+});
+
+// Recursively remove undefined and null values from an object
+const removeEmptyValues = (obj: unknown): unknown => {
+    if (obj === null || obj === undefined) {
+        return undefined;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(removeEmptyValues).filter(v => v !== undefined);
+    }
+    if (typeof obj === "object") {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+            const cleaned = removeEmptyValues(value);
+            if (cleaned !== undefined && cleaned !== "") {
+                result[key] = cleaned;
+            }
+        }
+        return Object.keys(result).length > 0 ? result : undefined;
+    }
+    return obj;
+};
 
 // Custom fields for RJSF
 const fields: RegistryFieldsType = {
@@ -119,6 +147,46 @@ export default function NewAgentPage() {
 
     const log = (type: string) => console.log.bind(console, type);
 
+    // Transform errors to filter out optional field validation errors
+    // and log validation data for debugging
+    const transformErrors = useCallback(
+        (errors: ReturnType<typeof validator.validateFormData>["errors"]) => {
+            console.log("[RJSF Validator] Form data before validation:", JSON.stringify(formData, null, 2));
+            console.log("[RJSF Validator] Schema:", JSON.stringify(schema, null, 2));
+            console.log("[RJSF Validator] Raw validation errors:", errors);
+            
+            // Get required fields from schema
+            const requiredFields = (schema?.required as string[]) || [];
+            
+            // Filter out errors for optional fields with empty/undefined values
+            const filteredErrors = errors.filter((error) => {
+                // Extract field name from the error property path
+                const fieldName = error.property?.replace(/^\./, "").split(".")[0] || "";
+                
+                // If the field is required, keep the error
+                if (requiredFields.includes(fieldName)) {
+                    return true;
+                }
+                
+                // If the error is about type mismatch for an optional field
+                // and the value is empty/undefined, filter it out
+                if (error.name === "type") {
+                    const fieldValue = (formData as Record<string, unknown>)[fieldName];
+                    if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
+                        console.log(`[RJSF Validator] Filtering out type error for optional empty field: ${fieldName}`);
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            console.log("[RJSF Validator] Filtered errors:", filteredErrors);
+            return filteredErrors;
+        },
+        [formData, schema]
+    );
+
     if (isSchemaLoading) {
         return (
             <div className="container py-10">
@@ -169,6 +237,7 @@ export default function NewAgentPage() {
                     onChange={(e) => setFormData(e.formData || {})}
                     onSubmit={handleSubmit}
                     onError={log("errors")}
+                    transformErrors={transformErrors}
                     className="space-y-6"
                     widgets={widgets}
                     fields={fields}
