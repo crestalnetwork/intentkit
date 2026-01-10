@@ -115,10 +115,9 @@ async def override_agent_endpoint(
     * `IntentKitAPIError`:
         - 400: Invalid agent ID format
         - 404: Agent not found
-        - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    latest_agent, agent_data = await override_agent(agent_id, agent, "system")
+    latest_agent, agent_data = await override_agent(agent_id, agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -159,10 +158,9 @@ async def patch_agent_endpoint(
     * `IntentKitAPIError`:
         - 400: Invalid agent ID format
         - 404: Agent not found
-        - 403: Permission denied (if owner mismatch)
         - 500: Database error
     """
-    latest_agent, agent_data = await patch_agent(agent_id, agent, "system")
+    latest_agent, agent_data = await patch_agent(agent_id, agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
