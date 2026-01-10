@@ -33,6 +33,15 @@ IntentKit supports a wide range of LLM providers and models to give you flexibil
 - **venice-uncensored** - Venice Uncensored model
 - **venice-llama-4-maverick-17b** - Venice Llama-4 Maverick 17B
 
+#### BlockRun.AI
+BlockRun is a pay-per-request AI gateway using x402 micropayments on Base. Access multiple LLM providers with just a wallet - no API keys needed.
+
+- **openai/gpt-4o** - GPT-4o via BlockRun
+- **openai/gpt-4o-mini** - GPT-4o Mini via BlockRun
+- **anthropic/claude-sonnet-4** - Claude Sonnet 4 via BlockRun
+- **deepseek/deepseek-chat** - DeepSeek V3 via BlockRun
+- **google/gemini-2.0-flash** - Gemini 2.0 Flash via BlockRun
+
 ### Model Capabilities
 
 Each model supports different capabilities:
@@ -57,5 +66,16 @@ To use these models, configure the appropriate API keys in your environment:
 - `ETERNAL_API_KEY` for Eternal AI models
 - `REIGENT_API_KEY` for Reigent models
 - `VENICE_API_KEY` for Venice AI models
+- `BLOCKRUN_WALLET_KEY` for BlockRun models (wallet private key, never leaves your machine)
 
 The system will automatically route requests to the appropriate provider based on the model selected.
+
+### BlockRun.AI Setup
+
+BlockRun uses x402 micropayments - your wallet private key never leaves your machine. Only EIP-712 signatures are sent for payment authorization.
+
+1. Set your Base chain wallet private key: `BLOCKRUN_WALLET_KEY=0x...`
+2. Fund your wallet with USDC on Base
+3. Use any BlockRun model (e.g., `anthropic/claude-sonnet-4`)
+
+Learn more: https://blockrun.ai/docs
