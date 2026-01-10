@@ -124,22 +124,66 @@ export default function EditAgentPage() {
     // Clean up skills data before submission:
     // - Remove categories where enabled=false
     // - Remove skill states that are 'disabled'
-    const cleanSkillsData = (data: Record<string, unknown>): Record<string, unknown> => {
+    // - Remove skills that are not defined in the schema (handles renamed skills)
+    const cleanSkillsData = (data: Record<string, unknown>, schemaData: Record<string, unknown> | undefined): Record<string, unknown> => {
         const skills = data.skills as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
         if (!skills) return data;
 
+        // Extract valid skill keys from the schema for each category
+        const getValidSkillsForCategory = (categoryKey: string): Set<string> | null => {
+            if (!schemaData?.properties) return null;
+            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
+            const skillsSchema = schemaProperties.skills;
+            if (!skillsSchema?.properties) return null;
+            const skillsCategoriesSchema = skillsSchema.properties as Record<string, Record<string, unknown>>;
+            const categorySchema = skillsCategoriesSchema[categoryKey];
+            if (!categorySchema?.properties) return null;
+            const categoryProperties = categorySchema.properties as Record<string, Record<string, unknown>>;
+            const statesSchema = categoryProperties.states;
+            if (!statesSchema?.properties) return null;
+            const statesProperties = statesSchema.properties as Record<string, unknown>;
+            return new Set(Object.keys(statesProperties));
+        };
+
+        // Extract valid category keys from the schema
+        const getValidCategories = (): Set<string> | null => {
+            if (!schemaData?.properties) return null;
+            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
+            const skillsSchema = schemaProperties.skills;
+            if (!skillsSchema?.properties) return null;
+            const skillsCategoriesSchema = skillsSchema.properties as Record<string, unknown>;
+            return new Set(Object.keys(skillsCategoriesSchema));
+        };
+
+        const validCategories = getValidCategories();
         const cleanedSkills: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
         for (const [categoryKey, categoryData] of Object.entries(skills)) {
             // Skip categories that are explicitly disabled
             if (categoryData.enabled === false) continue;
 
-            // Clean up states - only keep non-disabled skills
+            // Skip categories not in schema (removed categories)
+            if (validCategories && !validCategories.has(categoryKey)) {
+                console.log(`[cleanSkillsData] Removing category not in schema: ${categoryKey}`);
+                continue;
+            }
+
+            // Get valid skills for this category
+            const validSkills = getValidSkillsForCategory(categoryKey);
+
+            // Clean up states - only keep non-disabled skills that exist in schema
             const states = categoryData.states || {};
             const cleanedStates: Record<string, string> = {};
             for (const [skillKey, skillValue] of Object.entries(states)) {
-                if (skillValue !== 'disabled') {
-                    cleanedStates[skillKey] = skillValue;
+                // Skip disabled skills
+                if (skillValue === 'disabled') continue;
+                
+                // Skip skills not in schema (old/renamed skills)
+                if (validSkills && !validSkills.has(skillKey)) {
+                    console.log(`[cleanSkillsData] Removing skill not in schema: ${categoryKey}.${skillKey}`);
+                    continue;
                 }
+                
+                cleanedStates[skillKey] = skillValue;
             }
 
             // Only include category if it's enabled
@@ -162,7 +206,7 @@ export default function EditAgentPage() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const cleanedData = cleanSkillsData(formData);
+            const cleanedData = cleanSkillsData(formData, schema);
             await agentApi.patch(agentId, cleanedData);
             router.push("/");
         } catch (err) {
