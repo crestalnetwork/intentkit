@@ -7,6 +7,7 @@ from epyxid import XID
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import DateTime, String, func
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
@@ -42,6 +43,31 @@ class AgentPostBase(BaseModel):
         str,
         PydanticField(
             description="Content of the post in markdown format",
+        ),
+    ]
+    slug: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="URL slug for the post",
+            max_length=60,
+            pattern="^[a-zA-Z0-9-]+$",
+        ),
+    ] = None
+    excerpt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Short excerpt of the post",
+            max_length=200,
+        ),
+    ] = None
+    tags: Annotated[
+        list[str],
+        PydanticField(
+            default_factory=list,
+            description="List of tags",
+            max_length=3,
         ),
     ]
 
@@ -107,6 +133,27 @@ class AgentPostBrief(BaseModel):
             description="First 500 characters of post content",
         ),
     ]
+    slug: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="URL slug for the post",
+        ),
+    ]
+    excerpt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Short excerpt of the post",
+        ),
+    ]
+    tags: Annotated[
+        list[str],
+        PydanticField(
+            default_factory=list,
+            description="List of tags",
+        ),
+    ]
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -125,6 +172,9 @@ class AgentPostBrief(BaseModel):
             summary=table.markdown[:500]
             if len(table.markdown) > 500
             else table.markdown,
+            slug=table.slug,
+            excerpt=table.excerpt,
+            tags=table.tags or [],
             created_at=table.created_at,
         )
 
@@ -160,6 +210,21 @@ class AgentPostTable(Base):
         String,
         nullable=False,
         comment="Content of the post in markdown format",
+    )
+    slug: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="URL slug for the post",
+    )
+    excerpt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Short excerpt of the post",
+    )
+    tags: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        nullable=True,
+        comment="List of tags",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -8,7 +8,9 @@ from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
+from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.agent_post import create_agent_post
+from intentkit.models.agent_activity import AgentActivityCreate
 from intentkit.models.agent_post import AgentPostCreate
 
 
@@ -27,6 +29,22 @@ class CreatePostInput(BaseModel):
             "Do not include the title (h1) in the content, only the body text. "
             "Use h2 (##) for section headings."
         ),
+    )
+    slug: str = Field(
+        ...,
+        description="URL slug for the post. Must be unique within the agent.",
+        max_length=60,
+        pattern="^[a-zA-Z0-9-]+$",
+    )
+    excerpt: str = Field(
+        ...,
+        description="Short excerpt of the post. Max 200 characters.",
+        max_length=200,
+    )
+    tags: list[str] = Field(
+        ...,
+        description="List of tags. Max 3 tags.",
+        max_length=3,
     )
     cover: str | None = Field(
         default=None,
@@ -55,6 +73,9 @@ class CreatePostSkill(BaseTool):
         self,
         title: str,
         markdown: str,
+        slug: str,
+        excerpt: str,
+        tags: list[str],
         cover: str | None = None,
     ) -> str:
         raise NotImplementedError(
@@ -66,6 +87,9 @@ class CreatePostSkill(BaseTool):
         self,
         title: str,
         markdown: str,
+        slug: str,
+        excerpt: str,
+        tags: list[str],
         cover: str | None = None,
     ) -> str:
         """Create a new agent post.
@@ -73,6 +97,9 @@ class CreatePostSkill(BaseTool):
         Args:
             title: Title of the post.
             markdown: Content of the post in markdown format.
+            slug: URL slug for the post.
+            excerpt: Short excerpt of the post.
+            tags: List of tags.
             cover: Optional URL of the cover image.
 
         Returns:
@@ -90,8 +117,18 @@ class CreatePostSkill(BaseTool):
             title=title,
             markdown=markdown,
             cover=cover,
+            slug=slug,
+            excerpt=excerpt,
+            tags=tags,
         )
 
         post = await create_agent_post(post_create)
+
+        activity_create = AgentActivityCreate(
+            agent_id=agent_id,
+            text=f"Published a new post: {title}",
+            post_id=post.id,
+        )
+        await create_agent_activity(activity_create)
 
         return f"Post created successfully with ID: {post.id}"

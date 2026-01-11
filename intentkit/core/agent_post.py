@@ -27,6 +27,9 @@ async def create_agent_post(post_create: AgentPostCreate) -> AgentPost:
             title=post_create.title,
             cover=post_create.cover,
             markdown=post_create.markdown,
+            slug=post_create.slug,
+            excerpt=post_create.excerpt,
+            tags=post_create.tags,
         )
         session.add(db_post)
         await session.commit()
