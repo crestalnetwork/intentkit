@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { postApi } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 import {
     Card,
     CardContent,
@@ -13,7 +14,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Eye } from "lucide-react";
+import { FileText } from "lucide-react";
 
 interface PostListProps {
     agentId?: string;
@@ -93,12 +94,15 @@ export function PostList({ agentId }: PostListProps) {
                                 <div className="text-sm text-muted-foreground mb-4">
                                     {post.excerpt || "No excerpt available."}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                        <Eye className="h-3 w-3" />
-                                        <span>{post.view_count} views</span>
+                                {post.tags && post.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {post.tags.map((tag) => (
+                                            <Badge key={tag} variant="secondary" className="text-xs">
+                                                {tag}
+                                            </Badge>
+                                        ))}
                                     </div>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
                     </Link>
