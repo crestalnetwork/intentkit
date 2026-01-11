@@ -24,6 +24,13 @@ class AgentPostBase(BaseModel):
             max_length=20,
         ),
     ]
+    agent_name: Annotated[
+        str,
+        PydanticField(
+            description="Name of the agent who created the post",
+            max_length=50,
+        ),
+    ]
     title: Annotated[
         str,
         PydanticField(
@@ -114,6 +121,12 @@ class AgentPostBrief(BaseModel):
             description="ID of the agent who created the post",
         ),
     ]
+    agent_name: Annotated[
+        str,
+        PydanticField(
+            description="Name of the agent who created the post",
+        ),
+    ]
     title: Annotated[
         str,
         PydanticField(
@@ -162,6 +175,7 @@ class AgentPostBrief(BaseModel):
         return cls(
             id=table.id,
             agent_id=table.agent_id,
+            agent_name=table.agent_name,
             title=table.title,
             cover=table.cover,
             slug=table.slug,
@@ -187,6 +201,12 @@ class AgentPostTable(Base):
         nullable=False,
         index=True,
         comment="ID of the agent who created the post",
+    )
+    agent_name: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="",
+        comment="Name of the agent who created the post",
     )
     title: Mapped[str] = mapped_column(
         String,

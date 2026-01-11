@@ -24,6 +24,7 @@ async def create_agent_post(post_create: AgentPostCreate) -> AgentPost:
         # Create SQLAlchemy model instance
         db_post = AgentPostTable(
             agent_id=post_create.agent_id,
+            agent_name=post_create.agent_name,
             title=post_create.title,
             cover=post_create.cover,
             markdown=post_create.markdown,

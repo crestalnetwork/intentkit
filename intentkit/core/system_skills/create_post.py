@@ -112,8 +112,17 @@ class CreatePostSkill(BaseTool):
             raise ToolException("No AgentContext found")
         agent_id = context.agent_id
 
+        from intentkit.core.agent import get_agent
+
+        agent = await get_agent(agent_id)
+        if agent is None:
+            raise ToolException(f"Agent with ID {agent_id} not found")
+
+        agent_name = agent.name or "Unknown Agent"
+
         post_create = AgentPostCreate(
             agent_id=agent_id,
+            agent_name=agent_name,
             title=title,
             markdown=markdown,
             cover=cover,

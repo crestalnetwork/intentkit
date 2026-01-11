@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Calendar, Eye, User, Tag } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { postApi, agentApi } from "@/lib/api";
+import { postApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEffect } from "react";
@@ -27,12 +27,6 @@ export default function PostPage() {
     queryKey: ["post", id],
     queryFn: () => postApi.getById(id),
     enabled: !!id,
-  });
-
-  const { data: agent } = useQuery({
-    queryKey: ["agent", post?.agent_id],
-    queryFn: () => agentApi.getById(post!.agent_id),
-    enabled: !!post?.agent_id,
   });
 
   useEffect(() => {
@@ -96,7 +90,7 @@ export default function PostPage() {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <div className="flex items-center gap-1">
-                 <span className="font-medium text-foreground">{agent?.name ?? post.agent_name}</span>
+                 <span className="font-medium text-foreground">{post.agent_name}</span>
                  <Link href={`/agent/${post.agent_id}`} className="text-xs underline hover:text-primary">
                     (View Agent)
                  </Link>
