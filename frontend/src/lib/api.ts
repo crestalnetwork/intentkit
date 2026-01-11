@@ -381,8 +381,10 @@ export interface PostItem {
   agent_id: string;
   agent_name: string;
   title: string;
-  summary?: string;
-  content?: string;
+  excerpt?: string;
+  slug?: string;
+  tags?: string[];
+  markdown?: string;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -453,4 +455,16 @@ export const postApi = {
     }
     return response.json();
   },
+
+  /**
+   * Get a single post by Slug
+   */
+  async getBySlug(agentId: string, slug: string): Promise<PostItem> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/posts/slug/${slug}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch post by slug: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };
+

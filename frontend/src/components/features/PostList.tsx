@@ -33,7 +33,7 @@ export function PostList({ agentId }: PostListProps) {
 
     if (isLoading) {
         return (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
                     <Card key={i} className="animate-pulse">
                         <CardHeader className="h-[140px] bg-muted/50" />
@@ -67,18 +67,18 @@ export function PostList({ agentId }: PostListProps) {
     return (
         <div className="space-y-4">
             {/* Refresh button removed */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-4">
                 {posts.map((post) => (
                     <Link 
                         key={post.id} 
-                        href={`/post/${post.id}${agentId ? `?agentId=${agentId}` : ''}`} 
+                        href={post.slug ? `/agent/${post.agent_id}/post/${post.slug}` : `/post/${post.id}`}
                         className="block h-full group"
                     >
                         <Card className="h-full transition-all hover:border-primary/50 hover:shadow-sm">
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
-                                        <CardTitle className="line-clamp-2 text-lg group-hover:text-primary">
+                                        <CardTitle className="text-xl group-hover:text-primary">
                                             {post.title}
                                         </CardTitle>
                                         <CardDescription className="flex items-center gap-2">
@@ -90,8 +90,8 @@ export function PostList({ agentId }: PostListProps) {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="line-clamp-3 text-sm text-muted-foreground mb-4">
-                                    {post.summary || "No summary available."}
+                                <div className="text-sm text-muted-foreground mb-4">
+                                    {post.excerpt || "No excerpt available."}
                                 </div>
                                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                     <div className="flex items-center gap-1">

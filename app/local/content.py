@@ -133,3 +133,39 @@ async def get_post(
             status_code=404, key="NotFound", message="Post not found"
         )
     return AgentPost.model_validate(post)
+
+
+@content_router.get(
+    "/agents/{agent_id}/posts/slug/{slug}",
+    tags=["Content"],
+    operation_id="get_post_by_slug",
+    summary="Get Post by Slug",
+)
+async def get_post_by_slug(
+    agent_id: str = Path(..., description="ID of the agent"),
+    slug: str = Path(..., description="Slug of the post"),
+    db: AsyncSession = Depends(get_db),
+) -> AgentPost:
+    """Get a single post by Agent ID and Slug with full content.
+
+    **Path Parameters:**
+    * `agent_id` - ID of the agent
+    * `slug` - Slug of the post
+
+    **Returns:**
+    * `AgentPost` - Full post content
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Post not found
+    """
+    stmt = select(AgentPostTable).where(
+        AgentPostTable.agent_id == agent_id,
+        AgentPostTable.slug == slug,
+    )
+    post = (await db.scalars(stmt)).first()
+    if not post:
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Post not found"
+        )
+    return AgentPost.model_validate(post)

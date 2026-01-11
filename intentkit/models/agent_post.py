@@ -127,12 +127,7 @@ class AgentPostBrief(BaseModel):
             description="URL of the cover image",
         ),
     ]
-    summary: Annotated[
-        str,
-        PydanticField(
-            description="First 500 characters of post content",
-        ),
-    ]
+
     slug: Annotated[
         str | None,
         PydanticField(
@@ -169,9 +164,6 @@ class AgentPostBrief(BaseModel):
             agent_id=table.agent_id,
             title=table.title,
             cover=table.cover,
-            summary=table.markdown[:500]
-            if len(table.markdown) > 500
-            else table.markdown,
             slug=table.slug,
             excerpt=table.excerpt,
             tags=table.tags or [],

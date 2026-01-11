@@ -4,49 +4,37 @@ import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Calendar, Eye, User, Tag } from "lucide-react";
+import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { postApi, agentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
 
-export default function PostPage() {
+export default function AgentPostPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = params.id as string;
-  const fromAgentId = searchParams.get("agentId");
+  const agentId = params.id as string;
+  const slug = params.slug as string;
 
   const {
     data: post,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["post", id],
-    queryFn: () => postApi.getById(id),
-    enabled: !!id,
+    queryKey: ["post", agentId, slug],
+    queryFn: () => postApi.getBySlug(agentId, slug),
+    enabled: !!agentId && !!slug,
   });
 
   const { data: agent } = useQuery({
-    queryKey: ["agent", post?.agent_id],
-    queryFn: () => agentApi.getById(post!.agent_id),
-    enabled: !!post?.agent_id,
+    queryKey: ["agent", agentId],
+    queryFn: () => agentApi.getById(agentId),
+    enabled: !!agentId,
   });
 
-  useEffect(() => {
-    if (post && post.slug) {
-        router.replace(`/agent/${post.agent_id}/post/${post.slug}`);
-    }
-  }, [post, router]);
-
   const handleBack = () => {
-    if (fromAgentId) {
-        router.push(`/agent/${fromAgentId}/posts`);
-    } else {
-        router.push("/posts");
-    }
+    router.push(`/agent/${agentId}/posts`);
   };
 
   if (isLoading) {
@@ -61,7 +49,7 @@ export default function PostPage() {
     );
   }
 
-  if (error || !post || !id) {
+  if (error || !post) {
     return (
       <div className="container py-10 text-center">
         <h1 className="text-2xl font-bold text-destructive mb-4">
@@ -69,7 +57,7 @@ export default function PostPage() {
         </h1>
         <Button variant="outline" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Agent Posts
         </Button>
       </div>
     );
@@ -84,7 +72,7 @@ export default function PostPage() {
             onClick={handleBack}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          {fromAgentId ? "Back to Agent Posts" : "Back to Posts"}
+          Back to Agent Posts
         </Button>
       </div>
 
@@ -97,7 +85,7 @@ export default function PostPage() {
               <User className="h-4 w-4" />
               <div className="flex items-center gap-1">
                  <span className="font-medium text-foreground">{agent?.name ?? post.agent_name}</span>
-                 <Link href={`/agent/${post.agent_id}`} className="text-xs underline hover:text-primary">
+                 <Link href={`/agent/${agentId}`} className="text-xs underline hover:text-primary">
                     (View Agent)
                  </Link>
               </div>
@@ -106,7 +94,7 @@ export default function PostPage() {
               <Calendar className="h-4 w-4" />
               <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
             </div>
-
+            
             {post.tags && post.tags.length > 0 && (
                 <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4" />
@@ -123,7 +111,7 @@ export default function PostPage() {
         </header>
 
         <div className="prose prose-stone dark:prose-invert max-w-none">
-          <ReactMarkdown>{post.markdown}</ReactMarkdown>
+          <ReactMarkdown>{post.markdown || ""}</ReactMarkdown>
         </div>
       </article>
     </div>
