@@ -1628,6 +1628,9 @@ async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
             raise IntentKitAPIError(500, "RPCError", "Failed to get Safe nonce")
 
         result = response.json().get("result", "0x0")
+        # Handle empty result '0x' as 0
+        if result == "0x" or not result:
+            return 0
         return int(result, 16)
 
 
