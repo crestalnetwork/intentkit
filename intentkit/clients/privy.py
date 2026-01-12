@@ -672,8 +672,17 @@ class SafeClient:
         return setup_selector + setup_data
 
     def _calculate_create2_address(self, initializer: bytes, salt_nonce: int) -> str:
-        """Calculate the CREATE2 address for a Safe deployment."""
-        # Salt is keccak256(keccak256(initializer) + salt_nonce)
+        """Calculate the CREATE2 address for a Safe deployment.
+
+        The SafeProxyFactory calculates CREATE2 address as follows:
+        - salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce))
+        - deploymentData = abi.encodePacked(type(SafeProxy).creationCode, uint256(uint160(_singleton)))
+        - address = keccak256(0xff ++ factory ++ salt ++ keccak256(deploymentData))[12:]
+
+        Note: The initializer is NOT included in the deploymentData/init_code_hash,
+        it's only used in the salt calculation.
+        """
+        # Salt = keccak256(keccak256(initializer) ++ saltNonce)
         initializer_hash = keccak(initializer)
         salt = keccak(initializer_hash + encode(["uint256"], [salt_nonce]))
 
@@ -683,14 +692,12 @@ class SafeClient:
             "608060405234801561001057600080fd5b506040516101e63803806101e68339818101604052602081101561003357600080fd5b8101908080519060200190929190505050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156100ca576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260228152602001806101c46022913960400191505060405180910390fd5b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505060ab806101196000396000f3fe608060405273ffffffffffffffffffffffffffffffffffffffff600054167fa619486e0000000000000000000000000000000000000000000000000000000060003514156050578060005260206000f35b3660008037600080366000845af43d6000803e60008114156070573d6000fd5b3d6000f3fea2646970667358221220d1429297349653a4918076d650332de1a1068c5f3e07c5c82360c277770b955264736f6c63430007060033496e76616c69642073696e676c65746f6e20616464726573732070726f7669646564"
         )
 
-        # The init code is the creation code + encoded singleton address
+        # deploymentData = creationCode + abi.encode(singleton)
+        # Note: We do NOT include the initializer here - that's only for the salt
         init_code = proxy_creation_code + encode(["address"], [SAFE_SINGLETON_ADDRESS])
+        init_code_hash = keccak(init_code)
 
-        # deploymentData for CREATE2: keccak256(init_code + initializer)
-        deployment_data = init_code + initializer
-        init_code_hash = keccak(deployment_data)
-
-        # CREATE2 address calculation
+        # CREATE2 address calculation: keccak256(0xff ++ factory ++ salt ++ init_code_hash)[12:]
         factory_address = bytes.fromhex(SAFE_PROXY_FACTORY_ADDRESS[2:])
         create2_input = b"\xff" + factory_address + salt + init_code_hash
         address_bytes = keccak(create2_input)[12:]
@@ -1309,7 +1316,7 @@ async def deploy_safe_with_allowance(
     else:
         # Deploy the Safe
         logger.info(f"Deploying Safe to {predicted_address}")
-        deploy_tx_hash = await _deploy_safe(
+        deploy_tx_hash, actual_address = await _deploy_safe(
             owner_address=owner_address,
             salt_nonce=salt_nonce,
             chain_id=chain_config.chain_id,
@@ -1318,8 +1325,16 @@ async def deploy_safe_with_allowance(
         result["tx_hashes"].append({"deploy_safe": deploy_tx_hash})
         result["already_deployed"] = False
 
-        # Wait for deployment (simple polling)
-        await _wait_for_deployment(predicted_address, rpc_url)
+        # Validate that predicted address matches actual deployed address
+        if actual_address.lower() != predicted_address.lower():
+            raise IntentKitAPIError(
+                500,
+                "AddressMismatch",
+                f"Safe address prediction mismatch: predicted {predicted_address}, "
+                f"but actually deployed to {actual_address}. "
+                "This indicates a bug in the CREATE2 address calculation.",
+            )
+        logger.info(f"Safe address validated: {predicted_address}")
 
     # Enable Allowance Module if spending limit is configured
     if weekly_spending_limit_usdc is not None and weekly_spending_limit_usdc > 0:
@@ -1376,7 +1391,7 @@ async def _deploy_safe(
     salt_nonce: int,
     chain_id: int,
     rpc_url: str,
-) -> str:
+) -> tuple[str, str]:
     """Deploy a new Safe via the ProxyFactory using master wallet.
 
     The master wallet pays for gas, but the Safe is owned by owner_address.
@@ -1389,7 +1404,7 @@ async def _deploy_safe(
         rpc_url: RPC URL for the chain
 
     Returns:
-        Transaction hash of the deployment
+        Tuple of (transaction_hash, deployed_safe_address)
     """
     if not config.master_wallet_private_key:
         raise IntentKitAPIError(
@@ -1457,46 +1472,43 @@ async def _deploy_safe(
             500, "DeploymentFailed", "Safe deployment transaction failed"
         )
 
+    # Extract the deployed Safe address from ProxyCreation event
+    # Event signature: ProxyCreation(address proxy, address singleton)
+    # Topic: keccak256("ProxyCreation(address,address)")
+    proxy_creation_topic = keccak(text="ProxyCreation(address,address)").hex()
+    actual_safe_address: str | None = None
+
+    for log in receipt.get("logs", []):
+        topics = log.get("topics", [])
+        if topics and topics[0].hex() == proxy_creation_topic:
+            # The proxy address is in the event data (first 32 bytes, padded)
+            log_data = log.get("data", b"")
+            # Handle both bytes and HexBytes types
+            if hasattr(log_data, "hex"):
+                # It's bytes or HexBytes, convert to bytes
+                log_data = bytes(log_data)
+            elif isinstance(log_data, str):
+                log_data = bytes.fromhex(
+                    log_data[2:] if log_data.startswith("0x") else log_data
+                )
+            if len(log_data) >= 32:
+                # Extract address from first 32 bytes (last 20 bytes are the address)
+                actual_safe_address = to_checksum_address(log_data[12:32])
+                break
+
+    if not actual_safe_address:
+        raise IntentKitAPIError(
+            500,
+            "DeploymentFailed",
+            "Could not extract deployed Safe address from ProxyCreation event",
+        )
+
     logger.info(
         f"Safe deployed successfully. Tx hash: {tx_hash.hex()}, "
-        f"Gas used: {receipt['gasUsed']}"
+        f"Gas used: {receipt['gasUsed']}, Address: {actual_safe_address}"
     )
 
-    return tx_hash.hex()
-
-
-async def _wait_for_deployment(
-    address: str,
-    rpc_url: str,
-    max_attempts: int = 30,
-    delay_seconds: float = 2.0,
-) -> bool:
-    """Wait for a contract to be deployed."""
-    import asyncio
-
-    for _ in range(max_attempts):
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                rpc_url,
-                json={
-                    "jsonrpc": "2.0",
-                    "method": "eth_getCode",
-                    "params": [address, "latest"],
-                    "id": 1,
-                },
-                timeout=30.0,
-            )
-
-            if response.status_code == 200:
-                result = response.json().get("result", "0x")
-                if len(result) > 2:
-                    return True
-
-        await asyncio.sleep(delay_seconds)
-
-    raise IntentKitAPIError(
-        500, "DeploymentTimeout", f"Safe deployment not confirmed at {address}"
-    )
+    return tx_hash.hex(), actual_safe_address
 
 
 async def _is_module_enabled(
