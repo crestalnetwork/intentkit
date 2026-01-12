@@ -159,43 +159,33 @@ async def create_agent_from_template(
         Agent: The created agent
     """
     async with get_session() as db:
-        template_row = await db.scalar(
-            select(TemplateTable).where(TemplateTable.id == data.template_id)
+        # Verify template exists
+        template_exists = await db.scalar(
+            select(TemplateTable.id).where(TemplateTable.id == data.template_id)
         )
-        if template_row is None:
+        if template_exists is None:
             raise ValueError(f"Template '{data.template_id}' not found")
-
-        template = Template.model_validate(template_row)
-
-        # Prepare core data from template
-        core_data = {}
-        for field_name in AgentCore.model_fields:
-            value = getattr(template, field_name, None)
-            core_data[field_name] = value
-
-        # Override with provided data
-        if data.name:
-            core_data["name"] = data.name
-        if data.picture:
-            core_data["picture"] = data.picture
 
         # Set visibility based on team_id
         visibility = AgentVisibility.TEAM if team_id else AgentVisibility.PRIVATE
 
-        # Create new agent
+        # Create new agent with only user-provided fields
+        # Template's AgentCore fields will be applied dynamically via render_agent
         db_agent = AgentTable(
             id=str(XID()),
             owner=owner,
             team_id=team_id,
             template_id=data.template_id,
+            name=data.name,
+            picture=data.picture,
             description=data.description,
             readonly_wallet_address=data.readonly_wallet_address,
             weekly_spending_limit=data.weekly_spending_limit,
             extra_prompt=data.extra_prompt,
             visibility=visibility,
-            **core_data,
         )
         db.add(db_agent)
         await db.commit()
         await db.refresh(db_agent)
-        return Agent.model_validate(db_agent)
+        agent = Agent.model_validate(db_agent)
+        return await render_agent(agent)
