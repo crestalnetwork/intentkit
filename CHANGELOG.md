@@ -1,3 +1,11 @@
+## v0.8.49 - 2026-01-12
+
+### Bug Fixes
+- Fixed wallet processing when creating agents from templates
+- Wallet initialization now properly triggered during template-based agent creation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.48...v0.8.49
+
 ## v0.8.48 - 2026-01-12
 
 ### New Features
