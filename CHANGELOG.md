@@ -1,3 +1,10 @@
+## v0.8.51 - 2026-01-13
+
+### Bug Fixes
+- Fixed Safe nonce retrieval to handle empty '0x' response from RPC, defaulting to 0 instead of failing
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.50...v0.8.51
+
 ## v0.8.50 - 2026-01-13
 
 ### Bug Fixes
