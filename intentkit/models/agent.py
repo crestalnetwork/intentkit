@@ -617,6 +617,7 @@ class AgentCore(BaseModel):
             "arbitrum-mainnet",
             "optimism-mainnet",
             "solana",
+            "base-sepolia",
         ]
         | None,
         PydanticField(
