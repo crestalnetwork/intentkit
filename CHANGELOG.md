@@ -1,3 +1,25 @@
+## v0.8.48 - 2026-01-12
+
+### New Features
+- **Local Chat Interface**: New local chat functionality with private mode
+- **Agent UI Improvements**: Redesigned agent creation and editing pages
+- **Post System**: Added post creation, viewing, and timeline features
+- **Chat Sidebar**: Enhanced chat UI with conversation history
+- **Agent Activities**: New activity tracking and viewing for agents
+
+### Improvements
+- Better frontend navigation and user experience
+- Enhanced skill availability management
+- Improved agent template handling with dynamic field application
+
+### Bug Fixes
+- Fixed issues in agent network ID enum handling
+- Resolved bugs in post-related modules
+- Fixed UI bugs in agent update and skill state mapping
+- Patched Pydantic upgrade compatibility issues
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.47...v0.8.48
+
 ## v0.8.45 - 2026-01-08
 
 ### New Features
