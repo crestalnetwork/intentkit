@@ -14,7 +14,8 @@ from intentkit.models.template import Template, TemplateTable
 
 
 @pytest.mark.asyncio
-async def test_create_agent_from_template():
+@patch("intentkit.core.agent.process_agent_wallet", new_callable=AsyncMock)
+async def test_create_agent_from_template(mock_process_agent_wallet):
     """Test creating an agent from a template."""
 
     # 1. Setup Data
@@ -54,8 +55,15 @@ async def test_create_agent_from_template():
         async def mock_refresh(instance):
             instance.created_at = datetime.now()
             instance.updated_at = datetime.now()
+            if hasattr(instance, "model") and instance.model is None:
+                instance.model = "gpt-5-mini"
 
         mock_session.refresh = AsyncMock(side_effect=mock_refresh)
+
+        # Mock execute for render_agent
+        mock_result = MagicMock()
+        mock_result.first.return_value = (template_id,)
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
         # 3. Call Function
         agent = await create_agent_from_template(
@@ -85,9 +93,10 @@ async def test_create_agent_from_template():
         assert added_agent.description == "Created from template"
 
         # Verify inherited fields
-        assert added_agent.model == "gpt-4o"
-        assert added_agent.temperature == 0.5
-        assert added_agent.prompt == "You are a template."
+        # Verify inherited fields
+        assert agent.model == "gpt-4o"
+        assert agent.temperature == 0.5
+        assert agent.prompt == "You are a template."
 
         # Verify commit and refresh
         assert mock_session.commit.called
@@ -96,9 +105,13 @@ async def test_create_agent_from_template():
         # Verify returned agent match
         assert agent.id == added_agent.id
 
+        # Verify wallet processing
+        mock_process_agent_wallet.assert_called_once_with(agent)
+
 
 @pytest.mark.asyncio
-async def test_create_agent_from_template_without_team():
+@patch("intentkit.core.agent.process_agent_wallet", new_callable=AsyncMock)
+async def test_create_agent_from_template_without_team(mock_process_agent_wallet):
     """Test creating an agent from a template without team_id (PRIVATE visibility)."""
 
     # 1. Setup Data
@@ -140,8 +153,15 @@ async def test_create_agent_from_template_without_team():
         async def mock_refresh(instance):
             instance.created_at = datetime.now()
             instance.updated_at = datetime.now()
+            if hasattr(instance, "model") and instance.model is None:
+                instance.model = "gpt-5-mini"
 
         mock_session.refresh = AsyncMock(side_effect=mock_refresh)
+
+        # Mock execute for render_agent
+        mock_result = MagicMock()
+        mock_result.first.return_value = (template_id,)
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
         # 3. Call Function without team_id
         await create_agent_from_template(
@@ -164,6 +184,9 @@ async def test_create_agent_from_template_without_team():
         assert added_agent.readonly_wallet_address == "0x1234567890abcdef"
         assert added_agent.weekly_spending_limit == 100.0
         assert added_agent.extra_prompt == "Additional task instructions"
+
+        # Verify wallet processing
+        mock_process_agent_wallet.assert_called_once()
 
 
 @pytest.mark.asyncio

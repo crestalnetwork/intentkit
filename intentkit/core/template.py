@@ -188,4 +188,11 @@ async def create_agent_from_template(
         await db.commit()
         await db.refresh(db_agent)
         agent = Agent.model_validate(db_agent)
-        return await render_agent(agent)
+        agent = await render_agent(agent)
+
+        # Process agent wallet
+        from intentkit.core.agent import process_agent_wallet
+
+        _ = await process_agent_wallet(agent)
+
+        return agent
