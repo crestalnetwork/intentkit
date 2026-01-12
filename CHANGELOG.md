@@ -1,3 +1,11 @@
+## v0.8.50 - 2026-01-13
+
+### Bug Fixes
+- Fixed Safe CREATE2 address calculation bug - the initializer should only be included in the salt calculation, not in the deploymentData
+- Added address validation to ensure predicted address matches actual deployed address
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.49...v0.8.50
+
 ## v0.8.49 - 2026-01-12
 
 ### Bug Fixes
