@@ -145,7 +145,8 @@ async def process_agent_wallet(
             from intentkit.clients.privy import PrivyClient
 
             privy_client = PrivyClient()
-            privy_wallet = await privy_client.create_wallet()
+            # Pass agent.owner (Privy user ID) as the wallet owner
+            privy_wallet = await privy_client.create_wallet(owner_id=agent.owner)
             existing_privy_wallet_id = privy_wallet.id
             existing_privy_wallet_address = privy_wallet.address
 

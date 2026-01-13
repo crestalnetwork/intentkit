@@ -376,8 +376,12 @@ class PrivyClient:
             "Content-Type": "application/json",
         }
 
-    async def create_wallet(self) -> PrivyWallet:
+    async def create_wallet(self, owner_id: str | None = None) -> PrivyWallet:
         """Create a new server wallet.
+
+        Args:
+            owner_id: Optional Privy user ID to set as the wallet owner.
+                     When provided, the wallet will be owned by this user.
 
         Note: Privy's create wallet API does not support idempotency keys.
         Idempotency keys are only supported for transaction APIs via the
@@ -392,6 +396,8 @@ class PrivyClient:
         payload: dict[str, Any] = {
             "chain_type": "ethereum",
         }
+        if owner_id:
+            payload["owner"] = {"id": owner_id}
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
