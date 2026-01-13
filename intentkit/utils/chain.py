@@ -92,6 +92,9 @@ class QuickNodeNetwork(StrEnum):
     BaseMainnet = "base-mainnet"
     BaseSepolia = "base-sepolia"
 
+    # BNB
+    BnbMainnet = "bnb-mainnet"
+
     # Cosmos Ecosystem (These can be tricky and may need updates)
     CosmosHubMainnet = "cosmos-hub-mainnet"  # Or just "cosmos"
     OsmosisMainnet = "osmosis-mainnet"  # Or just "osmosis"
@@ -148,6 +151,9 @@ class NetworkId(IntEnum):
     BaseMainnet = 8453
     BaseSepolia = 84532
 
+    # BNB
+    BnbMainnet = 56
+
     # Other Chains
     SonicMainnet = 146
     BeraMainnet = 80094
@@ -164,6 +170,7 @@ network_to_id: dict[QuickNodeNetwork, NetworkId] = {
     QuickNodeNetwork.BaseSepolia: NetworkId.BaseSepolia,
     QuickNodeNetwork.BeraMainnet: NetworkId.BeraMainnet,
     QuickNodeNetwork.BinanceMainnet: NetworkId.BinanceMainnet,
+    QuickNodeNetwork.BnbMainnet: NetworkId.BnbMainnet,
     QuickNodeNetwork.EthereumMainnet: NetworkId.EthereumMainnet,
     QuickNodeNetwork.EthereumSepolia: NetworkId.EthereumSepolia,
     QuickNodeNetwork.GnosisMainnet: NetworkId.GnosisMainnet,
@@ -187,6 +194,7 @@ id_to_network: dict[NetworkId, QuickNodeNetwork] = {
     NetworkId.BaseSepolia: QuickNodeNetwork.BaseSepolia,
     NetworkId.BeraMainnet: QuickNodeNetwork.BeraMainnet,
     NetworkId.BinanceMainnet: QuickNodeNetwork.BinanceMainnet,
+    NetworkId.BnbMainnet: QuickNodeNetwork.BnbMainnet,
     NetworkId.EthereumMainnet: QuickNodeNetwork.EthereumMainnet,
     NetworkId.EthereumSepolia: QuickNodeNetwork.EthereumSepolia,
     NetworkId.GnosisMainnet: QuickNodeNetwork.GnosisMainnet,
@@ -210,6 +218,7 @@ AGENT_NETWORK_TO_QUICKNODE_NETWORK: dict[str, QuickNodeNetwork] = {
     "base-sepolia": QuickNodeNetwork.BaseSepolia,
     "bera-mainnet": QuickNodeNetwork.BeraMainnet,
     "binance-mainnet": QuickNodeNetwork.BinanceMainnet,
+    "bnb-mainnet": QuickNodeNetwork.BnbMainnet,
     "bsc-mainnet": QuickNodeNetwork.BinanceMainnet,
     "celo-mainnet": QuickNodeNetwork.CeloMainnet,
     "ethereum": QuickNodeNetwork.EthereumMainnet,

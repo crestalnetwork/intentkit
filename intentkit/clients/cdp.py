@@ -97,6 +97,7 @@ def get_cdp_network(agent: Agent) -> str:
         "optimism-mainnet": "optimism",
         "polygon-mainnet": "polygon",
         "base-sepolia": "base-sepolia",
+        "bnb-mainnet": "bsc",
     }
     if agent.network_id == "solana":
         raise IntentKitAPIError(

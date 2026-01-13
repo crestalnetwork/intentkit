@@ -49,6 +49,12 @@ class ChainConfig:
 # Chain configurations mapping IntentKit network_id to Safe chain config
 CHAIN_CONFIGS: dict[str, ChainConfig] = {
     # Mainnets
+    "bnb-mainnet": ChainConfig(
+        chain_id=56,
+        name="BNB Smart Chain",
+        safe_tx_service_url="https://safe-transaction-bsc.safe.global",
+        usdc_address="0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    ),
     "base-mainnet": ChainConfig(
         chain_id=8453,
         name="Base",

@@ -616,6 +616,7 @@ class AgentCore(BaseModel):
             "polygon-mainnet",
             "arbitrum-mainnet",
             "optimism-mainnet",
+            "bnb-mainnet",
             "solana",
             "base-sepolia",
         ]

@@ -359,7 +359,9 @@
         "ethereum-mainnet",
         "polygon-mainnet",
         "arbitrum-mainnet",
-        "optimism-mainnet"
+        "optimism-mainnet",
+        "bnb-mainnet",
+        "base-sepolia"
       ],
       "x-group": "onchain"
     }

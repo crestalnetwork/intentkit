@@ -29,6 +29,8 @@ USDC_ADDRESSES = {
     "arbitrum-mainnet": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
     "optimism-mainnet": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
     "polygon-mainnet": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    "bnb-mainnet": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    "base-sepolia": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
 }
 
 # NATION token address for base-mainnet
@@ -40,6 +42,7 @@ MORALIS_CHAIN_BY_NETWORK = {
     "polygon-mainnet": "polygon",
     "arbitrum-mainnet": "arbitrum",
     "optimism-mainnet": "optimism",
+    "bnb-mainnet": "bsc",
 }
 
 
