@@ -1,3 +1,13 @@
+## v0.8.53 - 2026-01-13
+
+### Bug Fixes
+- Fixed Privy signing methods to use correct RPC methods for different use cases (personal_sign for messages, secp256k1_sign for raw hashes)
+
+### Dependencies
+- Updated dependencies via uv sync
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.52...v0.8.53
+
 ## v0.8.52 - 2026-01-13
 
 ### Bug Fixes
