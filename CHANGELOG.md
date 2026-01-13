@@ -1,3 +1,11 @@
+## v0.8.56 - 2026-01-13
+
+### New Features
+- Added gasless transaction support for Safe wallets using the relayer pattern
+- Safe wallet owners can now execute transactions without holding ETH for gas
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.55...v0.8.56
+
 ## v0.8.55 - 2026-01-13
 
 ### New Features
