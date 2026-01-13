@@ -418,7 +418,11 @@ class PrivyClient:
             )
 
     async def sign_message(self, wallet_id: str, message: str) -> str:
-        """Sign a message using the Privy server wallet."""
+        """Sign a message using the Privy server wallet.
+
+        Uses personal_sign which signs the message with Ethereum's
+        personal_sign prefix: "\\x19Ethereum Signed Message:\\n" + len(message) + message
+        """
         if not self.app_id or not self.app_secret:
             raise IntentKitAPIError(
                 500, "PrivyConfigError", "Privy credentials missing"
@@ -426,7 +430,7 @@ class PrivyClient:
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
         payload = {
-            "method": "signMessage",
+            "method": "personal_sign",
             "params": {
                 "message": message,
                 "encoding": "utf-8",
@@ -454,7 +458,11 @@ class PrivyClient:
             return data["data"]["signature"]
 
     async def sign_hash(self, wallet_id: str, hash_bytes: bytes) -> str:
-        """Sign a hash directly using the Privy server wallet."""
+        """Sign a raw hash directly using the Privy server wallet.
+
+        Uses secp256k1_sign which signs the raw hash without any prefix.
+        This is different from personal_sign which adds Ethereum's message prefix.
+        """
         if not self.app_id or not self.app_secret:
             raise IntentKitAPIError(
                 500, "PrivyConfigError", "Privy credentials missing"
@@ -465,10 +473,9 @@ class PrivyClient:
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
         payload = {
-            "method": "signMessage",
+            "method": "secp256k1_sign",
             "params": {
-                "message": hash_hex,
-                "encoding": "hex",
+                "hash": hash_hex,
             },
         }
 
