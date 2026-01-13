@@ -1,3 +1,10 @@
+## v0.8.52 - 2026-01-13
+
+### Bug Fixes
+- Fixed Privy signMessage method to use correct API method and encoding parameters
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.51...v0.8.52
+
 ## v0.8.51 - 2026-01-13
 
 ### Bug Fixes
