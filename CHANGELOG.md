@@ -1,3 +1,14 @@
+## v0.8.55 - 2026-01-13
+
+### New Features
+- Added user server wallet creation system with Safe smart accounts
+- Added UserData model for flexible key-value storage per user
+
+### Improvements
+- Refactored agent list endpoint to use dynamic template rendering
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.54...v0.8.55
+
 ## v0.8.54 - 2026-01-13
 
 ### New Features
