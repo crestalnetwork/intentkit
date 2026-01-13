@@ -403,7 +403,7 @@ class PrivyClient:
             "chain_type": "ethereum",
         }
         if owner_id:
-            payload["owner"] = {"id": owner_id}
+            payload["owner"] = {"user_id": owner_id}
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

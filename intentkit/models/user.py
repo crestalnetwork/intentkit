@@ -102,6 +102,10 @@ class UserTable(Base):
         String,
         nullable=True,
     )
+    server_wallet_address: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
     linked_accounts: Mapped[dict[str, object] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
@@ -150,6 +154,10 @@ class UserUpdate(BaseModel):
     ]
     solana_wallet_address: Annotated[
         str | None, Field(None, description="User's Solana wallet address")
+    ]
+    server_wallet_address: Annotated[
+        str | None,
+        Field(None, description="User's server wallet address (Safe smart account)"),
     ]
     linked_accounts: Annotated[
         dict[str, object] | None,
