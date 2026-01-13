@@ -1933,6 +1933,189 @@ async def _set_spending_limit(
 
 
 # =============================================================================
+# Gasless Transaction Support (Relayer Pattern)
+# =============================================================================
+
+
+async def execute_gasless_transaction(
+    privy_client: PrivyClient,
+    privy_wallet_id: str,
+    safe_address: str,
+    to: str,
+    value: int,
+    data: bytes,
+    network_id: str,
+    rpc_url: str,
+) -> str:
+    """
+    Execute a Safe transaction with gas paid by the Master Wallet (Relayer pattern).
+
+    This enables gasless transactions for Safe wallets:
+    1. The Safe owner (Privy wallet) signs the transaction hash off-chain
+    2. The Master Wallet submits the signed transaction on-chain and pays for gas
+    3. The Safe executes the transaction
+
+    This is ideal for scenarios where Safe wallet owners don't hold ETH for gas,
+    such as User-to-Agent USDC transfers.
+
+    Args:
+        privy_client: Initialized Privy client
+        privy_wallet_id: The Privy wallet ID (owner of the Safe)
+        safe_address: The Safe smart account address
+        to: Target address for the transaction
+        value: ETH value to send (in wei, usually 0 for ERC20 transfers)
+        data: Transaction calldata (e.g., encoded ERC20 transfer)
+        network_id: Network identifier (e.g., "base-mainnet")
+        rpc_url: RPC URL for the network
+
+    Returns:
+        Transaction hash of the executed transaction
+
+    Raises:
+        ValueError: If network is not supported
+        IntentKitAPIError: If transaction execution fails
+    """
+    chain_config = CHAIN_CONFIGS.get(network_id)
+    if not chain_config:
+        raise ValueError(f"Unsupported network: {network_id}")
+
+    # Get Safe nonce for signing
+    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+
+    # Calculate Safe transaction hash (EIP-712)
+    safe_tx_hash = _get_safe_tx_hash(
+        safe_address=safe_address,
+        to=to,
+        value=value,
+        data=data,
+        nonce=safe_nonce,
+        chain_id=chain_config.chain_id,
+    )
+
+    # Sign the transaction hash with Privy wallet (off-chain, no gas)
+    signature_hex = await privy_client.sign_hash(privy_wallet_id, safe_tx_hash)
+
+    # Parse signature and adjust v value for Safe
+    sig_bytes = bytes.fromhex(
+        signature_hex[2:] if signature_hex.startswith("0x") else signature_hex
+    )
+    r = sig_bytes[:32]
+    s = sig_bytes[32:64]
+    v = sig_bytes[64]
+    # Safe expects v to be 27 or 28, but some signers return 0 or 1
+    if v < 27:
+        v += 27
+    signature = r + s + bytes([v])
+
+    # Encode execTransaction with the signature
+    exec_selector = keccak(
+        text="execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)"
+    )[:4]
+
+    exec_data = exec_selector + encode(
+        [
+            "address",
+            "uint256",
+            "bytes",
+            "uint8",
+            "uint256",
+            "uint256",
+            "uint256",
+            "address",
+            "address",
+            "bytes",
+        ],
+        [
+            to_checksum_address(to),
+            value,
+            data,
+            0,  # operation: 0 = Call
+            0,  # safeTxGas
+            0,  # baseGas
+            0,  # gasPrice
+            "0x0000000000000000000000000000000000000000",  # gasToken
+            "0x0000000000000000000000000000000000000000",  # refundReceiver
+            signature,
+        ],
+    )
+
+    # Use Master Wallet to relay the transaction (pays for gas)
+    tx_hash = await _send_safe_transaction_with_master_wallet(
+        safe_address=safe_address,
+        exec_data=exec_data,
+        chain_id=chain_config.chain_id,
+        rpc_url=rpc_url,
+    )
+
+    logger.info(
+        f"Gasless transaction executed: Safe={safe_address}, To={to}, Value={value}, TxHash={tx_hash}"
+    )
+
+    return tx_hash
+
+
+async def transfer_erc20_gasless(
+    privy_client: PrivyClient,
+    privy_wallet_id: str,
+    safe_address: str,
+    token_address: str,
+    to: str,
+    amount: int,
+    network_id: str,
+    rpc_url: str,
+) -> str:
+    """
+    Transfer ERC20 tokens from a Safe wallet with gas paid by Master Wallet.
+
+    This is a convenience wrapper around execute_gasless_transaction for
+    ERC20 token transfers. Ideal for USDC transfers between User and Agent wallets.
+
+    Args:
+        privy_client: Initialized Privy client
+        privy_wallet_id: The Privy wallet ID (owner of the Safe)
+        safe_address: The Safe smart account address
+        token_address: The ERC20 token contract address
+        to: Recipient address
+        amount: Amount to transfer (in token's smallest unit, e.g., 6 decimals for USDC)
+        network_id: Network identifier (e.g., "base-mainnet")
+        rpc_url: RPC URL for the network
+
+    Returns:
+        Transaction hash of the executed transfer
+
+    Example:
+        # Transfer 10 USDC from User Safe to Agent Safe
+        tx_hash = await transfer_erc20_gasless(
+            privy_client=privy_client,
+            privy_wallet_id=user_privy_wallet_id,
+            safe_address=user_safe_address,
+            token_address="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC on Base
+            to=agent_safe_address,
+            amount=10_000_000,  # 10 USDC (6 decimals)
+            network_id="base-mainnet",
+            rpc_url=rpc_url,
+        )
+    """
+    # Encode ERC20 transfer call
+    transfer_selector = keccak(text="transfer(address,uint256)")[:4]
+    transfer_data = transfer_selector + encode(
+        ["address", "uint256"],
+        [to_checksum_address(to), amount],
+    )
+
+    return await execute_gasless_transaction(
+        privy_client=privy_client,
+        privy_wallet_id=privy_wallet_id,
+        safe_address=safe_address,
+        to=to_checksum_address(token_address),
+        value=0,
+        data=transfer_data,
+        network_id=network_id,
+        rpc_url=rpc_url,
+    )
+
+
+# =============================================================================
 # Main Entry Points
 # =============================================================================
 
