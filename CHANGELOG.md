@@ -1,3 +1,11 @@
+## v0.8.54 - 2026-01-13
+
+### New Features
+- Added BNB Smart Chain (bnb-mainnet) support across all chain configurations
+- Pass Privy user ID as wallet owner when creating agent wallet
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.53...v0.8.54
+
 ## v0.8.53 - 2026-01-13
 
 ### Bug Fixes
