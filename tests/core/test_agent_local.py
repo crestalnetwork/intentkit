@@ -16,7 +16,6 @@ from intentkit.models.llm import AVAILABLE_MODELS, LLMModelInfo, LLMProvider
 @pytest.fixture
 def mock_db_models():
     with (
-        patch("intentkit.models.agent.Agent.get") as mock_agent_get,
         patch("intentkit.models.agent_data.AgentData.get") as mock_agent_data_get,
         patch("intentkit.models.llm.LLMModelInfo.get") as mock_llm_get,
         patch("intentkit.models.llm.create_llm_model") as mock_create_llm,
@@ -30,7 +29,6 @@ def mock_db_models():
         mock_session.return_value.__aenter__.return_value = mock_session_ctx
 
         yield {
-            "agent_get": mock_agent_get,
             "agent_data_get": mock_agent_data_get,
             "llm_get": mock_llm_get,
             "create_llm": mock_create_llm,

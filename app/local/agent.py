@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import logging
 from datetime import UTC, datetime
@@ -30,6 +31,7 @@ from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
 from intentkit.core.engine import clean_agent_memory
+from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
     AgentCreate,
@@ -198,16 +200,25 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     )
     agent_data_map = {data.id: data for data in agent_data_list}
 
+    # Render agents concurrently
+    rendered_agents_tasks = []
+    for agent in agents:
+        agent_model = Agent.model_validate(agent)
+        rendered_agents_tasks.append(render_agent(agent_model))
+
+    rendered_agents = await asyncio.gather(*rendered_agents_tasks)
+
     # Convert to AgentResponse objects
-    return [
-        await AgentResponse.from_agent(
-            Agent.model_validate(agent),
+    response_tasks = []
+    for agent in rendered_agents:
+        agent_data = (
             AgentData.model_validate(agent_data_map.get(agent.id))
             if agent.id in agent_data_map
-            else None,
+            else None
         )
-        for agent in agents
-    ]
+        response_tasks.append(AgentResponse.from_agent(agent, agent_data))
+
+    return await asyncio.gather(*response_tasks)
 
 
 @agent_router.get(
