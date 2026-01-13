@@ -418,7 +418,7 @@ class PrivyClient:
             )
 
     async def sign_message(self, wallet_id: str, message: str) -> str:
-        """Sign a message using the Privy server wallet (personal_sign)."""
+        """Sign a message using the Privy server wallet."""
         if not self.app_id or not self.app_secret:
             raise IntentKitAPIError(
                 500, "PrivyConfigError", "Privy credentials missing"
@@ -426,9 +426,10 @@ class PrivyClient:
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
         payload = {
-            "method": "personal_sign",
+            "method": "signMessage",
             "params": {
                 "message": message,
+                "encoding": "utf-8",
             },
         }
 
@@ -464,9 +465,10 @@ class PrivyClient:
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
         payload = {
-            "method": "personal_sign",
+            "method": "signMessage",
             "params": {
                 "message": hash_hex,
+                "encoding": "hex",
             },
         }
 
