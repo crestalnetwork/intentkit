@@ -32,6 +32,7 @@ from web3 import AsyncWeb3
 from web3.types import TxParams
 
 from intentkit.config.config import config
+from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -278,6 +279,7 @@ ERC20_ABI = [
     },
 ]
 
+
 # SafeProxyFactory ABI
 SAFE_PROXY_FACTORY_ABI = [
     {
@@ -291,6 +293,122 @@ SAFE_PROXY_FACTORY_ABI = [
         "type": "function",
     },
 ]
+
+
+# =============================================================================
+# Distributed Nonce Manager (Redis-based)
+# =============================================================================
+
+NONCE_LOCK_TTL = 30  # Lock expires after 30 seconds (prevents deadlocks)
+NONCE_KEY_TTL = 3600  # Nonce cache expires after 1 hour
+
+
+class MasterWalletNonceManager:
+    """Distributed nonce manager using Redis for cross-process coordination.
+
+    This prevents nonce collisions when multiple workers/container replicas
+    use the same master wallet to pay for gas on Safe deployments.
+
+    Uses Redis for:
+    - nonce storage (shared across all processes)
+    - distributed locking (SETNX pattern with TTL)
+    """
+
+    address: str
+    _nonce_key: str
+    _lock_key: str
+
+    def __init__(self, address: str):
+        self.address = to_checksum_address(address)
+        self._nonce_key = f"intentkit:master_wallet:nonce:{address.lower()}"
+        self._lock_key = f"intentkit:master_wallet:lock:{address.lower()}"
+
+    async def acquire_lock(self, timeout: float = 10.0) -> bool:
+        """Acquire distributed lock with timeout.
+
+        Args:
+            timeout: Maximum seconds to wait for lock acquisition
+
+        Returns:
+            True if lock acquired, False if timeout
+        """
+        import asyncio
+        import time
+
+        redis = get_redis()
+        start = time.monotonic()
+
+        while (time.monotonic() - start) < timeout:
+            # SETNX pattern with TTL
+            acquired = await redis.set(self._lock_key, "1", nx=True, ex=NONCE_LOCK_TTL)
+            if acquired:
+                return True
+            await asyncio.sleep(0.05)  # Small delay before retry
+        return False
+
+    async def release_lock(self) -> None:
+        """Release the distributed lock."""
+        redis = get_redis()
+        await redis.delete(self._lock_key)
+
+    async def get_and_increment_nonce(self, w3: AsyncWeb3) -> int:
+        """Get nonce from Redis (or blockchain if not cached) and atomically increment.
+
+        Args:
+            w3: AsyncWeb3 instance for blockchain queries
+
+        Returns:
+            The nonce to use for the current transaction
+        """
+        redis = get_redis()
+
+        # Check if nonce is cached
+        cached = await redis.get(self._nonce_key)
+        if cached is None:
+            # First time or expired - fetch from blockchain
+            blockchain_nonce = await w3.eth.get_transaction_count(
+                to_checksum_address(self.address)
+            )
+            # Set only if not exists (another worker might have set it)
+            await redis.set(
+                self._nonce_key, str(blockchain_nonce), nx=True, ex=NONCE_KEY_TTL
+            )
+            cached = await redis.get(self._nonce_key)
+
+        current_nonce = int(str(cached))
+        # Atomically increment for next caller
+        await redis.incr(self._nonce_key)
+        return current_nonce
+
+    async def reset_from_blockchain(self, w3: AsyncWeb3) -> None:
+        """Reset nonce cache from blockchain (call after tx failure).
+
+        Args:
+            w3: AsyncWeb3 instance for blockchain queries
+        """
+        redis = get_redis()
+        blockchain_nonce = await w3.eth.get_transaction_count(
+            to_checksum_address(self.address)
+        )
+        await redis.set(self._nonce_key, str(blockchain_nonce), ex=NONCE_KEY_TTL)
+        logger.info(f"Reset master wallet nonce to {blockchain_nonce}")
+
+
+# Module-level nonce manager instance (lazy init)
+_nonce_manager: MasterWalletNonceManager | None = None
+
+
+def _get_nonce_manager() -> MasterWalletNonceManager:
+    """Get or create the nonce manager singleton for the master wallet."""
+    global _nonce_manager
+    if _nonce_manager is None:
+        if not config.master_wallet_private_key:
+            raise IntentKitAPIError(
+                500, "ConfigError", "MASTER_WALLET_PRIVATE_KEY not configured"
+            )
+        master_account = Account.from_key(config.master_wallet_private_key)
+        _nonce_manager = MasterWalletNonceManager(str(master_account.address))
+    return _nonce_manager
 
 
 # =============================================================================
@@ -1811,34 +1929,52 @@ async def _deploy_safe(
         f"Deploying Safe for owner {owner_address} using master wallet {master_account.address}"
     )
 
-    # Build transaction
-    nonce = await w3.eth.get_transaction_count(master_account.address)
-    gas_price = await w3.eth.gas_price
+    # Use distributed nonce manager with lock
+    nonce_manager = _get_nonce_manager()
+    if not await nonce_manager.acquire_lock():
+        raise IntentKitAPIError(
+            500, "LockTimeout", "Failed to acquire nonce lock for Safe deployment"
+        )
 
-    tx: dict[str, Any] = {
-        "from": master_account.address,
-        "to": SAFE_PROXY_FACTORY_ADDRESS,
-        "value": 0,
-        "data": create_data,
-        "nonce": nonce,
-        "chainId": chain_id,
-        "gas": 500000,  # Safe deployment typically needs ~300k gas
-        "gasPrice": gas_price,
-    }
-
-    # Estimate gas
     try:
-        estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
-        tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
-        logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+        # Get nonce from Redis (or blockchain if not cached)
+        nonce = await nonce_manager.get_and_increment_nonce(w3)
+        gas_price = await w3.eth.gas_price
+
+        tx: dict[str, Any] = {
+            "from": master_account.address,
+            "to": SAFE_PROXY_FACTORY_ADDRESS,
+            "value": 0,
+            "data": create_data,
+            "nonce": nonce,
+            "chainId": chain_id,
+            "gas": 500000,  # Safe deployment typically needs ~300k gas
+            "gasPrice": gas_price,
+        }
+
+        # Estimate gas
+        try:
+            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
+            tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
+            logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+        except Exception as e:
+            logger.warning(f"Gas estimation failed, using default 500000: {e}")
+
+        # Sign and send
+        signed_tx = master_account.sign_transaction(tx)
+        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+        logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
+
     except Exception as e:
-        logger.warning(f"Gas estimation failed, using default 500000: {e}")
-
-    # Sign and send
-    signed_tx = master_account.sign_transaction(tx)
-    tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-    logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
+        # Reset nonce on error (might be nonce-related)
+        error_msg = str(e).lower()
+        if "nonce" in error_msg:
+            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+            await nonce_manager.reset_from_blockchain(w3)
+        raise
+    finally:
+        await nonce_manager.release_lock()
 
     # Wait for confirmation
     receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
@@ -2038,28 +2174,47 @@ async def _send_safe_transaction_with_master_wallet(
     w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
     master_account = Account.from_key(config.master_wallet_private_key)
 
-    nonce = await w3.eth.get_transaction_count(master_account.address)
-    gas_price = await w3.eth.gas_price
-
-    tx: dict[str, Any] = {
-        "from": master_account.address,
-        "to": safe_address,
-        "value": 0,
-        "data": exec_data,
-        "nonce": nonce,
-        "chainId": chain_id,
-        "gas": 300000,
-        "gasPrice": gas_price,
-    }
+    # Use distributed nonce manager with lock
+    nonce_manager = _get_nonce_manager()
+    if not await nonce_manager.acquire_lock():
+        raise IntentKitAPIError(
+            500, "LockTimeout", "Failed to acquire nonce lock for Safe transaction"
+        )
 
     try:
-        estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
-        tx["gas"] = int(estimated_gas * 1.2)
-    except Exception as e:
-        logger.warning(f"Gas estimation failed for Safe tx, using default: {e}")
+        # Get nonce from Redis (or blockchain if not cached)
+        nonce = await nonce_manager.get_and_increment_nonce(w3)
+        gas_price = await w3.eth.gas_price
 
-    signed_tx = master_account.sign_transaction(tx)
-    tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx: dict[str, Any] = {
+            "from": master_account.address,
+            "to": safe_address,
+            "value": 0,
+            "data": exec_data,
+            "nonce": nonce,
+            "chainId": chain_id,
+            "gas": 300000,
+            "gasPrice": gas_price,
+        }
+
+        try:
+            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
+            tx["gas"] = int(estimated_gas * 1.2)
+        except Exception as e:
+            logger.warning(f"Gas estimation failed for Safe tx, using default: {e}")
+
+        signed_tx = master_account.sign_transaction(tx)
+        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+    except Exception as e:
+        # Reset nonce on error (might be nonce-related)
+        error_msg = str(e).lower()
+        if "nonce" in error_msg:
+            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+            await nonce_manager.reset_from_blockchain(w3)
+        raise
+    finally:
+        await nonce_manager.release_lock()
 
     receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     if receipt["status"] != 1:
