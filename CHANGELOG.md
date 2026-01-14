@@ -1,3 +1,13 @@
+## v0.8.60
+
+### Bug Fixes
+- Fixed critical nonce collision issue in Safe wallet deployments under high concurrency
+
+### Improvements
+- Improved transaction reliability for multi-worker deployments
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.59...v0.8.60
+
 ## v0.8.59 - 2026-01-14
 
 ### New Features
@@ -12,6 +22,7 @@
 - Enhanced logging with key fingerprints for easier debugging of authorization issues
 
 **Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.58...v0.8.59
+
 
 ## v0.8.58 - 2026-01-14
 
