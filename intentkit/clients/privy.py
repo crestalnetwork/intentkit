@@ -1419,16 +1419,15 @@ async def deploy_safe_with_allowance(
             )
         logger.info(f"Safe address validated: {predicted_address}")
 
-    # Enable Allowance Module if spending limit is configured
-    if weekly_spending_limit_usdc is not None and weekly_spending_limit_usdc > 0:
-        # Check if module is already enabled
+    if weekly_spending_limit_usdc is not None:
         module_enabled = await _is_module_enabled(
             rpc_url=rpc_url,
             safe_address=predicted_address,
             module_address=chain_config.allowance_module_address,
         )
+        result["allowance_module_enabled"] = module_enabled
 
-        if not module_enabled:
+        if weekly_spending_limit_usdc > 0 and not module_enabled:
             logger.info("Enabling Allowance Module")
             enable_tx_hash = await _enable_allowance_module(
                 privy_client=privy_client,
@@ -1440,11 +1439,11 @@ async def deploy_safe_with_allowance(
                 rpc_url=rpc_url,
             )
             result["tx_hashes"].append({"enable_module": enable_tx_hash})
+            result["allowance_module_enabled"] = True
 
-        result["allowance_module_enabled"] = True
-
-        # Configure spending limit
-        if chain_config.usdc_address:
+        if chain_config.usdc_address and (
+            weekly_spending_limit_usdc > 0 or module_enabled
+        ):
             logger.info(
                 f"Setting weekly spending limit: {weekly_spending_limit_usdc} USDC"
             )
@@ -1453,12 +1452,10 @@ async def deploy_safe_with_allowance(
                 privy_wallet_id=privy_wallet_id,
                 safe_address=predicted_address,
                 owner_address=owner_address,
-                delegate_address=owner_address,  # Privy wallet is the delegate
+                delegate_address=owner_address,
                 token_address=chain_config.usdc_address,
-                allowance_amount=int(
-                    weekly_spending_limit_usdc * 1_000_000
-                ),  # USDC has 6 decimals
-                reset_time_minutes=7 * 24 * 60,  # 1 week in minutes
+                allowance_amount=int(weekly_spending_limit_usdc * 1_000_000),
+                reset_time_minutes=7 * 24 * 60,
                 allowance_module_address=chain_config.allowance_module_address,
                 chain_id=chain_config.chain_id,
                 rpc_url=rpc_url,

@@ -58,7 +58,9 @@ async def get_agent(agent_id: str) -> Agent | None:
 
 
 async def process_agent_wallet(
-    agent: Agent, old_wallet_provider: str | None = None
+    agent: Agent,
+    old_wallet_provider: str | None = None,
+    old_weekly_spending_limit: float | None = None,
 ) -> AgentData:
     """Process agent wallet initialization and validation.
 
@@ -73,6 +75,16 @@ async def process_agent_wallet(
         IntentKitAPIError: If attempting to change between cdp and readonly providers
     """
     current_wallet_provider = agent.wallet_provider
+    old_limit = (
+        Decimal(str(old_weekly_spending_limit)).quantize(Decimal("0.000001"))
+        if old_weekly_spending_limit is not None
+        else None
+    )
+    new_limit = (
+        Decimal(str(agent.weekly_spending_limit)).quantize(Decimal("0.000001"))
+        if agent.weekly_spending_limit is not None
+        else None
+    )
 
     # 1. Check if changing between cdp and readonly (not allowed)
     if (
@@ -92,6 +104,57 @@ async def process_agent_wallet(
         and old_wallet_provider != "none"
         and old_wallet_provider == current_wallet_provider
     ):
+        if current_wallet_provider == "privy" and old_limit != new_limit:
+            agent_data = await AgentData.get(agent.id)
+            if agent_data.privy_wallet_data:
+                from intentkit.clients.privy import create_privy_safe_wallet
+
+                try:
+                    privy_wallet_data = json.loads(agent_data.privy_wallet_data)
+                except json.JSONDecodeError:
+                    privy_wallet_data = {}
+
+                existing_privy_wallet_id = privy_wallet_data.get("privy_wallet_id")
+                existing_privy_wallet_address = privy_wallet_data.get(
+                    "privy_wallet_address"
+                )
+
+                if existing_privy_wallet_id and existing_privy_wallet_address:
+                    rpc_url: str | None = None
+                    network_id = (
+                        agent.network_id
+                        or privy_wallet_data.get("network_id")
+                        or "base-mainnet"
+                    )
+                    if config.chain_provider:
+                        try:
+                            chain_config = config.chain_provider.get_chain_config(
+                                network_id
+                            )
+                            rpc_url = chain_config.rpc_url
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to get RPC URL from chain provider: {e}"
+                            )
+
+                    wallet_data = await create_privy_safe_wallet(
+                        agent_id=agent.id,
+                        network_id=network_id,
+                        rpc_url=rpc_url,
+                        weekly_spending_limit_usdc=agent.weekly_spending_limit
+                        if agent.weekly_spending_limit is not None
+                        else 0.0,
+                        existing_privy_wallet_id=existing_privy_wallet_id,
+                        existing_privy_wallet_address=existing_privy_wallet_address,
+                    )
+                    agent_data = await AgentData.patch(
+                        agent.id,
+                        {
+                            "evm_wallet_address": wallet_data["smart_wallet_address"],
+                            "privy_wallet_data": json.dumps(wallet_data),
+                        },
+                    )
+                    return agent_data
         return await AgentData.get(agent.id)
 
     # 3. For new agents (old_wallet_provider is None), check if wallet already exists
@@ -340,7 +403,9 @@ async def override_agent(
     # Update agent
     latest_agent = await agent.override(agent_id)
     agent_data = await process_agent_wallet(
-        latest_agent, existing_agent.wallet_provider
+        latest_agent,
+        existing_agent.wallet_provider,
+        existing_agent.weekly_spending_limit,
     )
     send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
 
@@ -382,7 +447,9 @@ async def patch_agent(
     # Update agent with only provided fields
     latest_agent = await agent.update(agent_id)
     agent_data = await process_agent_wallet(
-        latest_agent, existing_agent.wallet_provider
+        latest_agent,
+        existing_agent.wallet_provider,
+        existing_agent.weekly_spending_limit,
     )
     send_agent_notification(latest_agent, agent_data, "Agent Patched")
 
