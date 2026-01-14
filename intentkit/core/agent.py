@@ -216,13 +216,25 @@ async def process_agent_wallet(
                     "PrivyUserIdMissing",
                     "Agent owner (Privy user ID) is required for Privy wallets",
                 )
-            user_signer_key_quorum_id = await privy_client.create_key_quorum(
+            if not agent.owner.startswith("did:privy:"):
+                raise IntentKitAPIError(
+                    400,
+                    "PrivyUserIdInvalid",
+                    "Only Privy-authenticated users (did:privy:...) can create Privy wallets",
+                )
+            # Create a 1-of-N key quorum containing both the server's authorization key
+            # and the user's ID. This allows either party to independently control the wallet.
+            server_public_keys = privy_client.get_authorization_public_keys()
+            owner_key_quorum_id = await privy_client.create_key_quorum(
                 user_ids=[agent.owner],
-                authorization_threshold=1,
+                public_keys=server_public_keys if server_public_keys else None,
+                authorization_threshold=1,  # Any single party can authorize
                 display_name=f"intentkit:{agent.id[:40]}",
             )
+            # Create wallet with key quorum as owner (not additional signer)
+            # This enables both server and user to fully control the wallet
             privy_wallet = await privy_client.create_wallet(
-                additional_signer_ids=[user_signer_key_quorum_id]
+                owner_key_quorum_id=owner_key_quorum_id,
             )
             existing_privy_wallet_id = privy_wallet.id
             existing_privy_wallet_address = privy_wallet.address
@@ -231,7 +243,7 @@ async def process_agent_wallet(
             partial_wallet_data = {
                 "privy_wallet_id": existing_privy_wallet_id,
                 "privy_wallet_address": existing_privy_wallet_address,
-                "user_signer_key_quorum_id": user_signer_key_quorum_id,
+                "owner_key_quorum_id": owner_key_quorum_id,
                 "network_id": network_id,
                 "status": "privy_created",
             }

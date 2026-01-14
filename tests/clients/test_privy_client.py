@@ -81,3 +81,58 @@ class TestPrivyClient:
                 "chain_type": "ethereum",
                 "additional_signers": [{"signer_id": "kq_user"}],
             }
+
+    @pytest.mark.asyncio
+    async def test_create_wallet_with_owner_key_quorum(self) -> None:
+        with patch(
+            "intentkit.clients.privy.httpx.AsyncClient"
+        ) as mock_async_client_cls:
+            mock_client = _mock_async_client(
+                mock_async_client_cls,
+                response_json={
+                    "id": "wallet_2",
+                    "address": "0x0000000000000000000000000000000000000002",
+                    "chain_type": "ethereum",
+                },
+            )
+
+            privy = PrivyClient()
+            privy.app_id = "app"
+            privy.app_secret = "secret"
+            privy.base_url = "https://api.privy.io/v1"
+
+            wallet = await privy.create_wallet(owner_key_quorum_id="kq_owner")
+
+            assert wallet.id == "wallet_2"
+            args, kwargs = mock_client.post.call_args
+            assert args[0] == "https://api.privy.io/v1/wallets"
+            assert kwargs["json"] == {
+                "chain_type": "ethereum",
+                "owner_id": "kq_owner",
+            }
+
+    def test_get_authorization_public_keys_empty(self) -> None:
+        privy = PrivyClient()
+        privy._authorization_key_objects = []
+
+        public_keys = privy.get_authorization_public_keys()
+
+        assert public_keys == []
+
+    def test_get_authorization_public_keys_with_key(self) -> None:
+        from cryptography.hazmat.primitives.asymmetric import ec
+
+        privy = PrivyClient()
+        # Generate a test P-256 key
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        privy._authorization_key_objects = [private_key]
+
+        public_keys = privy.get_authorization_public_keys()
+
+        assert len(public_keys) == 1
+        # Should be base64-encoded
+        import base64
+
+        decoded = base64.b64decode(public_keys[0])
+        # SPKI DER format starts with specific bytes for P-256
+        assert len(decoded) == 91  # Standard SPKI P-256 public key size

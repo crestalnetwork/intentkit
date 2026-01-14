@@ -12,6 +12,7 @@ Architecture:
 """
 
 import base64
+import hashlib
 import json
 import logging
 import textwrap
@@ -37,7 +38,29 @@ logger = logging.getLogger(__name__)
 
 
 def _canonicalize_json(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    if value is None:
+        return "null"
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    if isinstance(value, str):
+        return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    if isinstance(value, (list, tuple)):
+        return "[" + ",".join(_canonicalize_json(v) for v in value) + "]"
+    if isinstance(value, dict):
+        keys = sorted(value.keys())
+        parts: list[str] = []
+        for k in keys:
+            if not isinstance(k, str):
+                raise TypeError("JSON object keys must be strings")
+            parts.append(_canonicalize_json(k) + ":" + _canonicalize_json(value[k]))
+        return "{" + ",".join(parts) + "}"
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
 
 
 def _privy_private_key_to_pem(key: str) -> bytes:
@@ -395,6 +418,40 @@ class PrivyClient:
             if hasattr(config, "privy_authorization_private_keys")
             else []
         )
+        self._authorization_key_objects: list[ec.EllipticCurvePrivateKey] = []
+        self._authorization_key_fingerprints: list[str] = []
+
+        for raw_key in self.authorization_private_keys:
+            try:
+                pem = _privy_private_key_to_pem(raw_key)
+                key_obj = serialization.load_pem_private_key(pem, password=None)
+                if not isinstance(key_obj, ec.EllipticCurvePrivateKey):
+                    logger.warning(
+                        "Privy authorization key ignored (not EC private key)"
+                    )
+                    continue
+                if getattr(key_obj.curve, "name", "") != "secp256r1":
+                    logger.warning(
+                        "Privy authorization key curve unexpected: %s",
+                        getattr(key_obj.curve, "name", ""),
+                    )
+                pub_der = key_obj.public_key().public_bytes(
+                    encoding=serialization.Encoding.DER,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+                )
+                fp = hashlib.sha256(pub_der).hexdigest()[:16]
+                self._authorization_key_objects.append(key_obj)
+                self._authorization_key_fingerprints.append(fp)
+            except Exception as exc:
+                logger.warning("Failed to load Privy authorization key: %s", exc)
+
+        if self.authorization_private_keys:
+            logger.info(
+                "Privy authorization keys loaded: configured=%s usable=%s fingerprints=%s",
+                len(self.authorization_private_keys),
+                len(self._authorization_key_objects),
+                ",".join(self._authorization_key_fingerprints),
+            )
 
         if not self.app_id or not self.app_secret:
             logger.warning("Privy credentials not configured")
@@ -405,10 +462,29 @@ class PrivyClient:
             "Content-Type": "application/json",
         }
 
+    def get_authorization_public_keys(self) -> list[str]:
+        """Get base64-encoded SPKI DER public keys for creating key quorums.
+
+        These public keys can be used when creating a key quorum that includes
+        the server's authorization key, enabling the server to sign requests
+        for wallets owned by that key quorum.
+
+        Returns:
+            List of base64-encoded public keys in SPKI DER format.
+        """
+        public_keys = []
+        for key_obj in self._authorization_key_objects:
+            pub_der = key_obj.public_key().public_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            public_keys.append(base64.b64encode(pub_der).decode("utf-8"))
+        return public_keys
+
     def _get_authorization_signature(
         self, *, url: str, body: dict[str, Any], signed_headers: dict[str, str]
     ) -> str | None:
-        if not self.authorization_private_keys:
+        if not self._authorization_key_objects:
             return None
         if not self.app_id:
             return None
@@ -421,13 +497,11 @@ class PrivyClient:
             "headers": signed_headers,
         }
         serialized_payload = _canonicalize_json(payload).encode("utf-8")
+        payload_hash = hashlib.sha256(serialized_payload).hexdigest()[:16]
+        logger.info("Privy auth payload sha256: %s", payload_hash)
 
         signatures: list[str] = []
-        for raw_key in self.authorization_private_keys:
-            pem = _privy_private_key_to_pem(raw_key)
-            private_key = serialization.load_pem_private_key(pem, password=None)
-            if not isinstance(private_key, ec.EllipticCurvePrivateKey):
-                continue
+        for private_key in self._authorization_key_objects:
             sig_bytes = private_key.sign(serialized_payload, ec.ECDSA(hashes.SHA256()))
             signatures.append(base64.b64encode(sig_bytes).decode("utf-8"))
 
@@ -612,6 +686,16 @@ class PrivyClient:
             len(self.authorization_private_keys),
             signature_count,
         )
+        if self._authorization_key_fingerprints:
+            logger.info(
+                "Privy rpc auth fingerprints: %s",
+                ",".join(self._authorization_key_fingerprints),
+            )
+        if self._authorization_key_fingerprints:
+            logger.info(
+                "Privy rpc auth fingerprints: %s",
+                ",".join(self._authorization_key_fingerprints),
+            )
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -684,6 +768,11 @@ class PrivyClient:
             len(self.authorization_private_keys),
             signature_count,
         )
+        if self._authorization_key_fingerprints:
+            logger.info(
+                "Privy rpc auth fingerprints: %s",
+                ",".join(self._authorization_key_fingerprints),
+            )
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -805,16 +894,52 @@ class PrivyClient:
             },
         }
 
+        headers = self._get_headers()
+        authorization_signature = self._get_authorization_signature(
+            url=url,
+            body=payload,
+            signed_headers={"privy-app-id": self.app_id or ""},
+        )
+        signature_count = (
+            len([s for s in authorization_signature.split(",") if s.strip()])
+            if authorization_signature
+            else 0
+        )
+        if authorization_signature:
+            headers["privy-authorization-signature"] = authorization_signature
+
+        logger.info(
+            "Privy rpc request: wallet_id=%s method=%s base_url=%s auth_keys_configured=%s auth_sig_count=%s",
+            wallet_id,
+            payload.get("method"),
+            self.base_url,
+            len(self.authorization_private_keys),
+            signature_count,
+        )
+        if self._authorization_key_fingerprints:
+            logger.info(
+                "Privy rpc auth fingerprints: %s",
+                ",".join(self._authorization_key_fingerprints),
+            )
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,
                 json=payload,
                 auth=(self.app_id, self.app_secret),
-                headers=self._get_headers(),
+                headers=headers,
                 timeout=60.0,
             )
 
             if response.status_code not in (200, 201):
+                logger.info(
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    wallet_id,
+                    payload.get("method"),
+                    response.status_code,
+                    signature_count,
+                    response.text,
+                )
                 logger.error(f"Privy send transaction failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
