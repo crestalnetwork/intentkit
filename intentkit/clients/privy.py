@@ -14,14 +14,16 @@ Architecture:
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from eth_abi import encode
 from eth_account import Account
 from eth_utils import keccak, to_checksum_address
+from hexbytes import HexBytes
 from pydantic import BaseModel
 from web3 import AsyncWeb3
+from web3.types import TxParams
 
 from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
@@ -371,7 +373,7 @@ class PrivyClient:
     def __init__(self) -> None:
         self.app_id: str | None = config.privy_app_id
         self.app_secret: str | None = config.privy_app_secret
-        self.base_url: str = "https://auth.privy.io/api/v1"
+        self.base_url: str = config.privy_base_url
 
         if not self.app_id or not self.app_secret:
             logger.warning("Privy credentials not configured")
@@ -382,12 +384,65 @@ class PrivyClient:
             "Content-Type": "application/json",
         }
 
-    async def create_wallet(self, owner_id: str | None = None) -> PrivyWallet:
+    async def create_key_quorum(
+        self,
+        *,
+        user_ids: list[str] | None = None,
+        public_keys: list[str] | None = None,
+        authorization_threshold: int | None = None,
+        display_name: str | None = None,
+    ) -> str:
+        if not self.app_id or not self.app_secret:
+            raise IntentKitAPIError(
+                500, "PrivyConfigError", "Privy credentials missing"
+            )
+
+        url = f"{self.base_url}/key_quorums"
+        payload: dict[str, Any] = {}
+        if user_ids:
+            payload["user_ids"] = user_ids
+        if public_keys:
+            payload["public_keys"] = public_keys
+        if authorization_threshold is not None:
+            payload["authorization_threshold"] = authorization_threshold
+        if display_name:
+            payload["display_name"] = display_name
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=payload,
+                auth=(self.app_id, self.app_secret),
+                headers=self._get_headers(),
+                timeout=30.0,
+            )
+
+            if response.status_code not in (200, 201):
+                logger.error(f"Privy create key quorum failed: {response.text}")
+                raise IntentKitAPIError(
+                    response.status_code,
+                    "PrivyAPIError",
+                    "Failed to create Privy key quorum",
+                )
+
+            data = response.json()
+            return data["id"]
+
+    async def create_wallet(
+        self,
+        owner_id: str | None = None,
+        *,
+        owner_user_id: str | None = None,
+        owner_key_quorum_id: str | None = None,
+        additional_signer_ids: list[str] | None = None,
+    ) -> PrivyWallet:
         """Create a new server wallet.
 
         Args:
-            owner_id: Optional Privy user ID to set as the wallet owner.
-                     When provided, the wallet will be owned by this user.
+            owner_id: Deprecated alias for owner_user_id.
+            owner_user_id: Optional Privy user ID to set as the wallet owner.
+            owner_key_quorum_id: Optional key quorum ID to set as the wallet owner.
+            additional_signer_ids: Optional key quorum IDs to add as additional signers.
 
         Note: Privy's create wallet API does not support idempotency keys.
         Idempotency keys are only supported for transaction APIs via the
@@ -402,8 +457,15 @@ class PrivyClient:
         payload: dict[str, Any] = {
             "chain_type": "ethereum",
         }
-        if owner_id:
-            payload["owner"] = {"user_id": owner_id}
+        effective_owner_user_id = owner_user_id or owner_id
+        if effective_owner_user_id:
+            payload["owner"] = {"user_id": effective_owner_user_id}
+        if owner_key_quorum_id:
+            payload["owner_id"] = owner_key_quorum_id
+        if additional_signer_ids:
+            payload["additional_signers"] = [
+                {"signer_id": signer_id} for signer_id in additional_signer_ids
+            ]
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -1474,7 +1536,7 @@ async def _deploy_safe(
 
     # Estimate gas
     try:
-        estimated_gas = await w3.eth.estimate_gas(tx)
+        estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
         tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
         logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
     except Exception as e:
@@ -1503,18 +1565,16 @@ async def _deploy_safe(
         topics = log.get("topics", [])
         if topics and topics[0].hex() == proxy_creation_topic:
             # The proxy address is in the event data (first 32 bytes, padded)
-            log_data = log.get("data", b"")
-            # Handle both bytes and HexBytes types
-            if hasattr(log_data, "hex"):
-                # It's bytes or HexBytes, convert to bytes
-                log_data = bytes(log_data)
-            elif isinstance(log_data, str):
-                log_data = bytes.fromhex(
-                    log_data[2:] if log_data.startswith("0x") else log_data
-                )
-            if len(log_data) >= 32:
+            raw_data = log.get("data", b"")
+            if isinstance(raw_data, (bytes, bytearray, memoryview)):
+                log_data_bytes = bytes(raw_data)
+            else:
+                raw_str = str(raw_data)
+                hex_str = raw_str[2:] if raw_str.startswith("0x") else raw_str
+                log_data_bytes = bytes.fromhex(hex_str)
+            if len(log_data_bytes) >= 32:
                 # Extract address from first 32 bytes (last 20 bytes are the address)
-                actual_safe_address = to_checksum_address(log_data[12:32])
+                actual_safe_address = to_checksum_address(log_data_bytes[12:32])
                 break
 
     if not actual_safe_address:
@@ -1701,7 +1761,7 @@ async def _send_safe_transaction_with_master_wallet(
     }
 
     try:
-        estimated_gas = await w3.eth.estimate_gas(tx)
+        estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
         tx["gas"] = int(estimated_gas * 1.2)
     except Exception as e:
         logger.warning(f"Gas estimation failed for Safe tx, using default: {e}")
@@ -2325,7 +2385,6 @@ class PrivyWalletSigner:
             SignedMessage-like object with v, r, s, and signature attributes.
         """
         from eth_account.datastructures import SignedMessage
-        from eth_account.messages import encode_defunct
 
         # Handle different message types
         if hasattr(signable_message, "body"):
@@ -2353,24 +2412,16 @@ class PrivyWalletSigner:
         v = signature_bytes[64]
 
         # Create message hash for the SignedMessage
-        message_for_hash = encode_defunct(text=message_text)
-
-        try:
-            from eth_account.messages import _hash_eip191_message
-
-            message_hash = _hash_eip191_message(message_for_hash)
-        except ImportError:
-            # Fallback for older eth_account versions
-            from eth_account._utils.signing import hash_eip191_message
-
-            message_hash = hash_eip191_message(message_for_hash)
+        message_bytes = message_text.encode("utf-8")
+        prefix = f"\x19Ethereum Signed Message:\n{len(message_bytes)}".encode("utf-8")
+        message_hash = keccak(prefix + message_bytes)
 
         return SignedMessage(
-            messageHash=message_hash,
+            message_hash=HexBytes(message_hash),
             r=r,
             s=s,
             v=v,
-            signature=signature_bytes,
+            signature=HexBytes(signature_bytes),
         )
 
     def sign_typed_data(
@@ -2421,11 +2472,11 @@ class PrivyWalletSigner:
         v = signature_bytes[64]
 
         return SignedMessage(
-            messageHash=b"\x00" * 32,  # Placeholder, actual hash computation is complex
+            message_hash=HexBytes(b"\x00" * 32),
             r=r,
             s=s,
             v=v,
-            signature=signature_bytes,
+            signature=HexBytes(signature_bytes),
         )
 
     def unsafe_sign_hash(self, message_hash: Any) -> Any:
@@ -2465,11 +2516,11 @@ class PrivyWalletSigner:
         v = signature_bytes[64]
 
         return SignedMessage(
-            messageHash=hash_bytes,
+            message_hash=HexBytes(hash_bytes),
             r=r,
             s=s,
             v=v,
-            signature=signature_bytes,
+            signature=HexBytes(signature_bytes),
         )
 
     def sign_transaction(self, transaction_dict: dict[str, Any]) -> Any:

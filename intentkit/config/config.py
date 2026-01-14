@@ -97,6 +97,9 @@ class Config:
         # Privy and Safe
         self.privy_app_id: str | None = self.load("PRIVY_APP_ID")
         self.privy_app_secret: str | None = self.load("PRIVY_APP_SECRET")
+        self.privy_base_url: str = self.load(
+            "PRIVY_BASE_URL", "https://api.privy.io/v1"
+        )
         self.safe_api_key: str | None = self.load("SAFE_API_KEY")
         # Master wallet for gas sponsorship (pays for Safe deployments)
         self.master_wallet_private_key: str | None = self.load(

@@ -98,8 +98,14 @@ async def create_user_server_wallet(
 
     # Create Privy wallet first (if not recovering)
     if not existing_privy_wallet_id:
-        # Pass user_id as owner so the wallet is owned by this user
-        privy_wallet = await privy_client.create_wallet(owner_id=user_id)
+        user_signer_key_quorum_id = await privy_client.create_key_quorum(
+            user_ids=[user_id],
+            authorization_threshold=1,
+            display_name=f"intentkit:user:{user_id[:36]}",
+        )
+        privy_wallet = await privy_client.create_wallet(
+            additional_signer_ids=[user_signer_key_quorum_id]
+        )
         existing_privy_wallet_id = privy_wallet.id
         existing_privy_wallet_address = privy_wallet.address
 
@@ -110,6 +116,7 @@ async def create_user_server_wallet(
             data={
                 "privy_wallet_id": existing_privy_wallet_id,
                 "privy_wallet_address": existing_privy_wallet_address,
+                "user_signer_key_quorum_id": user_signer_key_quorum_id,
                 "network_id": network_id,
                 "status": "privy_created",
             },

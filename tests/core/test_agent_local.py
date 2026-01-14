@@ -1,6 +1,9 @@
+import os
 from datetime import datetime
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from epyxid import XID
 from langchain_core.tools import tool
@@ -10,6 +13,24 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
 from intentkit.models.llm import AVAILABLE_MODELS, LLMModelInfo, LLMProvider
+
+
+def _ollama_has_model(base_url: str, model_name: str) -> bool:
+    try:
+        resp = httpx.get(f"{base_url}/api/tags", timeout=1.0)
+        if resp.status_code != 200:
+            return False
+        data = resp.json()
+        models = data.get("models", [])
+        if not isinstance(models, list):
+            return False
+        return any(
+            model.get("name") == model_name
+            for model in models
+            if isinstance(model, dict)
+        )
+    except Exception:
+        return False
 
 
 # Mock the database models since we don't have a real DB in this unit test
@@ -62,10 +83,12 @@ def calculator(operation: str, a: int, b: int) -> int:
 @pytest.mark.asyncio
 async def test_local_agent_tool_call():
     """Test that a local agent can be built and execute a tool call."""
+    if os.getenv("INTENTKIT_RUN_LOCAL_LLM_TESTS") != "true":
+        pytest.skip("set INTENTKIT_RUN_LOCAL_LLM_TESTS=true to run")
 
     # Define a local model
     local_model_id = "qwen3:0.6b"
-    local_model_info = LLMModelInfo(
+    local_model_info = LLMModelInfo.model_construct(
         id=local_model_id,
         name=local_model_id,
         provider=LLMProvider.OLLAMA,
@@ -78,12 +101,27 @@ async def test_local_agent_tool_call():
         speed=5,
         supports_skill_calls=True,
         api_base="http://localhost:11434",
+        timeout=30,
+        supports_temperature=True,
+        supports_frequency_penalty=True,
+        supports_presence_penalty=True,
+        supports_image_input=False,
+        supports_structured_output=False,
+        has_reasoning=False,
+        supports_search=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
+
+    if not _ollama_has_model(
+        local_model_info.api_base or "http://localhost:11434", local_model_id
+    ):
+        pytest.skip("ollama not available or model not pulled")
 
     # Patch AVAILABLE_MODELS to include our local model
     with patch.dict(AVAILABLE_MODELS, {local_model_id: local_model_info}):
         # 1. Setup Agent
-        agent = Agent(
+        agent = Agent.model_construct(
             id="test-agent",
             name="Test Agent",
             model=local_model_id,
@@ -91,11 +129,12 @@ async def test_local_agent_tool_call():
             temperature=0.0,
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            prompt="You are a helpful assistant. Use the calculator tool when asked to do math.",
+            skills=None,
         )
 
-        agent_data = AgentData(
-            id="test-agent",
-            system_message="You are a helpful assistant. Use the calculator tool when asked to do math.",
+        agent_data = AgentData.model_construct(
+            id="test-agent", twitter_is_verified=False
         )
 
         # Mock DB returns
@@ -155,7 +194,9 @@ async def test_local_agent_tool_call():
             ):
                 # 4. Run stream_agent_raw
                 responses = []
-                async for response in stream_agent_raw(message, agent, executor):
+                async for response in cast(
+                    Any, stream_agent_raw(message, agent, executor)
+                ):
                     responses.append(response)
 
             # 5. Verify results
@@ -210,10 +251,12 @@ async def test_local_agent_tool_call():
 @pytest.mark.asyncio
 async def test_local_agent_system_tool_call():
     """Test that a local agent can be built and execute a system tool call (current_time)."""
+    if os.getenv("INTENTKIT_RUN_LOCAL_LLM_TESTS") != "true":
+        pytest.skip("set INTENTKIT_RUN_LOCAL_LLM_TESTS=true to run")
 
     # Define a local model
     local_model_id = "qwen3:0.6b"
-    local_model_info = LLMModelInfo(
+    local_model_info = LLMModelInfo.model_construct(
         id=local_model_id,
         name=local_model_id,
         provider=LLMProvider.OLLAMA,
@@ -226,12 +269,27 @@ async def test_local_agent_system_tool_call():
         speed=5,
         supports_skill_calls=True,
         api_base="http://localhost:11434",
+        timeout=30,
+        supports_temperature=True,
+        supports_frequency_penalty=True,
+        supports_presence_penalty=True,
+        supports_image_input=False,
+        supports_structured_output=False,
+        has_reasoning=False,
+        supports_search=False,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
     )
+
+    if not _ollama_has_model(
+        local_model_info.api_base or "http://localhost:11434", local_model_id
+    ):
+        pytest.skip("ollama not available or model not pulled")
 
     # Patch AVAILABLE_MODELS to include our local model
     with patch.dict(AVAILABLE_MODELS, {local_model_id: local_model_info}):
         # 1. Setup Agent
-        agent = Agent(
+        agent = Agent.model_construct(
             id="test-agent-system",
             name="Test Agent System",
             model=local_model_id,
@@ -239,6 +297,7 @@ async def test_local_agent_system_tool_call():
             temperature=0.0,
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            prompt="You are a helpful assistant. Use the common_current_time tool when asked for the time.",
             skills={
                 "common": {
                     "enabled": True,
@@ -247,9 +306,8 @@ async def test_local_agent_system_tool_call():
             },
         )
 
-        agent_data = AgentData(
-            id="test-agent-system",
-            system_message="You are a helpful assistant. Use the common_current_time tool when asked for the time.",
+        agent_data = AgentData.model_construct(
+            id="test-agent-system", twitter_is_verified=False
         )
 
         # Mock DB returns
@@ -310,7 +368,9 @@ async def test_local_agent_system_tool_call():
             ):
                 # 4. Run stream_agent_raw
                 responses = []
-                async for response in stream_agent_raw(message, agent, executor):
+                async for response in cast(
+                    Any, stream_agent_raw(message, agent, executor)
+                ):
                     responses.append(response)
 
             # 5. Verify results

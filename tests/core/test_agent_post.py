@@ -30,7 +30,12 @@ async def test_create_agent_post(monkeypatch):
     monkeypatch.setattr(agent_post_module, "get_session", lambda: mock_session_cls)
 
     post_create = AgentPostCreate(
-        agent_id="agent-1", title="Test Post", markdown="Content", cover="image.jpg"
+        agent_id="agent-1",
+        agent_name="Test Agent",
+        title="Test Post",
+        markdown="Content",
+        cover="image.jpg",
+        tags=[],
     )
 
     result = await create_agent_post(post_create)
@@ -53,10 +58,12 @@ async def test_get_agent_post_cache_hit(monkeypatch):
     cached_data = {
         "id": post_id,
         "agent_id": "agent-1",
+        "agent_name": "Cached Agent",
         "title": "Cached Post",
         "markdown": "Content",
         "cover": None,
         "created_at": datetime.now().isoformat(),
+        "tags": [],
     }
 
     # Mock Redis
@@ -95,10 +102,12 @@ async def test_get_agent_post_cache_miss_db_hit(monkeypatch):
     db_post = AgentPostTable(
         id=post_id,
         agent_id="agent-1",
+        agent_name="DB Agent",
         title="DB Post",
         markdown="Content",
         cover=None,
         created_at=datetime.now(),
+        tags=[],
     )
 
     # Mock Session

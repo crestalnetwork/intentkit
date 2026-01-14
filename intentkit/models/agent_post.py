@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -77,6 +77,13 @@ class AgentPostBase(BaseModel):
             max_length=3,
         ),
     ]
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _normalize_tags(cls, value: object) -> object:
+        if value is None:
+            return []
+        return value
 
 
 class AgentPostCreate(AgentPostBase):
@@ -172,6 +179,9 @@ class AgentPostBrief(BaseModel):
     @classmethod
     def from_table(cls, table: "AgentPostTable") -> "AgentPostBrief":
         """Create a brief post from a table row, truncating markdown to 500 chars."""
+        excerpt = table.excerpt
+        if excerpt is None:
+            excerpt = table.markdown[:500]
         return cls(
             id=table.id,
             agent_id=table.agent_id,
@@ -179,7 +189,7 @@ class AgentPostBrief(BaseModel):
             title=table.title,
             cover=table.cover,
             slug=table.slug,
-            excerpt=table.excerpt,
+            excerpt=excerpt,
             tags=table.tags or [],
             created_at=table.created_at,
         )

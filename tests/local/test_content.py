@@ -76,6 +76,7 @@ def sample_posts():
         AgentPostTable(
             id="post-1",
             agent_id="agent-1",
+            agent_name="Agent 1",
             title="First Post Title",
             cover="cover1.jpg",
             markdown="A" * 600,  # Content longer than 500 chars
@@ -84,6 +85,7 @@ def sample_posts():
         AgentPostTable(
             id="post-2",
             agent_id="agent-1",
+            agent_name="Agent 1",
             title="Second Post Title",
             cover=None,
             markdown="Short content",
@@ -92,6 +94,7 @@ def sample_posts():
         AgentPostTable(
             id="post-3",
             agent_id="agent-2",
+            agent_name="Agent 2",
             title="Post from Agent 2",
             cover="cover3.jpg",
             markdown="Content from agent 2",
@@ -159,9 +162,9 @@ async def test_get_all_posts_truncates_content(monkeypatch, sample_posts):
 
     assert len(result) == 3
     # First post has 600 char content, should be truncated to 500
-    assert len(result[0].summary) == 500
+    assert len(result[0].excerpt or "") == 500
     # Second post has short content, should not be truncated
-    assert result[1].summary == "Short content"
+    assert result[1].excerpt == "Short content"
 
 
 @pytest.mark.asyncio

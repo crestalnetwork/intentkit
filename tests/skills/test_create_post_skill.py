@@ -68,9 +68,15 @@ async def test_create_post_success(mock_runtime, mock_db_session):
     excerpt = "Short excerpt."
     tags = ["tag1", "tag2"]
 
-    result = await skill._arun(
-        title=title, markdown=markdown, slug=slug, excerpt=excerpt, tags=tags
-    )
+    mock_agent = MagicMock()
+    mock_agent.name = "Test Agent"
+    with patch(
+        "intentkit.core.agent.get_agent",
+        new=AsyncMock(return_value=mock_agent),
+    ):
+        result = await skill._arun(
+            title=title, markdown=markdown, slug=slug, excerpt=excerpt, tags=tags
+        )
 
     assert "Post created successfully" in result
 
@@ -99,27 +105,50 @@ def test_create_post_input_validation():
     """Test input validation for CreatePostInput."""
 
     # Test valid input
-    valid_data = {
-        "title": "Valid Title",
-        "markdown": "Content",
-        "slug": "valid-slug-123",
-        "excerpt": "Valid excerpt",
-        "tags": ["tag1"],
-    }
-    CreatePostInput(**valid_data)
+    CreatePostInput(
+        title="Valid Title",
+        markdown="Content",
+        slug="valid-slug-123",
+        excerpt="Valid excerpt",
+        tags=["tag1"],
+    )
 
     # Test invalid slug (too long)
     with pytest.raises(Exception):  # Pydantic ValidationError
-        CreatePostInput(**{**valid_data, "slug": "a" * 61})
+        CreatePostInput(
+            title="Valid Title",
+            markdown="Content",
+            slug="a" * 61,
+            excerpt="Valid excerpt",
+            tags=["tag1"],
+        )
 
     # Test invalid slug (bad chars)
     with pytest.raises(Exception):
-        CreatePostInput(**{**valid_data, "slug": "bad slug"})
+        CreatePostInput(
+            title="Valid Title",
+            markdown="Content",
+            slug="bad slug",
+            excerpt="Valid excerpt",
+            tags=["tag1"],
+        )
 
     # Test invalid excerpt (too long)
     with pytest.raises(Exception):
-        CreatePostInput(**{**valid_data, "excerpt": "a" * 201})
+        CreatePostInput(
+            title="Valid Title",
+            markdown="Content",
+            slug="valid-slug-123",
+            excerpt="a" * 201,
+            tags=["tag1"],
+        )
 
     # Test invalid tags (too many)
     with pytest.raises(Exception):
-        CreatePostInput(**{**valid_data, "tags": ["1", "2", "3", "4"]})
+        CreatePostInput(
+            title="Valid Title",
+            markdown="Content",
+            slug="valid-slug-123",
+            excerpt="Valid excerpt",
+            tags=["1", "2", "3", "4"],
+        )

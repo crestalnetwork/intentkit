@@ -1,3 +1,4 @@
+import importlib
 import json
 import logging
 import time
@@ -8,7 +9,6 @@ from decimal import Decimal
 from sqlalchemy import func, select, text, update
 
 from intentkit.config.config import config
-from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
     AgentCreate,
@@ -50,6 +50,8 @@ async def get_agent(agent_id: str) -> Agent | None:
 
     # If agent has a template_id, render it with the template
     if item.template_id:
+        template_module = importlib.import_module("intentkit.core.template")
+        render_agent = template_module.render_agent
         agent = await render_agent(agent)
 
     return agent
@@ -145,8 +147,20 @@ async def process_agent_wallet(
             from intentkit.clients.privy import PrivyClient
 
             privy_client = PrivyClient()
-            # Pass agent.owner (Privy user ID) as the wallet owner
-            privy_wallet = await privy_client.create_wallet(owner_id=agent.owner)
+            if not agent.owner:
+                raise IntentKitAPIError(
+                    400,
+                    "PrivyUserIdMissing",
+                    "Agent owner (Privy user ID) is required for Privy wallets",
+                )
+            user_signer_key_quorum_id = await privy_client.create_key_quorum(
+                user_ids=[agent.owner],
+                authorization_threshold=1,
+                display_name=f"intentkit:{agent.id[:40]}",
+            )
+            privy_wallet = await privy_client.create_wallet(
+                additional_signer_ids=[user_signer_key_quorum_id]
+            )
             existing_privy_wallet_id = privy_wallet.id
             existing_privy_wallet_address = privy_wallet.address
 
@@ -154,6 +168,7 @@ async def process_agent_wallet(
             partial_wallet_data = {
                 "privy_wallet_id": existing_privy_wallet_id,
                 "privy_wallet_address": existing_privy_wallet_address,
+                "user_signer_key_quorum_id": user_signer_key_quorum_id,
                 "network_id": network_id,
                 "status": "privy_created",
             }
@@ -763,8 +778,8 @@ async def update_agents_account_snapshot(batch_size: int = 100) -> None:
 
 async def update_agents_assets(batch_size: int = 100) -> None:
     """Refresh cached asset information for all agents."""
-
-    from intentkit.core.asset import agent_asset
+    asset_module = importlib.import_module("intentkit.core.asset")
+    agent_asset = asset_module.agent_asset
 
     logger.info("Starting update of agent assets")
     start_time = time.time()
