@@ -11,12 +11,17 @@ Architecture:
 - Transactions are signed by Privy and executed through Safe
 """
 
+import base64
+import json
 import logging
+import textwrap
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, cast
 
 import httpx
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from eth_abi import encode
 from eth_account import Account
 from eth_utils import keccak, to_checksum_address
@@ -29,6 +34,17 @@ from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
+
+
+def _canonicalize_json(value: object) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def _privy_private_key_to_pem(key: str) -> bytes:
+    private_key_as_string = key.replace("wallet-auth:", "").strip()
+    wrapped = "\n".join(textwrap.wrap(private_key_as_string, width=64))
+    pem = f"-----BEGIN PRIVATE KEY-----\n{wrapped}\n-----END PRIVATE KEY-----\n"
+    return pem.encode("utf-8")
 
 
 # =============================================================================
@@ -374,6 +390,11 @@ class PrivyClient:
         self.app_id: str | None = config.privy_app_id
         self.app_secret: str | None = config.privy_app_secret
         self.base_url: str = config.privy_base_url
+        self.authorization_private_keys: list[str] = (
+            config.privy_authorization_private_keys
+            if hasattr(config, "privy_authorization_private_keys")
+            else []
+        )
 
         if not self.app_id or not self.app_secret:
             logger.warning("Privy credentials not configured")
@@ -383,6 +404,34 @@ class PrivyClient:
             "privy-app-id": self.app_id or "",
             "Content-Type": "application/json",
         }
+
+    def _get_authorization_signature(
+        self, *, url: str, body: dict[str, Any], signed_headers: dict[str, str]
+    ) -> str | None:
+        if not self.authorization_private_keys:
+            return None
+        if not self.app_id:
+            return None
+
+        payload = {
+            "version": 1,
+            "method": "POST",
+            "url": url,
+            "body": body,
+            "headers": signed_headers,
+        }
+        serialized_payload = _canonicalize_json(payload).encode("utf-8")
+
+        signatures: list[str] = []
+        for raw_key in self.authorization_private_keys:
+            pem = _privy_private_key_to_pem(raw_key)
+            private_key = serialization.load_pem_private_key(pem, password=None)
+            if not isinstance(private_key, ec.EllipticCurvePrivateKey):
+                continue
+            sig_bytes = private_key.sign(serialized_payload, ec.ECDSA(hashes.SHA256()))
+            signatures.append(base64.b64encode(sig_bytes).decode("utf-8"))
+
+        return ",".join(signatures) if signatures else None
 
     async def create_key_quorum(
         self,
@@ -467,16 +516,47 @@ class PrivyClient:
                 {"signer_id": signer_id} for signer_id in additional_signer_ids
             ]
 
+        headers = self._get_headers()
+        authorization_signature = self._get_authorization_signature(
+            url=url,
+            body=payload,
+            signed_headers={"privy-app-id": self.app_id or ""},
+        )
+        signature_count = (
+            len([s for s in authorization_signature.split(",") if s.strip()])
+            if authorization_signature
+            else 0
+        )
+        if authorization_signature:
+            headers["privy-authorization-signature"] = authorization_signature
+
+        logger.info(
+            "Privy create_wallet request: base_url=%s chain_type=%s owner_user_id=%s owner_key_quorum_id=%s additional_signers=%s auth_keys_configured=%s auth_sig_count=%s",
+            self.base_url,
+            payload.get("chain_type"),
+            bool(effective_owner_user_id),
+            bool(owner_key_quorum_id),
+            len(additional_signer_ids or []),
+            len(self.authorization_private_keys),
+            signature_count,
+        )
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,
                 json=payload,
                 auth=(self.app_id, self.app_secret),
-                headers=self._get_headers(),
+                headers=headers,
                 timeout=30.0,
             )
 
             if response.status_code not in (200, 201):
+                logger.info(
+                    "Privy create_wallet response: status=%s auth_sig_count=%s body=%s",
+                    response.status_code,
+                    signature_count,
+                    response.text,
+                )
                 logger.error(f"Privy create wallet failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
@@ -510,17 +590,47 @@ class PrivyClient:
                 "encoding": "utf-8",
             },
         }
+        headers = self._get_headers()
+        authorization_signature = self._get_authorization_signature(
+            url=url,
+            body=payload,
+            signed_headers={"privy-app-id": self.app_id or ""},
+        )
+        signature_count = (
+            len([s for s in authorization_signature.split(",") if s.strip()])
+            if authorization_signature
+            else 0
+        )
+        if authorization_signature:
+            headers["privy-authorization-signature"] = authorization_signature
+
+        logger.info(
+            "Privy rpc request: wallet_id=%s method=%s base_url=%s auth_keys_configured=%s auth_sig_count=%s",
+            wallet_id,
+            payload.get("method"),
+            self.base_url,
+            len(self.authorization_private_keys),
+            signature_count,
+        )
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,
                 json=payload,
                 auth=(self.app_id, self.app_secret),
-                headers=self._get_headers(),
+                headers=headers,
                 timeout=30.0,
             )
 
             if response.status_code not in (200, 201):
+                logger.info(
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    wallet_id,
+                    payload.get("method"),
+                    response.status_code,
+                    signature_count,
+                    response.text,
+                )
                 logger.error(f"Privy sign message failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
@@ -552,17 +662,47 @@ class PrivyClient:
                 "hash": hash_hex,
             },
         }
+        headers = self._get_headers()
+        authorization_signature = self._get_authorization_signature(
+            url=url,
+            body=payload,
+            signed_headers={"privy-app-id": self.app_id or ""},
+        )
+        signature_count = (
+            len([s for s in authorization_signature.split(",") if s.strip()])
+            if authorization_signature
+            else 0
+        )
+        if authorization_signature:
+            headers["privy-authorization-signature"] = authorization_signature
+
+        logger.info(
+            "Privy rpc request: wallet_id=%s method=%s base_url=%s auth_keys_configured=%s auth_sig_count=%s",
+            wallet_id,
+            payload.get("method"),
+            self.base_url,
+            len(self.authorization_private_keys),
+            signature_count,
+        )
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,
                 json=payload,
                 auth=(self.app_id, self.app_secret),
-                headers=self._get_headers(),
+                headers=headers,
                 timeout=30.0,
             )
 
             if response.status_code not in (200, 201):
+                logger.info(
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    wallet_id,
+                    payload.get("method"),
+                    response.status_code,
+                    signature_count,
+                    response.text,
+                )
                 logger.error(f"Privy sign hash failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
@@ -587,17 +727,47 @@ class PrivyClient:
                 "typed_data": typed_data,
             },
         }
+        headers = self._get_headers()
+        authorization_signature = self._get_authorization_signature(
+            url=url,
+            body=payload,
+            signed_headers={"privy-app-id": self.app_id or ""},
+        )
+        signature_count = (
+            len([s for s in authorization_signature.split(",") if s.strip()])
+            if authorization_signature
+            else 0
+        )
+        if authorization_signature:
+            headers["privy-authorization-signature"] = authorization_signature
+
+        logger.info(
+            "Privy rpc request: wallet_id=%s method=%s base_url=%s auth_keys_configured=%s auth_sig_count=%s",
+            wallet_id,
+            payload.get("method"),
+            self.base_url,
+            len(self.authorization_private_keys),
+            signature_count,
+        )
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url,
                 json=payload,
                 auth=(self.app_id, self.app_secret),
-                headers=self._get_headers(),
+                headers=headers,
                 timeout=30.0,
             )
 
             if response.status_code not in (200, 201):
+                logger.info(
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    wallet_id,
+                    payload.get("method"),
+                    response.status_code,
+                    signature_count,
+                    response.text,
+                )
                 logger.error(f"Privy sign typed data failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,

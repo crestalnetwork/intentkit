@@ -100,6 +100,14 @@ class Config:
         self.privy_base_url: str = self.load(
             "PRIVY_BASE_URL", "https://api.privy.io/v1"
         )
+        privy_auth_keys_raw = self.load("PRIVY_AUTHORIZATION_KEYS") or self.load(
+            "PRIVY_AUTHORIZATION_KEY"
+        )
+        self.privy_authorization_private_keys: list[str] = (
+            [k.strip() for k in privy_auth_keys_raw.split(",") if k.strip()]
+            if privy_auth_keys_raw
+            else []
+        )
         self.safe_api_key: str | None = self.load("SAFE_API_KEY")
         # Master wallet for gas sponsorship (pays for Safe deployments)
         self.master_wallet_private_key: str | None = self.load(
