@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Dictionary Lookup Skill",
+  "description": "Looks up a word's definition, part of speech, and example usage from a free dictionary.",
+  "x-icon": "https://raw.githubusercontent.com/Negred0/intentkit/main/skills/dicto/dicto.png",
+  "x-tags": [
+    "Language",
+    "Utility"
+  ],
+  "x-api-key": "none",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Enable or disable the Dictionary Lookup Skill",
+      "default": true
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "word_lookup": {
+          "type": "string",
+          "title": "Word Lookup Access",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Controls who can use the dictionary lookup functionality",
+          "default": "public"
+        }
+      },
+      "description": "Controls access level for the dictionary lookup functionality"
+    }
+  },
+  "required": [
+    "enabled",
+    "states"
+  ],
+  "additionalProperties": true
+}
