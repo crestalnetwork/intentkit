@@ -1,3 +1,18 @@
+## v0.8.59 - 2026-01-14
+
+### New Features
+- Server authorization keys are now automatically integrated into key quorums, enabling both server and users to independently control wallets while maintaining security
+- Added `get_authorization_public_keys()` method to expose server public keys for key quorum creation
+
+### Improvements
+- Authorization keys are now loaded and cached during initialization for better performance and reliability
+- Improved JSON canonicalization with proper primitive type handling for better signature consistency
+- Added validation to ensure Privy owner IDs start with 'did:privy:' prefix
+- Authorization signature support now applies to all Privy RPC calls including send_transaction
+- Enhanced logging with key fingerprints for easier debugging of authorization issues
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.58...v0.8.59
+
 ## v0.8.58 - 2026-01-14
 
 ### New Features
