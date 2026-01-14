@@ -1,3 +1,21 @@
+## v0.8.57 - 2026-01-14
+
+### New Features
+- Added key quorum support for Privy wallets, enabling multi-signature configurations with customizable authorization thresholds
+- Added configurable Privy base URL for flexible API endpoint configuration
+
+### Improvements
+- Fixed circular dependencies in agent and user modules by using dynamic imports
+- Improved agent post tags field handling with proper null normalization
+- Enhanced Privy wallet creation with key quorum signer support
+
+### Bug Fixes
+- Fixed type casting issues in Web3 transaction parameter handling
+- Improved Safe deployment event parsing for better address extraction
+- Updated test suite to match new agent model structure
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.56...v0.8.57
+
 ## v0.8.56 - 2026-01-13
 
 ### New Features
