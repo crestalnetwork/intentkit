@@ -1,3 +1,14 @@
+## v0.8.58 - 2026-01-14
+
+### New Features
+- Added Privy authorization signature support using ECDSA signatures for enhanced API security
+- Support for multiple authorization keys via `PRIVY_AUTHORIZATION_KEYS` environment variable
+
+### Improvements
+- Fixed spending limit synchronization when agent configuration changes, ensuring allowance module settings are properly updated
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.57...v0.8.58
+
 ## v0.8.57 - 2026-01-14
 
 ### New Features
