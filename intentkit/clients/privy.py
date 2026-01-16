@@ -76,6 +76,14 @@ def _privy_private_key_to_pem(key: str) -> bytes:
 # =============================================================================
 
 
+# Safe Singleton addresses (L2 version for most chains)
+# Canonical deployment: 0x3E5c63644E683549055b9Be8653de26E0B4CD36E
+# EIP-155 deployment: 0xfb1bffC9d739B8D520DaF37dF666da4C687191EA
+# Both are functionally identical Safe L2 contracts, just deployed differently
+SAFE_SINGLETON_L2_CANONICAL = "0x3E5c63644E683549055b9Be8653de26E0B4CD36E"
+SAFE_SINGLETON_L2_EIP155 = "0xfb1bffC9d739B8D520DaF37dF666da4C687191EA"
+
+
 @dataclass
 class ChainConfig:
     """Configuration for a blockchain network."""
@@ -86,6 +94,8 @@ class ChainConfig:
     rpc_url: str | None = None
     usdc_address: str | None = None
     allowance_module_address: str = "0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134"
+    # Safe singleton address - use L2 version for L2 chains
+    safe_singleton_address: str = SAFE_SINGLETON_L2_EIP155
 
 
 # Chain configurations mapping IntentKit network_id to Safe chain config
@@ -96,6 +106,7 @@ CHAIN_CONFIGS: dict[str, ChainConfig] = {
         name="BNB Smart Chain",
         safe_tx_service_url="https://safe-transaction-bsc.safe.global",
         usdc_address="0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+        safe_singleton_address=SAFE_SINGLETON_L2_CANONICAL,
     ),
     "base-mainnet": ChainConfig(
         chain_id=8453,
@@ -146,7 +157,6 @@ CHAIN_CONFIGS: dict[str, ChainConfig] = {
 
 # Safe contract addresses (same across most EVM chains for v1.3.0)
 SAFE_PROXY_FACTORY_ADDRESS = "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2"
-SAFE_SINGLETON_ADDRESS = "0xd9Db270c1B5E3Bd161E8c8503c55cEABe709501d"
 SAFE_FALLBACK_HANDLER_ADDRESS = "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4"
 MULTI_SEND_ADDRESS = "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761"
 MULTI_SEND_CALL_ONLY_ADDRESS = "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
@@ -1190,7 +1200,11 @@ class SafeClient:
 
         # deploymentData = creationCode + abi.encode(singleton)
         # Note: We do NOT include the initializer here - that's only for the salt
-        init_code = proxy_creation_code + encode(["address"], [SAFE_SINGLETON_ADDRESS])
+        # Use the chain-specific singleton address from ChainConfig
+        if self.chain_config is None:
+            raise ValueError("Chain config not initialized")
+        singleton_address = self.chain_config.safe_singleton_address
+        init_code = proxy_creation_code + encode(["address"], [singleton_address])
         init_code_hash = keccak(init_code)
 
         # CREATE2 address calculation: keccak256(0xff ++ factory ++ salt ++ init_code_hash)[12:]
@@ -1817,6 +1831,7 @@ async def deploy_safe_with_allowance(
             salt_nonce=salt_nonce,
             chain_id=chain_config.chain_id,
             rpc_url=rpc_url,
+            singleton_address=chain_config.safe_singleton_address,
         )
         result["tx_hashes"].append({"deploy_safe": deploy_tx_hash})
         result["already_deployed"] = False
@@ -1884,6 +1899,7 @@ async def _deploy_safe(
     salt_nonce: int,
     chain_id: int,
     rpc_url: str,
+    singleton_address: str,
 ) -> tuple[str, str]:
     """Deploy a new Safe via the ProxyFactory using master wallet.
 
@@ -1895,6 +1911,7 @@ async def _deploy_safe(
         salt_nonce: Salt for deterministic address generation
         chain_id: The chain ID to deploy on
         rpc_url: RPC URL for the chain
+        singleton_address: The Safe singleton (implementation) address to use
 
     Returns:
         Tuple of (transaction_hash, deployed_safe_address)
@@ -1918,7 +1935,7 @@ async def _deploy_safe(
     create_selector = keccak(text="createProxyWithNonce(address,bytes,uint256)")[:4]
     create_data = create_selector + encode(
         ["address", "bytes", "uint256"],
-        [SAFE_SINGLETON_ADDRESS, initializer, salt_nonce],
+        [singleton_address, initializer, salt_nonce],
     )
 
     # Use master wallet to send transaction
@@ -2059,10 +2076,23 @@ def _get_safe_tx_hash(
     data: bytes,
     nonce: int,
     chain_id: int,
+    operation: int = 0,
 ) -> bytes:
     """Calculate the Safe transaction hash for signing.
 
     This generates the EIP-712 typed data hash that owners must sign.
+
+    Args:
+        safe_address: The Safe contract address
+        to: Target address for the transaction
+        value: ETH value in wei
+        data: Transaction calldata
+        nonce: Safe nonce
+        chain_id: Chain ID
+        operation: 0 for Call, 1 for DelegateCall (default: 0)
+
+    Returns:
+        The EIP-712 hash to sign
     """
     # Domain separator
     domain_type_hash = keccak(
@@ -2099,7 +2129,7 @@ def _get_safe_tx_hash(
             to_checksum_address(to),
             value,
             data_hash,
-            0,  # operation
+            operation,  # operation: 0 = Call, 1 = DelegateCall
             0,  # safeTxGas
             0,  # baseGas
             0,  # gasPrice
@@ -2219,6 +2249,59 @@ async def _send_safe_transaction_with_master_wallet(
     receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     if receipt["status"] != 1:
         raise IntentKitAPIError(500, "SafeTxFailed", "Safe transaction failed")
+
+    # Verify Safe execution succeeded by checking for ExecutionSuccess event
+    # Safe's execTransaction returns false (doesn't revert) on internal failure,
+    # so we must check the logs for ExecutionSuccess/ExecutionFailure events.
+    # Event signatures:
+    # - ExecutionSuccess(bytes32,uint256): 0x442e715f...
+    # - ExecutionFailure(bytes32,uint256): 0x23428b18...
+    execution_success_topic = (
+        "0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e"
+    )
+    execution_failure_topic = (
+        "0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23"
+    )
+
+    execution_success = False
+    execution_failed = False
+
+    for log in receipt.get("logs", []):
+        topics = log.get("topics", [])
+        if topics:
+            topic_hex = topics[0].hex() if hasattr(topics[0], "hex") else str(topics[0])
+            # Normalize topic (add 0x prefix if missing)
+            if not topic_hex.startswith("0x"):
+                topic_hex = "0x" + topic_hex
+
+            if topic_hex == execution_success_topic:
+                execution_success = True
+                break
+            elif topic_hex == execution_failure_topic:
+                execution_failed = True
+                break
+
+    if execution_failed:
+        raise IntentKitAPIError(
+            500,
+            "SafeExecutionFailed",
+            "Safe execTransaction returned failure. "
+            "This typically means the signature is invalid or the signer is not a Safe owner.",
+        )
+
+    if not execution_success:
+        # No ExecutionSuccess event found - the Safe execution likely failed silently
+        # This can happen if the signature verification fails before execTransaction runs
+        logger.warning(
+            f"No ExecutionSuccess event found in Safe transaction {tx_hash.hex()}. "
+            f"Logs: {receipt.get('logs', [])}"
+        )
+        raise IntentKitAPIError(
+            500,
+            "SafeExecutionFailed",
+            "Safe transaction completed but no ExecutionSuccess event was found. "
+            "The Safe execution may have failed. Please verify the signer is a Safe owner.",
+        )
 
     return tx_hash.hex()
 
@@ -2372,7 +2455,7 @@ async def _set_spending_limit(
     safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash for the MultiSend call
-    # Note: We use MULTI_SEND_CALL_ONLY_ADDRESS with DelegateCall
+    # Note: We use MULTI_SEND_CALL_ONLY_ADDRESS with DelegateCall (operation=1)
     safe_tx_hash = _get_safe_tx_hash(
         safe_address=safe_address,
         to=MULTI_SEND_CALL_ONLY_ADDRESS,
@@ -2380,6 +2463,7 @@ async def _set_spending_limit(
         data=multi_send_data,
         nonce=safe_nonce,
         chain_id=chain_id,
+        operation=1,  # DelegateCall for MultiSend
     )
 
     # Sign the transaction hash with Privy wallet
@@ -2497,6 +2581,11 @@ async def execute_gasless_transaction(
         data=data,
         nonce=safe_nonce,
         chain_id=chain_config.chain_id,
+    )
+
+    logger.debug(
+        f"Gasless tx: safe={safe_address}, to={to}, value={value}, "
+        f"nonce={safe_nonce}, hash={safe_tx_hash.hex()}"
     )
 
     # Sign the transaction hash with Privy wallet (off-chain, no gas)
