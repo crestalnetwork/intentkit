@@ -1,3 +1,12 @@
+## v0.8.63
+
+### Bug Fixes
+- Fixed transaction collision issues in Safe wallet deployment operations
+- Improved reliability of module configuration after Safe deployment
+- Added local nonce tracking to prevent race conditions with distributed RPC nodes
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.62...v0.8.63
+
 ## v0.8.62
 
 ### Bug Fixes
