@@ -48,10 +48,10 @@ Follow Semantic Versioning:
    git tag --sort=-version:refname | head -15
    ```
 
-3. Diff `origin/main` with it, summarize release notes from a product or user perspective, not a technical one. List new features. For bug fixes and improvements, provide vague descriptions, such as "fixed bugs in the xxx module". Then save it to `build/changelog.md` for later use. Add a diff link to release note too, the from and to should be the version number.
+3. Diff `origin/main` with it, summarize release notes to business language, not a technical one. List new features. For bug fixes and improvements, provide vague descriptions, such as "fixed bugs in the xxx module". Then save it to `latest_changelog.md` for later use. Add a diff link to release note too, the from and to should be the version number.
 
 4. If the release is **not pre-release**, also insert the release note to the beginning of `CHANGELOG.md` (This file contains all history release notes, don't use it in gh command). Commit and push this changed `CHANGELOG.md`.
 
-5. Construct `gh release create` command, use `changelog.md` as notes file in gh command.
+5. Construct `gh release create` command, use `latest_changelog.md` as notes file in gh command.
 
 6. Use `gh` to publish release only, don't create branch, tag, or pull request.

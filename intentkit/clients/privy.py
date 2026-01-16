@@ -1864,6 +1864,13 @@ async def deploy_safe_with_allowance(
                 "RPC node may be slow to sync. Please retry.",
             )
 
+    # If we just deployed, we know the nonce is 0.
+    # Otherwise, we fetch it initially.
+    # We will track it locally to avoid race conditions with RPC nodes that lag behind.
+    current_nonce = 0
+    if result["already_deployed"]:
+        current_nonce = await _get_safe_nonce(predicted_address, rpc_url)
+
     if weekly_spending_limit_usdc is not None:
         module_enabled = await _is_module_enabled(
             rpc_url=rpc_url,
@@ -1882,9 +1889,11 @@ async def deploy_safe_with_allowance(
                 allowance_module_address=chain_config.allowance_module_address,
                 chain_id=chain_config.chain_id,
                 rpc_url=rpc_url,
+                nonce=current_nonce,
             )
             result["tx_hashes"].append({"enable_module": enable_tx_hash})
             result["allowance_module_enabled"] = True
+            current_nonce += 1
 
         if chain_config.usdc_address and (
             weekly_spending_limit_usdc > 0 or module_enabled
@@ -1904,9 +1913,11 @@ async def deploy_safe_with_allowance(
                 allowance_module_address=chain_config.allowance_module_address,
                 chain_id=chain_config.chain_id,
                 rpc_url=rpc_url,
+                nonce=current_nonce,
             )
             result["tx_hashes"].append({"set_spending_limit": limit_tx_hash})
             result["spending_limit_configured"] = True
+            current_nonce += 1
 
     return result
 
@@ -2387,6 +2398,7 @@ async def _enable_allowance_module(
     allowance_module_address: str,
     chain_id: int,
     rpc_url: str,
+    nonce: int | None = None,
 ) -> str:
     """Enable the Allowance Module on a Safe using master wallet for gas.
 
@@ -2397,8 +2409,11 @@ async def _enable_allowance_module(
     enable_selector = keccak(text="enableModule(address)")[:4]
     enable_data = enable_selector + encode(["address"], [allowance_module_address])
 
-    # Get Safe nonce from blockchain
-    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+    # Get Safe nonce from blockchain if not provided
+    if nonce is not None:
+        safe_nonce = nonce
+    else:
+        safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash
     safe_tx_hash = _get_safe_tx_hash(
@@ -2480,6 +2495,7 @@ async def _set_spending_limit(
     allowance_module_address: str,
     chain_id: int,
     rpc_url: str,
+    nonce: int | None = None,
 ) -> str:
     """Set a spending limit via the Allowance Module using master wallet for gas.
 
@@ -2524,8 +2540,11 @@ async def _set_spending_limit(
     multi_send_selector = keccak(text="multiSend(bytes)")[:4]
     multi_send_data = multi_send_selector + encode(["bytes"], [multi_send_txs])
 
-    # Get Safe nonce from blockchain
-    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+    # Get Safe nonce from blockchain if not provided
+    if nonce is not None:
+        safe_nonce = nonce
+    else:
+        safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash for the MultiSend call
     # Note: We use MULTI_SEND_CALL_ONLY_ADDRESS with DelegateCall (operation=1)
