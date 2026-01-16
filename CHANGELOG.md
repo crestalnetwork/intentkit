@@ -1,3 +1,10 @@
+## v0.8.61
+
+### Bug Fixes
+- Fixed Safe wallet deployment on L2 networks (Base, Base Sepolia, BNB Chain) by using correct L2 singleton addresses
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.60...v0.8.61
+
 ## v0.8.60
 
 ### Bug Fixes
