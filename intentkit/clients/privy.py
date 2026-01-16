@@ -1847,6 +1847,23 @@ async def deploy_safe_with_allowance(
             )
         logger.info(f"Safe address validated: {predicted_address}")
 
+        # Wait for Safe to be visible across RPC nodes before proceeding
+        # This prevents race conditions where subsequent operations fail because
+        # the RPC node hasn't synced the new contract yet
+        safe_visible = await _wait_for_safe_deployed(
+            safe_address=predicted_address,
+            rpc_url=rpc_url,
+            max_retries=15,  # Up to 15 seconds of waiting
+            retry_delay=1.0,
+        )
+        if not safe_visible:
+            raise IntentKitAPIError(
+                500,
+                "DeploymentSyncTimeout",
+                f"Safe {predicted_address} deployed but not visible after waiting. "
+                "RPC node may be slow to sync. Please retry.",
+            )
+
     if weekly_spending_limit_usdc is not None:
         module_enabled = await _is_module_enabled(
             rpc_url=rpc_url,
@@ -2067,6 +2084,62 @@ async def _is_module_enabled(
 
         result = response.json().get("result", "0x")
         return result.endswith("1")
+
+
+async def _wait_for_safe_deployed(
+    safe_address: str,
+    rpc_url: str,
+    max_retries: int = 10,
+    retry_delay: float = 1.0,
+) -> bool:
+    """Wait for Safe contract to be visible on the RPC node.
+
+    After deploying a Safe, there can be a delay before the contract code
+    is visible across all RPC nodes (especially with load-balanced endpoints).
+    This function polls eth_getCode to confirm the Safe is deployed before
+    proceeding with subsequent operations like enabling modules.
+
+    Args:
+        safe_address: The Safe contract address
+        rpc_url: RPC URL for the network
+        max_retries: Maximum number of retry attempts
+        retry_delay: Delay between retries in seconds
+
+    Returns:
+        True if Safe is deployed and visible, False if max retries exceeded
+    """
+    import asyncio
+
+    for attempt in range(max_retries):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                rpc_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "eth_getCode",
+                    "params": [safe_address, "latest"],
+                    "id": 1,
+                },
+                timeout=30.0,
+            )
+
+            if response.status_code == 200:
+                result = response.json().get("result", "0x")
+                if len(result) > 2:  # Has contract code
+                    if attempt > 0:
+                        logger.info(
+                            f"Safe {safe_address} visible after {attempt + 1} attempts"
+                        )
+                    return True
+
+        if attempt < max_retries - 1:
+            logger.debug(
+                f"Safe {safe_address} not yet visible, retry {attempt + 1}/{max_retries}"
+            )
+            await asyncio.sleep(retry_delay)
+
+    logger.warning(f"Safe {safe_address} not visible after {max_retries} attempts")
+    return False
 
 
 def _get_safe_tx_hash(
@@ -2324,7 +2397,7 @@ async def _enable_allowance_module(
     enable_selector = keccak(text="enableModule(address)")[:4]
     enable_data = enable_selector + encode(["address"], [allowance_module_address])
 
-    # Get Safe nonce for signing
+    # Get Safe nonce from blockchain
     safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash
@@ -2451,7 +2524,7 @@ async def _set_spending_limit(
     multi_send_selector = keccak(text="multiSend(bytes)")[:4]
     multi_send_data = multi_send_selector + encode(["bytes"], [multi_send_txs])
 
-    # Get Safe nonce for signing
+    # Get Safe nonce from blockchain
     safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash for the MultiSend call
@@ -2566,11 +2639,12 @@ async def execute_gasless_transaction(
         ValueError: If network is not supported
         IntentKitAPIError: If transaction execution fails
     """
+
     chain_config = CHAIN_CONFIGS.get(network_id)
     if not chain_config:
         raise ValueError(f"Unsupported network: {network_id}")
 
-    # Get Safe nonce for signing
+    # Get Safe nonce from blockchain
     safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash (EIP-712)

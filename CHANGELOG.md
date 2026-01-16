@@ -1,4 +1,17 @@
+## v0.8.62
+
+### Bug Fixes
+- Fixed intermittent GS026 errors in Safe wallet operations by adding deployment visibility check
+- Safe contracts are now verified to be visible across RPC nodes before proceeding with module operations
+
+### Improvements
+- Added `_wait_for_safe_deployed` function with retry logic to handle RPC node synchronization delays
+- Improved reliability of Safe wallet deployments in distributed RPC environments
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.61...v0.8.62
+
 ## v0.8.61
+
 
 ### Bug Fixes
 - Fixed Safe wallet deployment on L2 networks (Base, Base Sepolia, BNB Chain) by using correct L2 singleton addresses
