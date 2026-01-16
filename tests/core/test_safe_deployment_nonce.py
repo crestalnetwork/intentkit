@@ -70,7 +70,7 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
     monkeypatch.setattr("intentkit.clients.privy._get_safe_nonce", mock_get_nonce)
 
     # ACTION
-    result = await deploy_safe_with_allowance(
+    await deploy_safe_with_allowance(
         privy_client=privy_client,
         privy_wallet_id="wallet-id",
         privy_wallet_address="0x0000000000000000000000000000000000000000",
@@ -104,7 +104,7 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
     mock_get_nonce.reset_mock()
     mock_get_nonce.return_value = 5  # Assume current nonce is 5 on chain
 
-    result = await deploy_safe_with_allowance(
+    await deploy_safe_with_allowance(
         privy_client=privy_client,
         privy_wallet_id="wallet-id",
         privy_wallet_address="0x0000000000000000000000000000000000000000",
