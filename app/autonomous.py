@@ -81,7 +81,11 @@ async def schedule_agent_autonomous_tasks():
 
     async with get_session() as db:
         # Get all agents with autonomous configuration
-        query = select(AgentTable).where(AgentTable.autonomous != None)  # noqa: E711
+        query = (
+            select(AgentTable)
+            .where(AgentTable.autonomous.is_not(None))
+            .where(AgentTable.archived_at.is_(None))
+        )
         agents = await db.scalars(query)
 
         for item in agents:
