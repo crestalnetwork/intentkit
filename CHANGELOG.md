@@ -1,3 +1,11 @@
+## v0.8.64
+
+### Bug Fixes
+- Fixed autonomous task selection to correctly filter out archived agents
+- Improved test stability by removing unused variables in Safe deployment tests
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.63...v0.8.64
+
 ## v0.8.63
 
 ### Bug Fixes
