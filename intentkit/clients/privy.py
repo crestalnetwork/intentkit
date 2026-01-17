@@ -2985,6 +2985,7 @@ class PrivyWalletSigner:
         privy_client: PrivyClient,
         wallet_id: str,
         wallet_address: str,
+        from_address: str | None = None,
     ) -> None:
         """
         Initialize the Privy wallet signer.
@@ -2993,15 +2994,27 @@ class PrivyWalletSigner:
             privy_client: The Privy client for API calls.
             wallet_id: The Privy wallet ID.
             wallet_address: The EOA wallet address (used for signing).
+            from_address: The address that holds funds (e.g., Safe address).
+                          If not provided, defaults to wallet_address.
+                          For x402 payments with Safe wallets, this should be
+                          the Safe address where USDC is held.
         """
         self.privy_client = privy_client
         self.wallet_id = wallet_id
-        self._address = to_checksum_address(wallet_address)
+        self._signer_address = to_checksum_address(wallet_address)
+        self._from_address = (
+            to_checksum_address(from_address) if from_address else self._signer_address
+        )
 
     @property
     def address(self) -> str:
-        """The wallet address used for signing (EOA address)."""
-        return self._address
+        """The address that holds funds (Safe address for x402 payments)."""
+        return self._from_address
+
+    @property
+    def signer_address(self) -> str:
+        """The actual signer address (Privy EOA used for signing)."""
+        return self._signer_address
 
     def _run_in_thread(self, coro: Any) -> Any:
         """
@@ -3245,8 +3258,12 @@ def get_wallet_signer(
         PrivyWalletSigner instance ready for signing.
     """
     privy_client = PrivyClient()
+    # Use Safe address as from_address if available (for x402 payments)
+    # The Privy EOA is the signer, but funds are held in the Safe
+    from_address = privy_wallet_data.get("smart_wallet_address")
     return PrivyWalletSigner(
         privy_client=privy_client,
         wallet_id=privy_wallet_data["privy_wallet_id"],
         wallet_address=privy_wallet_data["privy_wallet_address"],
+        from_address=from_address,
     )
