@@ -51,6 +51,12 @@ def _canonicalize_json(value: object) -> str:
         return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
     if isinstance(value, str):
         return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    # Handle bytes and HexBytes by converting to hex string
+    if isinstance(value, (bytes, HexBytes)):
+        hex_str = value.hex()
+        if not hex_str.startswith("0x"):
+            hex_str = f"0x{hex_str}"
+        return json.dumps(hex_str, separators=(",", ":"), ensure_ascii=False)
     if isinstance(value, (list, tuple)):
         return "[" + ",".join(_canonicalize_json(v) for v in value) + "]"
     if isinstance(value, dict):
