@@ -3122,13 +3122,20 @@ class PrivyWalletSigner:
         if full_message is not None:
             typed_data = full_message
         else:
+            # Infer primaryType from message_types keys (the first key that isn't EIP712Domain)
+            # EIP-712 types dict contains type definitions, primaryType is NOT a key inside it
+            primary_type = "Message"  # default fallback
+            if message_types:
+                for key in message_types:
+                    if key != "EIP712Domain":
+                        primary_type = key
+                        break
+
             typed_data = {
                 "domain": domain_data or {},
                 "types": message_types or {},
                 "message": message_data or {},
-                "primaryType": message_types.get("primaryType", "Message")
-                if message_types
-                else "Message",
+                "primaryType": primary_type,
             }
 
         # Sign via Privy
