@@ -96,6 +96,21 @@ def _sanitize_for_json(value: object) -> object:
         return value
 
 
+def _convert_typed_data_to_privy_format(typed_data: dict[str, Any]) -> dict[str, Any]:
+    """Convert EIP-712 typed data to Privy's expected format.
+
+    Privy API expects snake_case field names but EIP-712 uses camelCase.
+    Main conversion: primaryType -> primary_type
+    """
+    result = dict(typed_data)
+
+    # Convert primaryType to primary_type
+    if "primaryType" in result:
+        result["primary_type"] = result.pop("primaryType")
+
+    return result
+
+
 # =============================================================================
 # Chain Configuration
 # =============================================================================
@@ -963,8 +978,10 @@ class PrivyClient:
             )
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
-        # Sanitize typed_data to convert bytes to hex strings for JSON serialization
-        sanitized_typed_data = _sanitize_for_json(typed_data)
+        # Convert typed_data to Privy format (primaryType -> primary_type)
+        # then sanitize to convert bytes to hex strings for JSON serialization
+        privy_typed_data = _convert_typed_data_to_privy_format(typed_data)
+        sanitized_typed_data = _sanitize_for_json(privy_typed_data)
         payload = {
             "method": "eth_signTypedData_v4",
             "params": {
