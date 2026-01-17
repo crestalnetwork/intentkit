@@ -77,6 +77,25 @@ def _privy_private_key_to_pem(key: str) -> bytes:
     return pem.encode("utf-8")
 
 
+def _sanitize_for_json(value: object) -> object:
+    """Recursively convert bytes and HexBytes to hex strings for JSON serialization.
+
+    This is needed when passing data structures to httpx's json= parameter,
+    which uses standard json.dumps() that doesn't support bytes.
+    """
+    if isinstance(value, (bytes, HexBytes)):
+        hex_str = value.hex()
+        if not hex_str.startswith("0x"):
+            hex_str = f"0x{hex_str}"
+        return hex_str
+    elif isinstance(value, dict):
+        return {k: _sanitize_for_json(v) for k, v in value.items()}
+    elif isinstance(value, (list, tuple)):
+        return [_sanitize_for_json(item) for item in value]
+    else:
+        return value
+
+
 # =============================================================================
 # Chain Configuration
 # =============================================================================
@@ -944,10 +963,12 @@ class PrivyClient:
             )
 
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
+        # Sanitize typed_data to convert bytes to hex strings for JSON serialization
+        sanitized_typed_data = _sanitize_for_json(typed_data)
         payload = {
             "method": "eth_signTypedData_v4",
             "params": {
-                "typed_data": typed_data,
+                "typed_data": sanitized_typed_data,
             },
         }
         headers = self._get_headers()
