@@ -21,7 +21,7 @@ async def create_user_server_wallet(
 ) -> dict[str, Any]:
     """
     Create a server wallet for a user using either Safe (smart account) or Privy (EOA) mode.
-    
+
     Mode options:
     - "safe": Creates Privy wallet + Safe smart account (default, for backwards compatibility)
     - "privy": Creates only Privy wallet, uses EOA address directly (no Safe, no spending limits)
@@ -52,7 +52,7 @@ async def create_user_server_wallet(
     """
     if mode not in ("safe", "privy"):
         raise ValueError(f"Invalid mode: {mode}. Must be 'safe' or 'privy'")
-    
+
     from intentkit.clients.privy import (
         CHAIN_CONFIGS,
         PrivyClient,
@@ -168,7 +168,7 @@ async def create_user_server_wallet(
             "deployment_info": deployment_info,
             "status": "deployed",
         }
-        
+
         server_wallet_address = deployment_info["safe_address"]
     else:
         # Privy mode: Use privy wallet address directly, no Safe deployment
@@ -180,7 +180,7 @@ async def create_user_server_wallet(
             "chain_id": chain_config.chain_id,
             "status": "created",
         }
-        
+
         server_wallet_address = existing_privy_wallet_address
 
     # Save complete wallet data

@@ -80,17 +80,17 @@ class X402BaseSkill(IntentKitOnChainSkill):
     This class provides unified wallet signer support for x402 operations,
     automatically selecting the appropriate signer based on the agent's
     wallet_provider configuration (CDP or Privy).
-    
+
     Note: Safe wallet mode is not supported for x402 operations.
     """
 
     @property
     def category(self) -> str:
         return "x402"
-    
+
     def _validate_wallet_provider(self) -> None:
         """Validate that the wallet provider supports x402 operations.
-        
+
         Raises:
             ValueError: If wallet provider is "safe" which doesn't support x402.
         """
@@ -119,7 +119,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
 
         Returns:
             A wallet signer compatible with x402 requirements.
-            
+
         Raises:
             ValueError: If wallet provider is "safe" which doesn't support x402.
         """

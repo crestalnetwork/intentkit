@@ -152,7 +152,9 @@ async def process_agent_wallet(
                         agent_data = await AgentData.patch(
                             agent.id,
                             {
-                                "evm_wallet_address": wallet_data["smart_wallet_address"],
+                                "evm_wallet_address": wallet_data[
+                                    "smart_wallet_address"
+                                ],
                                 "privy_wallet_data": json.dumps(wallet_data),
                             },
                         )
@@ -289,7 +291,7 @@ async def process_agent_wallet(
                 "PrivyUserIdInvalid",
                 "Only Privy-authenticated users (did:privy:...) can create Privy wallets",
             )
-        
+
         # Create a 1-of-N key quorum containing both the server's authorization key
         # and the user's ID. This allows either party to independently control the wallet.
         server_public_keys = privy_client.get_authorization_public_keys()
@@ -299,12 +301,12 @@ async def process_agent_wallet(
             authorization_threshold=1,  # Any single party can authorize
             display_name=f"intentkit:{agent.id[:40]}",
         )
-        
+
         # Create wallet with key quorum as owner
         privy_wallet = await privy_client.create_wallet(
             owner_key_quorum_id=owner_key_quorum_id,
         )
-        
+
         # Store wallet data - for privy-only mode, we use the privy wallet address directly
         wallet_data = {
             "privy_wallet_id": privy_wallet.id,
@@ -314,7 +316,7 @@ async def process_agent_wallet(
             "provider": "privy",
             "status": "created",
         }
-        
+
         agent_data = await AgentData.patch(
             agent.id,
             {
