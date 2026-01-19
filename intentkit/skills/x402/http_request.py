@@ -95,6 +95,11 @@ class X402HttpRequest(X402BaseSkill):
             raise ToolException("Request body is only supported for POST requests.")
 
         try:
+            await self._prefund_safe_wallet(
+                method=method_upper,
+                request_kwargs=request_kwargs,
+                timeout=timeout,
+            )
             account = await self.get_signer()
             async with x402HttpxClient(
                 account=account,
