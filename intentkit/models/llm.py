@@ -105,6 +105,8 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     is_configured = bool(config.reigent_api_key)
                 elif model.provider == LLMProvider.VENICE:
                     is_configured = bool(config.venice_api_key)
+                elif model.provider == LLMProvider.BLOCKRUN:
+                    is_configured = bool(config.blockrun_wallet_key)
 
                 if not is_configured:
                     continue
@@ -128,6 +130,7 @@ class LLMProvider(str, Enum):
     REIGENT = "reigent"
     VENICE = "venice"
     OLLAMA = "ollama"
+    BLOCKRUN = "blockrun"
 
     def display_name(self) -> str:
         """Return user-friendly display name for the provider."""
@@ -141,6 +144,7 @@ class LLMProvider(str, Enum):
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
             self.OLLAMA: "Ollama",
+            self.BLOCKRUN: "BlockRun",
         }
         return display_names.get(self, self.value)
 
@@ -695,6 +699,30 @@ class OllamaLLM(LLMModel):
         return ChatOllama(**kwargs)
 
 
+class BlockRunLLM(LLMModel):
+    """BlockRun.AI LLM configuration using x402 micropayments."""
+
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a BlockRun LangChain ChatModel instance."""
+        from intentkit.models.blockrun_chat import BlockRunChat
+
+        info = await self.model_info()
+
+        kwargs = {
+            "model": self.model_name,
+            "max_tokens": info.output_length,
+        }
+
+        # Add optional parameters based on model support
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        # Update kwargs with params to allow overriding
+        kwargs.update(params)
+
+        return BlockRunChat(**kwargs)
+
+
 # Factory function to create the appropriate LLM model based on the model name
 async def create_llm_model(
     model_name: str,
@@ -742,6 +770,8 @@ async def create_llm_model(
         return OpenRouterLLM(**base_params)
     elif provider == LLMProvider.OLLAMA:
         return OllamaLLM(**base_params)
+    elif provider == LLMProvider.BLOCKRUN:
+        return BlockRunLLM(**base_params)
     else:
         # Default to OpenAI
         return OpenAILLM(**base_params)

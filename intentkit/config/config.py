@@ -122,6 +122,8 @@ class Config:
         self.reigent_api_key: str | None = self.load("REIGENT_API_KEY")
         self.venice_api_key: str | None = self.load("VENICE_API_KEY")
         self.openrouter_api_key: str | None = self.load("OPENROUTER_API_KEY")
+        # BlockRun.AI - x402 micropayment LLM gateway
+        self.blockrun_wallet_key: str | None = self.load("BLOCKRUN_WALLET_KEY")
         # LLM Config
         self.system_prompt: str | None = self.load("SYSTEM_PROMPT")
         self.intentkit_prompt: str | None = self.load("INTENTKIT_PROMPT")

@@ -31,3 +31,8 @@ eternalai,Eternal AI (Llama-3.3-70B),eternal,FALSE,0.25,0.75,2,64000,4096,4,3,FA
 reigent,REI Network,reigent,FALSE,0.5,1.5,3,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.reisearch.box/v1,300
 venice-uncensored,Venice Uncensored,venice,TRUE,0.5,2,3,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.venice.ai/api/v1,300
 venice-llama-4-maverick-17b,Venice Llama 4 Maverick 17B,venice,TRUE,1.5,6,4,32000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,https://api.venice.ai/api/v1,300
+openai/gpt-4o,BlockRun GPT-4o,blockrun,TRUE,2.5,10,4,128000,4096,4,3,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,https://pay.blockrun.ai,180
+openai/gpt-4o-mini,BlockRun GPT-4o Mini,blockrun,TRUE,0.15,0.6,1,128000,4096,3,4,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,https://pay.blockrun.ai,180
+anthropic/claude-sonnet-4,BlockRun Claude Sonnet 4,blockrun,TRUE,3,15,5,200000,4096,5,3,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,https://pay.blockrun.ai,180
+deepseek/deepseek-chat,BlockRun DeepSeek V3,blockrun,TRUE,0.28,0.42,2,128000,4096,4,3,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,https://pay.blockrun.ai,300
+google/gemini-2.0-flash,BlockRun Gemini 2.0 Flash,blockrun,TRUE,0.1,0.4,1,1048576,8192,3,4,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,https://pay.blockrun.ai,180
