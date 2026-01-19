@@ -17,12 +17,16 @@ async def create_user_server_wallet(
     user_id: str,
     network_id: str = "base-mainnet",
     rpc_url: str | None = None,
+    mode: str = "safe",  # "safe" or "privy"
 ) -> dict[str, Any]:
     """
-    Create a Privy server wallet and deploy a Safe smart account for a user.
+    Create a server wallet for a user using either Safe (smart account) or Privy (EOA) mode.
+    
+    Mode options:
+    - "safe": Creates Privy wallet + Safe smart account (default, for backwards compatibility)
+    - "privy": Creates only Privy wallet, uses EOA address directly (no Safe, no spending limits)
 
-    Unlike agent wallets, user server wallets do NOT have spending limits.
-    This just creates the Safe wallet without allowance module setup.
+    Unlike agent wallets, user server wallets do NOT have spending limits in either mode.
 
     The wallet data is stored in the user_data table with key "server_wallet"
     and the server_wallet_address is updated in the users table.
@@ -31,20 +35,24 @@ async def create_user_server_wallet(
         user_id: User ID (Privy user ID)
         network_id: The network to use (default: base-mainnet)
         rpc_url: Optional RPC URL override
+        mode: Wallet mode - "safe" for Safe smart account or "privy" for EOA only
 
     Returns:
         dict: Wallet metadata including:
             - privy_wallet_id: The Privy wallet ID
-            - privy_wallet_address: The Privy EOA address (owner/signer)
-            - smart_wallet_address: The Safe smart account address
-            - provider: "safe"
+            - privy_wallet_address: The Privy EOA address
+            - smart_wallet_address: The Safe smart account address (only in "safe" mode)
+            - provider: "safe" or "privy"
             - network_id: The network ID
             - chain_id: The chain ID
 
     Raises:
-        ValueError: If network is not supported or RPC URL is not configured
+        ValueError: If network is not supported, RPC URL is not configured, or mode is invalid
         IntentKitAPIError: If wallet creation fails
     """
+    if mode not in ("safe", "privy"):
+        raise ValueError(f"Invalid mode: {mode}. Must be 'safe' or 'privy'")
+    
     from intentkit.clients.privy import (
         CHAIN_CONFIGS,
         PrivyClient,
@@ -136,28 +144,44 @@ async def create_user_server_wallet(
     assert existing_privy_wallet_id is not None
     assert existing_privy_wallet_address is not None
 
-    # Deploy Safe without spending limits (no allowance module)
-    # Pass weekly_spending_limit_usdc=None to skip allowance module setup
-    deployment_info = await deploy_safe_with_allowance(
-        privy_client=privy_client,
-        privy_wallet_id=existing_privy_wallet_id,
-        privy_wallet_address=existing_privy_wallet_address,
-        network_id=network_id,
-        rpc_url=effective_rpc_url,
-        weekly_spending_limit_usdc=None,  # No spending limits for user wallets
-    )
+    # Create wallet based on mode
+    if mode == "safe":
+        # Safe mode: Deploy Safe without spending limits (no allowance module)
+        # Pass weekly_spending_limit_usdc=None to skip allowance module setup
+        deployment_info = await deploy_safe_with_allowance(
+            privy_client=privy_client,
+            privy_wallet_id=existing_privy_wallet_id,
+            privy_wallet_address=existing_privy_wallet_address,
+            network_id=network_id,
+            rpc_url=effective_rpc_url,
+            weekly_spending_limit_usdc=None,  # No spending limits for user wallets
+        )
 
-    wallet_data: dict[str, Any] = {
-        "privy_wallet_id": existing_privy_wallet_id,
-        "privy_wallet_address": existing_privy_wallet_address,
-        "smart_wallet_address": deployment_info["safe_address"],
-        "provider": "safe",
-        "network_id": network_id,
-        "chain_id": chain_config.chain_id,
-        "salt_nonce": deployment_info["salt_nonce"],
-        "deployment_info": deployment_info,
-        "status": "deployed",
-    }
+        wallet_data: dict[str, Any] = {
+            "privy_wallet_id": existing_privy_wallet_id,
+            "privy_wallet_address": existing_privy_wallet_address,
+            "smart_wallet_address": deployment_info["safe_address"],
+            "provider": "safe",
+            "network_id": network_id,
+            "chain_id": chain_config.chain_id,
+            "salt_nonce": deployment_info["salt_nonce"],
+            "deployment_info": deployment_info,
+            "status": "deployed",
+        }
+        
+        server_wallet_address = deployment_info["safe_address"]
+    else:
+        # Privy mode: Use privy wallet address directly, no Safe deployment
+        wallet_data = {
+            "privy_wallet_id": existing_privy_wallet_id,
+            "privy_wallet_address": existing_privy_wallet_address,
+            "provider": "privy",
+            "network_id": network_id,
+            "chain_id": chain_config.chain_id,
+            "status": "created",
+        }
+        
+        server_wallet_address = existing_privy_wallet_address
 
     # Save complete wallet data
     final_wallet_data = UserData(
@@ -169,12 +193,12 @@ async def create_user_server_wallet(
 
     # Update user's server_wallet_address
     user_update = UserUpdate.model_construct(
-        server_wallet_address=deployment_info["safe_address"],
+        server_wallet_address=server_wallet_address,
     )
     await user_update.patch(user_id)
 
     logger.info(
-        f"Created server wallet for user {user_id}: {deployment_info['safe_address']}"
+        f"Created {mode} server wallet for user {user_id}: {server_wallet_address}"
     )
 
     return wallet_data
