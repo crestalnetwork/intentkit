@@ -50,7 +50,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
 
     Returns:
         CdpEvmWalletProvider for CDP agents.
-        SafeWalletProvider for Privy agents.
+        SafeWalletProvider for Safe agents (Privy + Safe smart account).
 
     Raises:
         IntentKitAPIError: If the wallet provider is not supported or not configured.
@@ -58,7 +58,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
     if agent.wallet_provider == "cdp":
         return await get_cdp_wallet_provider(agent)
 
-    elif agent.wallet_provider == "privy":
+    elif agent.wallet_provider in ("safe", "privy"):
         from intentkit.clients.privy import get_wallet_provider as get_privy_provider
         from intentkit.models.agent_data import AgentData
 
@@ -67,8 +67,8 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             raise IntentKitAPIError(
                 400,
                 "PrivyWalletNotInitialized",
-                "Privy wallet has not been initialized for this agent. "
-                "Please ensure the agent was created with wallet_provider='privy'.",
+                f"Wallet has not been initialized for this agent. "
+                f"Please ensure the agent was created with wallet_provider='{agent.wallet_provider}'.",
             )
 
         try:
@@ -77,7 +77,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             raise IntentKitAPIError(
                 500,
                 "PrivyWalletDataCorrupted",
-                f"Failed to parse Privy wallet data: {e}",
+                f"Failed to parse wallet data: {e}",
             ) from e
 
         return get_privy_provider(privy_data)
@@ -94,7 +94,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             400,
             "NoWalletConfigured",
             "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp' or 'privy' in the agent configuration.",
+            "Please set wallet_provider to 'cdp', 'safe', or 'privy' in the agent configuration.",
         )
 
     else:
@@ -102,7 +102,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             400,
             "UnsupportedWalletProvider",
             f"Wallet provider '{agent.wallet_provider}' is not supported for on-chain operations. "
-            "Supported providers are: 'cdp', 'privy'.",
+            "Supported providers are: 'cdp', 'safe', 'privy'.",
         )
 
 
@@ -119,7 +119,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
     Returns:
         A signer object with sign_message, sign_typed_data, and unsafe_sign_hash methods.
         - For CDP: ThreadSafeEvmWalletSigner wrapping CdpEvmWalletProvider
-        - For Privy: PrivyWalletSigner
+        - For Safe/Privy: PrivyWalletSigner
 
     Raises:
         IntentKitAPIError: If the wallet provider is not supported or not configured.
@@ -135,7 +135,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
 
         return ThreadSafeEvmWalletSigner(provider)
 
-    elif agent.wallet_provider == "privy":
+    elif agent.wallet_provider in ("safe", "privy"):
         from intentkit.clients.privy import get_wallet_signer as get_privy_signer
         from intentkit.models.agent_data import AgentData
 
@@ -144,8 +144,8 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             raise IntentKitAPIError(
                 400,
                 "PrivyWalletNotInitialized",
-                "Privy wallet has not been initialized for this agent. "
-                "Please ensure the agent was created with wallet_provider='privy'.",
+                f"Wallet has not been initialized for this agent. "
+                f"Please ensure the agent was created with wallet_provider='{agent.wallet_provider}'.",
             )
 
         try:
@@ -154,7 +154,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             raise IntentKitAPIError(
                 500,
                 "PrivyWalletDataCorrupted",
-                f"Failed to parse Privy wallet data: {e}",
+                f"Failed to parse wallet data: {e}",
             ) from e
 
         return get_privy_signer(privy_data)
@@ -171,7 +171,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             400,
             "NoWalletConfigured",
             "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp' or 'privy' in the agent configuration.",
+            "Please set wallet_provider to 'cdp', 'safe', or 'privy' in the agent configuration.",
         )
 
     else:
@@ -179,7 +179,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             400,
             "UnsupportedWalletProvider",
             f"Wallet provider '{agent.wallet_provider}' is not supported for signing. "
-            "Supported providers are: 'cdp', 'privy'.",
+            "Supported providers are: 'cdp', 'safe', 'privy'.",
         )
 
 

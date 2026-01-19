@@ -13,7 +13,7 @@ from intentkit.utils.error import IntentKitAPIError
 async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
     now = datetime.now()
     agent = Agent(  # pyright: ignore[reportCallIssue]
-        id="agent-privy-1",
+        id="agent-safe-1",
         name="Test Agent",
         description="A test agent",
         model="gpt-4o",
@@ -26,7 +26,7 @@ async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
         temperature=0.7,
         visibility=0,
         public_info_updated_at=now,
-        wallet_provider="privy",
+        wallet_provider="safe",
         weekly_spending_limit=200.0,
         network_id="base-mainnet",
     )

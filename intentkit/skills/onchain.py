@@ -187,4 +187,4 @@ class IntentKitOnChainSkill(IntentKitSkill):
             on-chain operations (CDP or Privy).
         """
         wallet_provider = self.get_agent_wallet_provider_type()
-        return wallet_provider in ("cdp", "privy")
+        return wallet_provider in ("cdp", "safe", "privy")
