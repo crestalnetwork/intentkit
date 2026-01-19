@@ -104,57 +104,59 @@ async def process_agent_wallet(
         and old_wallet_provider != "none"
         and old_wallet_provider == current_wallet_provider
     ):
-        if current_wallet_provider == "privy" and old_limit != new_limit:
+        if current_wallet_provider in ("safe", "privy") and old_limit != new_limit:
             agent_data = await AgentData.get(agent.id)
             if agent_data.privy_wallet_data:
-                from intentkit.clients.privy import create_privy_safe_wallet
+                # Only safe mode supports spending limits
+                if current_wallet_provider == "safe":
+                    from intentkit.clients.privy import create_privy_safe_wallet
 
-                try:
-                    privy_wallet_data = json.loads(agent_data.privy_wallet_data)
-                except json.JSONDecodeError:
-                    privy_wallet_data = {}
+                    try:
+                        privy_wallet_data = json.loads(agent_data.privy_wallet_data)
+                    except json.JSONDecodeError:
+                        privy_wallet_data = {}
 
-                existing_privy_wallet_id = privy_wallet_data.get("privy_wallet_id")
-                existing_privy_wallet_address = privy_wallet_data.get(
-                    "privy_wallet_address"
-                )
-
-                if existing_privy_wallet_id and existing_privy_wallet_address:
-                    rpc_url: str | None = None
-                    network_id = (
-                        agent.network_id
-                        or privy_wallet_data.get("network_id")
-                        or "base-mainnet"
+                    existing_privy_wallet_id = privy_wallet_data.get("privy_wallet_id")
+                    existing_privy_wallet_address = privy_wallet_data.get(
+                        "privy_wallet_address"
                     )
-                    if config.chain_provider:
-                        try:
-                            chain_config = config.chain_provider.get_chain_config(
-                                network_id
-                            )
-                            rpc_url = chain_config.rpc_url
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to get RPC URL from chain provider: {e}"
-                            )
 
-                    wallet_data = await create_privy_safe_wallet(
-                        agent_id=agent.id,
-                        network_id=network_id,
-                        rpc_url=rpc_url,
-                        weekly_spending_limit_usdc=agent.weekly_spending_limit
-                        if agent.weekly_spending_limit is not None
-                        else 0.0,
-                        existing_privy_wallet_id=existing_privy_wallet_id,
-                        existing_privy_wallet_address=existing_privy_wallet_address,
-                    )
-                    agent_data = await AgentData.patch(
-                        agent.id,
-                        {
-                            "evm_wallet_address": wallet_data["smart_wallet_address"],
-                            "privy_wallet_data": json.dumps(wallet_data),
-                        },
-                    )
-                    return agent_data
+                    if existing_privy_wallet_id and existing_privy_wallet_address:
+                        rpc_url: str | None = None
+                        network_id = (
+                            agent.network_id
+                            or privy_wallet_data.get("network_id")
+                            or "base-mainnet"
+                        )
+                        if config.chain_provider:
+                            try:
+                                chain_config = config.chain_provider.get_chain_config(
+                                    network_id
+                                )
+                                rpc_url = chain_config.rpc_url
+                            except Exception as e:
+                                logger.warning(
+                                    f"Failed to get RPC URL from chain provider: {e}"
+                                )
+
+                        wallet_data = await create_privy_safe_wallet(
+                            agent_id=agent.id,
+                            network_id=network_id,
+                            rpc_url=rpc_url,
+                            weekly_spending_limit_usdc=agent.weekly_spending_limit
+                            if agent.weekly_spending_limit is not None
+                            else 0.0,
+                            existing_privy_wallet_id=existing_privy_wallet_id,
+                            existing_privy_wallet_address=existing_privy_wallet_address,
+                        )
+                        agent_data = await AgentData.patch(
+                            agent.id,
+                            {
+                                "evm_wallet_address": wallet_data["smart_wallet_address"],
+                                "privy_wallet_data": json.dumps(wallet_data),
+                            },
+                        )
+                        return agent_data
         return await AgentData.get(agent.id)
 
     # 3. For new agents (old_wallet_provider is None), check if wallet already exists
@@ -175,7 +177,7 @@ async def process_agent_wallet(
                 "evm_wallet_address": agent.readonly_wallet_address,
             },
         )
-    elif current_wallet_provider == "privy":
+    elif current_wallet_provider == "safe":
         from intentkit.clients.privy import create_privy_safe_wallet
 
         # Get RPC URL from chain provider if available
@@ -269,6 +271,59 @@ async def process_agent_wallet(
                 "evm_wallet_address": wallet_data["smart_wallet_address"],
                 "privy_wallet_data": json.dumps(wallet_data),
             },
+        )
+    elif current_wallet_provider == "privy":
+        from intentkit.clients.privy import PrivyClient
+
+        # New privy-only mode: create just the privy wallet, no safe
+        privy_client = PrivyClient()
+        if not agent.owner:
+            raise IntentKitAPIError(
+                400,
+                "PrivyUserIdMissing",
+                "Agent owner (Privy user ID) is required for Privy wallets",
+            )
+        if not agent.owner.startswith("did:privy:"):
+            raise IntentKitAPIError(
+                400,
+                "PrivyUserIdInvalid",
+                "Only Privy-authenticated users (did:privy:...) can create Privy wallets",
+            )
+        
+        # Create a 1-of-N key quorum containing both the server's authorization key
+        # and the user's ID. This allows either party to independently control the wallet.
+        server_public_keys = privy_client.get_authorization_public_keys()
+        owner_key_quorum_id = await privy_client.create_key_quorum(
+            user_ids=[agent.owner],
+            public_keys=server_public_keys if server_public_keys else None,
+            authorization_threshold=1,  # Any single party can authorize
+            display_name=f"intentkit:{agent.id[:40]}",
+        )
+        
+        # Create wallet with key quorum as owner
+        privy_wallet = await privy_client.create_wallet(
+            owner_key_quorum_id=owner_key_quorum_id,
+        )
+        
+        # Store wallet data - for privy-only mode, we use the privy wallet address directly
+        wallet_data = {
+            "privy_wallet_id": privy_wallet.id,
+            "privy_wallet_address": privy_wallet.address,
+            "owner_key_quorum_id": owner_key_quorum_id,
+            "network_id": agent.network_id or "base-mainnet",
+            "provider": "privy",
+            "status": "created",
+        }
+        
+        agent_data = await AgentData.patch(
+            agent.id,
+            {
+                "evm_wallet_address": privy_wallet.address,  # Use privy wallet address directly
+                "privy_wallet_data": json.dumps(wallet_data),
+            },
+        )
+        logger.info(
+            f"Created Privy-only wallet {privy_wallet.id} for agent {agent.id}, address: {privy_wallet.address}"
         )
 
     return agent_data

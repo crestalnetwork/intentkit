@@ -26,7 +26,7 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
         temperature=0.7,
         visibility=0,
         public_info_updated_at=datetime.now(),
-        wallet_provider="privy",
+        wallet_provider="safe",
         weekly_spending_limit=200.0,
         network_id="base-mainnet",
     )
@@ -77,7 +77,7 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
 
     result = await agent_module.process_agent_wallet(
         agent,
-        old_wallet_provider="privy",
+        old_wallet_provider="safe",
         old_weekly_spending_limit=100.0,
     )
 
@@ -107,7 +107,7 @@ async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkey
         temperature=0.7,
         visibility=0,
         public_info_updated_at=datetime.now(),
-        wallet_provider="privy",
+        wallet_provider="safe",
         weekly_spending_limit=None,
         network_id="base-mainnet",
     )
@@ -151,7 +151,7 @@ async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkey
 
     await agent_module.process_agent_wallet(
         agent,
-        old_wallet_provider="privy",
+        old_wallet_provider="safe",
         old_weekly_spending_limit=100.0,
     )
 

@@ -38,10 +38,10 @@ class TestGetWalletProvider:
             assert provider == mock_cdp_provider
 
     @pytest.mark.asyncio
-    async def test_privy_provider(self):
-        """Test getting wallet provider for Privy agent."""
+    async def test_safe_provider(self):
+        """Test getting wallet provider for Safe agent."""
         mock_agent = MagicMock()
-        mock_agent.wallet_provider = "privy"
+        mock_agent.wallet_provider = "safe"
         mock_agent.id = "test-agent"
         mock_agent.network_id = "base-mainnet"
 

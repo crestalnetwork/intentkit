@@ -278,7 +278,7 @@ class AgentUserInputColumns:
     weekly_spending_limit: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
-        comment="Weekly spending limit in USDC when wallet_provider is privy",
+        comment="Weekly spending limit in USDC when wallet_provider is safe",
     )
     network_id: Mapped[str | None] = mapped_column(
         String,
@@ -603,7 +603,7 @@ class AgentCore(BaseModel):
         ),
     ]
     wallet_provider: Annotated[
-        Literal["cdp", "readonly", "privy", "none"] | None,
+        Literal["cdp", "readonly", "safe", "privy", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
@@ -685,7 +685,7 @@ class AgentUserInput(AgentCore):
         float | None,
         PydanticField(
             default=None,
-            description="Weekly spending limit in USDC when wallet_provider is privy. This limits how much USDC the agent can spend per week.",
+            description="Weekly spending limit in USDC when wallet_provider is safe. This limits how much USDC the agent can spend per week.",
             ge=0.0,
         ),
     ]
