@@ -1,8 +1,9 @@
-## v0.8.69
+## v0.8.70
 
-### Bug Fixes
+### Improvements
+- Updated wallet provider system with enhanced support for Safe and Privy modes
+- Improved x402 payment validation
+- Updated dependencies (async-lru, boto3, botocore)
+- Code formatting improvements
 
-- Fixed x402 payment signing with Safe wallets by adding support for specifying the address that holds funds
-- Fixed chat memory clearing functionality to directly delete from database tables
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.68...v0.8.69
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.69...v0.8.70
