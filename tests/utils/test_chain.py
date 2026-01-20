@@ -81,6 +81,7 @@ def test_chain_provider_fetch_by_network_and_id():
 
 
 def test_quicknode_chain_provider_alias_mapping(monkeypatch: pytest.MonkeyPatch):
+    # QuickNode can return "arb" and "optimism" values that should map to enums.
     payload = {
         "data": [
             {

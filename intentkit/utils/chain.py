@@ -159,6 +159,13 @@ class NetworkId(IntEnum):
     BeraMainnet = 80094
 
 
+QUICKNODE_CHAIN_ALIASES: dict[str, str] = {
+    "arb": Chain.Arbitrum.value,
+}
+QUICKNODE_NETWORK_ALIASES: dict[str, str] = {
+    "optimism": QuickNodeNetwork.OptimismMainnet.value,
+}
+
 # Mapping of QuickNodeNetwork enum members to their corresponding NetworkId enum members.
 # This dictionary facilitates efficient lookup of network IDs given a network name.
 # Note: SolanaMainnet is intentionally excluded as it does not have a numeric chain ID.
@@ -520,10 +527,10 @@ class QuicknodeChainProvider(ChainProvider):
                 chain_value = str(item["chain"]).lower()
                 network_value = str(item["network"]).lower()
                 rpc_url = item["http_url"]
-                if chain_value == "arb":
-                    chain_value = Chain.Arbitrum.value
-                if network_value == "optimism":
-                    network_value = QuickNodeNetwork.OptimismMainnet.value
+                chain_value = QUICKNODE_CHAIN_ALIASES.get(chain_value, chain_value)
+                network_value = QUICKNODE_NETWORK_ALIASES.get(
+                    network_value, network_value
+                )
                 chain = Chain(chain_value)
                 network = QuickNodeNetwork(network_value)
                 ens_url = item.get("ens_url", rpc_url)
