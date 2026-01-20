@@ -159,6 +159,7 @@ class NetworkId(IntEnum):
     BeraMainnet = 80094
 
 
+# QuickNode may return short chain/network identifiers that map to existing enums.
 QUICKNODE_CHAIN_ALIASES: dict[str, str] = {
     "arb": Chain.Arbitrum.value,
 }
