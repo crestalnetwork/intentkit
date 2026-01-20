@@ -524,12 +524,14 @@ class QuicknodeChainProvider(ChainProvider):
                 continue
 
             try:
-                chain_value = str(item["chain"]).lower()
-                network_value = str(item["network"]).lower()
+                chain_value = item["chain"]
+                network_value = item["network"]
                 rpc_url = item["http_url"]
-                chain_value = QUICKNODE_CHAIN_ALIASES.get(chain_value, chain_value)
+                chain_key = str(chain_value).lower()
+                network_key = str(network_value).lower()
+                chain_value = QUICKNODE_CHAIN_ALIASES.get(chain_key, chain_value)
                 network_value = QUICKNODE_NETWORK_ALIASES.get(
-                    network_value, network_value
+                    network_key, network_value
                 )
                 chain = Chain(chain_value)
                 network = QuickNodeNetwork(network_value)
