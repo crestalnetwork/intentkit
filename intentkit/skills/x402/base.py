@@ -148,7 +148,9 @@ class X402BaseSkill(IntentKitOnChainSkill):
                 payment_data = response.json()
                 return x402PaymentRequiredResponse(**payment_data)
             except Exception as exc:
-                raise ValueError(f"Failed to parse payment requirements: {exc}") from exc
+                raise ValueError(
+                    f"Failed to parse payment requirements: {exc}"
+                ) from exc
 
     @staticmethod
     def _select_payment_requirement(
@@ -239,9 +241,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
         if amount <= 0:
             return
         if max_value is not None and amount > max_value:
-            raise ValueError(
-                f"Payment amount {amount} exceeds max_value {max_value}."
-            )
+            raise ValueError(f"Payment amount {amount} exceeds max_value {max_value}.")
 
         agent_data = await AgentData.get(agent.id)
         if not agent_data.privy_wallet_data:
