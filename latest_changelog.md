@@ -1,17 +1,16 @@
-## v0.8.71
+## v0.8.72
 
-### Features
-- Added prefunding support for Privy wallets in x402 safe payment operations
+### New Features
+
+- Added httpx compatibility layer for X402 payment protocol skills, enabling better HTTP request handling and improved integration
 
 ### Improvements
-- Improved payment strategy for x402 safe transactions
-- Enhanced x402 base module functionality
+
+- Improved QuickNode network alias handling for better blockchain network compatibility
+- Enhanced network mapping for Arbitrum and Optimism chains in QuickNode integration
 
 ### Bug Fixes
-- Fixed issues in the x402 payment module
-- Fixed linting errors
 
-### Documentation
-- Added copilot instruction file
+- Fixed bugs in QuickNode network alias normalization module
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.70...v0.8.71
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.71...v0.8.72
