@@ -13,7 +13,7 @@ from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
 from x402.types import x402PaymentRequiredResponse
 
-from intentkit.skills.x402.base import X402BaseSkill
+from intentkit.skills.x402.base import X402BaseSkill, normalize_payment_required_payload
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,9 @@ class X402CheckPrice(X402BaseSkill):
                 if response.status_code == 402:
                     # Parse the 402 response to get payment requirements
                     try:
-                        payment_data = response.json()
+                        payment_data = normalize_payment_required_payload(
+                            response.json()
+                        )
                         payment_response = x402PaymentRequiredResponse(**payment_data)
 
                         # Format the payment requirements for display

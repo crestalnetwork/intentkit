@@ -51,6 +51,39 @@ MAX_CONTENT_LENGTH = 1000
 DEFAULT_NETWORK_ID = "base-mainnet"
 SUPPORTED_WALLET_PROVIDERS = {"cdp", "safe", "privy"}
 
+PAYMENT_RESPONSE_HEADERS = ("payment-response", "x-payment-response")
+
+
+def get_payment_response_header(response: httpx.Response) -> str | None:
+    """Get the x402 payment response header value (v1 or v2)."""
+    for header in PAYMENT_RESPONSE_HEADERS:
+        value = response.headers.get(header)
+        if value:
+            return value
+    return None
+
+
+def decode_payment_response_header(
+    payment_response_header: str,
+) -> dict[str, Any] | None:
+    """Decode the base64-encoded payment response header into JSON."""
+    try:
+        return json.loads(base64.b64decode(payment_response_header))
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
+def normalize_payment_required_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Normalize v1/v2 payment required payloads for x402 parsing."""
+    normalized = dict(payload)
+    x402_version = normalized.get("x402Version") or normalized.get("x402_version")
+    if x402_version is None:
+        normalized["x402Version"] = 1
+    else:
+        normalized["x402Version"] = x402_version
+    normalized.setdefault("error", "")
+    return normalized
+
 
 def get_status_text(status_code: int) -> str:
     """Get human-readable status text for an HTTP status code."""
@@ -145,7 +178,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
             if response.status_code != 402:
                 return None
             try:
-                payment_data = response.json()
+                payment_data = normalize_payment_required_payload(response.json())
                 return x402PaymentRequiredResponse(**payment_data)
             except Exception as exc:
                 raise ValueError(
@@ -348,19 +381,17 @@ class X402BaseSkill(IntentKitOnChainSkill):
         """
         lines = [f"Status: {get_status_text(response.status_code)}"]
 
-        # Extract chain and tx_hash from PAYMENT-RESPONSE header
-        payment_response_header = response.headers.get("payment-response")
+        # Extract chain and tx_hash from payment response header (v1/v2)
+        payment_response_header = get_payment_response_header(response)
         if payment_response_header:
-            try:
-                payment_data = json.loads(base64.b64decode(payment_response_header))
+            payment_data = decode_payment_response_header(payment_response_header)
+            if payment_data:
                 network = payment_data.get("network")
                 tx_hash = payment_data.get("transaction") or payment_data.get("txHash")
                 if network:
                     lines.append(f"Chain: {network}")
                 if tx_hash:
                     lines.append(f"TxHash: {tx_hash}")
-            except (json.JSONDecodeError, ValueError):
-                pass  # Ignore parsing errors, just skip tx info
 
         # Truncate content if too long
         content = truncate_content(response.text)
@@ -401,16 +432,15 @@ class X402BaseSkill(IntentKitOnChainSkill):
             if chat_id.startswith("autonomous-"):
                 task_id = chat_id.removeprefix("autonomous-")
 
-            # Parse PAYMENT-RESPONSE header (base64-encoded JSON)
-            payment_response_header = response.headers.get("payment-response")
+            # Parse payment response header (v1/v2, base64-encoded JSON)
+            payment_response_header = get_payment_response_header(response)
             if not payment_response_header:
-                logger.debug("No PAYMENT-RESPONSE header found, skipping order record")
+                logger.debug("No payment response header found, skipping order record")
                 return
 
-            try:
-                payment_data = json.loads(base64.b64decode(payment_response_header))
-            except (json.JSONDecodeError, ValueError) as e:
-                logger.warning(f"Failed to parse PAYMENT-RESPONSE header: {e}")
+            payment_data = decode_payment_response_header(payment_response_header)
+            if not payment_data:
+                logger.warning("Failed to parse payment response header.")
                 return
 
             # Extract payment details

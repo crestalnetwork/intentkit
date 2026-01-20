@@ -5,9 +5,9 @@ from urllib.parse import urlparse
 import httpx
 from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field
-from x402.clients.httpx import x402HttpxClient
 
 from intentkit.skills.x402.base import X402BaseSkill
+from intentkit.skills.x402.httpx_compat import X402HttpxCompatClient
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class X402HttpRequest(X402BaseSkill):
                 timeout=timeout,
             )
             account = await self.get_signer()
-            async with x402HttpxClient(
+            async with X402HttpxCompatClient(
                 account=account,
                 timeout=timeout,
             ) as client:
