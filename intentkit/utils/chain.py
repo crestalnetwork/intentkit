@@ -517,9 +517,13 @@ class QuicknodeChainProvider(ChainProvider):
                 continue
 
             try:
-                chain_value = item["chain"]
-                network_value = item["network"]
+                chain_value = str(item["chain"]).lower()
+                network_value = str(item["network"]).lower()
                 rpc_url = item["http_url"]
+                if chain_value == "arb":
+                    chain_value = Chain.Arbitrum.value
+                if network_value == "optimism":
+                    network_value = QuickNodeNetwork.OptimismMainnet.value
                 chain = Chain(chain_value)
                 network = QuickNodeNetwork(network_value)
                 ens_url = item.get("ens_url", rpc_url)
