@@ -81,7 +81,7 @@ def test_chain_provider_fetch_by_network_and_id():
 
 
 def test_quicknode_chain_provider_alias_mapping(monkeypatch: pytest.MonkeyPatch):
-    # QuickNode can return short chain/network identifiers that need alias mapping.
+    # QuickNode can return chain "arb" with network "optimism"; both should map.
     payload = {
         "data": [
             {
