@@ -1,16 +1,12 @@
-## v0.8.72
+# v0.8.73
 
-### New Features
+## New Features
 
-- Added httpx compatibility layer for X402 payment protocol skills, enabling better HTTP request handling and improved integration
+- **x402 Get Orders Skill**: Added new skill to retrieve recent successful x402 payment orders for agents, displaying transaction history with timestamps, URLs, descriptions, amounts (with proper decimal formatting), and transaction hashes
 
-### Improvements
+## Improvements
 
-- Improved QuickNode network alias handling for better blockchain network compatibility
-- Enhanced network mapping for Arbitrum and Optimism chains in QuickNode integration
+- Enhanced x402 order tracking with description field to capture payment details from the x402 protocol
+- Improved amount display formatting to show human-readable decimal values based on asset type (USDC, USDT, DAI, WETH, etc.)
 
-### Bug Fixes
-
-- Fixed bugs in QuickNode network alias normalization module
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.71...v0.8.72
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.72...v0.8.73
