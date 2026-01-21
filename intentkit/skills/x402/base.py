@@ -450,6 +450,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
             pay_to = payment_data.get("payTo", payment_data.get("pay_to", "unknown"))
             tx_hash = payment_data.get("transaction", payment_data.get("txHash"))
             success = payment_data.get("success", True)
+            description = payment_data.get("description")
 
             # Create order record
             order = X402OrderCreate(
@@ -469,6 +470,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
                 status="success" if success else "failed",
                 error=payment_data.get("errorReason"),
                 http_status=response.status_code,
+                description=description,
             )
             _ = await X402Order.create(order)
             logger.info(

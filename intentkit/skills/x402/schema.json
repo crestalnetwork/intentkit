@@ -65,6 +65,22 @@
           ],
           "description": "Perform a paid HTTP request with a maximum payment limit via the x402 payment protocol.",
           "default": "disabled"
+        },
+        "x402_get_orders": {
+          "type": "string",
+          "title": "Get Orders",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Retrieve recent x402 payment orders made by this agent.",
+          "default": "disabled"
         }
       }
     }

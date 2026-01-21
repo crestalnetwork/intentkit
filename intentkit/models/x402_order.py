@@ -7,7 +7,7 @@ from typing import Annotated
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import BigInteger, DateTime, Integer, String, func
+from sqlalchemy import BigInteger, DateTime, Integer, String, desc, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.models.base import Base
@@ -50,6 +50,9 @@ class X402OrderBase(BaseModel):
     ] = None
     http_status: Annotated[
         int | None, PydanticField(description="HTTP response status code")
+    ] = None
+    description: Annotated[
+        str | None, PydanticField(description="Payment description from x402 protocol")
     ] = None
 
 
@@ -95,11 +98,34 @@ class X402Order(X402OrderBase):
                 status=order.status,
                 error=order.error,
                 http_status=order.http_status,
+                description=order.description,
             )
             session.add(db_order)
             await session.commit()
             await session.refresh(db_order)
             return cls.model_validate(db_order)
+
+    @classmethod
+    async def get_by_agent(cls, agent_id: str, limit: int = 5) -> list["X402Order"]:
+        """Get recent successful orders for a specific agent.
+
+        Args:
+            agent_id: The agent ID to filter by
+            limit: Maximum number of orders to return (default 5)
+
+        Returns:
+            List of X402Order instances with status='success', ordered by created_at descending
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(X402OrderTable)
+                .where(X402OrderTable.agent_id == agent_id)
+                .where(X402OrderTable.status == "success")
+                .order_by(desc(X402OrderTable.created_at))
+                .limit(limit)
+            )
+            rows = result.scalars().all()
+            return [cls.model_validate(row) for row in rows]
 
 
 class X402OrderTable(Base):
@@ -157,6 +183,9 @@ class X402OrderTable(Base):
     )
     http_status: Mapped[int | None] = mapped_column(
         Integer, nullable=True, comment="HTTP response status code"
+    )
+    description: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Payment description from x402 protocol"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
