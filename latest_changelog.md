@@ -1,11 +1,10 @@
-## v0.8.74
+## v0.9.0
 
-**New Features:**
-- Added real-time status tracking for autonomous tasks, providing visibility into task execution states (waiting, running, error)
-- Added next run time display for scheduled autonomous tasks
+**Bug Fixes:**
+- Fixed JSON serialization errors in autonomous task storage that occurred when saving datetime fields to the database
 
 **Improvements:**
-- Enhanced autonomous task management with automatic status updates based on scheduler events
-- Improved task state consistency across the autonomous system
+- Enhanced autonomous task model with proper datetime serialization for better database compatibility
+- Added comprehensive test coverage for autonomous task JSON serialization
 
-**Full Changelog:** https://github.com/crestalnetwork/intentkit/compare/v0.8.73...v0.8.74
+**Full Changelog:** https://github.com/crestalnetwork/intentkit/compare/v0.8.74...v0.9.0
