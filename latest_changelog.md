@@ -1,12 +1,11 @@
-# v0.8.73
+## v0.8.74
 
-## New Features
+**New Features:**
+- Added real-time status tracking for autonomous tasks, providing visibility into task execution states (waiting, running, error)
+- Added next run time display for scheduled autonomous tasks
 
-- **x402 Get Orders Skill**: Added new skill to retrieve recent successful x402 payment orders for agents, displaying transaction history with timestamps, URLs, descriptions, amounts (with proper decimal formatting), and transaction hashes
+**Improvements:**
+- Enhanced autonomous task management with automatic status updates based on scheduler events
+- Improved task state consistency across the autonomous system
 
-## Improvements
-
-- Enhanced x402 order tracking with description field to capture payment details from the x402 protocol
-- Improved amount display formatting to show human-readable decimal values based on asset type (USDC, USDT, DAI, WETH, etc.)
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.8.72...v0.8.73
+**Full Changelog:** https://github.com/crestalnetwork/intentkit/compare/v0.8.73...v0.8.74
