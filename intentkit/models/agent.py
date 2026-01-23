@@ -8,7 +8,7 @@ import textwrap
 import warnings
 from datetime import UTC, datetime
 from decimal import Decimal
-from enum import IntEnum
+from enum import Enum, IntEnum
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -56,6 +56,14 @@ class AgentVisibility(IntEnum):
     PRIVATE = 0
     TEAM = 10
     PUBLIC = 20
+
+
+class AgentAutonomousStatus(str, Enum):
+    """Autonomous task execution status."""
+
+    WAITING = "waiting"
+    RUNNING = "running"
+    ERROR = "error"
 
 
 class AgentAutonomous(BaseModel):
@@ -146,6 +154,26 @@ class AgentAutonomous(BaseModel):
             },
         ),
     ]
+    status: Annotated[
+        AgentAutonomousStatus | None,
+        PydanticField(
+            default=None,
+            description="Current execution status for the autonomous task.",
+            json_schema_extra={
+                "x-group": "autonomous",
+            },
+        ),
+    ]
+    next_run_time: Annotated[
+        datetime | None,
+        PydanticField(
+            default=None,
+            description="Next scheduled run time for the autonomous task.",
+            json_schema_extra={
+                "x-group": "autonomous",
+            },
+        ),
+    ]
 
     @field_validator("id")
     @classmethod
@@ -159,6 +187,15 @@ class AgentAutonomous(BaseModel):
                 "id must contain only lowercase letters, numbers, and dashes"
             )
         return v
+
+    def normalize_status_defaults(self) -> "AgentAutonomous":
+        if not self.enabled:
+            if self.status is not None or self.next_run_time is not None:
+                return self.model_copy(update={"status": None, "next_run_time": None})
+            return self
+        if self.status is None:
+            return self.model_copy(update={"status": AgentAutonomousStatus.WAITING})
+        return self
 
 
 class AgentExample(BaseModel):
@@ -922,6 +959,22 @@ class AgentUpdate(AgentUserInput):
                         message="The shortest execution interval is 5 minutes",
                     )
 
+    @staticmethod
+    def _normalize_autonomous_statuses(
+        tasks: list[AgentAutonomous] | list[dict[str, Any]] | None,
+    ) -> list[dict[str, Any]] | None:
+        if not tasks:
+            return None
+        normalized: list[dict[str, Any]] = []
+        for task in tasks:
+            model = (
+                task
+                if isinstance(task, AgentAutonomous)
+                else AgentAutonomous.model_validate(task)
+            )
+            normalized.append(model.normalize_status_defaults().model_dump())
+        return normalized
+
     # deprecated, use override instead
     async def update(self, id: str) -> "Agent":
         # Validate autonomous schedule settings if present
@@ -937,7 +990,12 @@ class AgentUpdate(AgentUserInput):
                     message="Agent not found",
                 )
             # update
-            for key, value in self.model_dump(exclude_unset=True).items():
+            update_data = self.model_dump(exclude_unset=True)
+            if "autonomous" in update_data:
+                update_data["autonomous"] = self._normalize_autonomous_statuses(
+                    update_data["autonomous"]
+                )
+            for key, value in update_data.items():
                 setattr(db_agent, key, value)
             db_agent.version = self.hash()
             db_agent.deployed_at = func.now()
@@ -959,7 +1017,12 @@ class AgentUpdate(AgentUserInput):
                     message="Agent not found",
                 )
             # update
-            for key, value in self.model_dump().items():
+            update_data = self.model_dump()
+            if "autonomous" in update_data:
+                update_data["autonomous"] = self._normalize_autonomous_statuses(
+                    update_data["autonomous"]
+                )
+            for key, value in update_data.items():
                 setattr(db_agent, key, value)
             # version
             db_agent.version = self.hash()
@@ -1039,7 +1102,12 @@ class AgentCreate(AgentUpdate):
 
         async with get_session() as db:
             try:
-                db_agent = AgentTable(**self.model_dump())
+                create_data = self.model_dump()
+                if "autonomous" in create_data:
+                    create_data["autonomous"] = self._normalize_autonomous_statuses(
+                        create_data["autonomous"]
+                    )
+                db_agent = AgentTable(**create_data)
                 db_agent.version = self.hash()
                 db_agent.deployed_at = func.now()
                 db.add(db_agent)
@@ -1581,7 +1649,7 @@ class Agent(AgentCreate, AgentPublicInfo):
 
     @staticmethod
     def _serialize_autonomous(tasks: list[AgentAutonomous]) -> list[dict[str, Any]]:
-        return [task.model_dump() for task in tasks]
+        return [task.model_dump(mode="json") for task in tasks]
 
     @staticmethod
     def _autonomous_not_allowed_error() -> IntentKitAPIError:
@@ -1608,13 +1676,14 @@ class Agent(AgentCreate, AgentPublicInfo):
                 raise self._autonomous_not_allowed_error()
 
             current_tasks = self._deserialize_autonomous(db_agent.autonomous)
-            current_tasks.append(task)
+            normalized_task = task.normalize_status_defaults()
+            current_tasks.append(normalized_task)
 
             db_agent.autonomous = self._serialize_autonomous(current_tasks)
             await session.commit()
 
         self.autonomous = current_tasks
-        return task
+        return normalized_task
 
     async def delete_autonomous_task(self, task_id: str) -> None:
         async with get_session() as session:
@@ -1653,7 +1722,9 @@ class Agent(AgentCreate, AgentPublicInfo):
                 if task.id == task_id:
                     task_dict = task.model_dump()
                     task_dict.update(task_updates)
-                    updated_task = AgentAutonomous.model_validate(task_dict)
+                    updated_task = AgentAutonomous.model_validate(
+                        task_dict
+                    ).normalize_status_defaults()
                     rewritten_tasks.append(updated_task)
                 else:
                     rewritten_tasks.append(task)

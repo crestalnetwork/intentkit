@@ -4,13 +4,23 @@ import signal
 from datetime import datetime
 
 import sentry_sdk
+from apscheduler.events import (
+    EVENT_JOB_ERROR,
+    EVENT_JOB_EXECUTED,
+    EVENT_JOB_SUBMITTED,
+    JobEvent,
+    JobExecutionEvent,
+    JobSubmissionEvent,
+)
+from apscheduler.job import Job
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from intentkit.config.config import config
-from intentkit.models.agent import Agent, AgentTable
+from intentkit.core.agent import get_agent
+from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
 from intentkit.models.db import get_session, init_db
 from intentkit.models.redis import (
     clean_heartbeat,
@@ -54,6 +64,103 @@ if config.sentry_dsn:
     )
 
 
+def _resolve_autonomous_ids_from_job(job: Job | None) -> tuple[str, str] | None:
+    """Extract agent_id and autonomous_id from a scheduler job.
+
+    Args:
+        job: The APScheduler job instance, or None if job not found.
+
+    Returns:
+        A tuple of (agent_id, autonomous_id) if valid, None otherwise.
+    """
+    if job is None:
+        return None
+    if job.id in {HEAD_JOB_ID, "autonomous_heartbeat"}:
+        return None
+    args = job.args or ()
+    if len(args) < 3:
+        return None
+    agent_id = args[0]
+    autonomous_id = args[2]
+    if not isinstance(agent_id, str) or not isinstance(autonomous_id, str):
+        return None
+    return agent_id, autonomous_id
+
+
+async def _update_autonomous_status(
+    job_id: str, status: AgentAutonomousStatus | None
+) -> None:
+    """Update the status and next_run_time of an autonomous task in the database.
+
+    Args:
+        job_id: The APScheduler job ID (format: "{agent_id}-{autonomous_id}").
+        status: The new status to set, or None to clear.
+
+    Note:
+        The next_run_time is read from the scheduler at the time this function runs.
+        Due to async execution, there may be a small delay between the event firing
+        and this function executing, so next_run_time reflects the state at read time.
+    """
+    job: Job | None = scheduler.get_job(job_id)
+    resolved = _resolve_autonomous_ids_from_job(job)
+    if not resolved:
+        return
+    agent_id, autonomous_id = resolved
+    agent = await get_agent(agent_id)
+    if agent is None:
+        return
+
+    tasks = agent.autonomous or []
+    target = next((task for task in tasks if task.id == autonomous_id), None)
+    if target is None:
+        return
+
+    next_run_time = job.next_run_time if job else None
+
+    if target.enabled:
+        updates: dict[str, AgentAutonomousStatus | datetime | None] = {
+            "status": status,
+            "next_run_time": next_run_time,
+        }
+    else:
+        updates = {"status": None, "next_run_time": None}
+
+    _ = await agent.update_autonomous_task(autonomous_id, updates)
+
+
+async def _update_autonomous_status_safe(
+    job_id: str, status: AgentAutonomousStatus | None
+) -> None:
+    """Wrapper around _update_autonomous_status with error handling.
+
+    This ensures exceptions don't get silently swallowed when called via create_task.
+    """
+    try:
+        await _update_autonomous_status(job_id, status)
+    except Exception as e:
+        logger.error(f"Failed to update autonomous status for job {job_id}: {e}")
+
+
+def _handle_autonomous_event(
+    event: JobEvent | JobSubmissionEvent | JobExecutionEvent,
+) -> None:
+    """Handle APScheduler job events to update autonomous task status.
+
+    Args:
+        event: The APScheduler event (submission, execution, or error).
+    """
+    if event.code == EVENT_JOB_SUBMITTED:
+        status = AgentAutonomousStatus.RUNNING
+    elif event.code == EVENT_JOB_EXECUTED:
+        status = AgentAutonomousStatus.WAITING
+    elif event.code == EVENT_JOB_ERROR:
+        status = AgentAutonomousStatus.ERROR
+    else:
+        return
+
+    _ = asyncio.create_task(_update_autonomous_status_safe(event.job_id, status))
+
+
 async def send_autonomous_heartbeat():
     """Send a heartbeat signal to Redis to indicate the autonomous service is running.
 
@@ -95,6 +202,14 @@ async def schedule_agent_autonomous_tasks():
 
             for autonomous in agent.autonomous:
                 if not autonomous.enabled:
+                    if (
+                        autonomous.status is not None
+                        or autonomous.next_run_time is not None
+                    ):
+                        _ = await agent.update_autonomous_task(
+                            autonomous.id,
+                            {"status": None, "next_run_time": None},
+                        )
                     continue
 
                 # Create a unique task ID for this autonomous task
@@ -212,6 +327,11 @@ if __name__ == "__main__":
                 name="Autonomous Heartbeat",
                 replace_existing=True,
             )
+
+        scheduler.add_listener(
+            _handle_autonomous_event,
+            EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED | EVENT_JOB_ERROR,
+        )
 
         # Create a shutdown event for graceful termination
         shutdown_event = asyncio.Event()
