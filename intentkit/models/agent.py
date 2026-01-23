@@ -16,7 +16,7 @@ import jsonref
 import yaml
 from cron_validator import CronValidator
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
 from pydantic.main import IncEx
@@ -174,6 +174,14 @@ class AgentAutonomous(BaseModel):
             },
         ),
     ]
+
+    @field_serializer("next_run_time")
+    @classmethod
+    def serialize_next_run_time(cls, v: datetime | None) -> str | None:
+        """Serialize datetime to ISO format string for JSON compatibility."""
+        if v is None:
+            return None
+        return v.isoformat()
 
     @field_validator("id")
     @classmethod
