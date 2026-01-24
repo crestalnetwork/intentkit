@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Plus,
   MessageSquare,
@@ -9,6 +10,8 @@ import {
   Trash2,
   Check,
   X,
+  Activity,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +35,8 @@ import { cn } from "@/lib/utils";
 import type { ChatThread } from "@/types/chat";
 
 interface ChatSidebarProps {
+  agentId: string;
+  activeTab?: "chat" | "activities" | "posts";
   threads: ChatThread[];
   currentThreadId: string | null;
   isNewThread: boolean;
@@ -43,6 +48,8 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({
+  agentId,
+  activeTab = "chat",
   threads,
   currentThreadId,
   isNewThread,
@@ -111,7 +118,7 @@ export function ChatSidebar({
   return (
     <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
       {/* New Chat Button */}
-      <div className="p-3 border-b">
+      <div className="p-3">
         <Button
           onClick={onNewThread}
           className="w-full justify-start gap-2"
@@ -121,6 +128,37 @@ export function ChatSidebar({
           New Chat Thread
         </Button>
       </div>
+
+      {/* Navigation Links */}
+      <div className="px-3 pb-3 space-y-1">
+        <Link
+          href={`/agent/${agentId}/activities`}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            activeTab === "activities"
+              ? "bg-primary/10 text-primary font-medium"
+              : "hover:bg-muted text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Activity className="h-4 w-4" />
+          Activities
+        </Link>
+        <Link
+          href={`/agent/${agentId}/posts`}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            activeTab === "posts"
+              ? "bg-primary/10 text-primary font-medium"
+              : "hover:bg-muted text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <FileText className="h-4 w-4" />
+          Posts
+        </Link>
+      </div>
+
+      {/* Separator */}
+      <div className="border-t mx-3 mb-2" />
 
       {/* Thread List */}
       <div className="flex-1 overflow-y-auto">
