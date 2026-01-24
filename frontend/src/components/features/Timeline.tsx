@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { Activity, Bell, FileText, MessageSquare, StickyNote, Wallet } from "lucide-react";
+import { Activity, Bell, FileText, MessageSquare, StickyNote, Wallet, Bot } from "lucide-react";
 import { activityApi } from "@/lib/api";
 import {
     Card,
@@ -26,17 +25,19 @@ function getActivityIcon(type: string) {
     }
 }
 
+// ... imports remain the same
+
 interface TimelineProps {
     agentId?: string;
+    agentPicture?: string | null;
 }
 
-export function Timeline({ agentId }: TimelineProps) {
+export function Timeline({ agentId, agentPicture }: TimelineProps) {
     const {
         data: activities,
         isLoading,
         error,
         refetch,
-        isRefetching,
     } = useQuery({
         queryKey: agentId ? ["activities", agentId] : ["activities"],
         queryFn: () => agentId ? activityApi.getByAgent(agentId, 50) : activityApi.getAll(50),
@@ -81,8 +82,21 @@ export function Timeline({ agentId }: TimelineProps) {
             <div className="relative border-l border-muted pl-6 ml-4 space-y-8">
                 {activities.map((activity) => (
                     <div key={activity.id} className="relative">
-                        <span className="absolute -left-4 top-1 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                            {getActivityIcon(activity.activity_type || "default")}
+                        <span className="absolute -left-10 top-0 flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground overflow-hidden">
+                            {agentId ? (
+                                agentPicture ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img 
+                                        src={agentPicture} 
+                                        alt="Agent" 
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <Bot className="h-4 w-4" />
+                                )
+                            ) : (
+                                getActivityIcon(activity.activity_type || "default")
+                            )}
                         </span>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
