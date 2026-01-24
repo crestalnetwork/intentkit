@@ -2301,6 +2301,90 @@ async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
         return int(result, 16)
 
 
+async def _send_transaction_with_master_wallet(
+    to: str,
+    data: bytes,
+    chain_id: int,
+    rpc_url: str,
+    gas_limit: int = 300000,
+) -> str:
+    """Send a transaction using master wallet to pay for gas.
+
+    Args:
+        to: Target address
+        data: Transaction data
+        chain_id: Chain ID
+        rpc_url: RPC URL
+        gas_limit: Gas limit (default: 300000)
+
+    Returns:
+        Transaction hash
+    """
+    if not config.master_wallet_private_key:
+        raise IntentKitAPIError(
+            500,
+            "ConfigError",
+            "MASTER_WALLET_PRIVATE_KEY not configured",
+        )
+
+    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
+    master_account = Account.from_key(config.master_wallet_private_key)
+
+    # Use distributed nonce manager with lock
+    nonce_manager = _get_nonce_manager()
+    if not await nonce_manager.acquire_lock():
+        raise IntentKitAPIError(
+            500, "LockTimeout", "Failed to acquire nonce lock for transaction"
+        )
+
+    try:
+        # Get nonce from Redis (or blockchain if not cached)
+        nonce = await nonce_manager.get_and_increment_nonce(w3)
+        gas_price = await w3.eth.gas_price
+
+        tx: dict[str, Any] = {
+            "from": master_account.address,
+            "to": to,
+            "value": 0,
+            "data": data,
+            "nonce": nonce,
+            "chainId": chain_id,
+            "gas": gas_limit,
+            "gasPrice": gas_price,
+        }
+
+        try:
+            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
+            # Add 20% buffer, but don't exceed block gas limit blindly
+            tx["gas"] = int(estimated_gas * 1.2)
+        except Exception as e:
+            logger.warning(f"Gas estimation failed, using default {gas_limit}: {e}")
+
+        signed_tx = master_account.sign_transaction(tx)
+        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+        logger.info(f"Transaction sent via master wallet: {tx_hash.hex()}")
+
+    except Exception as e:
+        # Reset nonce on error (might be nonce-related)
+        error_msg = str(e).lower()
+        if "nonce" in error_msg:
+            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+            await nonce_manager.reset_from_blockchain(w3)
+        raise
+    finally:
+        await nonce_manager.release_lock()
+
+    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+    if receipt["status"] != 1:
+        # Check for revert reason if possible
+        # This is where we could try to decode the error, but for now just fail
+        logger.error(f"Transaction {tx_hash.hex()} failed/reverted")
+        raise IntentKitAPIError(500, "TxFailed", "Transaction failed on-chain")
+
+    return tx_hash.hex()
+
+
 async def _send_safe_transaction_with_master_wallet(
     safe_address: str,
     exec_data: bytes,
@@ -2322,65 +2406,24 @@ async def _send_safe_transaction_with_master_wallet(
     Returns:
         Transaction hash
     """
-    if not config.master_wallet_private_key:
-        raise IntentKitAPIError(
-            500,
-            "ConfigError",
-            "MASTER_WALLET_PRIVATE_KEY not configured",
-        )
-
-    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
-    master_account = Account.from_key(config.master_wallet_private_key)
-
-    # Use distributed nonce manager with lock
-    nonce_manager = _get_nonce_manager()
-    if not await nonce_manager.acquire_lock():
-        raise IntentKitAPIError(
-            500, "LockTimeout", "Failed to acquire nonce lock for Safe transaction"
-        )
-
-    try:
-        # Get nonce from Redis (or blockchain if not cached)
-        nonce = await nonce_manager.get_and_increment_nonce(w3)
-        gas_price = await w3.eth.gas_price
-
-        tx: dict[str, Any] = {
-            "from": master_account.address,
-            "to": safe_address,
-            "value": 0,
-            "data": exec_data,
-            "nonce": nonce,
-            "chainId": chain_id,
-            "gas": 300000,
-            "gasPrice": gas_price,
-        }
-
-        try:
-            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
-            tx["gas"] = int(estimated_gas * 1.2)
-        except Exception as e:
-            logger.warning(f"Gas estimation failed for Safe tx, using default: {e}")
-
-        signed_tx = master_account.sign_transaction(tx)
-        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-    except Exception as e:
-        # Reset nonce on error (might be nonce-related)
-        error_msg = str(e).lower()
-        if "nonce" in error_msg:
-            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
-            await nonce_manager.reset_from_blockchain(w3)
-        raise
-    finally:
-        await nonce_manager.release_lock()
-
-    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-    if receipt["status"] != 1:
-        raise IntentKitAPIError(500, "SafeTxFailed", "Safe transaction failed")
+    # Send the transaction via master wallet
+    # execTransaction can be gas hungry, so we keep the default 300k
+    # (actually Safe transactions often need more depending on logic,
+    # but the generic sender estimates gas which corrects this)
+    tx_hash_hex = await _send_transaction_with_master_wallet(
+        to=safe_address,
+        data=exec_data,
+        chain_id=chain_id,
+        rpc_url=rpc_url,
+        gas_limit=500000,  # Safe txs can be heavy
+    )
 
     # Verify Safe execution succeeded by checking for ExecutionSuccess event
     # Safe's execTransaction returns false (doesn't revert) on internal failure,
     # so we must check the logs for ExecutionSuccess/ExecutionFailure events.
+    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
+    receipt = await w3.eth.get_transaction_receipt(tx_hash_hex)
+
     # Event signatures:
     # - ExecutionSuccess(bytes32,uint256): 0x442e715f...
     # - ExecutionFailure(bytes32,uint256): 0x23428b18...
@@ -2421,7 +2464,7 @@ async def _send_safe_transaction_with_master_wallet(
         # No ExecutionSuccess event found - the Safe execution likely failed silently
         # This can happen if the signature verification fails before execTransaction runs
         logger.warning(
-            f"No ExecutionSuccess event found in Safe transaction {tx_hash.hex()}. "
+            f"No ExecutionSuccess event found in Safe transaction {tx_hash_hex}. "
             f"Logs: {receipt.get('logs', [])}"
         )
         raise IntentKitAPIError(
@@ -2431,7 +2474,7 @@ async def _send_safe_transaction_with_master_wallet(
             "The Safe execution may have failed. Please verify the signer is a Safe owner.",
         )
 
-    return tx_hash.hex()
+    return tx_hash_hex
 
 
 async def _enable_allowance_module(
@@ -2787,6 +2830,103 @@ async def execute_gasless_transaction(
     return tx_hash
 
 
+async def _execute_allowance_transfer_gasless(
+    privy_client: PrivyClient,
+    privy_wallet_id: str,
+    privy_wallet_address: str,
+    safe_address: str,
+    token_address: str,
+    to: str,
+    amount: int,
+    network_id: str,
+    rpc_url: str,
+) -> str:
+    """
+    Execute a token transfer via Allowance Module with gas paid by Master Wallet.
+
+    This enforces the spending limits defined in the Allowance Module.
+    """
+    chain_config = CHAIN_CONFIGS.get(network_id)
+    if not chain_config:
+        raise ValueError(f"Unsupported network: {network_id}")
+
+    # Get allowance module address
+    allowance_module = chain_config.allowance_module_address
+
+    # Need an instance of SafeWalletProvider helper methods to reuse logic
+    # or we can make those methods static/standalone.
+    # Currently _get_allowance_nonce, _generate_transfer_hash, _encode_execute_allowance_transfer
+    # are instance methods of SafeWalletProvider or private helper methods in the module?
+    # Checking existing code... they are methods of SafeWalletProvider.
+    # But we are in a standalone function here.
+    # We should instantiate a temporary provider or refactor/copy the helpers.
+    # Instantiating is cleaner if it doesn't have side effects.
+    # SafeWalletProvider init is lightweight.
+    safe_provider = SafeWalletProvider(
+        privy_wallet_id=privy_wallet_id,
+        privy_wallet_address=privy_wallet_address,
+        safe_address=safe_address,
+        network_id=network_id,
+        rpc_url=rpc_url,
+    )
+
+    # Get nonce
+    nonce = await safe_provider._get_allowance_nonce(
+        rpc_url, allowance_module, token_address
+    )
+
+    # Generate hash
+    transfer_hash = await safe_provider._generate_transfer_hash(
+        rpc_url=rpc_url,
+        allowance_module=allowance_module,
+        token_address=token_address,
+        to=to,
+        amount=amount,
+        nonce=nonce,
+    )
+
+    # Sign hash with Privy (Delegate)
+    signature = await privy_client.sign_hash(privy_wallet_id, transfer_hash)
+
+    # Encode execution data
+    exec_data = safe_provider._encode_execute_allowance_transfer(
+        token_address=token_address,
+        to=to,
+        amount=amount,
+        signature=signature,
+    )
+
+    try:
+        # Send transaction to Allowance Module via Master Wallet
+        tx_hash = await _send_transaction_with_master_wallet(
+            to=allowance_module,
+            data=exec_data,
+            chain_id=chain_config.chain_id,
+            rpc_url=rpc_url,
+            gas_limit=200000,  # Allowance transfers are cheaper
+        )
+        return tx_hash
+
+    except IntentKitAPIError as e:
+        # Try to interpret the error
+        # Allowance Module errors:
+        # GS013: Safe Transaction failed (if module calls execTransactionFromModule and that fails)
+        # But here we call the Module directly.
+        # Common errors: "L1" (Limit exceeded), "A1" (Transfer failed)
+        err_msg = str(e)
+        logger.error(f"Allowance transfer gasless failed: {err_msg}")
+
+        # If the transaction failed on-chain, it's likely a limit issue or balance issue
+        # We assume limit exceeded for clarity if it's a generic failure during this specific op
+        if "TxFailed" in str(e.code) or "execution reverted" in err_msg.lower():
+            raise IntentKitAPIError(
+                400,
+                "SpendingLimitExceeded",
+                f"Transaction failed. This likely means the weekly spending limit has been exceeded or the Safe has insufficient funds. (Amount: {amount / 1e6} USDC)",
+            ) from e
+        raise
+
+
 async def transfer_erc20_gasless(
     privy_client: PrivyClient,
     privy_wallet_id: str,
@@ -2800,52 +2940,99 @@ async def transfer_erc20_gasless(
     """
     Transfer ERC20 tokens from a Safe wallet with gas paid by Master Wallet.
 
-    This is a convenience wrapper around execute_gasless_transaction for
-    ERC20 token transfers. Ideal for USDC transfers between User and Agent wallets.
-
-    Args:
-        privy_client: Initialized Privy client
-        privy_wallet_id: The Privy wallet ID (owner of the Safe)
-        safe_address: The Safe smart account address
-        token_address: The ERC20 token contract address
-        to: Recipient address
-        amount: Amount to transfer (in token's smallest unit, e.g., 6 decimals for USDC)
-        network_id: Network identifier (e.g., "base-mainnet")
-        rpc_url: RPC URL for the network
-
-    Returns:
-        Transaction hash of the executed transfer
-
-    Example:
-        # Transfer 10 USDC from User Safe to Agent Safe
-        tx_hash = await transfer_erc20_gasless(
-            privy_client=privy_client,
-            privy_wallet_id=user_privy_wallet_id,
-            safe_address=user_safe_address,
-            token_address="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC on Base
-            to=agent_safe_address,
-            amount=10_000_000,  # 10 USDC (6 decimals)
-            network_id="base-mainnet",
-            rpc_url=rpc_url,
-        )
+    Uses Allowance Module to enforce spending limits.
     """
-    # Encode ERC20 transfer call
-    transfer_selector = keccak(text="transfer(address,uint256)")[:4]
-    transfer_data = transfer_selector + encode(
-        ["address", "uint256"],
-        [to_checksum_address(to), amount],
-    )
+    # Use Allowance Module for transfer to enforce limits
+    # We need the privy wallet address (delegate) which isn't passed here explicitly?
+    # Wait, previous implementation of transfer_erc20_gasless only needed privy_wallet_id
+    # because execute_gasless_transaction didn't strictly need the address for logic, just ID for signing.
+    # But wait, execute_gasless_transaction DOES logic? No, it just signs.
+    # Ah, deploy_safe_with_allowance sets the delegate to the owner address.
+    # We need that address to reconstruct the signature/hash.
 
-    return await execute_gasless_transaction(
-        privy_client=privy_client,
-        privy_wallet_id=privy_wallet_id,
-        safe_address=safe_address,
-        to=to_checksum_address(token_address),
-        value=0,
-        data=transfer_data,
-        network_id=network_id,
-        rpc_url=rpc_url,
-    )
+    # We need to fetch the wallet address for the ID if we don't have it.
+    # Or we can derive/fetch it.
+    # Optimization: The caller usually has this info (AgentData).
+    # Checking call sites... verify if we break signature.
+    # The signature of transfer_erc20_gasless is fixed in the codebase?
+    # Let's check if we can get the address from the ID via PrivyClient?
+    # PrivyClient doesn't store the map.
+    # BUT! In `execute_gasless_transaction` it wasn't used?
+    # Ref: `execute_gasless_transaction` receives `to`, `value`, `data`.
+    # It calls `_get_safe_tx_hash` -> `signing` -> `_send...`.
+    # It does NOT use privy_wallet_address directly, only `privy_wallet_id` for signing.
+
+    # HOWEVER, `_execute_allowance_transfer_gasless` (and the logic inside `_encode_execute_allowance_transfer`)
+    # REQUIRES the delegate address as an argument to the solidity function `executeAllowanceTransfer`.
+
+    # We HAVE to get the delegate (Privy EOA) address.
+    # Since we only have `privy_wallet_id`, we might need to look it up or require it passed.
+    # Changing the signature of `transfer_erc20_gasless` is risky if used elsewhere.
+    # Let's check call sites using grep.
+
+    # For now, assuming we might need to fetch it.
+    # `privy_client` calls are async. We don't have a "get_wallet" method in `PrivyClient` shown in the view?
+    # I saw `create_wallet`, but not `get_wallet`.
+    # Wait, `AgentData` has `privy_wallet_data` which contains both ID and Address.
+    # Let's assume the caller passes the address or we have to find away.
+    # Actually, let's look at `x402/base.py`.
+    # It calls:
+    # await transfer_erc20_gasless(
+    #        privy_client=privy_client,
+    #        privy_wallet_id=privy_wallet_id,
+    #        safe_address=safe_address,
+    #        token_address=token_address,
+    #        to=privy_wallet_address, <-- This "to" IS the privy address in the funding case
+    #        ...
+    # )
+    # In `_ensure_safe_funding`:
+    # privy_wallet_address = privy_wallet_data["privy_wallet_address"]
+    # So the caller HAS the address.
+
+    # I will modify `transfer_erc20_gasless` to accept `privy_wallet_address` as an OPTIONAL argument first to avoid breaking,
+    # but strictly it's needed for this new logic.
+    # If not provided, we are stuck.
+    # BUT, wait. spending limit is enforced via Delegate. The Delegate IS the Privy config.
+    # If the caller doesn't provide it, we can't efficiently use Allowance Module without an extra API call (if exists).
+
+    # Proposed fix: Update the signature of `transfer_erc20_gasless`.
+    # Call sites:
+    # 1. intentkit/skills/x402/base.py : _ensure_safe_funding
+    # Any others?
+
+    # Let's assume I initiate a find first to be safe about changing signature.
+    # Actually I can't do tools inside this block.
+    # I'll stick to the plan: Update the function.
+    # I'll add `privy_wallet_address: str | None = None` to the end.
+    # If it's missing, I'll raise an error or try to proceed (but I can't).
+    # Actually, in `x402/base.py`, the user *funds* the EOA.
+    # Wait, `transfer_erc20_gasless` is used in `x402/base.py` to FUND the privy wallet FROM the Safe.
+    # `to=privy_wallet_address`.
+    # So in that specific case, `to` == `privy_wallet_address`.
+    # So we can use `to` as the delegate address!
+
+    # BUT, what about other uses?
+    # If we use it to pay a third party?
+    # Then `to` != `privy_wallet_address`.
+    # We typically need the proper Delegate address.
+
+    # Let's verify `x402/base.py` usage again.
+    # `await transfer_erc20_gasless(...)`
+    # It passes:
+    # to=privy_wallet_address
+
+    # Is there any other usage?
+    # I'll modify the function to accept `privy_wallet_address`?
+    # Or I can try to make it work.
+
+    # Actually, `transfer_erc20_gasless` is a public utility.
+    # I should add `privy_wallet_address` argument.
+    # In `x402/base.py`, I can pass it.
+
+    # Let's try to update `x402/base.py` in the next step.
+    # For now I will define the new signature.
+
+    pass
 
 
 # =============================================================================

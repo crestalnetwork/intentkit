@@ -316,6 +316,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
         await transfer_erc20_gasless(
             privy_client=privy_client,
             privy_wallet_id=privy_wallet_id,
+            privy_wallet_address=privy_wallet_address,
             safe_address=safe_address,
             token_address=token_address,
             to=privy_wallet_address,
