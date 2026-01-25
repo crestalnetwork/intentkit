@@ -186,6 +186,8 @@ CHAIN_CONFIGS: dict[str, ChainConfig] = {
         name="Base Sepolia",
         safe_tx_service_url="https://safe-transaction-base-sepolia.safe.global",
         usdc_address="0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        # Deployed custom Allowance Module v1.3.0 since canonical is missing
+        allowance_module_address="0x3cfE2CEb10FC1654B5F4422704288D08BDF7d27F",
     ),
     "sepolia": ChainConfig(
         chain_id=11155111,
