@@ -813,6 +813,37 @@ class PrivyClient:
                 chain_type=data["chain_type"],
             )
 
+    async def get_wallet(self, wallet_id: str) -> PrivyWallet:
+        """Get a specific wallet by ID."""
+        if not self.app_id or not self.app_secret:
+            raise IntentKitAPIError(
+                500, "PrivyConfigError", "Privy credentials missing"
+            )
+
+        url = f"{self.base_url}/wallets/{wallet_id}"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                auth=(self.app_id, self.app_secret),
+                headers=self._get_headers(),
+                timeout=30.0,
+            )
+
+            if response.status_code != 200:
+                logger.error(f"Privy get wallet failed: {response.text}")
+                raise IntentKitAPIError(
+                    response.status_code,
+                    "PrivyAPIError",
+                    f"Failed to get Privy wallet {wallet_id}",
+                )
+
+            data = response.json()
+            return PrivyWallet(
+                id=data["id"],
+                address=data["address"],
+                chain_type=data["chain_type"],
+            )
+
     async def sign_message(self, wallet_id: str, message: str) -> str:
         """Sign a message using the Privy server wallet.
 
@@ -2994,12 +3025,26 @@ async def transfer_erc20_gasless(
     )
 
     if is_enabled:
-        if privy_wallet_address:
+        # If address not provided, try to fetch it from Privy
+        effective_wallet_address = privy_wallet_address
+        if not effective_wallet_address:
+            try:
+                wallet = await privy_client.get_wallet(privy_wallet_id)
+                effective_wallet_address = wallet.address
+                logger.info(
+                    f"Fetched Privy wallet address {effective_wallet_address} for ID {privy_wallet_id}"
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to fetch wallet address for {privy_wallet_id}: {e}"
+                )
+
+        if effective_wallet_address:
             logger.info("Allowance Module enabled, using allowance transfer (gasless)")
             return await _execute_allowance_transfer_gasless(
                 privy_client=privy_client,
                 privy_wallet_id=privy_wallet_id,
-                privy_wallet_address=privy_wallet_address,
+                privy_wallet_address=effective_wallet_address,
                 safe_address=safe_address,
                 token_address=token_address,
                 to=to,
@@ -3009,7 +3054,7 @@ async def transfer_erc20_gasless(
             )
         else:
             logger.warning(
-                "Allowance Module enabled but privy_wallet_address not provided. "
+                "Allowance Module enabled but privy_wallet_address missing and fetch failed. "
                 "The transfer might fail if the Owner is not a Delegate. "
                 "Falling back to Owner direct transfer."
             )
