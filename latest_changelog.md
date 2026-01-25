@@ -1,7 +1,7 @@
-## v0.9.4
+## v0.9.5
 
-### Fixes
+### Bug Fixes
+- Fixed Privy error handling to correctly check for transaction failures using the correct error attribute.
+- Added `scripts/deploy_allowance.py` for Allowance Module deployment on non-canonical chains.
 
-- Fixed missing canonical allowance module on Base Sepolia by deploying and configuring a custom one.
-
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.3...v0.9.4)
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.4...v0.9.5)
