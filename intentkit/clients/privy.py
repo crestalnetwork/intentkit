@@ -1415,7 +1415,42 @@ class SafeWalletProvider(WalletProvider):
         amount: int,
         chain_id: int | None = None,
     ) -> TransactionResult:
-        """Transfer ERC20 tokens from the Safe."""
+        """Transfer ERC20 tokens from the Safe.
+
+        Uses Allowance Module if enabled to enforce spending limits.
+        Falls back to direct owner execution if not enabled.
+        """
+        if self.chain_config is None:
+            return TransactionResult(
+                success=False,
+                error="Chain config not initialized",
+            )
+        target_chain_id = chain_id or self.chain_config.chain_id
+        rpc_url = self._get_rpc_url_for_chain(target_chain_id)
+        if not rpc_url:
+            return TransactionResult(
+                success=False,
+                error=f"No RPC URL configured for chain {target_chain_id}",
+            )
+
+        # Check if Allowance Module is enabled
+        allowance_module = self.chain_config.allowance_module_address
+        is_enabled = await _is_module_enabled(
+            rpc_url=rpc_url,
+            safe_address=self.safe_address,
+            module_address=allowance_module,
+        )
+
+        if is_enabled:
+            logger.info("Allowance Module enabled, using allowance transfer")
+            return await self.execute_allowance_transfer(
+                token_address=token_address,
+                to=to,
+                amount=amount,
+                chain_id=chain_id,
+            )
+
+        logger.info("Allowance Module disabled, using direct owner transfer")
         # Encode ERC20 transfer call
         transfer_selector = keccak(text="transfer(address,uint256)")[:4]
         transfer_data = transfer_selector + encode(
@@ -2936,103 +2971,68 @@ async def transfer_erc20_gasless(
     amount: int,
     network_id: str,
     rpc_url: str,
+    privy_wallet_address: str | None = None,
 ) -> str:
     """
     Transfer ERC20 tokens from a Safe wallet with gas paid by Master Wallet.
 
-    Uses Allowance Module to enforce spending limits.
+    Smart Fallback:
+    1. If Allowance Module is enabled and privy_wallet_address is provided,
+       uses _execute_allowance_transfer_gasless (enforces limits).
+    2. Otherwise, falls back to execute_gasless_transaction (owner direct).
     """
-    # Use Allowance Module for transfer to enforce limits
-    # We need the privy wallet address (delegate) which isn't passed here explicitly?
-    # Wait, previous implementation of transfer_erc20_gasless only needed privy_wallet_id
-    # because execute_gasless_transaction didn't strictly need the address for logic, just ID for signing.
-    # But wait, execute_gasless_transaction DOES logic? No, it just signs.
-    # Ah, deploy_safe_with_allowance sets the delegate to the owner address.
-    # We need that address to reconstruct the signature/hash.
+    chain_config = CHAIN_CONFIGS.get(network_id)
+    if not chain_config:
+        raise ValueError(f"Unsupported network: {network_id}")
 
-    # We need to fetch the wallet address for the ID if we don't have it.
-    # Or we can derive/fetch it.
-    # Optimization: The caller usually has this info (AgentData).
-    # Checking call sites... verify if we break signature.
-    # The signature of transfer_erc20_gasless is fixed in the codebase?
-    # Let's check if we can get the address from the ID via PrivyClient?
-    # PrivyClient doesn't store the map.
-    # BUT! In `execute_gasless_transaction` it wasn't used?
-    # Ref: `execute_gasless_transaction` receives `to`, `value`, `data`.
-    # It calls `_get_safe_tx_hash` -> `signing` -> `_send...`.
-    # It does NOT use privy_wallet_address directly, only `privy_wallet_id` for signing.
+    # Check if Allowance Module is enabled
+    allowance_module = chain_config.allowance_module_address
+    is_enabled = await _is_module_enabled(
+        rpc_url=rpc_url,
+        safe_address=safe_address,
+        module_address=allowance_module,
+    )
 
-    # HOWEVER, `_execute_allowance_transfer_gasless` (and the logic inside `_encode_execute_allowance_transfer`)
-    # REQUIRES the delegate address as an argument to the solidity function `executeAllowanceTransfer`.
+    if is_enabled:
+        if privy_wallet_address:
+            logger.info("Allowance Module enabled, using allowance transfer (gasless)")
+            return await _execute_allowance_transfer_gasless(
+                privy_client=privy_client,
+                privy_wallet_id=privy_wallet_id,
+                privy_wallet_address=privy_wallet_address,
+                safe_address=safe_address,
+                token_address=token_address,
+                to=to,
+                amount=amount,
+                network_id=network_id,
+                rpc_url=rpc_url,
+            )
+        else:
+            logger.warning(
+                "Allowance Module enabled but privy_wallet_address not provided. "
+                "The transfer might fail if the Owner is not a Delegate. "
+                "Falling back to Owner direct transfer."
+            )
 
-    # We HAVE to get the delegate (Privy EOA) address.
-    # Since we only have `privy_wallet_id`, we might need to look it up or require it passed.
-    # Changing the signature of `transfer_erc20_gasless` is risky if used elsewhere.
-    # Let's check call sites using grep.
+    logger.info("Using direct owner transfer (gasless)")
+    # Fallback to direct owner transfer (gasless)
+    # Encode ERC20 transfer call
+    transfer_selector = keccak(text="transfer(address,uint256)")[:4]
+    transfer_data = transfer_selector + encode(
+        ["address", "uint256"],
+        [to_checksum_address(to), amount],
+    )
 
-    # For now, assuming we might need to fetch it.
-    # `privy_client` calls are async. We don't have a "get_wallet" method in `PrivyClient` shown in the view?
-    # I saw `create_wallet`, but not `get_wallet`.
-    # Wait, `AgentData` has `privy_wallet_data` which contains both ID and Address.
-    # Let's assume the caller passes the address or we have to find away.
-    # Actually, let's look at `x402/base.py`.
-    # It calls:
-    # await transfer_erc20_gasless(
-    #        privy_client=privy_client,
-    #        privy_wallet_id=privy_wallet_id,
-    #        safe_address=safe_address,
-    #        token_address=token_address,
-    #        to=privy_wallet_address, <-- This "to" IS the privy address in the funding case
-    #        ...
-    # )
-    # In `_ensure_safe_funding`:
-    # privy_wallet_address = privy_wallet_data["privy_wallet_address"]
-    # So the caller HAS the address.
-
-    # I will modify `transfer_erc20_gasless` to accept `privy_wallet_address` as an OPTIONAL argument first to avoid breaking,
-    # but strictly it's needed for this new logic.
-    # If not provided, we are stuck.
-    # BUT, wait. spending limit is enforced via Delegate. The Delegate IS the Privy config.
-    # If the caller doesn't provide it, we can't efficiently use Allowance Module without an extra API call (if exists).
-
-    # Proposed fix: Update the signature of `transfer_erc20_gasless`.
-    # Call sites:
-    # 1. intentkit/skills/x402/base.py : _ensure_safe_funding
-    # Any others?
-
-    # Let's assume I initiate a find first to be safe about changing signature.
-    # Actually I can't do tools inside this block.
-    # I'll stick to the plan: Update the function.
-    # I'll add `privy_wallet_address: str | None = None` to the end.
-    # If it's missing, I'll raise an error or try to proceed (but I can't).
-    # Actually, in `x402/base.py`, the user *funds* the EOA.
-    # Wait, `transfer_erc20_gasless` is used in `x402/base.py` to FUND the privy wallet FROM the Safe.
-    # `to=privy_wallet_address`.
-    # So in that specific case, `to` == `privy_wallet_address`.
-    # So we can use `to` as the delegate address!
-
-    # BUT, what about other uses?
-    # If we use it to pay a third party?
-    # Then `to` != `privy_wallet_address`.
-    # We typically need the proper Delegate address.
-
-    # Let's verify `x402/base.py` usage again.
-    # `await transfer_erc20_gasless(...)`
-    # It passes:
-    # to=privy_wallet_address
-
-    # Is there any other usage?
-    # I'll modify the function to accept `privy_wallet_address`?
-    # Or I can try to make it work.
-
-    # Actually, `transfer_erc20_gasless` is a public utility.
-    # I should add `privy_wallet_address` argument.
-    # In `x402/base.py`, I can pass it.
-
-    # Let's try to update `x402/base.py` in the next step.
-    # For now I will define the new signature.
-
-    pass
+    return await execute_gasless_transaction(
+        privy_client=privy_client,
+        privy_wallet_id=privy_wallet_id,
+        safe_address=safe_address,
+        to=token_address,
+        value=0,
+        data=transfer_data,
+        network_id=network_id,
+        rpc_url=rpc_url,
+    )
 
 
 # =============================================================================
