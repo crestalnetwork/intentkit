@@ -2986,7 +2986,7 @@ async def _execute_allowance_transfer_gasless(
 
         # If the transaction failed on-chain, it's likely a limit issue or balance issue
         # We assume limit exceeded for clarity if it's a generic failure during this specific op
-        if "TxFailed" in str(e.code) or "execution reverted" in err_msg.lower():
+        if "TxFailed" in str(e.key) or "execution reverted" in err_msg.lower():
             raise IntentKitAPIError(
                 400,
                 "SpendingLimitExceeded",
