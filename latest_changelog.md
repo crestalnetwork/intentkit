@@ -1,7 +1,6 @@
-## v0.9.5
+## v0.9.6
 
-### Bug Fixes
-- Fixed Privy error handling to correctly check for transaction failures using the correct error attribute.
-- Added `scripts/deploy_allowance.py` for Allowance Module deployment on non-canonical chains.
+### Features
+- Added `force_admin_execution` parameter to Safe transfer methods (both ERC20 and gasless) to allow bypassing the Allowance Module when necessary.
 
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.4...v0.9.5)
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.5...v0.9.6)
