@@ -1447,11 +1447,16 @@ class SafeWalletProvider(WalletProvider):
         to: str,
         amount: int,
         chain_id: int | None = None,
+        force_admin_execution: bool = False,
     ) -> TransactionResult:
         """Transfer ERC20 tokens from the Safe.
 
         Uses Allowance Module if enabled to enforce spending limits.
         Falls back to direct owner execution if not enabled.
+
+        Args:
+            force_admin_execution: If True, bypass allowance module and use direct owner transfer
+                                 even if the module is enabled.
         """
         if self.chain_config is None:
             return TransactionResult(
@@ -1474,7 +1479,7 @@ class SafeWalletProvider(WalletProvider):
             module_address=allowance_module,
         )
 
-        if is_enabled:
+        if is_enabled and not force_admin_execution:
             logger.info("Allowance Module enabled, using allowance transfer")
             return await self.execute_allowance_transfer(
                 token_address=token_address,
@@ -1483,7 +1488,12 @@ class SafeWalletProvider(WalletProvider):
                 chain_id=chain_id,
             )
 
-        logger.info("Allowance Module disabled, using direct owner transfer")
+        if is_enabled and force_admin_execution:
+            logger.info(
+                "Allowance Module enabled but force_admin_execution is True, bypassing allowance"
+            )
+
+        logger.info("Using direct owner transfer (Allowance disabled or forced admin)")
         # Encode ERC20 transfer call
         transfer_selector = keccak(text="transfer(address,uint256)")[:4]
         transfer_data = transfer_selector + encode(
@@ -3005,6 +3015,7 @@ async def transfer_erc20_gasless(
     network_id: str,
     rpc_url: str,
     privy_wallet_address: str | None = None,
+    force_admin_execution: bool = False,
 ) -> str:
     """
     Transfer ERC20 tokens from a Safe wallet with gas paid by Master Wallet.
@@ -3013,6 +3024,10 @@ async def transfer_erc20_gasless(
     1. If Allowance Module is enabled and privy_wallet_address is provided,
        uses _execute_allowance_transfer_gasless (enforces limits).
     2. Otherwise, falls back to execute_gasless_transaction (owner direct).
+
+    Args:
+        force_admin_execution: If True, bypass allowance module and use direct owner transfer
+                             even if the module is enabled.
     """
     chain_config = CHAIN_CONFIGS.get(network_id)
     if not chain_config:
@@ -3026,7 +3041,7 @@ async def transfer_erc20_gasless(
         module_address=allowance_module,
     )
 
-    if is_enabled:
+    if is_enabled and not force_admin_execution:
         # If address not provided, try to fetch it from Privy
         effective_wallet_address = privy_wallet_address
         if not effective_wallet_address:
@@ -3060,6 +3075,11 @@ async def transfer_erc20_gasless(
                 "The transfer might fail if the Owner is not a Delegate. "
                 "Falling back to Owner direct transfer."
             )
+
+    if is_enabled and force_admin_execution:
+        logger.info(
+            "Allowance Module enabled but force_admin_execution is True, bypassing allowance (gasless)"
+        )
 
     logger.info("Using direct owner transfer (gasless)")
     # Fallback to direct owner transfer (gasless)
