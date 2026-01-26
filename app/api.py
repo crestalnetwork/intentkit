@@ -33,6 +33,7 @@ from intentkit.utils.s3_setup import ensure_bucket_exists_and_public
 from app.entrypoints.agent_api import agent_api_router
 from app.local import (
     agent_router,
+    autonomous_router,
     chat_router,
     content_router,
     debug_router,
@@ -188,6 +189,7 @@ app.add_middleware(
 app.mount("/v1", agent_app)
 
 app.include_router(agent_router)
+app.include_router(autonomous_router)
 app.include_router(chat_router)
 app.include_router(content_router)
 app.include_router(debug_router)

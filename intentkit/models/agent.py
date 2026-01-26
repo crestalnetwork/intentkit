@@ -108,9 +108,10 @@ class AgentAutonomous(BaseModel):
         int | None,
         PydanticField(
             default=None,
-            description="Interval in minutes between operations, mutually exclusive with cron",
+            description="Interval in minutes between operations. Mutually exclusive with cron.",
             json_schema_extra={
                 "x-group": "autonomous",
+                "deprecated": True,
             },
         ),
     ]
