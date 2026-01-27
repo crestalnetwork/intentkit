@@ -404,6 +404,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
         skill_name: str,
         method: str,
         url: str,
+        payer: str | None = None,
         max_value: int | None = None,
     ) -> None:
         """
@@ -417,6 +418,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
             skill_name: Name of the skill that made the request
             method: HTTP method used
             url: Target URL
+            payer: The address that paid for the order
             max_value: Maximum payment value (for x402_pay only)
         """
         try:
@@ -446,7 +448,13 @@ class X402BaseSkill(IntentKitOnChainSkill):
             amount = payment_data.get("amount", 0)
             asset = payment_data.get("asset", "unknown")
             network = payment_data.get("network", "unknown")
-            pay_to = payment_data.get("payTo", payment_data.get("pay_to", "unknown"))
+
+            # Try to get pay_to from standard header, fallback to injected header
+            pay_to = payment_data.get("payTo", payment_data.get("pay_to"))
+            if not pay_to:
+                # Check for injected header from httpx_compat
+                pay_to = response.request.headers.get("X-IntentKit-Paid-To", "unknown")
+
             tx_hash = payment_data.get("transaction", payment_data.get("txHash"))
             success = payment_data.get("success", True)
             description = payment_data.get("description")
@@ -465,6 +473,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
                 asset=asset,
                 network=network,
                 pay_to=pay_to,
+                payer=payer or "unknown",
                 tx_hash=tx_hash,
                 status="success" if success else "failed",
                 error=payment_data.get("errorReason"),

@@ -135,6 +135,7 @@ class X402Pay(X402BaseSkill):
                     skill_name=self.name,
                     method=method_upper,
                     url=url,
+                    payer=account.address,
                     max_value=max_value,
                 )
 

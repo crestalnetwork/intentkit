@@ -65,6 +65,11 @@ class X402HttpxCompatHooks:
 
             request.headers[PAYMENT_HEADER_V1] = payment_header
             request.headers[PAYMENT_HEADER_V2] = payment_header
+
+            # Inject pay_to for record_order to use (internal only)
+            if selected_requirements.pay_to:
+                request.headers["X-IntentKit-Paid-To"] = selected_requirements.pay_to
+
             request.headers["Access-Control-Expose-Headers"] = EXPOSE_HEADERS_VALUE
 
             async with AsyncClient() as client:
