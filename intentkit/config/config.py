@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import overload
+from typing import TypedDict, overload
 
 from dotenv import load_dotenv
 
@@ -10,7 +10,18 @@ from intentkit.utils.logging import setup_logging
 from intentkit.utils.slack_alert import init_slack
 
 SecretsMap = dict[str, str | int]
-DatabaseConfig = dict[str, str | int | bool]
+SecretsMap = dict[str, str | int]
+
+
+class DatabaseConfig(TypedDict):
+    host: str | None
+    username: str | None
+    password: str | None
+    dbname: str | None
+    port: str | None
+    auto_migrate: bool
+    pool_size: int
+
 
 # Load environment variables from .env file
 _ = load_dotenv()
@@ -44,12 +55,20 @@ class Config:
         if db_secret_name:
             secret_db: SecretsMap = load_from_aws(db_secret_name)
             # format the db config
-            secret_db["port"] = str(secret_db["port"])
-            # only keep the necessary fields
             self.db = {
-                k: v
-                for k, v in secret_db.items()
-                if k in ["username", "password", "host", "dbname", "port"]
+                "host": str(secret_db.get("host")) if secret_db.get("host") else None,
+                "username": str(secret_db.get("username"))
+                if secret_db.get("username")
+                else None,
+                "password": str(secret_db.get("password"))
+                if secret_db.get("password")
+                else None,
+                "dbname": str(secret_db.get("dbname"))
+                if secret_db.get("dbname")
+                else None,
+                "port": str(secret_db.get("port", "5432")),
+                "auto_migrate": self.load("DB_AUTO_MIGRATE", "true") == "true",
+                "pool_size": self.load_int("DB_POOL_SIZE", 3),
             }
         else:
             self.db = {
@@ -58,10 +77,9 @@ class Config:
                 "host": self.load("DB_HOST", ""),
                 "port": self.load("DB_PORT", "5432"),
                 "dbname": self.load("DB_NAME", ""),
+                "auto_migrate": self.load("DB_AUTO_MIGRATE", "true") == "true",
+                "pool_size": self.load_int("DB_POOL_SIZE", 3),
             }
-        # ==== this part can be load from env or aws secrets manager
-        self.db["auto_migrate"] = self.load("DB_AUTO_MIGRATE", "true") == "true"
-        self.db["pool_size"] = self.load_int("DB_POOL_SIZE", 3)
         self.debug: bool = self.load("DEBUG") == "true"
         self.debug_checkpoint: bool = (
             self.load("DEBUG_CHECKPOINT", "false") == "true"
