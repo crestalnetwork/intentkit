@@ -108,7 +108,9 @@ dev = [
 package = true
 default-groups = ["dev"]
 
-[tool.pyright]
+
+[tool.basedpyright]
+reportAny = false
 reportMissingTypeStubs = false
 reportCallInDefaultInitializer = false
 
