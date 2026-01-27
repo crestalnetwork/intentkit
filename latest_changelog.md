@@ -1,7 +1,8 @@
-## v0.9.9
+## v0.9.10
 
-### Fixes
+### Improvements
 
-- Fixed `pytest` failures in `tests/models/test_x402_order.py` by adding the missing required `payer` field to `X402OrderCreate` and `X402OrderTable` instantiations.
+- Updated release operations guide for better clarity and correct sequencing.
+- Synchronized dependency lock file with correct package version.
 
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.8...v0.9.9)
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.9...v0.9.10)
