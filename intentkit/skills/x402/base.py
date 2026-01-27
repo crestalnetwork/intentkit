@@ -404,8 +404,8 @@ class X402BaseSkill(IntentKitOnChainSkill):
         skill_name: str,
         method: str,
         url: str,
-        payer: str | None = None,
         max_value: int | None = None,
+        pay_to_fallback: str | None = None,
     ) -> None:
         """
         Record an x402 order from a successful payment response.
@@ -418,8 +418,8 @@ class X402BaseSkill(IntentKitOnChainSkill):
             skill_name: Name of the skill that made the request
             method: HTTP method used
             url: Target URL
-            payer: The address that paid for the order
             max_value: Maximum payment value (for x402_pay only)
+            pay_to_fallback: Fallback address if pay_to is missing in headers
         """
         try:
             # Get context info
@@ -427,6 +427,10 @@ class X402BaseSkill(IntentKitOnChainSkill):
             agent_id = context.agent_id
             chat_id = context.chat_id
             user_id = context.user_id
+
+            # Get payer address from signer
+            signer = await self.get_signer()
+            payer = signer.address
 
             # Derive task_id from chat_id for autonomous tasks
             task_id = None
@@ -449,11 +453,10 @@ class X402BaseSkill(IntentKitOnChainSkill):
             asset = payment_data.get("asset", "unknown")
             network = payment_data.get("network", "unknown")
 
-            # Try to get pay_to from standard header, fallback to injected header
+            # Try to get pay_to from standard header, use fallback if missing
             pay_to = payment_data.get("payTo", payment_data.get("pay_to"))
             if not pay_to:
-                # Check for injected header from httpx_compat
-                pay_to = response.request.headers.get("X-IntentKit-Paid-To", "unknown")
+                pay_to = pay_to_fallback or "unknown"
 
             tx_hash = payment_data.get("transaction", payment_data.get("txHash"))
             success = payment_data.get("success", True)

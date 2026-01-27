@@ -129,14 +129,17 @@ class X402Pay(X402BaseSkill):
                 response = await client.request(method_upper, **request_kwargs)
                 response.raise_for_status()
 
+                # Get the address we paid to from the hooks
+                pay_to = client.payment_hooks.last_paid_to
+
                 # Record the order
                 await self.record_order(
                     response=response,
                     skill_name=self.name,
                     method=method_upper,
                     url=url,
-                    payer=account.address,
                     max_value=max_value,
+                    pay_to_fallback=pay_to,
                 )
 
                 return self.format_response(response)

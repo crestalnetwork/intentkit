@@ -31,6 +31,7 @@ class X402HttpxCompatHooks:
     def __init__(self, client: x402Client) -> None:
         self.client = client
         self._is_retry = False
+        self.last_paid_to: str | None = None
 
     async def on_request(self, request: Request) -> None:
         """Handle request before it is sent."""
@@ -66,9 +67,8 @@ class X402HttpxCompatHooks:
             request.headers[PAYMENT_HEADER_V1] = payment_header
             request.headers[PAYMENT_HEADER_V2] = payment_header
 
-            # Inject pay_to for record_order to use (internal only)
-            if selected_requirements.pay_to:
-                request.headers["X-IntentKit-Paid-To"] = selected_requirements.pay_to
+            # Store pay_to for retrieval
+            self.last_paid_to = selected_requirements.pay_to
 
             request.headers["Access-Control-Expose-Headers"] = EXPOSE_HEADERS_VALUE
 
@@ -91,7 +91,7 @@ def x402_compat_payment_hooks(
     account: Account,
     max_value: Optional[int] = None,
     payment_requirements_selector: Optional[PaymentSelectorCallable] = None,
-) -> Dict[str, List]:
+) -> tuple[Dict[str, List], X402HttpxCompatHooks]:
     """Create httpx event hooks for x402 payment handling with v1/v2 headers."""
     client = x402Client(
         account,
@@ -104,7 +104,7 @@ def x402_compat_payment_hooks(
     return {
         "request": [hooks.on_request],
         "response": [hooks.on_response],
-    }
+    }, hooks
 
 
 class X402HttpxCompatClient(AsyncClient):
@@ -118,6 +118,8 @@ class X402HttpxCompatClient(AsyncClient):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.event_hooks = x402_compat_payment_hooks(
+        event_hooks, payment_hooks = x402_compat_payment_hooks(
             account, max_value, payment_requirements_selector
         )
+        self.event_hooks = event_hooks
+        self.payment_hooks = payment_hooks
