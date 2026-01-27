@@ -28,6 +28,7 @@ from intentkit.utils.error import (
     intentkit_other_error_handler,
     request_validation_exception_handler,
 )
+from intentkit.utils.s3_setup import ensure_bucket_exists_and_public
 
 from app.entrypoints.agent_api import agent_api_router
 from app.local import (
@@ -140,6 +141,10 @@ async def lifespan(app: FastAPI):
             port=config.redis_port,
             db=config.redis_db,
         )
+
+    # Initialize S3 bucket (Create & Set Public Policy if needed)
+    # This is synchronous but fast enough for startup
+    ensure_bucket_exists_and_public()
 
     # Create example agent if no agents exist
     await create_example_agent()

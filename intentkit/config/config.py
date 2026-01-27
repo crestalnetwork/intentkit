@@ -71,8 +71,8 @@ class Config:
         self.redis_port: int = self.load_int("REDIS_PORT", 6379)
         self.redis_db: int = self.load_int("REDIS_DB", 0)
         # AWS S3
-        self.aws_s3_bucket: str | None = self.load("AWS_S3_BUCKET")
         self.aws_s3_cdn_url: str | None = self.load("AWS_S3_CDN_URL")
+        self.aws_s3_bucket: str | None = self.load("AWS_S3_BUCKET")
         # If using custom S3 endpoint
         self.aws_s3_endpoint_url: str | None = self.load("AWS_S3_ENDPOINT_URL")
         self.aws_s3_region_name: str | None = self.load("AWS_S3_REGION_NAME")
