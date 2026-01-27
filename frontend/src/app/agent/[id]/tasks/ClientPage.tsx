@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { agentApi, chatApi, autonomousApi, AutonomousTask } from "@/lib/api";
+import { TaskDialog } from "./TaskDialog";
 
 export default function AgentTasksPage() {
   const params = useParams();
@@ -60,6 +61,44 @@ export default function AgentTasksPage() {
     task: AutonomousTask;
     type: "toggle" | "delete";
   } | null>(null);
+
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<AutonomousTask | null>(null);
+
+  const handleCreateTask = () => {
+    setEditingTask(null);
+    setIsTaskDialogOpen(true);
+  };
+
+  const handleEditTask = (task: AutonomousTask) => {
+    setEditingTask(task);
+    setIsTaskDialogOpen(true);
+  };
+
+  const handleSaveTask = async (taskData: Partial<AutonomousTask>) => {
+    try {
+      if (editingTask) {
+        await autonomousApi.updateTask(agentId, editingTask.id, taskData);
+      } else {
+        // Ensure prompt and cron are present for creation
+        if (!taskData.prompt || !taskData.cron) {
+          throw new Error("Prompt and Cron are required");
+        }
+        await autonomousApi.createTask(agentId, {
+          prompt: taskData.prompt,
+          cron: taskData.cron,
+          name: taskData.name,
+          description: taskData.description,
+          enabled: taskData.enabled ?? false,
+          has_memory: taskData.has_memory ?? true,
+        });
+      }
+      refetchTasks();
+    } catch (error) {
+      console.error("Failed to save task:", error);
+      throw error; // Re-throw to be caught by dialog
+    }
+  };
 
   const handleConfirmAction = async () => {
     if (!actionTask) return;
@@ -213,7 +252,7 @@ export default function AgentTasksPage() {
               Manage autonomous scheduled tasks for this agent.
             </p>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={handleCreateTask}>
             <Plus className="mr-2 h-4 w-4" />
             New
           </Button>
@@ -269,7 +308,7 @@ export default function AgentTasksPage() {
                               <Power className="mr-2 h-4 w-4" />
                               {task.enabled ? "Disable" : "Enable"}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditTask(task)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
@@ -353,6 +392,13 @@ export default function AgentTasksPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TaskDialog 
+        open={isTaskDialogOpen} 
+        onOpenChange={setIsTaskDialogOpen}
+        task={editingTask}
+        onSave={handleSaveTask}
+      />
     </div>
   );
 }
