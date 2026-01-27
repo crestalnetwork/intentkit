@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bot, Pencil, MoreVertical, Archive } from "lucide-react";
+import { ArrowLeft, Bot, Pencil, MoreVertical, Archive, Plus, MoreHorizontal, Trash, Power } from "lucide-react";
 import Link from "next/link";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { agentApi, chatApi, autonomousApi, AutonomousTask } from "@/lib/api";
 
 export default function AgentTasksPage() {
@@ -35,11 +45,38 @@ export default function AgentTasksPage() {
   });
 
   // Fetch autonomous tasks
-  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery({
+  const { 
+    data: tasks = [], 
+    isLoading: isLoadingTasks,
+    refetch: refetchTasks 
+  } = useQuery({
     queryKey: ["tasks", agentId],
     queryFn: () => autonomousApi.listTasks(agentId),
     enabled: !!agentId,
   });
+
+  const [actionTask, setActionTask] = useState<{
+    task: AutonomousTask;
+    type: "toggle" | "delete";
+  } | null>(null);
+
+  const handleConfirmAction = async () => {
+    if (!actionTask) return;
+    try {
+      if (actionTask.type === "toggle") {
+        await autonomousApi.updateTask(agentId, actionTask.task.id, {
+          enabled: !actionTask.task.enabled,
+        });
+      } else if (actionTask.type === "delete") {
+        await autonomousApi.deleteTask(agentId, actionTask.task.id);
+      }
+      refetchTasks();
+    } catch (error) {
+      console.error("Failed to perform action:", error);
+    } finally {
+      setActionTask(null);
+    }
+  };
 
   // Fetch thread list for sidebar
   const {
@@ -168,11 +205,17 @@ export default function AgentTasksPage() {
         </div>
 
         {/* Page Title */}
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold tracking-tight">Autonomous Tasks</h2>
-          <p className="text-muted-foreground">
-            Manage autonomous scheduled tasks for this agent.
-          </p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Autonomous Tasks</h2>
+            <p className="text-muted-foreground">
+              Manage autonomous scheduled tasks for this agent.
+            </p>
+          </div>
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            New
+          </Button>
         </div>
 
         {/* Content */}
@@ -201,15 +244,43 @@ export default function AgentTasksPage() {
                           {task.description || "No description provided"}
                         </CardDescription>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
+                        {task.has_memory && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                            Memory
+                          </Badge>
+                        )}
                         <Badge
                           variant={task.enabled ? "default" : "secondary"}
                         >
                           {task.enabled ? "Enabled" : "Disabled"}
                         </Badge>
-                        {task.status && (
-                          <Badge variant="outline">{task.status}</Badge>
-                        )}
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setActionTask({ task, type: "toggle" })}>
+                              <Power className="mr-2 h-4 w-4" />
+                              {task.enabled ? "Disable" : "Enable"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setActionTask({ task, type: "delete" })}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </CardHeader>
@@ -225,18 +296,10 @@ export default function AgentTasksPage() {
                       </div>
                       <div>
                         <span className="font-semibold text-muted-foreground">
-                          Memory:{" "}
+                          Next Run:{" "}
                         </span>
-                        {task.has_memory ? "On" : "Off"}
+                         {task.next_run_time ? new Date(task.next_run_time).toLocaleString() : "Not scheduled"}
                       </div>
-                      {task.next_run_time && (
-                        <div className="md:col-span-2">
-                          <span className="font-semibold text-muted-foreground">
-                            Next Run:{" "}
-                          </span>
-                          {new Date(task.next_run_time).toLocaleString()}
-                        </div>
-                      )}
                     </div>
                     {task.prompt && (
                       <div className="mt-4">
@@ -253,6 +316,29 @@ export default function AgentTasksPage() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={!!actionTask} onOpenChange={(open) => !open && setActionTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionTask && (
+                actionTask.type === "toggle"
+                  ? `This will ${
+                      actionTask.task.enabled ? "disable" : "enable"
+                    } the task "${actionTask.task.name ?? "Untitled"}".`
+                  : `This will permanently delete the task "${actionTask.task.name ?? "Untitled"}". This action cannot be undone.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>
+              {actionTask?.type === "delete" ? "Delete" : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
