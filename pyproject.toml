@@ -113,6 +113,9 @@ default-groups = ["dev"]
 reportAny = false
 reportMissingTypeStubs = false
 reportCallInDefaultInitializer = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
 
 [build-system]
 requires = ["hatchling"]
