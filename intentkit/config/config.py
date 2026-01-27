@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import TypedDict, overload
+from typing import TypeAlias, TypedDict, overload
 
 from dotenv import load_dotenv
 
@@ -9,8 +9,7 @@ from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
 from intentkit.utils.slack_alert import init_slack
 
-SecretsMap = dict[str, str | int]
-SecretsMap = dict[str, str | int]
+SecretsMap: TypeAlias = dict[str, str | int]
 
 
 class DatabaseConfig(TypedDict):
