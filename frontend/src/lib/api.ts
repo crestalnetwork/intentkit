@@ -468,3 +468,106 @@ export const postApi = {
   },
 };
 
+/**
+ * Autonomous Task type definition
+ */
+export interface AutonomousTask {
+  id: string;
+  name?: string;
+  description?: string;
+  cron?: string;
+  minutes?: number;
+  prompt: string;
+  enabled: boolean;
+  has_memory: boolean;
+  status?: string;
+  next_run_time?: string;
+  chat_id: string;
+}
+
+/**
+ * Autonomous API functions
+ * Based on app/local/autonomous.py
+ */
+export const autonomousApi = {
+  /**
+   * List all autonomous tasks for an agent
+   * GET /agents/{agentId}/autonomous
+   */
+  async listTasks(agentId: string): Promise<AutonomousTask[]> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/autonomous`);
+    if (!response.ok) {
+      throw new Error(`Failed to list autonomous tasks: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Create a new autonomous task
+   * POST /agents/{agentId}/autonomous
+   */
+  async createTask(
+    agentId: string,
+    data: Omit<AutonomousTask, "id" | "chat_id">,
+  ): Promise<AutonomousTask> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/autonomous`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to create autonomous task: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  /**
+   * Update an autonomous task
+   * PATCH /agents/{agentId}/autonomous/{taskId}
+   */
+  async updateTask(
+    agentId: string,
+    taskId: string,
+    data: Partial<AutonomousTask>,
+  ): Promise<AutonomousTask> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/autonomous/${taskId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to update autonomous task: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  /**
+   * Delete an autonomous task
+   * DELETE /agents/{agentId}/autonomous/{taskId}
+   */
+  async deleteTask(agentId: string, taskId: string): Promise<void> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/autonomous/${taskId}`,
+      {
+        method: "DELETE",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to delete autonomous task: ${response.statusText}`);
+    }
+  },
+};
+
