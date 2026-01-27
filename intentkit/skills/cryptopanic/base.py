@@ -45,7 +45,5 @@ class CryptopanicBaseTool(IntentKitSkill):
                 f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for CryptoPanic."
             )
 
-    @property
-    def category(self) -> str:
-        """Category of the skill."""
+    category: str = "TEMP_MARKER"
         return "cryptopanic"

@@ -1,4 +1,5 @@
 import logging
+from abc import ABCMeta
 from collections.abc import Callable, Sequence
 from typing import (
     Any,
@@ -48,7 +49,7 @@ class SkillConfig(TypedDict):
     __extra__: NotRequired[dict[str, Any]]
 
 
-class IntentKitSkill(BaseTool):
+class IntentKitSkill(BaseTool, metaclass=ABCMeta):
     """Abstract base class for IntentKit skills.
     Will have predefined abilities.
     """
@@ -68,10 +69,8 @@ class IntentKitSkill(BaseTool):
     # Logger for the class
     logger: logging.Logger = logging.getLogger(__name__)
 
-    @property
-    def category(self) -> str:
-        """Get the category of the skill."""
-        raise NotImplementedError
+    category: str
+    """Get the category of the skill."""
 
     async def user_rate_limit(self, limit: int, seconds: int, key: str) -> None:
         """Check if a user has exceeded the rate limit for this skill.

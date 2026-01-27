@@ -10,6 +10,4 @@ class LiFiBaseTool(IntentKitOnChainSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]
 
-    @property
-    def category(self) -> str:
-        return "lifi"
+    category: str = "TEMP_MARKER"

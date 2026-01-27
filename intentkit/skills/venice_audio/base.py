@@ -16,9 +16,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]  # type: ignore
 
-    @property
-    def category(self) -> str:
-        return "venice_audio"
+    category: str = "TEMP_MARKER"
 
     def validate_voice_model(
         self, context, voice_model: str

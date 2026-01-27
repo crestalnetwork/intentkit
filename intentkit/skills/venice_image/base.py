@@ -32,9 +32,7 @@ class VeniceImageBaseTool(IntentKitSkill):
     and `description` attributes.
     """
 
-    @property
-    def category(self) -> str:
-        """
+    category: str = "TEMP_MARKER"
         Returns the category of this skill, used for configuration and logging.
         """
         return "venice_image"

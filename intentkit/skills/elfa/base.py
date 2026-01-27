@@ -29,6 +29,4 @@ class ElfaBaseTool(IntentKitSkill):
             f"Invalid API key provider: {api_key_provider}, or no api_key in config"
         )
 
-    @property
-    def category(self) -> str:
-        return "elfa"
+    category: str = "TEMP_MARKER"

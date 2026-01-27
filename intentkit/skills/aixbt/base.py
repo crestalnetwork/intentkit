@@ -10,6 +10,4 @@ class AIXBTBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]
 
-    @property
-    def category(self) -> str:
-        return "aixbt"
+    category: str = "TEMP_MARKER"

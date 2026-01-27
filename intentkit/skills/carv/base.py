@@ -20,9 +20,7 @@ class CarvBaseTool(IntentKitSkill):
     description: str = Field(description="Tool description")
     args_schema: type[BaseModel]  # type: ignore
 
-    @property
-    def category(self) -> str:
-        return "carv"
+    category: str = "TEMP_MARKER"
 
     def get_api_key(self) -> str:
         """

@@ -57,9 +57,7 @@ class TwitterBaseTool(IntentKitSkill):
         else:
             raise ToolException(f"Invalid API key provider: {api_key_provider}")
 
-    @property
-    def category(self) -> str:
-        return "twitter"
+    category: str = "twitter"
 
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.

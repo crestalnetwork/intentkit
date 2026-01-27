@@ -7,6 +7,7 @@ wallet providers.
 """
 
 import inspect
+from abc import ABCMeta
 from typing import TYPE_CHECKING
 
 from cdp import EvmServerAccount
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from intentkit.clients import WalletProviderType, WalletSignerType
 
 
-class IntentKitOnChainSkill(IntentKitSkill):
+class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
     """
     Shared helpers for on-chain enabled skills.
 

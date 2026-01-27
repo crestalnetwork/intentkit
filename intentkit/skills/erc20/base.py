@@ -6,6 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class ERC20BaseTool(CDPBaseTool):
     """Base class for ERC20 tools."""
 
-    @property
-    def category(self) -> str:
-        return "erc20"
+    category: str = "TEMP_MARKER"

@@ -21,6 +21,4 @@ class NationBaseTool(IntentKitSkill):
             return config.nation_api_url
         return default_nation_api_url
 
-    @property
-    def category(self) -> str:
-        return "nation"
+    category: str = "TEMP_MARKER"

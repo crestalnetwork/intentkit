@@ -12,9 +12,7 @@ class WebScraperBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]
 
-    @property
-    def category(self) -> str:
-        return "web_scraper"
+    category: str = "TEMP_MARKER"
 
     def get_openai_api_key(self) -> str:
         """Retrieve the OpenAI API key for embedding operations."""

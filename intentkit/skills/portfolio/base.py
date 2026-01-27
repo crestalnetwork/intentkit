@@ -36,9 +36,7 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
 
         return api_key
 
-    @property
-    def category(self) -> str:
-        return "portfolio"
+    category: str = "TEMP_MARKER"
 
     def _prepare_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Convert boolean values to lowercase strings for API compatibility.

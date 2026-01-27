@@ -26,6 +26,4 @@ class FirecrawlBaseTool(IntentKitSkill):
         else:
             return config.firecrawl_api_key
 
-    @property
-    def category(self) -> str:
-        return "firecrawl"
+    category: str = "TEMP_MARKER"

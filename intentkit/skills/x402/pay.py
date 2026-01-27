@@ -4,11 +4,11 @@ This skill performs a paid HTTP request with a configurable maximum payment amou
 """
 
 import logging
-from typing import Any
+from typing import Any, override
 from urllib.parse import urlparse
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.x402.base import X402BaseSkill
@@ -63,8 +63,9 @@ class X402Pay(X402BaseSkill):
         "The request will automatically fail if the required payment exceeds max_value. "
         "Use x402_check_price first to know the exact cost before paying."
     )
-    args_schema: type[BaseModel] = X402PayInput
+    args_schema: ArgsSchema | None = X402PayInput
 
+    @override
     async def _arun(
         self,
         method: str,

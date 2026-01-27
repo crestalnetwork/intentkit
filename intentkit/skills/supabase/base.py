@@ -12,9 +12,7 @@ class SupabaseBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]
 
-    @property
-    def category(self) -> str:
-        return "supabase"
+    category: str = "TEMP_MARKER"
 
     def get_supabase_config(self, context: AgentContext) -> tuple[str, str]:
         """Get Supabase URL and key from config.

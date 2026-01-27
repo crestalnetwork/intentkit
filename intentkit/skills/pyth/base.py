@@ -6,6 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class PythBaseTool(CDPBaseTool):
     """Base class for Pyth tools."""
 
-    @property
-    def category(self) -> str:
-        return "pyth"
+    category: str = "TEMP_MARKER"

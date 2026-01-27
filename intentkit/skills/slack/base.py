@@ -29,9 +29,7 @@ class SlackBaseTool(IntentKitSkill):
                 f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for Slack."
             )
 
-    @property
-    def category(self) -> str:
-        return "slack"
+    category: str = "TEMP_MARKER"
 
     def get_client(self, token: str) -> WebClient:
         """Get a Slack WebClient instance.

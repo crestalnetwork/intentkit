@@ -140,9 +140,7 @@ class EnsoBaseTool(IntentKitOnChainSkill):
             )
         return int(network_id)
 
-    @property
-    def category(self) -> str:
-        return "enso"
+    category: str = "TEMP_MARKER"
 
 
 def format_amount_with_decimals(amount: object, decimals: int | None) -> str | None:

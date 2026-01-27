@@ -126,9 +126,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
     before initiating an x402 payment.
     """
 
-    @property
-    def category(self) -> str:
-        return "x402"
+    category: str = "x402"
 
     def _validate_wallet_provider(self) -> None:
         """Validate that the wallet provider supports x402 operations.

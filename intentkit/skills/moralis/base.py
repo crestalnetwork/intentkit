@@ -48,9 +48,7 @@ class WalletBaseTool(IntentKitSkill):
                 f"Invalid API key provider: {api_key_provider}, or no api_key in config"
             )
 
-    @property
-    def category(self) -> str:
-        return "moralis"
+    category: str = "TEMP_MARKER"
 
     def _get_chain_name(self, chain_id: int) -> str:
         """Convert chain ID to chain name for API calls.

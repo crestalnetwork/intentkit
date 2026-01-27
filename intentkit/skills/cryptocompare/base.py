@@ -27,9 +27,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
     description: str = Field(description="A description of what the tool does")
     args_schema: type[BaseModel]
 
-    @property
-    def category(self) -> str:
-        return "cryptocompare"
+    category: str = "TEMP_MARKER"
 
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.
