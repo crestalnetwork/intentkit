@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.http.base import HttpBaseTool
@@ -52,7 +52,7 @@ class HttpPost(HttpBaseTool):
         "Returns the response content as text. "
         "Use this when you need to send data to web APIs or submit forms."
     )
-    args_schema: type[BaseModel] = HttpPostInput
+    args_schema: ArgsSchema | None = HttpPostInput
 
     async def _arun(
         self,

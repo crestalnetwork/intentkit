@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -26,7 +27,7 @@ class ListAutonomousTasks(SystemBaseTool):
         "List all autonomous task configurations for the agent. "
         "Returns details about each task including scheduling, prompts, and status."
     )
-    args_schema: type[ListAutonomousTasksInput] = ListAutonomousTasksInput
+    args_schema: ArgsSchema | None = ListAutonomousTasksInput
 
     async def _arun(
         self,

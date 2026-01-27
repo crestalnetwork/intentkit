@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from langchain_core.tools import ArgsSchema
+from pydantic import Field
 
 # Import the generic base and shared input
 from intentkit.skills.venice_image.base import VeniceImageBaseTool
@@ -14,7 +15,7 @@ class VeniceImageEnhanceBaseTool(VeniceImageBaseTool):
     /image/upscale endpoint
     """
 
-    args_schema: type[BaseModel] = VeniceImageEnhanceInput
+    args_schema: ArgsSchema | None = VeniceImageEnhanceInput
     name: str = Field(description="The unique name of the image Enchanching tool.")
     description: str = Field(
         description="A description of what the image Enchanching tool does."

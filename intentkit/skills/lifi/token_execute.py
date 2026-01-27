@@ -3,6 +3,7 @@ from typing import Any
 
 import httpx
 from cdp import EvmServerAccount, TransactionRequestEIP1559
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 from web3.exceptions import TimeExhausted
@@ -63,7 +64,7 @@ class TokenExecute(LiFiBaseTool):
         "Use token_quote first to check rates and fees before executing.\n"
         "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
     )
-    args_schema: type[BaseModel] = TokenExecuteInput
+    args_schema: ArgsSchema | None = TokenExecuteInput
     api_url: str = LIFI_API_URL
 
     # Configuration options

@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol
@@ -151,7 +152,7 @@ class DefiLlamaFetchProtocol(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_protocol"
     description: str = FETCH_PROTOCOL_PROMPT
-    args_schema: type[BaseModel] = DefiLlamaProtocolInput
+    args_schema: ArgsSchema | None = DefiLlamaProtocolInput
 
     async def _arun(self, protocol: str) -> DefiLlamaProtocolOutput:
         """Fetch detailed information about a specific protocol.

@@ -1,5 +1,6 @@
 """Tool for fetching token price percentage changes via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_price_percentage
@@ -55,7 +56,7 @@ class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_price_percentage"
     description: str = FETCH_PRICE_PERCENTAGE_PROMPT
-    args_schema: type[BaseModel] = FetchPricePercentageInput
+    args_schema: ArgsSchema | None = FetchPricePercentageInput
 
     async def _arun(self, coins: list[str]) -> FetchPricePercentageResponse:
         """Fetch price percentage changes for the given tokens.

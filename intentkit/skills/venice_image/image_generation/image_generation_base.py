@@ -3,7 +3,8 @@ import hashlib
 import logging
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from langchain_core.tools import ArgsSchema
+from pydantic import Field
 
 from intentkit.clients.s3 import store_image_bytes
 
@@ -25,7 +26,7 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
     """
 
     # --- Attributes specific to Image Generation ---
-    args_schema: type[BaseModel] = VeniceImageGenerationInput
+    args_schema: ArgsSchema | None = VeniceImageGenerationInput
 
     # --- Attributes Subclasses MUST Define ---
     name: str = Field(description="The unique name of the image generation tool/model.")

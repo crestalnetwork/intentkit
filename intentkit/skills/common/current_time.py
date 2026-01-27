@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import pytz
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.common.base import CommonBaseTool
@@ -35,7 +36,7 @@ class CurrentTime(CommonBaseTool):
         "Get the current time, converted to a specified timezone.\n"
         "You must call this tool whenever the user asks for the time."
     )
-    args_schema: type[BaseModel] = CurrentTimeInput
+    args_schema: ArgsSchema | None = CurrentTimeInput
 
     async def _arun(self, timezone: str, **kwargs) -> str:
         """Implementation of the tool to get the current time.

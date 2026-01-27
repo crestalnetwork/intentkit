@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 import httpx
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
@@ -52,7 +53,7 @@ class TextToSpeech(UnrealSpeechBaseTool):
         "Returns URLs to the generated audio file and word-level timestamps.\n"
         "Provides various voice options and speech customization parameters."
     )
-    args_schema: type[BaseModel] = TextToSpeechInput
+    args_schema: ArgsSchema | None = TextToSpeechInput
 
     def get_env_var(self, env_var_name: str) -> str | None:
         """Helper method to get environment variables."""

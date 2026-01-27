@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -60,7 +61,7 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
     Updated every 5 minutes. Smart mentions provide sophisticated discussion volume measurement beyond simple keyword counts.
     
     Use this to identify tokens gaining traction, gauge market sentiment, and research potential investments."""
-    args_schema: type[BaseModel] = ElfaGetTrendingTokensInput
+    args_schema: ArgsSchema | None = ElfaGetTrendingTokensInput
 
     async def _arun(
         self,

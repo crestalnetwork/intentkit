@@ -2,6 +2,7 @@
 
 from typing import ClassVar
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptopanic.base import CryptopanicBaseTool
@@ -43,7 +44,7 @@ class FetchCryptoSentiment(CryptopanicBaseTool):
         "with all posts sorted by recency. Triggered by 'sentiment' or 'market state' queries. "
         "Defaults to BTC."
     )
-    args_schema: type[BaseModel] = CryptopanicSentimentInput
+    args_schema: ArgsSchema | None = CryptopanicSentimentInput
 
     INSIGHTS_PROMPT: ClassVar[str] = """
 CryptoPanic Headlines for {currency}:

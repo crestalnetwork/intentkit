@@ -6,6 +6,7 @@ Uses query ID 4832844 to retrieve a list of KOL buy transactions.
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -47,7 +48,7 @@ class FetchKOLBuys(DuneBaseTool):
         "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API using query ID 4832844. "
         "Supports a configurable limit for the number of results. Handles rate limits with retries."
     )
-    args_schema: type[BaseModel] = KOLBuysInput
+    args_schema: ArgsSchema | None = KOLBuysInput
 
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=5, min=5, max=60)

@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
@@ -34,7 +35,7 @@ class TwitterGetUserByUsername(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = TwitterGetUserByUsernameInput
+    args_schema: ArgsSchema | None = TwitterGetUserByUsernameInput
 
     async def _arun(self, username: str, **kwargs):
         context = self.get_context()

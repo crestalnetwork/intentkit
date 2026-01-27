@@ -1,5 +1,6 @@
 """Tool for fetching first recorded token prices via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_first_price
@@ -62,7 +63,7 @@ class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_first_price"
     description: str = FETCH_FIRST_PRICE_PROMPT
-    args_schema: type[BaseModel] = FetchFirstPriceInput
+    args_schema: ArgsSchema | None = FetchFirstPriceInput
 
     async def _arun(self, coins: list[str]) -> FetchFirstPriceResponse:
         """Fetch first recorded prices for the given tokens.

@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.moralis.api import fetch_nft_data, get_solana_nfts
@@ -92,7 +93,7 @@ class FetchNftPortfolio(WalletBaseTool):
         "- Floor prices if available\n"
         "Use this tool whenever a user asks about their NFTs or digital collectibles."
     )
-    args_schema: type[BaseModel] = FetchNftPortfolioInput
+    args_schema: ArgsSchema | None = FetchNftPortfolioInput
 
     async def _arun(
         self,

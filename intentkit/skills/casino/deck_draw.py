@@ -9,6 +9,7 @@ except ImportError:
     raise ImportError(
         "httpx is required for Casino skills. Install it with: pip install httpx"
     )
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.casino.base import CasinoBaseTool
@@ -49,7 +50,7 @@ class CasinoDeckDraw(CasinoBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = CasinoDeckDrawInput
+    args_schema: ArgsSchema | None = CasinoDeckDrawInput
 
     async def _arun(self, count: int = 1, **kwargs) -> dict[str, Any]:
         try:

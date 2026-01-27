@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoNews
@@ -31,7 +32,7 @@ class CryptoCompareFetchNews(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_news"
     description: str = "Fetch the latest cryptocurrency news for a specific token"
-    args_schema: type[BaseModel] = CryptoCompareFetchNewsInput
+    args_schema: ArgsSchema | None = CryptoCompareFetchNewsInput
 
     async def _arun(
         self,

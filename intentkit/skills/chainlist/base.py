@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from langchain_core.tools import ArgsSchema
+from pydantic import Field
 
 from intentkit.skills.base import IntentKitSkill
 
@@ -8,6 +9,4 @@ class ChainlistBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]
-
-    category: str = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = "TEMP_MARKER"

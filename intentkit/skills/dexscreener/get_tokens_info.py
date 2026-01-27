@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
@@ -64,7 +65,7 @@ class GetTokensInfo(DexScreenerBaseTool):
         "This is more efficient than making individual calls when you need info for multiple tokens. "
         "Use this tool for portfolio analysis or comparing multiple tokens at once."
     )
-    args_schema: type[BaseModel] = GetTokensInfoInput
+    args_schema: ArgsSchema | None = GetTokensInfoInput
 
     async def _arun(
         self,

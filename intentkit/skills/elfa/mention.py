@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -46,7 +47,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
     Updated hourly. Returns engagement metrics and account information for market sentiment analysis.
     
     Use this to track public opinion, identify trending news, and monitor investor discussions."""
-    args_schema: type[BaseModel] = ElfaGetTopMentionsInput
+    args_schema: ArgsSchema | None = ElfaGetTopMentionsInput
 
     async def _arun(
         self,
@@ -148,7 +149,7 @@ class ElfaSearchMentions(ElfaBaseTool):
     Updated every 5 minutes. Access 30 days of recent data or historical archives.
     
     Use this for market research, brand monitoring, opinion tracking, and competitive analysis."""
-    args_schema: type[BaseModel] = ElfaSearchMentionsInput
+    args_schema: ArgsSchema | None = ElfaSearchMentionsInput
 
     async def _arun(
         self,

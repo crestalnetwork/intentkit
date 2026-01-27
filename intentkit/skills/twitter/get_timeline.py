@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
 from intentkit.clients import get_twitter_client
@@ -33,7 +34,7 @@ class TwitterGetTimeline(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = TwitterGetTimelineInput
+    args_schema: ArgsSchema | None = TwitterGetTimelineInput
 
     async def _arun(self, **kwargs):
         context = self.get_context()

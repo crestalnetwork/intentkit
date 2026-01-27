@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, ValidationError
 
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
@@ -59,7 +60,7 @@ class SearchToken(DexScreenerBaseTool):
         f"limited to the top {MAX_SEARCH_RESULTS}. "
         f"Use this tool to find token information based on user queries."
     )
-    args_schema: type[BaseModel] = SearchTokenInput
+    args_schema: ArgsSchema | None = SearchTokenInput
 
     async def _arun(
         self,

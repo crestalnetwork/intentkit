@@ -1,5 +1,6 @@
 """Tool for fetching pool chart data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pool_chart
@@ -63,7 +64,7 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_pool_chart"
     description: str = FETCH_POOL_CHART_PROMPT
-    args_schema: type[BaseModel] = FetchPoolChartInput
+    args_schema: ArgsSchema | None = FetchPoolChartInput
 
     async def _arun(self, pool_id: str) -> FetchPoolChartResponse:
         """Fetch historical chart data for the given pool.

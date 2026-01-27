@@ -1,5 +1,6 @@
 """Tool for fetching chain historical TVL via DeFiLlama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_chain_historical_tvl
@@ -55,7 +56,7 @@ class DefiLlamaFetchChainHistoricalTvl(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_chain_historical_tvl"
     description: str = FETCH_HISTORICAL_TVL_PROMPT
-    args_schema: type[BaseModel] = FetchChainHistoricalTVLInput
+    args_schema: ArgsSchema | None = FetchChainHistoricalTVLInput
 
     async def _arun(self, chain: str) -> FetchChainHistoricalTVLResponse:
         """Fetch historical TVL data for the given chain.

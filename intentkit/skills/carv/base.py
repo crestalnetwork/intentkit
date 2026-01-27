@@ -2,8 +2,9 @@ import logging
 from typing import Any
 
 import httpx  # Ensure httpx is installed: pip install httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -18,9 +19,7 @@ class CarvBaseTool(IntentKitSkill):
 
     name: str = Field(description="Tool name")  # type: ignore
     description: str = Field(description="Tool description")
-    args_schema: type[BaseModel]  # type: ignore
-
-    category: str = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = "TEMP_MARKER"
 
     def get_api_key(self) -> str:
         """

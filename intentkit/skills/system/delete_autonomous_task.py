@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.system.base import SystemBaseTool
@@ -28,7 +29,7 @@ class DeleteAutonomousTask(SystemBaseTool):
         "Delete an autonomous task configuration from the agent. "
         "Requires the task ID to identify which task to remove."
     )
-    args_schema: type[DeleteAutonomousTaskInput] = DeleteAutonomousTaskInput
+    args_schema: ArgsSchema | None = DeleteAutonomousTaskInput
 
     async def _arun(
         self,

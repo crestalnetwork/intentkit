@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoCurrency
@@ -38,7 +39,7 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_top_market_cap"
     description: str = "Fetch top cryptocurrencies ranked by market capitalization"
-    args_schema: type[BaseModel] = CryptoCompareFetchTopMarketCapInput
+    args_schema: ArgsSchema | None = CryptoCompareFetchTopMarketCapInput
 
     async def _arun(
         self,

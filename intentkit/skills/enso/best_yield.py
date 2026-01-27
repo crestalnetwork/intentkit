@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -68,7 +69,7 @@ class EnsoGetBestYield(EnsoBaseTool):
         "Find the best yield options for a specific token (default: USDC) across all protocols "
         "on a blockchain network (default: Base). Results are sorted by APY in descending order."
     )
-    args_schema: type[BaseModel] = EnsoGetBestYieldInput
+    args_schema: ArgsSchema | None = EnsoGetBestYieldInput
 
     async def _arun(
         self,

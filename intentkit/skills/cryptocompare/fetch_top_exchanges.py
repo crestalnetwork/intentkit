@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoExchange
@@ -43,7 +44,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
     description: str = (
         "Fetch top exchanges for a cryptocurrency trading pair, ranked by volume"
     )
-    args_schema: type[BaseModel] = CryptoCompareFetchTopExchangesInput
+    args_schema: ArgsSchema | None = CryptoCompareFetchTopExchangesInput
 
     async def _arun(
         self,

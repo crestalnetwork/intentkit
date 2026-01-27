@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.lifi.base import LiFiBaseTool
@@ -52,7 +53,7 @@ class TokenQuote(LiFiBaseTool):
         "Use this tool to check rates, fees, and estimated time for token transfers without executing them.\n"
         "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
     )
-    args_schema: type[BaseModel] = TokenQuoteInput
+    args_schema: ArgsSchema | None = TokenQuoteInput
     api_url: str = LIFI_API_URL
 
     # Configuration options

@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
@@ -32,7 +33,7 @@ class TwitterSearchTweets(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = TwitterSearchTweetsInput
+    args_schema: ArgsSchema | None = TwitterSearchTweetsInput
 
     async def _arun(self, query: str, **kwargs):
         context = self.get_context()

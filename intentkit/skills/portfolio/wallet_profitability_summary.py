@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -37,7 +38,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
         "Retrieve a summary of wallet profitability including total profit/loss, "
         "trade volume, and other metrics. Filter by time period."
     )
-    args_schema: type[BaseModel] = WalletProfitabilitySummaryInput
+    args_schema: ArgsSchema | None = WalletProfitabilitySummaryInput
 
     async def _arun(
         self,

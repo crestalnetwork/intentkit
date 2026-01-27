@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -58,7 +59,7 @@ class OnchainQueryTool(CarvBaseTool):
         "- ETH values are denominated in 18 decimals—consider 10^18 when interpreting amounts.\n"
         "- Never fabricate or infer data beyond what the tool provides."
     )
-    args_schema: type[BaseModel] = CarvInput
+    args_schema: ArgsSchema | None = CarvInput
 
     async def _arun(
         self,

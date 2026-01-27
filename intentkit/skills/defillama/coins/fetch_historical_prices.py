@@ -1,5 +1,6 @@
 """Tool for fetching historical token prices via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_prices
@@ -71,7 +72,7 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_historical_prices"
     description: str = FETCH_HISTORICAL_PRICES_PROMPT
-    args_schema: type[BaseModel] = FetchHistoricalPricesInput
+    args_schema: ArgsSchema | None = FetchHistoricalPricesInput
 
     async def _arun(
         self, timestamp: int, coins: list[str]

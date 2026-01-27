@@ -1,5 +1,6 @@
 """Tool for fetching current block data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_block
@@ -53,7 +54,7 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_block"
     description: str = FETCH_BLOCK_PROMPT
-    args_schema: type[BaseModel] = FetchBlockInput
+    args_schema: ArgsSchema | None = FetchBlockInput
 
     async def _arun(self, chain: str) -> FetchBlockResponse:
         """Fetch current block data for the given chain.

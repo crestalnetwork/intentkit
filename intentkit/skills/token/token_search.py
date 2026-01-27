@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -44,7 +45,7 @@ class TokenSearch(TokenBaseTool):
         "Returns token information including price, market cap, and security information. "
         "NOTE: This is a premium endpoint that requires a Moralis Business plan."
     )
-    args_schema: type[BaseModel] = TokenSearchInput
+    args_schema: ArgsSchema | None = TokenSearchInput
 
     async def _arun(
         self,

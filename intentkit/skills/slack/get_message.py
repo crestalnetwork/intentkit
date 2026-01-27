@@ -1,5 +1,6 @@
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackMessage
@@ -30,7 +31,7 @@ class SlackGetMessage(SlackBaseTool):
 
     name: str = "slack_get_message"
     description: str = "Get messages from a Slack channel or thread"
-    args_schema: type[BaseModel] = SlackGetMessageSchema
+    args_schema: ArgsSchema | None = SlackGetMessageSchema
 
     async def _arun(
         self,

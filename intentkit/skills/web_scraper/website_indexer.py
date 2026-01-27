@@ -3,6 +3,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 import openai
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
@@ -67,7 +68,7 @@ class WebsiteIndexer(WebScraperBaseTool):
         "This tool finds sitemaps from robots.txt, parses the XML content to extract URLs, "
         "and then uses the reliable scrape_and_index functionality for content indexing."
     )
-    args_schema: type[BaseModel] = WebsiteIndexerInput
+    args_schema: ArgsSchema | None = WebsiteIndexerInput
 
     def _normalize_url(self, url: str) -> str:
         """Normalize URL by ensuring it has a proper scheme."""

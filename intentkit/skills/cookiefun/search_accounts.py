@@ -2,6 +2,7 @@ from enum import IntEnum
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -59,7 +60,7 @@ class SearchAccounts(CookieFunBaseTool):
 
     name: str = "cookiefun_search_accounts"
     description: str = "Searches for Twitter accounts that authored tweets matching specified search criteria."
-    args_schema: type[BaseModel] = SearchAccountsInput
+    args_schema: ArgsSchema | None = SearchAccountsInput
 
     async def _arun(
         self,

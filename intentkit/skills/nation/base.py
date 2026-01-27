@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field
+from langchain_core.tools import ArgsSchema
+from pydantic import Field
 
-from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 default_nation_api_url = "http://backend-api"
@@ -11,14 +11,4 @@ class NationBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]
-
-    def get_api_key(self) -> str:
-        return config.nation_api_key
-
-    def get_base_url(self) -> str:
-        if config.nation_api_url:
-            return config.nation_api_url
-        return default_nation_api_url
-
-    category: str = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = "TEMP_MARKER"

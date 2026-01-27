@@ -1,5 +1,6 @@
 from typing import Literal
 
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -24,7 +25,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
     name: str = "xmtp_get_swap_price"
     description: str = "Get an indicative swap price/quote for token pair and amount on Ethereum, Base, Arbitrum, and Optimism mainnet networks using CDP."
     response_format: Literal["content", "content_and_artifact"] = "content"
-    args_schema: type[BaseModel] = SwapPriceInput
+    args_schema: ArgsSchema | None = SwapPriceInput
 
     async def _arun(
         self,

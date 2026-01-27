@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -31,7 +32,7 @@ class TokenAnalytics(TokenBaseTool):
         "Get analytics for a token by token address. "
         "Returns trading volumes, number of buyers/sellers, and liquidity information over various time periods."
     )
-    args_schema: type[BaseModel] = TokenAnalyticsInput
+    args_schema: ArgsSchema | None = TokenAnalyticsInput
 
     async def _arun(
         self,

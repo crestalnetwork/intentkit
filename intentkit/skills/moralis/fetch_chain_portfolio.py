@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.moralis.api import fetch_token_approvals, fetch_wallet_balances
@@ -86,7 +87,7 @@ class FetchChainPortfolio(WalletBaseTool):
         "- Token approvals (optional)\n"
         "Use this tool whenever a user wants to see their holdings on a specific blockchain."
     )
-    args_schema: type[BaseModel] = FetchChainPortfolioInput
+    args_schema: ArgsSchema | None = FetchChainPortfolioInput
 
     async def _arun(
         self, address: str, chain_id: int, include_approvals: bool = False, **kwargs

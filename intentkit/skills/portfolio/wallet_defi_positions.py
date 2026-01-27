@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -31,7 +32,7 @@ class WalletDefiPositions(PortfolioBaseTool):
         "Get the DeFi positions summary of a wallet address. "
         "Returns information about liquidity positions, staking, lending, and other DeFi activities."
     )
-    args_schema: type[BaseModel] = WalletDefiPositionsInput
+    args_schema: ArgsSchema | None = WalletDefiPositionsInput
 
     async def _arun(
         self,

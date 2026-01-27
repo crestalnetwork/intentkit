@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config
@@ -37,7 +38,7 @@ class RegenerateAgentApiKey(SystemBaseTool):
         "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
         "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
-    args_schema: type[RegenerateAgentApiKeyInput] = RegenerateAgentApiKeyInput
+    args_schema: ArgsSchema | None = RegenerateAgentApiKeyInput
 
     async def _arun(self, **kwargs) -> RegenerateAgentApiKeyOutput:
         """Generate and set a new API key for the agent."""

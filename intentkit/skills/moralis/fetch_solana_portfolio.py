@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.moralis.api import (
@@ -91,7 +92,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
         "- USD values of assets\n"
         "Use this tool whenever the user asks specifically about Solana holdings."
     )
-    args_schema: type[BaseModel] = SolanaPortfolioInput
+    args_schema: ArgsSchema | None = SolanaPortfolioInput
 
     async def _arun(
         self,

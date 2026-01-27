@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime, timedelta
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel
 
 from intentkit.clients.twitter import Tweet, get_twitter_client
@@ -37,7 +37,7 @@ class TwitterGetMentions(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = TwitterGetMentionsInput
+    args_schema: ArgsSchema | None = TwitterGetMentionsInput
 
     async def _arun(self, **kwargs) -> list[Tweet]:
         context = self.get_context()

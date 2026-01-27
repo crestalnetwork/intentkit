@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -43,7 +43,7 @@ class WalletApprovals(PortfolioBaseTool):
         "Retrieve active ERC20 token approvals for the specified wallet address. "
         "This helps identify which contracts have permission to spend tokens."
     )
-    args_schema: type[BaseModel] = WalletApprovalsInput
+    args_schema: ArgsSchema | None = WalletApprovalsInput
 
     async def _arun(
         self,

@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.dapplooker.base import DappLookerBaseTool
@@ -50,7 +51,7 @@ class DappLookerTokenData(DappLookerBaseTool):
         "Note that this tool is specialized for AI agent tokens and may not return data for general cryptocurrencies like ETH, BTC, or SOL.\n"
         "Either token_tickers or token_addresses must be provided."
     )
-    args_schema: type[BaseModel] = DappLookerTokenDataInput
+    args_schema: ArgsSchema | None = DappLookerTokenDataInput
 
     async def _arun(
         self,

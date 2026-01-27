@@ -1,5 +1,6 @@
 """Tool for fetching all protocols via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocols
@@ -135,7 +136,7 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
 
         pass
 
-    args_schema: type[BaseModel] = EmptyArgsSchema
+    args_schema: ArgsSchema | None = EmptyArgsSchema
 
     async def _arun(self, **kwargs) -> DefiLlamaProtocolsOutput:
         """Fetch information about all protocols.

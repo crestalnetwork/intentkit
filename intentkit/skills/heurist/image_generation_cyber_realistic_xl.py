@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class ImageGenerationCyberRealisticXL(HeuristBaseTool):
         "CyberRealisticXL specializes in creating high-quality hyperrealistic photographs with a cyberpunk aesthetic.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: type[BaseModel] = ImageGenerationCyberRealisticXLInput
+    args_schema: ArgsSchema | None = ImageGenerationCyberRealisticXLInput
 
     async def _arun(
         self,

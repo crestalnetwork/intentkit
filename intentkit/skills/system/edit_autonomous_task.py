@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -58,7 +59,7 @@ class EditAutonomousTask(SystemBaseTool):
         "Only provided fields will be updated; omitted fields will keep their current values. "
         "The minutes and cron fields are mutually exclusive. Do not provide both of them. "
     )
-    args_schema: type[EditAutonomousTaskInput] = EditAutonomousTaskInput
+    args_schema: ArgsSchema | None = EditAutonomousTaskInput
 
     async def _arun(
         self,

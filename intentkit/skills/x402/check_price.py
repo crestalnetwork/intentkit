@@ -9,7 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 from x402.types import x402PaymentRequiredResponse
 
@@ -56,7 +56,7 @@ class X402CheckPrice(X402BaseSkill):
         "Returns the price information including amount, asset, network, and description. "
         "Use this to preview costs before making a paid request."
     )
-    args_schema: type[BaseModel] = X402CheckPriceInput
+    args_schema: ArgsSchema | None = X402CheckPriceInput
 
     async def _arun(
         self,

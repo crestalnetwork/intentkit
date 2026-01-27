@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -63,7 +64,7 @@ class WalletNFTs(PortfolioBaseTool):
         "Get NFTs owned by a given wallet address. Results include token details, "
         "metadata, collection information, and optionally prices."
     )
-    args_schema: type[BaseModel] = WalletNFTsInput
+    args_schema: ArgsSchema | None = WalletNFTsInput
 
     async def _arun(
         self,

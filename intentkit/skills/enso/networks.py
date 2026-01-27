@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -45,7 +46,7 @@ class EnsoGetNetworks(EnsoBaseTool):
 
     name: str = "enso_get_networks"
     description: str = "Retrieve networks supported by the Enso API"
-    args_schema: type[BaseModel] = EnsoGetNetworksInput
+    args_schema: ArgsSchema | None = EnsoGetNetworksInput
 
     async def _arun(self, **kwargs) -> EnsoGetNetworksOutput:
         """

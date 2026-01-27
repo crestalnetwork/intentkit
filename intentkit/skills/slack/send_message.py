@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackMessage
@@ -23,7 +24,7 @@ class SlackSendMessage(SlackBaseTool):
 
     name: str = "slack_send_message"
     description: str = "Send a message to a Slack channel or thread"
-    args_schema: type[BaseModel] = SlackSendMessageSchema
+    args_schema: ArgsSchema | None = SlackSendMessageSchema
 
     async def _arun(
         self,

@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -20,7 +21,7 @@ class GetSectors(CookieFunBaseTool):
     description: str = (
         "Returns a list of all available sectors in the CookieFun system."
     )
-    args_schema: type[BaseModel] = GetSectorsInput
+    args_schema: ArgsSchema | None = GetSectorsInput
 
     async def _arun(self, **kwargs) -> list[dict[str, Any]]:
         """

@@ -10,9 +10,8 @@ class SlackBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]
 
-    def get_api_key(self) -> str:
+    def get_api_key(self):
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
         api_key_provider = skill_config.get("api_key_provider")

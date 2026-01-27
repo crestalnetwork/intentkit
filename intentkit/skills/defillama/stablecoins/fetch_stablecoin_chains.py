@@ -1,5 +1,6 @@
 """Tool for fetching stablecoin chains data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_chains
@@ -68,7 +69,7 @@ class DefiLlamaFetchStablecoinChains(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_stablecoin_chains"
     description: str = FETCH_STABLECOIN_CHAINS_PROMPT
-    args_schema: None = None  # No input parameters needed
+    args_schema: ArgsSchema | None = None  # No input parameters needed
 
     async def _arun(self, **kwargs) -> FetchStablecoinChainsResponse:
         """Fetch stablecoin distribution data across chains.

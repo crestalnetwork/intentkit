@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -36,7 +37,7 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
         "Use this tool to search through content that was previously scraped and indexed using Firecrawl tools.\n"
         "This tool can help answer questions based on the indexed web content from Firecrawl scraping/crawling."
     )
-    args_schema: type[BaseModel] = FirecrawlQueryInput
+    args_schema: ArgsSchema | None = FirecrawlQueryInput
 
     async def _arun(
         self,

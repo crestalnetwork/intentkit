@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.moralis.api import (
@@ -73,7 +74,7 @@ class FetchWalletPortfolio(WalletBaseTool):
         "Use this tool whenever the user asks about their crypto holdings, portfolio value, "
         "or wallet contents across multiple blockchains."
     )
-    args_schema: type[BaseModel] = FetchWalletPortfolioInput
+    args_schema: ArgsSchema | None = FetchWalletPortfolioInput
 
     async def _arun(
         self,

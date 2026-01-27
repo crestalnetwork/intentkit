@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class ImageGenerationSDXL(HeuristBaseTool):
         "SDXL is a versatile, general-purpose model capable of generating high-quality images in any style.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: type[BaseModel] = ImageGenerationSDXLInput
+    args_schema: ArgsSchema | None = ImageGenerationSDXLInput
 
     async def _arun(
         self,

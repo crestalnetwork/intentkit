@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -31,7 +32,7 @@ class WalletStats(PortfolioBaseTool):
         "Get statistical information about a wallet, including the number of NFTs, "
         "collections, and transaction counts."
     )
-    args_schema: type[BaseModel] = WalletStatsInput
+    args_schema: ArgsSchema | None = WalletStatsInput
 
     async def _arun(
         self,

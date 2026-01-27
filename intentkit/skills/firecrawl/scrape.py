@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from langchain_core.documents import Document
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -80,7 +81,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
         "This tool can handle JavaScript-rendered content, PDFs, and dynamic websites. "
         "Use this when you want to refresh/update content from a URL that was previously scraped."
     )
-    args_schema: type[BaseModel] = FirecrawlScrapeInput
+    args_schema: ArgsSchema | None = FirecrawlScrapeInput
 
     async def _arun(
         self,

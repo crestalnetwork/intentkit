@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -74,7 +74,7 @@ class WalletHistory(PortfolioBaseTool):
         "Retrieve the full transaction history of a specified wallet address, including sends, "
         "receives, token and NFT transfers, and contract interactions."
     )
-    args_schema: type[BaseModel] = WalletHistoryInput
+    args_schema: ArgsSchema | None = WalletHistoryInput
 
     async def _arun(
         self,

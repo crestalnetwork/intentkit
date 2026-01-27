@@ -6,16 +6,14 @@ CDP and Privy wallet providers for Enso DeFi operations.
 """
 
 from decimal import Decimal
-from typing import Any
 
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.config.config import config
 from intentkit.skills.onchain import IntentKitOnChainSkill
 from intentkit.utils.chain import (
-    ChainProvider,
     network_to_id,
     resolve_quicknode_network,
 )
@@ -35,47 +33,8 @@ class EnsoBaseTool(IntentKitOnChainSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]
-
-    async def get_enso_wallet_provider(self, context: AgentContext) -> Any:
-        """
-        Get the wallet provider for Enso operations.
-
-        This method uses the unified wallet provider from IntentKitOnChainSkill,
-        which automatically selects:
-        - CdpEvmWalletProvider for CDP wallets
-        - SafeWalletProvider for Privy wallets
-
-        Args:
-            context: The skill context containing agent information.
-
-        Returns:
-            The wallet provider instance.
-        """
-        # Use the unified method from parent class
-        return await self.get_wallet_provider()
-
-    async def get_enso_wallet_address(self, context: AgentContext) -> str:
-        """
-        Get the wallet address for Enso operations.
-
-        This method handles both CDP (sync) and Privy (async) providers.
-
-        Args:
-            context: The skill context containing agent information.
-
-        Returns:
-            The wallet address as a checksummed hex string.
-        """
-        # Use the unified method from parent class
-        return await self.get_wallet_address()
-
-    def get_chain_provider(self, context: AgentContext) -> ChainProvider | None:
-        """Get the chain provider configuration."""
-        return config.chain_provider
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
-        """Get the main tokens configured for this skill."""
         skill_config = context.agent.skill_config(self.category)
         if "main_tokens" in skill_config and skill_config["main_tokens"]:
             return skill_config["main_tokens"]

@@ -1,7 +1,8 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -14,9 +15,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
 
     name: str = Field(default="venice_base_tool", description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]  # type: ignore
-
-    category: str = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = "TEMP_MARKER"
 
     def validate_voice_model(
         self, context, voice_model: str

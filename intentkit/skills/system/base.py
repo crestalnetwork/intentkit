@@ -6,7 +6,8 @@ from intentkit.skills.base import IntentKitSkill
 class SystemBaseTool(IntentKitSkill):
     """Base class for system-related skills."""
 
-    category: str = "TEMP_MARKER"
+    @property
+    def category(self) -> str:
         return "system"
 
     def _generate_api_key(self) -> str:

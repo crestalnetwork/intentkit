@@ -1,5 +1,6 @@
 """Tool for fetching fees overview data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_fees_overview
@@ -98,7 +99,7 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
 
         pass
 
-    args_schema: type[BaseModel] = EmptyArgsSchema
+    args_schema: ArgsSchema | None = EmptyArgsSchema
 
     async def _arun(self, **kwargs) -> FetchFeesOverviewResponse:
         """Fetch overview data for protocol fees.

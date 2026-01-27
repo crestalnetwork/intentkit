@@ -8,6 +8,7 @@ from typing import Literal
 import httpx
 import openai
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image_bytes
@@ -55,7 +56,7 @@ class GPTImageToImage(OpenAIBaseTool):
         "based on text descriptions.\n"
         "You can specify size and quality parameters for more control.\n"
     )
-    args_schema: type[BaseModel] = GPTImageToImageInput
+    args_schema: ArgsSchema | None = GPTImageToImageInput
 
     async def _arun(
         self,

@@ -2,6 +2,7 @@ from enum import IntEnum
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -79,7 +80,7 @@ class GetAccountFeed(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_feed"
     description: str = "Retrieves a list of tweets for a specific Twitter account with various filtering options."
-    args_schema: type[BaseModel] = GetAccountFeedInput
+    args_schema: ArgsSchema | None = GetAccountFeedInput
 
     async def _arun(
         self,

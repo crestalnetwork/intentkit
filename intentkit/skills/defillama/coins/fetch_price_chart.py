@@ -1,5 +1,6 @@
 """Tool for fetching token price charts via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_price_chart
@@ -71,7 +72,7 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_price_chart"
     description: str = FETCH_PRICE_CHART_PROMPT
-    args_schema: type[BaseModel] = FetchPriceChartInput
+    args_schema: ArgsSchema | None = FetchPriceChartInput
 
     async def _arun(self, coins: list[str]) -> FetchPriceChartResponse:
         """Fetch price charts for the given tokens.

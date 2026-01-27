@@ -1,5 +1,6 @@
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.cdp import get_cdp_client
@@ -42,7 +43,7 @@ class XmtpSwap(XmtpBaseTool):
         "Returns a wallet_sendCalls payload that can include an optional approval call and the swap call. "
         "Supports Ethereum, Base, Arbitrum, and Optimism mainnet networks."
     )
-    args_schema: type[BaseModel] = SwapInput
+    args_schema: ArgsSchema | None = SwapInput
 
     async def _arun(
         self,

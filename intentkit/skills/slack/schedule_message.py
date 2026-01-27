@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool
@@ -29,7 +30,7 @@ class SlackScheduleMessage(SlackBaseTool):
 
     name: str = "slack_schedule_message"
     description: str = "Schedule a message to be sent to a Slack channel or thread at a specific time, if you need current time, use skill common_current_time"
-    args_schema: type[BaseModel] = SlackScheduleMessageSchema
+    args_schema: ArgsSchema | None = SlackScheduleMessageSchema
 
     async def _arun(
         self,

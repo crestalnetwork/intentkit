@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config
@@ -49,7 +50,7 @@ class TavilySearch(TavilyBaseTool):
         "You must call this tool whenever the user asks for information that may not be in your training data,"
         " requires current data, or when you're unsure about facts."
     )
-    args_schema: type[BaseModel] = TavilySearchInput
+    args_schema: ArgsSchema | None = TavilySearchInput
 
     async def _arun(
         self,

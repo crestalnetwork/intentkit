@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -67,7 +68,7 @@ class WalletSwaps(PortfolioBaseTool):
         "Get all swap-related transactions (buy, sell) for a wallet address. "
         "Note that swaps data is only available from September 2024 onwards."
     )
-    args_schema: type[BaseModel] = WalletSwapsInput
+    args_schema: ArgsSchema | None = WalletSwapsInput
 
     async def _arun(
         self,

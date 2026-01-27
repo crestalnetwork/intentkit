@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_summary
@@ -89,7 +90,7 @@ class DefiLlamaFetchDexSummary(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_dex_summary"
     description: str = FETCH_DEX_SUMMARY_PROMPT
-    args_schema: type[BaseModel] = FetchDexSummaryInput
+    args_schema: ArgsSchema | None = FetchDexSummaryInput
 
     async def _arun(self, protocol: str) -> FetchDexSummaryResponse:
         """Fetch summary data for the given DEX protocol.

@@ -1,6 +1,6 @@
 import logging
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
@@ -41,7 +41,7 @@ class TwitterPostTweet(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = TwitterPostTweetInput
+    args_schema: ArgsSchema | None = TwitterPostTweetInput
 
     async def _arun(
         self,

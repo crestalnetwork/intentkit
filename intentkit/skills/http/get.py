@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.http.base import HttpBaseTool
@@ -47,7 +47,7 @@ class HttpGet(HttpBaseTool):
         "Returns the response content as text. "
         "Use this when you need to fetch data from web APIs or websites."
     )
-    args_schema: type[BaseModel] = HttpGetInput
+    args_schema: ArgsSchema | None = HttpGetInput
 
     async def _arun(
         self,

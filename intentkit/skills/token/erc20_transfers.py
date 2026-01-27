@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -65,7 +66,7 @@ class ERC20Transfers(TokenBaseTool):
         "Get ERC20 token transactions for a wallet address, ordered by block number. "
         "Returns transaction details, token information, and wallet interactions."
     )
-    args_schema: type[BaseModel] = ERC20TransfersInput
+    args_schema: ArgsSchema | None = ERC20TransfersInput
 
     async def _arun(
         self,

@@ -1,6 +1,7 @@
 import logging
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.tavily.base import TavilyBaseTool
@@ -41,7 +42,7 @@ class TavilyExtract(TavilyBaseTool):
         "This tool is useful when you need to get the full text content from a webpage. "
         "You must call this tool whenever the user asks to extract or scrape content from a specific URL."
     )
-    args_schema: type[BaseModel] = TavilyExtractInput
+    args_schema: ArgsSchema | None = TavilyExtractInput
 
     async def _arun(
         self,

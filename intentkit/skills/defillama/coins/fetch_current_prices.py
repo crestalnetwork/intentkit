@@ -1,5 +1,6 @@
 """Tool for fetching token prices via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_current_prices
@@ -67,7 +68,7 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_current_prices"
     description: str = FETCH_PRICES_PROMPT
-    args_schema: type[BaseModel] = FetchCurrentPricesInput
+    args_schema: ArgsSchema | None = FetchCurrentPricesInput
 
     async def _arun(self, coins: list[str]) -> FetchCurrentPricesResponse:
         """Fetch current prices for the given tokens.

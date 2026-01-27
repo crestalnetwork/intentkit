@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
@@ -66,7 +67,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
         "Use this tool to collect and index web content that you want to reference later.\n"
         "The indexed content can then be queried using the query_indexed_content tool."
     )
-    args_schema: type[BaseModel] = ScrapeAndIndexInput
+    args_schema: ArgsSchema | None = ScrapeAndIndexInput
 
     async def _arun(
         self,
@@ -170,7 +171,7 @@ class QueryIndexedContent(WebScraperBaseTool):
         "Use this tool to search through content that was previously scraped and indexed.\n"
         "This tool can help answer questions based on the indexed web content."
     )
-    args_schema: type[BaseModel] = QueryIndexInput
+    args_schema: ArgsSchema | None = QueryIndexInput
 
     async def _arun(
         self,

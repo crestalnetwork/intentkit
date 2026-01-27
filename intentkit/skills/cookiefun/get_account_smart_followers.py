@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -26,7 +27,7 @@ class GetAccountSmartFollowers(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_smart_followers"
     description: str = "Returns a list of top smart followers for a specific Twitter account, with detailed metrics about these followers."
-    args_schema: type[BaseModel] = GetAccountSmartFollowersInput
+    args_schema: ArgsSchema | None = GetAccountSmartFollowersInput
 
     async def _arun(
         self,

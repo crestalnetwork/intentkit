@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class ImageGenerationBrainDance(HeuristBaseTool):
         "BrainDance specializes in creating unique, artistic interpretations with creative flair.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: type[BaseModel] = ImageGenerationBrainDanceInput
+    args_schema: ArgsSchema | None = ImageGenerationBrainDanceInput
 
     async def _arun(
         self,

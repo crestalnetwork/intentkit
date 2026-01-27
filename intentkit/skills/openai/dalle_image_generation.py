@@ -4,6 +4,7 @@ import logging
 
 import openai
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class DALLEImageGeneration(OpenAIBaseTool):
         "high-quality images from text descriptions.\n"
         "You can specify size, quality, and style parameters for more control.\n"
     )
-    args_schema: type[BaseModel] = DALLEImageGenerationInput
+    args_schema: ArgsSchema | None = DALLEImageGenerationInput
 
     async def _arun(
         self,

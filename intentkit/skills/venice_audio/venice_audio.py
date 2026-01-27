@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 import httpx
-from pydantic import BaseModel
+from langchain_core.tools import ArgsSchema
 
 from intentkit.clients.s3 import store_file
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
@@ -32,7 +32,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
         "Requires input text. Optional parameters include speed (0.25-4.0, default 1.0) "
         "and audio format (mp3, opus, aac, flac, wav, pcm, default mp3)."
     )
-    args_schema: type[BaseModel] = VeniceAudioInput
+    args_schema: ArgsSchema | None = VeniceAudioInput
 
     async def _arun(
         self,

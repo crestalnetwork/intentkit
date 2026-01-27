@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -70,7 +71,7 @@ class TokenBalances(PortfolioBaseTool):
         "Get token balances for a specific wallet address and their token prices in USD. "
         "Includes options to exclude spam and unverified contracts."
     )
-    args_schema: type[BaseModel] = TokenBalancesInput
+    args_schema: ArgsSchema | None = TokenBalancesInput
 
     async def _arun(
         self,

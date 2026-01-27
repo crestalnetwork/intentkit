@@ -3,7 +3,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.x402.base import X402BaseSkill
@@ -49,7 +49,7 @@ class X402HttpRequest(X402BaseSkill):
         "Provide the method, absolute URL, optional headers, query parameters, and request body. "
         "Returns the response status and body text."
     )
-    args_schema: type[BaseModel] = X402HttpRequestInput
+    args_schema: ArgsSchema | None = X402HttpRequestInput
 
     async def _arun(
         self,

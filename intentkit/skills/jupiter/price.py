@@ -1,5 +1,4 @@
-from typing import Type
-
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.jupiter.base import JupiterBaseTool
@@ -16,7 +15,7 @@ class JupiterGetPrice(JupiterBaseTool):
     description: str = (
         "Get the current price of Solana tokens in USD using Jupiter Price API."
     )
-    args_schema: Type[BaseModel] = JupiterGetPriceInput
+    args_schema: ArgsSchema | None = JupiterGetPriceInput
 
     async def _arun(
         self,

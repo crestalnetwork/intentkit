@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.token.base import TokenBaseTool
@@ -53,7 +54,7 @@ class TokenPrice(TokenBaseTool):
         "Get the token price denominated in the blockchain's native token and USD for a given token contract address. "
         "Returns price, token information and exchange data."
     )
-    args_schema: type[BaseModel] = TokenPriceInput
+    args_schema: ArgsSchema | None = TokenPriceInput
 
     async def _arun(
         self,

@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 import httpx
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.aixbt.base import AIXBTBaseTool
@@ -53,7 +53,7 @@ class AIXBTProjects(AIXBTBaseTool):
         "detailed information on recent developments. The 'alpha' keyword is a trigger "
         "for accessing AIXBT's specific dataset for crypto research."
     )
-    args_schema: type[BaseModel] = ProjectsInput
+    args_schema: ArgsSchema | None = ProjectsInput
 
     async def _arun(
         self,

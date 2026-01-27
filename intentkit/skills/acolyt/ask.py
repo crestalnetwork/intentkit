@@ -2,6 +2,7 @@ import logging
 from typing import Any, Literal
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.acolyt.base import AcolytBaseTool
@@ -63,7 +64,7 @@ class AcolytAskGpt(AcolytBaseTool):
         DEX & Trading: 24h volume, top DEX liquidity, buy/sell ratio, price change comparison, high liquidity pairs.
         Overall: Smart engagement/market cap ratio, mindshare/market cap ratio, smart follower percentage comparison across top AI agents.
         """
-    args_schema: type[BaseModel] = AcolytAskGptInput
+    args_schema: ArgsSchema | None = AcolytAskGptInput
 
     async def _arun(self, question: str, **kwargs) -> dict[str, Any]:
         """Run the tool to get answer from Acolyt GPT.

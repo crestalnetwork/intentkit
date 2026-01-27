@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, ValidationError
 
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
@@ -44,7 +45,7 @@ class GetTokenPairs(DexScreenerBaseTool):
         "DEX information, liquidity, volume, and pricing data for each pair. "
         "Use this tool to analyze all available trading venues and liquidity sources for a specific token."
     )
-    args_schema: type[BaseModel] = GetTokenPairsInput
+    args_schema: ArgsSchema | None = GetTokenPairsInput
 
     async def _arun(
         self,

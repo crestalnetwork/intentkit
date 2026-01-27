@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.models.agent import AgentAutonomous
@@ -52,7 +53,7 @@ class AddAutonomousTask(SystemBaseTool):
         "If the user does not explicitly state that the condition task should be executed continuously, "
         "then add in the task prompt that it will delete itself after successful execution. "
     )
-    args_schema: type[AddAutonomousTaskInput] = AddAutonomousTaskInput
+    args_schema: ArgsSchema | None = AddAutonomousTaskInput
 
     async def _arun(
         self,

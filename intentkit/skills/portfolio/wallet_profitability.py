@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -42,7 +42,7 @@ class WalletProfitability(PortfolioBaseTool):
         "Retrieve detailed profitability breakdown for a wallet, including profit/loss per token, "
         "average buy/sell prices, and realized profits. Can be filtered by specific tokens."
     )
-    args_schema: type[BaseModel] = WalletProfitabilityInput
+    args_schema: ArgsSchema | None = WalletProfitabilityInput
 
     async def _arun(
         self,

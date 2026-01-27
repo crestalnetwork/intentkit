@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -84,7 +85,7 @@ class FetchNationMetrics(DuneBaseTool):
         "Supports predefined metrics, direct query IDs, or all configured metrics if none specified. "
         "Handles rate limits with retries."
     )
-    args_schema: type[BaseModel] = NationMetricsInput
+    args_schema: ArgsSchema | None = NationMetricsInput
 
     def normalize_metric(self, metric: str) -> str:
         """Normalize a metric string for matching.

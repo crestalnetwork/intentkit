@@ -1,5 +1,6 @@
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.slack.base import SlackBaseTool, SlackChannel
@@ -23,7 +24,7 @@ class SlackGetChannel(SlackBaseTool):
 
     name: str = "slack_get_channel"
     description: str = "Get information about a Slack channel by ID or name"
-    args_schema: type[BaseModel] = SlackGetChannelSchema
+    args_schema: ArgsSchema | None = SlackGetChannelSchema
 
     async def _arun(
         self,

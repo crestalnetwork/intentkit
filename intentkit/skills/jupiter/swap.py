@@ -1,5 +1,4 @@
-from typing import Type
-
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.jupiter.base import JupiterBaseTool
@@ -28,7 +27,7 @@ class JupiterGetQuote(JupiterBaseTool):
         "Returns the best route and estimated output amount. "
         "Does NOT execute the swap."
     )
-    args_schema: Type[BaseModel] = JupiterGetQuoteInput
+    args_schema: ArgsSchema | None = JupiterGetQuoteInput
 
     async def _arun(
         self,

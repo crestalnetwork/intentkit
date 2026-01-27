@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from langchain_core.tools import ToolException
+from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
 
@@ -34,7 +34,7 @@ class SupabaseInsertData(SupabaseBaseTool):
 
     name: str = NAME
     description: str = PROMPT
-    args_schema: type[BaseModel] = SupabaseInsertDataInput
+    args_schema: ArgsSchema | None = SupabaseInsertDataInput
 
     async def _arun(
         self,

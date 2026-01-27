@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cookiefun.base import CookieFunBaseTool, logger
@@ -26,7 +27,7 @@ class GetAccountDetails(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_details"
     description: str = "Retrieves detailed information about a Twitter account including followers, following, posts, metrics, and engagement data."
-    args_schema: type[BaseModel] = GetAccountDetailsInput
+    args_schema: ArgsSchema | None = GetAccountDetailsInput
 
     async def _arun(
         self,

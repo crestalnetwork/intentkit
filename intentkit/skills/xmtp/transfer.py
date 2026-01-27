@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3.exceptions import ContractLogicError
 
@@ -29,7 +30,7 @@ class XmtpTransfer(XmtpBaseTool):
     that can be sent to users for signing. 
     Supports Ethereum, Polygon, Base, Arbitrum, and Optimism networks (both mainnet and testnet).
     """
-    args_schema: type[BaseModel] = TransferInput
+    args_schema: ArgsSchema | None = TransferInput
 
     async def _arun(
         self,

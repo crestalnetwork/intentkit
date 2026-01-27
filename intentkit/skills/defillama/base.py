@@ -3,7 +3,8 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from pydantic import BaseModel, Field
+from langchain_core.tools import ArgsSchema
+from pydantic import Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.skills.base import IntentKitSkill
@@ -26,8 +27,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: type[BaseModel]
-    base_url: str = Field(
+    args_schema: ArgsSchema | None = Field(
         default=DEFILLAMA_BASE_URL, description="Base URL for DeFi Llama API"
     )
 

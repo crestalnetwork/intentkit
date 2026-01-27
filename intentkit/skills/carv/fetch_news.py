@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -29,7 +30,7 @@ class FetchNewsTool(CarvBaseTool):
         "Fetches the latest news articles from the CARV API. "
         "Returns a list of news items, each with a title, URL, and a short summary (card_text)."
     )
-    args_schema: type[BaseModel] = CarvNewsInput
+    args_schema: ArgsSchema | None = CarvNewsInput
 
     async def _arun(
         self,  # type: ignore

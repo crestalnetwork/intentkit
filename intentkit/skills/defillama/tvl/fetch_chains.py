@@ -1,5 +1,6 @@
 """Tool for fetching chain TVL data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_chains
@@ -70,7 +71,7 @@ class DefiLlamaFetchChains(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_chains"
     description: str = FETCH_CHAINS_PROMPT
-    args_schema: type[BaseModel] = FetchChainsInput
+    args_schema: ArgsSchema | None = FetchChainsInput
 
     async def _arun(self, **kwargs) -> FetchChainsResponse:
         """Fetch TVL data for all chains.

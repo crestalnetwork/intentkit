@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.chainlist.base import ChainlistBaseTool
@@ -38,7 +39,7 @@ class ChainLookup(ChainlistBaseTool):
         "Look up blockchain RPC endpoints and details by chain name, symbol, or chain ID.\n"
         "Returns information about blockchains including RPC endpoints, native currency, and explorers."
     )
-    args_schema: type[BaseModel] = ChainLookupInput
+    args_schema: ArgsSchema | None = ChainLookupInput
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text for searching (lowercase, remove spaces)."""

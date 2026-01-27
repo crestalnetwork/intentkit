@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoCurrency
@@ -37,7 +38,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
 
     name: str = "cryptocompare_fetch_top_volume"
     description: str = "Fetch top cryptocurrencies ranked by 24-hour trading volume"
-    args_schema: type[BaseModel] = CryptoCompareFetchTopVolumeInput
+    args_schema: ArgsSchema | None = CryptoCompareFetchTopVolumeInput
 
     async def _arun(
         self,

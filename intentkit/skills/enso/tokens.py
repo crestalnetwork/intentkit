@@ -1,4 +1,5 @@
 import httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -131,7 +132,7 @@ class EnsoGetTokens(EnsoBaseTool):
         "Enso Finance Token Information Tool: Retrieves detailed token information from the Enso Finance API, "
         "including APY, symbol, address, protocol slug, token type, and underlying tokens."
     )
-    args_schema: type[BaseModel] = EnsoGetTokensInput
+    args_schema: ArgsSchema | None = EnsoGetTokensInput
 
     async def _arun(
         self,

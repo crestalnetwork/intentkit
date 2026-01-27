@@ -1,5 +1,6 @@
 """Tool for fetching pool data via DeFi Llama API."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pools
@@ -92,7 +93,7 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_pools"
     description: str = FETCH_POOLS_PROMPT
-    args_schema: None = None  # No input parameters needed
+    args_schema: ArgsSchema | None = None  # No input parameters needed
 
     async def _arun(self, **kwargs) -> FetchPoolsResponse:
         """Fetch pool data.

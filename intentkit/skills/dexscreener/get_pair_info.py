@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.dexscreener.base import DexScreenerBaseTool
@@ -39,7 +40,7 @@ class GetPairInfo(DexScreenerBaseTool):
         "market cap, FDV, transaction counts, and social links. "
         "Use this tool when you have a specific pair address and need detailed trading metrics."
     )
-    args_schema: type[BaseModel] = GetPairInfoInput
+    args_schema: ArgsSchema | None = GetPairInfoInput
 
     async def _arun(
         self,

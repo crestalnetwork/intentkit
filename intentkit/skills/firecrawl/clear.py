@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.models.skill import AgentSkillData
@@ -30,7 +31,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
         "This will permanently delete all indexed content and cannot be undone.\n"
         "Use this tool when you want to start fresh with new content."
     )
-    args_schema: type[BaseModel] = FirecrawlClearInput
+    args_schema: ArgsSchema | None = FirecrawlClearInput
 
     async def _arun(
         self,

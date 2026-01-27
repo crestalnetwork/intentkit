@@ -3,6 +3,7 @@ import logging
 
 import httpx
 from langchain_core.documents import Document
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.firecrawl.base import FirecrawlBaseTool
@@ -90,7 +91,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
         "Optionally indexes all crawled content for later querying using the firecrawl_query_indexed_content tool. "
         "Use this when you need to gather comprehensive information from a website."
     )
-    args_schema: type[BaseModel] = FirecrawlCrawlInput
+    args_schema: ArgsSchema | None = FirecrawlCrawlInput
 
     async def _arun(
         self,

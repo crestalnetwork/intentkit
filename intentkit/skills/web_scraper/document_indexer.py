@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.web_scraper.base import WebScraperBaseTool
@@ -64,7 +65,7 @@ class DocumentIndexer(WebScraperBaseTool):
         "Perfect for adding content from Google Docs, Notion pages, PDFs, or any other document sources. "
         "The indexed content can then be queried using the query_indexed_content tool."
     )
-    args_schema: type[BaseModel] = DocumentIndexerInput
+    args_schema: ArgsSchema | None = DocumentIndexerInput
 
     async def _arun(
         self,

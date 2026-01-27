@@ -1,7 +1,8 @@
 import logging
 from typing import Any
 
-from pydantic import BaseModel, HttpUrl
+from langchain_core.tools import ArgsSchema
+from pydantic import HttpUrl
 
 from intentkit.skills.base import ToolException
 from intentkit.skills.venice_image.image_vision.image_vision_base import (
@@ -27,7 +28,7 @@ class ImageVision(VeniceImageVisionBaseTool):
         "Provide the public URL of the image to describe.\n"
         "Returns a descriptive text of the image."
     )
-    args_schema: type[BaseModel] = VeniceImageVision
+    args_schema: ArgsSchema | None = VeniceImageVision
     # No model_id needed for the generic vision endpoint currently
 
     async def _arun(

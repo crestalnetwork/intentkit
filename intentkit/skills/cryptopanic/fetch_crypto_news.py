@@ -4,6 +4,7 @@ Fetches all news posts for BTC or ETH, sorted by publication date (newest first)
 """
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptopanic.base import CryptopanicBaseTool
@@ -45,7 +46,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
         "Fetches all crypto market news posts from CryptoPanic for BTC or ETH, "
         "sorted by publication date (newest first). Defaults to BTC."
     )
-    args_schema: type[BaseModel] = CryptopanicNewsInput
+    args_schema: ArgsSchema | None = CryptopanicNewsInput
 
     async def fetch_news(
         self,

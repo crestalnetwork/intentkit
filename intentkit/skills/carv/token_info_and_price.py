@@ -2,6 +2,7 @@ import logging
 import re
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -38,7 +39,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         "Useful for understanding a token's identity, ecosystem, and market value"
         "Use this tool when you need comprehensive token data and live pricing from CARV."
     )
-    args_schema: type[BaseModel] = TokenInfoAndPriceInput
+    args_schema: ArgsSchema | None = TokenInfoAndPriceInput
 
     async def _arun(
         self,

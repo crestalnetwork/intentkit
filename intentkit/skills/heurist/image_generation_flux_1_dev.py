@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class ImageGenerationFlux1Dev(HeuristBaseTool):
         "Flux.1-dev is a versatile, general-purpose model capable of generating images in any style.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: type[BaseModel] = ImageGenerationFlux1DevInput
+    args_schema: ArgsSchema | None = ImageGenerationFlux1DevInput
 
     async def _arun(
         self,

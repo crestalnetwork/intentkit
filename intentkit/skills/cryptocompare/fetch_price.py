@@ -2,6 +2,7 @@
 
 import logging
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool, CryptoPrice
@@ -39,7 +40,7 @@ class CryptoCompareFetchPrice(CryptoCompareBaseTool):
     description: str = (
         "Fetch real-time cryptocurrency price data with multi-currency support"
     )
-    args_schema: type[BaseModel] = CryptoCompareFetchPriceInput
+    args_schema: ArgsSchema | None = CryptoCompareFetchPriceInput
 
     async def _arun(
         self,

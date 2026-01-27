@@ -6,7 +6,7 @@ from typing import Literal
 
 import openai
 from epyxid import XID
-from pydantic import BaseModel
+from langchain_core.tools import ArgsSchema
 
 from intentkit.clients.s3 import store_image_bytes
 from intentkit.skills.openai.base import OpenAIBaseTool
@@ -25,7 +25,7 @@ class GPTImageMiniGenerator(OpenAIBaseTool):
         "GPT-Image-1-Mini delivers high-quality images with faster performance at a lower cost.\n"
         "You can specify size, quality, and background parameters for more control.\n"
     )
-    args_schema: type[BaseModel] = GPTImageGenerationInput
+    args_schema: ArgsSchema | None = GPTImageGenerationInput
 
     async def _arun(
         self,

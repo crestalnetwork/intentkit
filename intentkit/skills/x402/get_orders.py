@@ -7,6 +7,7 @@ import logging
 from decimal import Decimal
 from typing import override
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.models.x402_order import X402Order
@@ -63,7 +64,7 @@ class X402GetOrders(X402BaseSkill):
         "Returns the most recent orders including URL, description, amount, and transaction hash. "
         "Use this to review past payment activities."
     )
-    args_schema: type[X402GetOrdersInput] = X402GetOrdersInput
+    args_schema: ArgsSchema | None = X402GetOrdersInput
 
     @override
     async def _arun(

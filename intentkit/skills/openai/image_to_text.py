@@ -3,6 +3,7 @@ import logging
 
 import aiohttp
 import openai
+from langchain_core.tools import ArgsSchema
 from PIL import Image
 from pydantic import BaseModel, Field
 
@@ -45,7 +46,7 @@ class ImageToText(OpenAIBaseTool):
         "Provide a URL to the image to analyze and get a comprehensive textual description.\n"
         "Optimized for DALL-E generated images and preserves as many details as possible."
     )
-    args_schema: type[BaseModel] = ImageToTextInput
+    args_schema: ArgsSchema | None = ImageToTextInput
 
     async def _arun(self, image: str, **kwargs) -> ImageToTextOutput:
         """Implementation of the tool to convert images to text.

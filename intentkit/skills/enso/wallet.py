@@ -1,6 +1,7 @@
 from typing import Literal
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
@@ -35,7 +36,7 @@ class EnsoGetWalletBalances(EnsoBaseTool):
     description: str = (
         "Retrieve token balances of a wallet on a specified blockchain network."
     )
-    args_schema: type[BaseModel] = EnsoGetBalancesInput
+    args_schema: ArgsSchema | None = EnsoGetBalancesInput
 
     async def _arun(
         self,
@@ -107,7 +108,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
     description: str = (
         "Retrieve token spend approvals for a wallet on a specified blockchain network."
     )
-    args_schema: type[BaseModel] = EnsoGetApprovalsInput
+    args_schema: ArgsSchema | None = EnsoGetApprovalsInput
 
     async def _arun(
         self,
@@ -192,7 +193,7 @@ class EnsoWalletApprove(EnsoBaseTool):
         "network. It should only be used when the user explicitly requests to broadcast an approval transaction "
         "with a specific amount for a certain token."
     )
-    args_schema: type[BaseModel] = EnsoWalletApproveInput
+    args_schema: ArgsSchema | None = EnsoWalletApproveInput
     response_format: str = "content_and_artifact"
 
     async def _arun(

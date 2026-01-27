@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image
@@ -52,7 +53,7 @@ class ImageGenerationArthemyComics(HeuristBaseTool):
         "ArthemyComics specializes in creating vibrant, stylized comic book illustrations.\n"
         "If you have height and width, remember to specify them.\n"
     )
-    args_schema: type[BaseModel] = ImageGenerationArthemyComicsInput
+    args_schema: ArgsSchema | None = ImageGenerationArthemyComicsInput
 
     async def _arun(
         self,

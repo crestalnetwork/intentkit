@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.portfolio.base import PortfolioBaseTool
@@ -46,7 +47,7 @@ class WalletNetWorth(PortfolioBaseTool):
         "Get the net worth of a wallet in USD across multiple chains. "
         "Filters out spam tokens and low-liquidity assets for more accurate results."
     )
-    args_schema: type[BaseModel] = WalletNetWorthInput
+    args_schema: ArgsSchema | None = WalletNetWorthInput
 
     async def _arun(
         self,

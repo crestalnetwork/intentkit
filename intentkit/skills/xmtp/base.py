@@ -25,7 +25,8 @@ class XmtpBaseTool(IntentKitOnChainSkill):
         "optimism-mainnet": "optimism",
     }
 
-    category: str = "TEMP_MARKER"
+    @property
+    def category(self) -> str:
         return "xmtp"
 
     def validate_network_and_get_chain_id(

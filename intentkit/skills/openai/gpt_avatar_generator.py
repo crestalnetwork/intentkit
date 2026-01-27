@@ -5,6 +5,7 @@ import logging
 
 import openai
 from epyxid import XID
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.clients.s3 import store_image_bytes
@@ -34,7 +35,7 @@ class GPTAvatarGenerator(OpenAIBaseTool):
     description: str = (
         "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model."
     )
-    args_schema: type[BaseModel] = GPTAvatarGeneratorInput
+    args_schema: ArgsSchema | None = GPTAvatarGeneratorInput
 
     async def _arun(self, prompt: str, **kwargs) -> str:
         """Generate avatar-friendly images using OpenAI's GPT-Image-1-Mini model."""

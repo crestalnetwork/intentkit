@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.github.base import GitHubBaseTool
@@ -53,7 +54,7 @@ class GitHubSearch(GitHubBaseTool):
         "- Code snippets across GitHub repositories\n"
         "You must call this tool whenever the user asks about finding something on GitHub."
     )
-    args_schema: type[BaseModel] = GitHubSearchInput
+    args_schema: ArgsSchema | None = GitHubSearchInput
 
     async def _arun(
         self,

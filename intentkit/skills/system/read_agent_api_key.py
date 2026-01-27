@@ -1,3 +1,4 @@
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config
@@ -35,7 +36,7 @@ class ReadAgentApiKey(SystemBaseTool):
         "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
         "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
-    args_schema: type[ReadAgentApiKeyInput] = ReadAgentApiKeyInput
+    args_schema: ArgsSchema | None = ReadAgentApiKeyInput
 
     async def _arun(self, **kwargs) -> ReadAgentApiKeyOutput:
         """Retrieve or generate an API key for the agent."""

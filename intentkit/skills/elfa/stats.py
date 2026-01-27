@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from .base import ElfaBaseTool
@@ -43,7 +44,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
     description: str = """Get comprehensive social media metrics for a username including smart following count, 
     engagement scores, and follower analytics. Use this for competitor analysis, influencer identification, 
     and social media performance audits."""
-    args_schema: type[BaseModel] = ElfaGetSmartStatsInput
+    args_schema: ArgsSchema | None = ElfaGetSmartStatsInput
 
     async def _arun(self, username: str, **kwargs) -> ElfaGetSmartStatsOutput:
         """
