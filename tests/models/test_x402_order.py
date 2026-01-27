@@ -45,6 +45,7 @@ async def test_create_x402_order(monkeypatch):
         asset="USDC",
         network="base-mainnet",
         pay_to="0x1234567890abcdef",
+        payer="0xpayer_address",
         tx_hash="0xabcdef123456",
         status="success",
         error=None,
@@ -72,6 +73,7 @@ async def test_create_x402_order(monkeypatch):
     assert result.asset == "USDC"
     assert result.network == "base-mainnet"
     assert result.pay_to == "0x1234567890abcdef"
+    assert result.payer == "0xpayer_address"
     assert result.tx_hash == "0xabcdef123456"
     assert result.status == "success"
     assert result.error is None
@@ -108,6 +110,7 @@ async def test_create_x402_order_minimal(monkeypatch):
         asset="USDC",
         network="base-sepolia",
         pay_to="0xabcdef1234567890",
+        payer="0xpayer_address",
         status="success",
     )
 
@@ -138,6 +141,7 @@ def test_x402_order_table_model():
         asset="USDC",
         network="base-mainnet",
         pay_to="0x9876543210",
+        payer="0xpayer_address",
         status="failed",
         error="Insufficient funds",
         created_at=datetime.now(),
