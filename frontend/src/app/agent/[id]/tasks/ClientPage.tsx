@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import cronstrue from "cronstrue";
 import {
   Card,
   CardContent,
@@ -290,9 +291,22 @@ export default function AgentTasksPage() {
                         <span className="font-semibold text-muted-foreground">
                           Schedule:{" "}
                         </span>
-                        {task.cron
-                          ? `Cron: ${task.cron}`
-                          : `Every ${task.minutes} minutes`}
+                        {task.cron ? (
+                          <div className="flex flex-col">
+                            <span>{(() => {
+                              try {
+                                return cronstrue.toString(task.cron);
+                              } catch (e) {
+                                return task.cron;
+                              }
+                            })()}</span>
+                            <span className="text-xs text-muted-foreground font-mono mt-0.5">
+                              {task.cron}
+                            </span>
+                          </div>
+                        ) : (
+                          `Every ${task.minutes} minutes`
+                        )}
                       </div>
                       <div>
                         <span className="font-semibold text-muted-foreground">
