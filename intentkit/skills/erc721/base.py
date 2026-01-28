@@ -6,4 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class ERC721BaseTool(CDPBaseTool):
     """Base class for ERC721 tools."""
 
-    category: str = "TEMP_MARKER"
+    category: str = "erc721"

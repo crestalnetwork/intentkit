@@ -6,4 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class SuperfluidBaseTool(CDPBaseTool):
     """Base class for Superfluid tools."""
 
-    category: str = "TEMP_MARKER"
+    category: str = "superfluid"

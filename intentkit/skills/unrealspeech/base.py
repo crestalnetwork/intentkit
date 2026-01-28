@@ -25,4 +25,4 @@ class UnrealSpeechBaseTool(IntentKitSkill):
                 f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for UnrealSpeech."
             )
 
-    category: str = "TEMP_MARKER"
+    category: str = "unrealspeech"

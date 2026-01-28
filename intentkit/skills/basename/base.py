@@ -6,4 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class BasenameBaseTool(CDPBaseTool):
     """Base class for Basename tools."""
 
-    category: str = "TEMP_MARKER"
+    category: str = "basename"

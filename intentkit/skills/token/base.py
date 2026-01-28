@@ -19,7 +19,7 @@ class TokenBaseTool(IntentKitSkill):
     including making HTTP requests to the Moralis API.
     """
 
-    category: str = "TEMP_MARKER"
+    category: str = "token"
 
     def get_api_key(self) -> str:
         """Get API key from agent config or system config.

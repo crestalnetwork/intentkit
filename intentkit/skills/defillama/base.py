@@ -31,7 +31,7 @@ class DefiLlamaBaseTool(IntentKitSkill):
         default=DEFILLAMA_BASE_URL, description="Base URL for DeFi Llama API"
     )
 
-    category: str = "TEMP_MARKER"
+    category: str = "defillama"
 
     async def check_rate_limit(
         self, context: AgentContext, max_requests: int = 30, interval: int = 5

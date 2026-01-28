@@ -25,4 +25,4 @@ class TavilyBaseTool(IntentKitSkill):
                 f"Invalid API key provider: {api_key_provider}, or no api_key in config"
             )
 
-    category: str = "TEMP_MARKER"
+    category: str = "tavily"

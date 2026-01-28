@@ -6,4 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class WowBaseTool(CDPBaseTool):
     """Base class for WOW tools."""
 
-    category: str = "TEMP_MARKER"
+    category: str = "wow"

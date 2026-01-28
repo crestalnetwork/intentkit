@@ -19,7 +19,7 @@ class CarvBaseTool(IntentKitSkill):
 
     name: str = Field(description="Tool name")  # type: ignore
     description: str = Field(description="Tool description")
-    args_schema: ArgsSchema | None = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = None
 
     def get_api_key(self) -> str:
         """

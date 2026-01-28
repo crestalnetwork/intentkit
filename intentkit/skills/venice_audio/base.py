@@ -15,7 +15,7 @@ class VeniceAudioBaseTool(IntentKitSkill):
 
     name: str = Field(default="venice_base_tool", description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = "TEMP_MARKER"
+    args_schema: ArgsSchema | None = None
 
     def validate_voice_model(
         self, context, voice_model: str

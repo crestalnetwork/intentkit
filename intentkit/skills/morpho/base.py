@@ -6,4 +6,4 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class MorphoBaseTool(CDPBaseTool):
     """Base class for Morpho tools."""
 
-    category: str = "TEMP_MARKER"
+    category: str = "morpho"

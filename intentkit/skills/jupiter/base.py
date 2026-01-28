@@ -27,7 +27,7 @@ class JupiterBaseTool(IntentKitSkill):
         super().__init__(**kwargs)
         self.api_key = api_key
 
-    category: str = "TEMP_MARKER"
+    category: str = "jupiter"
 
     async def _make_request(
         self,

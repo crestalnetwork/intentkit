@@ -99,7 +99,7 @@ class EnsoBaseTool(IntentKitOnChainSkill):
             )
         return int(network_id)
 
-    category: str = "TEMP_MARKER"
+    category: str = "enso"
 
 
 def format_amount_with_decimals(amount: object, decimals: int | None) -> str | None:

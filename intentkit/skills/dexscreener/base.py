@@ -21,7 +21,7 @@ class DexScreenerBaseTool(IntentKitSkill):
 
     base_url: str = DEXSCREENER_BASE_URL
 
-    category: str = "TEMP_MARKER"
+    category: str = "dexscreener"
 
     async def _get(
         self,
