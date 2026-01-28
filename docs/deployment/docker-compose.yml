@@ -1,4 +1,7 @@
-version: "3.8"
+volumes:
+  postgres_data:
+  rustfs_data:
+  redis_data:
 
 services:
   db:
@@ -8,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-intentkit}
     volumes:
-      - ./pg_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
@@ -32,10 +35,22 @@ services:
       timeout: 20s
       retries: 3
 
+  redis:
+    image: redis:8.4-bookworm
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   intent-api:
     image: crestal/intentkit:latest
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       - ENV=${ENV:-local}
@@ -50,6 +65,9 @@ services:
       - CDP_API_KEY_ID=${CDP_API_KEY_ID}
       - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
       - AWS_S3_SECRET_ACCESS_KEY=${AWS_S3_SECRET_ACCESS_KEY:-minioadmin}
@@ -64,31 +82,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      - ENV=${ENV:-local}
-      - RELEASE=${RELEASE:-local}
-      - DB_USERNAME=${POSTGRES_USER:-postgres}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=${POSTGRES_DB:-intentkit}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
-      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
-      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
-      - AWS_S3_ENDPOINT_URL=http://rustfs:9000
-      - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
-      - AWS_S3_SECRET_ACCESS_KEY=${AWS_S3_SECRET_ACCESS_KEY:-minioadmin}
-      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
-      - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
-      - INTERNAL_BASE_URL=http://api:8000
-    command: python -m app.autonomous
-
-  intent-scheduler:
-    image: crestal/intentkit:latest
-    depends_on:
-      db:
+      redis:
         condition: service_healthy
     environment:
       - ENV=${ENV:-local}
@@ -103,13 +97,43 @@ services:
       - CDP_API_KEY_ID=${CDP_API_KEY_ID}
       - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - AWS_S3_ENDPOINT_URL=http://rustfs:9000
+      - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
+      - AWS_S3_SECRET_ACCESS_KEY=${AWS_S3_SECRET_ACCESS_KEY:-minioadmin}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
+      - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
+      - INTERNAL_BASE_URL=http://api:8000
+    command: python -m app.autonomous
+
+  intent-scheduler:
+    image: crestal/intentkit:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - ENV=${ENV:-local}
+      - RELEASE=${RELEASE:-local}
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-intentkit}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
+      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
+      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
       - AWS_S3_SECRET_ACCESS_KEY=${AWS_S3_SECRET_ACCESS_KEY:-minioadmin}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
     command: python -m app.scheduler
-
-volumes:
-  postgres_data:
-  rustfs_data:

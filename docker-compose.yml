@@ -1,6 +1,7 @@
 volumes:
   postgres_data:
   rustfs_data:
+  redis_data:
 
 services:
   db:
@@ -34,6 +35,16 @@ services:
       timeout: 20s
       retries: 3
 
+  redis:
+    image: redis:8.4-bookworm
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   intent-api:
     build: .
     volumes:
@@ -42,6 +53,8 @@ services:
       - ./app:/app/app
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       - ENV=${ENV:-local}
@@ -56,6 +69,9 @@ services:
       - CDP_API_KEY_ID=${CDP_API_KEY_ID}
       - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
       - AWS_S3_CDN_URL=http://localhost:9000
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
@@ -75,6 +91,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - ENV=${ENV:-local}
       - RELEASE=${RELEASE:-local}
@@ -88,6 +106,9 @@ services:
       - CDP_API_KEY_ID=${CDP_API_KEY_ID}
       - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
       - AWS_S3_CDN_URL=http://localhost:9000
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
@@ -106,6 +127,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - ENV=${ENV:-local}
       - RELEASE=${RELEASE:-local}
@@ -119,6 +142,9 @@ services:
       - CDP_API_KEY_ID=${CDP_API_KEY_ID}
       - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
       - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
       - AWS_S3_CDN_URL=http://localhost:9000
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_ID:-minioadmin}
