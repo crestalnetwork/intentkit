@@ -9,56 +9,63 @@ requires-python = "==3.13.*"
 readme = "intentkit/README.md"
 license = { file = "intentkit/LICENSE" }
 dependencies = [
+    # AWS
     "aws-secretsmanager-caching>=1.1.3",
     "boto3>=1.37.23,<2.0.0",
     "botocore>=1.35.97",
-    "coinbase-agentkit>=0.7.2",
-    "cron-validator>=1.0.8,<2.0.0",
-    "epyxid>=0.3.3",
+    "mypy-boto3-s3>=1.37.24,<2.0.0",
+    # Web framework
     "fastapi>=0.115.8",
-    "filetype>=1.2.0,<2.0.0",
+    "starlette>=0.47.1",
+    "uvicorn>=0.34.0,<1.0.0",
     "httpx>=0.28.1",
-    "jsonref>=1.1.0",
+    "aiohttp>=3.11.16",
+    # Database
+    "psycopg>=3.2.9",
+    "psycopg-pool>=3.2.4",
+    "asyncpg>=0.30.0",
+    "aiosqlite>=0.21.0",
+    "sqlalchemy[asyncio]>=2.0.37",
+    "redis>=5.2.1,<8.0.0",
+    "supabase>=2.16.0",
+    # LangChain & LLM
     "langchain>=0.3.25",
     "langchain-community>=0.3.19",
     "langchain-core>=0.3.43",
-    "langchain-mcp-adapters>=0.0.11",
     "langchain-openai>=0.3.8",
     "langchain-text-splitters>=0.3.8",
     "langchain-xai>=0.2.1",
+    "langchain-deepseek>=0.1.4",
+    "langchain-google-genai>=3.2.0",
     "langgraph>=0.6.1",
     "langgraph-checkpoint>=2.0.18",
     "langgraph-checkpoint-postgres>=2.0.16",
     "langgraph-prebuilt>=0.6.1",
-    "mypy-boto3-s3>=1.37.24,<2.0.0",
     "openai>=1.59.6",
+    # Blockchain / Web3
+    "coinbase-agentkit>=0.7.2",
+    "cdp-sdk>=1.31.1",
+    "web3>=7.10.0",
+    "eth-abi>=5.0.0",
+    "eth-keys>=0.4.0",
+    "eth-utils>=2.1.0",
+    "x402>=0.2.1",
+    # Social platforms
+    "slack-sdk>=3.34.0",
+    "tweepy[async]>=4.15.0",
+    # Utilities
+    "cron-validator>=1.0.8,<2.0.0",
+    "epyxid>=0.3.3",
+    "filetype>=1.2.0,<2.0.0",
+    "jsonref>=1.1.0",
     "pillow>=11.1.0,<13.0.0",
-    "psycopg>=3.2.9",
-    "psycopg-pool>=3.2.4",
     "pydantic>=2.10.6",
     "python-dotenv>=1.0.1",
     "pytz>=2025.1",
     "pyyaml>=6.0.2",
-    "redis>=5.2.1,<8.0.0",
     "requests>=2.32.3",
-    "slack-sdk>=3.34.0",
-    "sqlalchemy[asyncio]>=2.0.37",
-    "supabase>=2.16.0",
-    "tweepy[async]>=4.15.0",
-    "uvicorn>=0.34.0,<1.0.0",
-    "eth-abi>=5.0.0",
-    "eth-keys>=0.4.0",
-    "eth-utils>=2.1.0",
-    "cdp-sdk>=1.31.1",
-    "web3>=7.10.0",
-    "aiohttp>=3.11.16",
-    "starlette>=0.47.1",
-    "tenacity>=9.1.2",
     "requests-oauthlib>=2.0.0",
-    "asyncpg>=0.30.0",
-    "aiosqlite>=0.21.0",
-    "langchain-deepseek>=0.1.4",
-    "langchain-google-genai>=3.2.0",
+    "tenacity>=9.1.2",
 ]
 keywords = ["ai", "agent", "intent", "blockchain", "crypto"]
 classifiers = [
@@ -78,35 +85,41 @@ Documentation = "https://github.com/crestalnetwork/intentkit/tree/main/docs"
 "Bug Tracker" = "https://github.com/crestalnetwork/intentkit/issues"
 
 [dependency-groups]
-dev = [
+# App runtime dependencies (app/ folder needs these beyond intentkit)
+app = [
     "aiogram>=3.17.0",
-    "alembic>=1.14.0",
-    "anyio>=4.8.0",
     "APScheduler>=3.11.0",
-    "beautifulsoup4>=4.13.4",
-    "deptry>=0.23.0",
     "discord.py>=2.3.2",
-    "faiss-cpu>=1.11.0",
     "gunicorn>=23.0.0",
-    "jsonschema>=4.24.0",
-    "langchain-postgres>=0.0.13",
-    "pgvector>=0.3.6",
-    "psycopg2-binary>=2.9.10,<3.0.0",
     "pydantic-settings>=2.8.1",
-    "pytest>=8.4.0",
-    "pytest-asyncio>=1.2.0",
     "python-multipart>=0.0.20",
-    "pyjwt>=2.10.1",
-    "ruff>=0.11.9",
     "sentry-sdk[fastapi]>=2.20.0",
     "telegramify-markdown>=0.5.0,<0.6.0",
-    "x402>=0.2.1",
+]
+# Development-only dependencies (testing, linting, local dev tools)
+dev = [
+    # Include app dependencies for local development
+    { include-group = "app" },
+    # Testing
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.2.0",
+    # Linting and code quality
+    "ruff>=0.11.9",
+    "deptry>=0.23.0",
+    # Database migrations
+    "alembic>=1.14.0",
+    # Local LLM testing
     "langchain-ollama>=0.2.0",
 ]
 
 [tool.uv]
 package = true
 default-groups = ["dev"]
+
+# Override bcl to >=3.0.0 because 2.x lacks Linux ARM64 (aarch64) wheels,
+# causing source builds to fail on Python 3.13 (pkgutil.ImpImporter removed).
+# bcl 3.0.0 has manylinux_2_17_aarch64 wheels that work on ARM64 Docker builds.
+override-dependencies = ["bcl>=3.0.0"]
 
 
 [tool.basedpyright]

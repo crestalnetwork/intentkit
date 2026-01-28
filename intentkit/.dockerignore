@@ -1,0 +1,78 @@
+# Virtual environments (** matches nested directories too)
+**/.venv/
+**/venv/
+**/env/
+**/ENV/
+
+# Frontend build artifacts and dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Git
+.git/
+.gitignore
+
+# IDE and editor
+.idea/
+.vscode/
+.cursor/
+.zed/
+.claude/
+*.swp
+*.swo
+
+# Python cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/dist/
+**/build/
+*.egg
+
+# macOS
+.DS_Store
+
+# Environment files (sensitive)
+.env
+*.env
+!example.env
+
+# Test and coverage
+htmlcov/
+.coverage
+.coverage.*
+.tox/
+.nox/
+
+# Documentation
+docs/
+
+# Development files
+*.md
+!intentkit/README.md
+LICENSE
+CONTRIBUTING.md
+DEVELOPMENT.md
+SECURITY.md
+
+# Scripts not needed in production
+scripts/
+
+# Tests
+tests/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local development artifacts
+wallet_data.txt
+*.response
