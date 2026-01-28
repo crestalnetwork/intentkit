@@ -1,8 +1,6 @@
-## v0.9.10
+### Fixes
 
-### Improvements
+- Made `payer` field in `X402Order` optional to support older records and cases where payer information is missing.
+- Added unit tests for ensuring `X402Order` creation works without `payer` field.
 
-- Updated release operations guide for better clarity and correct sequencing.
-- Synchronized dependency lock file with correct package version.
-
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.9...v0.9.10)
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.11...v0.9.12)
