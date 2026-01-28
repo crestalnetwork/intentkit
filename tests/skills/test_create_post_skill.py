@@ -70,6 +70,7 @@ async def test_create_post_success(mock_runtime, mock_db_session):
 
     mock_agent = MagicMock()
     mock_agent.name = "Test Agent"
+    mock_agent.picture = "https://example.com/avatar.png"
     with patch(
         "intentkit.core.agent.get_agent",
         new=AsyncMock(return_value=mock_agent),

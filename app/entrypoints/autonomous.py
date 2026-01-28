@@ -2,6 +2,7 @@ import logging
 
 from epyxid import XID
 
+from intentkit.core.agent import get_agent
 from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.client import execute_agent
@@ -31,7 +32,16 @@ async def run_autonomous_task(
     """
     logger.info(f"Running autonomous task {task_id} for agent {agent_id}")
 
+    # Initialize agent info variables before try block so they're always available
+    agent_name: str | None = None
+    agent_picture: str | None = None
+
     try:
+        # Get agent info first for use in activities
+        agent = await get_agent(agent_id)
+        agent_name = agent.name if agent else None
+        agent_picture = agent.picture if agent else None
+
         # Run the autonomous action
         chat_id = f"autonomous-{task_id}"
 
@@ -45,6 +55,7 @@ async def run_autonomous_task(
             except Exception as e:
                 # Log the error but continue with execution
                 logger.warning(f"Failed to clear thread memory for task {task_id}: {e}")
+
         message = ChatMessageCreate(
             id=str(XID()),
             agent_id=agent_id,
@@ -70,6 +81,8 @@ async def run_autonomous_task(
             try:
                 activity = AgentActivityCreate(
                     agent_id=agent_id,
+                    agent_name=agent_name,
+                    agent_picture=agent_picture,
                     text="Unexpected result: empty response",
                 )
                 _ = await create_agent_activity(activity)
@@ -93,6 +106,8 @@ async def run_autonomous_task(
                 try:
                     activity = AgentActivityCreate(
                         agent_id=agent_id,
+                        agent_name=agent_name,
+                        agent_picture=agent_picture,
                         text=error_text,
                     )
                     _ = await create_agent_activity(activity)
@@ -109,6 +124,8 @@ async def run_autonomous_task(
         try:
             activity = AgentActivityCreate(
                 agent_id=agent_id,
+                agent_name=agent_name,
+                agent_picture=agent_picture,
                 text=f"Autonomous task exception: {str(e)}",
             )
             _ = await create_agent_activity(activity)

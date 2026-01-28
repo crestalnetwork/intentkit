@@ -94,6 +94,13 @@ export function Timeline({ agentId, agentPicture }: TimelineProps) {
                                 ) : (
                                     <Bot className="h-4 w-4" />
                                 )
+                            ) : activity.agent_picture ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img 
+                                    src={activity.agent_picture} 
+                                    alt="Agent" 
+                                    className="h-full w-full object-cover"
+                                />
                             ) : (
                                 getActivityIcon(activity.activity_type || "default")
                             )}

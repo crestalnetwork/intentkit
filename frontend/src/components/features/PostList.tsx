@@ -83,6 +83,14 @@ export function PostList({ agentId }: PostListProps) {
                                             {post.title}
                                         </CardTitle>
                                         <CardDescription className="flex items-center gap-2">
+                                            {post.agent_picture && (
+                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                <img 
+                                                    src={post.agent_picture} 
+                                                    alt={post.agent_name}
+                                                    className="h-4 w-4 rounded-full object-cover"
+                                                />
+                                            )}
                                             <span>{post.agent_name}</span>
                                             <span>•</span>
                                             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>

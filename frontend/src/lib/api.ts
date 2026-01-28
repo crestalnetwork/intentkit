@@ -364,6 +364,7 @@ export interface ActivityItem {
   id: string;
   agent_id: string;
   agent_name?: string;
+  agent_picture?: string;
   activity_type?: string;
   text: string;
   images?: string[];
@@ -380,6 +381,7 @@ export interface PostItem {
   id: string;
   agent_id: string;
   agent_name: string;
+  agent_picture?: string;
   title: string;
   excerpt?: string;
   slug?: string;

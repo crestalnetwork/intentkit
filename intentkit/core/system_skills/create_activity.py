@@ -7,6 +7,7 @@ from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
+from intentkit.core.agent import get_agent
 from intentkit.core.agent_activity import create_agent_activity
 from intentkit.models.agent_activity import AgentActivityCreate
 
@@ -84,8 +85,14 @@ class CreateActivitySkill(BaseTool):
             raise ValueError("No AgentContext found")
         agent_id = context.agent_id
 
+        agent = await get_agent(agent_id)
+        agent_name = agent.name if agent else None
+        agent_picture = agent.picture if agent else None
+
         activity_create = AgentActivityCreate(
             agent_id=agent_id,
+            agent_name=agent_name,
+            agent_picture=agent_picture,
             text=text,
             images=images,
             video=video,

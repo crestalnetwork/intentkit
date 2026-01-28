@@ -32,6 +32,7 @@ async def test_create_agent_post(monkeypatch):
     post_create = AgentPostCreate(
         agent_id="agent-1",
         agent_name="Test Agent",
+        agent_picture="https://example.com/avatar.png",
         title="Test Post",
         markdown="Content",
         cover="image.jpg",
@@ -48,6 +49,8 @@ async def test_create_agent_post(monkeypatch):
     # Verify result
     assert isinstance(result, AgentPost)
     assert result.agent_id == "agent-1"
+    assert result.agent_name == "Test Agent"
+    assert result.agent_picture == "https://example.com/avatar.png"
     assert result.title == "Test Post"
     assert result.id == "post-123"
 
@@ -59,6 +62,7 @@ async def test_get_agent_post_cache_hit(monkeypatch):
         "id": post_id,
         "agent_id": "agent-1",
         "agent_name": "Cached Agent",
+        "agent_picture": "https://example.com/cached.png",
         "title": "Cached Post",
         "markdown": "Content",
         "cover": None,
@@ -86,6 +90,8 @@ async def test_get_agent_post_cache_hit(monkeypatch):
 
     assert isinstance(result, AgentPost)
     assert result.id == post_id
+    assert result.agent_name == "Cached Agent"
+    assert result.agent_picture == "https://example.com/cached.png"
     assert result.title == "Cached Post"
 
 
@@ -103,6 +109,7 @@ async def test_get_agent_post_cache_miss_db_hit(monkeypatch):
         id=post_id,
         agent_id="agent-1",
         agent_name="DB Agent",
+        agent_picture="https://example.com/db.png",
         title="DB Post",
         markdown="Content",
         cover=None,
@@ -129,6 +136,8 @@ async def test_get_agent_post_cache_miss_db_hit(monkeypatch):
     mock_redis.set.assert_called_once()
 
     assert isinstance(result, AgentPost)
+    assert result.agent_name == "DB Agent"
+    assert result.agent_picture == "https://example.com/db.png"
     assert result.title == "DB Post"
 
 
@@ -156,3 +165,41 @@ async def test_get_agent_post_db_miss(monkeypatch):
 
     assert result is None
     assert not mock_redis.set.called
+
+
+@pytest.mark.asyncio
+async def test_create_agent_post_with_none_picture(monkeypatch):
+    """Test creating post when agent_picture is None."""
+    # Mock session
+    mock_session = AsyncMock()
+    mock_session.add = MagicMock()
+
+    async def mock_refresh(obj):
+        obj.id = "post-456"
+        obj.created_at = datetime.now()
+
+    mock_session.refresh.side_effect = mock_refresh
+
+    mock_session_cls = MagicMock()
+    mock_session_cls.__aenter__.return_value = mock_session
+    mock_session_cls.__aexit__.return_value = None
+
+    monkeypatch.setattr(agent_post_module, "get_session", lambda: mock_session_cls)
+
+    # Create post without agent_picture (should default to None)
+    post_create = AgentPostCreate(
+        agent_id="agent-1",
+        agent_name="Test Agent",
+        title="Test Post",
+        markdown="Content",
+        tags=[],
+    )
+
+    result = await create_agent_post(post_create)
+
+    # Verify result
+    assert isinstance(result, AgentPost)
+    assert result.agent_id == "agent-1"
+    assert result.agent_name == "Test Agent"
+    assert result.agent_picture is None
+    assert result.title == "Test Post"

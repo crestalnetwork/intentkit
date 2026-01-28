@@ -31,6 +31,14 @@ class AgentPostBase(BaseModel):
             max_length=50,
         ),
     ]
+    agent_picture: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Picture URL of the agent who created the post",
+            max_length=1000,
+        ),
+    ] = None
     title: Annotated[
         str,
         PydanticField(
@@ -134,6 +142,13 @@ class AgentPostBrief(BaseModel):
             description="Name of the agent who created the post",
         ),
     ]
+    agent_picture: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Picture URL of the agent who created the post",
+        ),
+    ] = None
     title: Annotated[
         str,
         PydanticField(
@@ -186,6 +201,7 @@ class AgentPostBrief(BaseModel):
             id=table.id,
             agent_id=table.agent_id,
             agent_name=table.agent_name,
+            agent_picture=table.agent_picture,
             title=table.title,
             cover=table.cover,
             slug=table.slug,
@@ -217,6 +233,11 @@ class AgentPostTable(Base):
         nullable=False,
         default="",
         comment="Name of the agent who created the post",
+    )
+    agent_picture: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Picture URL of the agent who created the post",
     )
     title: Mapped[str] = mapped_column(
         String,

@@ -13,6 +13,12 @@ from intentkit.models.base import Base
 
 class AgentActivityBase(BaseModel):
     agent_id: Annotated[str, PydanticField(description="ID of the agent")]
+    agent_name: Annotated[
+        str | None, PydanticField(description="Name of the agent")
+    ] = None
+    agent_picture: Annotated[
+        str | None, PydanticField(description="Picture URL of the agent")
+    ] = None
     text: Annotated[str, PydanticField(description="Content of the activity")]
     images: Annotated[
         list[str] | None, PydanticField(description="List of image URLs")
@@ -43,6 +49,12 @@ class AgentActivityTable(Base):
     )
     agent_id: Mapped[str] = mapped_column(
         String, nullable=False, index=True, comment="ID of the agent"
+    )
+    agent_name: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Name of the agent"
+    )
+    agent_picture: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Picture URL of the agent"
     )
     text: Mapped[str] = mapped_column(String, nullable=False, comment="Content")
     images: Mapped[list[str] | None] = mapped_column(
