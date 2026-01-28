@@ -116,6 +116,7 @@ reportCallInDefaultInitializer = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
+reportImplicitStringConcatenation = false
 
 [build-system]
 requires = ["hatchling"]

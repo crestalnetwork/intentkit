@@ -60,28 +60,36 @@ def _build_agent_identity_section(agent: Agent) -> str:
     return "\n".join(identity_parts) + ("\n" if identity_parts else "")
 
 
-def _build_social_accounts_section(agent_data: AgentData) -> str:
+def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
     """Build social accounts information section."""
     if not agent_data:
         return ""
 
     social_parts = []
 
-    # Twitter info
-    if agent_data.twitter_id:
+    # Twitter info - only include if twitter skill is enabled
+    twitter_enabled = (
+        agent.skills
+        and "twitter" in agent.skills
+        and agent.skills["twitter"].get("enabled") is True
+    )
+
+    if twitter_enabled and agent_data.twitter_id:
         social_parts.append(
             f"Your twitter id is {agent_data.twitter_id}, never reply or retweet yourself."
         )
-    if agent_data.twitter_username:
-        social_parts.append(f"Your twitter username is {agent_data.twitter_username}.")
-    if agent_data.twitter_name:
-        social_parts.append(f"Your twitter name is {agent_data.twitter_name}.")
+        if agent_data.twitter_username:
+            social_parts.append(
+                f"Your twitter username is {agent_data.twitter_username}."
+            )
+        if agent_data.twitter_name:
+            social_parts.append(f"Your twitter name is {agent_data.twitter_name}.")
 
-    # Twitter verification status
-    if agent_data.twitter_is_verified:
-        social_parts.append("Your twitter account is verified.")
-    else:
-        social_parts.append("Your twitter account is not verified.")
+        # Twitter verification status
+        if agent_data.twitter_is_verified:
+            social_parts.append("Your twitter account is verified.")
+        else:
+            social_parts.append("Your twitter account is not verified.")
 
     # Telegram info
     if agent_data.telegram_id:
@@ -220,7 +228,7 @@ def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
     prompt_sections = [
         _build_system_header(),
         _build_agent_identity_section(agent),
-        _build_social_accounts_section(agent_data),
+        _build_social_accounts_section(agent, agent_data),
         _build_wallet_section(agent, agent_data),
         "\n",  # Add spacing before characteristics
         _build_agent_characteristics_section(agent),
