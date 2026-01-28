@@ -1,3 +1,12 @@
+## v0.9.13
+
+### Features
+
+- Add redundant agent info to activity and post models to optimize data retrieval and display.
+- Name and picture are now stored directly in AgentActivity and AgentPost records.
+
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.12...v0.9.13)
+
 ## v0.9.12
 
 ### Fixes
