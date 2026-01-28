@@ -41,7 +41,7 @@ class X402OrderBase(BaseModel):
     asset: Annotated[str, PydanticField(description="Payment asset (e.g., USDC)")]
     network: Annotated[str, PydanticField(description="Payment network")]
     pay_to: Annotated[str, PydanticField(description="Recipient address")]
-    payer: Annotated[str, PydanticField(description="Payer address")]
+    payer: Annotated[str | None, PydanticField(description="Payer address")] = None
     tx_hash: Annotated[str | None, PydanticField(description="Transaction hash")] = None
     status: Annotated[
         str, PydanticField(description="Status: pending, success, failed")
@@ -174,7 +174,9 @@ class X402OrderTable(Base):
     pay_to: Mapped[str] = mapped_column(
         String, nullable=False, comment="Recipient address"
     )
-    payer: Mapped[str] = mapped_column(String, nullable=False, comment="Payer address")
+    payer: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Payer address"
+    )
     tx_hash: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Transaction hash"
     )

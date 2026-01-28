@@ -151,3 +151,44 @@ def test_x402_order_table_model():
     assert table.agent_id == "agent-3"
     assert table.status == "failed"
     assert table.error == "Insufficient funds"
+
+
+@pytest.mark.asyncio
+async def test_create_x402_order_optional_payer(monkeypatch):
+    """Test creating an x402 order without payer field."""
+    # Mock session
+    mock_session = AsyncMock()
+    mock_session.add = MagicMock()
+
+    async def mock_refresh(obj):
+        obj.id = "order-789"
+        obj.created_at = datetime.now()
+
+    mock_session.refresh.side_effect = mock_refresh
+
+    mock_session_cls = MagicMock()
+    mock_session_cls.__aenter__.return_value = mock_session
+    mock_session_cls.__aexit__.return_value = None
+
+    monkeypatch.setattr(x402_order_module, "get_session", lambda: mock_session_cls)
+
+    order_create = X402OrderCreate(
+        agent_id="agent-3",
+        chat_id="chat-3",
+        skill_name="x402_pay",
+        method="POST",
+        url="https://example.com/api",
+        amount=500000,
+        asset="USDC",
+        network="base-mainnet",
+        pay_to="0x1234567890abcdef",
+        # payer is omitted
+        status="success",
+    )
+
+    result = await X402Order.create(order_create)
+
+    # Verify result
+    assert isinstance(result, X402Order)
+    assert result.payer is None
+    assert result.id == "order-789"
