@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 from eth_utils import is_address
 
@@ -15,9 +16,9 @@ from intentkit.models.user import User
 # ============================================================================
 
 # Base system prompt components
-INTENTKIT_PROMPT = """You are an AI agent built using IntentKit.
+INTENTKIT_PROMPT = """You are an AI agent created with IntentKit.
 Your tools are called 'skills'.
-If your skill fails to execute due to a technical error ask the user to try again later, don't retry by yourself. If someone asks you to do something you can't do with your currently available skills, you must say so, recommend them to submit their feedback to the IntentKit team at https://github.com/crestalnetwork/intentkit. Be concise and helpful with your responses."""
+"""
 
 ENSO_SKILLS_GUIDE = """## ENSO Skills Guide
 
@@ -36,15 +37,17 @@ user confirmation before broadcasting any approval transactions for security rea
 # ============================================================================
 
 
-def _build_system_header() -> str:
+def _build_system_header(agent: Agent, context: AgentContext) -> str:
     """Build the system prompt header."""
     prompt = "# SYSTEM PROMPT\n\n"
-    if config.system_prompt:
-        prompt += config.system_prompt + "\n\n"
+    prompt += f"Your agent id is {agent.id}. "
     if config.intentkit_prompt:
         prompt += config.intentkit_prompt + "\n\n"
     else:
         prompt += INTENTKIT_PROMPT + "\n\n"
+    if config.system_prompt:
+        prompt += config.system_prompt + "\n\n"
+    prompt += _build_system_skills_section(context)
     return prompt
 
 
@@ -205,7 +208,9 @@ def _build_skills_guides_section(agent: Agent) -> str:
     return "".join(guides)
 
 
-def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
+def build_agent_prompt(
+    agent: Agent, agent_data: AgentData, context: AgentContext
+) -> str:
     """
     Build the complete agent system prompt.
 
@@ -226,7 +231,7 @@ def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
         str: The complete system prompt
     """
     prompt_sections = [
-        _build_system_header(),
+        _build_system_header(agent, context),
         _build_agent_identity_section(agent),
         _build_social_accounts_section(agent, agent_data),
         _build_wallet_section(agent, agent_data),
@@ -245,9 +250,9 @@ def build_agent_prompt(agent: Agent, agent_data: AgentData) -> str:
 
 
 # Legacy function name for backward compatibility
-def agent_prompt(agent: Agent, agent_data: AgentData) -> str:
+def agent_prompt(agent: Agent, agent_data: AgentData, context: AgentContext) -> str:
     """Legacy function name. Use build_agent_prompt instead."""
-    return build_agent_prompt(agent, agent_data)
+    return build_agent_prompt(agent, agent_data, context)
 
 
 async def explain_prompt(message: str) -> str:
@@ -318,6 +323,17 @@ def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
         task_info += f". This task runs every {autonomous_task.minutes} minute(s)"
     elif autonomous_task.cron:
         task_info += f". This task runs on schedule: {autonomous_task.cron}"
+
+    # Add current time
+    current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    task_info += f". Current time is {current_time}"
+
+    # Add autonomous task guidelines
+    task_info += (
+        ". In autonomous task, you cannot ask the user for clarification or input. "
+        "You must make all decisions on your own. "
+        "If an error prevents the task from proceeding, use create_activity to report the issue to the user"
+    )
 
     return f"{task_info}. "
 
@@ -397,12 +413,8 @@ async def build_system_prompt(
 ) -> str:
     """Construct the final system prompt for an agent run."""
 
-    base_prompt = build_agent_prompt(agent, agent_data)
+    base_prompt = build_agent_prompt(agent, agent_data, context)
     final_system_prompt = await explain_prompt(escape_prompt(base_prompt))
-
-    system_skills_guide = _build_system_skills_section(context)
-    if system_skills_guide:
-        final_system_prompt = f"{final_system_prompt}{system_skills_guide}"
 
     entrypoint_prompt = await build_entrypoint_prompt(agent, context)
     if entrypoint_prompt:
@@ -411,9 +423,11 @@ async def build_system_prompt(
             f"{final_system_prompt}## Entrypoint rules{processed_entrypoint}\n\n"
         )
 
-    user_info = await _build_user_info_section(context)
-    if user_info:
-        final_system_prompt = f"{final_system_prompt}{user_info}"
+    # Skip user info section for autonomous tasks
+    if context.entrypoint != AuthorType.TRIGGER.value:
+        user_info = await _build_user_info_section(context)
+        if user_info:
+            final_system_prompt = f"{final_system_prompt}{user_info}"
 
     internal_info = build_internal_info_prompt(context)
     final_system_prompt = f"{final_system_prompt}{internal_info}"

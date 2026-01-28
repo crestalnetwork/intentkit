@@ -9,10 +9,12 @@ import logging
 from fastapi import APIRouter, Path, Response
 from fastapi.responses import PlainTextResponse
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent import get_agent
 from intentkit.core.engine import thread_stats
 from intentkit.core.prompt import agent_prompt
 from intentkit.models.agent_data import AgentData
+from intentkit.models.chat import AuthorType
 
 # init logger
 logger = logging.getLogger(__name__)
@@ -56,7 +58,16 @@ async def debug_agent_prompt(
         return "Agent not found"
     agent_data = await AgentData.get(agent_id)
 
-    init_prompt = agent_prompt(agent, agent_data)
+    # Create a minimal context for debugging
+    context = AgentContext(
+        agent_id=agent_id,
+        get_agent=lambda: agent,
+        chat_id="debug",
+        entrypoint=AuthorType.API,
+        is_private=False,
+    )
+
+    init_prompt = agent_prompt(agent, agent_data, context)
     append_prompt = agent.prompt_append or "None"
 
     full_prompt = (
