@@ -1,8 +1,4 @@
 ## New Features
-- Implement soft-off credit charging policy: Allow expenses processing even when payment is disabled (recording costs as 0 or discounted).
-- Adjust `expense_summarize` and `expense_message` to correctly handle `created_at` timestamp for Credit Events.
+- Make Redis a required dependency: The project now strictly requires Redis for operation. Configuration and application entry points have been updated to enforce this.
 
-## Improvements
-- Enhanced test coverage for credit calculations.
-
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.14...v0.9.15)
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.15...v0.9.16)
