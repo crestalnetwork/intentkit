@@ -1,20 +1,8 @@
-## v0.9.14
+## New Features
+- Implement soft-off credit charging policy: Allow expenses processing even when payment is disabled (recording costs as 0 or discounted).
+- Adjust `expense_summarize` and `expense_message` to correctly handle `created_at` timestamp for Credit Events.
 
-### New Features
-- Enhanced agent system prompts with improved context awareness
-- Added agent ID to system prompts for better agent identification
-- Improved autonomous task execution with clearer guidelines and current time awareness
+## Improvements
+- Enhanced test coverage for credit calculations.
 
-### Improvements
-- Optimized Twitter skill integration - social account information now only appears in prompts when Twitter skill is enabled
-- Refined prompt structure for better clarity and organization
-- Enhanced autonomous task handling with better error reporting guidance
-- Improved system prompt ordering for more logical information flow
-- Updated debug endpoint to support new prompt context requirements
-
-### Bug Fixes
-- Fixed prompt generation issues in Twitter-related functionality
-- Resolved missing context parameter issues in debug endpoints
-
-### Diff
-https://github.com/crestalnetwork/intentkit/compare/v0.9.13...v0.9.14
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.14...v0.9.15)
