@@ -10,14 +10,14 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.triggers.cron import CronTrigger
 
 from intentkit.config.config import config
-from intentkit.core.scheduler import create_scheduler
-from intentkit.models.db import init_db
-from intentkit.models.redis import (
+from intentkit.config.db import init_db
+from intentkit.config.redis import (
     clean_heartbeat,
     get_redis,
     init_redis,
     send_heartbeat,
 )
+from intentkit.core.scheduler import create_scheduler
 
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 

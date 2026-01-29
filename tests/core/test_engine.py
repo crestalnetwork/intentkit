@@ -166,8 +166,8 @@ async def test_stream_agent_flow(mock_agent):
             "intentkit.core.engine.explain_prompt", new_callable=AsyncMock
         ) as mock_explain,
         patch("intentkit.models.llm.LLMModelInfo.get", new_callable=AsyncMock),
-        patch("intentkit.models.db.engine", new=MagicMock()),
-        patch("intentkit.models.db.AsyncSession", new=MagicMock()) as mock_session_cls,
+        patch("intentkit.config.db.engine", new=MagicMock()),
+        patch("intentkit.config.db.AsyncSession", new=MagicMock()) as mock_session_cls,
         patch("intentkit.core.engine.expense_message", new_callable=AsyncMock),
         patch("intentkit.core.engine.clear_thread_memory", new_callable=AsyncMock),
     ):

@@ -8,6 +8,7 @@ from typing import Annotated, Any
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, SkipValidation
 
+from intentkit.config.db import get_session
 from intentkit.core.draft import (
     get_agent_latest_draft,
     update_agent_draft,
@@ -17,7 +18,6 @@ from intentkit.core.manager.service import (
     get_latest_public_info,
 )
 from intentkit.models.agent import AgentPublicInfo, AgentUserInput
-from intentkit.models.db import get_session
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.schema import resolve_schema_refs

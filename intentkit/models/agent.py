@@ -27,10 +27,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 from intentkit.models.agent_data import AgentData
-from intentkit.models.base import Base
 from intentkit.models.credit import CreditAccount
-from intentkit.models.db import get_session
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import Skill
 from intentkit.utils.ens import resolve_ens_to_address

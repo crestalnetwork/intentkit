@@ -10,7 +10,7 @@ from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from intentkit.config.config import config
-from intentkit.models.redis import get_redis
+from intentkit.config.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

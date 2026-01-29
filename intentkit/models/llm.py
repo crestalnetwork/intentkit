@@ -13,11 +13,11 @@ from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
+from intentkit.config.base import Base
 from intentkit.config.config import config
+from intentkit.config.db import get_session
+from intentkit.config.redis import get_redis
 from intentkit.models.app_setting import AppSetting
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

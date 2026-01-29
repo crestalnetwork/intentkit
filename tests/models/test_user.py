@@ -3,7 +3,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from intentkit.models.base import Base
+from intentkit.config.base import Base
 from intentkit.models.user import User, UserTable
 
 

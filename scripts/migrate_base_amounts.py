@@ -16,9 +16,9 @@ from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
 from intentkit.core.credit import FOURPLACES
 from intentkit.models.credit import CreditEventTable
-from intentkit.models.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

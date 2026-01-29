@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.config.db import get_db
 from intentkit.models.agent_activity import AgentActivity, AgentActivityTable
 from intentkit.models.agent_post import AgentPost, AgentPostBrief, AgentPostTable
-from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
 
 content_router = APIRouter()

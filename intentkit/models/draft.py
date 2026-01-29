@@ -8,12 +8,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import DateTime, Index, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 from intentkit.models.agent import (
     AgentUserInput,
     AgentUserInputColumns,
 )
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError
 
 

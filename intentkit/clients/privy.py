@@ -32,7 +32,7 @@ from web3 import AsyncWeb3
 from web3.types import TxParams
 
 from intentkit.config.config import config
-from intentkit.models.redis import get_redis
+from intentkit.config.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

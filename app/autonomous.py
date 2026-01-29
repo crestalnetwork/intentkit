@@ -19,15 +19,15 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from intentkit.config.config import config
-from intentkit.core.agent import get_agent
-from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
-from intentkit.models.db import get_session, init_db
-from intentkit.models.redis import (
+from intentkit.config.db import get_session, init_db
+from intentkit.config.redis import (
     clean_heartbeat,
     get_redis,
     init_redis,
     send_heartbeat,
 )
+from intentkit.core.agent import get_agent
+from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
 
 from app.entrypoints.autonomous import run_autonomous_task
 

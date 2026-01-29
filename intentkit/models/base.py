@@ -1,9 +1,13 @@
-"""Base SQLAlchemy model for all models in the application."""
+from __future__ import annotations
 
-from sqlalchemy.orm import DeclarativeBase
+import warnings
 
+from intentkit.config.base import Base
 
-class Base(DeclarativeBase):
-    """Base class for all models."""
+warnings.warn(
+    "intentkit.models.base is deprecated; use intentkit.config.base",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-    pass
+__all__ = ["Base"]

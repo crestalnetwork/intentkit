@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.models.db import get_db
+from intentkit.config.db import get_db
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import Skill
 

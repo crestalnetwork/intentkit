@@ -36,6 +36,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
+from intentkit.config.db import (
+    get_checkpointer,
+    get_session,
+)
 from intentkit.core.agent import get_agent
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
@@ -58,10 +62,6 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.db import (
-    get_checkpointer,
-    get_session,
-)
 from intentkit.models.llm import LLMModelInfo, create_llm_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User

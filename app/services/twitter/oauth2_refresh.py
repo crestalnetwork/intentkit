@@ -6,8 +6,8 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
+from intentkit.config.db import get_session
 from intentkit.models.agent_data import AgentData, AgentDataTable
-from intentkit.models.db import get_session
 
 from app.services.twitter.oauth2 import oauth2_user_handler
 

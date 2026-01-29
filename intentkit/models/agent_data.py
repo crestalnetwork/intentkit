@@ -11,8 +11,8 @@ from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func, sel
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

@@ -8,9 +8,9 @@ from coinbase_agentkit import (  # noqa: E402
 )
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentTable  # noqa: E402
 from intentkit.models.agent_data import AgentData
-from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError  # noqa: E402
 
 _wallet_providers: dict[str, tuple[str, str, CdpEvmWalletProvider]] = {}

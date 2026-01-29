@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.config.db import get_session
 from intentkit.models.agent_data import AgentQuota, AgentQuotaTable
 from intentkit.models.credit import CreditAccount, CreditEventTable, OwnerType
-from intentkit.models.db import get_session
 
 
 class AgentStatistics(BaseModel):

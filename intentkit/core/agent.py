@@ -9,6 +9,7 @@ from decimal import Decimal
 from sqlalchemy import func, select, text, update
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session
 from intentkit.models.agent import (
     Agent,
     AgentCreate,
@@ -23,7 +24,6 @@ from intentkit.models.credit import (
     OwnerType,
     UpstreamType,
 )
-from intentkit.models.db import get_session
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.slack_alert import send_slack_message
 

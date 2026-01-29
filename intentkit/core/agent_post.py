@@ -3,9 +3,9 @@ import logging
 
 from sqlalchemy import select
 
+from intentkit.config.db import get_session
+from intentkit.config.redis import get_redis
 from intentkit.models.agent_post import AgentPost, AgentPostCreate, AgentPostTable
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 

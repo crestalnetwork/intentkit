@@ -25,8 +25,8 @@ from redis.exceptions import RedisError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
+from intentkit.config.redis import get_redis
 from intentkit.models.agent import Agent
-from intentkit.models.redis import get_redis
 from intentkit.models.skill import (
     AgentSkillData,
     AgentSkillDataCreate,

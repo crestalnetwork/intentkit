@@ -19,7 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
-from intentkit.models.db import get_session, init_db
+from intentkit.config.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

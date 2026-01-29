@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import select, text
 
+from intentkit.config.db import get_session
 from intentkit.models.credit import (
     CreditAccount,
     CreditAccountTable,
@@ -14,7 +15,6 @@ from intentkit.models.credit import (
     CreditTransaction,
     CreditTransactionTable,
 )
-from intentkit.models.db import get_session
 from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)

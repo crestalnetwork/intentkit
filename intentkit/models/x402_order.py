@@ -10,8 +10,8 @@ from pydantic import Field as PydanticField
 from sqlalchemy import BigInteger, DateTime, Integer, String, desc, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 
 logger = logging.getLogger(__name__)
 

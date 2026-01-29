@@ -8,8 +8,8 @@ from pydantic import BaseModel
 from pydantic import Field as PydanticField
 from sqlalchemy import select
 
+from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentCore, AgentTable, AgentVisibility
-from intentkit.models.db import get_session
 from intentkit.models.template import Template, TemplateTable
 
 if TYPE_CHECKING:

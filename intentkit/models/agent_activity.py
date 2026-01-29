@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
-from intentkit.models.base import Base
+from intentkit.config.base import Base
 
 
 class AgentActivityBase(BaseModel):

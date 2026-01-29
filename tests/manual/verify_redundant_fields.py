@@ -22,8 +22,8 @@ async def verify_activity_creation():
     # Let's try to fetch an existing agent first.
     from sqlalchemy import select
 
+    from intentkit.config.db import get_session
     from intentkit.models.agent import AgentTable
-    from intentkit.models.db import get_session
 
     async with get_session() as session:
         stmt = select(AgentTable).limit(1)
@@ -102,8 +102,8 @@ async def verify_post_creation():
     print("\nVerifying AgentPost creation...")
     from sqlalchemy import select
 
+    from intentkit.config.db import get_session
     from intentkit.models.agent import AgentTable
-    from intentkit.models.db import get_session
 
     async with get_session() as session:
         stmt = select(AgentTable).limit(1)
@@ -188,7 +188,7 @@ async def main():
     load_dotenv()  # Load env vars for DB connection
 
     from intentkit.config.config import Config
-    from intentkit.models.db import init_db
+    from intentkit.config.db import init_db
 
     # Load config from env
     # Assuming Config() loads from env automatically or we just use os.environ

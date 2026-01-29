@@ -8,6 +8,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -37,7 +38,6 @@ from intentkit.models.credit import (
     TransactionType,
     UpstreamType,
 )
-from intentkit.models.db import get_session
 from intentkit.models.skill import Skill
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.slack_alert import send_slack_message

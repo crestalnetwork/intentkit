@@ -4,7 +4,7 @@ import logging
 from sqlalchemy import text
 
 from intentkit.config.config import config
-from intentkit.models.db import get_session, init_db
+from intentkit.config.db import get_session, init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -9,8 +9,8 @@ from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.config.db import get_db
 from intentkit.models.agent import Agent
-from intentkit.models.db import get_db
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

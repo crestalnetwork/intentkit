@@ -14,7 +14,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import text
 
 from intentkit.config.config import config
-from intentkit.models.db import get_session, init_db
+from intentkit.config.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

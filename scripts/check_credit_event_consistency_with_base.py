@@ -24,8 +24,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
 from intentkit.models.credit import CreditEventTable
-from intentkit.models.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

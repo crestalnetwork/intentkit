@@ -8,9 +8,9 @@ import sys
 from sqlalchemy import select
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
+from intentkit.config.redis import init_redis
 from intentkit.models.agent import Agent, AgentTable
-from intentkit.models.db import get_session, init_db
-from intentkit.models.redis import init_redis
 
 from app.services.discord.bot import pool as pool_module
 from app.services.discord.bot.pool import BotPool, agent_by_id, is_agent_failed

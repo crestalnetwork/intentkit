@@ -12,8 +12,8 @@ from requests_oauthlib import OAuth2Session
 from tweepy.asynchronous import AsyncClient
 
 from intentkit.abstracts.twitter import TwitterABC
+from intentkit.config.redis import get_redis
 from intentkit.models.agent_data import AgentData
-from intentkit.models.redis import get_redis
 
 logger = logging.getLogger(__name__)
 

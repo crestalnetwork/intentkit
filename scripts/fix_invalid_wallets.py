@@ -25,8 +25,8 @@ from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
 from sqlalchemy import select, update
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
 from intentkit.models.agent_data import AgentDataTable
-from intentkit.models.db import get_session, init_db
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

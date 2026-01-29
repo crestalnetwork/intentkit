@@ -9,8 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, ForeignKey, Index, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from intentkit.models.base import Base
-from intentkit.models.db import get_session
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 
 
 class TeamRole(str, Enum):

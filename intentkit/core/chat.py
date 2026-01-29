@@ -9,7 +9,7 @@ import traceback
 
 from sqlalchemy import text
 
-from intentkit.models.db import get_session
+from intentkit.config.db import get_session
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

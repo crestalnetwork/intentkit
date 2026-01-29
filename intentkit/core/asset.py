@@ -13,11 +13,11 @@ from web3 import Web3
 
 from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
+from intentkit.config.db import get_session
+from intentkit.config.redis import get_redis
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
-from intentkit.models.db import get_session
-from intentkit.models.redis import get_redis
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)

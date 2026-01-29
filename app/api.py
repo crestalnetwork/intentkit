@@ -17,10 +17,10 @@ from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
+from intentkit.config.redis import init_redis
 from intentkit.core.api import core_router
 from intentkit.models.agent import AgentTable
-from intentkit.models.db import get_session, init_db
-from intentkit.models.redis import init_redis
 from intentkit.utils.error import (
     IntentKitAPIError,
     http_exception_handler,

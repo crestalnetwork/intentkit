@@ -11,8 +11,8 @@ from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from intentkit.config.base import Base
 from intentkit.models.agent import AgentCore
-from intentkit.models.base import Base
 
 
 class TemplateTable(Base):

@@ -9,9 +9,9 @@ from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from intentkit.models.base import Base
+from intentkit.config.base import Base
+from intentkit.config.db import get_session
 from intentkit.models.credit import CreditAccount
-from intentkit.models.db import get_session
 
 logger = logging.getLogger(__name__)
 

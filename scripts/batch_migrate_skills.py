@@ -17,8 +17,8 @@ import logging
 from sqlalchemy import select
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session, init_db
 from intentkit.models.agent import AgentTable
-from intentkit.models.db import get_session, init_db
 
 # Configure logging
 logging.basicConfig(

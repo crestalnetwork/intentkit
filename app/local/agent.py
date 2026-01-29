@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from yaml import safe_load
 
 from intentkit.clients.twitter import unlink_twitter
+from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
     create_agent,
     deploy_agent,
@@ -40,7 +41,6 @@ from intentkit.models.agent import (
     AgentUpdate,
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
-from intentkit.models.db import get_db, get_session
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
 

@@ -10,9 +10,9 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, ReactionTypeEmoji
 from epyxid import XID
 
+from intentkit.config.redis import get_redis
 from intentkit.core.client import execute_agent
 from intentkit.models.chat import AuthorType, ChatMessageCreate
-from intentkit.models.redis import get_redis
 from intentkit.models.user import User
 from intentkit.utils.slack_alert import send_slack_message
 
