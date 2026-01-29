@@ -43,17 +43,11 @@ async def resolve_ens_to_address(name: str) -> str:
     if not normalized:
         raise IntentKitAPIError(404, "ENSNameNotFound", "ENS name is empty.")
 
-    redis_client = None
     cache_key = f"{_CACHE_PREFIX}{normalized}"
-    try:
-        redis_client = get_redis()
-    except Exception:  # Redis is optional; ignore if unavailable
-        redis_client = None
-
-    if redis_client is not None:
-        cached_address = await redis_client.get(cache_key)
-        if cached_address:
-            return cached_address
+    redis_client = get_redis()
+    cached_address = await redis_client.get(cache_key)
+    if cached_address:
+        return cached_address
 
     networks = _networks_for_name(normalized)
     if not networks:
@@ -66,11 +60,7 @@ async def resolve_ens_to_address(name: str) -> str:
     for network in networks:
         address = await _resolve_on_network(normalized, network)
         if address:
-            if redis_client is not None:
-                try:
-                    await redis_client.set(cache_key, address, ex=_CACHE_TTL_SECONDS)
-                except Exception as exc:  # pragma: no cover - optional cache
-                    logger.debug("Failed to cache ENS resolution: %s", exc)
+            await redis_client.set(cache_key, address, ex=_CACHE_TTL_SECONDS)
             return address
 
     raise IntentKitAPIError(

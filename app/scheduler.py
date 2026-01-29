@@ -53,13 +53,14 @@ if __name__ == "__main__":
         # Initialize database
         await init_db(**config.db)
 
-        # Initialize Redis if configured
-        if config.redis_host:
-            await init_redis(
-                host=config.redis_host,
-                port=config.redis_port,
-                db=config.redis_db,
-            )
+        # Initialize Redis
+        await init_redis(
+            host=config.redis_host,
+            port=config.redis_port,
+            db=config.redis_db,
+            password=config.redis_password,
+            ssl=config.redis_ssl,
+        )
 
         # Set up signal handlers for graceful shutdown
         loop = asyncio.get_running_loop()
@@ -75,9 +76,8 @@ if __name__ == "__main__":
         # Define the cleanup function that will be called on exit
         async def cleanup_resources():
             try:
-                if config.redis_host:
-                    redis_client = get_redis()
-                    await clean_heartbeat(redis_client, "scheduler")
+                redis_client = get_redis()
+                await clean_heartbeat(redis_client, "scheduler")
             except Exception as e:
                 logger.error(f"Error cleaning up heartbeat: {e}")
 
@@ -96,14 +96,13 @@ if __name__ == "__main__":
             replace_existing=True,
         )
 
-        if config.redis_host:
-            scheduler.add_job(
-                send_scheduler_heartbeat,
-                trigger=CronTrigger(minute="*", timezone="UTC"),
-                id="scheduler_heartbeat",
-                name="Scheduler Heartbeat",
-                replace_existing=True,
-            )
+        scheduler.add_job(
+            send_scheduler_heartbeat,
+            trigger=CronTrigger(minute="*", timezone="UTC"),
+            id="scheduler_heartbeat",
+            name="Scheduler Heartbeat",
+            replace_existing=True,
+        )
 
         try:
             logger.info("Starting scheduler process...")

@@ -135,13 +135,14 @@ async def lifespan(app: FastAPI):
     # Initialize database
     await init_db(**config.db)
 
-    # Initialize Redis if configured
-    if config.redis_host:
-        await init_redis(
-            host=config.redis_host,
-            port=config.redis_port,
-            db=config.redis_db,
-        )
+    # Initialize Redis
+    await init_redis(
+        host=config.redis_host,
+        port=config.redis_port,
+        db=config.redis_db,
+        password=config.redis_password,
+        ssl=config.redis_ssl,
+    )
 
     # Initialize S3 bucket (Create & Set Public Policy if needed)
     # This is synchronous but fast enough for startup

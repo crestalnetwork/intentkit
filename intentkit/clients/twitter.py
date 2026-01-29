@@ -474,22 +474,16 @@ class OAuth2UserHandler(OAuth2Session):
             redirect_uri: URI to redirect to after authorization
         """
         if not self.code_challenge:
-            try:
-                kv = await get_redis()
-                self.code_verifier = await kv.get(_VERIFIER_KEY)
-                self.code_challenge = await kv.get(_CHALLENGE_KEY)
-                if not self.code_verifier or not self.code_challenge:
-                    self.code_verifier = self._client.create_code_verifier(128)
-                    self.code_challenge = self._client.create_code_challenge(
-                        self.code_verifier, "S256"
-                    )
-                    await kv.set(_VERIFIER_KEY, self.code_verifier)
-                    await kv.set(_CHALLENGE_KEY, self.code_challenge)
-            except Exception:
+            kv = await get_redis()
+            self.code_verifier = await kv.get(_VERIFIER_KEY)
+            self.code_challenge = await kv.get(_CHALLENGE_KEY)
+            if not self.code_verifier or not self.code_challenge:
                 self.code_verifier = self._client.create_code_verifier(128)
                 self.code_challenge = self._client.create_code_challenge(
                     self.code_verifier, "S256"
                 )
+                await kv.set(_VERIFIER_KEY, self.code_verifier)
+                await kv.set(_CHALLENGE_KEY, self.code_challenge)
         state_params = {"agent_id": agent_id, "redirect_uri": redirect_uri}
         authorization_url, _ = self.authorization_url(
             "https://x.com/i/oauth2/authorize",

@@ -1,5 +1,4 @@
 import json
-import logging
 
 from sqlalchemy import desc, select
 
@@ -10,8 +9,6 @@ from intentkit.models.agent_activity import (
     AgentActivityCreate,
     AgentActivityTable,
 )
-
-logger = logging.getLogger(__name__)
 
 
 async def create_agent_activity(activity_create: AgentActivityCreate) -> AgentActivity:
@@ -25,23 +22,12 @@ async def create_agent_activity(activity_create: AgentActivityCreate) -> AgentAc
 
 async def get_agent_activity(activity_id: str) -> AgentActivity | None:
     cache_key = f"intentkit:agent_activity:{activity_id}"
-    redis_client = None
+    redis_client = get_redis()
 
-    try:
-        redis_client = get_redis()
-    except Exception as exc:  # pragma: no cover
-        logger.debug("Redis unavailable for agent activity: %s", exc)
-
-    if redis_client:
-        try:
-            cached_raw = await redis_client.get(cache_key)
-            if cached_raw:
-                cached_data = json.loads(cached_raw)
-                return AgentActivity.model_validate(cached_data)
-        except Exception as exc:  # pragma: no cover
-            logger.debug(
-                "Failed to read agent activity cache for %s: %s", activity_id, exc
-            )
+    cached_raw = await redis_client.get(cache_key)
+    if cached_raw:
+        cached_data = json.loads(cached_raw)
+        return AgentActivity.model_validate(cached_data)
 
     async with get_session() as session:
         result = await session.execute(
@@ -54,17 +40,11 @@ async def get_agent_activity(activity_id: str) -> AgentActivity | None:
 
         activity = AgentActivity.model_validate(db_activity)
 
-    if redis_client:
-        try:
-            await redis_client.set(
-                cache_key,
-                json.dumps(activity.model_dump(mode="json")),
-                ex=3600,
-            )
-        except Exception as exc:  # pragma: no cover
-            logger.debug(
-                "Failed to write agent activity cache for %s: %s", activity_id, exc
-            )
+    await redis_client.set(
+        cache_key,
+        json.dumps(activity.model_dump(mode="json")),
+        ex=3600,
+    )
 
     return activity
 

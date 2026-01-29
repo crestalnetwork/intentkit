@@ -39,35 +39,31 @@ async def cache_message(chat_id: int, agent_id: str, message: Message) -> None:
         agent_id: The agent ID to identify the agent
         message: The message to cache
     """
-    try:
-        redis = get_redis()
-        cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
+    redis = get_redis()
+    cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
 
-        # Prepare message data for caching
-        username = (
-            message.from_user.username
-            if message.from_user and message.from_user.username
-            else "Unknown"
-        )
+    # Prepare message data for caching
+    username = (
+        message.from_user.username
+        if message.from_user and message.from_user.username
+        else "Unknown"
+    )
 
-        message_data = {
-            "text": message.text,
-            "username": username,
-            "timestamp": datetime.now().isoformat(),
-            "message_id": message.message_id,
-        }
+    message_data = {
+        "text": message.text,
+        "username": username,
+        "timestamp": datetime.now().isoformat(),
+        "message_id": message.message_id,
+    }
 
-        # Add to Redis list (right push to maintain chronological order - oldest first)
-        await redis.rpush(cache_key, json.dumps(message_data))
+    # Add to Redis list (right push to maintain chronological order - oldest first)
+    await redis.rpush(cache_key, json.dumps(message_data))
 
-        # Trim list to keep only the latest MAX_CACHED_MESSAGES (remove from left)
-        await redis.ltrim(cache_key, -MAX_CACHED_MESSAGES, -1)
+    # Trim list to keep only the latest MAX_CACHED_MESSAGES (remove from left)
+    await redis.ltrim(cache_key, -MAX_CACHED_MESSAGES, -1)
 
-        # Set expiration
-        await redis.expire(cache_key, CACHE_TTL)
-
-    except Exception as e:
-        logger.warning(f"Failed to cache message: {e}")
+    # Set expiration
+    await redis.expire(cache_key, CACHE_TTL)
 
 
 async def get_cached_context(chat_id: int, agent_id: str) -> list[dict[str, Any]]:
@@ -80,39 +76,34 @@ async def get_cached_context(chat_id: int, agent_id: str) -> list[dict[str, Any]
     Returns:
         List of cached message data, limited by size and count
     """
-    try:
-        redis = get_redis()
-        cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
+    redis = get_redis()
+    cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
 
-        # Get all cached messages (oldest first due to rpush)
-        cached_messages = await redis.lrange(cache_key, 0, -1)
+    # Get all cached messages (oldest first due to rpush)
+    cached_messages = await redis.lrange(cache_key, 0, -1)
 
-        if not cached_messages:
-            return []
-
-        # Parse messages and apply size limit
-        context_messages = []
-        total_size = 0
-
-        for msg_json in cached_messages:
-            try:
-                msg_data = json.loads(msg_json)
-                msg_size = len(json.dumps(msg_data))
-
-                if total_size + msg_size > MAX_CACHE_SIZE_BYTES:
-                    break
-
-                context_messages.append(msg_data)
-                total_size += msg_size
-
-            except json.JSONDecodeError:
-                continue
-
-        return context_messages
-
-    except Exception as e:
-        logger.warning(f"Failed to get cached context: {e}")
+    if not cached_messages:
         return []
+
+    # Parse messages and apply size limit
+    context_messages = []
+    total_size = 0
+
+    for msg_json in cached_messages:
+        try:
+            msg_data = json.loads(msg_json)
+            msg_size = len(json.dumps(msg_data))
+
+            if total_size + msg_size > MAX_CACHE_SIZE_BYTES:
+                break
+
+            context_messages.append(msg_data)
+            total_size += msg_size
+
+        except json.JSONDecodeError:
+            continue
+
+    return context_messages
 
 
 async def clear_cached_context(chat_id: int, agent_id: str) -> None:
@@ -122,13 +113,9 @@ async def clear_cached_context(chat_id: int, agent_id: str) -> None:
         chat_id: The chat ID to clear context for
         agent_id: The agent ID to identify the agent
     """
-    try:
-        redis = get_redis()
-        cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
-        await redis.delete(cache_key)
-
-    except Exception as e:
-        logger.warning(f"Failed to clear cached context: {e}")
+    redis = get_redis()
+    cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
+    await redis.delete(cache_key)
 
 
 async def get_user_id(from_user) -> str:

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -42,8 +42,11 @@ async def test_agent_asset_missing_agent(monkeypatch):
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     # Patch get_session to avoid DB init check
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
-    # Patch get_redis to return None to avoid redis connection
-    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
+    # Patch get_redis to return a mock redis client
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+    mock_redis.set.return_value = None
+    monkeypatch.setattr(asset_module, "get_redis", lambda: mock_redis)
 
     with pytest.raises(IntentKitAPIError) as exc:
         await asset_module.agent_asset("missing")
@@ -69,7 +72,10 @@ async def test_agent_asset_no_wallet(monkeypatch):
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
-    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+    mock_redis.set.return_value = None
+    monkeypatch.setattr(asset_module, "get_redis", lambda: mock_redis)
 
     result = await asset_module.agent_asset("agent-id")
 
@@ -107,7 +113,10 @@ async def test_agent_asset_success(monkeypatch):
         asset_module, "_get_wallet_net_worth", mock_get_wallet_net_worth
     )
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
-    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+    mock_redis.set.return_value = None
+    monkeypatch.setattr(asset_module, "get_redis", lambda: mock_redis)
 
     result = await asset_module.agent_asset("agent-id")
 
@@ -133,7 +142,10 @@ async def test_agent_asset_missing_network(monkeypatch):
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
-    monkeypatch.setattr(asset_module, "get_redis", lambda: None)
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+    mock_redis.set.return_value = None
+    monkeypatch.setattr(asset_module, "get_redis", lambda: mock_redis)
 
     result = await asset_module.agent_asset("agent-id")
 

@@ -95,13 +95,14 @@ async def run_telegram_server() -> None:
     # Initialize database connection
     await init_db(**config.db)
 
-    # Initialize Redis if configured
-    if config.redis_host:
-        await init_redis(
-            host=config.redis_host,
-            port=config.redis_port,
-            db=config.redis_db,
-        )
+    # Initialize Redis
+    await init_redis(
+        host=config.redis_host,
+        port=config.redis_port,
+        db=config.redis_db,
+        password=config.redis_password,
+        ssl=config.redis_ssl,
+    )
 
     # Signal handler for graceful shutdown
     def signal_handler(signum, frame):

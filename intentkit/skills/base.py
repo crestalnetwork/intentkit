@@ -21,7 +21,6 @@ from pydantic import (
     ValidationError,
 )
 from pydantic.v1 import ValidationError as ValidationErrorV1
-from redis.exceptions import RedisError
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
@@ -114,34 +113,22 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
         if window_seconds <= 0 or max_requests <= 0:
             return None
 
-        try:
-            redis = get_redis()
-            # Create a unique key for this rate limit and user
-            rate_limit_key = f"rate_limit:{key}:{user_identifier}"
+        redis = get_redis()
+        # Create a unique key for this rate limit and user
+        rate_limit_key = f"rate_limit:{key}:{user_identifier}"
 
-            # Get the current count
-            count = await redis.incr(rate_limit_key)
+        # Get the current count
+        count = await redis.incr(rate_limit_key)
 
-            # Set expiration if this is the first request
-            if count == 1:
-                await redis.expire(rate_limit_key, window_seconds)
+        # Set expiration if this is the first request
+        if count == 1:
+            await redis.expire(rate_limit_key, window_seconds)
 
-            # Check if user has exceeded the limit
-            if count > max_requests:
-                raise RateLimitExceeded(f"Rate limit exceeded for {key}")
+        # Check if user has exceeded the limit
+        if count > max_requests:
+            raise RateLimitExceeded(f"Rate limit exceeded for {key}")
 
-            return None
-
-        except RuntimeError:
-            # Redis client not initialized, log and allow the request
-            self.logger.info(f"Redis not initialized, skipping rate limit for {key}")
-            return None
-        except RedisError as e:
-            # Redis error, log and allow the request
-            self.logger.info(
-                f"Redis error in rate limiting: {e}, skipping rate limit for {key}"
-            )
-            return None
+        return None
 
     async def user_rate_limit_by_skill(self, limit: int, seconds: int) -> None:
         """Check if a user has exceeded the rate limit for this specific skill.
@@ -201,31 +188,18 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
         if window_seconds <= 0 or max_requests <= 0:
             return None
 
-        try:
-            redis = get_redis()
-            rate_limit_key = f"rate_limit:{key}"
+        redis = get_redis()
+        rate_limit_key = f"rate_limit:{key}"
 
-            count = await redis.incr(rate_limit_key)
+        count = await redis.incr(rate_limit_key)
 
-            if count == 1:
-                await redis.expire(rate_limit_key, window_seconds)
+        if count == 1:
+            await redis.expire(rate_limit_key, window_seconds)
 
-            if count > max_requests:
-                raise RateLimitExceeded(f"Global rate limit exceeded for {key}")
+        if count > max_requests:
+            raise RateLimitExceeded(f"Global rate limit exceeded for {key}")
 
-            return None
-
-        except RuntimeError:
-            self.logger.info(
-                "Redis not initialized, skipping global rate limit for %s",
-                key,
-            )
-            return None
-        except RedisError as e:
-            self.logger.info(
-                f"Redis error in global rate limiting: {e}, skipping rate limit for {key}"
-            )
-            return None
+        return None
 
     async def global_rate_limit_by_skill(self, limit: int, seconds: int) -> None:
         """Apply a global rate limit scoped to this specific skill."""

@@ -37,16 +37,18 @@ logger = logging.getLogger(__name__)
 autonomous_tasks_updated_at: dict[str, datetime] = {}
 
 # Global scheduler instance
-jobstores = {}
-if config.redis_host:
-    jobstores["default"] = RedisJobStore(
+jobstores = {
+    "default": RedisJobStore(
         host=config.redis_host,
         port=config.redis_port,
         db=config.redis_db,
+        password=config.redis_password,
+        ssl=config.redis_ssl,
         jobs_key="intentkit:autonomous:jobs",
         run_times_key="intentkit:autonomous:run_times",
     )
-    logger.info(f"autonomous scheduler use redis store: {config.redis_host}")
+}
+logger.info(f"autonomous scheduler use redis store: {config.redis_host}")
 scheduler = AsyncIOScheduler(jobstores=jobstores)
 
 # Head job ID, it schedules the other jobs
@@ -296,13 +298,14 @@ if __name__ == "__main__":
     async def main():
         # Initialize database
         await init_db(**config.db)
-        # Initialize Redis if configured
-        if config.redis_host:
-            await init_redis(
-                host=config.redis_host,
-                port=config.redis_port,
-                db=config.redis_db,
-            )
+        # Initialize Redis
+        await init_redis(
+            host=config.redis_host,
+            port=config.redis_port,
+            db=config.redis_db,
+            password=config.redis_password,
+            ssl=config.redis_ssl,
+        )
 
         # Add job to schedule agent autonomous tasks every 5 minutes
         # Run it immediately on startup and then every 5 minutes
@@ -319,14 +322,13 @@ if __name__ == "__main__":
             )
 
         # Add job to send heartbeat every 5 minutes
-        if config.redis_host:
-            scheduler.add_job(
-                send_autonomous_heartbeat,
-                trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
-                id="autonomous_heartbeat",
-                name="Autonomous Heartbeat",
-                replace_existing=True,
-            )
+        scheduler.add_job(
+            send_autonomous_heartbeat,
+            trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
+            id="autonomous_heartbeat",
+            name="Autonomous Heartbeat",
+            replace_existing=True,
+        )
 
         scheduler.add_listener(
             _handle_autonomous_event,
@@ -350,9 +352,8 @@ if __name__ == "__main__":
         # Define the cleanup function that will be called on exit
         async def cleanup_resources():
             try:
-                if config.redis_host:
-                    redis_client = get_redis()
-                    await clean_heartbeat(redis_client, "autonomous")
+                redis_client = get_redis()
+                await clean_heartbeat(redis_client, "autonomous")
             except Exception as e:
                 logger.error(f"Error cleaning up heartbeat: {e}")
 

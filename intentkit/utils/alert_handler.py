@@ -18,8 +18,6 @@ from redis import Redis
 
 from intentkit.utils.slack_alert import send_slack_message
 
-logger = logging.getLogger(__name__)
-
 # Global sync Redis client for alert handler
 _sync_redis_client: Redis | None = None
 
@@ -64,12 +62,17 @@ def init_alert_redis(
     return _sync_redis_client
 
 
-def get_alert_redis() -> Redis | None:
+def get_alert_redis() -> Redis:
     """Get the sync Redis client for alert handler.
 
     Returns:
-        Redis client or None if not initialized
+        Redis client
+
+    Raises:
+        RuntimeError: If the Redis client is not initialized
     """
+    if _sync_redis_client is None:
+        raise RuntimeError("Alert Redis client not initialized. Call init_alert_redis.")
     return _sync_redis_client
 
 
@@ -114,44 +117,35 @@ class RateLimitedAlertHandler(logging.Handler):
     def _is_rate_limited(self) -> bool:
         """Check if rate limit is exceeded using Redis sliding window."""
         redis = get_alert_redis()
-        if redis is None:
-            # If Redis is not available, allow the message
-            return False
 
-        try:
-            now = time.time()
-            window_start = now - self.time_window
+        now = time.time()
+        window_start = now - self.time_window
 
-            # Use Redis pipeline for atomic operations
-            pipe = redis.pipeline()
+        # Use Redis pipeline for atomic operations
+        pipe = redis.pipeline()
 
-            # Remove old entries outside the window
-            _ = pipe.zremrangebyscore(self._rate_limit_key, 0, window_start)
+        # Remove old entries outside the window
+        _ = pipe.zremrangebyscore(self._rate_limit_key, 0, window_start)
 
-            # Count current entries in window
-            _ = pipe.zcard(self._rate_limit_key)
+        # Count current entries in window
+        _ = pipe.zcard(self._rate_limit_key)
 
-            # Execute pipeline
-            results = pipe.execute()
-            current_count = results[1]
+        # Execute pipeline
+        results = pipe.execute()
+        current_count = results[1]
 
-            # Check if limit exceeded
-            if current_count >= self.max_messages:
-                self._dropped_count += 1
-                return True
+        # Check if limit exceeded
+        if current_count >= self.max_messages:
+            self._dropped_count += 1
+            return True
 
-            # Add current timestamp to sorted set
-            _ = redis.zadd(self._rate_limit_key, {str(now): now})
+        # Add current timestamp to sorted set
+        _ = redis.zadd(self._rate_limit_key, {str(now): now})
 
-            # Set expiry on the key to auto-cleanup
-            _ = redis.expire(self._rate_limit_key, self.time_window + 10)
+        # Set expiry on the key to auto-cleanup
+        _ = redis.expire(self._rate_limit_key, self.time_window + 10)
 
-            return False
-
-        except Exception as e:
-            # If Redis fails, allow the message but log the error
-            print(f"[AlertHandler] Redis error in rate limiting: {e}")
-            return False
+        return False
 
     def _process_queue(self) -> None:
         """Background thread processes the send queue."""
@@ -234,10 +228,10 @@ def create_slack_sender() -> Callable[[str], None]:
 
 
 def setup_alert_handler(
+    redis_host: str,
     telegram_bot_token: str | None = None,
     telegram_chat_id: str | None = None,
     slack_enabled: bool = False,
-    redis_host: str | None = None,
     redis_port: int = 6379,
     redis_db: int = 0,
     redis_password: str | None = None,
@@ -282,18 +276,16 @@ def setup_alert_handler(
         return None
 
     # Initialize sync Redis for rate limiting
-    if redis_host:
-        try:
-            _ = init_alert_redis(
-                host=redis_host,
-                port=redis_port,
-                db=redis_db,
-                password=redis_password,
-                ssl=redis_ssl,
-            )
-            print(f"[AlertHandler] Redis initialized at {redis_host}:{redis_port}")
-        except Exception as e:
-            print(f"[AlertHandler] Failed to initialize Redis: {e}")
+    if not redis_host:
+        raise RuntimeError("Redis host is required for alert handler")
+    _ = init_alert_redis(
+        host=redis_host,
+        port=redis_port,
+        db=redis_db,
+        password=redis_password,
+        ssl=redis_ssl,
+    )
+    print(f"[AlertHandler] Redis initialized at {redis_host}:{redis_port}")
 
     handler = RateLimitedAlertHandler(
         send_func=send_func,

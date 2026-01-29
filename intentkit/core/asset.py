@@ -192,26 +192,17 @@ async def agent_asset(agent_id: str) -> AgentAssets:
     """Fetch wallet net worth and token balances for an agent."""
 
     cache_key = f"intentkit:agent_assets:{agent_id}"
-    redis_client = None
-
-    try:
-        redis_client = get_redis()
-    except Exception as exc:  # pragma: no cover - best effort fallback
-        logger.debug("Redis unavailable for agent assets: %s", exc)
+    redis_client = get_redis()
 
     agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(404, "AgentNotFound", "Agent not found")
 
-    if redis_client:
-        try:
-            cached_raw = await redis_client.get(cache_key)
-            if cached_raw:
-                cached_data = json.loads(cached_raw)
-                cached_assets = AgentAssets.model_validate(cached_data)
-                return cached_assets
-        except Exception as exc:  # pragma: no cover - cache read path only
-            logger.debug("Failed to read agent asset cache for %s: %s", agent_id, exc)
+    cached_raw = await redis_client.get(cache_key)
+    if cached_raw:
+        cached_data = json.loads(cached_raw)
+        cached_assets = AgentAssets.model_validate(cached_data)
+        return cached_assets
 
     agent_data = await AgentData.get(agent_id)
     if not agent_data or not agent_data.evm_wallet_address:
@@ -236,15 +227,11 @@ async def agent_asset(agent_id: str) -> AgentAssets:
 
     assets_payload = assets_result.model_dump(mode="json")
 
-    if redis_client:
-        try:
-            await redis_client.set(
-                cache_key,
-                json.dumps(assets_payload),
-                ex=3600,
-            )
-        except Exception as exc:  # pragma: no cover - cache write path only
-            logger.debug("Failed to write agent asset cache for %s: %s", agent_id, exc)
+    await redis_client.set(
+        cache_key,
+        json.dumps(assets_payload),
+        ex=3600,
+    )
 
     try:
         async with get_session() as session:

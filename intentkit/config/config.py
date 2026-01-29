@@ -85,11 +85,13 @@ class Config:
             self.load("DEBUG_CHECKPOINT", "false") == "true"
         )  # log with checkpoint
         # Redis
-        self.redis_host: str | None = self.load("REDIS_HOST")
+        self.redis_host: str = self.load("REDIS_HOST") or ""
         self.redis_port: int = self.load_int("REDIS_PORT", 6379)
         self.redis_db: int = self.load_int("REDIS_DB", 0)
         self.redis_password: str | None = self.load("REDIS_PASSWORD")
         self.redis_ssl: bool = self.load("REDIS_SSL", "false") == "true"
+        if not self.redis_host:
+            raise RuntimeError("REDIS_HOST is required for Redis")
         # AWS S3
         self.aws_s3_cdn_url: str | None = self.load("AWS_S3_CDN_URL")
         self.aws_s3_bucket: str | None = self.load("AWS_S3_BUCKET")
@@ -224,16 +226,6 @@ class Config:
             init_slack(self.slack_alert_token, self.slack_alert_channel)
 
         # Set up alert handler for ERROR+ logs (Telegram > Slack)
-        has_alert_config = bool(
-            (self.tg_alert_bot_token and self.tg_alert_chat_id)
-            or (self.slack_alert_token and self.slack_alert_channel)
-        )
-
-        if has_alert_config and not self.redis_host:
-            print(
-                "[Warning] Alert handler configured but Redis not available - rate limiting disabled"
-            )
-
         _ = setup_alert_handler(
             telegram_bot_token=self.tg_alert_bot_token,
             telegram_chat_id=self.tg_alert_chat_id,
