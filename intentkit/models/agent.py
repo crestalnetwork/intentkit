@@ -6,11 +6,12 @@ import logging
 import re
 import textwrap
 import warnings
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, override
 
 import jsonref
 import yaml
@@ -347,7 +348,7 @@ class AgentUserInputColumns:
         default="trim",
         comment="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
     )
-    autonomous: Mapped[dict[str, Any] | None] = mapped_column(
+    autonomous: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"),
         nullable=True,
         comment="Autonomous agent configurations",
@@ -985,13 +986,13 @@ class AgentUpdate(AgentUserInput):
         return normalized
 
     # deprecated, use override instead
-    async def update(self, id: str) -> "Agent":
+    async def update(self, agent_id: str) -> "Agent":
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
             self.validate_autonomous_schedule()
 
         async with get_session() as db:
-            db_agent = await db.get(AgentTable, id)
+            db_agent = await db.get(AgentTable, agent_id)
             if not db_agent:
                 raise IntentKitAPIError(
                     status_code=404,
@@ -1012,13 +1013,13 @@ class AgentUpdate(AgentUserInput):
             await db.refresh(db_agent)
             return Agent.model_validate(db_agent)
 
-    async def override(self, id: str) -> "Agent":
+    async def override(self, agent_id: str) -> "Agent":
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
             self.validate_autonomous_schedule()
 
         async with get_session() as db:
-            db_agent = await db.get(AgentTable, id)
+            db_agent = await db.get(AgentTable, agent_id)
             if not db_agent:
                 raise IntentKitAPIError(
                     status_code=404,
@@ -1482,14 +1483,14 @@ class Agent(AgentCreate, AgentPublicInfo):
         # Get the field names from AgentUpdate model for filtering
         agent_update_fields = set(AgentUpdate.model_fields.keys())
 
-        for field_name, field in self.model_fields.items():
+        for field_name, field in type(self).model_fields.items():
             logger.debug(f"Processing field {field_name} with type {field.metadata}")
             # Skip fields that are not in AgentUpdate model
             if field_name not in agent_update_fields:
                 continue
 
             # Skip fields with SkipJsonSchema annotation
-            if any(isinstance(item, SkipJsonSchema) for item in field.metadata):
+            if any(type(item).__name__ == "SkipJsonSchema" for item in field.metadata):
                 continue
 
             value = getattr(self, field_name)
@@ -1519,9 +1520,12 @@ class Agent(AgentCreate, AgentPublicInfo):
                     yaml_lines.append("# Deprecated")
 
             # Check if the field is experimental and add experimental notice
-            if hasattr(field, "json_schema_extra") and field.json_schema_extra:
-                if field.json_schema_extra.get("x-group") == "experimental":
-                    yaml_lines.append("# Experimental")
+            if (
+                hasattr(field, "json_schema_extra")
+                and isinstance(field.json_schema_extra, dict)
+                and field.json_schema_extra.get("x-group") == "experimental"
+            ):
+                yaml_lines.append("# Experimental")
 
             # Format the value based on its type
             if value is None:
@@ -1547,7 +1551,11 @@ class Agent(AgentCreate, AgentPublicInfo):
                 # Handle list of Pydantic models (e.g., list[AgentAutonomous])
                 yaml_lines.append(f"{field_name}:")
                 # Convert each Pydantic model to dict
-                model_dicts = [item.model_dump(exclude_none=True) for item in value]
+                model_dicts = [
+                    item.model_dump(exclude_none=True)
+                    for item in value
+                    if hasattr(item, "model_dump")
+                ]
                 # Dump the list of dicts
                 yaml_value = yaml.dump(
                     model_dicts, default_flow_style=False, allow_unicode=True
@@ -1560,8 +1568,9 @@ class Agent(AgentCreate, AgentPublicInfo):
             elif hasattr(value, "model_dump"):
                 # Handle individual Pydantic model
                 yaml_lines.append(f"{field_name}:")
+                model_dump_func = getattr(value, "model_dump")
                 yaml_value = yaml.dump(
-                    value.model_dump(exclude_none=True),
+                    model_dump_func(exclude_none=True),
                     default_flow_style=False,
                     allow_unicode=True,
                 )
@@ -1587,10 +1596,11 @@ class Agent(AgentCreate, AgentPublicInfo):
     @staticmethod
     async def count() -> int:
         async with get_session() as db:
-            return await db.scalar(select(func.count(AgentTable.id)))
+            result = await db.scalar(select(func.count(AgentTable.id)))
+            return result or 0
 
     @classmethod
-    async def get(cls, agent_id: str) -> "Agent" | None:
+    async def get(cls, agent_id: str) -> "Agent | None":
         """Get agent by ID from database.
 
         .. deprecated::
@@ -1609,7 +1619,7 @@ class Agent(AgentCreate, AgentPublicInfo):
             return cls.model_validate(item)
 
     @classmethod
-    async def get_by_id_or_slug(cls, agent_id: str) -> "Agent" | None:
+    async def get_by_id_or_slug(cls, agent_id: str) -> "Agent | None":
         """Get agent by ID or slug.
 
         First tries to get by ID if agent_id length <= 20,
@@ -1793,7 +1803,9 @@ class Agent(AgentCreate, AgentPublicInfo):
 
         base_uri = f"file://{agent_schema_path}"
         with open(agent_schema_path) as f:
-            schema = jsonref.load(f, base_uri=base_uri, proxies=False, lazy_load=False)
+            schema: dict[str, Any] = jsonref.load(  # pyright: ignore[reportAssignmentType]
+                f, base_uri=base_uri, proxies=False, lazy_load=False
+            )
 
             # Get the model property from the schema
             model_property = schema.get("properties", {}).get("model", {})
@@ -1895,7 +1907,7 @@ class Agent(AgentCreate, AgentPublicInfo):
                         # Load and embed the full skill schema directly
                         base_uri = f"file://{skill_schema_path}"
                         with open(skill_schema_path) as f:
-                            embedded_skill_schema = jsonref.load(
+                            embedded_skill_schema: dict[str, Any] = jsonref.load(  # pyright: ignore[reportAssignmentType]
                                 f, base_uri=base_uri, proxies=False, lazy_load=False
                             )
 
@@ -2147,19 +2159,22 @@ class AgentResponse(Agent):
             accept_image_input_private=accept_image_input_private,
         )
 
+    @override
     def model_dump(
         self,
         *,
-        mode: str | Literal["json", "python"] = "python",
+        mode: Literal["json", "python"] | str = "python",
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         context: Any | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal["none", "warn", "error"] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """Override model_dump to exclude privacy fields and filter data."""
@@ -2173,8 +2188,10 @@ class AgentResponse(Agent):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         )
 
@@ -2266,19 +2283,23 @@ class AgentResponse(Agent):
 
         return data
 
+    @override
     def model_dump_json(
         self,
         *,
-        indent: int | str | None = None,
+        indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         context: Any | None = None,
-        by_alias: bool = False,
+        by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal["none", "warn", "error"] = True,
+        fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
     ) -> str:
         """Override model_dump_json to exclude privacy fields and filter sensitive data."""
@@ -2292,10 +2313,12 @@ class AgentResponse(Agent):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
+            fallback=fallback,
             serialize_as_any=serialize_as_any,
         )
 
         # Use json.dumps to serialize the filtered data with proper indentation
-        return json.dumps(data, indent=indent, ensure_ascii=False)
+        return json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)

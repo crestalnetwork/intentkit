@@ -56,9 +56,15 @@ async def init_db(
     # Initialize psycopg pool and AsyncShallowPostgresSaver if not already initialized
     if _connection_pool is None:
         if host:
-            conn_string = (
-                f"postgresql://{username}:{quote_plus(password)}@{host}:{port}/{dbname}"
-            )
+            # Handle local PostgreSQL without authentication
+            username_str = username or ""
+            password_str = quote_plus(password) if password else ""
+            if username_str or password_str:
+                conn_string = (
+                    f"postgresql://{username_str}:{password_str}@{host}:{port}/{dbname}"
+                )
+            else:
+                conn_string = f"postgresql://{host}:{port}/{dbname}"
             pool = AsyncConnectionPool(
                 conninfo=conn_string,
                 min_size=pool_size,
@@ -70,8 +76,8 @@ async def init_db(
                 # Set connection max lifetime to prevent stale connections
                 max_lifetime=3600,  # 1 hour
             )
-            _connection_pool = pool
-            _checkpointer = AsyncShallowPostgresSaver(pool)
+            _connection_pool = pool  # pyright: ignore[reportAssignmentType]
+            _checkpointer = AsyncShallowPostgresSaver(pool)  # pyright: ignore[reportArgumentType]
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
                 async with AsyncShallowPostgresSaver.from_conn_string(
@@ -84,8 +90,15 @@ async def init_db(
     # Initialize SQLAlchemy engine with pool settings
     if engine is None:
         if host:
+            # Handle local PostgreSQL without authentication
+            username_str = username or ""
+            password_str = quote_plus(password) if password else ""
+            if username_str or password_str:
+                db_url = f"postgresql+asyncpg://{username_str}:{password_str}@{host}:{port}/{dbname}"
+            else:
+                db_url = f"postgresql+asyncpg://{host}:{port}/{dbname}"
             engine = create_async_engine(
-                f"postgresql+asyncpg://{username}:{quote_plus(password)}@{host}:{port}/{dbname}",
+                db_url,
                 pool_size=pool_size,
                 max_overflow=pool_size * 2,  # Set overflow to 2x pool size
                 pool_timeout=60,  # Increase timeout

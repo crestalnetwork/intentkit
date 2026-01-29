@@ -2500,7 +2500,7 @@ async def _send_safe_transaction_with_master_wallet(
     # Safe's execTransaction returns false (doesn't revert) on internal failure,
     # so we must check the logs for ExecutionSuccess/ExecutionFailure events.
     w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
-    receipt = await w3.eth.get_transaction_receipt(tx_hash_hex)
+    receipt = await w3.eth.get_transaction_receipt(HexBytes(tx_hash_hex))
 
     # Event signatures:
     # - ExecutionSuccess(bytes32,uint256): 0x442e715f...
