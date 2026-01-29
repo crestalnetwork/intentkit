@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.config.config import config
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
@@ -1006,7 +1007,15 @@ async def expense_message(
 
     # Calculate amount with exact 4 decimal places
     base_original_amount = base_llm_amount
-    base_amount = base_original_amount
+
+    # Determine base_discount_amount based on payment_enabled flag
+
+    if config.payment_enabled:
+        base_discount_amount = Decimal("0")
+    else:
+        base_discount_amount = base_original_amount
+
+    base_amount = base_original_amount - base_discount_amount
     fee_platform_amount = (
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -1023,20 +1032,29 @@ async def expense_message(
     event_id = str(XID())
 
     # 2. Update user account - deduct credits
-    user_account, details = await CreditAccount.expense_in_session(
-        session=session,
-        owner_type=OwnerType.USER,
-        owner_id=user_id,
-        amount=total_amount,
-        event_id=event_id,
-    )
+    details: dict[CreditType, Decimal] = {}
+    if total_amount > 0:
+        user_account, details = await CreditAccount.expense_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+            amount=total_amount,
+            event_id=event_id,
+        )
+    else:
+        user_account = await CreditAccount.get_or_create_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+        )
 
     # If using free credits, add to agent's free_income_daily
-    if details.get(CreditType.FREE):
+    free_credits_used = details.get(CreditType.FREE)
+    if total_amount > 0 and free_credits_used:
         from intentkit.models.agent_data import AgentQuota
 
         await AgentQuota.add_free_income_in_session(
-            session=session, id=agent.id, amount=details.get(CreditType.FREE)
+            session=session, id=agent.id, amount=free_credits_used
         )
 
     # 3. Calculate detailed amounts for fees based on user payment details
@@ -1106,40 +1124,42 @@ async def expense_message(
     )
 
     # 4. Update fee account - add credits with detailed amounts
-    message_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
-        amount_details={
-            CreditType.FREE: base_free_amount,
-            CreditType.REWARD: base_reward_amount,
-            CreditType.PERMANENT: base_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    platform_fee_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
-        amount_details={
-            CreditType.FREE: fee_platform_free_amount,
-            CreditType.REWARD: fee_platform_reward_amount,
-            CreditType.PERMANENT: fee_platform_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    if fee_agent_amount > 0:
-        agent_account = await CreditAccount.income_in_session(
+    agent_account: CreditAccount | None = None
+    if total_amount > 0:
+        await CreditAccount.income_in_session(
             session=session,
-            owner_type=OwnerType.AGENT,
-            owner_id=agent.id,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
             amount_details={
-                CreditType.FREE: fee_agent_free_amount,
-                CreditType.REWARD: fee_agent_reward_amount,
-                CreditType.PERMANENT: fee_agent_permanent_amount,
+                CreditType.FREE: base_free_amount,
+                CreditType.REWARD: base_reward_amount,
+                CreditType.PERMANENT: base_permanent_amount,
             },
             event_id=event_id,
         )
+        await CreditAccount.income_in_session(
+            session=session,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
+            amount_details={
+                CreditType.FREE: fee_platform_free_amount,
+                CreditType.REWARD: fee_platform_reward_amount,
+                CreditType.PERMANENT: fee_platform_permanent_amount,
+            },
+            event_id=event_id,
+        )
+        if fee_agent_amount > 0:
+            agent_account = await CreditAccount.income_in_session(
+                session=session,
+                owner_type=OwnerType.AGENT,
+                owner_id=agent.id,
+                amount_details={
+                    CreditType.FREE: fee_agent_free_amount,
+                    CreditType.REWARD: fee_agent_reward_amount,
+                    CreditType.PERMANENT: fee_agent_permanent_amount,
+                },
+                event_id=event_id,
+            )
 
     # Get agent wallet address
     agent_data = await AgentData.get(agent.id)
@@ -1165,6 +1185,7 @@ async def expense_message(
         + user_account.reward_credits,
         base_amount=base_amount,
         base_original_amount=base_original_amount,
+        base_discount_amount=base_discount_amount,
         base_free_amount=base_free_amount,
         base_reward_amount=base_reward_amount,
         base_permanent_amount=base_permanent_amount,
@@ -1174,7 +1195,7 @@ async def expense_message(
         fee_platform_reward_amount=fee_platform_reward_amount,
         fee_platform_permanent_amount=fee_platform_permanent_amount,
         fee_agent_amount=fee_agent_amount,
-        fee_agent_account=agent_account.id if fee_agent_amount > 0 else None,
+        fee_agent_account=agent_account.id if agent_account else None,
         fee_agent_free_amount=fee_agent_free_amount,
         fee_agent_reward_amount=fee_agent_reward_amount,
         fee_agent_permanent_amount=fee_agent_permanent_amount,
@@ -1187,66 +1208,67 @@ async def expense_message(
     await session.flush()
 
     # 4. Create credit transaction records
-    # 4.1 User account transaction (debit)
-    user_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=user_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.PAY,
-        credit_debit=CreditDebit.DEBIT,
-        change_amount=total_amount,
-        credit_type=credit_type,
-        free_amount=free_amount,
-        reward_amount=reward_amount,
-        permanent_amount=permanent_amount,
-    )
-    session.add(user_tx)
-
-    # 4.2 Message account transaction (credit)
-    message_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=message_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_BASE_LLM,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=base_amount,
-        credit_type=credit_type,
-        free_amount=base_free_amount,
-        reward_amount=base_reward_amount,
-        permanent_amount=base_permanent_amount,
-    )
-    session.add(message_tx)
-
-    # 4.3 Platform fee account transaction (credit)
-    platform_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=platform_fee_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=fee_platform_amount,
-        credit_type=credit_type,
-        free_amount=fee_platform_free_amount,
-        reward_amount=fee_platform_reward_amount,
-        permanent_amount=fee_platform_permanent_amount,
-    )
-    session.add(platform_tx)
-
-    # 4.4 Agent fee account transaction (credit)
-    if fee_agent_amount > 0:
-        agent_tx = CreditTransactionTable(
+    if total_amount > 0:
+        # 4.1 User account transaction (debit)
+        user_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=agent_account.id,
+            account_id=user_account.id,
             event_id=event_id,
-            tx_type=TransactionType.RECEIVE_FEE_AGENT,
-            credit_debit=CreditDebit.CREDIT,
-            change_amount=fee_agent_amount,
+            tx_type=TransactionType.PAY,
+            credit_debit=CreditDebit.DEBIT,
+            change_amount=total_amount,
             credit_type=credit_type,
-            free_amount=fee_agent_free_amount,
-            reward_amount=fee_agent_reward_amount,
-            permanent_amount=fee_agent_permanent_amount,
+            free_amount=free_amount,
+            reward_amount=reward_amount,
+            permanent_amount=permanent_amount,
         )
-        session.add(agent_tx)
+        session.add(user_tx)
+
+        # 4.2 Message account transaction (credit)
+        message_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_BASE_LLM,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=base_amount,
+            credit_type=credit_type,
+            free_amount=base_free_amount,
+            reward_amount=base_reward_amount,
+            permanent_amount=base_permanent_amount,
+        )
+        session.add(message_tx)
+
+        # 4.3 Platform fee account transaction (credit)
+        platform_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=fee_platform_amount,
+            credit_type=credit_type,
+            free_amount=fee_platform_free_amount,
+            reward_amount=fee_platform_reward_amount,
+            permanent_amount=fee_platform_permanent_amount,
+        )
+        session.add(platform_tx)
+
+        # 4.4 Agent fee account transaction (credit)
+        if fee_agent_amount > 0 and agent_account:
+            agent_tx = CreditTransactionTable(
+                id=str(XID()),
+                account_id=agent_account.id,
+                event_id=event_id,
+                tx_type=TransactionType.RECEIVE_FEE_AGENT,
+                credit_debit=CreditDebit.CREDIT,
+                change_amount=fee_agent_amount,
+                credit_type=credit_type,
+                free_amount=fee_agent_free_amount,
+                reward_amount=fee_agent_reward_amount,
+                permanent_amount=fee_agent_permanent_amount,
+            )
+            session.add(agent_tx)
 
     await session.refresh(event)
 
@@ -1313,7 +1335,15 @@ async def skill_cost(
 
     # Calculate amount with exact 4 decimal places
     base_original_amount = base_skill_amount
-    base_amount = base_original_amount
+
+    # Determine base_discount_amount based on payment_enabled flag
+
+    if config.payment_enabled:
+        base_discount_amount = Decimal("0")
+    else:
+        base_discount_amount = base_original_amount
+
+    base_amount = base_original_amount - base_discount_amount
     fee_platform_amount = (
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -1335,7 +1365,7 @@ async def skill_cost(
     return SkillCost(
         total_amount=total_amount,
         base_amount=base_amount,
-        base_discount_amount=Decimal("0"),  # No discount in this implementation
+        base_discount_amount=base_discount_amount,
         base_original_amount=base_original_amount,
         base_skill_amount=base_skill_amount,
         fee_platform_amount=fee_platform_amount,
@@ -1385,16 +1415,25 @@ async def expense_skill(
     event_id = str(XID())
 
     # 2. Update user account - deduct credits
-    user_account, details = await CreditAccount.expense_in_session(
-        session=session,
-        owner_type=OwnerType.USER,
-        owner_id=user_id,
-        amount=skill_cost_info.total_amount,
-        event_id=event_id,
-    )
+    details = {}
+    user_account: CreditAccount | None = None
+    if skill_cost_info.total_amount > 0:
+        user_account, details = await CreditAccount.expense_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+            amount=skill_cost_info.total_amount,
+            event_id=event_id,
+        )
+    else:
+        user_account = await CreditAccount.get_or_create_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+        )
 
     # If using free credits, add to agent's free_income_daily
-    if CreditType.FREE in details:
+    if skill_cost_info.total_amount > 0 and CreditType.FREE in details:
         from intentkit.models.agent_data import AgentQuota
 
         await AgentQuota.add_free_income_in_session(
@@ -1524,52 +1563,58 @@ async def expense_skill(
     )
 
     # 4. Update fee account - add credits
-    skill_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_SKILL,
-        amount_details={
-            CreditType.FREE: base_free_amount,
-            CreditType.REWARD: base_reward_amount,
-            CreditType.PERMANENT: base_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    platform_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
-        amount_details={
-            CreditType.FREE: fee_platform_free_amount,
-            CreditType.REWARD: fee_platform_reward_amount,
-            CreditType.PERMANENT: fee_platform_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    if skill_cost_info.fee_dev_amount > 0:
-        dev_account = await CreditAccount.income_in_session(
+    skill_account: CreditAccount | None = None
+    platform_account: CreditAccount | None = None
+    dev_account: CreditAccount | None = None
+    agent_account: CreditAccount | None = None
+
+    if skill_cost_info.total_amount > 0:
+        skill_account = await CreditAccount.income_in_session(
             session=session,
-            owner_type=skill_cost_info.fee_dev_user_type,
-            owner_id=skill_cost_info.fee_dev_user,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_SKILL,
             amount_details={
-                CreditType.FREE: fee_dev_free_amount,
-                CreditType.REWARD: fee_dev_reward_amount,
-                CreditType.PERMANENT: fee_dev_permanent_amount,
+                CreditType.FREE: base_free_amount,
+                CreditType.REWARD: base_reward_amount,
+                CreditType.PERMANENT: base_permanent_amount,
             },
             event_id=event_id,
         )
-    if skill_cost_info.fee_agent_amount > 0:
-        agent_account = await CreditAccount.income_in_session(
+        platform_account = await CreditAccount.income_in_session(
             session=session,
-            owner_type=OwnerType.AGENT,
-            owner_id=agent.id,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
             amount_details={
-                CreditType.FREE: fee_agent_free_amount,
-                CreditType.REWARD: fee_agent_reward_amount,
-                CreditType.PERMANENT: fee_agent_permanent_amount,
+                CreditType.FREE: fee_platform_free_amount,
+                CreditType.REWARD: fee_platform_reward_amount,
+                CreditType.PERMANENT: fee_platform_permanent_amount,
             },
             event_id=event_id,
         )
+        if skill_cost_info.fee_dev_amount > 0:
+            dev_account = await CreditAccount.income_in_session(
+                session=session,
+                owner_type=skill_cost_info.fee_dev_user_type,
+                owner_id=skill_cost_info.fee_dev_user,
+                amount_details={
+                    CreditType.FREE: fee_dev_free_amount,
+                    CreditType.REWARD: fee_dev_reward_amount,
+                    CreditType.PERMANENT: fee_dev_permanent_amount,
+                },
+                event_id=event_id,
+            )
+        if skill_cost_info.fee_agent_amount > 0:
+            agent_account = await CreditAccount.income_in_session(
+                session=session,
+                owner_type=OwnerType.AGENT,
+                owner_id=agent.id,
+                amount_details={
+                    CreditType.FREE: fee_agent_free_amount,
+                    CreditType.REWARD: fee_agent_reward_amount,
+                    CreditType.PERMANENT: fee_agent_permanent_amount,
+                },
+                event_id=event_id,
+            )
 
     # 5. Create credit event record
 
@@ -1598,6 +1643,7 @@ async def expense_skill(
         + user_account.reward_credits,
         base_amount=skill_cost_info.base_amount,
         base_original_amount=skill_cost_info.base_original_amount,
+        base_discount_amount=skill_cost_info.base_discount_amount,
         base_skill_amount=skill_cost_info.base_skill_amount,
         base_free_amount=base_free_amount,
         base_reward_amount=base_reward_amount,
@@ -1607,14 +1653,12 @@ async def expense_skill(
         fee_platform_reward_amount=fee_platform_reward_amount,
         fee_platform_permanent_amount=fee_platform_permanent_amount,
         fee_agent_amount=skill_cost_info.fee_agent_amount,
-        fee_agent_account=agent_account.id
-        if skill_cost_info.fee_agent_amount > 0
-        else None,
+        fee_agent_account=agent_account.id if agent_account else None,
         fee_agent_free_amount=fee_agent_free_amount,
         fee_agent_reward_amount=fee_agent_reward_amount,
         fee_agent_permanent_amount=fee_agent_permanent_amount,
         fee_dev_amount=skill_cost_info.fee_dev_amount,
-        fee_dev_account=dev_account.id if skill_cost_info.fee_dev_amount > 0 else None,
+        fee_dev_account=dev_account.id if dev_account else None,
         fee_dev_free_amount=fee_dev_free_amount,
         fee_dev_reward_amount=fee_dev_reward_amount,
         fee_dev_permanent_amount=fee_dev_permanent_amount,
@@ -1627,82 +1671,85 @@ async def expense_skill(
     await session.flush()
 
     # 4. Create credit transaction records
-    # 4.1 User account transaction (debit)
-    user_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=user_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.PAY,
-        credit_debit=CreditDebit.DEBIT,
-        change_amount=skill_cost_info.total_amount,
-        credit_type=credit_type,
-        free_amount=free_amount,
-        reward_amount=reward_amount,
-        permanent_amount=permanent_amount,
-    )
-    session.add(user_tx)
-
-    # 4.2 Skill account transaction (credit)
-    skill_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=skill_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_BASE_SKILL,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=skill_cost_info.base_amount,
-        credit_type=credit_type,
-        free_amount=base_free_amount,
-        reward_amount=base_reward_amount,
-        permanent_amount=base_permanent_amount,
-    )
-    session.add(skill_tx)
-
-    # 4.3 Platform fee account transaction (credit)
-    platform_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=platform_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=skill_cost_info.fee_platform_amount,
-        credit_type=credit_type,
-        free_amount=fee_platform_free_amount,
-        reward_amount=fee_platform_reward_amount,
-        permanent_amount=fee_platform_permanent_amount,
-    )
-    session.add(platform_tx)
-
-    # 4.4 Dev user transaction (credit)
-    if skill_cost_info.fee_dev_amount > 0:
-        dev_tx = CreditTransactionTable(
+    if skill_cost_info.total_amount > 0:
+        # 4.1 User account transaction (debit)
+        user_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=dev_account.id,
+            account_id=user_account.id,
             event_id=event_id,
-            tx_type=TransactionType.RECEIVE_FEE_DEV,
-            credit_debit=CreditDebit.CREDIT,
-            change_amount=skill_cost_info.fee_dev_amount,
-            credit_type=CreditType.REWARD,
-            free_amount=fee_dev_free_amount,
-            reward_amount=fee_dev_reward_amount,
-            permanent_amount=fee_dev_permanent_amount,
-        )
-        session.add(dev_tx)
-
-    # 4.5 Agent fee account transaction (credit)
-    if skill_cost_info.fee_agent_amount > 0:
-        agent_tx = CreditTransactionTable(
-            id=str(XID()),
-            account_id=agent_account.id,
-            event_id=event_id,
-            tx_type=TransactionType.RECEIVE_FEE_AGENT,
-            credit_debit=CreditDebit.CREDIT,
-            change_amount=skill_cost_info.fee_agent_amount,
+            tx_type=TransactionType.PAY,
+            credit_debit=CreditDebit.DEBIT,
+            change_amount=skill_cost_info.total_amount,
             credit_type=credit_type,
-            free_amount=fee_agent_free_amount,
-            reward_amount=fee_agent_reward_amount,
-            permanent_amount=fee_agent_permanent_amount,
+            free_amount=free_amount,
+            reward_amount=reward_amount,
+            permanent_amount=permanent_amount,
         )
-        session.add(agent_tx)
+        session.add(user_tx)
+
+        # 4.2 Skill account transaction (credit)
+        assert skill_account is not None
+        skill_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=skill_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_BASE_SKILL,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=skill_cost_info.base_amount,
+            credit_type=credit_type,
+            free_amount=base_free_amount,
+            reward_amount=base_reward_amount,
+            permanent_amount=base_permanent_amount,
+        )
+        session.add(skill_tx)
+
+        # 4.3 Platform fee account transaction (credit)
+        assert platform_account is not None
+        platform_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=platform_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=skill_cost_info.fee_platform_amount,
+            credit_type=credit_type,
+            free_amount=fee_platform_free_amount,
+            reward_amount=fee_platform_reward_amount,
+            permanent_amount=fee_platform_permanent_amount,
+        )
+        session.add(platform_tx)
+
+        # 4.4 Dev user transaction (credit)
+        if skill_cost_info.fee_dev_amount > 0 and dev_account:
+            dev_tx = CreditTransactionTable(
+                id=str(XID()),
+                account_id=dev_account.id,
+                event_id=event_id,
+                tx_type=TransactionType.RECEIVE_FEE_DEV,
+                credit_debit=CreditDebit.CREDIT,
+                change_amount=skill_cost_info.fee_dev_amount,
+                credit_type=CreditType.REWARD,
+                free_amount=fee_dev_free_amount,
+                reward_amount=fee_dev_reward_amount,
+                permanent_amount=fee_dev_permanent_amount,
+            )
+            session.add(dev_tx)
+
+        # 4.5 Agent fee account transaction (credit)
+        if skill_cost_info.fee_agent_amount > 0 and agent_account:
+            agent_tx = CreditTransactionTable(
+                id=str(XID()),
+                account_id=agent_account.id,
+                event_id=event_id,
+                tx_type=TransactionType.RECEIVE_FEE_AGENT,
+                credit_debit=CreditDebit.CREDIT,
+                change_amount=skill_cost_info.fee_agent_amount,
+                credit_type=credit_type,
+                free_amount=fee_agent_free_amount,
+                reward_amount=fee_agent_reward_amount,
+                permanent_amount=fee_agent_permanent_amount,
+            )
+            session.add(agent_tx)
 
     # Commit all changes
     await session.refresh(event)
@@ -1896,7 +1943,15 @@ async def expense_summarize(
 
     # Calculate amount with exact 4 decimal places
     base_original_amount = base_llm_amount
-    base_amount = base_original_amount
+
+    # Determine base_discount_amount based on payment_enabled flag
+
+    if config.payment_enabled:
+        base_discount_amount = Decimal("0")
+    else:
+        base_discount_amount = base_original_amount
+
+    base_amount = base_original_amount - base_discount_amount
     fee_platform_amount = (
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -1913,20 +1968,30 @@ async def expense_summarize(
     event_id = str(XID())
 
     # 2. Update user account - deduct credits
-    user_account, details = await CreditAccount.expense_in_session(
-        session=session,
-        owner_type=OwnerType.USER,
-        owner_id=user_id,
-        amount=total_amount,
-        event_id=event_id,
-    )
+    details: dict[CreditType, Decimal] = {}
+    user_account: CreditAccount
+    if total_amount > 0:
+        user_account, details = await CreditAccount.expense_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+            amount=total_amount,
+            event_id=event_id,
+        )
+    else:
+        user_account = await CreditAccount.get_or_create_in_session(
+            session=session,
+            owner_type=OwnerType.USER,
+            owner_id=user_id,
+        )
 
     # If using free credits, add to agent's free_income_daily
-    if details.get(CreditType.FREE):
+    free_credits_used = details.get(CreditType.FREE)
+    if total_amount > 0 and free_credits_used:
         from intentkit.models.agent_data import AgentQuota
 
         await AgentQuota.add_free_income_in_session(
-            session=session, id=agent.id, amount=details.get(CreditType.FREE)
+            session=session, id=agent.id, amount=free_credits_used
         )
 
     # 3. Calculate fee amounts by credit type before income_in_session calls
@@ -1998,40 +2063,45 @@ async def expense_summarize(
     )
 
     # 4. Update fee account - add credits
-    memory_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_MEMORY,
-        amount_details={
-            CreditType.FREE: base_free_amount,
-            CreditType.REWARD: base_reward_amount,
-            CreditType.PERMANENT: base_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    platform_fee_account = await CreditAccount.income_in_session(
-        session=session,
-        owner_type=OwnerType.PLATFORM,
-        owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
-        amount_details={
-            CreditType.FREE: fee_platform_free_amount,
-            CreditType.REWARD: fee_platform_reward_amount,
-            CreditType.PERMANENT: fee_platform_permanent_amount,
-        },
-        event_id=event_id,
-    )
-    if fee_agent_amount > 0:
-        agent_account = await CreditAccount.income_in_session(
+    memory_account: CreditAccount | None = None
+    platform_fee_account: CreditAccount | None = None
+    agent_account: CreditAccount | None = None
+
+    if total_amount > 0:
+        memory_account = await CreditAccount.income_in_session(
             session=session,
-            owner_type=OwnerType.AGENT,
-            owner_id=agent.id,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_MEMORY,
             amount_details={
-                CreditType.FREE: fee_agent_free_amount,
-                CreditType.REWARD: fee_agent_reward_amount,
-                CreditType.PERMANENT: fee_agent_permanent_amount,
+                CreditType.FREE: base_free_amount,
+                CreditType.REWARD: base_reward_amount,
+                CreditType.PERMANENT: base_permanent_amount,
             },
             event_id=event_id,
         )
+        platform_fee_account = await CreditAccount.income_in_session(
+            session=session,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
+            amount_details={
+                CreditType.FREE: fee_platform_free_amount,
+                CreditType.REWARD: fee_platform_reward_amount,
+                CreditType.PERMANENT: fee_platform_permanent_amount,
+            },
+            event_id=event_id,
+        )
+        if fee_agent_amount > 0:
+            agent_account = await CreditAccount.income_in_session(
+                session=session,
+                owner_type=OwnerType.AGENT,
+                owner_id=agent.id,
+                amount_details={
+                    CreditType.FREE: fee_agent_free_amount,
+                    CreditType.REWARD: fee_agent_reward_amount,
+                    CreditType.PERMANENT: fee_agent_permanent_amount,
+                },
+                event_id=event_id,
+            )
 
     # 5. Create credit event record
 
@@ -2059,6 +2129,7 @@ async def expense_summarize(
         + user_account.reward_credits,
         base_amount=base_amount,
         base_original_amount=base_original_amount,
+        base_discount_amount=base_discount_amount,
         base_llm_amount=base_llm_amount,
         base_free_amount=base_free_amount,
         base_reward_amount=base_reward_amount,
@@ -2068,6 +2139,7 @@ async def expense_summarize(
         fee_platform_reward_amount=fee_platform_reward_amount,
         fee_platform_permanent_amount=fee_platform_permanent_amount,
         fee_agent_amount=fee_agent_amount,
+        fee_agent_account=agent_account.id if agent_account else None,
         fee_agent_free_amount=fee_agent_free_amount,
         fee_agent_reward_amount=fee_agent_reward_amount,
         fee_agent_permanent_amount=fee_agent_permanent_amount,
@@ -2079,69 +2151,73 @@ async def expense_summarize(
     session.add(event)
 
     # 4. Create credit transaction records
-    # 4.1 User account transaction (debit)
-    user_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=user_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.PAY,
-        credit_debit=CreditDebit.DEBIT,
-        change_amount=total_amount,
-        credit_type=credit_type,
-        free_amount=free_amount,
-        reward_amount=reward_amount,
-        permanent_amount=permanent_amount,
-    )
-    session.add(user_tx)
-
-    # 4.2 Memory account transaction (credit)
-    memory_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=memory_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_BASE_MEMORY,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=base_amount,
-        credit_type=credit_type,
-        free_amount=base_free_amount,
-        reward_amount=base_reward_amount,
-        permanent_amount=base_permanent_amount,
-    )
-    session.add(memory_tx)
-
-    # 4.3 Platform fee account transaction (credit)
-    platform_tx = CreditTransactionTable(
-        id=str(XID()),
-        account_id=platform_fee_account.id,
-        event_id=event_id,
-        tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
-        credit_debit=CreditDebit.CREDIT,
-        change_amount=fee_platform_amount,
-        credit_type=credit_type,
-        free_amount=fee_platform_free_amount,
-        reward_amount=fee_platform_reward_amount,
-        permanent_amount=fee_platform_permanent_amount,
-    )
-    session.add(platform_tx)
-
-    # 4.4 Agent fee account transaction (credit) - only if there's an agent fee
-    if fee_agent_amount > 0:
-        agent_tx = CreditTransactionTable(
+    if total_amount > 0:
+        # 4.1 User account transaction (debit)
+        user_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=agent_account.id,
+            account_id=user_account.id,
             event_id=event_id,
-            tx_type=TransactionType.RECEIVE_FEE_AGENT,
-            credit_debit=CreditDebit.CREDIT,
-            change_amount=fee_agent_amount,
-            credit_type=CreditType.REWARD,
-            free_amount=fee_agent_free_amount,
-            reward_amount=fee_agent_reward_amount,
-            permanent_amount=fee_agent_permanent_amount,
+            tx_type=TransactionType.PAY,
+            credit_debit=CreditDebit.DEBIT,
+            change_amount=total_amount,
+            credit_type=credit_type,
+            free_amount=free_amount,
+            reward_amount=reward_amount,
+            permanent_amount=permanent_amount,
         )
-        session.add(agent_tx)
+        session.add(user_tx)
+
+        # 4.2 Memory account transaction (credit)
+        assert memory_account is not None
+        memory_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=memory_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_BASE_MEMORY,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=base_amount,
+            credit_type=credit_type,
+            free_amount=base_free_amount,
+            reward_amount=base_reward_amount,
+            permanent_amount=base_permanent_amount,
+        )
+        session.add(memory_tx)
+
+        # 4.3 Platform fee account transaction (credit)
+        assert platform_fee_account is not None
+        platform_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=platform_fee_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=fee_platform_amount,
+            credit_type=credit_type,
+            free_amount=fee_platform_free_amount,
+            reward_amount=fee_platform_reward_amount,
+            permanent_amount=fee_platform_permanent_amount,
+        )
+        session.add(platform_tx)
+
+        # 4.4 Agent fee account transaction (credit) - only if there's an agent fee
+        if fee_agent_amount > 0 and agent_account:
+            agent_tx = CreditTransactionTable(
+                id=str(XID()),
+                account_id=agent_account.id,
+                event_id=event_id,
+                tx_type=TransactionType.RECEIVE_FEE_AGENT,
+                credit_debit=CreditDebit.CREDIT,
+                change_amount=fee_agent_amount,
+                credit_type=CreditType.REWARD,
+                free_amount=fee_agent_free_amount,
+                reward_amount=fee_agent_reward_amount,
+                permanent_amount=fee_agent_permanent_amount,
+            )
+            session.add(agent_tx)
 
     # 5. Refresh session to get updated data
     await session.refresh(user_account)
+    await session.refresh(event)
 
     # 6. Return credit event model
     return CreditEvent.model_validate(event)

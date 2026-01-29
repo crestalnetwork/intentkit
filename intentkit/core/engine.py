@@ -22,6 +22,7 @@ from typing import Any
 import sqlalchemy
 from epyxid import XID
 from langchain.agents import create_agent as create_langchain_agent
+from langchain.agents.middleware import AgentMiddleware
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -183,7 +184,7 @@ async def build_agent(
 
     base_model = await llm_model.create_instance()
 
-    middleware = [
+    middleware: list[AgentMiddleware] = [
         ToolBindingMiddleware(llm_model, tools, private_tools),
         DynamicPromptMiddleware(agent, agent_data),
     ]
@@ -362,6 +363,17 @@ async def stream_agent_raw(
 
     payment_enabled = config.payment_enabled
 
+    # Determine payer (needed for credit event recording regardless of payment_enabled)
+    payer = user_message.user_id
+    if user_message.author_type in [
+        AuthorType.TELEGRAM,
+        AuthorType.DISCORD,
+        AuthorType.TWITTER,
+        AuthorType.API,
+        AuthorType.X402,
+    ]:
+        payer = agent.owner
+
     # check user balance
     if payment_enabled:
         if not user_message.user_id or not agent.owner:
@@ -386,16 +398,6 @@ async def stream_agent_raw(
                 error_message = await error_message_create.save()
                 yield error_message
                 return
-        # payer
-        payer = user_message.user_id
-        if user_message.author_type in [
-            AuthorType.TELEGRAM,
-            AuthorType.DISCORD,
-            AuthorType.TWITTER,
-            AuthorType.API,
-            AuthorType.X402,
-        ]:
-            payer = agent.owner
         # user account
         user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         # quota
@@ -628,39 +630,33 @@ async def stream_agent_raw(
                     )
                     last = this_time
                     async with get_session() as session:
-                        if payment_enabled:
-                            amount = await model.calculate_cost(
-                                chat_message_create.input_tokens,
-                                chat_message_create.output_tokens,
-                            )
+                        amount = await model.calculate_cost(
+                            chat_message_create.input_tokens,
+                            chat_message_create.output_tokens,
+                        )
 
-                            if (
-                                hasattr(msg, "additional_kwargs")
-                                and msg.additional_kwargs
-                            ):
-                                tool_outputs = msg.additional_kwargs.get(
-                                    "tool_outputs", []
-                                )
-                                for tool_output in tool_outputs:
-                                    if tool_output.get("type") == "web_search_call":
-                                        logger.info(
-                                            f"[{user_message.agent_id}] Found web_search_call in additional_kwargs"
-                                        )
-                                        amount += 35
-                                        break
-                            credit_event = await expense_message(
-                                session,
-                                payer,
-                                chat_message_create.id,
-                                user_message.id,
-                                amount,
-                                agent,
-                            )
-                            logger.info(
-                                f"[{user_message.agent_id}] expense message: {amount}"
-                            )
-                            chat_message_create.credit_event_id = credit_event.id
-                            chat_message_create.credit_cost = credit_event.total_amount
+                        if hasattr(msg, "additional_kwargs") and msg.additional_kwargs:
+                            tool_outputs = msg.additional_kwargs.get("tool_outputs", [])
+                            for tool_output in tool_outputs:
+                                if tool_output.get("type") == "web_search_call":
+                                    logger.info(
+                                        f"[{user_message.agent_id}] Found web_search_call in additional_kwargs"
+                                    )
+                                    amount += 35
+                                    break
+                        credit_event = await expense_message(
+                            session,
+                            payer,
+                            chat_message_create.id,
+                            user_message.id,
+                            amount,
+                            agent,
+                        )
+                        logger.info(
+                            f"[{user_message.agent_id}] expense message: {amount}"
+                        )
+                        chat_message_create.credit_event_id = credit_event.id
+                        chat_message_create.credit_cost = credit_event.total_amount
                         chat_message = await chat_message_create.save_in_session(
                             session
                         )
@@ -740,46 +736,43 @@ async def stream_agent_raw(
                 )
                 last = this_time
                 async with get_session() as session:
-                    if payment_enabled:
-                        if have_first_call_in_cache:
-                            message_amount = await model.calculate_cost(
-                                skill_message_create.input_tokens,
-                                skill_message_create.output_tokens,
-                            )
-                            message_payment_event = await expense_message(
-                                session,
-                                payer,
-                                skill_message_create.id,
-                                user_message.id,
-                                message_amount,
-                                agent,
-                            )
-                            skill_message_create.credit_event_id = (
-                                message_payment_event.id
-                            )
-                            skill_message_create.credit_cost = (
-                                message_payment_event.total_amount
-                            )
-                        for skill_call in skill_calls:
-                            if not skill_call["success"]:
-                                continue
-                            skill = await Skill.get(skill_call["name"])
-                            if not skill:
-                                continue
-                            payment_event = await expense_skill(
-                                session,
-                                payer,
-                                skill_message_create.id,
-                                user_message.id,
-                                skill_call["id"],
-                                skill_call["name"],
-                                agent,
-                            )
-                            skill_call["credit_event_id"] = payment_event.id
-                            skill_call["credit_cost"] = payment_event.total_amount
-                            logger.info(
-                                f"[{user_message.agent_id}] skill payment: {skill_call}"
-                            )
+                    if have_first_call_in_cache:
+                        message_amount = await model.calculate_cost(
+                            skill_message_create.input_tokens,
+                            skill_message_create.output_tokens,
+                        )
+                        message_payment_event = await expense_message(
+                            session,
+                            payer,
+                            skill_message_create.id,
+                            user_message.id,
+                            message_amount,
+                            agent,
+                        )
+                        skill_message_create.credit_event_id = message_payment_event.id
+                        skill_message_create.credit_cost = (
+                            message_payment_event.total_amount
+                        )
+                    for skill_call in skill_calls:
+                        if not skill_call["success"]:
+                            continue
+                        skill = await Skill.get(skill_call["name"])
+                        if not skill:
+                            continue
+                        payment_event = await expense_skill(
+                            session,
+                            payer,
+                            skill_message_create.id,
+                            user_message.id,
+                            skill_call["id"],
+                            skill_call["name"],
+                            agent,
+                        )
+                        skill_call["credit_event_id"] = payment_event.id
+                        skill_call["credit_cost"] = payment_event.total_amount
+                        logger.info(
+                            f"[{user_message.agent_id}] skill payment: {skill_call}"
+                        )
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
