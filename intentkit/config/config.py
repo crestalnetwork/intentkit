@@ -6,10 +6,10 @@ from typing import TypeAlias, TypedDict, overload
 
 from dotenv import load_dotenv
 
+from intentkit.utils.alert import init_alert
 from intentkit.utils.alert_handler import setup_alert_handler
 from intentkit.utils.chain import ChainProvider, QuicknodeChainProvider
 from intentkit.utils.logging import setup_logging
-from intentkit.utils.slack_alert import init_slack
 
 SecretsMap: TypeAlias = dict[str, str | int]
 
@@ -223,15 +223,16 @@ class Config:
         setup_logging(self.env, self.debug)
         logger.info("config loaded")
 
-        # If the slack alert token exists, init it
-        if self.slack_alert_token and self.slack_alert_channel:
-            init_slack(self.slack_alert_token, self.slack_alert_channel)
-
-        # Set up alert handler for ERROR+ logs (Telegram > Slack)
-        _ = setup_alert_handler(
+        # Initialize unified alert system (Telegram > Slack > None)
+        _ = init_alert(
             telegram_bot_token=self.tg_alert_bot_token,
             telegram_chat_id=self.tg_alert_chat_id,
-            slack_enabled=bool(self.slack_alert_token and self.slack_alert_channel),
+            slack_token=self.slack_alert_token,
+            slack_channel=self.slack_alert_channel,
+        )
+
+        # Set up alert handler for ERROR+ logs (only if alert is enabled)
+        _ = setup_alert_handler(
             redis_host=self.redis_host,
             redis_port=self.redis_port,
             redis_db=self.redis_db,

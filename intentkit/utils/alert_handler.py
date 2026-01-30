@@ -13,10 +13,9 @@ from queue import Queue
 from threading import Thread
 from typing import Callable, override
 
-import httpx
 from redis import Redis
 
-from intentkit.utils.slack_alert import send_slack_message
+from intentkit.utils.alert import is_alert_enabled, send_alert
 
 # Global sync Redis client for alert handler
 _sync_redis_client: Redis | None = None
@@ -184,54 +183,22 @@ class RateLimitedAlertHandler(logging.Handler):
             self.handleError(record)
 
 
-def create_telegram_sender(bot_token: str, chat_id: str) -> Callable[[str], None]:
+def create_alert_sender() -> Callable[[str], None]:
     """
-    Create a Telegram sender function.
-
-    Args:
-        bot_token: Telegram Bot Token (obtained from @BotFather)
-        chat_id: Target Chat ID (can be user, group, or channel)
+    Create a sender function that uses the unified alert system.
 
     Returns:
-        Sender function
-    """
-
-    # Create a persistent client with timeout
-    client = httpx.Client(timeout=10)
-
-    def send(message: str) -> None:
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        try:
-            _ = client.post(
-                url,
-                json={
-                    "chat_id": chat_id,
-                    "text": message[:4096],  # Telegram message length limit
-                },
-            ).raise_for_status()
-        except Exception:
-            # Re-raise to be handled by caller
-            raise
-
-    return send
-
-
-def create_slack_sender() -> Callable[[str], None]:
-    """
-    Create a Slack sender function (reuses existing slack_alert module).
+        Sender function that calls send_alert
     """
 
     def send(message: str) -> None:
-        send_slack_message(message)
+        send_alert(message)
 
     return send
 
 
 def setup_alert_handler(
     redis_host: str,
-    telegram_bot_token: str | None = None,
-    telegram_chat_id: str | None = None,
-    slack_enabled: bool = False,
     redis_port: int = 6379,
     redis_db: int = 0,
     redis_password: str | None = None,
@@ -242,12 +209,13 @@ def setup_alert_handler(
     logger_name: str | None = None,
 ) -> RateLimitedAlertHandler | None:
     """
-    Set up alert handler with priority: Telegram > Slack.
+    Set up alert handler using the unified alert system.
+
+    The alert system must be initialized via init_alert() before calling this.
+    If no alert service is configured, this function returns None and no handler
+    is attached.
 
     Args:
-        telegram_bot_token: Telegram Bot Token
-        telegram_chat_id: Target Telegram Chat ID
-        slack_enabled: Whether Slack is configured (uses existing slack_alert module)
         redis_host: Redis host for rate limiting
         redis_port: Redis port (default: 6379)
         redis_db: Redis database number (default: 0)
@@ -261,18 +229,9 @@ def setup_alert_handler(
     Returns:
         Created handler instance, or None if no alert service is configured
     """
-    send_func: Callable[[str], None] | None = None
-    service_name: str = ""
-
-    # Priority: Telegram > Slack
-    if telegram_bot_token and telegram_chat_id:
-        send_func = create_telegram_sender(telegram_bot_token, telegram_chat_id)
-        service_name = "Telegram"
-    elif slack_enabled:
-        send_func = create_slack_sender()
-        service_name = "Slack"
-
-    if send_func is None:
+    # Check if alert is enabled
+    if not is_alert_enabled():
+        print("[AlertHandler] No alert service configured, skipping handler setup")
         return None
 
     # Initialize sync Redis for rate limiting
@@ -287,12 +246,15 @@ def setup_alert_handler(
     )
     print(f"[AlertHandler] Redis initialized at {redis_host}:{redis_port}")
 
+    # Create sender using unified alert system
+    send_func = create_alert_sender()
+
     handler = RateLimitedAlertHandler(
         send_func=send_func,
         max_messages=max_messages,
         time_window=time_window,
         level=level,
-        rate_limit_key=service_name.lower(),
+        rate_limit_key="alert",
     )
     handler.setFormatter(
         logging.Formatter("🚨 %(levelname)s | %(name)s\n\n%(message)s")
@@ -303,9 +265,9 @@ def setup_alert_handler(
     )
     target_logger.addHandler(handler)
 
-    # Log which service is being used (use print to avoid recursion)
+    # Log setup complete (use print to avoid recursion)
     print(
-        f"[AlertHandler] Initialized with {service_name} (rate limit: {max_messages}/{time_window}s)"
+        f"[AlertHandler] Initialized with unified alert system (rate limit: {max_messages}/{time_window}s)"
     )
 
     return handler

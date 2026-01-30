@@ -18,6 +18,7 @@ from intentkit.config.redis import (
     send_heartbeat,
 )
 from intentkit.core.scheduler import create_scheduler
+from intentkit.utils.alert import cleanup_alert
 
 from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 
@@ -80,6 +81,8 @@ if __name__ == "__main__":
                 await clean_heartbeat(redis_client, "scheduler")
             except Exception as e:
                 logger.error(f"Error cleaning up heartbeat: {e}")
+
+            cleanup_alert()
 
         # Initialize scheduler
         jobstores: dict[str, BaseJobStore] = {}

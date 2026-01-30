@@ -14,7 +14,7 @@ from intentkit.config.redis import get_redis
 from intentkit.core.client import execute_agent
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 from intentkit.models.user import User
-from intentkit.utils.slack_alert import send_slack_message
+from intentkit.utils.alert import send_alert
 
 from app.services.tg.bot import pool
 from app.services.tg.bot.filter.chat_type import GroupOnlyFilter
@@ -226,7 +226,7 @@ async def gp_process_message(message: Message) -> None:
             # remove bot name tag from text
             message_text = remove_bot_name(bot.username, message.text)
             if len(message_text) > 65535:
-                send_slack_message(
+                send_alert(
                     "Message too long from telegram.\n"
                     f"length: {len(message_text)}\n"
                     f"chat_id:{message.chat.id}\n"
@@ -344,7 +344,7 @@ async def process_message(message: Message) -> None:
 
     try:
         if len(message.text) > 65535:
-            send_slack_message(
+            send_alert(
                 "Message too long from telegram.\n"
                 f"length: {len(message.text)}\n"
                 f"chat_id:{message.chat.id}\n"

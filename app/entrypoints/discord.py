@@ -11,6 +11,7 @@ from intentkit.config.config import config
 from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
 from intentkit.models.agent import Agent, AgentTable
+from intentkit.utils.alert import cleanup_alert
 
 from app.services.discord.bot import pool as pool_module
 from app.services.discord.bot.pool import BotPool, agent_by_id, is_agent_failed
@@ -92,6 +93,7 @@ async def run_discord_server() -> None:
     # Signal handler for graceful shutdown
     def signal_handler(signum, frame):
         logger.info("Received termination signal. Shutting down gracefully...")
+        cleanup_alert()
         sys.exit(0)
 
     # Register signal handlers
@@ -112,3 +114,4 @@ async def run_discord_server() -> None:
             await asyncio.sleep(3600)  # Sleep for an hour
     except asyncio.CancelledError:
         logger.info("Discord server shutdown initiated")
+        cleanup_alert()

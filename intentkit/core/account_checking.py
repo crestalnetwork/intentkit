@@ -15,7 +15,7 @@ from intentkit.models.credit import (
     CreditTransaction,
     CreditTransactionTable,
 )
-from intentkit.utils.slack_alert import send_slack_message
+from intentkit.utils.alert import send_alert
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ async def check_account_balance_consistency(
                 # If no last_event_id, include all transactions for the account
                 if account.last_event_id:
                     query = text("""
-                    SELECT 
+                    SELECT
                         SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.change_amount ELSE 0 END) as credits,
                         SUM(CASE WHEN ct.credit_debit = 'debit' THEN ct.change_amount ELSE 0 END) as debits,
                         SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.free_amount ELSE -ct.free_amount END) as free_credits_sum,
@@ -124,7 +124,7 @@ async def check_account_balance_consistency(
                         SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.permanent_amount ELSE -ct.permanent_amount END) as permanent_credits_sum
                     FROM credit_transactions ct
                     JOIN credit_events ce ON ct.event_id = ce.id
-                    WHERE ct.account_id = :account_id 
+                    WHERE ct.account_id = :account_id
                       AND ce.id <= :last_event_id
                 """)
 
@@ -137,7 +137,7 @@ async def check_account_balance_consistency(
                     )
                 else:
                     query = text("""
-                    SELECT 
+                    SELECT
                         SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.change_amount ELSE 0 END) as credits,
                         SUM(CASE WHEN ct.credit_debit = 'debit' THEN ct.change_amount ELSE 0 END) as debits,
                         SUM(CASE WHEN ct.credit_debit = 'credit' THEN ct.free_amount ELSE -ct.free_amount END) as free_credits_sum,
@@ -512,7 +512,7 @@ async def check_total_credit_balance() -> list[AccountCheckingResult]:
     async with get_session() as session:
         # Query to sum all credit types across all accounts
         query = text("""
-        SELECT 
+        SELECT
             SUM(free_credits) as total_free_credits,
             SUM(reward_credits) as total_reward_credits,
             SUM(credits) as total_permanent_credits,
@@ -572,7 +572,7 @@ async def check_transaction_total_balance() -> list[AccountCheckingResult]:
     async with get_session() as session:
         # Query to sum all credit and debit transactions
         query = text("""
-        SELECT 
+        SELECT
             SUM(CASE WHEN credit_debit = 'credit' THEN change_amount ELSE 0 END) as total_credits,
             SUM(CASE WHEN credit_debit = 'debit' THEN change_amount ELSE 0 END) as total_debits
         FROM credit_transactions
@@ -690,7 +690,7 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
         )
 
     # Send the message
-    send_slack_message(
+    send_alert(
         message=f"{notify}Quick Account Checking Results", attachments=attachments
     )
 
@@ -795,7 +795,7 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
             )
 
     # Send the message
-    send_slack_message(
+    send_alert(
         message=f"{notify}Slow Account Checking Results", attachments=attachments
     )
 

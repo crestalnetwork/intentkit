@@ -24,8 +24,8 @@ from intentkit.models.credit import (
     OwnerType,
     UpstreamType,
 )
+from intentkit.utils.alert import send_alert
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -390,7 +390,7 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
     else:
         skills_formatted = "None"
 
-    send_slack_message(
+    send_alert(
         message,
         attachments=[
             {

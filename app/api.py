@@ -21,6 +21,7 @@ from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
 from intentkit.core.api import core_router
 from intentkit.models.agent import AgentTable
+from intentkit.utils.alert import cleanup_alert
 from intentkit.utils.error import (
     IntentKitAPIError,
     http_exception_handler,
@@ -154,6 +155,7 @@ async def lifespan(app: FastAPI):
     logger.info("API server start")
     yield
     # Clean up will run after the API server shutdown
+    cleanup_alert()
     logger.info("Cleaning up and shutdown...")
 
 

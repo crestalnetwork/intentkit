@@ -48,7 +48,7 @@ async def test_recharge_success():
             "intentkit.core.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
-        patch("intentkit.core.credit.send_slack_message") as mock_slack,
+        patch("intentkit.core.credit.send_alert") as mock_slack,
     ):
         mock_income.return_value = mock_user_account
         mock_deduction.return_value = mock_platform_account
@@ -139,7 +139,7 @@ async def test_withdraw_success():
             "intentkit.core.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
-        patch("intentkit.core.credit.send_slack_message"),
+        patch("intentkit.core.credit.send_alert"),
     ):
         mock_get_agent.return_value = mock_agent
         mock_get_account.return_value = mock_agent_account
@@ -191,7 +191,7 @@ async def test_reward_success():
             "intentkit.core.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
-        patch("intentkit.core.credit.send_slack_message"),
+        patch("intentkit.core.credit.send_alert"),
     ):
         mock_income.return_value = mock_user_account
         mock_deduction.return_value = mock_platform_account

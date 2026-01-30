@@ -40,8 +40,8 @@ from intentkit.models.credit import (
     UpstreamType,
 )
 from intentkit.models.skill import Skill
+from intentkit.utils.alert import send_alert
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.utils.slack_alert import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -201,9 +201,9 @@ async def recharge(
     # Commit all changes
     await session.commit()
 
-    # Send Slack notification for recharge
+    # Send notification for recharge
     try:
-        send_slack_message(
+        send_alert(
             f"💰 **Credit Recharge**\n"
             f"• User ID: `{user_id}`\n"
             f"• Amount: `{amount}` credits\n"
@@ -212,7 +212,7 @@ async def recharge(
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
-        logger.error(f"Failed to send Slack notification for recharge: {str(e)}")
+        logger.error(f"Failed to send notification for recharge: {str(e)}")
 
     return user_account
 
@@ -365,9 +365,9 @@ async def withdraw(
     # Commit all changes
     await session.commit()
 
-    # Send Slack notification for withdraw
+    # Send notification for withdraw
     try:
-        send_slack_message(
+        send_alert(
             f"💸 **Credit Withdraw**\n"
             f"• Agent ID: `{agent_id}`\n"
             f"• User ID: `{user_id}`\n"
@@ -377,7 +377,7 @@ async def withdraw(
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
-        logger.error(f"Failed to send Slack notification for withdraw: {str(e)}")
+        logger.error(f"Failed to send notification for withdraw: {str(e)}")
 
     return updated_agent_account
 
@@ -498,10 +498,10 @@ async def reward(
     # Commit all changes
     await session.commit()
 
-    # Send Slack notification for reward
+    # Send notification for reward
     try:
         reward_type_name = reward_type.value if reward_type else "REWARD"
-        send_slack_message(
+        send_alert(
             f"🎁 **Credit Reward**\n"
             f"• User ID: `{user_id}`\n"
             f"• Amount: `{amount}` reward credits\n"
@@ -511,7 +511,7 @@ async def reward(
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
-        logger.error(f"Failed to send Slack notification for reward: {str(e)}")
+        logger.error(f"Failed to send notification for reward: {str(e)}")
 
     return user_account
 

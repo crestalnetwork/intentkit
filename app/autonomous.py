@@ -28,6 +28,7 @@ from intentkit.config.redis import (
 )
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
+from intentkit.utils.alert import cleanup_alert
 
 from app.entrypoints.autonomous import run_autonomous_task
 
@@ -356,6 +357,8 @@ if __name__ == "__main__":
                 await clean_heartbeat(redis_client, "autonomous")
             except Exception as e:
                 logger.error(f"Error cleaning up heartbeat: {e}")
+
+            cleanup_alert()
 
         try:
             logger.info("Starting autonomous agents scheduler...")

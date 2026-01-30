@@ -10,6 +10,7 @@ from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
+from intentkit.utils.alert import cleanup_alert
 
 from app.services.tg.bot import pool
 from app.services.tg.bot.pool import BotPool, bot_by_token, is_agent_failed
@@ -107,6 +108,7 @@ async def run_telegram_server() -> None:
     # Signal handler for graceful shutdown
     def signal_handler(signum, frame):
         logger.info("Received termination signal. Shutting down gracefully...")
+        cleanup_alert()
         sys.exit(0)
 
     # Register signal handlers
@@ -135,3 +137,4 @@ async def run_telegram_server() -> None:
             await asyncio.sleep(3600)  # Sleep for an hour
     except asyncio.CancelledError:
         logging.info("Server shutdown initiated")
+        cleanup_alert()
