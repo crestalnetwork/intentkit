@@ -1306,7 +1306,7 @@ wheels = [
 
 [[package]]
 name = "intentkit"
-version = "0.9.16"
+version = "0.9.17"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
