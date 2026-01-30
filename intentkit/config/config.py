@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from decimal import Decimal, InvalidOperation
 from typing import TypeAlias, TypedDict, overload
 
 from dotenv import load_dotenv
@@ -108,6 +109,7 @@ class Config:
         )
         # Payment
         self.payment_enabled: bool = self.load("PAYMENT_ENABLED", "false") == "true"
+        self.hourly_budget: Decimal | None = self.load_decimal("HOURLY_BUDGET")
         # Open API for agent
         self.open_api_base_url: str = self.load(
             "OPEN_API_BASE_URL", "http://localhost:8000"
@@ -285,6 +287,20 @@ class Config:
         except (ValueError, TypeError):
             logger.warning(f"Invalid float value for {key}, using default: {default}")
             return default
+
+    def load_decimal(self, key: str, default: Decimal | None = None) -> Decimal | None:
+        """Load a Decimal value from env, handling empty strings gracefully"""
+        default_value = default if default is not None else None
+        value = self.load(key, str(default)) if default is not None else self.load(key)
+        if not value:
+            return default_value
+        try:
+            return Decimal(value)
+        except (InvalidOperation, ValueError, TypeError):
+            logger.warning(
+                f"Invalid decimal value for {key}, using default: {default_value}"
+            )
+            return default_value
 
 
 config: Config = Config()

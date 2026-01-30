@@ -41,6 +41,7 @@ from intentkit.config.db import (
     get_session,
 )
 from intentkit.core.agent import get_agent
+from intentkit.core.budget import check_hourly_budget_exceeded
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.middleware import (
@@ -373,6 +374,22 @@ async def stream_agent_raw(
         AuthorType.X402,
     ]:
         payer = agent.owner
+
+    budget_status = await check_hourly_budget_exceeded(f"base_llm:{payer}")
+    if budget_status.exceeded:
+        error_message_create = await ChatMessageCreate.from_system_message(
+            SystemMessageType.HOURLY_BUDGET_EXCEEDED,
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
+            time_cost=time.perf_counter() - start,
+        )
+        error_message = await error_message_create.save()
+        yield error_message
+        return
 
     # check user balance
     if payment_enabled:

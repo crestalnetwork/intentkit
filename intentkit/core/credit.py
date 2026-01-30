@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.core.agent import get_agent
+from intentkit.core.budget import accumulate_hourly_base_llm_amount
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import AppSetting
@@ -1001,6 +1002,9 @@ async def expense_message(
 
     if base_llm_amount < Decimal("0"):
         raise ValueError("Base LLM amount must be non-negative")
+
+    # Track hourly budget usage after validation
+    await accumulate_hourly_base_llm_amount(f"base_llm:{user_id}", base_llm_amount)
 
     # Get payment settings
     payment_settings = await AppSetting.payment()

@@ -65,6 +65,10 @@ async def test_expense_message_soft_off():
         patch(
             "intentkit.core.credit.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
+        patch(
+            "intentkit.core.credit.accumulate_hourly_base_llm_amount",
+            new_callable=AsyncMock,
+        ),
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
         mock_get_or_create.return_value = mock_user_account
@@ -160,6 +164,10 @@ async def test_expense_message_enabled():
         patch(
             "intentkit.core.credit.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
+        patch(
+            "intentkit.core.credit.accumulate_hourly_base_llm_amount",
+            new_callable=AsyncMock,
+        ),
         patch(
             "intentkit.core.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,

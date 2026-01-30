@@ -22,6 +22,7 @@ class SystemMessageType(str, Enum):
     AGENT_INTERNAL_ERROR = "agent_internal_error"
     STEP_LIMIT_EXCEEDED = "step_limit_exceeded"
     SKILL_INTERRUPTED = "skill_interrupted"
+    HOURLY_BUDGET_EXCEEDED = "hourly_budget_exceeded"
 
 
 # Default system messages
@@ -32,6 +33,7 @@ DEFAULT_SYSTEM_MESSAGES = {
     "agent_internal_error": "Something went wrong. Please try again.",
     "step_limit_exceeded": "This Agent tried to process too many steps. Try again with @super for higher step limit.",
     "skill_interrupted": "You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
+    "hourly_budget_exceeded": "Hourly budget exceeded. Please try again later.",
 }
 
 # In-memory cache for app settings
