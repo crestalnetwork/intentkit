@@ -1,22 +1,15 @@
-"""Basename AgentKit skills."""
+"""Basename skills for ENS-style domain registration on Base."""
 
 from typing import TypedDict
 
-from coinbase_agentkit import basename_action_provider
-
 from intentkit.config.config import config as system_config
-from intentkit.models.agent import Agent
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-    action_to_structured_tool,
-    get_agentkit_actions,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.basename.base import BasenameBaseTool
+from intentkit.skills.basename.register import BasenameRegister
 
 
 class SkillStates(TypedDict):
-    BasenameActionProvider_register_basename: SkillState
+    basename_register_basename: SkillState
 
 
 class Config(SkillConfig):
@@ -25,39 +18,78 @@ class Config(SkillConfig):
     states: SkillStates
 
 
+# Legacy skill name mapping (legacy names -> IntentKit names)
+_LEGACY_NAME_MAP: dict[str, str] = {
+    "BasenameActionProvider_register_basename": "basename_register_basename",
+}
+
+# Skill registry
+_SKILLS: dict[str, type[BasenameBaseTool]] = {
+    "basename_register_basename": BasenameRegister,
+}
+
+# Cache for skill instances
+_cache: dict[str, BasenameBaseTool] = {}
+
+
+def _normalize_skill_name(name: str) -> str:
+    """Normalize legacy skill names to new names."""
+    return _LEGACY_NAME_MAP.get(name, name)
+
+
 async def get_skills(
     config: "Config",
     is_private: bool,
-    agent_id: str,
-    agent: Agent | None = None,
     **_,
 ) -> list[BasenameBaseTool]:
-    """Get all Basename skills."""
+    """Get all enabled Basename skills.
 
-    available_skills: list[str] = []
+    Args:
+        config: The configuration for Basename skills.
+        is_private: Whether to include private skills.
+
+    Returns:
+        A list of enabled Basename skills.
+    """
+    tools: list[BasenameBaseTool] = []
+
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+            # Normalize legacy skill names
+            normalized_name = _normalize_skill_name(skill_name)
+            # Check cache first
+            if normalized_name in _cache:
+                tools.append(_cache[normalized_name])
+            else:
+                skill_class = _SKILLS.get(normalized_name)
+                if skill_class:
+                    skill_instance = skill_class()
+                    _cache[normalized_name] = skill_instance
+                    tools.append(skill_instance)
 
-    actions = await get_agentkit_actions(
-        agent_id, [basename_action_provider], agent=agent
-    )
-    tools: list[BasenameBaseTool] = []
-    for skill in available_skills:
-        for action in actions:
-            if action.name.endswith(skill):
-                tools.append(action_to_structured_tool(action))
     return tools
 
 
 def available() -> bool:
-    """Check if this skill category is available based on system config."""
-    return all(
+    """Check if this skill category is available based on system config.
+
+    Basename skills require CDP credentials for wallet operations,
+    or can work with Safe/Privy wallet providers.
+    """
+    # Basename works with any on-chain capable wallet
+    # Check if we have at least CDP credentials configured
+    has_cdp = all(
         [
             bool(system_config.cdp_api_key_id),
             bool(system_config.cdp_api_key_secret),
             bool(system_config.cdp_wallet_secret),
         ]
     )
+    # Or Privy credentials
+    has_privy = bool(system_config.privy_app_id) and bool(
+        system_config.privy_app_secret
+    )
+
+    return has_cdp or has_privy

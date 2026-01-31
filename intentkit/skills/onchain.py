@@ -22,6 +22,7 @@ from intentkit.skills.base import IntentKitSkill
 
 if TYPE_CHECKING:
     from intentkit.clients import WalletProviderType, WalletSignerType
+    from intentkit.clients.evm_wallet import EvmWallet
 
 
 class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
@@ -83,6 +84,33 @@ class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
     # =========================================================================
     # Unified Wallet Methods (Support both CDP and Privy)
     # =========================================================================
+
+    async def get_unified_wallet(self) -> "EvmWallet":
+        """
+        Get a unified wallet interface for the active agent.
+
+        This method returns an EvmWallet instance that provides a consistent
+        async interface for wallet operations, regardless of whether the
+        underlying provider is CDP or Safe/Privy.
+
+        Returns:
+            An EvmWallet instance for the current agent.
+
+        Raises:
+            IntentKitAPIError: If the wallet cannot be created.
+
+        Example:
+            ```python
+            wallet = await self.get_unified_wallet()
+            address = wallet.address
+            balance = await wallet.get_balance()
+            tx_hash = await wallet.send_transaction(to="0x...", value=1000)
+            ```
+        """
+        from intentkit.clients.evm_wallet import EvmWallet
+
+        context = self.get_context()
+        return await EvmWallet.create(context.agent)
 
     async def get_wallet_provider(self) -> "WalletProviderType":
         """
@@ -189,3 +217,13 @@ class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
         """
         wallet_provider = self.get_agent_wallet_provider_type()
         return wallet_provider in ("cdp", "safe", "privy")
+
+    def get_agent_network_id(self) -> str | None:
+        """
+        Get the network ID for the active agent.
+
+        Returns:
+            The network ID string (e.g., 'base-mainnet') or None if not set.
+        """
+        context = self.get_context()
+        return context.agent.network_id

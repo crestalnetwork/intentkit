@@ -21,7 +21,7 @@ from typing import Any, List, Optional
 # Add the parent directory to the path to import intentkit modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from coinbase_agentkit import CdpEvmWalletProvider, CdpEvmWalletProviderConfig
+from cdp import CdpClient, HttpErrorType, NetworkError
 from sqlalchemy import select, update
 
 from intentkit.config.config import config
@@ -46,31 +46,26 @@ class WalletFixer:
             "failed_fixes": 0,
         }
 
-    async def check_wallet_exists(
-        self, address: str, network_id: str = "base-mainnet"
-    ) -> bool:
-        """Check if a wallet address can be initialized with CDP."""
+    async def check_wallet_exists(self, address: str) -> bool:
+        """Check if a wallet address exists in CDP."""
         try:
-            # Try to initialize the wallet provider with the address
-            wallet_config = CdpEvmWalletProviderConfig(
+            async with CdpClient(
                 api_key_id=config.cdp_api_key_id,
                 api_key_secret=config.cdp_api_key_secret,
-                network_id=network_id,
-                address=address,
                 wallet_secret=config.cdp_wallet_secret,
-            )
-
-            # Try to create the wallet provider - this will fail if address doesn't exist
-            await asyncio.to_thread(CdpEvmWalletProvider, wallet_config)
+            ) as cdp:
+                await cdp.evm.get_account(address=address)
             return True
 
+        except NetworkError as e:
+            if e.error_type == HttpErrorType.NOT_FOUND:
+                return False
+            return True
         except Exception as e:
             error_msg = str(e).lower()
             if "not found" in error_msg or "404" in error_msg:
                 return False
-            else:
-                # For other errors, assume it exists to be safe
-                return True
+            return True
 
     async def find_agents_with_invalid_wallets(
         self, agent_id: Optional[str] = None

@@ -1,9 +1,13 @@
-"""Pyth AgentKit skills base class."""
+"""Pyth skills base class."""
 
-from intentkit.skills.cdp.base import CDPBaseTool
+from intentkit.skills.base import IntentKitSkill
 
 
-class PythBaseTool(CDPBaseTool):
-    """Base class for Pyth tools."""
+class PythBaseTool(IntentKitSkill):
+    """Base class for Pyth tools.
+
+    Pyth skills fetch price data from the Pyth oracle network.
+    These skills do not require a wallet as they only read data.
+    """
 
     category: str = "pyth"

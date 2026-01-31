@@ -2,12 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "ERC20",
-  "description": "ERC20 token balance and transfer actions via Coinbase AgentKit",
+  "description": "ERC20 token balance, transfer, and lookup actions",
   "x-icon": "https://ai.service.crestal.dev/skills/erc20/erc20.svg",
-  "x-tags": [
-    "Crypto",
-    "DeFi"
-  ],
+  "x-tags": ["Crypto", "DeFi"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,57 +15,46 @@
     "states": {
       "type": "object",
       "properties": {
-        "ERC20ActionProvider_get_balance": {
+        "erc20_get_balance": {
           "type": "string",
           "title": "Get ERC20 Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for ERC20ActionProvider_get_balance",
+          "description": "Get the balance of an ERC20 token for a given address",
           "default": "disabled"
         },
-        "ERC20ActionProvider_transfer": {
+        "erc20_transfer": {
           "type": "string",
           "title": "Transfer ERC20",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for ERC20ActionProvider_transfer",
+          "description": "Transfer ERC20 tokens to another address",
+          "default": "disabled"
+        },
+        "erc20_get_token_address": {
+          "type": "string",
+          "title": "Get Token Address",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the contract address for a token symbol on the current network",
           "default": "disabled"
         }
       },
       "description": "States for each ERC20 skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
-      "default": "platform"
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "required": ["states", "enabled"],
   "additionalProperties": true
 }

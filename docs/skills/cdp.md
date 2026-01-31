@@ -1,18 +1,15 @@
 # Coinbase Developer Platform
 
-## CDP AgentKit
+## CDP SDK
 
-All CDP Skills are supported by [AgentKit](https://github.com/coinbase/agentkit/).
+IntentKit CDP skills are implemented with the official [CDP SDK](https://github.com/coinbase/cdp-sdk) and use the unified wallet interface inside IntentKit.
 
-The core CDP skills bundle now focuses on wallet management and faucet access. Available tools are:
+The core CDP skills bundle focuses on wallet management and native transfers. Available tools are:
 
 ```
-WalletActionProvider_get_balance
-WalletActionProvider_get_wallet_details
-WalletActionProvider_native_transfer
-CdpApiActionProvider_request_faucet_funds
-CdpEvmWalletActionProvider_get_swap_price
-CdpEvmWalletActionProvider_swap
+cdp_get_balance
+cdp_get_wallet_details
+cdp_native_transfer
 ```
 
-Other AgentKit providers such as Basename, ERC20, ERC721, Morpho, Pyth, Superfluid, WETH, and WOW are exposed through their own dedicated skill categories under `intentkit/skills/`.
+Other on-chain providers such as Basename, ERC20, ERC721, Morpho, Pyth, Superfluid, WETH, and WOW are exposed through their own dedicated skill categories under `intentkit/skills/`.

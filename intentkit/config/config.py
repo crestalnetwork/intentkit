@@ -114,7 +114,7 @@ class Config:
         self.open_api_base_url: str = self.load(
             "OPEN_API_BASE_URL", "http://localhost:8000"
         )
-        # CDP - AgentKit 0.7.x Configuration
+        # CDP SDK Configuration
         self.cdp_api_key_id: str | None = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret: str | None = self.load("CDP_API_KEY_SECRET")
         self.cdp_wallet_secret: str | None = self.load("CDP_WALLET_SECRET")

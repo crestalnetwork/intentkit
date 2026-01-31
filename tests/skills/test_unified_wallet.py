@@ -110,23 +110,18 @@ class TestGetWalletSigner:
         mock_agent.id = "test-agent"
         mock_agent.network_id = "base-mainnet"
 
-        mock_cdp_provider = MagicMock()
+        mock_account = MagicMock()
+        mock_account.address = "0x1234567890abcdef1234567890abcdef12345678"
 
         with patch(
-            "intentkit.clients.cdp.get_wallet_provider",
+            "intentkit.clients.get_evm_account",
             new_callable=AsyncMock,
-            return_value=mock_cdp_provider,
+            return_value=mock_account,
         ):
-            with patch(
-                "intentkit.clients.signer.ThreadSafeEvmWalletSigner"
-            ) as mock_signer_class:
-                mock_signer = MagicMock()
-                mock_signer_class.return_value = mock_signer
+            signer = await get_wallet_signer(mock_agent)
 
-                signer = await get_wallet_signer(mock_agent)
-
-                # Should create ThreadSafeEvmWalletSigner
-                assert signer is not None
+            assert signer is not None
+            assert signer.address == mock_account.address
 
     @pytest.mark.asyncio
     async def test_readonly_signer_raises(self):
@@ -145,20 +140,22 @@ class TestThreadSafeEvmWalletSigner:
     """Tests for ThreadSafeEvmWalletSigner class."""
 
     def test_address_property(self):
-        """Test that address property returns provider's address."""
-        mock_provider = MagicMock()
-        mock_provider.get_address.return_value = "0x1234567890abcdef"
+        """Test that address property returns account address."""
+        mock_account = MagicMock()
+        mock_account.address = "0x1234567890abcdef"
 
         with patch(
-            "coinbase_agentkit.wallet_providers.evm_wallet_provider.EvmWalletSigner"
-        ) as mock_coinbase_signer:
-            mock_coinbase_signer.return_value = MagicMock()
+            "intentkit.clients.signer.EvmLocalAccount"
+        ) as mock_local_account_class:
+            mock_local_account = MagicMock()
+            mock_local_account.address = mock_account.address
+            mock_local_account_class.return_value = mock_local_account
 
-            signer = ThreadSafeEvmWalletSigner(mock_provider)
+            signer = ThreadSafeEvmWalletSigner(mock_account)
             address = signer.address
 
-            mock_provider.get_address.assert_called_once()
-            assert address == "0x1234567890abcdef"
+            mock_local_account_class.assert_called_once_with(mock_account)
+            assert address == mock_account.address
 
 
 class TestPrivyWalletSigner:

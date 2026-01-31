@@ -1,6 +1,8 @@
+"""Base classes and utilities for IntentKit skills."""
+
 import logging
 from abc import ABCMeta
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import (
     Any,
     Literal,
@@ -8,13 +10,7 @@ from typing import (
     TypedDict,
 )
 
-from coinbase_agentkit import (
-    Action,
-    AgentKit,
-    AgentKitConfig,
-    CdpEvmWalletProvider,
-)
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import (
@@ -23,16 +19,14 @@ from pydantic import (
 from pydantic.v1 import ValidationError as ValidationErrorV1
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
 from intentkit.config.redis import get_redis
-from intentkit.models.agent import Agent
 from intentkit.models.skill import (
     AgentSkillData,
     AgentSkillDataCreate,
     ChatSkillData,
     ChatSkillDataCreate,
 )
-from intentkit.utils.error import IntentKitAPIError, RateLimitExceeded
+from intentkit.utils.error import RateLimitExceeded
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
@@ -281,57 +275,3 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
             data=data,
         )
         await skill_data.save()
-
-
-async def get_agentkit_actions(
-    agent_id: str,
-    provider_factories: Sequence[Callable[[], object]],
-    *,
-    agent: Agent | None = None,
-) -> list[Action]:
-    """Build an AgentKit instance and return its actions."""
-
-    if agent is None:
-        try:
-            context = IntentKitSkill.get_context()
-        except ValueError as exc:  # pragma: no cover - defensive guard
-            raise IntentKitAPIError(
-                500,
-                "AgentContextMissing",
-                "Agent context is required to initialize AgentKit actions.",
-            ) from exc
-        agent = context.agent
-
-    if agent.id != agent_id:
-        raise IntentKitAPIError(
-            400,
-            "AgentMismatch",
-            "The requested agent does not match the active context agent.",
-        )
-
-    wallet_provider: CdpEvmWalletProvider = await get_cdp_wallet_provider(agent)
-
-    agent_kit = AgentKit(
-        AgentKitConfig(
-            wallet_provider=wallet_provider,
-            action_providers=[factory() for factory in provider_factories],
-        )
-    )
-    return agent_kit.get_actions()
-
-
-def action_to_structured_tool(action: Action) -> StructuredTool:
-    """Convert an AgentKit action to a LangChain StructuredTool."""
-
-    def _tool_fn(**kwargs: object) -> str:
-        return action.invoke(kwargs)
-
-    tool = StructuredTool(
-        name=action.name,
-        description=action.description,
-        func=_tool_fn,
-        args_schema=action.args_schema,
-    )
-    tool.handle_tool_error = lambda e: f"tool error: {e}"
-    tool.handle_validation_error = lambda e: f"validation error: {e}"
-    return tool

@@ -1,12 +1,15 @@
-from langchain_core.tools import ArgsSchema
-from pydantic import Field
+"""CDP wallet skills base class."""
 
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class CDPBaseTool(IntentKitSkill):
-    """Base class for CDP tools."""
+class CDPBaseTool(IntentKitOnChainSkill):
+    """Base class for CDP wallet skills.
 
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = None
+    CDP skills provide basic wallet operations like getting balances,
+    wallet details, and transferring native tokens.
+
+    These skills work with any EVM-compatible wallet provider (CDP, Safe/Privy).
+    """
+
+    category: str = "cdp"

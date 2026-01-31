@@ -1,9 +1,15 @@
-"""WETH AgentKit skills base class."""
+"""WETH skills base class."""
 
-from intentkit.skills.cdp.base import CDPBaseTool
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class WethBaseTool(CDPBaseTool):
-    """Base class for WETH tools."""
+class WethBaseTool(IntentKitOnChainSkill):
+    """Base class for WETH wrapping/unwrapping skills.
+
+    WETH skills provide functionality to wrap ETH to WETH and unwrap WETH to ETH.
+    WETH (Wrapped ETH) is an ERC20 token representation of ETH.
+
+    These skills work with any EVM-compatible wallet provider (CDP, Safe/Privy).
+    """
 
     category: str = "weth"

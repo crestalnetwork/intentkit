@@ -1,24 +1,18 @@
-"""ERC721 AgentKit skills."""
+"""ERC721 NFT skills."""
 
 from typing import TypedDict
 
-from coinbase_agentkit import erc721_action_provider
-
-from intentkit.config.config import config as system_config
-from intentkit.models.agent import Agent
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-    action_to_structured_tool,
-    get_agentkit_actions,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.erc721.base import ERC721BaseTool
+from intentkit.skills.erc721.get_balance import ERC721GetBalance
+from intentkit.skills.erc721.mint import ERC721Mint
+from intentkit.skills.erc721.transfer import ERC721Transfer
 
 
 class SkillStates(TypedDict):
-    Erc721ActionProvider_get_balance: SkillState
-    Erc721ActionProvider_mint: SkillState
-    Erc721ActionProvider_transfer: SkillState
+    erc721_get_balance: SkillState
+    erc721_mint: SkillState
+    erc721_transfer: SkillState
 
 
 class Config(SkillConfig):
@@ -27,39 +21,68 @@ class Config(SkillConfig):
     states: SkillStates
 
 
+# Skill registry
+_SKILLS: dict[str, type[ERC721BaseTool]] = {
+    "erc721_get_balance": ERC721GetBalance,
+    "erc721_mint": ERC721Mint,
+    "erc721_transfer": ERC721Transfer,
+}
+
+# Legacy skill name mapping (legacy names -> IntentKit names)
+_LEGACY_NAME_MAP: dict[str, str] = {
+    "Erc721ActionProvider_get_balance": "erc721_get_balance",
+    "Erc721ActionProvider_mint": "erc721_mint",
+    "Erc721ActionProvider_transfer": "erc721_transfer",
+}
+
+# Cache for skill instances
+_cache: dict[str, ERC721BaseTool] = {}
+
+
+def _normalize_skill_name(name: str) -> str:
+    """Normalize legacy skill names to new names."""
+    return _LEGACY_NAME_MAP.get(name, name)
+
+
 async def get_skills(
     config: Config,
     is_private: bool,
-    agent_id: str,
-    agent: Agent | None = None,
     **_,
 ) -> list[ERC721BaseTool]:
-    """Get all ERC721 skills."""
+    """Get all enabled ERC721 skills.
 
-    available_skills: list[str] = []
+    Args:
+        config: The configuration for ERC721 skills.
+        is_private: Whether to include private skills.
+
+    Returns:
+        A list of enabled ERC721 skills.
+    """
+    tools: list[ERC721BaseTool] = []
+
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+            # Normalize legacy names to new names
+            normalized_name = _normalize_skill_name(skill_name)
+            # Check cache first
+            if normalized_name in _cache:
+                tools.append(_cache[normalized_name])
+            else:
+                skill_class = _SKILLS.get(normalized_name)
+                if skill_class:
+                    skill_instance = skill_class()
+                    _cache[normalized_name] = skill_instance
+                    tools.append(skill_instance)
 
-    actions = await get_agentkit_actions(
-        agent_id, [erc721_action_provider], agent=agent
-    )
-    tools: list[ERC721BaseTool] = []
-    for skill in available_skills:
-        for action in actions:
-            if action.name.endswith(skill):
-                tools.append(action_to_structured_tool(action))
     return tools
 
 
 def available() -> bool:
-    """Check if this skill category is available based on system config."""
-    return all(
-        [
-            bool(system_config.cdp_api_key_id),
-            bool(system_config.cdp_api_key_secret),
-            bool(system_config.cdp_wallet_secret),
-        ]
-    )
+    """Check if this skill category is available based on system config.
+
+    ERC721 skills are available for any EVM-compatible wallet (CDP, Safe/Privy).
+    They don't require specific CDP credentials since they work with any wallet.
+    """
+    return True

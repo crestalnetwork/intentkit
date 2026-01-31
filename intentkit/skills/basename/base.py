@@ -1,9 +1,9 @@
-"""Basename AgentKit skills base class."""
+"""Basename skills base class."""
 
-from intentkit.skills.cdp.base import CDPBaseTool
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class BasenameBaseTool(CDPBaseTool):
+class BasenameBaseTool(IntentKitOnChainSkill):
     """Base class for Basename tools."""
 
     category: str = "basename"

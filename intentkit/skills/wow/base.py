@@ -1,9 +1,9 @@
-"""WOW AgentKit skills base class."""
+"""WOW skills base class."""
 
-from intentkit.skills.cdp.base import CDPBaseTool
+from intentkit.skills.onchain import IntentKitOnChainSkill
 
 
-class WowBaseTool(CDPBaseTool):
+class WowBaseTool(IntentKitOnChainSkill):
     """Base class for WOW tools."""
 
     category: str = "wow"

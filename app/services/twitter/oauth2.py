@@ -43,7 +43,7 @@ async def get_twitter_auth_url(agent_id: str, redirect_uri: str) -> TwitterAuthR
 
     **Query Parameters:**
     * `agent_id` - ID of the agent to authenticate
-    * `redirect_uri` - DApp URI to redirect to after authorization from agentkit to DApp
+    * `redirect_uri` - DApp URI to redirect to after authorization from IntentKit to DApp
 
     **Returns:**
     * Object containing agent_id and authorization URL

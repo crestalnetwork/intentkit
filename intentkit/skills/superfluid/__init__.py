@@ -1,24 +1,18 @@
-"""Superfluid AgentKit skills."""
+"""Superfluid streaming payment skills."""
 
 from typing import TypedDict
 
-from coinbase_agentkit import superfluid_action_provider
-
-from intentkit.config.config import config as system_config
-from intentkit.models.agent import Agent
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-    action_to_structured_tool,
-    get_agentkit_actions,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.superfluid.base import SuperfluidBaseTool
+from intentkit.skills.superfluid.create_flow import SuperfluidCreateFlow
+from intentkit.skills.superfluid.delete_flow import SuperfluidDeleteFlow
+from intentkit.skills.superfluid.update_flow import SuperfluidUpdateFlow
 
 
 class SkillStates(TypedDict):
-    SuperfluidActionProvider_create_flow: SkillState
-    SuperfluidActionProvider_delete_flow: SkillState
-    SuperfluidActionProvider_update_flow: SkillState
+    superfluid_create_flow: SkillState
+    superfluid_update_flow: SkillState
+    superfluid_delete_flow: SkillState
 
 
 class Config(SkillConfig):
@@ -27,39 +21,68 @@ class Config(SkillConfig):
     states: SkillStates
 
 
+# Legacy skill name mapping (legacy names -> IntentKit names)
+_LEGACY_NAME_MAP: dict[str, str] = {
+    "SuperfluidActionProvider_create_flow": "superfluid_create_flow",
+    "SuperfluidActionProvider_update_flow": "superfluid_update_flow",
+    "SuperfluidActionProvider_delete_flow": "superfluid_delete_flow",
+}
+
+# Skill registry
+_SKILLS: dict[str, type[SuperfluidBaseTool]] = {
+    "superfluid_create_flow": SuperfluidCreateFlow,
+    "superfluid_update_flow": SuperfluidUpdateFlow,
+    "superfluid_delete_flow": SuperfluidDeleteFlow,
+}
+
+# Cache for skill instances
+_cache: dict[str, SuperfluidBaseTool] = {}
+
+
+def _normalize_skill_name(name: str) -> str:
+    """Normalize legacy skill names to new names."""
+    return _LEGACY_NAME_MAP.get(name, name)
+
+
 async def get_skills(
     config: Config,
     is_private: bool,
-    agent_id: str,
-    agent: Agent | None = None,
     **_,
 ) -> list[SuperfluidBaseTool]:
-    """Get all Superfluid skills."""
+    """Get all enabled Superfluid skills.
 
-    available_skills: list[str] = []
+    Args:
+        config: The configuration for Superfluid skills.
+        is_private: Whether to include private skills.
+
+    Returns:
+        A list of enabled Superfluid skills.
+    """
+    tools: list[SuperfluidBaseTool] = []
+
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+            # Normalize legacy skill names
+            normalized_name = _normalize_skill_name(skill_name)
+            # Check cache first
+            if normalized_name in _cache:
+                tools.append(_cache[normalized_name])
+            else:
+                skill_class = _SKILLS.get(normalized_name)
+                if skill_class:
+                    skill_instance = skill_class()
+                    _cache[normalized_name] = skill_instance
+                    tools.append(skill_instance)
 
-    actions = await get_agentkit_actions(
-        agent_id, [superfluid_action_provider], agent=agent
-    )
-    tools: list[SuperfluidBaseTool] = []
-    for skill in available_skills:
-        for action in actions:
-            if action.name.endswith(skill):
-                tools.append(action_to_structured_tool(action))
     return tools
 
 
 def available() -> bool:
-    """Check if this skill category is available based on system config."""
-    return all(
-        [
-            bool(system_config.cdp_api_key_id),
-            bool(system_config.cdp_api_key_secret),
-            bool(system_config.cdp_wallet_secret),
-        ]
-    )
+    """Check if this skill category is available based on system config.
+
+    Superfluid skills are available for any EVM-compatible wallet (CDP, Safe/Privy).
+    They don't require specific CDP credentials since they work with any wallet.
+    """
+    return True

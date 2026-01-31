@@ -26,16 +26,15 @@ from intentkit.clients.web3 import get_web3_client
 from intentkit.utils.error import IntentKitAPIError
 
 if TYPE_CHECKING:
-    from coinbase_agentkit import CdpEvmWalletProvider
-
+    from intentkit.clients.cdp import CdpWalletProvider
     from intentkit.clients.privy import SafeWalletProvider
     from intentkit.models.agent import Agent
 
 logger = logging.getLogger(__name__)
 
 # Type alias for unified wallet provider
-WalletProviderType = Union["CdpEvmWalletProvider", "SafeWalletProvider"]
-WalletSignerType = Any  # Can be ThreadSafeEvmWalletSigner or PrivyWalletSigner
+WalletProviderType = Union["CdpWalletProvider", "SafeWalletProvider"]
+WalletSignerType = Any  # Can be EvmLocalAccount or PrivyWalletSigner
 
 
 async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
@@ -49,7 +48,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
         agent: The agent to get the wallet provider for.
 
     Returns:
-        CdpEvmWalletProvider for CDP agents.
+        CdpWalletProvider for CDP agents.
         SafeWalletProvider for Safe agents (Privy + Safe smart account).
 
     Raises:
@@ -118,22 +117,17 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
 
     Returns:
         A signer object with sign_message, sign_typed_data, and unsafe_sign_hash methods.
-        - For CDP: ThreadSafeEvmWalletSigner wrapping CdpEvmWalletProvider
+        - For CDP: EvmLocalAccount (CDP SDK)
         - For Safe/Privy: PrivyWalletSigner
 
     Raises:
         IntentKitAPIError: If the wallet provider is not supported or not configured.
     """
     if agent.wallet_provider == "cdp":
-        # Import here to avoid circular imports
-        from intentkit.clients.cdp import get_wallet_provider as get_cdp_provider
+        from cdp import EvmLocalAccount
 
-        provider = await get_cdp_provider(agent)
-
-        # Create thread-safe signer wrapper
-        from intentkit.clients.signer import ThreadSafeEvmWalletSigner
-
-        return ThreadSafeEvmWalletSigner(provider)
+        account = await get_evm_account(agent)
+        return EvmLocalAccount(account)
 
     elif agent.wallet_provider in ("safe", "privy"):
         from intentkit.clients.privy import get_wallet_signer as get_privy_signer

@@ -1,22 +1,16 @@
-"""WETH AgentKit skills."""
+"""WETH wrapping/unwrapping skills."""
 
 from typing import TypedDict
 
-from coinbase_agentkit import weth_action_provider
-
-from intentkit.config.config import config as system_config
-from intentkit.models.agent import Agent
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-    action_to_structured_tool,
-    get_agentkit_actions,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.weth.base import WethBaseTool
+from intentkit.skills.weth.unwrap_eth import WETHUnwrapEth
+from intentkit.skills.weth.wrap_eth import WETHWrapEth
 
 
 class SkillStates(TypedDict):
-    WethActionProvider_wrap_eth: SkillState
+    weth_wrap_eth: SkillState
+    weth_unwrap_eth: SkillState
 
 
 class Config(SkillConfig):
@@ -25,37 +19,66 @@ class Config(SkillConfig):
     states: SkillStates
 
 
+# Legacy skill name mapping (legacy names -> IntentKit names)
+_LEGACY_NAME_MAP: dict[str, str] = {
+    "WethActionProvider_wrap_eth": "weth_wrap_eth",
+    "WethActionProvider_unwrap_eth": "weth_unwrap_eth",
+}
+
+# Skill registry
+_SKILLS: dict[str, type[WethBaseTool]] = {
+    "weth_wrap_eth": WETHWrapEth,
+    "weth_unwrap_eth": WETHUnwrapEth,
+}
+
+# Cache for skill instances
+_cache: dict[str, WethBaseTool] = {}
+
+
+def _normalize_skill_name(name: str) -> str:
+    """Normalize legacy skill names to new names."""
+    return _LEGACY_NAME_MAP.get(name, name)
+
+
 async def get_skills(
     config: Config,
     is_private: bool,
-    agent_id: str,
-    agent: Agent | None = None,
     **_,
 ) -> list[WethBaseTool]:
-    """Get all WETH skills."""
+    """Get all enabled WETH skills.
 
-    available_skills: list[str] = []
+    Args:
+        config: The configuration for WETH skills.
+        is_private: Whether to include private skills.
+
+    Returns:
+        A list of enabled WETH skills.
+    """
+    tools: list[WethBaseTool] = []
+
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+            # Normalize legacy skill names
+            normalized_name = _normalize_skill_name(skill_name)
+            # Check cache first
+            if normalized_name in _cache:
+                tools.append(_cache[normalized_name])
+            else:
+                skill_class = _SKILLS.get(normalized_name)
+                if skill_class:
+                    skill_instance = skill_class()
+                    _cache[normalized_name] = skill_instance
+                    tools.append(skill_instance)
 
-    actions = await get_agentkit_actions(agent_id, [weth_action_provider], agent=agent)
-    tools: list[WethBaseTool] = []
-    for skill in available_skills:
-        for action in actions:
-            if action.name.endswith(skill):
-                tools.append(action_to_structured_tool(action))
     return tools
 
 
 def available() -> bool:
-    """Check if this skill category is available based on system config."""
-    return all(
-        [
-            bool(system_config.cdp_api_key_id),
-            bool(system_config.cdp_api_key_secret),
-            bool(system_config.cdp_wallet_secret),
-        ]
-    )
+    """Check if this skill category is available based on system config.
+
+    WETH skills are available for any EVM-compatible wallet (CDP, Safe/Privy)
+    on networks that have WETH deployed.
+    """
+    return True

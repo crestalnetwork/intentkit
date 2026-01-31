@@ -1,30 +1,22 @@
-"""CDP wallet interaction skills."""
+"""CDP wallet interaction skills.
+
+This module provides wallet skills that work with any EVM-compatible wallet
+(CDP, Safe/Privy). CDP-specific operations like swap are handled separately.
+"""
 
 from typing import TypedDict
 
-from coinbase_agentkit import (
-    cdp_api_action_provider,
-    cdp_evm_wallet_action_provider,
-    wallet_action_provider,
-)
-
-from intentkit.config.config import config as system_config
-from intentkit.models.agent import Agent
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-    action_to_structured_tool,
-    get_agentkit_actions,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cdp.base import CDPBaseTool
+from intentkit.skills.cdp.get_balance import CDPGetBalance
+from intentkit.skills.cdp.get_wallet_details import CDPGetWalletDetails
+from intentkit.skills.cdp.native_transfer import CDPNativeTransfer
 
 
 class SkillStates(TypedDict):
-    WalletActionProvider_get_balance: SkillState
-    WalletActionProvider_get_wallet_details: SkillState
-    WalletActionProvider_native_transfer: SkillState
-    CdpEvmWalletActionProvider_get_swap_price: SkillState
-    CdpEvmWalletActionProvider_swap: SkillState
+    cdp_get_balance: SkillState
+    cdp_get_wallet_details: SkillState
+    cdp_native_transfer: SkillState
 
 
 class Config(SkillConfig):
@@ -33,58 +25,69 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-# CDP skills is not stateless for agents, so we need agent_id here
-# If you are skill contributor, please do not follow this pattern
+# Legacy skill name mapping (legacy names -> IntentKit names)
+_LEGACY_NAME_MAP: dict[str, str] = {
+    "WalletActionProvider_get_balance": "cdp_get_balance",
+    "WalletActionProvider_get_wallet_details": "cdp_get_wallet_details",
+    "WalletActionProvider_native_transfer": "cdp_native_transfer",
+}
+
+# Skill registry
+_SKILLS: dict[str, type[CDPBaseTool]] = {
+    "cdp_get_balance": CDPGetBalance,
+    "cdp_get_wallet_details": CDPGetWalletDetails,
+    "cdp_native_transfer": CDPNativeTransfer,
+}
+
+# Cache for skill instances
+_cache: dict[str, CDPBaseTool] = {}
+
+
+def _normalize_skill_name(name: str) -> str:
+    """Normalize legacy skill names to new names."""
+    return _LEGACY_NAME_MAP.get(name, name)
+
+
 async def get_skills(
-    config: "Config",
+    config: Config,
     is_private: bool,
-    agent_id: str,
-    agent: Agent | None = None,
     **_,
 ) -> list[CDPBaseTool]:
-    """Get all CDP skills.
+    """Get all enabled CDP skills.
 
     Args:
         config: The configuration for CDP skills.
         is_private: Whether to include private skills.
-        agent_id: The ID of the agent using the skills.
 
     Returns:
-        A list of CDP skills.
+        A list of enabled CDP skills.
     """
-    available_skills = []
+    tools: list[CDPBaseTool] = []
 
-    # Include skills based on their state
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
-        elif state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+        if state == "public" or (state == "private" and is_private):
+            # Normalize legacy names to new names
+            normalized_name = _normalize_skill_name(skill_name)
+            # Check cache first
+            if normalized_name in _cache:
+                tools.append(_cache[normalized_name])
+            else:
+                skill_class = _SKILLS.get(normalized_name)
+                if skill_class:
+                    skill_instance = skill_class()
+                    _cache[normalized_name] = skill_instance
+                    tools.append(skill_instance)
 
-    # Initialize CDP client
-    actions = await get_agentkit_actions(
-        agent_id,
-        [
-            wallet_action_provider,
-            cdp_api_action_provider,
-            cdp_evm_wallet_action_provider,
-        ],
-        agent=agent,
-    )
-    tools = []
-    for skill in available_skills:
-        for action in actions:
-            if action.name.endswith(skill):
-                tools.append(action_to_structured_tool(action))
     return tools
 
 
 def available() -> bool:
-    """Check if this skill category is available based on system config."""
-    return all(
-        [
-            bool(system_config.cdp_api_key_id),
-            bool(system_config.cdp_api_key_secret),
-            bool(system_config.cdp_wallet_secret),
-        ]
-    )
+    """Check if this skill category is available based on system config.
+
+    CDP wallet skills (get_balance, get_wallet_details, native_transfer) are
+    available for any EVM-compatible wallet (CDP, Safe/Privy).
+    They don't require specific CDP credentials since they work with any wallet.
+    """
+    return True

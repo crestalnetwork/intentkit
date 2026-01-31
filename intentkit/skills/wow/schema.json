@@ -2,11 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "WOW",
-  "description": "WOW social token actions via Coinbase AgentKit",
+  "description": "WOW social token actions for Zora ERC20 memecoins on Base",
   "x-icon": "https://ai.service.crestal.dev/skills/wow/wow.svg",
-  "x-tags": [
-    "Crypto"
-  ],
+  "x-tags": ["Crypto"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -17,52 +15,40 @@
     "states": {
       "type": "object",
       "properties": {
-        "WowActionProvider_buy_token": {
+        "wow_buy_token": {
           "type": "string",
           "title": "Buy Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for WowActionProvider_buy_token",
+          "description": "Buy WOW ERC20 memecoin tokens with ETH",
           "default": "disabled"
         },
-        "WowActionProvider_create_token": {
+        "wow_create_token": {
           "type": "string",
           "title": "Create Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for WowActionProvider_create_token",
+          "description": "Create a new WOW ERC20 memecoin using the factory",
           "default": "disabled"
         },
-        "WowActionProvider_sell_token": {
+        "wow_sell_token": {
           "type": "string",
           "title": "Sell Token",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for WowActionProvider_sell_token",
+          "description": "Sell WOW ERC20 memecoin tokens for ETH",
           "default": "disabled"
         }
       },
@@ -72,18 +58,11 @@
       "type": "string",
       "title": "API Key Provider",
       "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
+      "enum": ["platform"],
+      "x-enum-title": ["Nation Hosted"],
       "default": "platform"
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "required": ["states", "enabled"],
   "additionalProperties": true
 }

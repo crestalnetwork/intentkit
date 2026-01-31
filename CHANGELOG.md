@@ -1072,7 +1072,7 @@ This release focuses on improving the x402 integration with better error handlin
 - **Agent Response**: Fixed agent response model validation and data conversion
 
 ### Refactoring
-- **Agent Provider Icons**: Replaced agentkit provider icons
+- **Agent Provider Icons**: Replaced provider icons
 - **Code Formatting**: Improved code formatting and removed unused imports
 - **Agent Model**: Major refactoring of agent model structure
 - **Engine**: Fixed various engine bugs
@@ -1684,7 +1684,7 @@ This release focuses on improving the x402 integration with better error handlin
 ## 2025-02-21
 
 ### New Features
-- AgentKit upgrade to new package
+- CDP SDK upgrade to new package
 
 ## 2025-02-20
 

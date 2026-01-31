@@ -2,11 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Morpho",
-  "description": "Morpho lending actions via Coinbase AgentKit",
+  "description": "Morpho lending protocol actions for depositing and withdrawing assets from vaults",
   "x-icon": "https://ai.service.crestal.dev/skills/morpho/morpho.svg",
-  "x-tags": [
-    "DeFi"
-  ],
+  "x-tags": ["DeFi"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -17,57 +15,34 @@
     "states": {
       "type": "object",
       "properties": {
-        "MorphoActionProvider_deposit": {
+        "morpho_deposit": {
           "type": "string",
           "title": "Deposit",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for MorphoActionProvider_deposit",
+          "description": "Deposit assets into a Morpho Vault",
           "default": "disabled"
         },
-        "MorphoActionProvider_withdraw": {
+        "morpho_withdraw": {
           "type": "string",
           "title": "Withdraw",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for MorphoActionProvider_withdraw",
+          "description": "Withdraw assets from a Morpho Vault",
           "default": "disabled"
         }
       },
       "description": "States for each Morpho skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
-      "default": "platform"
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "required": ["states", "enabled"],
   "additionalProperties": true
 }

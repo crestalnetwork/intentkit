@@ -2,13 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Pyth",
-  "description": "Pyth oracle price data via Coinbase AgentKit",
+  "description": "Pyth oracle price data for crypto, equities, forex, and metals",
   "x-icon": "https://ai.service.crestal.dev/skills/pyth/pyth.svg",
-  "x-tags": [
-    "Analytics",
-    "Crypto",
-    "DeFi"
-  ],
+  "x-tags": ["Analytics", "Crypto", "DeFi"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -19,57 +15,34 @@
     "states": {
       "type": "object",
       "properties": {
-        "PythActionProvider_fetch_price": {
+        "pyth_fetch_price": {
           "type": "string",
           "title": "Fetch Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for PythActionProvider_fetch_price",
+          "description": "Fetch the current price from a Pyth price feed",
           "default": "disabled"
         },
-        "PythActionProvider_fetch_price_feed": {
+        "pyth_fetch_price_feed": {
           "type": "string",
           "title": "Fetch Price Feed",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "State for PythActionProvider_fetch_price_feed",
+          "description": "Find the Pyth price feed ID for a given asset symbol",
           "default": "disabled"
         }
       },
       "description": "States for each Pyth skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
-      "default": "platform"
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "required": ["states", "enabled"],
   "additionalProperties": true
 }

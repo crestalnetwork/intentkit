@@ -1,13 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "Coinbase Wallet",
-  "description": "Integration with Coinbase Wallet (CDP) providing blockchain wallet functionality including balance checking and native transfers",
+  "title": "Wallet Operations",
+  "description": "Basic wallet operations including balance checking, wallet details, and native token transfers. Works with any EVM-compatible wallet.",
   "x-icon": "https://ai.service.crestal.dev/skills/cdp/cdp.png",
-  "x-tags": [
-    "Crypto",
-    "DeFi"
-  ],
+  "x-tags": ["Crypto", "DeFi"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,105 +15,46 @@
     "states": {
       "type": "object",
       "properties": {
-        "WalletActionProvider_get_balance": {
+        "cdp_get_balance": {
           "type": "string",
-          "title": "Normal Get Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "title": "Get Balance",
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Get balance, raw bigint result. Use this with professional AI models.",
+          "description": "Get the native token balance (ETH, MATIC, etc.) of the wallet",
           "default": "disabled"
         },
-        "WalletActionProvider_get_wallet_details": {
+        "cdp_get_wallet_details": {
           "type": "string",
           "title": "Get Wallet Details",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Get wallet details using coinbase API",
+          "description": "Get wallet details including address, network, and balance",
           "default": "disabled"
         },
-        "WalletActionProvider_native_transfer": {
+        "cdp_native_transfer": {
           "type": "string",
           "title": "Native Transfer",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
+          "enum": ["disabled", "public", "private"],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Transfer the native asset from the wallet",
-          "default": "disabled"
-        },
-        "CdpEvmWalletActionProvider_get_swap_price": {
-          "type": "string",
-          "title": "Get Swap Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for CdpEvmWalletActionProvider_get_swap_price",
-          "default": "disabled"
-        },
-        "CdpEvmWalletActionProvider_swap": {
-          "type": "string",
-          "title": "Swap Tokens",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "State for CdpEvmWalletActionProvider_swap",
+          "description": "Transfer native tokens (ETH, MATIC, etc.) to another address",
           "default": "disabled"
         }
       },
-      "description": "States for each CDP skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Nation Hosted"
-      ],
-      "default": "platform"
+      "description": "States for each wallet skill (disabled, public, or private)"
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "required": ["states", "enabled"],
   "additionalProperties": true
 }
