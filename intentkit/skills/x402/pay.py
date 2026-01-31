@@ -147,6 +147,13 @@ class X402Pay(X402BaseSkill):
             # x402HttpxClient raises ValueError when payment exceeds max_value
             raise ToolException(str(exc)) from exc
         except PaymentError as exc:
+            error_context = None
+            if "client" in locals():
+                error_context = client.payment_hooks.last_payment_error
+            if error_context:
+                raise ToolException(
+                    f"{exc} | last_payment_error={error_context}"
+                ) from exc
             raise ToolException(str(exc)) from exc
         except httpx.TimeoutException as exc:
             raise ToolException(

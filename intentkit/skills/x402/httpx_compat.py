@@ -202,17 +202,30 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
         except Exception as exc:
             error_message = _normalize_payment_error(exc)
             self._payment_hooks.last_payment_error = error_message
+            try:
+                response_body = body_data if body_data is not None else response.text
+            except Exception:
+                response_body = body_data
+
+            debug_context = {
+                "status_code": response.status_code,
+                "headers": dict(response.headers),
+                "body": response_body,
+                "url": str(request.url),
+            }
             logger.debug(
                 "Failed to parse payment required response",
-                extra={
-                    "status_code": response.status_code,
-                    "headers": dict(response.headers),
-                    "body": body_data,
-                    "url": str(request.url),
-                },
+                extra=debug_context,
                 exc_info=exc,
             )
-            raise PaymentError(f"Failed to handle payment: {error_message}") from exc
+            raise PaymentError(
+                "Failed to handle payment: "
+                f"{error_message}; "
+                f"status_code={response.status_code}; "
+                f"url={request.url}; "
+                f"headers={dict(response.headers)}; "
+                f"body={response_body}"
+            ) from exc
 
     async def aclose(self) -> None:
         await self._transport.aclose()
