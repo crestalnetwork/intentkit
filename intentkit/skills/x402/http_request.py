@@ -7,7 +7,7 @@ from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.x402.base import X402BaseSkill
-from intentkit.skills.x402.httpx_compat import X402HttpxCompatClient
+from intentkit.skills.x402.httpx_compat import PaymentError, X402HttpxCompatClient
 
 logger = logging.getLogger(__name__)
 
@@ -109,15 +109,19 @@ class X402HttpRequest(X402BaseSkill):
                 response.raise_for_status()
 
                 # Record the order
+                pay_to = client.payment_hooks.last_paid_to
                 await self.record_order(
                     response=response,
                     skill_name=self.name,
                     method=method_upper,
                     url=url,
+                    pay_to_fallback=pay_to,
                 )
 
                 return self.format_response(response)
         except ValueError as exc:
+            raise ToolException(str(exc)) from exc
+        except PaymentError as exc:
             raise ToolException(str(exc)) from exc
         except httpx.TimeoutException as exc:
             raise ToolException(

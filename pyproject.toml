@@ -49,7 +49,7 @@ dependencies = [
     "eth-abi>=5.0.0",
     "eth-keys>=0.4.0",
     "eth-utils>=2.1.0",
-    "x402>=0.2.1",
+    "x402>=2.0.0",
     # Social platforms
     "slack-sdk>=3.34.0",
     "tweepy[async]>=4.15.0",
@@ -110,6 +110,7 @@ dev = [
     "alembic>=1.14.0",
     # Local LLM testing
     "langchain-ollama>=0.2.0",
+    "jsonschema>=4.26.0",
 ]
 
 [tool.uv]

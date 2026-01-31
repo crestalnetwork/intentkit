@@ -11,11 +11,25 @@ from urllib.parse import urlparse
 import httpx
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
-from x402.types import x402PaymentRequiredResponse
+from x402.schemas import PaymentRequired, PaymentRequiredV1
 
-from intentkit.skills.x402.base import X402BaseSkill, normalize_payment_required_payload
+from intentkit.skills.x402.base import (
+    X402BaseSkill,
+    decode_payment_required_header,
+    get_payment_required_header,
+    normalize_payment_required_payload,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _format_amount(requirement: Any) -> str:
+    amount_value = getattr(requirement, "amount", None)
+    if amount_value is None:
+        amount_value = getattr(requirement, "max_amount_required", None)
+    if amount_value is None:
+        return "unknown"
+    return str(amount_value)
 
 
 class X402CheckPriceInput(BaseModel):
@@ -109,30 +123,74 @@ class X402CheckPrice(X402BaseSkill):
                 if response.status_code == 402:
                     # Parse the 402 response to get payment requirements
                     try:
-                        payment_data = normalize_payment_required_payload(
-                            response.json()
+                        payment_required_header = get_payment_required_header(response)
+                        if payment_required_header:
+                            payment_data = decode_payment_required_header(
+                                payment_required_header
+                            )
+                            if not payment_data:
+                                raise ToolException(
+                                    "Failed to decode payment required header."
+                                )
+                            default_version = 2
+                        else:
+                            payment_data = response.json()
+                            default_version = 1
+
+                        normalized = normalize_payment_required_payload(
+                            payment_data, default_version=default_version
                         )
-                        payment_response = x402PaymentRequiredResponse(**payment_data)
+                        version = normalized.get("x402Version") or normalized.get(
+                            "x402_version"
+                        )
+                        if version == 1:
+                            payment_response = PaymentRequiredV1.model_validate(
+                                normalized
+                            )
+                        else:
+                            payment_response = PaymentRequired.model_validate(
+                                normalized
+                            )
 
                         # Format the payment requirements for display
                         result_parts = ["Payment Required:"]
+                        resource = getattr(payment_response, "resource", None)
+                        resource_description = (
+                            resource.description if resource else None
+                        )
+
                         for req in payment_response.accepts:
+                            amount = _format_amount(req)
+                            result_parts.append(f"\n  - Amount: {amount}")
                             result_parts.append(
-                                f"\n  - Amount: {req.max_amount_required}"
+                                f"    Asset: {getattr(req, 'asset', None)}"
                             )
-                            result_parts.append(f"    Asset: {req.asset}")
-                            result_parts.append(f"    Network: {req.network}")
-                            result_parts.append(f"    Scheme: {req.scheme}")
-                            result_parts.append(f"    Pay To: {req.pay_to}")
-                            result_parts.append(f"    Description: {req.description}")
                             result_parts.append(
-                                f"    Max Timeout: {req.max_timeout_seconds}s"
+                                f"    Network: {getattr(req, 'network', None)}"
                             )
-                            if req.output_schema:
+                            result_parts.append(
+                                f"    Scheme: {getattr(req, 'scheme', None)}"
+                            )
+                            pay_to = getattr(req, "pay_to", None) or getattr(
+                                req, "payTo", None
+                            )
+                            result_parts.append(f"    Pay To: {pay_to}")
+                            description = (
+                                getattr(req, "description", None)
+                                or resource_description
+                            )
+                            result_parts.append(f"    Description: {description}")
+                            result_parts.append(
+                                f"    Max Timeout: {getattr(req, 'max_timeout_seconds', None)}s"
+                            )
+                            output_schema = getattr(req, "output_schema", None)
+                            if output_schema:
                                 result_parts.append(
-                                    f"    Output Schema: {req.output_schema}"
+                                    f"    Output Schema: {output_schema}"
                                 )
                         return "".join(result_parts)
+                    except ToolException:
+                        raise
                     except Exception as exc:
                         raise ToolException(
                             f"Failed to parse payment requirements: {exc}"

@@ -12,7 +12,7 @@ from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.x402.base import X402BaseSkill
-from intentkit.skills.x402.httpx_compat import X402HttpxCompatClient
+from intentkit.skills.x402.httpx_compat import PaymentError, X402HttpxCompatClient
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +145,8 @@ class X402Pay(X402BaseSkill):
                 return self.format_response(response)
         except ValueError as exc:
             # x402HttpxClient raises ValueError when payment exceeds max_value
+            raise ToolException(str(exc)) from exc
+        except PaymentError as exc:
             raise ToolException(str(exc)) from exc
         except httpx.TimeoutException as exc:
             raise ToolException(
