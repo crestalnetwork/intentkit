@@ -137,9 +137,6 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
         if request.extensions.get(self.RETRY_KEY):
             return response
 
-        if not response.request:
-            raise MissingRequestConfigError("Missing request configuration")
-
         try:
             await response.aread()
             body_data: Any = None
