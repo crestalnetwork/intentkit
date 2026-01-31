@@ -4,6 +4,7 @@ This skill sends a request to a 402-protected endpoint to retrieve
 the payment requirements (price information) without making a payment.
 """
 
+import json
 import logging
 from typing import Any
 from urllib.parse import urlparse
@@ -137,6 +138,17 @@ class X402CheckPrice(X402BaseSkill):
                             payment_data = response.json()
                             default_version = 1
 
+                        # Debug: log full 402 response for schema inspection
+                        logger.debug(
+                            "Received 402 Payment Required response",
+                            extra={
+                                "url": url,
+                                "status": response.status_code,
+                                "headers": dict(response.headers),
+                                "body": payment_data,
+                            },
+                        )
+
                         normalized = normalize_payment_required_payload(
                             payment_data, default_version=default_version
                         )
@@ -158,6 +170,28 @@ class X402CheckPrice(X402BaseSkill):
                         resource_description = (
                             resource.description if resource else None
                         )
+
+                        extensions = getattr(payment_response, "extensions", None)
+                        if extensions and isinstance(extensions, dict):
+                            bazaar = extensions.get("bazaar")
+                            if bazaar and isinstance(bazaar, dict):
+                                info = bazaar.get("info")
+                                schema = bazaar.get("schema")
+                                if info and isinstance(info, dict):
+                                    input_example = info.get("input")
+                                    output_example = info.get("output")
+                                    if input_example is not None:
+                                        result_parts.append(
+                                            f"\n  Bazaar Input Example: {json.dumps(input_example, indent=2)}"
+                                        )
+                                    if output_example is not None:
+                                        result_parts.append(
+                                            f"\n  Bazaar Output Example: {json.dumps(output_example, indent=2)}"
+                                        )
+                                if schema is not None:
+                                    result_parts.append(
+                                        f"\n  Bazaar Schema: {json.dumps(schema, indent=2)}"
+                                    )
 
                         for req in payment_response.accepts:
                             amount = _format_amount(req)
@@ -183,6 +217,18 @@ class X402CheckPrice(X402BaseSkill):
                             result_parts.append(
                                 f"    Max Timeout: {getattr(req, 'max_timeout_seconds', None)}s"
                             )
+
+                            # Extract input schema from extra field (x402 v2)
+                            extra = getattr(req, "extra", None)
+                            if extra and isinstance(extra, dict):
+                                input_schema = extra.get("input_schema") or extra.get(
+                                    "inputSchema"
+                                )
+                                if input_schema:
+                                    result_parts.append(
+                                        f"\n    Input Schema: {json.dumps(input_schema, indent=6)}"
+                                    )
+
                             output_schema = getattr(req, "output_schema", None)
                             if output_schema:
                                 result_parts.append(

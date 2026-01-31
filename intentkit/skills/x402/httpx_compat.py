@@ -6,6 +6,7 @@ transport flow while keeping v1 seller compatibility.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -14,6 +15,8 @@ from x402 import max_amount, x402Client
 from x402.http.x402_http_client import x402HTTPClient
 from x402.mechanisms.evm.exact import register_exact_evm_client
 from x402.mechanisms.evm.types import DOMAIN_TYPES, TypedDataDomain, TypedDataField
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentError(Exception):
@@ -199,6 +202,16 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
         except Exception as exc:
             error_message = _normalize_payment_error(exc)
             self._payment_hooks.last_payment_error = error_message
+            logger.debug(
+                "Failed to parse payment required response",
+                extra={
+                    "status_code": response.status_code,
+                    "headers": dict(response.headers),
+                    "body": body_data,
+                    "url": str(request.url),
+                },
+                exc_info=exc,
+            )
             raise PaymentError(f"Failed to handle payment: {error_message}") from exc
 
     async def aclose(self) -> None:
