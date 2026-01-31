@@ -1,8 +1,18 @@
-## v0.9.18
+## v0.9.19
+
+### New Features
+- Added X402 check price skill for real-time price checking functionality
+- Enhanced HTTP request handling in X402 integration with improved compatibility layer
 
 ### Improvements
+- Improved HTTP handling and HTTPX compatibility across X402 skills module
+- Enhanced error handling and response processing in price checking operations
 
-- Unified alert system with support for both Telegram and Slack notifications
-- Improved alert handling mechanism across all application components
+### Bug Fixes
+- Fixed bugs in the X402 module related to HTTP request processing
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.17...v0.9.18
+### Development
+- Added test script for X402 check price functionality
+- Added jsonschema as development dependency for schema validation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.18...v0.9.19
