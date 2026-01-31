@@ -1,9 +1,7 @@
-## v0.9.21
-
-### New Features
-- Added richer x402 payment requirement output with schema and example details to improve price inspection workflows
+## v0.9.22
 
 ### Improvements
-- Improved x402 payment requirement visibility with richer debug context and schema details for faster troubleshooting
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.20...v0.9.21
+- Enhanced error diagnostics in the x402 payment module for better troubleshooting
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.21...v0.9.22
