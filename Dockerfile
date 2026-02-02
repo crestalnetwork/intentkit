@@ -47,6 +47,7 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy application code
 COPY --from=builder /app/intentkit /app/intentkit
 COPY --from=builder /app/app /app/app
+COPY --from=builder /app/scripts /app/scripts
 
 ARG RELEASE
 ENV RELEASE=$RELEASE
