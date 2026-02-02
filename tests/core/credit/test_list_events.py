@@ -15,7 +15,6 @@ from intentkit.models.credit import (
     CreditEventTable,
     Direction,
     EventType,
-    OwnerType,
 )
 from intentkit.utils.error import IntentKitAPIError
 
@@ -33,7 +32,9 @@ class SelectQueryStub:
         operator = getattr(condition, "operator", None)
         key = getattr(left, "key", "")
         op = getattr(operator, "__name__", str(operator))
-        self.conditions.append((key, op, right.value if hasattr(right, "value") else right))
+        self.conditions.append(
+            (key, op, right.value if hasattr(right, "value") else right)
+        )
         return self
 
     def order_by(self, *_args):

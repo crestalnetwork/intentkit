@@ -4,7 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from intentkit.core.credit import expense_message, expense_skill, expense_summarize, skill_cost
+from intentkit.core.credit import (
+    expense_skill,
+    expense_summarize,
+    skill_cost,
+)
 from intentkit.models.agent import Agent
 from intentkit.models.credit import CreditAccountTable, CreditType, OwnerType
 
@@ -24,7 +28,9 @@ async def test_skill_cost_self_key_pricing():
     mock_skill.author = None
 
     with (
-        patch("intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock) as mock_get,
+        patch(
+            "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
+        ) as mock_get,
         patch("intentkit.config.config.config.payment_enabled", True),
         patch(
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
@@ -49,7 +55,9 @@ async def test_skill_cost_missing_skill():
     agent.fee_percentage = Decimal("0")
     agent.skills = {}
 
-    with patch("intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock) as mock_get:
+    with patch(
+        "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
+    ) as mock_get:
         mock_get.return_value = None
         with pytest.raises(ValueError, match="price of missing"):
             await skill_cost("missing", "user-1", agent)
@@ -119,7 +127,10 @@ async def test_expense_skill_creates_transactions():
         ),
     ):
         mock_skill_cost.return_value = skill_cost_info
-        mock_expense.return_value = (mock_user_account, {CreditType.PERMANENT: Decimal("5.0000")})
+        mock_expense.return_value = (
+            mock_user_account,
+            {CreditType.PERMANENT: Decimal("5.0000")},
+        )
 
         result = await expense_skill(
             mock_session,
@@ -232,7 +243,9 @@ async def test_skill_cost_uses_author_fee_recipient():
     mock_skill.author = "dev-user"
 
     with (
-        patch("intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock) as mock_get,
+        patch(
+            "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
+        ) as mock_get,
         patch("intentkit.config.config.config.payment_enabled", True),
         patch(
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock

@@ -7,7 +7,12 @@ from intentkit.core.credit.refill import (
     refill_all_free_credits,
     refill_free_credits_for_account,
 )
-from intentkit.models.credit import CreditAccount, CreditAccountTable, CreditType, OwnerType
+from intentkit.models.credit import (
+    CreditAccount,
+    CreditAccountTable,
+    CreditType,
+    OwnerType,
+)
 
 
 @pytest.mark.asyncio
@@ -39,7 +44,8 @@ async def test_refill_free_credits_for_account_skips_zero_refill():
     mock_session = AsyncMock()
 
     with patch(
-        "intentkit.models.credit.CreditAccount.income_in_session", new_callable=AsyncMock
+        "intentkit.models.credit.CreditAccount.income_in_session",
+        new_callable=AsyncMock,
     ) as mock_income:
         await refill_free_credits_for_account(mock_session, account)
 
@@ -157,7 +163,8 @@ async def test_refill_all_free_credits_iterates_accounts():
 
     with (
         patch(
-            "intentkit.core.credit.refill.get_session", side_effect=[first_ctx, second_ctx]
+            "intentkit.core.credit.refill.get_session",
+            side_effect=[first_ctx, second_ctx],
         ),
         patch(
             "intentkit.core.credit.refill.CreditAccount.model_validate",
