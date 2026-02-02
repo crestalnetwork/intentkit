@@ -116,10 +116,8 @@ class DALLEImageGeneration(OpenAIBaseTool):
 
         except openai.OpenAIError as e:
             error_message = f"OpenAI API error: {str(e)}"
-            logger.error(error_message)
             raise Exception(error_message)
 
         except Exception as e:
             error_message = f"Error generating image with DALL-E: {str(e)}"
-            logger.error(error_message)
             raise Exception(error_message)

@@ -136,5 +136,4 @@ class X402HttpRequest(X402BaseSkill):
         except ToolException:
             raise
         except Exception as exc:
-            logger.error("Unexpected error in x402_http_request", exc_info=exc)
             raise ToolException(f"Unexpected error occurred - {str(exc)}") from exc

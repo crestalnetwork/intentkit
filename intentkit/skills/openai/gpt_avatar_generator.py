@@ -94,10 +94,8 @@ class GPTAvatarGenerator(OpenAIBaseTool):
 
         except openai.OpenAIError as e:
             error_message = f"OpenAI API error: {str(e)}"
-            logger.error(error_message)
             raise Exception(error_message)
 
         except Exception as e:
             error_message = f"Error generating avatar with GPT-Image-1-Mini: {str(e)}"
-            logger.error(error_message)
             raise Exception(error_message)
