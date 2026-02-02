@@ -1352,7 +1352,6 @@ async def _send_transaction_with_master_wallet(
             if receipt["status"] != 1:
                 # Check for revert reason if possible
                 # This is where we could try to decode the error, but for now just fail
-                logger.error(f"Transaction {tx_hash.hex()} failed/reverted")
                 raise IntentKitAPIError(500, "TxFailed", "Transaction failed on-chain")
 
         except Exception as e:
@@ -1894,7 +1893,6 @@ async def _execute_allowance_transfer_gasless(
     except IntentKitAPIError as e:
         # Try to interpret the error
         err_msg = str(e)
-        logger.error(f"Allowance transfer gasless failed: {err_msg}")
 
         # If the transaction failed on-chain, it's likely a limit issue or balance issue
         # We assume limit exceeded for clarity if it's a generic failure during this specific op

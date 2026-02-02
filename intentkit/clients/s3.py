@@ -124,11 +124,9 @@ async def store_image(url: str, key: str) -> str:
             logger.info(f"Image uploaded successfully to {cdn_url}")
             return cdn_url
 
-    except httpx.HTTPError as e:
-        logger.error(f"Failed to download image from URL {url}: {str(e)}")
+    except httpx.HTTPError:
         raise
-    except ClientError as e:
-        logger.error(f"Failed to upload image to S3: {str(e)}")
+    except ClientError:
         raise
 
 
@@ -190,8 +188,7 @@ async def store_image_bytes(
         logger.info(f"image is uploaded to {cdn_url}")
         return cdn_url
 
-    except ClientError as e:
-        logger.error(f"Failed to upload image bytes to S3: {str(e)}")
+    except ClientError:
         raise
 
 
@@ -337,6 +334,5 @@ async def store_file_bytes(
         logger.info(f"{file_type} uploaded successfully to {cdn_url}")
         return cdn_url
 
-    except ClientError as e:
-        logger.error(f"Failed to upload {file_type} bytes to S3: {str(e)}")
+    except ClientError:
         raise

@@ -160,7 +160,6 @@ class PrivyClient:
             )
 
             if response.status_code not in (200, 201):
-                logger.error(f"Privy create key quorum failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -250,7 +249,7 @@ class PrivyClient:
                     signature_count,
                     response.text,
                 )
-                logger.error(f"Privy create wallet failed: {response.text}")
+
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -281,7 +280,6 @@ class PrivyClient:
             )
 
             if response.status_code != 200:
-                logger.error(f"Privy get wallet failed: {response.text}")
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -360,7 +358,7 @@ class PrivyClient:
                     signature_count,
                     response.text,
                 )
-                logger.error(f"Privy sign message failed: {response.text}")
+
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -437,7 +435,7 @@ class PrivyClient:
                     signature_count,
                     response.text,
                 )
-                logger.error(f"Privy sign hash failed: {response.text}")
+
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -506,7 +504,7 @@ class PrivyClient:
                     signature_count,
                     response.text,
                 )
-                logger.error(f"Privy sign typed data failed: {response.text}")
+
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
@@ -589,7 +587,7 @@ class PrivyClient:
                     signature_count,
                     response.text,
                 )
-                logger.error(f"Privy send transaction failed: {response.text}")
+
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",

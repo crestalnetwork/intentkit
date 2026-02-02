@@ -220,7 +220,6 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         except IntentKitAPIError:
             raise
         except Exception as exc:
-            logger.error("Error getting agent assets for %s: %s", agent_id, exc)
             raise IntentKitAPIError(
                 500, "AgentAssetError", "Failed to retrieve agent assets"
             ) from exc
