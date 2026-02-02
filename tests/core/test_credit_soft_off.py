@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -38,21 +39,21 @@ async def test_expense_message_soft_off():
     mock_agent_data = MagicMock()
     mock_agent_data.evm_wallet_address = "0x123"
 
-    def side_effect_refresh(instance):
+    def side_effect_refresh(instance: Any) -> None:
         instance.created_at = datetime.now()
 
     with (
         patch.object(config, "payment_enabled", False),
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.get_or_create_in_session",
+            "intentkit.models.credit.CreditAccount.get_or_create_in_session",
             new_callable=AsyncMock,
         ) as mock_get_or_create,
         patch(
-            "intentkit.core.credit.CreditAccount.expense_in_session",
+            "intentkit.models.credit.CreditAccount.expense_in_session",
             new_callable=AsyncMock,
         ) as mock_expense,
         patch(
@@ -60,13 +61,13 @@ async def test_expense_message_soft_off():
             new_callable=AsyncMock,
         ) as mock_add_free,
         patch(
-            "intentkit.core.credit.AppSetting.payment", new_callable=AsyncMock
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
         patch(
-            "intentkit.core.credit.AgentData.get", new_callable=AsyncMock
+            "intentkit.models.agent_data.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
         patch(
-            "intentkit.core.credit.accumulate_hourly_base_llm_amount",
+            "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
             new_callable=AsyncMock,
         ),
     ):
@@ -79,7 +80,7 @@ async def test_expense_message_soft_off():
         mock_session.refresh.side_effect = side_effect_refresh
 
         # Run
-        await expense_message(
+        _ = await expense_message(
             mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
         )
 
@@ -137,21 +138,21 @@ async def test_expense_message_enabled():
     mock_income_account = MagicMock()
     mock_income_account.id = "acc_income"
 
-    def side_effect_refresh(instance):
+    def side_effect_refresh(instance: Any) -> None:
         instance.created_at = datetime.now()
 
     with (
         patch.object(config, "payment_enabled", True),
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.get_or_create_in_session",
+            "intentkit.models.credit.CreditAccount.get_or_create_in_session",
             new_callable=AsyncMock,
         ) as mock_get_or_create,
         patch(
-            "intentkit.core.credit.CreditAccount.expense_in_session",
+            "intentkit.models.credit.CreditAccount.expense_in_session",
             new_callable=AsyncMock,
         ) as mock_expense,
         patch(
@@ -159,17 +160,17 @@ async def test_expense_message_enabled():
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.AppSetting.payment", new_callable=AsyncMock
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
         patch(
-            "intentkit.core.credit.AgentData.get", new_callable=AsyncMock
+            "intentkit.models.agent_data.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
         patch(
-            "intentkit.core.credit.accumulate_hourly_base_llm_amount",
+            "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
     ):
@@ -186,7 +187,7 @@ async def test_expense_message_enabled():
         mock_session.refresh.side_effect = side_effect_refresh
 
         # Run
-        await expense_message(
+        _ = await expense_message(
             mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
         )
 
@@ -229,10 +230,10 @@ async def test_skill_cost_soft_off():
     with (
         patch.object(config, "payment_enabled", False),
         patch(
-            "intentkit.core.credit.AppSetting.payment", new_callable=AsyncMock
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
         patch(
-            "intentkit.core.credit.Skill.get", new_callable=AsyncMock
+            "intentkit.models.skill.Skill.get", new_callable=AsyncMock
         ) as mock_skill_get,
     ):
         # We need to mock Skill.get to return a mock skill with a price
@@ -278,29 +279,37 @@ async def test_expense_summarize_soft_off():
     mock_agent_data = MagicMock()
     mock_agent_data.evm_wallet_address = "0x123"
 
-    def side_effect_refresh(instance):
+    def side_effect_refresh(instance: Any) -> None:
         instance.created_at = datetime.now()
 
     with (
         patch.object(config, "payment_enabled", False),
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.get_or_create_in_session",
+            "intentkit.models.credit.CreditAccount.get_or_create_in_session",
             new_callable=AsyncMock,
         ) as mock_get_or_create,
         patch(
-            "intentkit.core.credit.CreditAccount.expense_in_session",
+            "intentkit.models.credit.CreditAccount.expense_in_session",
             new_callable=AsyncMock,
         ) as mock_expense,
         patch(
-            "intentkit.core.credit.AppSetting.payment", new_callable=AsyncMock
+            "intentkit.models.agent_data.AgentQuota.add_free_income_in_session",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
         patch(
-            "intentkit.core.credit.AgentData.get", new_callable=AsyncMock
+            "intentkit.models.agent_data.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
+        patch(
+            "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
+            new_callable=AsyncMock,
+        ),
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
         mock_get_or_create.return_value = mock_user_account
@@ -310,7 +319,7 @@ async def test_expense_summarize_soft_off():
         mock_session.add = MagicMock()
         mock_session.refresh.side_effect = side_effect_refresh
 
-        await expense_summarize(
+        _ = await expense_summarize(
             mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
         )
 

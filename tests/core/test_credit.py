@@ -37,18 +37,18 @@ async def test_recharge_success():
 
     with (
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
         patch(
-            "intentkit.core.credit.CreditAccount.deduction_in_session",
+            "intentkit.models.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
-        patch("intentkit.core.credit.send_alert") as mock_slack,
+        patch("intentkit.core.credit.recharge.send_alert") as mock_slack,
     ):
         mock_income.return_value = mock_user_account
         mock_deduction.return_value = mock_platform_account
@@ -84,11 +84,11 @@ async def test_recharge_success():
 async def test_recharge_negative_amount():
     """Test recharge with negative amount fails."""
     with patch(
-        "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+        "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
         new_callable=AsyncMock,
     ):
         with pytest.raises(ValueError, match="Recharge amount must be positive"):
-            await recharge(AsyncMock(), "user_1", Decimal("-10.0"), "tx_123")
+            _ = await recharge(AsyncMock(), "user_1", Decimal("-10.0"), "tx_123")
 
 
 @pytest.mark.asyncio
@@ -121,25 +121,26 @@ async def test_withdraw_success():
 
     with (
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.get_agent", new_callable=AsyncMock
+            "intentkit.core.credit.withdraw.get_agent", new_callable=AsyncMock
         ) as mock_get_agent,
-        patch("intentkit.core.credit.AgentData.get", new_callable=AsyncMock),
+        patch("intentkit.models.agent_data.AgentData.get", new_callable=AsyncMock),
         patch(
-            "intentkit.core.credit.CreditAccount.get_in_session", new_callable=AsyncMock
+            "intentkit.models.credit.CreditAccount.get_in_session",
+            new_callable=AsyncMock,
         ) as mock_get_account,
         patch(
-            "intentkit.core.credit.CreditAccount.deduction_in_session",
+            "intentkit.models.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
-        patch("intentkit.core.credit.send_alert"),
+        patch("intentkit.core.credit.withdraw.send_alert"),
     ):
         mock_get_agent.return_value = mock_agent
         mock_get_account.return_value = mock_agent_account
@@ -180,25 +181,25 @@ async def test_reward_success():
 
     with (
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
         patch(
-            "intentkit.core.credit.CreditAccount.deduction_in_session",
+            "intentkit.models.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
-        patch("intentkit.core.credit.send_alert"),
+        patch("intentkit.core.credit.reward.send_alert"),
     ):
         mock_income.return_value = mock_user_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        await reward(mock_session, user_id, amount, upstream_tx_id)
+        _ = await reward(mock_session, user_id, amount, upstream_tx_id)
 
         # Check user income (reward type)
         mock_income.assert_called_once()
@@ -227,15 +228,15 @@ async def test_adjustment_income():
 
     with (
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
         patch(
-            "intentkit.core.credit.CreditAccount.deduction_in_session",
+            "intentkit.models.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
     ):
@@ -245,7 +246,7 @@ async def test_adjustment_income():
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        await adjustment(
+        _ = await adjustment(
             mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )
 
@@ -277,15 +278,15 @@ async def test_adjustment_expense():
 
     with (
         patch(
-            "intentkit.core.credit.CreditEvent.check_upstream_tx_id_exists",
+            "intentkit.models.credit.CreditEvent.check_upstream_tx_id_exists",
             new_callable=AsyncMock,
         ),
         patch(
-            "intentkit.core.credit.CreditAccount.deduction_in_session",
+            "intentkit.models.credit.CreditAccount.deduction_in_session",
             new_callable=AsyncMock,
         ) as mock_deduction,
         patch(
-            "intentkit.core.credit.CreditAccount.income_in_session",
+            "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
         ) as mock_income,
     ):
@@ -294,7 +295,7 @@ async def test_adjustment_expense():
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        await adjustment(
+        _ = await adjustment(
             mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )
 
