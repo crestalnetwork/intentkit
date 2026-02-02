@@ -1,6 +1,15 @@
-## v0.9.24
+## v0.9.26
 
 ### Improvements
-- **Privy Client**: Enhanced transaction handling by returning receipts and ensuring proper resource cleanup (disconnecting provider) to prevent unclosed session warnings.
 
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.23...v0.9.24)
+- Refactored credit module for better code organization and maintainability
+- Refactored agent models for improved structure
+- Added comprehensive test coverage for the credit module
+- Fixed issues in x402 skills error handling
+
+### Bug Fixes
+
+- Fixed error handling in x402 skills to properly catch and convert IntentKitAPIError to ToolException
+- Fixed code linting issues
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.25...v0.9.26
