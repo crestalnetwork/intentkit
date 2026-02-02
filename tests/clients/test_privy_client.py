@@ -1,7 +1,10 @@
+from typing import get_overloads, get_type_hints
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from web3.types import TxReceipt
 
+from intentkit.clients import privy
 from intentkit.clients.privy import PrivyClient
 
 
@@ -136,3 +139,11 @@ class TestPrivyClient:
         decoded = base64.b64decode(public_keys[0])
         # SPKI DER format starts with specific bytes for P-256
         assert len(decoded) == 91  # Standard SPKI P-256 public key size
+
+
+def test_send_transaction_with_master_wallet_overloads() -> None:
+    overloads = get_overloads(privy._send_transaction_with_master_wallet)
+    assert overloads
+    returns = {get_type_hints(overload)["return"] for overload in overloads}
+    assert str in returns
+    assert tuple[str, TxReceipt] in returns

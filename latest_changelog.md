@@ -1,9 +1,6 @@
-## v0.9.23
-
-### New Features
-- **Native Wallet Support**: Added comprehensive native wallet functionality for agent operations, enabling direct blockchain interactions with native tokens
+## v0.9.24
 
 ### Improvements
-- Fixed deployment issues in the Docker image configuration
+- **Privy Client**: Enhanced transaction handling by returning receipts and ensuring proper resource cleanup (disconnecting provider) to prevent unclosed session warnings.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.9.22...v0.9.23
+[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.23...v0.9.24)

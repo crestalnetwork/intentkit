@@ -18,7 +18,7 @@ import logging
 import textwrap
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Literal, cast, overload
 
 import httpx
 from cryptography.hazmat.primitives import hashes, serialization
@@ -29,7 +29,7 @@ from eth_utils import keccak, to_checksum_address
 from hexbytes import HexBytes
 from pydantic import BaseModel
 from web3 import AsyncWeb3
-from web3.types import TxParams
+from web3.types import TxParams, TxReceipt
 
 from intentkit.config.config import config
 from intentkit.config.redis import get_redis
@@ -2096,59 +2096,66 @@ async def _deploy_safe(
         f"Deploying Safe for owner {owner_address} using master wallet {master_account.address}"
     )
 
-    # Use distributed nonce manager with lock
-    nonce_manager = _get_nonce_manager()
-    if not await nonce_manager.acquire_lock():
-        raise IntentKitAPIError(
-            500, "LockTimeout", "Failed to acquire nonce lock for Safe deployment"
-        )
-
     try:
-        # Get nonce from Redis (or blockchain if not cached)
-        nonce = await nonce_manager.get_and_increment_nonce(w3)
-        gas_price = await w3.eth.gas_price
+        # Use distributed nonce manager with lock
+        nonce_manager = _get_nonce_manager()
+        if not await nonce_manager.acquire_lock():
+            raise IntentKitAPIError(
+                500, "LockTimeout", "Failed to acquire nonce lock for Safe deployment"
+            )
 
-        tx: dict[str, Any] = {
-            "from": master_account.address,
-            "to": SAFE_PROXY_FACTORY_ADDRESS,
-            "value": 0,
-            "data": create_data,
-            "nonce": nonce,
-            "chainId": chain_id,
-            "gas": 500000,  # Safe deployment typically needs ~300k gas
-            "gasPrice": gas_price,
-        }
-
-        # Estimate gas
         try:
-            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
-            tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
-            logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+            # Get nonce from Redis (or blockchain if not cached)
+            nonce = await nonce_manager.get_and_increment_nonce(w3)
+            gas_price = await w3.eth.gas_price
+
+            tx: dict[str, Any] = {
+                "from": master_account.address,
+                "to": SAFE_PROXY_FACTORY_ADDRESS,
+                "value": 0,
+                "data": create_data,
+                "nonce": nonce,
+                "chainId": chain_id,
+                "gas": 500000,  # Safe deployment typically needs ~300k gas
+                "gasPrice": gas_price,
+            }
+
+            # Estimate gas
+            try:
+                estimated_gas = await w3.eth.estimate_gas(
+                    cast(TxParams, cast(object, tx))
+                )
+                tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
+                logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+            except Exception as e:
+                logger.warning(f"Gas estimation failed, using default 500000: {e}")
+
+            # Sign and send
+            signed_tx = master_account.sign_transaction(tx)
+            tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+            logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
+
+            # Wait for confirmation inside the lock to prevent nonce race conditions
+            # Other processes must wait until we confirm the transaction is mined
+            receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+            if receipt["status"] != 1:
+                raise IntentKitAPIError(
+                    500, "DeploymentFailed", "Safe deployment transaction failed"
+                )
+
         except Exception as e:
-            logger.warning(f"Gas estimation failed, using default 500000: {e}")
-
-        # Sign and send
-        signed_tx = master_account.sign_transaction(tx)
-        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-        logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
-
-    except Exception as e:
-        # Reset nonce on error (might be nonce-related)
-        error_msg = str(e).lower()
-        if "nonce" in error_msg:
-            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
-            await nonce_manager.reset_from_blockchain(w3)
-        raise
+            # Reset nonce on error (might be nonce-related)
+            error_msg = str(e).lower()
+            if "nonce" in error_msg:
+                logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+                await nonce_manager.reset_from_blockchain(w3)
+            raise
+        finally:
+            await nonce_manager.release_lock()
     finally:
-        await nonce_manager.release_lock()
-
-    # Wait for confirmation
-    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-    if receipt["status"] != 1:
-        raise IntentKitAPIError(
-            500, "DeploymentFailed", "Safe deployment transaction failed"
-        )
+        # Clean up web3 provider session to avoid "Unclosed client session" warning
+        await w3.provider.disconnect()
 
     # Extract the deployed Safe address from ProxyCreation event
     # Event signature: ProxyCreation(address proxy, address singleton)
@@ -2379,13 +2386,36 @@ async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
         return int(result, 16)
 
 
+@overload
 async def _send_transaction_with_master_wallet(
     to: str,
     data: bytes,
     chain_id: int,
     rpc_url: str,
     gas_limit: int = 300000,
-) -> str:
+    return_receipt: Literal[True] = True,
+) -> tuple[str, TxReceipt]: ...
+
+
+@overload
+async def _send_transaction_with_master_wallet(
+    to: str,
+    data: bytes,
+    chain_id: int,
+    rpc_url: str,
+    gas_limit: int = 300000,
+    return_receipt: Literal[False] = False,
+) -> str: ...
+
+
+async def _send_transaction_with_master_wallet(
+    to: str,
+    data: bytes,
+    chain_id: int,
+    rpc_url: str,
+    gas_limit: int = 300000,
+    return_receipt: bool = False,
+) -> str | tuple[str, TxReceipt]:
     """Send a transaction using master wallet to pay for gas.
 
     Args:
@@ -2394,9 +2424,10 @@ async def _send_transaction_with_master_wallet(
         chain_id: Chain ID
         rpc_url: RPC URL
         gas_limit: Gas limit (default: 300000)
+        return_receipt: If True, return (tx_hash, receipt) tuple instead of just tx_hash
 
     Returns:
-        Transaction hash
+        Transaction hash, or (tx_hash, receipt) tuple if return_receipt=True
     """
     if not config.master_wallet_private_key:
         raise IntentKitAPIError(
@@ -2408,58 +2439,68 @@ async def _send_transaction_with_master_wallet(
     w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
     master_account = Account.from_key(config.master_wallet_private_key)
 
-    # Use distributed nonce manager with lock
-    nonce_manager = _get_nonce_manager()
-    if not await nonce_manager.acquire_lock():
-        raise IntentKitAPIError(
-            500, "LockTimeout", "Failed to acquire nonce lock for transaction"
-        )
-
     try:
-        # Get nonce from Redis (or blockchain if not cached)
-        nonce = await nonce_manager.get_and_increment_nonce(w3)
-        gas_price = await w3.eth.gas_price
-
-        tx: dict[str, Any] = {
-            "from": master_account.address,
-            "to": to,
-            "value": 0,
-            "data": data,
-            "nonce": nonce,
-            "chainId": chain_id,
-            "gas": gas_limit,
-            "gasPrice": gas_price,
-        }
+        # Use distributed nonce manager with lock
+        nonce_manager = _get_nonce_manager()
+        if not await nonce_manager.acquire_lock():
+            raise IntentKitAPIError(
+                500, "LockTimeout", "Failed to acquire nonce lock for transaction"
+            )
 
         try:
-            estimated_gas = await w3.eth.estimate_gas(cast(TxParams, cast(object, tx)))
-            # Add 20% buffer, but don't exceed block gas limit blindly
-            tx["gas"] = int(estimated_gas * 1.2)
+            # Get nonce from Redis (or blockchain if not cached)
+            nonce = await nonce_manager.get_and_increment_nonce(w3)
+            gas_price = await w3.eth.gas_price
+
+            tx: dict[str, Any] = {
+                "from": master_account.address,
+                "to": to,
+                "value": 0,
+                "data": data,
+                "nonce": nonce,
+                "chainId": chain_id,
+                "gas": gas_limit,
+                "gasPrice": gas_price,
+            }
+
+            try:
+                estimated_gas = await w3.eth.estimate_gas(
+                    cast(TxParams, cast(object, tx))
+                )
+                # Add 20% buffer, but don't exceed block gas limit blindly
+                tx["gas"] = int(estimated_gas * 1.2)
+            except Exception as e:
+                logger.warning(f"Gas estimation failed, using default {gas_limit}: {e}")
+
+            signed_tx = master_account.sign_transaction(tx)
+            tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+            logger.info(f"Transaction sent via master wallet: {tx_hash.hex()}")
+
+            # Wait for confirmation inside the lock to prevent nonce race conditions
+            # Other processes must wait until we confirm the transaction is mined
+            receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+            if receipt["status"] != 1:
+                # Check for revert reason if possible
+                # This is where we could try to decode the error, but for now just fail
+                logger.error(f"Transaction {tx_hash.hex()} failed/reverted")
+                raise IntentKitAPIError(500, "TxFailed", "Transaction failed on-chain")
+
         except Exception as e:
-            logger.warning(f"Gas estimation failed, using default {gas_limit}: {e}")
-
-        signed_tx = master_account.sign_transaction(tx)
-        tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-        logger.info(f"Transaction sent via master wallet: {tx_hash.hex()}")
-
-    except Exception as e:
-        # Reset nonce on error (might be nonce-related)
-        error_msg = str(e).lower()
-        if "nonce" in error_msg:
-            logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
-            await nonce_manager.reset_from_blockchain(w3)
-        raise
+            # Reset nonce on error (might be nonce-related)
+            error_msg = str(e).lower()
+            if "nonce" in error_msg:
+                logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+                await nonce_manager.reset_from_blockchain(w3)
+            raise
+        finally:
+            await nonce_manager.release_lock()
     finally:
-        await nonce_manager.release_lock()
+        # Clean up web3 provider session to avoid "Unclosed client session" warning
+        await w3.provider.disconnect()
 
-    receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-    if receipt["status"] != 1:
-        # Check for revert reason if possible
-        # This is where we could try to decode the error, but for now just fail
-        logger.error(f"Transaction {tx_hash.hex()} failed/reverted")
-        raise IntentKitAPIError(500, "TxFailed", "Transaction failed on-chain")
-
+    if return_receipt:
+        return tx_hash.hex(), receipt
     return tx_hash.hex()
 
 
@@ -2488,19 +2529,21 @@ async def _send_safe_transaction_with_master_wallet(
     # execTransaction can be gas hungry, so we keep the default 300k
     # (actually Safe transactions often need more depending on logic,
     # but the generic sender estimates gas which corrects this)
-    tx_hash_hex = await _send_transaction_with_master_wallet(
+    # We request the receipt directly to avoid a race condition where
+    # a second get_transaction_receipt call might hit a different RPC node
+    # that hasn't synced the transaction yet.
+    tx_hash_hex, receipt = await _send_transaction_with_master_wallet(
         to=safe_address,
         data=exec_data,
         chain_id=chain_id,
         rpc_url=rpc_url,
         gas_limit=500000,  # Safe txs can be heavy
+        return_receipt=True,
     )
 
     # Verify Safe execution succeeded by checking for ExecutionSuccess event
     # Safe's execTransaction returns false (doesn't revert) on internal failure,
     # so we must check the logs for ExecutionSuccess/ExecutionFailure events.
-    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
-    receipt = await w3.eth.get_transaction_receipt(HexBytes(tx_hash_hex))
 
     # Event signatures:
     # - ExecutionSuccess(bytes32,uint256): 0x442e715f...
@@ -2982,6 +3025,7 @@ async def _execute_allowance_transfer_gasless(
             chain_id=chain_config.chain_id,
             rpc_url=rpc_url,
             gas_limit=200000,  # Allowance transfers are cheaper
+            return_receipt=False,
         )
         return tx_hash
 
