@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from intentkit.skills.x402.base import X402BaseSkill
 from intentkit.skills.x402.httpx_compat import PaymentError, X402HttpxCompatClient
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,8 @@ class X402HttpRequest(X402BaseSkill):
             ) from exc
         except httpx.RequestError as exc:
             raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc
+        except IntentKitAPIError as exc:
+            raise ToolException(str(exc)) from exc
         except ToolException:
             raise
         except Exception as exc:
