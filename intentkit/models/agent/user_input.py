@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import AgentAutonomous
-from intentkit.models.agent.core import AgentCore, AgentVisibility
+from intentkit.models.agent.base import AgentCore, AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.utils.error import IntentKitAPIError
 

@@ -33,7 +33,9 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
     mock_safe_client_instance = MagicMock()
     mock_safe_client_instance.predict_safe_address.return_value = "0xSafeAddress"
     mock_safe_client_instance.is_deployed = AsyncMock(return_value=False)
-    mock_safe_client_instance._build_safe_initializer.return_value = b"\x00" * 32  # Mock initializer bytes
+    mock_safe_client_instance._build_safe_initializer.return_value = (
+        b"\x00" * 32
+    )  # Mock initializer bytes
 
     mock_safe_client_class = MagicMock(return_value=mock_safe_client_instance)
     monkeypatch.setattr(
@@ -50,7 +52,8 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
 
     # _wait_for_safe_deployed returns True
     monkeypatch.setattr(
-        "intentkit.clients.privy_safe._wait_for_safe_deployed", AsyncMock(return_value=True)
+        "intentkit.clients.privy_safe._wait_for_safe_deployed",
+        AsyncMock(return_value=True),
     )
 
     # _is_module_enabled returns False
@@ -60,11 +63,15 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
 
     # Mock _enable_allowance_module to check if nonce is passed
     mock_enable = AsyncMock(return_value="0xEnableTx")
-    monkeypatch.setattr("intentkit.clients.privy_safe._enable_allowance_module", mock_enable)
+    monkeypatch.setattr(
+        "intentkit.clients.privy_safe._enable_allowance_module", mock_enable
+    )
 
     # Mock _set_spending_limit to check if nonce is passed
     mock_set_limit = AsyncMock(return_value="0xLimitTx")
-    monkeypatch.setattr("intentkit.clients.privy_safe._set_spending_limit", mock_set_limit)
+    monkeypatch.setattr(
+        "intentkit.clients.privy_safe._set_spending_limit", mock_set_limit
+    )
 
     # Mock _get_safe_nonce - should NOT be called if we just deployed
     mock_get_nonce = AsyncMock(
