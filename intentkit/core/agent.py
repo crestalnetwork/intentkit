@@ -327,6 +327,24 @@ async def process_agent_wallet(
         logger.info(
             f"Created Privy-only wallet {privy_wallet.id} for agent {agent.id}, address: {privy_wallet.address}"
         )
+    elif current_wallet_provider == "native":
+        from intentkit.clients.native import create_native_wallet
+
+        # Create native wallet based on network
+        network_id = agent.network_id or "base-mainnet"
+        wallet_data = create_native_wallet(network_id)
+
+        # Store wallet data
+        agent_data = await AgentData.patch(
+            agent.id,
+            {
+                "evm_wallet_address": wallet_data["address"],
+                "native_wallet_data": json.dumps(wallet_data),
+            },
+        )
+        logger.info(
+            f"Created native wallet for agent {agent.id}, address: {wallet_data['address']}"
+        )
 
     return agent_data
 

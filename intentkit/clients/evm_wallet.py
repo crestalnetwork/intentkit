@@ -333,6 +333,11 @@ class EvmWallet:
         provider_type = type(self._provider).__name__
         return "Cdp" in provider_type
 
+    def is_native_provider(self) -> bool:
+        """Check if the underlying provider is a native wallet provider."""
+        provider_type = type(self._provider).__name__
+        return "Native" in provider_type
+
     def is_safe_provider(self) -> bool:
         """Check if the underlying provider is a Safe/Privy provider."""
         provider_type = type(self._provider).__name__

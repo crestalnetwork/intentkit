@@ -38,6 +38,9 @@ class AgentDataTable(Base):
     privy_wallet_data: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Privy wallet data"
     )
+    native_wallet_data: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Native wallet data (encrypted private key)"
+    )
     twitter_id: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Twitter user ID"
     )
@@ -148,6 +151,13 @@ class AgentData(BaseModel):
         PydanticField(
             default=None,
             description="Privy wallet data",
+        ),
+    ] = None
+    native_wallet_data: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Native wallet data (encrypted private key)",
         ),
     ] = None
     twitter_id: Annotated[

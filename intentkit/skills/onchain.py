@@ -213,10 +213,10 @@ class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
 
         Returns:
             True if the agent has a wallet provider that supports
-            on-chain operations (CDP or Privy).
+            on-chain operations (CDP, native, Safe, or Privy).
         """
         wallet_provider = self.get_agent_wallet_provider_type()
-        return wallet_provider in ("cdp", "safe", "privy")
+        return wallet_provider in ("cdp", "native", "safe", "privy")
 
     def get_agent_network_id(self) -> str | None:
         """

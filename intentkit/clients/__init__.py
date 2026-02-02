@@ -17,6 +17,9 @@ from intentkit.clients.cdp import (
 from intentkit.clients.cdp import (
     get_wallet_provider as get_cdp_wallet_provider,
 )
+from intentkit.clients.native import (
+    get_wallet_provider as get_native_wallet_provider,
+)
 from intentkit.clients.twitter import (
     TwitterClient,
     TwitterClientConfig,
@@ -27,14 +30,19 @@ from intentkit.utils.error import IntentKitAPIError
 
 if TYPE_CHECKING:
     from intentkit.clients.cdp import CdpWalletProvider
+    from intentkit.clients.native import NativeWalletProvider
     from intentkit.clients.privy import SafeWalletProvider
     from intentkit.models.agent import Agent
 
 logger = logging.getLogger(__name__)
 
 # Type alias for unified wallet provider
-WalletProviderType = Union["CdpWalletProvider", "SafeWalletProvider"]
-WalletSignerType = Any  # Can be EvmLocalAccount or PrivyWalletSigner
+WalletProviderType = Union[
+    "CdpWalletProvider", "NativeWalletProvider", "SafeWalletProvider"
+]
+WalletSignerType = (
+    Any  # Can be EvmLocalAccount, NativeWalletSigner, or PrivyWalletSigner
+)
 
 
 async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
@@ -56,6 +64,29 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
     """
     if agent.wallet_provider == "cdp":
         return await get_cdp_wallet_provider(agent)
+
+    elif agent.wallet_provider == "native":
+        from intentkit.models.agent_data import AgentData
+
+        agent_data = await AgentData.get(agent.id)
+        if not agent_data.native_wallet_data:
+            raise IntentKitAPIError(
+                400,
+                "NativeWalletNotInitialized",
+                "Native wallet has not been initialized for this agent. "
+                "Please ensure the agent was created with wallet_provider='native'.",
+            )
+
+        try:
+            native_data = json.loads(agent_data.native_wallet_data)
+        except json.JSONDecodeError as e:
+            raise IntentKitAPIError(
+                500,
+                "NativeWalletDataCorrupted",
+                f"Failed to parse native wallet data: {e}",
+            ) from e
+
+        return get_native_wallet_provider(native_data)
 
     elif agent.wallet_provider in ("safe", "privy"):
         from intentkit.clients.privy import get_wallet_provider as get_privy_provider
@@ -93,7 +124,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             400,
             "NoWalletConfigured",
             "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp', 'safe', or 'privy' in the agent configuration.",
+            "Please set wallet_provider to 'cdp', 'native', 'safe', or 'privy' in the agent configuration.",
         )
 
     else:
@@ -101,7 +132,7 @@ async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
             400,
             "UnsupportedWalletProvider",
             f"Wallet provider '{agent.wallet_provider}' is not supported for on-chain operations. "
-            "Supported providers are: 'cdp', 'safe', 'privy'.",
+            "Supported providers are: 'cdp', 'native', 'safe', 'privy'.",
         )
 
 
@@ -128,6 +159,30 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
 
         account = await get_evm_account(agent)
         return EvmLocalAccount(account)
+
+    elif agent.wallet_provider == "native":
+        from intentkit.clients.native import get_wallet_signer as get_native_signer
+        from intentkit.models.agent_data import AgentData
+
+        agent_data = await AgentData.get(agent.id)
+        if not agent_data.native_wallet_data:
+            raise IntentKitAPIError(
+                400,
+                "NativeWalletNotInitialized",
+                "Native wallet has not been initialized for this agent. "
+                "Please ensure the agent was created with wallet_provider='native'.",
+            )
+
+        try:
+            native_data = json.loads(agent_data.native_wallet_data)
+        except json.JSONDecodeError as e:
+            raise IntentKitAPIError(
+                500,
+                "NativeWalletDataCorrupted",
+                f"Failed to parse native wallet data: {e}",
+            ) from e
+
+        return get_native_signer(native_data)
 
     elif agent.wallet_provider in ("safe", "privy"):
         from intentkit.clients.privy import get_wallet_signer as get_privy_signer
@@ -165,7 +220,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             400,
             "NoWalletConfigured",
             "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp', 'safe', or 'privy' in the agent configuration.",
+            "Please set wallet_provider to 'cdp', 'native', 'safe', or 'privy' in the agent configuration.",
         )
 
     else:
@@ -173,7 +228,7 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
             400,
             "UnsupportedWalletProvider",
             f"Wallet provider '{agent.wallet_provider}' is not supported for signing. "
-            "Supported providers are: 'cdp', 'safe', 'privy'.",
+            "Supported providers are: 'cdp', 'native', 'safe', 'privy'.",
         )
 
 

@@ -49,7 +49,7 @@ HTTP_STATUS_PHRASES: dict[int, str] = {
 # Maximum content length to return (in bytes)
 MAX_CONTENT_LENGTH = 1000
 DEFAULT_NETWORK_ID = "base-mainnet"
-SUPPORTED_WALLET_PROVIDERS = {"cdp", "safe", "privy"}
+SUPPORTED_WALLET_PROVIDERS = {"cdp", "native", "safe", "privy"}
 
 PAYMENT_RESPONSE_HEADERS = ("payment-response", "x-payment-response")
 PAYMENT_REQUIRED_HEADERS = ("payment-required",)
@@ -194,7 +194,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
 
     This class provides unified wallet signer support for x402 operations,
     automatically selecting the appropriate signer based on the agent's
-    wallet_provider configuration (CDP, Privy, or Safe).
+    wallet_provider configuration (CDP, Native, Privy, or Safe).
 
     Safe wallet mode is supported by prefunding the Privy EOA signer
     before initiating an x402 payment.
@@ -211,7 +211,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
         agent = self.get_context().agent
         if agent and agent.wallet_provider not in SUPPORTED_WALLET_PROVIDERS:
             raise ValueError(
-                "x402 operations require wallet_provider to be 'cdp', 'safe', or 'privy'."
+                "x402 operations require wallet_provider to be 'cdp', 'native', 'safe', or 'privy'."
             )
 
     async def get_signer(self) -> Any:
@@ -221,9 +221,10 @@ class X402BaseSkill(IntentKitOnChainSkill):
         This method uses the unified wallet signer interface from
         IntentKitOnChainSkill, which automatically selects:
         - ThreadSafeEvmWalletSigner for CDP wallets
+        - NativeWalletSigner for native wallets
         - PrivyWalletSigner for Privy and Safe wallets
 
-        Both signers implement the required interface for x402:
+        All signers implement the required interface for x402:
         - address property
         - sign_message()
         - sign_typed_data()
