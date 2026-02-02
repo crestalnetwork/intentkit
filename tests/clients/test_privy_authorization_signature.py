@@ -45,7 +45,9 @@ async def test_rpc_includes_privy_authorization_signature_header() -> None:
         mock_cm.__aenter__ = AsyncMock(return_value=mock_client)
         mock_cm.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("intentkit.clients.privy.httpx.AsyncClient", return_value=mock_cm):
+        with patch(
+            "intentkit.clients.privy_client.httpx.AsyncClient", return_value=mock_cm
+        ):
             await privy.sign_hash("wallet_1", b"\x11" * 32)
 
         _, kwargs = mock_client.post.call_args
