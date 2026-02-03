@@ -1,10 +1,8 @@
 import logging
 
-from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
-from intentkit.skills.base import IntentKitSkill, NoArgsSchema
+from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +10,7 @@ logger = logging.getLogger(__name__)
 class CookieFunBaseTool(IntentKitSkill):
     """Base class for CookieFun tools."""
 
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = NoArgsSchema
+    category: str = "cookiefun"
 
     def get_api_key(self) -> str:
         """

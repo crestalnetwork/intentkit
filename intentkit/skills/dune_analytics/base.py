@@ -4,7 +4,6 @@ Provides shared functionality for interacting with the Dune Analytics API.
 """
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.skills.base import IntentKitSkill
 
@@ -15,8 +14,7 @@ class DuneBaseTool(IntentKitSkill):
     Offers common functionality like API key retrieval and Dune API interaction.
     """
 
-    name: str = Field(description="Tool name")
-    description: str = Field(description="Tool description")
+    category: str = "dune_analytics"
 
     def get_api_key(self):
         context = self.get_context()
@@ -32,7 +30,3 @@ class DuneBaseTool(IntentKitSkill):
             raise ToolException(
                 f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for Dune Analytics."
             )
-
-    @property
-    def category(self) -> str:
-        return "dune_analytics"

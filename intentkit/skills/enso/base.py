@@ -8,7 +8,6 @@ CDP and Privy wallet providers for Enso DeFi operations.
 from decimal import Decimal
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.config.config import config
@@ -30,9 +29,6 @@ class EnsoBaseTool(IntentKitOnChainSkill):
     the appropriate provider based on the agent's configuration
     (CDP or Privy).
     """
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
         skill_config = context.agent.skill_config(self.category)

@@ -6,9 +6,7 @@ from intentkit.skills.base import IntentKitSkill
 class SystemBaseTool(IntentKitSkill):
     """Base class for system-related skills."""
 
-    @property
-    def category(self) -> str:
-        return "system"
+    category: str = "system"
 
     def _generate_api_key(self) -> str:
         """Generate a new API key using secure random bytes."""

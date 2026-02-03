@@ -1,16 +1,12 @@
-from langchain_core.tools import ArgsSchema, ToolException
-from pydantic import Field
+from langchain_core.tools import ToolException
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.skills.base import IntentKitSkill, NoArgsSchema
+from intentkit.skills.base import IntentKitSkill
 
 
 class SupabaseBaseTool(IntentKitSkill):
     """Base class for Supabase tools."""
 
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = NoArgsSchema
     category: str = "supabase"
 
     def get_supabase_config(self, context: AgentContext) -> tuple[str, str]:

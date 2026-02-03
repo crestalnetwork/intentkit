@@ -1,5 +1,4 @@
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -9,9 +8,6 @@ base_url = "https://api.elfa.ai/v2"
 
 class ElfaBaseTool(IntentKitSkill):
     """Base class for Elfa tools."""
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_api_key(self):
         context = self.get_context()

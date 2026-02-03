@@ -7,7 +7,6 @@ from typing import Any
 
 import aiohttp
 from langchain_core.tools import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -18,9 +17,6 @@ logger = logging.getLogger(__name__)
 
 class PortfolioBaseTool(IntentKitSkill, ABC):
     """Base class for portfolio analysis skills."""
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_api_key(self):
         context = self.get_context()

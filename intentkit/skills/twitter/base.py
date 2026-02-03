@@ -1,7 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -10,9 +9,6 @@ from intentkit.utils.error import RateLimitExceeded
 
 class TwitterBaseTool(IntentKitSkill):
     """Base class for Twitter tools."""
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_api_key(self):
         context = self.get_context()

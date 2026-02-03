@@ -3,9 +3,6 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from langchain_core.tools import ArgsSchema
-from pydantic import Field
-
 from intentkit.abstracts.graph import AgentContext
 from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.defillama.config.chains import (
@@ -24,12 +21,6 @@ class DefiLlamaBaseTool(IntentKitSkill):
     - Chain validation
     - Error handling
     """
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = Field(
-        default=DEFILLAMA_BASE_URL, description="Base URL for DeFi Llama API"
-    )
 
     category: str = "defillama"
 

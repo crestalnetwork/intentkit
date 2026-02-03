@@ -5,10 +5,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
-from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import IntentKitSkill, NoArgsSchema
+from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import RateLimitExceeded
 
 CRYPTO_COMPARE_BASE_URL = "https://min-api.cryptocompare.com"
@@ -24,9 +23,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
     - API client handling
     """
 
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = NoArgsSchema
+    category: str = "cryptocompare"
 
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.

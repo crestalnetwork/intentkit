@@ -1,8 +1,6 @@
 """Base class for Wallet Portfolio tools."""
 
-from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -25,12 +23,6 @@ SOLANA_NETWORKS = ["mainnet", "devnet"]
 
 class WalletBaseTool(IntentKitSkill):
     """Base class for all wallet portfolio tools."""
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = Field(
-        default=SOLANA_NETWORKS, description="Supported Solana networks"
-    )
 
     def get_api_key(self) -> str:
         context = self.get_context()

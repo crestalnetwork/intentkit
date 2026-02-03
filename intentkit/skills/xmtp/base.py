@@ -6,6 +6,8 @@ from intentkit.skills.onchain import IntentKitOnChainSkill
 class XmtpBaseTool(IntentKitOnChainSkill):
     """Base class for XMTP-related skills."""
 
+    category: str = "xmtp"
+
     # Set response format to content_and_artifact for returning tuple
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
@@ -24,10 +26,6 @@ class XmtpBaseTool(IntentKitOnChainSkill):
         "arbitrum-mainnet": "arbitrum",
         "optimism-mainnet": "optimism",
     }
-
-    @property
-    def category(self) -> str:
-        return "xmtp"
 
     def validate_network_and_get_chain_id(
         self, network_id: str, skill_name: str

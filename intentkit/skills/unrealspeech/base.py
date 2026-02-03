@@ -1,14 +1,10 @@
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.skills.base import IntentKitSkill
 
 
 class UnrealSpeechBaseTool(IntentKitSkill):
     """Base class for UnrealSpeech text-to-speech tools."""
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_api_key(self):
         context = self.get_context()

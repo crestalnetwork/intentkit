@@ -1,11 +1,9 @@
 import logging
 
-from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
-from intentkit.skills.base import IntentKitSkill, NoArgsSchema
+from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +11,7 @@ logger = logging.getLogger(__name__)
 class VeniceAudioBaseTool(IntentKitSkill):
     """Base class for Venice Audio tools."""
 
-    name: str = Field(default="venice_base_tool", description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = NoArgsSchema
+    category: str = "venice_audio"
 
     def validate_voice_model(
         self, context, voice_model: str

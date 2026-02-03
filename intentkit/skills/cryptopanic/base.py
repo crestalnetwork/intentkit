@@ -4,7 +4,6 @@ Defines the base class and shared utilities for CryptoPanic skills.
 """
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.skills.base import IntentKitSkill
 
@@ -18,8 +17,7 @@ class CryptopanicBaseTool(IntentKitSkill):
     including API key retrieval and shared helpers.
     """
 
-    name: str = Field(description="Tool name")
-    description: str = Field(description="Tool description")
+    category: str = "cryptopanic"
 
     def get_api_key(self):
         context = self.get_context()
@@ -35,7 +33,3 @@ class CryptopanicBaseTool(IntentKitSkill):
             raise ToolException(
                 f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for CryptoPanic."
             )
-
-    @property
-    def category(self) -> str:
-        return "cryptopanic"

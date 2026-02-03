@@ -2,12 +2,10 @@ import logging
 from typing import Any
 
 import httpx  # Ensure httpx is installed: pip install httpx
-from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
-from intentkit.skills.base import IntentKitSkill, NoArgsSchema
+from intentkit.skills.base import IntentKitSkill
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +15,7 @@ CARV_API_BASE_URL = "https://interface.carv.io"
 class CarvBaseTool(IntentKitSkill):
     """Base class for CARV API tools."""
 
-    name: str = Field(description="Tool name")  # type: ignore
-    description: str = Field(description="Tool description")
-    args_schema: ArgsSchema | None = NoArgsSchema
+    category: str = "carv"
 
     def get_api_key(self) -> str:
         """

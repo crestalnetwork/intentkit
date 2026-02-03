@@ -32,12 +32,7 @@ class VeniceImageBaseTool(IntentKitSkill):
     and `description` attributes.
     """
 
-    @property
-    def category(self) -> str:
-        """
-        Returns the category of this skill, used for configuration and logging.
-        """
-        return "venice_image"
+    category: str = "venice_image"
 
     def getSkillConfig(self, context) -> VeniceImageConfig:
         """

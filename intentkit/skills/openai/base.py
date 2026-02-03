@@ -1,7 +1,6 @@
 """Base class for OpenAI skills."""
 
 from langchain_core.tools.base import ToolException
-from pydantic import Field
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -12,9 +11,6 @@ class OpenAIBaseTool(IntentKitSkill):
 
     This class provides common functionality for all OpenAI skills.
     """
-
-    name: str = Field(description="The name of the tool")
-    description: str = Field(description="A description of what the tool does")
 
     def get_api_key(self):
         context = self.get_context()
