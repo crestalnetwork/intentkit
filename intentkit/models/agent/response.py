@@ -11,7 +11,7 @@ from pydantic import Field as PydanticField
 from pydantic.json_schema import SkipJsonSchema
 from pydantic.main import IncEx
 
-from intentkit.models.agent.core import Agent
+from intentkit.models.agent.agent import Agent
 from intentkit.models.agent.example import AgentExample
 from intentkit.models.agent_data import AgentData
 

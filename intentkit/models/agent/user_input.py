@@ -12,12 +12,12 @@ from sqlalchemy.exc import IntegrityError
 
 from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import AgentAutonomous
-from intentkit.models.agent.base import AgentCore, AgentVisibility
+from intentkit.models.agent.core import AgentCore, AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.utils.error import IntentKitAPIError
 
 if TYPE_CHECKING:
-    from intentkit.models.agent.core import Agent
+    from intentkit.models.agent.agent import Agent
 
 
 class AgentUserInput(AgentCore):
@@ -299,7 +299,7 @@ class AgentUpdate(AgentUserInput):
 
     # deprecated, use override instead
     async def update(self, agent_id: str) -> "Agent":
-        from intentkit.models.agent.core import Agent
+        from intentkit.models.agent.agent import Agent
 
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
@@ -328,7 +328,7 @@ class AgentUpdate(AgentUserInput):
             return Agent.model_validate(db_agent)
 
     async def override(self, agent_id: str) -> "Agent":
-        from intentkit.models.agent.core import Agent
+        from intentkit.models.agent.agent import Agent
 
         # Validate autonomous schedule settings if present
         if "autonomous" in self.model_dump(exclude_unset=True):
@@ -411,7 +411,7 @@ class AgentCreate(AgentUpdate):
                 )
 
     async def get_by_upstream_id(self) -> Agent | None:
-        from intentkit.models.agent.core import Agent
+        from intentkit.models.agent.agent import Agent
 
         if not self.upstream_id:
             return None
@@ -424,7 +424,7 @@ class AgentCreate(AgentUpdate):
             return None
 
     async def create(self) -> "Agent":
-        from intentkit.models.agent.core import Agent
+        from intentkit.models.agent.agent import Agent
 
         # Validate autonomous schedule settings if present
         if self.autonomous:

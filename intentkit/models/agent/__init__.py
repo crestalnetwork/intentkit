@@ -1,9 +1,10 @@
 from ..agent_data import AgentData
+from .agent import Agent
 from .autonomous import AgentAutonomous, AgentAutonomousStatus
-from .base import AgentCore, AgentPublicInfo, AgentVisibility
-from .core import Agent
+from .core import AgentCore, AgentVisibility
 from .db import AgentTable, AgentUserInputColumns
 from .example import AgentExample
+from .public_info import AgentPublicInfo
 from .response import AgentResponse
 from .user_input import AgentCreate, AgentUpdate, AgentUserInput
 
