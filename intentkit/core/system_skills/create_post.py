@@ -66,7 +66,7 @@ class CreatePostSkill(BaseTool):
         "markdown content, and an optional cover image URL. "
         "Use this to publish articles, announcements, or long-form content."
     )
-    args_schema: ArgsSchema | None = CreatePostInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CreatePostInput
 
     @override
     def _run(
@@ -142,6 +142,6 @@ class CreatePostSkill(BaseTool):
             text=f"Published a new post: {title}",
             post_id=post.id,
         )
-        await create_agent_activity(activity_create)
+        _ = await create_agent_activity(activity_create)
 
         return f"Post created successfully with ID: {post.id}"

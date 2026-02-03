@@ -38,7 +38,7 @@ class CallAgentSkill(BaseTool):
         "This allows the current agent to delegate tasks to other agents. "
         "The called agent will execute with the provided message and return its final response."
     )
-    args_schema: ArgsSchema | None = CallAgentInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CallAgentInput
 
     @override
     def _run(

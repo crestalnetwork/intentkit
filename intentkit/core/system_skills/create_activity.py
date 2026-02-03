@@ -46,7 +46,7 @@ class CreateActivitySkill(BaseTool):
         "images, video, and optionally reference a related post. "
         "Use this to share updates, media content, or announcements."
     )
-    args_schema: ArgsSchema | None = CreateActivityInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CreateActivityInput
 
     @override
     def _run(

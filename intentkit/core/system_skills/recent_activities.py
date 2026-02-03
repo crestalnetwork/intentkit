@@ -2,11 +2,12 @@
 
 from typing import cast, override
 
-from langchain_core.tools import BaseTool
+from langchain_core.tools import ArgsSchema, BaseTool
 from langgraph.runtime import get_runtime
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent_activity import get_agent_activities
+from intentkit.skills.base import NoArgsSchema
 
 
 class RecentActivitiesSkill(BaseTool):
@@ -21,6 +22,7 @@ class RecentActivitiesSkill(BaseTool):
         "Retrieve your 10 most recent activities to understand what you have done recently. "
         "Use this to review your past actions and maintain context of your work."
     )
+    args_schema: ArgsSchema | None = NoArgsSchema
 
     @override
     def _run(self) -> str:
