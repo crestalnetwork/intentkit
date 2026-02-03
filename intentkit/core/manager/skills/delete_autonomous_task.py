@@ -3,6 +3,7 @@ from typing import Any
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.core.autonomous import delete_autonomous_task
 from intentkit.core.manager.skills.base import ManagerSkill
 
 

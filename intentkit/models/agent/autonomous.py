@@ -18,6 +18,94 @@ class AgentAutonomousStatus(str, Enum):
     ERROR = "error"
 
 
+class AutonomousCreateRequest(BaseModel):
+    """Request model for creating a new autonomous task."""
+
+    name: str | None = PydanticField(
+        default=None,
+        description="Display name of the autonomous configuration",
+        max_length=50,
+    )
+    description: str | None = PydanticField(
+        default=None,
+        description="Description of the autonomous configuration",
+        max_length=200,
+    )
+    cron: str = PydanticField(
+        ...,
+        description="Cron expression for scheduling operations",
+    )
+    prompt: str = PydanticField(
+        ...,
+        description="Special prompt used during autonomous operation",
+        max_length=20000,
+    )
+    enabled: bool = PydanticField(
+        default=False,
+        description="Whether the autonomous configuration is enabled",
+    )
+    has_memory: bool = PydanticField(
+        default=True,
+        description="Whether to retain conversation memory between autonomous runs.",
+    )
+
+
+class AutonomousUpdateRequest(BaseModel):
+    """Request model for modifying an autonomous task."""
+
+    name: str | None = PydanticField(
+        default=None,
+        description="Display name of the autonomous configuration",
+        max_length=50,
+    )
+    description: str | None = PydanticField(
+        default=None,
+        description="Description of the autonomous configuration",
+        max_length=200,
+    )
+    cron: str | None = PydanticField(
+        default=None,
+        description="Cron expression for scheduling operations",
+    )
+    prompt: str | None = PydanticField(
+        default=None,
+        description="Special prompt used during autonomous operation",
+        max_length=20000,
+    )
+    enabled: bool | None = PydanticField(
+        default=None,
+        description="Whether the autonomous configuration is enabled",
+    )
+    has_memory: bool | None = PydanticField(
+        default=None,
+        description="Whether to retain conversation memory between autonomous runs.",
+    )
+
+
+def minutes_to_cron(minutes: int) -> str:
+    """Convert minutes interval to a cron expression.
+
+    This is a simple conversion that creates a cron expression like `*/n * * * *`
+    where n is the number of minutes.
+
+    Args:
+        minutes: Interval in minutes (should be >= 1)
+
+    Returns:
+        A cron expression string
+    """
+    if minutes <= 0:
+        minutes = 5  # Default to 5 minutes if invalid
+    if minutes >= 60:
+        # For intervals >= 60 minutes, use hourly scheduling
+        hours = minutes // 60
+        if hours >= 24:
+            # Run once a day at midnight
+            return "0 0 * * *"
+        return f"0 */{hours} * * *"
+    return f"*/{minutes} * * * *"
+
+
 class AgentAutonomous(BaseModel):
     """Autonomous agent configuration."""
 
@@ -44,7 +132,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     description: Annotated[
         str | None,
         PydanticField(
@@ -55,7 +143,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     minutes: Annotated[
         int | None,
         PydanticField(
@@ -66,7 +154,7 @@ class AgentAutonomous(BaseModel):
                 "deprecated": True,
             },
         ),
-    ]
+    ] = None
     cron: Annotated[
         str | None,
         PydanticField(
@@ -96,7 +184,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     has_memory: Annotated[
         bool | None,
         PydanticField(
@@ -106,7 +194,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     status: Annotated[
         AgentAutonomousStatus | None,
         PydanticField(
@@ -116,7 +204,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     next_run_time: Annotated[
         datetime | None,
         PydanticField(
@@ -126,7 +214,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
 
     @field_serializer("next_run_time")
     @classmethod
@@ -150,10 +238,27 @@ class AgentAutonomous(BaseModel):
         return v
 
     def normalize_status_defaults(self) -> "AgentAutonomous":
+        """Normalize the autonomous task configuration.
+
+        This method:
+        1. Converts deprecated `minutes` field to `cron` expression
+        2. Clears status/next_run_time when task is disabled
+        3. Sets default status to WAITING when task is enabled
+        """
+        updates: dict[str, object] = {}
+
+        # Convert minutes to cron if minutes is set but cron is not
+        if self.minutes is not None and not self.cron:
+            updates["cron"] = minutes_to_cron(self.minutes)
+            updates["minutes"] = None  # Clear minutes after conversion
+
         if not self.enabled:
             if self.status is not None or self.next_run_time is not None:
-                return self.model_copy(update={"status": None, "next_run_time": None})
-            return self
-        if self.status is None:
-            return self.model_copy(update={"status": AgentAutonomousStatus.WAITING})
+                updates["status"] = None
+                updates["next_run_time"] = None
+        elif self.status is None:
+            updates["status"] = AgentAutonomousStatus.WAITING
+
+        if updates:
+            return self.model_copy(update=updates)
         return self

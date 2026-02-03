@@ -229,7 +229,7 @@ async def schedule_agent_autonomous_tasks():
                     continue
 
                 try:
-                    # Schedule new job based on minutes or cron
+                    # Schedule new job using cron (minutes field is deprecated)
                     # Default has_memory to True if not set (backward compatibility)
                     task_has_memory = (
                         autonomous.has_memory
@@ -253,27 +253,9 @@ async def schedule_agent_autonomous_tasks():
                             ],
                             replace_existing=True,
                         )
-                    elif autonomous.minutes:
-                        logger.info(
-                            f"Scheduling interval task {task_id} every {autonomous.minutes} minutes"
-                        )
-                        scheduler.add_job(
-                            run_autonomous_task,
-                            "interval",
-                            id=task_id,
-                            args=[
-                                agent.id,
-                                agent.owner,
-                                autonomous.id,
-                                autonomous.prompt,
-                                task_has_memory,
-                            ],
-                            minutes=autonomous.minutes,
-                            replace_existing=True,
-                        )
                     else:
                         logger.error(
-                            f"Invalid autonomous configuration for task {task_id}: {autonomous}"
+                            f"Invalid autonomous configuration for task {task_id}: cron is required (minutes field is deprecated)"
                         )
                 except Exception as e:
                     logger.error(

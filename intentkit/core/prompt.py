@@ -318,10 +318,8 @@ def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
     if autonomous_task.description:
         task_info += f": {autonomous_task.description}"
 
-    # Add cycle info
-    if autonomous_task.minutes:
-        task_info += f". This task runs every {autonomous_task.minutes} minute(s)"
-    elif autonomous_task.cron:
+    # Add schedule info (minutes field is deprecated)
+    if autonomous_task.cron:
         task_info += f". This task runs on schedule: {autonomous_task.cron}"
 
     # Add current time

@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from intentkit.models.agent import Agent, AgentAutonomous
-from intentkit.models.agent_data import AgentData
 
 from app.local.autonomous import autonomous_router
 
@@ -41,6 +40,20 @@ def mock_agent():
     return agent
 
 
+@pytest.fixture
+def mock_task():
+    return AgentAutonomous(
+        id="new-task-id",
+        name="New Task",
+        cron="*/5 * * * *",
+        prompt="New prompt",
+        enabled=True,
+        status="waiting",
+        minutes=None,
+        next_run_time=None,
+    )
+
+
 @pytest.mark.asyncio
 async def test_list_autonomous(client, mock_agent, monkeypatch):
     import app.local.autonomous as autonomous_module
@@ -61,23 +74,16 @@ async def test_list_autonomous(client, mock_agent, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_add_autonomous(client, mock_agent, monkeypatch):
+async def test_add_autonomous(client, mock_task, monkeypatch):
     import app.local.autonomous as autonomous_module
 
-    async def mock_get_agent(agent_id):
-        return mock_agent
+    async def mock_add_autonomous_task(agent_id, task_request):
+        # Simulate adding the task and returning the created task
+        return mock_task
 
-    async def mock_patch_agent(agent_id, update_data, owner):
-        # Simulate adding the task
-        new_tasks = update_data.autonomous
-        # In the real code we rely on patch_agent returning the updated agent.
-        # We need to return an agent that has the new task.
-
-        mock_agent.autonomous = new_tasks
-        return mock_agent, AgentData(id=agent_id)
-
-    monkeypatch.setattr(autonomous_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(autonomous_module, "patch_agent", mock_patch_agent)
+    monkeypatch.setattr(
+        autonomous_module, "add_autonomous_task", mock_add_autonomous_task
+    )
 
     payload = {
         "name": "New Task",
@@ -95,18 +101,26 @@ async def test_add_autonomous(client, mock_agent, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_update_autonomous(client, mock_agent, monkeypatch):
+async def test_update_autonomous(client, monkeypatch):
     import app.local.autonomous as autonomous_module
 
-    async def mock_get_agent(agent_id):
-        return mock_agent
+    updated_task = AgentAutonomous(
+        id="task-1",
+        name="Updated Task",
+        cron="0 * * * *",
+        prompt="Do something",
+        enabled=False,
+        status=None,
+        minutes=None,
+        next_run_time=None,
+    )
 
-    async def mock_patch_agent(agent_id, update_data, owner):
-        mock_agent.autonomous = update_data.autonomous
-        return mock_agent, AgentData(id=agent_id)
+    async def mock_update_autonomous_task(agent_id, task_id, task_update):
+        return updated_task
 
-    monkeypatch.setattr(autonomous_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(autonomous_module, "patch_agent", mock_patch_agent)
+    monkeypatch.setattr(
+        autonomous_module, "update_autonomous_task", mock_update_autonomous_task
+    )
 
     payload = {"name": "Updated Task", "enabled": False}
 
@@ -119,20 +133,16 @@ async def test_update_autonomous(client, mock_agent, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_delete_autonomous(client, mock_agent, monkeypatch):
+async def test_delete_autonomous(client, monkeypatch):
     import app.local.autonomous as autonomous_module
 
-    async def mock_get_agent(agent_id):
-        return mock_agent
+    async def mock_delete_autonomous_task(agent_id, task_id):
+        # Simulate successful deletion
+        pass
 
-    async def mock_patch_agent(agent_id, update_data, owner):
-        mock_agent.autonomous = update_data.autonomous
-        return mock_agent, AgentData(id=agent_id)
-
-    monkeypatch.setattr(autonomous_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(autonomous_module, "patch_agent", mock_patch_agent)
+    monkeypatch.setattr(
+        autonomous_module, "delete_autonomous_task", mock_delete_autonomous_task
+    )
 
     response = client.delete("/agents/test-agent/autonomous/task-1")
     assert response.status_code == 204
-
-    # Verify it's gone from the agent (simulated by our mock interaction, mostly ensuring 204 returned)

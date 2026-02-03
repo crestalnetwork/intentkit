@@ -1,40 +1,18 @@
 from typing import Any
 
-from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.core.autonomous import add_autonomous_task
 from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent import AgentAutonomous
+from intentkit.models.agent.autonomous import AutonomousCreateRequest
 
 
-class AddAutonomousTaskInput(BaseModel):
+class AddAutonomousTaskInput(AutonomousCreateRequest):
     """Input model for add_autonomous_task skill."""
 
-    name: str | None = Field(
-        default=None,
-        description="Display name of the autonomous task configuration",
-        max_length=50,
-    )
-    description: str | None = Field(
-        default=None,
-        description="Description of the autonomous task configuration",
-        max_length=200,
-    )
-    minutes: int | None = Field(
-        default=None,
-        description="Interval in minutes between operations, mutually exclusive with cron",
-    )
-    cron: str | None = Field(
-        default=None,
-        description="Cron expression for scheduling operations, mutually exclusive with minutes",
-    )
-    prompt: str = Field(description="Special prompt used during autonomous operation")
-    has_memory: bool | None = Field(
-        default=True,
-        description="Whether to retain conversation memory between autonomous runs. If False, thread memory is cleared before each run.",
-    )
+    pass
 
 
 class AddAutonomousTaskOutput(BaseModel):
@@ -52,8 +30,8 @@ class AddAutonomousTask(ManagerSkill):
     description: str = (
         "Add a new autonomous task configuration to the agent. "
         "Allows setting up scheduled operations with custom prompts and intervals. "
-        "The minutes and cron fields are mutually exclusive. But you must provide one of them. "
-        "If user want to add a condition task, you can add a 5 minutes task to check the condition. "
+        "User must provide a cron expression for scheduling. "
+        "If user want to add a condition task, you can add a 5 minutes task (using cron) to check the condition. "
         "If the user does not explicitly state that the condition task should be executed continuously, "
         "then add in the task prompt that it will delete itself after successful execution. "
     )
@@ -61,22 +39,23 @@ class AddAutonomousTask(ManagerSkill):
 
     async def _arun(
         self,
+        cron: str,
+        prompt: str,
         name: str | None = None,
         description: str | None = None,
-        minutes: int | None = None,
-        cron: str | None = None,
-        prompt: str = "",
-        has_memory: bool | None = True,
+        enabled: bool = False,
+        has_memory: bool = True,
         **kwargs: Any,
     ) -> AddAutonomousTaskOutput:
         """Add an autonomous task to the agent.
 
         Args:
+            cron: Cron expression
+            prompt: Special prompt for autonomous operation
             name: Display name of the task
             description: Description of the task
-            minutes: Interval in minutes (mutually exclusive with cron)
-            cron: Cron expression (mutually exclusive with minutes)
-            prompt: Special prompt for autonomous operation
+            enabled: Whether the task is enabled
+            has_memory: Whether to retain memory between runs
             config: Runtime configuration containing agent context
 
         Returns:
@@ -85,23 +64,16 @@ class AddAutonomousTask(ManagerSkill):
         context = self.get_context()
         agent = context.agent
 
-        if minutes is not None and cron is not None:
-            raise ValueError("minutes and cron are mutually exclusive")
-
-        task = AgentAutonomous(
-            id=str(XID()),
+        task_request = AutonomousCreateRequest(
             name=name,
             description=description,
-            minutes=minutes,
             cron=cron,
             prompt=prompt,
-            enabled=True,
+            enabled=enabled,
             has_memory=has_memory,
-            status=None,
-            next_run_time=None,
         )
 
-        created_task = await add_autonomous_task(agent.id, task)
+        created_task = await add_autonomous_task(agent.id, task_request)
 
         return AddAutonomousTaskOutput(task=created_task)
 

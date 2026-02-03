@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
+from epyxid import XID
 from sqlalchemy import select
 
 from intentkit.config.db import get_session
-from intentkit.models.agent.autonomous import AgentAutonomous
+from intentkit.models.agent.autonomous import (
+    AgentAutonomous,
+    AutonomousCreateRequest,
+    AutonomousUpdateRequest,
+)
 from intentkit.models.agent.db import AgentTable
 from intentkit.utils.error import IntentKitAPIError
 
@@ -66,11 +71,26 @@ async def list_autonomous_tasks(agent_id: str) -> list[AgentAutonomous]:
         return _deserialize_autonomous(autonomous_data)
 
 
-async def add_autonomous_task(agent_id: str, task: AgentAutonomous) -> AgentAutonomous:
+async def add_autonomous_task(
+    agent_id: str, task_request: AutonomousCreateRequest
+) -> AgentAutonomous:
     async with get_session() as session:
         db_agent = await session.get(AgentTable, agent_id)
-        if db_agent is None or db_agent.archived_at is not None:
+        if db_agent is None:
+            raise _agent_not_found_error(agent_id)
+        if db_agent.archived_at is not None:
             raise _autonomous_not_allowed_error()
+
+        # Create new task model from request
+        task = AgentAutonomous(
+            id=str(XID()),
+            cron=task_request.cron,
+            prompt=task_request.prompt,
+            name=task_request.name,
+            description=task_request.description,
+            enabled=task_request.enabled,
+            has_memory=task_request.has_memory,
+        )
 
         current_tasks = _deserialize_autonomous(db_agent.autonomous)
         normalized_task = task.normalize_status_defaults()
@@ -85,7 +105,9 @@ async def add_autonomous_task(agent_id: str, task: AgentAutonomous) -> AgentAuto
 async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
     async with get_session() as session:
         db_agent = await session.get(AgentTable, agent_id)
-        if db_agent is None or db_agent.archived_at is not None:
+        if db_agent is None:
+            raise _agent_not_found_error(agent_id)
+        if db_agent.archived_at is not None:
             raise _autonomous_not_allowed_error()
 
         current_tasks = _deserialize_autonomous(db_agent.autonomous)
@@ -103,11 +125,13 @@ async def delete_autonomous_task(agent_id: str, task_id: str) -> None:
 
 
 async def update_autonomous_task(
-    agent_id: str, task_id: str, task_updates: dict[str, Any]
+    agent_id: str, task_id: str, task_update: AutonomousUpdateRequest
 ) -> AgentAutonomous:
     async with get_session() as session:
         db_agent = await session.get(AgentTable, agent_id)
-        if db_agent is None or db_agent.archived_at is not None:
+        if db_agent is None:
+            raise _agent_not_found_error(agent_id)
+        if db_agent.archived_at is not None:
             raise _autonomous_not_allowed_error()
 
         current_tasks = _deserialize_autonomous(db_agent.autonomous)
@@ -116,8 +140,11 @@ async def update_autonomous_task(
         rewritten_tasks: list[AgentAutonomous] = []
         for task in current_tasks:
             if task.id == task_id:
+                # Update only fields that are set in the request
+                update_data = task_update.model_dump(exclude_unset=True)
                 task_dict = task.model_dump()
-                task_dict.update(task_updates)
+                task_dict.update(update_data)
+
                 updated_task = AgentAutonomous.model_validate(
                     task_dict
                 ).normalize_status_defaults()
