@@ -25,15 +25,9 @@ from intentkit.models.agent.user_input import AgentCreate, AgentUpdate
 from intentkit.models.credit import CreditAccount
 from intentkit.models.llm import LLMModelInfo, LLMProvider
 from intentkit.models.skill import Skill
-from intentkit.utils.ens import resolve_ens_to_address
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
-
-ENS_NAME_PATTERN = re.compile(
-    r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:eth|base\.eth)$",
-    re.IGNORECASE,
-)
 
 
 class Agent(AgentCreate, AgentPublicInfo):
@@ -328,39 +322,6 @@ class Agent(AgentCreate, AgentPublicInfo):
             if item is None:
                 return None
             return cls.model_validate(item)
-
-    @classmethod
-    async def get_by_id_or_slug(cls, agent_id: str) -> "Agent | None":
-        """Get agent by ID or slug.
-
-        First tries to get by ID if agent_id length <= 20,
-        then falls back to searching by slug if not found.
-
-        Args:
-            agent_id: Agent ID or slug to search for
-
-        Returns:
-            Agent if found, None otherwise
-        """
-        query_id = agent_id
-        if ENS_NAME_PATTERN.fullmatch(agent_id):
-            query_id = await resolve_ens_to_address(agent_id)
-
-        async with get_session() as db:
-            agent = None
-
-            # Try to get by ID if length <= 20
-            if len(query_id) <= 20 or query_id.startswith("0x"):
-                agent = await Agent.get(query_id)
-
-            # If not found, try to get by slug
-            if agent is None:
-                slug_stmt = select(AgentTable).where(AgentTable.slug == query_id)
-                agent_row = await db.scalar(slug_stmt)
-                if agent_row is not None:
-                    agent = Agent.model_validate(agent_row)
-
-            return agent
 
     @staticmethod
     def _deserialize_autonomous(
