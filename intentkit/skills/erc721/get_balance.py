@@ -1,5 +1,6 @@
 """ERC721 get_balance skill."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -35,7 +36,7 @@ Inputs:
 
 Returns the number of NFTs owned by the address for the specified collection.
 """
-    args_schema: type[BaseModel] = GetBalanceInput
+    args_schema: ArgsSchema | None = GetBalanceInput
 
     async def _arun(
         self,

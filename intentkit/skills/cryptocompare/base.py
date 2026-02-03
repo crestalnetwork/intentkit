@@ -8,7 +8,7 @@ import httpx
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.base import IntentKitSkill, NoArgsSchema
 from intentkit.utils.error import RateLimitExceeded
 
 CRYPTO_COMPARE_BASE_URL = "https://min-api.cryptocompare.com"
@@ -26,7 +26,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
     name: str = Field(description="The name of the tool")
     description: str = Field(description="A description of what the tool does")
-    args_schema: ArgsSchema | None = None
+    args_schema: ArgsSchema | None = NoArgsSchema
 
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.

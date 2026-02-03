@@ -3,6 +3,7 @@
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_stablecoin_prices
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
@@ -50,7 +51,7 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_stablecoin_prices"
     description: str = FETCH_STABLECOIN_PRICES_PROMPT
-    args_schema: ArgsSchema | None = None  # No input parameters needed
+    args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 
     async def _arun(self, **kwargs) -> FetchStablecoinPricesResponse:
         """Fetch stablecoin price data.

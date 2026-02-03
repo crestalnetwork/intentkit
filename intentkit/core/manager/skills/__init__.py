@@ -1,6 +1,5 @@
 """Manager skills package."""
 
-from intentkit.core.manager.skills.common import NoArgsSchema
 from intentkit.core.manager.skills.draft import (
     GetAgentLatestDraftSkill,
     UpdateAgentDraftSkill,
@@ -13,6 +12,7 @@ from intentkit.core.manager.skills.public_info import (
     get_agent_latest_public_info_skill,
     update_public_info_skill,
 )
+from intentkit.skills.base import NoArgsSchema
 
 __all__ = [
     "NoArgsSchema",

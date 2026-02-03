@@ -2,6 +2,7 @@
 
 import math
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, field_validator
 from web3 import Web3
 
@@ -55,7 +56,7 @@ Important notes:
 - 1 wei = 0.000000000000000001 of the token
 - Minimum sale amount to account for slippage is 100000000000000 wei (0.0001 tokens)
 """
-    args_schema: type[BaseModel] = SellTokenInput
+    args_schema: ArgsSchema | None = SellTokenInput
 
     async def _arun(
         self,

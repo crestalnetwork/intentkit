@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -45,7 +46,7 @@ Important notes:
 - Ensure sufficient balance of the input asset before transferring
 - When sending native assets (e.g. 'eth' on base-mainnet), ensure there is sufficient balance for the transfer itself AND the gas cost
 """
-    args_schema: type[BaseModel] = TransferInput
+    args_schema: ArgsSchema | None = TransferInput
 
     async def _arun(
         self,

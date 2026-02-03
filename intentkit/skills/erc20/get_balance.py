@@ -1,5 +1,6 @@
 """ERC20 get_balance skill."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -37,7 +38,7 @@ Important notes:
 - Never assume token or address, they have to be provided as inputs
 - If only token symbol is provided, use the erc20_get_token_address tool to get the token address first
 """
-    args_schema: type[BaseModel] = GetBalanceInput
+    args_schema: ArgsSchema | None = GetBalanceInput
 
     async def _arun(
         self,

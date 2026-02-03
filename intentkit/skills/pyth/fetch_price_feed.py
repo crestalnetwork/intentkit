@@ -3,6 +3,7 @@
 import json
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.pyth.base import PythBaseTool
@@ -44,7 +45,7 @@ Examples:
 - FX: EUR, GBP, JPY
 - Metals: XAU (Gold), XAG (Silver), XPT (Platinum), XPD (Palladium)
 """
-    args_schema: type[BaseModel] = FetchPriceFeedInput
+    args_schema: ArgsSchema | None = FetchPriceFeedInput
 
     async def _arun(
         self,

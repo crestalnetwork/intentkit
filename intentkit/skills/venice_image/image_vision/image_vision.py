@@ -2,9 +2,9 @@ import logging
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import HttpUrl
 
-from intentkit.skills.base import ToolException
 from intentkit.skills.venice_image.image_vision.image_vision_base import (
     VeniceImageVisionBaseTool,
 )

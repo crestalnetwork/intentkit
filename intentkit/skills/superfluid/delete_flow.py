@@ -1,5 +1,6 @@
 """Superfluid delete_flow skill - Delete an existing money stream."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -40,7 +41,7 @@ Important notes:
 - A stream must exist to the recipient before it can be deleted.
 - Once deleted, the stream will stop immediately and no more tokens will be transferred.
 """
-    args_schema: type[BaseModel] = DeleteFlowInput
+    args_schema: ArgsSchema | None = DeleteFlowInput
 
     async def _arun(
         self,

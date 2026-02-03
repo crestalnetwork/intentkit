@@ -1,5 +1,6 @@
 """Superfluid create_flow skill - Create a money stream."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -48,7 +49,7 @@ Important notes:
 - 1 wei = 0.000000000000000001 ETH
 - Example: To stream 1 token per month, calculate: 1e18 / (30 * 24 * 60 * 60) ≈ 385802469135802 wei/second
 """
-    args_schema: type[BaseModel] = CreateFlowInput
+    args_schema: ArgsSchema | None = CreateFlowInput
 
     async def _arun(
         self,

@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
 from intentkit.skills.cdp.base import CDPBaseTool
@@ -27,7 +28,7 @@ Returns the balance in both atomic units (wei) and human-readable format (ETH).
 
 No inputs required - returns the balance for the connected wallet address.
 """
-    args_schema: type[BaseModel] = GetBalanceInput
+    args_schema: ArgsSchema | None = GetBalanceInput
 
     async def _arun(self) -> str:
         """Get the native currency balance for the connected wallet.

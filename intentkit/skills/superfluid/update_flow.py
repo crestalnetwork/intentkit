@@ -1,5 +1,6 @@
 """Superfluid update_flow skill - Update an existing money stream."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -46,7 +47,7 @@ Important notes:
 - 1 wei = 0.000000000000000001 ETH
 - A stream must already exist to the recipient before it can be updated.
 """
-    args_schema: type[BaseModel] = UpdateFlowInput
+    args_schema: ArgsSchema | None = UpdateFlowInput
 
     async def _arun(
         self,

@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -38,7 +39,7 @@ Important notes:
 - Ensure sufficient WETH balance before unwrapping
 - Some ETH will be needed for gas fees
 """
-    args_schema: type[BaseModel] = UnwrapEthInput
+    args_schema: ArgsSchema | None = UnwrapEthInput
 
     async def _arun(
         self,

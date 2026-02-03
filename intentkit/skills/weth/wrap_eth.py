@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -38,7 +39,7 @@ Important notes:
 - Ensure sufficient ETH balance before wrapping
 - Some ETH will be needed for gas fees in addition to the amount being wrapped
 """
-    args_schema: type[BaseModel] = WrapEthInput
+    args_schema: ArgsSchema | None = WrapEthInput
 
     async def _arun(
         self,

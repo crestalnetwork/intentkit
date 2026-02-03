@@ -2,7 +2,7 @@
 
 from typing import cast, override
 
-from langchain_core.tools import BaseTool
+from langchain_core.tools import ArgsSchema, BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
@@ -66,7 +66,7 @@ class CreatePostSkill(BaseTool):
         "markdown content, and an optional cover image URL. "
         "Use this to publish articles, announcements, or long-form content."
     )
-    args_schema: type[BaseModel] = CreatePostInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CreatePostInput  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @override
     def _run(

@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -42,7 +43,7 @@ Important notes:
 - Make sure you have enough shares in the vault to cover the withdrawal.
 - The assets amount should be in whole units (e.g., '1' for 1 token, '0.5' for 0.5 tokens).
 """
-    args_schema: type[BaseModel] = WithdrawInput
+    args_schema: ArgsSchema | None = WithdrawInput
 
     async def _arun(
         self,

@@ -2,6 +2,7 @@
 
 import math
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, field_validator
 from web3 import Web3
 
@@ -51,7 +52,7 @@ Important notes:
 - 1 wei = 0.000000000000000001 ETH
 - Minimum purchase amount is 100000000000000 wei (0.0001 ETH)
 """
-    args_schema: type[BaseModel] = BuyTokenInput
+    args_schema: ArgsSchema | None = BuyTokenInput
 
     async def _arun(
         self,

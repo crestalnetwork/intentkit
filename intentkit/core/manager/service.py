@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def agent_draft_json_schema() -> dict[str, object]:
     """Return AgentUserInput schema tailored for LLM draft generation."""
-    schema: dict[str, object] = AgentUserInput.model_json_schema()
+    schema: dict[str, Any] = AgentUserInput.model_json_schema()
     properties: dict[str, object] = schema.get("properties", {})
 
     fields_to_remove = {"autonomous", "frequency_penalty", "presence_penalty"}

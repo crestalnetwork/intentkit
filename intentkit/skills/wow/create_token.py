@@ -1,5 +1,6 @@
 """WOW create token skill."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -43,7 +44,7 @@ Important notes:
 - The token will start trading immediately after creation
 - Anyone can buy/sell the token once created
 """
-    args_schema: type[BaseModel] = CreateTokenInput
+    args_schema: ArgsSchema | None = CreateTokenInput
 
     async def _arun(
         self,

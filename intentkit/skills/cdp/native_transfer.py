@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.cdp.base import CDPBaseTool
@@ -34,7 +35,7 @@ Important notes:
 - Ensure sufficient balance of the native asset before transferring
 - Ensure there is sufficient balance for the transfer itself AND the gas cost of this transfer
 """
-    args_schema: type[BaseModel] = NativeTransferInput
+    args_schema: ArgsSchema | None = NativeTransferInput
 
     async def _arun(
         self,

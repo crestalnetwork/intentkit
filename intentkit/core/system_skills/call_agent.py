@@ -3,7 +3,7 @@
 from typing import cast, override
 
 from epyxid import XID
-from langchain_core.tools import BaseTool
+from langchain_core.tools import ArgsSchema, BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
@@ -38,7 +38,7 @@ class CallAgentSkill(BaseTool):
         "This allows the current agent to delegate tasks to other agents. "
         "The called agent will execute with the provided message and return its final response."
     )
-    args_schema: type[BaseModel] = CallAgentInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CallAgentInput  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @override
     def _run(

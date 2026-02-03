@@ -1,5 +1,6 @@
 """ERC20 get_token_address skill."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.erc20.base import ERC20BaseTool
@@ -42,7 +43,7 @@ Supported tokens vary by network:
 - arbitrum-mainnet: USDC, WETH
 - optimism-mainnet: USDC, WETH
 """
-    args_schema: type[BaseModel] = GetTokenAddressInput
+    args_schema: ArgsSchema | None = GetTokenAddressInput
 
     async def _arun(
         self,

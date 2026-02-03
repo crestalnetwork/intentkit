@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
 from intentkit.skills.cdp.base import CDPBaseTool
@@ -31,7 +32,7 @@ Returns wallet details including:
 
 No inputs required.
 """
-    args_schema: type[BaseModel] = GetWalletDetailsInput
+    args_schema: ArgsSchema | None = GetWalletDetailsInput
 
     async def _arun(self) -> str:
         """Get details about the connected wallet.

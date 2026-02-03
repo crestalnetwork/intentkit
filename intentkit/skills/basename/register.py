@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from ens import ENS
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -63,7 +64,7 @@ Important notes:
 - Ensure you have sufficient ETH balance for registration fee plus gas
 - Names are first-come, first-served - if registration fails, try a more unique name
 """
-    args_schema: type[BaseModel] = RegisterBasenameInput
+    args_schema: ArgsSchema | None = RegisterBasenameInput
 
     async def _arun(
         self,

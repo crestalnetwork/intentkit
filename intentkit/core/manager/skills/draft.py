@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-from typing import Annotated, Any, override
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
-from pydantic import SkipValidation
+from pydantic import BaseModel
 
 from intentkit.config.db import get_session
 from intentkit.core.draft import (
@@ -15,8 +15,8 @@ from intentkit.core.draft import (
 )
 from intentkit.core.manager.service import agent_draft_json_schema
 from intentkit.core.manager.skills.base import ManagerSkill
-from intentkit.core.manager.skills.common import NoArgsSchema
 from intentkit.models.agent import AgentUserInput
+from intentkit.skills.base import NoArgsSchema
 
 
 class GetAgentLatestDraftSkill(ManagerSkill):
@@ -25,7 +25,7 @@ class GetAgentLatestDraftSkill(ManagerSkill):
     name: str = "get_agent_latest_draft"
     description: str = "Fetch the latest draft for the current agent."
     # type: ignore[assignment]
-    args_schema: Annotated[ArgsSchema | None, SkipValidation()] = NoArgsSchema
+    args_schema: ArgsSchema | None = NoArgsSchema
 
     @override
     async def _arun(self) -> str:
@@ -43,6 +43,12 @@ class GetAgentLatestDraftSkill(ManagerSkill):
         return json.dumps(draft.model_dump(mode="json"), indent=2)
 
 
+class UpdateAgentDraftSchema(BaseModel):
+    """Schema for updating an agent draft."""
+
+    draft_update: AgentUserInput
+
+
 class UpdateAgentDraftSkill(ManagerSkill):
     """Skill to update agent drafts with partial field updates."""
 
@@ -52,7 +58,7 @@ class UpdateAgentDraftSkill(ManagerSkill):
         "Only fields that are explicitly provided will be updated, leaving other fields unchanged. "
         "This is more efficient than override and reduces the risk of accidentally changing fields."
     )
-    args_schema: dict[str, Any] = {  # type: ignore[assignment]
+    args_schema: ArgsSchema | None = {
         "type": "object",
         "properties": {
             "draft_update": agent_draft_json_schema(),

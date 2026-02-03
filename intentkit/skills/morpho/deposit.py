@@ -2,6 +2,7 @@
 
 from decimal import Decimal
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -46,7 +47,7 @@ Important notes:
 - The token must be approved for the vault to spend before depositing.
 - If you are unsure of the token address, please clarify what the requested token address is before continuing.
 """
-    args_schema: type[BaseModel] = DepositInput
+    args_schema: ArgsSchema | None = DepositInput
 
     async def _arun(
         self,

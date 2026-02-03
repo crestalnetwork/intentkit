@@ -2,7 +2,7 @@
 
 from typing import cast, override
 
-from langchain_core.tools import BaseTool
+from langchain_core.tools import ArgsSchema, BaseTool
 from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
@@ -46,7 +46,7 @@ class CreateActivitySkill(BaseTool):
         "images, video, and optionally reference a related post. "
         "Use this to share updates, media content, or announcements."
     )
-    args_schema: type[BaseModel] = CreateActivityInput  # pyright: ignore[reportIncompatibleVariableOverride]
+    args_schema: ArgsSchema | None = CreateActivityInput  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @override
     def _run(

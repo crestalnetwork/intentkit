@@ -4,12 +4,12 @@ import logging
 from typing import Any, Literal
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import Field
 
 from intentkit.clients.s3 import store_image_bytes
 
 # Import the generic base
-from intentkit.skills.base import ToolException
 from intentkit.skills.venice_image.base import VeniceImageBaseTool
 from intentkit.skills.venice_image.image_generation.image_generation_input import (
     VeniceImageGenerationInput,

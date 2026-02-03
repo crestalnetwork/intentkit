@@ -5,6 +5,7 @@ from typing import Any
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_dex_overview
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
@@ -124,7 +125,7 @@ class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):
 
     name: str = "defillama_fetch_dex_overview"
     description: str = FETCH_DEX_OVERVIEW_PROMPT
-    args_schema: ArgsSchema | None = None  # No input parameters needed
+    args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 
     async def _arun(self, **kwargs) -> FetchDexOverviewResponse:
         """Fetch DEX overview data.

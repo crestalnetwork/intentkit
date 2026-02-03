@@ -3,6 +3,7 @@
 import json
 
 import httpx
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.pyth.base import PythBaseTool
@@ -34,7 +35,7 @@ Important notes:
 - This action only fetches price inputs from Pyth price feeds. No other source.
 - If you are asked to fetch the price from Pyth for a ticker symbol such as BTC, you must first use the pyth_fetch_price_feed action to retrieve the price feed ID before invoking this action.
 """
-    args_schema: type[BaseModel] = FetchPriceInput
+    args_schema: ArgsSchema | None = FetchPriceInput
 
     async def _arun(
         self,

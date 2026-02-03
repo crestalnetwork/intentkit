@@ -14,6 +14,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 from langgraph.runtime import get_runtime
 from pydantic import (
+    BaseModel,
     ValidationError,
 )
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -31,6 +32,10 @@ from intentkit.utils.error import RateLimitExceeded
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
 APIKeyProviderValue = Literal["platform", "agent_owner"]
+
+
+class NoArgsSchema(BaseModel):
+    """Empty schema for skills without arguments."""
 
 
 class SkillConfig(TypedDict):

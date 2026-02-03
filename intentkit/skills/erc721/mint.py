@@ -1,5 +1,6 @@
 """ERC721 mint skill."""
 
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
 
@@ -39,7 +40,7 @@ Important notes:
 - The contract must support the mint function
 - The wallet must have permission to mint (some contracts restrict who can mint)
 """
-    args_schema: type[BaseModel] = MintInput
+    args_schema: ArgsSchema | None = MintInput
 
     async def _arun(
         self,

@@ -1,9 +1,8 @@
-from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import Field
 
 from intentkit.config.config import config
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.base import ArgsSchema, IntentKitSkill
 
 
 class WebScraperBaseTool(IntentKitSkill):

@@ -7,7 +7,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import Field
 
 from intentkit.config.config import config
-from intentkit.skills.base import IntentKitSkill
+from intentkit.skills.base import IntentKitSkill, NoArgsSchema
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class CarvBaseTool(IntentKitSkill):
 
     name: str = Field(description="Tool name")  # type: ignore
     description: str = Field(description="Tool description")
-    args_schema: ArgsSchema | None = None
+    args_schema: ArgsSchema | None = NoArgsSchema
 
     def get_api_key(self) -> str:
         """
