@@ -1,8 +1,8 @@
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent import AgentAutonomous
-from intentkit.skills.system.base import SystemBaseTool
 
 
 class ListAutonomousTasksInput(BaseModel):
@@ -19,7 +19,7 @@ class ListAutonomousTasksOutput(BaseModel):
     )
 
 
-class ListAutonomousTasks(SystemBaseTool):
+class ListAutonomousTasks(ManagerSkill):
     """Skill to list all autonomous tasks for an agent."""
 
     name: str = "system_list_autonomous_tasks"
@@ -47,3 +47,7 @@ class ListAutonomousTasks(SystemBaseTool):
         tasks = await agent.list_autonomous_tasks()
 
         return ListAutonomousTasksOutput(tasks=tasks)
+
+
+# Shared skill instances
+list_autonomous_tasks_skill = ListAutonomousTasks()

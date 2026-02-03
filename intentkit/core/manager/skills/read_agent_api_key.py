@@ -2,8 +2,8 @@ from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config
+from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent_data import AgentData
-from intentkit.skills.system.base import SystemBaseTool
 
 
 class ReadAgentApiKeyInput(BaseModel):
@@ -22,7 +22,7 @@ class ReadAgentApiKeyOutput(BaseModel):
     api_endpoint: str = Field(description="The full API endpoint URL")
 
 
-class ReadAgentApiKey(SystemBaseTool):
+class ReadAgentApiKey(ManagerSkill):
     """Skill to retrieve or generate an API key for the agent."""
 
     name: str = "system_read_agent_api_key"
@@ -84,3 +84,7 @@ class ReadAgentApiKey(SystemBaseTool):
             open_api_base_url=open_api_base_url,
             api_endpoint=api_endpoint,
         )
+
+
+# Shared skill instances
+read_agent_api_key_skill = ReadAgentApiKey()

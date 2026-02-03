@@ -1,7 +1,7 @@
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.skills.system.base import SystemBaseTool
+from intentkit.core.manager.skills.base import ManagerSkill
 
 
 class DeleteAutonomousTaskInput(BaseModel):
@@ -21,7 +21,7 @@ class DeleteAutonomousTaskOutput(BaseModel):
     message: str = Field(description="Confirmation message about the deletion")
 
 
-class DeleteAutonomousTask(SystemBaseTool):
+class DeleteAutonomousTask(ManagerSkill):
     """Skill to delete an autonomous task from an agent."""
 
     name: str = "system_delete_autonomous_task"
@@ -53,3 +53,7 @@ class DeleteAutonomousTask(SystemBaseTool):
         return DeleteAutonomousTaskOutput(
             success=True, message=f"Successfully deleted autonomous task {task_id}"
         )
+
+
+# Shared skill instances
+delete_autonomous_task_skill = DeleteAutonomousTask()

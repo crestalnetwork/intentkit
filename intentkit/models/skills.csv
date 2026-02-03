@@ -120,12 +120,6 @@ supabase,update_data,supabase_update_data,TRUE,1,5,5,,,0x445750026A4a1906b613024
 supabase,upsert_data,supabase_upsert_data,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 supabase,delete_data,supabase_delete_data,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 supabase,invoke_function,supabase_invoke_function,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,read_agent_api_key,system_read_agent_api_key,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,regenerate_agent_api_key,system_regenerate_agent_api_key,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,list_autonomous_tasks,system_list_autonomous_tasks,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,add_autonomous_task,system_add_autonomous_task,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,edit_autonomous_task,system_edit_autonomous_task,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
-system,delete_autonomous_task,system_delete_autonomous_task,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 http,http_get,http_get,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 http,http_put,http_put,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a
 http,http_post,http_post,TRUE,1,5,5,,,0x445750026A4a1906b61302442E085f9cbAfe206a

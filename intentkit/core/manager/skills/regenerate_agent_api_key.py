@@ -2,8 +2,8 @@ from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.config.config import config
+from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent_data import AgentData
-from intentkit.skills.system.base import SystemBaseTool
 
 
 class RegenerateAgentApiKeyInput(BaseModel):
@@ -24,7 +24,7 @@ class RegenerateAgentApiKeyOutput(BaseModel):
     api_endpoint: str = Field(description="The full API endpoint URL")
 
 
-class RegenerateAgentApiKey(SystemBaseTool):
+class RegenerateAgentApiKey(ManagerSkill):
     """Skill to regenerate and reset the API key for the agent."""
 
     name: str = "system_regenerate_agent_api_key"
@@ -72,3 +72,7 @@ class RegenerateAgentApiKey(SystemBaseTool):
             open_api_base_url=open_api_base_url,
             api_endpoint=api_endpoint,
         )
+
+
+# Shared skill instances
+regenerate_agent_api_key_skill = RegenerateAgentApiKey()

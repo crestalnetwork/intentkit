@@ -12,8 +12,15 @@ from langgraph.graph.state import CompiledStateGraph
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.engine import build_agent, stream_agent_raw
 from intentkit.core.manager.skills import (
+    add_autonomous_task_skill,
+    delete_autonomous_task_skill,
+    edit_autonomous_task_skill,
     get_agent_latest_draft_skill,
     get_agent_latest_public_info_skill,
+    get_available_llms_skill,
+    list_autonomous_tasks_skill,
+    read_agent_api_key_skill,
+    regenerate_agent_api_key_skill,
     update_agent_draft_skill,
     update_public_info_skill,
 )
@@ -139,18 +146,18 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
         "skills": {
-            "system": {
-                "enabled": True,
-                "states": {
-                    "add_autonomous_task": "private",
-                    "delete_autonomous_task": "private",
-                    "edit_autonomous_task": "private",
-                    "list_autonomous_tasks": "private",
-                    "read_agent_api_key": "private",
-                    "regenerate_agent_api_key": "private",
-                    "get_available_llms": "private",
-                },
-            },
+            # "system": {
+            #     "enabled": True,
+            #     "states": {
+            #         "add_autonomous_task": "private",
+            #         "delete_autonomous_task": "private",
+            #         "edit_autonomous_task": "private",
+            #         "list_autonomous_tasks": "private",
+            #         "read_agent_api_key": "private",
+            #         "regenerate_agent_api_key": "private",
+            #         "get_available_llms": "private",
+            #     },
+            # },
             "openai": {
                 "enabled": True,
                 "api_key_provider": "platform",
@@ -192,6 +199,13 @@ async def _get_manager_executor(
                 get_agent_latest_public_info_skill,
                 update_agent_draft_skill,
                 update_public_info_skill,
+                add_autonomous_task_skill,
+                delete_autonomous_task_skill,
+                edit_autonomous_task_skill,
+                list_autonomous_tasks_skill,
+                read_agent_api_key_skill,
+                regenerate_agent_api_key_skill,
+                get_available_llms_skill,
             ]
             executor = await build_agent(
                 manager_agent, AgentData(id=manager_agent.id), custom_skills
