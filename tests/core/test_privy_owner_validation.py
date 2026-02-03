@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-import intentkit.core.agent as agent_module
+from intentkit.core.agent import process_agent_wallet
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
@@ -32,7 +32,7 @@ async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
     )
 
     monkeypatch.setattr(
-        agent_module.AgentData,
+        AgentData,
         "get",
         AsyncMock(
             side_effect=lambda _id: AgentData(  # pyright: ignore[reportCallIssue]
@@ -44,6 +44,6 @@ async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
     )
 
     with pytest.raises(IntentKitAPIError) as exc_info:
-        await agent_module.process_agent_wallet(agent, old_wallet_provider="none")
+        await process_agent_wallet(agent, old_wallet_provider="none")
 
     assert exc_info.value.key == "PrivyUserIdInvalid"

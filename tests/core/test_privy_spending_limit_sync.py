@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 import intentkit.clients.privy as privy_module
-import intentkit.core.agent as agent_module
+from intentkit.core.agent import process_agent_wallet
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 
@@ -55,11 +55,9 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
         updated_at=now,
     )
 
-    monkeypatch.setattr(
-        agent_module.AgentData, "get", AsyncMock(return_value=existing_agent_data)
-    )
+    monkeypatch.setattr(AgentData, "get", AsyncMock(return_value=existing_agent_data))
     patch_mock = AsyncMock(return_value=updated_agent_data)
-    monkeypatch.setattr(agent_module.AgentData, "patch", patch_mock)
+    monkeypatch.setattr(AgentData, "patch", patch_mock)
 
     create_mock = AsyncMock(
         return_value={
@@ -75,7 +73,7 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
     )
     monkeypatch.setattr(privy_module, "create_privy_safe_wallet", create_mock)
 
-    result = await agent_module.process_agent_wallet(
+    result = await process_agent_wallet(
         agent,
         old_wallet_provider="safe",
         old_weekly_spending_limit=100.0,
@@ -128,12 +126,8 @@ async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkey
         updated_at=now,
     )
 
-    monkeypatch.setattr(
-        agent_module.AgentData, "get", AsyncMock(return_value=existing_agent_data)
-    )
-    monkeypatch.setattr(
-        agent_module.AgentData, "patch", AsyncMock(return_value=existing_agent_data)
-    )
+    monkeypatch.setattr(AgentData, "get", AsyncMock(return_value=existing_agent_data))
+    monkeypatch.setattr(AgentData, "patch", AsyncMock(return_value=existing_agent_data))
 
     create_mock = AsyncMock(
         return_value={
@@ -149,7 +143,7 @@ async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkey
     )
     monkeypatch.setattr(privy_module, "create_privy_safe_wallet", create_mock)
 
-    await agent_module.process_agent_wallet(
+    await process_agent_wallet(
         agent,
         old_wallet_provider="safe",
         old_weekly_spending_limit=100.0,

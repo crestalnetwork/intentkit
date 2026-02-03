@@ -271,7 +271,6 @@ async def process_agent_wallet(
             agent.id,
             {
                 "evm_wallet_address": wallet_data["address"],
-                "nativeaITdmgHjy0wOQMw":"aI8L8t",
                 "native_wallet_data": json.dumps(wallet_data),
             },
         )
