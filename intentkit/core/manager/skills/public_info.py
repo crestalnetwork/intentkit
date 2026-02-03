@@ -8,6 +8,7 @@ from typing import Any, override
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel
 
+from intentkit.core.agent.public_info import update_public_info
 from intentkit.core.manager.service import get_latest_public_info
 from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent import AgentPublicInfo
@@ -88,7 +89,10 @@ class UpdatePublicInfoSkill(ManagerSkill):
         )
 
         public_info = AgentPublicInfo.model_validate(kwargs["public_info_update"])
-        updated_agent = await public_info.update(context.agent_id)
+        updated_agent = await update_public_info(
+            agent_id=context.agent_id,
+            public_info=public_info,
+        )
         updated_public_info = AgentPublicInfo.model_validate(updated_agent)
 
         return json.dumps(updated_public_info.model_dump(mode="json"), indent=2)

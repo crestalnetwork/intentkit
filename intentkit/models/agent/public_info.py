@@ -1,19 +1,45 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import func, select
 
-from intentkit.config.db import get_session
-from intentkit.models.agent.db import AgentTable
-from intentkit.models.agent.example import AgentExample
-from intentkit.utils.error import IntentKitAPIError
 
-if TYPE_CHECKING:
-    from intentkit.models.agent.agent import Agent
+class AgentExample(BaseModel):
+    """Agent example configuration."""
+
+    name: Annotated[
+        str,
+        PydanticField(
+            description="Name of the example",
+            max_length=50,
+            json_schema_extra={
+                "x-placeholder": "Add a name for the example",
+            },
+        ),
+    ]
+    description: Annotated[
+        str,
+        PydanticField(
+            description="Description of the example",
+            max_length=200,
+            json_schema_extra={
+                "x-placeholder": "Add a short description for the example",
+            },
+        ),
+    ]
+    prompt: Annotated[
+        str,
+        PydanticField(
+            description="Example prompt",
+            max_length=2000,
+            json_schema_extra={
+                "x-placeholder": "The prompt will be sent to the agent",
+            },
+        ),
+    ]
 
 
 class AgentPublicInfo(BaseModel):
@@ -132,72 +158,3 @@ class AgentPublicInfo(BaseModel):
             description="Public extra data of the agent",
         ),
     ]
-
-    async def update(self, agent_id: str) -> "Agent":
-        """Update agent public info with only the fields that are explicitly provided.
-
-        This method only updates fields that are explicitly set in this instance,
-        leaving other fields unchanged. This is more efficient than override as it
-        reduces context usage and minimizes the risk of accidentally changing fields.
-
-        Args:
-            agent_id: The ID of the agent to update
-
-        Returns:
-            The updated Agent instance
-        """
-        from intentkit.models.agent.agent import Agent
-
-        async with get_session() as session:
-            result = await session.execute(
-                select(AgentTable).where(AgentTable.id == agent_id)
-            )
-            db_agent = result.scalar_one_or_none()
-
-            if not db_agent:
-                raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
-
-            update_data = self.model_dump(exclude_unset=True)
-
-            for key, value in update_data.items():
-                if hasattr(db_agent, key):
-                    setattr(db_agent, key, value)
-
-            db_agent.public_info_updated_at = func.now()
-
-            await session.commit()
-            await session.refresh(db_agent)
-
-            return Agent.model_validate(db_agent)
-
-    async def override(self, agent_id: str) -> "Agent":
-        """Override agent public info with all fields from this instance.
-
-        Args:
-            agent_id: The ID of the agent to override
-
-        Returns:
-            The updated Agent instance
-        """
-        from intentkit.models.agent.agent import Agent
-
-        async with get_session() as session:
-            result = await session.execute(
-                select(AgentTable).where(AgentTable.id == agent_id)
-            )
-            db_agent = result.scalar_one_or_none()
-
-            if not db_agent:
-                raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
-
-            update_data = self.model_dump()
-            for key, value in update_data.items():
-                if hasattr(db_agent, key):
-                    setattr(db_agent, key, value)
-
-            db_agent.public_info_updated_at = func.now()
-
-            await session.commit()
-            await session.refresh(db_agent)
-
-            return Agent.model_validate(db_agent)

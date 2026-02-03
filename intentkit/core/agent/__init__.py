@@ -7,6 +7,7 @@ from .analytics import (
 )
 from .management import create_agent, deploy_agent, override_agent, patch_agent
 from .notifications import send_agent_notification
+from .public_info import override_public_info, update_public_info
 from .queries import get_agent, get_agent_by_id_or_slug, iterate_agent_id_batches
 from .wallet import process_agent_wallet
 
@@ -25,4 +26,6 @@ __all__ = [
     "update_agents_account_snapshot",
     "update_agents_assets",
     "update_agents_statistics",
+    "update_public_info",
+    "override_public_info",
 ]

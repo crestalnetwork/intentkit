@@ -3,8 +3,7 @@ from .agent import Agent
 from .autonomous import AgentAutonomous, AgentAutonomousStatus
 from .core import AgentCore, AgentVisibility
 from .db import AgentTable, AgentUserInputColumns
-from .example import AgentExample
-from .public_info import AgentPublicInfo
+from .public_info import AgentExample, AgentPublicInfo
 from .response import AgentResponse
 from .user_input import AgentCreate, AgentUpdate, AgentUserInput
 
