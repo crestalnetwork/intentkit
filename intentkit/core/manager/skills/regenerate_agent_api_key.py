@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -40,7 +42,7 @@ class RegenerateAgentApiKey(ManagerSkill):
     )
     args_schema: ArgsSchema | None = RegenerateAgentApiKeyInput
 
-    async def _arun(self, **kwargs) -> RegenerateAgentApiKeyOutput:
+    async def _arun(self, **kwargs: Any) -> RegenerateAgentApiKeyOutput:
         """Generate and set a new API key for the agent."""
         # Get context from runnable config to access agent.id
         context = self.get_context()
@@ -61,7 +63,7 @@ class RegenerateAgentApiKey(ManagerSkill):
         new_public_api_key = self._generate_public_api_key()
 
         # Save the new API keys to agent data (overwrites existing)
-        await AgentData.patch(
+        _ = await AgentData.patch(
             agent_id, {"api_key": new_api_key, "api_key_public": new_public_api_key}
         )
 

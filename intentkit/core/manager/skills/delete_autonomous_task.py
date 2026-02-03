@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -34,7 +36,7 @@ class DeleteAutonomousTask(ManagerSkill):
     async def _arun(
         self,
         task_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> DeleteAutonomousTaskOutput:
         """Delete an autonomous task from the agent.
 
@@ -48,7 +50,7 @@ class DeleteAutonomousTask(ManagerSkill):
         context = self.get_context()
         agent = context.agent
 
-        await agent.delete_autonomous_task(task_id)
+        await delete_autonomous_task(agent.id, task_id)
 
         return DeleteAutonomousTaskOutput(
             success=True, message=f"Successfully deleted autonomous task {task_id}"

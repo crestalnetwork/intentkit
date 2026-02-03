@@ -16,6 +16,7 @@ import re
 import textwrap
 import time
 import traceback
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
@@ -101,7 +102,9 @@ def _extract_text_content(content: object) -> str:
 
 
 async def build_agent(
-    agent: Agent, agent_data: AgentData, custom_skills: list[BaseTool] = []
+    agent: Agent,
+    agent_data: AgentData,
+    custom_skills: Sequence[BaseTool] = (),
 ) -> CompiledStateGraph[AgentState, AgentContext, Any, Any]:
     """Build an AI agent with specified configuration and tools.
 

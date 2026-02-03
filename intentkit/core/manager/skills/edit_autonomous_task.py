@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -71,7 +73,7 @@ class EditAutonomousTask(ManagerSkill):
         prompt: str | None = None,
         enabled: bool | None = None,
         has_memory: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> EditAutonomousTaskOutput:
         """Edit an autonomous task for the agent.
 
@@ -114,7 +116,7 @@ class EditAutonomousTask(ManagerSkill):
         if has_memory is not None:
             task_updates["has_memory"] = has_memory
 
-        updated_task = await agent.update_autonomous_task(task_id, task_updates)
+        updated_task = await update_autonomous_task(agent.id, task_id, task_updates)
 
         return EditAutonomousTaskOutput(task=updated_task)
 

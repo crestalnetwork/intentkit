@@ -1,6 +1,10 @@
+from typing import Any
+
+from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.core.autonomous import add_autonomous_task
 from intentkit.core.manager.skills.base import ManagerSkill
 from intentkit.models.agent import AgentAutonomous
 
@@ -63,7 +67,7 @@ class AddAutonomousTask(ManagerSkill):
         cron: str | None = None,
         prompt: str = "",
         has_memory: bool | None = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> AddAutonomousTaskOutput:
         """Add an autonomous task to the agent.
 
@@ -81,7 +85,11 @@ class AddAutonomousTask(ManagerSkill):
         context = self.get_context()
         agent = context.agent
 
+        if minutes is not None and cron is not None:
+            raise ValueError("minutes and cron are mutually exclusive")
+
         task = AgentAutonomous(
+            id=str(XID()),
             name=name,
             description=description,
             minutes=minutes,
@@ -89,9 +97,11 @@ class AddAutonomousTask(ManagerSkill):
             prompt=prompt,
             enabled=True,
             has_memory=has_memory,
+            status=None,
+            next_run_time=None,
         )
 
-        created_task = await agent.add_autonomous_task(task)
+        created_task = await add_autonomous_task(agent.id, task)
 
         return AddAutonomousTaskOutput(task=created_task)
 

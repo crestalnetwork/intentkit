@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from langgraph.graph.state import CompiledStateGraph
 
@@ -208,7 +209,9 @@ async def _get_manager_executor(
                 get_available_llms_skill,
             ]
             executor = await build_agent(
-                manager_agent, AgentData(id=manager_agent.id), custom_skills
+                manager_agent,
+                AgentData.model_construct(id=manager_agent.id),
+                custom_skills,
             )
             _manager_executors[cache_key] = executor
 
@@ -231,7 +234,7 @@ def _cleanup_cache(now: datetime) -> None:
     expired_before = now - _MANAGER_CACHE_TTL
     for cache_key, cached_time in list(_manager_cached_at.items()):
         if cached_time < expired_before:
-            _manager_cached_at.pop(cache_key, None)
-            _manager_executors.pop(cache_key, None)
-            _manager_agents.pop(cache_key, None)
+            _ = _manager_cached_at.pop(cache_key, None)
+            _ = _manager_executors.pop(cache_key, None)
+            _ = _manager_agents.pop(cache_key, None)
             logger.debug("Removed expired manager executor for %s", cache_key)

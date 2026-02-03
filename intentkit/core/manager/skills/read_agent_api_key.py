@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -38,7 +40,7 @@ class ReadAgentApiKey(ManagerSkill):
     )
     args_schema: ArgsSchema | None = ReadAgentApiKeyInput
 
-    async def _arun(self, **kwargs) -> ReadAgentApiKeyOutput:
+    async def _arun(self, **kwargs: Any) -> ReadAgentApiKeyOutput:
         """Retrieve or generate an API key for the agent."""
         # Get context from runnable config to access agent.id
         context = self.get_context()
@@ -75,7 +77,7 @@ class ReadAgentApiKey(ManagerSkill):
             update_data["api_key_public"] = new_public_api_key
 
         if update_data:
-            await AgentData.patch(agent_id, update_data)
+            _ = await AgentData.patch(agent_id, update_data)
 
         return ReadAgentApiKeyOutput(
             api_key=new_api_key,

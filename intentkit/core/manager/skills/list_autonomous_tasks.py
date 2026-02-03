@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -31,7 +33,7 @@ class ListAutonomousTasks(ManagerSkill):
 
     async def _arun(
         self,
-        **kwargs,
+        **kwargs: Any,
     ) -> ListAutonomousTasksOutput:
         """List autonomous tasks for the agent.
 
@@ -44,7 +46,7 @@ class ListAutonomousTasks(ManagerSkill):
         context = self.get_context()
         agent = context.agent
 
-        tasks = await agent.list_autonomous_tasks()
+        tasks = await list_autonomous_tasks(agent.id)
 
         return ListAutonomousTasksOutput(tasks=tasks)
 

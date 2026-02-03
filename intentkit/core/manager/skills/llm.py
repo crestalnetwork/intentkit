@@ -1,3 +1,6 @@
+from typing import Any
+
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.core.manager.skills.base import ManagerSkill
@@ -18,9 +21,9 @@ class GetAvailableLLMs(ManagerSkill):
     description: str = (
         "Retrieve a list of available LLM model IDs that can be used for agents."
     )
-    args_schema: type[BaseModel] | None = NoArgsSchema
+    args_schema: ArgsSchema | None = NoArgsSchema
 
-    async def _arun(self, **kwargs) -> GetAvailableLLMsOutput:
+    async def _arun(self, **kwargs: Any) -> GetAvailableLLMsOutput:
         """Retrieve available LLM models."""
         models = await LLMModelInfo.get_all()
         model_ids = [m.id for m in models] if models else []
