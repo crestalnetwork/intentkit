@@ -2,7 +2,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from intentkit.models.agent import Agent, AgentAutonomous
+from intentkit.models.agent import Agent, AgentAutonomous, AgentAutonomousStatus
 
 from app.local.autonomous import autonomous_router
 
@@ -31,7 +31,7 @@ def mock_agent():
                 cron="0 * * * *",
                 prompt="Do something",
                 enabled=True,
-                status="waiting",
+                status=AgentAutonomousStatus.WAITING,
                 minutes=None,
                 next_run_time=None,
             )
@@ -48,7 +48,7 @@ def mock_task():
         cron="*/5 * * * *",
         prompt="New prompt",
         enabled=True,
-        status="waiting",
+        status=AgentAutonomousStatus.WAITING,
         minutes=None,
         next_run_time=None,
     )
@@ -146,3 +146,58 @@ async def test_delete_autonomous(client, monkeypatch):
 
     response = client.delete("/agents/test-agent/autonomous/task-1")
     assert response.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_update_autonomous_status_uses_core_update(monkeypatch):
+    import app.autonomous as autonomous_module
+
+    called = {"value": False}
+
+    async def mock_update_autonomous_task_status(
+        agent_id, task_id, status, next_run_time
+    ):
+        called["value"] = True
+
+    async def mock_get_agent(agent_id):
+        return Agent.model_construct(
+            id=agent_id,
+            owner="user",
+            autonomous=[
+                AgentAutonomous(
+                    id="task-1",
+                    cron="*/5 * * * *",
+                    prompt="Do something",
+                    enabled=True,
+                    status=AgentAutonomousStatus.WAITING,
+                    minutes=None,
+                    next_run_time=None,
+                )
+            ],
+        )
+
+    class MockJob:
+        def __init__(self):
+            self.id = "agent-1-task-1"
+            self.args = ["agent-1", "user", "task-1", "prompt", True]
+            self.next_run_time = None
+
+    monkeypatch.setattr(
+        autonomous_module,
+        "update_autonomous_task_status",
+        mock_update_autonomous_task_status,
+        raising=False,
+    )
+    monkeypatch.setattr(autonomous_module, "get_agent", mock_get_agent)
+    monkeypatch.setattr(
+        autonomous_module.scheduler, "get_job", lambda _job_id: MockJob()
+    )
+
+    try:
+        await autonomous_module._update_autonomous_status(
+            "agent-1-task-1", AgentAutonomousStatus.RUNNING
+        )
+    except AttributeError as exc:
+        pytest.fail(f"unexpected attribute error: {exc}")
+
+    assert called["value"] is True

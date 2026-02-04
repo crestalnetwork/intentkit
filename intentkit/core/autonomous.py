@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from epyxid import XID
@@ -8,6 +9,7 @@ from sqlalchemy import select
 from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import (
     AgentAutonomous,
+    AgentAutonomousStatus,
     AutonomousCreateRequest,
     AutonomousUpdateRequest,
 )
@@ -148,6 +150,45 @@ async def update_autonomous_task(
                 updated_task = AgentAutonomous.model_validate(
                     task_dict
                 ).normalize_status_defaults()
+                rewritten_tasks.append(updated_task)
+            else:
+                rewritten_tasks.append(task)
+
+        if updated_task is None:
+            raise IntentKitAPIError(
+                404,
+                "TaskNotFound",
+                f"Autonomous task with ID {task_id} not found.",
+            )
+
+        db_agent.autonomous = _serialize_autonomous(rewritten_tasks)
+        await session.commit()
+
+    return updated_task
+
+
+async def update_autonomous_task_status(
+    agent_id: str,
+    task_id: str,
+    status: AgentAutonomousStatus | None,
+    next_run_time: datetime | None,
+) -> AgentAutonomous:
+    async with get_session() as session:
+        db_agent = await session.get(AgentTable, agent_id)
+        if db_agent is None:
+            raise _agent_not_found_error(agent_id)
+        if db_agent.archived_at is not None:
+            raise _autonomous_not_allowed_error()
+
+        current_tasks = _deserialize_autonomous(db_agent.autonomous)
+
+        updated_task: AgentAutonomous | None = None
+        rewritten_tasks: list[AgentAutonomous] = []
+        for task in current_tasks:
+            if task.id == task_id:
+                updated_task = task.model_copy(
+                    update={"status": status, "next_run_time": next_run_time}
+                )
                 rewritten_tasks.append(updated_task)
             else:
                 rewritten_tasks.append(task)

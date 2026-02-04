@@ -27,6 +27,7 @@ from intentkit.config.redis import (
     send_heartbeat,
 )
 from intentkit.core.agent import get_agent
+from intentkit.core.autonomous import update_autonomous_task_status
 from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
 from intentkit.utils.alert import cleanup_alert
 
@@ -121,14 +122,15 @@ async def _update_autonomous_status(
     next_run_time = job.next_run_time if job else None
 
     if target.enabled:
-        updates: dict[str, AgentAutonomousStatus | datetime | None] = {
-            "status": status,
-            "next_run_time": next_run_time,
-        }
+        status_value = status
+        next_run_time_value = next_run_time
     else:
-        updates = {"status": None, "next_run_time": None}
+        status_value = None
+        next_run_time_value = None
 
-    _ = await agent.update_autonomous_task(autonomous_id, updates)
+    _ = await update_autonomous_task_status(
+        agent.id, autonomous_id, status_value, next_run_time_value
+    )
 
 
 async def _update_autonomous_status_safe(
@@ -209,9 +211,11 @@ async def schedule_agent_autonomous_tasks():
                         autonomous.status is not None
                         or autonomous.next_run_time is not None
                     ):
-                        _ = await agent.update_autonomous_task(
+                        _ = await update_autonomous_task_status(
+                            agent.id,
                             autonomous.id,
-                            {"status": None, "next_run_time": None},
+                            None,
+                            None,
                         )
                     continue
 
