@@ -16,8 +16,8 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.types import TxParams, Wei
 
-from intentkit.clients.web3 import get_web3_client
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets.web3 import get_web3_client
 
 logger = logging.getLogger(__name__)
 
@@ -89,27 +89,23 @@ class NativeWalletProvider:
             TransactionResult with success status and tx hash.
         """
         try:
-            # Get nonce
             nonce = self._w3.eth.get_transaction_count(self._address)
 
-            # Build transaction
             tx_params: TxParams = {
                 "nonce": nonce,
                 "to": Web3.to_checksum_address(to),
                 "value": Wei(value),
                 "data": HexBytes(data) if data else b"",
                 "chainId": chain_id or self._w3.eth.chain_id,
-                "gas": 21000,  # Base gas for simple transfer
+                "gas": 21000,
             }
             if data:
-                # Estimate gas for contract interaction
                 try:
                     tx_params["gas"] = Wei(self._w3.eth.estimate_gas(tx_params))
                 except Exception as e:
                     logger.warning(f"Gas estimation failed, using default: {e}")
                     tx_params["gas"] = Wei(100000)
 
-            # Add EIP-1559 gas parameters
             try:
                 fee_history = self._w3.eth.fee_history(1, "latest")
                 base_fee = fee_history["baseFeePerGas"][0]
@@ -119,7 +115,6 @@ class NativeWalletProvider:
                 logger.warning(f"Failed to get fee history, using legacy gas: {e}")
                 tx_params["gasPrice"] = Wei(self._w3.eth.gas_price)
 
-            # Sign and send transaction
             signed_tx = self._account.sign_transaction(tx_params)
             tx_hash = self._w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
@@ -152,7 +147,6 @@ class NativeWalletProvider:
         Returns:
             TransactionResult with success status and tx hash.
         """
-        # Standard ERC20 transfer function ABI
         erc20_abi = [
             {
                 "constant": False,
@@ -172,7 +166,6 @@ class NativeWalletProvider:
                 abi=erc20_abi,
             )
 
-            # Build transaction data
             data = contract.functions.transfer(
                 Web3.to_checksum_address(to),
                 amount,
@@ -184,7 +177,6 @@ class NativeWalletProvider:
                 }
             )
 
-            # Remove 'data' key if present to avoid duplicate
             tx_data = data.get("data", b"")
 
             return await self.execute_transaction(
@@ -344,7 +336,6 @@ def create_native_wallet(network_id: str) -> dict[str, str]:
             - private_key: The private key (hex string with 0x prefix).
             - network_id: The network ID.
     """
-    # Generate a new account
     account = Account.create()
 
     return {
@@ -386,3 +377,13 @@ def get_wallet_signer(native_wallet_data: dict[str, Any]) -> NativeWalletSigner:
         address=native_wallet_data["address"],
         private_key=native_wallet_data["private_key"],
     )
+
+
+__all__ = [
+    "NativeWalletProvider",
+    "NativeWalletSigner",
+    "TransactionResult",
+    "create_native_wallet",
+    "get_wallet_provider",
+    "get_wallet_signer",
+]

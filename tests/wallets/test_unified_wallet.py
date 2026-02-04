@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from intentkit.clients import get_wallet_provider, get_wallet_signer
-from intentkit.clients.signer import ThreadSafeEvmWalletSigner
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets import get_wallet_provider, get_wallet_signer
+from intentkit.wallets.signer import ThreadSafeEvmWalletSigner
 
 
 class TestGetWalletProvider:
@@ -28,7 +28,7 @@ class TestGetWalletProvider:
         mock_cdp_provider = MagicMock()
 
         with patch(
-            "intentkit.clients.get_cdp_wallet_provider",
+            "intentkit.wallets.get_cdp_wallet_provider",
             new_callable=AsyncMock,
             return_value=mock_cdp_provider,
         ) as mock_get_cdp:
@@ -46,7 +46,12 @@ class TestGetWalletProvider:
         mock_agent.network_id = "base-mainnet"
 
         mock_agent_data = MagicMock()
-        mock_agent_data.privy_wallet_data = '{"privy_wallet_id": "test-id", "privy_wallet_address": "0x123", "smart_wallet_address": "0x456", "network_id": "base-mainnet"}'
+        mock_agent_data.privy_wallet_data = (
+            '{"privy_wallet_id": "test-id", '
+            '"privy_wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21", '
+            '"smart_wallet_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", '
+            '"network_id": "base-mainnet"}'
+        )
 
         mock_privy_provider = MagicMock()
 
@@ -56,7 +61,7 @@ class TestGetWalletProvider:
             return_value=mock_agent_data,
         ):
             with patch(
-                "intentkit.clients.privy.get_wallet_provider",
+                "intentkit.wallets.privy.get_wallet_provider",
                 return_value=mock_privy_provider,
             ):
                 provider = await get_wallet_provider(mock_agent)
@@ -99,6 +104,41 @@ class TestGetWalletProvider:
         assert exc_info.value.key == "UnsupportedWalletProvider"
 
 
+class TestEvmWallet:
+    """Tests for EvmWallet class."""
+
+    @pytest.mark.asyncio
+    async def test_create_prefetches_address(self):
+        """Test that create prefetches address and chain ID."""
+        from intentkit.wallets.evm_wallet import EvmWallet
+
+        mock_agent = MagicMock()
+        mock_agent.wallet_provider = "cdp"
+        mock_agent.network_id = "base-mainnet"
+
+        mock_provider = MagicMock()
+        mock_provider.get_address.return_value = "0x123"
+
+        mock_w3 = MagicMock()
+        mock_w3.eth.chain_id = 8453
+
+        with (
+            patch(
+                "intentkit.wallets.evm_wallet.get_wallet_provider",
+                new_callable=AsyncMock,
+                return_value=mock_provider,
+            ),
+            patch(
+                "intentkit.wallets.evm_wallet.get_web3_client",
+                return_value=mock_w3,
+            ),
+        ):
+            wallet = await EvmWallet.create(mock_agent)
+
+        assert wallet.address == "0x123"
+        assert wallet.chain_id == 8453
+
+
 class TestGetWalletSigner:
     """Tests for get_wallet_signer function."""
 
@@ -114,7 +154,7 @@ class TestGetWalletSigner:
         mock_account.address = "0x1234567890abcdef1234567890abcdef12345678"
 
         with patch(
-            "intentkit.clients.get_evm_account",
+            "intentkit.wallets.get_evm_account",
             new_callable=AsyncMock,
             return_value=mock_account,
         ):
@@ -145,7 +185,7 @@ class TestThreadSafeEvmWalletSigner:
         mock_account.address = "0x1234567890abcdef"
 
         with patch(
-            "intentkit.clients.signer.EvmLocalAccount"
+            "intentkit.wallets.signer.EvmLocalAccount"
         ) as mock_local_account_class:
             mock_local_account = MagicMock()
             mock_local_account.address = mock_account.address
@@ -163,10 +203,9 @@ class TestPrivyWalletSigner:
 
     def test_address_property(self):
         """Test that address property returns correct checksummed address."""
-        from intentkit.clients.privy import PrivyClient, PrivyWalletSigner
+        from intentkit.wallets.privy import PrivyClient, PrivyWalletSigner
 
         mock_privy_client = MagicMock(spec=PrivyClient)
-        # Use already checksummed address
         wallet_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21"
 
         signer = PrivyWalletSigner(
@@ -175,7 +214,6 @@ class TestPrivyWalletSigner:
             wallet_address=wallet_address,
         )
 
-        # Address should be checksummed (to_checksum_address normalizes it)
         from eth_utils import to_checksum_address
 
         expected_address = to_checksum_address(wallet_address)
@@ -183,7 +221,7 @@ class TestPrivyWalletSigner:
 
     def test_sign_transaction_not_implemented(self):
         """Test that sign_transaction raises NotImplementedError."""
-        from intentkit.clients.privy import PrivyClient, PrivyWalletSigner
+        from intentkit.wallets.privy import PrivyClient, PrivyWalletSigner
 
         mock_privy_client = MagicMock(spec=PrivyClient)
 

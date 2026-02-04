@@ -7,15 +7,15 @@ import httpx
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from intentkit.clients.privy_types import PrivyWallet
-from intentkit.clients.privy_utils import (
+from intentkit.config.config import config
+from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets.privy_types import PrivyWallet
+from intentkit.wallets.privy_utils import (
     _canonicalize_json,
     _convert_typed_data_to_privy_format,
     _privy_private_key_to_pem,
     _sanitize_for_json,
 )
-from intentkit.config.config import config
-from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 

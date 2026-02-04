@@ -8,9 +8,11 @@ from eth_utils import keccak, to_checksum_address
 from web3 import AsyncWeb3
 from web3.types import TxParams, TxReceipt
 
-from intentkit.clients.privy_client import PrivyClient
-from intentkit.clients.privy_nonce import _get_nonce_manager
-from intentkit.clients.privy_types import (
+from intentkit.config.config import config
+from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets.privy_client import PrivyClient
+from intentkit.wallets.privy_nonce import _get_nonce_manager
+from intentkit.wallets.privy_types import (
     CHAIN_CONFIGS,
     MULTI_SEND_CALL_ONLY_ADDRESS,
     SAFE_FALLBACK_HANDLER_ADDRESS,
@@ -19,8 +21,6 @@ from intentkit.clients.privy_types import (
     TransactionResult,
     WalletProvider,
 )
-from intentkit.config.config import config
-from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from web3.types import TxReceipt
 
-from intentkit.clients import privy
-from intentkit.clients.privy import PrivyClient
+from intentkit.wallets import privy
+from intentkit.wallets.privy import PrivyClient
 
 
 def _mock_async_client(
@@ -29,7 +29,7 @@ class TestPrivyClient:
     @pytest.mark.asyncio
     async def test_create_key_quorum(self) -> None:
         with patch(
-            "intentkit.clients.privy_client.httpx.AsyncClient"
+            "intentkit.wallets.privy_client.httpx.AsyncClient"
         ) as mock_async_client_cls:
             mock_client = _mock_async_client(
                 mock_async_client_cls,
@@ -59,7 +59,7 @@ class TestPrivyClient:
     @pytest.mark.asyncio
     async def test_create_wallet_with_additional_signers(self) -> None:
         with patch(
-            "intentkit.clients.privy_client.httpx.AsyncClient"
+            "intentkit.wallets.privy_client.httpx.AsyncClient"
         ) as mock_async_client_cls:
             mock_client = _mock_async_client(
                 mock_async_client_cls,
@@ -88,7 +88,7 @@ class TestPrivyClient:
     @pytest.mark.asyncio
     async def test_create_wallet_with_owner_key_quorum(self) -> None:
         with patch(
-            "intentkit.clients.privy_client.httpx.AsyncClient"
+            "intentkit.wallets.privy_client.httpx.AsyncClient"
         ) as mock_async_client_cls:
             mock_client = _mock_async_client(
                 mock_async_client_cls,
@@ -115,30 +115,27 @@ class TestPrivyClient:
             }
 
     def test_get_authorization_public_keys_empty(self) -> None:
-        privy = PrivyClient()
-        privy._authorization_key_objects = []
+        privy_client = PrivyClient()
+        privy_client._authorization_key_objects = []
 
-        public_keys = privy.get_authorization_public_keys()
+        public_keys = privy_client.get_authorization_public_keys()
 
         assert public_keys == []
 
     def test_get_authorization_public_keys_with_key(self) -> None:
         from cryptography.hazmat.primitives.asymmetric import ec
 
-        privy = PrivyClient()
-        # Generate a test P-256 key
+        privy_client = PrivyClient()
         private_key = ec.generate_private_key(ec.SECP256R1())
-        privy._authorization_key_objects = [private_key]
+        privy_client._authorization_key_objects = [private_key]
 
-        public_keys = privy.get_authorization_public_keys()
+        public_keys = privy_client.get_authorization_public_keys()
 
         assert len(public_keys) == 1
-        # Should be base64-encoded
         import base64
 
         decoded = base64.b64decode(public_keys[0])
-        # SPKI DER format starts with specific bytes for P-256
-        assert len(decoded) == 91  # Standard SPKI P-256 public key size
+        assert len(decoded) == 91
 
 
 def test_send_transaction_with_master_wallet_overloads() -> None:

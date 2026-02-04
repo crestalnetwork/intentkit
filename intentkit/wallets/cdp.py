@@ -1,18 +1,19 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 from cdp import CdpClient, EvmServerAccount, TransactionRequestEIP1559
+from eth_typing import HexStr
 from web3 import Web3
 from web3.types import TxParams, Wei
 
-from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets.web3 import get_web3_client
 
 _wallet_providers: dict[str, tuple[str, str, "CdpWalletProvider"]] = {}
 _cdp_client: CdpClient | None = None
@@ -85,7 +86,7 @@ class CdpWalletProvider:
         request = TransactionRequestEIP1559(
             to=Web3.to_checksum_address(str(to)),
             value=value_int,
-            data=data_hex,
+            data=cast(HexStr, data_hex),
         )
 
         result = _run_async(
@@ -112,7 +113,7 @@ class CdpWalletProvider:
     ) -> dict[str, Any]:
         receipt = await asyncio.to_thread(
             self._web3.eth.wait_for_transaction_receipt,
-            tx_hash,
+            cast(HexStr, tx_hash),
             timeout=timeout,
             poll_latency=poll_interval,
         )
@@ -137,7 +138,7 @@ class CdpWalletProvider:
         tx_params: TxParams = {
             "to": Web3.to_checksum_address(to),
             "value": Wei(value_wei),
-            "data": "0x",
+            "data": cast(HexStr, cast(object, "0x")),
         }
         return self.send_transaction(tx_params)
 
@@ -147,7 +148,6 @@ def get_cdp_client() -> CdpClient:
     if _cdp_client:
         return _cdp_client
 
-    # Get credentials from global configuration
     api_key_id = config.cdp_api_key_id
     api_key_secret = config.cdp_api_key_secret
     wallet_secret = config.cdp_wallet_secret
@@ -270,3 +270,12 @@ async def get_wallet_provider(agent: Agent) -> CdpWalletProvider:
     )
     _wallet_providers[agent.id] = (network_id, address, wallet_provider)
     return wallet_provider
+
+
+__all__ = [
+    "CdpWalletProvider",
+    "get_cdp_client",
+    "get_cdp_network",
+    "get_evm_account",
+    "get_wallet_provider",
+]

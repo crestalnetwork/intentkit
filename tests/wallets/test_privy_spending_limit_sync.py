@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-import intentkit.clients.privy as privy_module
+import intentkit.wallets.privy as privy_module
 from intentkit.core.agent import process_agent_wallet
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData

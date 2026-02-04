@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Awaitable
 
 from pydantic import BaseModel
 
@@ -284,7 +285,7 @@ class WalletProvider(ABC):
     """
 
     @abstractmethod
-    async def get_address(self) -> str:
+    def get_address(self) -> str | Awaitable[str]:
         """Get the wallet's public address."""
         pass
 

@@ -7,7 +7,7 @@ from eth_account.datastructures import SignedMessage
 from eth_utils import keccak, to_checksum_address
 from hexbytes import HexBytes
 
-from intentkit.clients.privy_client import PrivyClient
+from intentkit.wallets.privy_client import PrivyClient
 
 logger = logging.getLogger(__name__)
 

@@ -26,7 +26,7 @@ async def test_wallet_creation_flow():
     logger.info("Testing create_privy_safe_wallet flow...")
 
     # Import after path setup
-    from intentkit.clients.privy import (
+    from intentkit.wallets.privy import (
         SafeClient,
         create_privy_safe_wallet,
     )
@@ -59,7 +59,7 @@ async def test_wallet_creation_flow():
     logger.info(f"Expected Safe address: {expected_safe_address}")
 
     # Mock httpx.AsyncClient
-    with patch("intentkit.clients.privy.httpx.AsyncClient") as mock_client_cls:
+    with patch("intentkit.wallets.privy.httpx.AsyncClient") as mock_client_cls:
         mock_client = MagicMock()
         mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -142,7 +142,7 @@ async def test_address_prediction_determinism():
     """Test that Safe address prediction is deterministic for the same inputs."""
     logger.info("Testing Safe address prediction determinism...")
 
-    from intentkit.clients.privy import SafeClient
+    from intentkit.wallets.privy import SafeClient
 
     safe_client = SafeClient("base-mainnet")
     owner_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21"
@@ -173,7 +173,7 @@ async def test_chain_configs():
     """Test that all chain configurations are valid."""
     logger.info("Testing chain configurations...")
 
-    from intentkit.clients.privy import CHAIN_CONFIGS, ChainConfig
+    from intentkit.wallets.privy import CHAIN_CONFIGS, ChainConfig
 
     required_networks = [
         "base-mainnet",
@@ -200,7 +200,7 @@ async def test_wallet_provider_interface():
     """Test the WalletProvider abstract interface."""
     logger.info("Testing WalletProvider interface...")
 
-    from intentkit.clients.privy import SafeWalletProvider, WalletProvider
+    from intentkit.wallets.privy import SafeWalletProvider, WalletProvider
 
     # Verify SafeWalletProvider implements WalletProvider
     assert issubclass(SafeWalletProvider, WalletProvider)
@@ -224,7 +224,7 @@ async def test_get_wallet_provider():
     """Test restoring a wallet provider from stored data."""
     logger.info("Testing get_wallet_provider...")
 
-    from intentkit.clients.privy import SafeWalletProvider, get_wallet_provider
+    from intentkit.wallets.privy import SafeWalletProvider, get_wallet_provider
 
     wallet_data = {
         "privy_wallet_id": "test_wallet_id",

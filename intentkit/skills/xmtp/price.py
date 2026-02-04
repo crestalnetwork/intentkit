@@ -4,8 +4,8 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.clients.cdp import get_cdp_client
 from intentkit.skills.xmtp.base import XmtpBaseTool
+from intentkit.wallets.cdp import get_cdp_client
 
 
 class SwapPriceInput(BaseModel):

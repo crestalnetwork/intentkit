@@ -15,11 +15,11 @@ from eth_abi import encode
 from eth_utils import keccak, to_checksum_address
 from x402.schemas import PaymentRequired, PaymentRequiredV1
 
-from intentkit.clients.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 from intentkit.config.config import config
 from intentkit.models.agent_data import AgentData
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.skills.onchain import IntentKitOnChainSkill
+from intentkit.wallets.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 
 logger = logging.getLogger(__name__)
 

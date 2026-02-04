@@ -59,3 +59,6 @@ class ThreadSafeEvmWalletSigner:
             message_data=message_data,
             full_message=full_message,
         )
+
+
+__all__ = ["EvmLocalAccount", "ThreadSafeEvmWalletSigner"]

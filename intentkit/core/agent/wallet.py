@@ -59,7 +59,7 @@ async def process_agent_wallet(
             agent_data = await AgentData.get(agent.id)
             if agent_data.privy_wallet_data:
                 if current_wallet_provider == "safe":
-                    from intentkit.clients.privy import create_privy_safe_wallet
+                    from intentkit.wallets.privy import create_privy_safe_wallet
 
                     try:
                         privy_wallet_data = json.loads(agent_data.privy_wallet_data)
@@ -116,7 +116,7 @@ async def process_agent_wallet(
         return agent_data
 
     if config.cdp_api_key_id and current_wallet_provider == "cdp":
-        from intentkit.clients.cdp import get_wallet_provider as get_cdp_wallet_provider
+        from intentkit.wallets.cdp import get_wallet_provider as get_cdp_wallet_provider
 
         await get_cdp_wallet_provider(agent)
         agent_data = await AgentData.get(agent.id)
@@ -128,7 +128,7 @@ async def process_agent_wallet(
             },
         )
     elif current_wallet_provider == "safe":
-        from intentkit.clients.privy import create_privy_safe_wallet
+        from intentkit.wallets.privy import create_privy_safe_wallet
 
         rpc_url: str | None = None
         network_id = agent.network_id or "base-mainnet"
@@ -155,7 +155,7 @@ async def process_agent_wallet(
                 logger.warning(f"Failed to parse existing privy_wallet_data: {e}")
 
         if not existing_privy_wallet_id:
-            from intentkit.clients.privy import PrivyClient
+            from intentkit.wallets.privy import PrivyClient
 
             privy_client = PrivyClient()
             if not agent.owner:
@@ -214,7 +214,7 @@ async def process_agent_wallet(
             },
         )
     elif current_wallet_provider == "privy":
-        from intentkit.clients.privy import PrivyClient
+        from intentkit.wallets.privy import PrivyClient
 
         privy_client = PrivyClient()
         if not agent.owner:
@@ -262,7 +262,7 @@ async def process_agent_wallet(
             f"Created Privy-only wallet {privy_wallet.id} for agent {agent.id}, address: {privy_wallet.address}"
         )
     elif current_wallet_provider == "native":
-        from intentkit.clients.native import create_native_wallet
+        from intentkit.wallets.native import create_native_wallet
 
         network_id = agent.network_id or "base-mainnet"
         wallet_data = create_native_wallet(network_id)

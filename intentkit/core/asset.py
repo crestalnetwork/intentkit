@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy import update
 from web3 import Web3
 
-from intentkit.clients.web3 import get_web3_client
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
@@ -19,6 +18,7 @@ from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets.web3 import get_web3_client
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +127,9 @@ async def _get_wallet_net_worth(wallet_address: str, network_id: str | None) -> 
             )
             headers = {
                 "accept": "application/json",
-                "X-API-Key": config.moralis_api_key,
             }
+            if config.moralis_api_key:
+                headers["X-API-Key"] = config.moralis_api_key
             params = {
                 "exclude_spam": "true",
                 "exclude_unverified_contracts": "true",

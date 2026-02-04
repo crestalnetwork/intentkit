@@ -13,16 +13,16 @@ from typing import TYPE_CHECKING
 from cdp import EvmServerAccount
 from web3 import Web3
 
-from intentkit.clients import get_cdp_network as resolve_cdp_network
-from intentkit.clients import get_evm_account as fetch_evm_account
-from intentkit.clients import get_wallet_provider as unified_get_wallet_provider
-from intentkit.clients import get_wallet_signer as unified_get_wallet_signer
-from intentkit.clients.web3 import get_web3_client
 from intentkit.skills.base import IntentKitSkill
+from intentkit.wallets import get_cdp_network as resolve_cdp_network
+from intentkit.wallets import get_evm_account as fetch_evm_account
+from intentkit.wallets import get_wallet_provider as unified_get_wallet_provider
+from intentkit.wallets import get_wallet_signer as unified_get_wallet_signer
+from intentkit.wallets.web3 import get_web3_client
 
 if TYPE_CHECKING:
-    from intentkit.clients import WalletProviderType, WalletSignerType
-    from intentkit.clients.evm_wallet import EvmWallet
+    from intentkit.wallets import WalletProviderType, WalletSignerType
+    from intentkit.wallets.evm_wallet import EvmWallet
 
 
 class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
@@ -107,7 +107,7 @@ class IntentKitOnChainSkill(IntentKitSkill, metaclass=ABCMeta):
             tx_hash = await wallet.send_transaction(to="0x...", value=1000)
             ```
         """
-        from intentkit.clients.evm_wallet import EvmWallet
+        from intentkit.wallets.evm_wallet import EvmWallet
 
         context = self.get_context()
         return await EvmWallet.create(context.agent)

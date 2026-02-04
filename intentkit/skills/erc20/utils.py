@@ -13,7 +13,7 @@ from intentkit.skills.erc20.constants import (
 )
 
 if TYPE_CHECKING:
-    from intentkit.clients.evm_wallet import EvmWallet
+    from intentkit.wallets.evm_wallet import EvmWallet
 
 
 @dataclass

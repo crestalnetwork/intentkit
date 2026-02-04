@@ -53,7 +53,7 @@ async def create_user_server_wallet(
     if mode not in ("safe", "privy"):
         raise ValueError(f"Invalid mode: {mode}. Must be 'safe' or 'privy'")
 
-    from intentkit.clients.privy import (
+    from intentkit.wallets.privy import (
         CHAIN_CONFIGS,
         PrivyClient,
         deploy_safe_with_allowance,

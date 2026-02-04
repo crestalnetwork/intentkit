@@ -7,8 +7,8 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from intentkit.clients.privy import PrivyClient
 from intentkit.config.config import config
+from intentkit.wallets.privy import PrivyClient
 
 
 def _make_wallet_auth_key() -> str:
@@ -46,7 +46,7 @@ async def test_rpc_includes_privy_authorization_signature_header() -> None:
         mock_cm.__aexit__ = AsyncMock(return_value=None)
 
         with patch(
-            "intentkit.clients.privy_client.httpx.AsyncClient", return_value=mock_cm
+            "intentkit.wallets.privy_client.httpx.AsyncClient", return_value=mock_cm
         ):
             await privy.sign_hash("wallet_1", b"\x11" * 32)
 
