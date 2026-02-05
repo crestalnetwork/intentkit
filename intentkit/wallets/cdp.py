@@ -272,8 +272,17 @@ async def get_wallet_provider(agent: Agent) -> CdpWalletProvider:
     return wallet_provider
 
 
+async def close_cdp_client() -> None:
+    """Close the global CDP client if it exists."""
+    global _cdp_client
+    if _cdp_client is not None:
+        await _cdp_client.close()
+        _cdp_client = None
+
+
 __all__ = [
     "CdpWalletProvider",
+    "close_cdp_client",
     "get_cdp_client",
     "get_cdp_network",
     "get_evm_account",

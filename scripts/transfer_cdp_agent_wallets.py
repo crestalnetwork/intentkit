@@ -18,14 +18,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 USDC_DECIMALS = 6
-DEFAULT_GAS_RESERVE_ETH = Decimal("0.00005")
+DEFAULT_GAS_RESERVE_ETH = Decimal("0.00001")
 
 
 def resolve_owner_address(user: Any) -> str | None:
-    if user.evm_wallet_address and Web3.is_address(user.evm_wallet_address):
-        return Web3.to_checksum_address(user.evm_wallet_address)
-    if user.id and Web3.is_address(user.id):
-        return Web3.to_checksum_address(user.id)
+    def _is_valid(addr: str | None) -> str | None:
+        if not addr:
+            return None
+        addr = addr.strip()
+        if not addr.startswith("0x"):
+            addr = f"0x{addr}"
+        if Web3.is_address(addr):
+            return Web3.to_checksum_address(addr)
+        return None
+
+    # Check evm_wallet_address first
+    addr = _is_valid(user.evm_wallet_address)
+    if addr:
+        return addr
+
+    # Fallback to user id as address
+    addr = _is_valid(user.id)
+    if addr:
+        return addr
+
     return None
 
 
@@ -140,81 +156,27 @@ async def process_agent(
 
     agent = Agent.model_validate(agent_row)
     if not agent.owner:
-        logger.debug(
-            "%s %s USDC 0 tx=skip:no_owner",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
-        logger.debug(
-            "%s %s ETH 0 tx=skip:no_owner",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
         return "skip:no_owner", "skip:no_owner"
 
     async with get_session() as session:
         user_row = await session.get(UserTable, agent.owner)
     if not user_row:
-        logger.debug(
-            "%s %s USDC 0 tx=skip:owner_not_found",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
-        logger.debug(
-            "%s %s ETH 0 tx=skip:owner_not_found",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
         return "skip:owner_not_found", "skip:owner_not_found"
 
     owner_address = resolve_owner_address(user_row)
     if not owner_address:
-        logger.debug(
-            "%s %s USDC 0 tx=skip:owner_address_invalid",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
-        logger.debug(
-            "%s %s ETH 0 tx=skip:owner_address_invalid",
-            agent.id,
-            agent_data.evm_wallet_address if agent_data else None,
-        )
         return "skip:owner_address_invalid", "skip:owner_address_invalid"
 
     if not agent_data or not agent_data.evm_wallet_address:
-        logger.debug("%s None USDC 0 tx=skip:no_wallet", agent.id)
-        logger.debug("%s None ETH 0 tx=skip:no_wallet", agent.id)
         return "skip:no_wallet", "skip:no_wallet"
 
     wallet_address = agent_data.evm_wallet_address
     if owner_address.lower() == wallet_address.lower():
-        logger.debug(
-            "%s %s USDC 0 tx=skip:owner_is_wallet",
-            agent.id,
-            wallet_address,
-        )
-        logger.debug(
-            "%s %s ETH 0 tx=skip:owner_is_wallet",
-            agent.id,
-            wallet_address,
-        )
         return "skip:owner_is_wallet", "skip:owner_is_wallet"
 
     try:
         cdp_network = get_cdp_network(agent)
     except Exception as exc:
-        logger.debug(
-            "%s %s USDC 0 tx=skip:bad_network:%s",
-            agent.id,
-            wallet_address,
-            str(exc),
-        )
-        logger.debug(
-            "%s %s ETH 0 tx=skip:bad_network:%s",
-            agent.id,
-            wallet_address,
-            str(exc),
-        )
         return f"skip:bad_network:{exc}", f"skip:bad_network:{exc}"
 
     cdp_client = get_cdp_client()
@@ -227,22 +189,24 @@ async def process_agent(
         wallet_address=wallet_address,
         network_id=str(agent.network_id),
     )
-    if usdc_tx.startswith("skip:"):
-        logger.debug(
-            "%s %s USDC %s tx=%s (skipped)",
-            agent.id,
-            wallet_address,
-            usdc_amount,
-            usdc_tx,
-        )
-    else:
-        logger.info(
-            "%s %s USDC %s tx=%s",
-            agent.id,
-            wallet_address,
-            usdc_amount,
-            usdc_tx,
-        )
+    # Only log if there was actual balance (not skip:no_balance)
+    if usdc_tx != "skip:no_balance" and usdc_tx != "skip:no_usdc_address":
+        if usdc_tx.startswith("skip:"):
+            logger.info(
+                "%s %s USDC %s tx=%s (failed)",
+                agent.id,
+                wallet_address,
+                usdc_amount,
+                usdc_tx,
+            )
+        else:
+            logger.info(
+                "%s %s USDC %s tx=%s",
+                agent.id,
+                wallet_address,
+                usdc_amount,
+                usdc_tx,
+            )
 
     eth_amount, eth_tx = await transfer_eth(
         account=account,
@@ -252,18 +216,24 @@ async def process_agent(
         network_id=str(agent.network_id),
         gas_reserve_wei=gas_reserve_wei,
     )
-    if eth_tx.startswith("skip:"):
-        logger.debug(
-            "%s %s ETH %s tx=%s (skipped)", agent.id, wallet_address, eth_amount, eth_tx
-        )
-    else:
-        logger.info(
-            "%s %s ETH %s tx=%s",
-            agent.id,
-            wallet_address,
-            eth_amount,
-            eth_tx,
-        )
+    # Only log if there was actual balance (not skip:no_balance)
+    if eth_tx != "skip:no_balance":
+        if eth_tx.startswith("skip:"):
+            logger.info(
+                "%s %s ETH %s tx=%s (failed)",
+                agent.id,
+                wallet_address,
+                eth_amount,
+                eth_tx,
+            )
+        else:
+            logger.info(
+                "%s %s ETH %s tx=%s",
+                agent.id,
+                wallet_address,
+                eth_amount,
+                eth_tx,
+            )
     return usdc_tx, eth_tx
 
 
@@ -290,17 +260,25 @@ async def main() -> None:
     eth_success = 0
     eth_skipped = 0
 
+    # Track reasons for skipping
+    usdc_skip_reasons = {}
+    eth_skip_reasons = {}
+
     for agent_row, agent_data in rows:
         total_agents += 1
         usdc_tx, eth_tx = await process_agent(agent_row, agent_data, gas_reserve_wei)
 
         if usdc_tx.startswith("skip:"):
             usdc_skipped += 1
+            reason = usdc_tx
+            usdc_skip_reasons[reason] = usdc_skip_reasons.get(reason, 0) + 1
         else:
             usdc_success += 1
 
         if eth_tx.startswith("skip:"):
             eth_skipped += 1
+            reason = eth_tx
+            eth_skip_reasons[reason] = eth_skip_reasons.get(reason, 0) + 1
         else:
             eth_success += 1
 
@@ -314,6 +292,19 @@ async def main() -> None:
     logger.info("-" * 40)
     logger.info("ETH Transfers Success  : %d", eth_success)
     logger.info("ETH Transfers Skipped  : %d", eth_skipped)
+    logger.info("=" * 40)
+
+    if usdc_skip_reasons:
+        logger.info("USDC Skip Reasons:")
+        for reason, count in usdc_skip_reasons.items():
+            logger.info("  %s: %d", reason, count)
+
+    if eth_skip_reasons:
+        logger.info("-" * 40)
+        logger.info("ETH Skip Reasons:")
+        for reason, count in eth_skip_reasons.items():
+            logger.info("  %s: %d", reason, count)
+
     logger.info("=" * 40)
 
 
