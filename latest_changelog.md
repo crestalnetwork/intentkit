@@ -1,12 +1,18 @@
-## v0.9.30
+# Release v0.9.31
 
-### Bug Fixes
+## Improvement
 
-- **CDP Wallet Transfer**: Fixed a crash in `scripts/transfer_cdp_agent_wallets.py` caused by insufficient ETH balance/gas. The script now gracefully skips such agents.
+- **Transfer Script**: Optimized `scripts/transfer_cdp_agent_wallets.py` to:
+  - Automatically resolve invalid owner addresses by stripping whitespace and adding `0x` prefixes.
+  - Lower `DEFAULT_GAS_RESERVE_ETH` to `0.00001` to allow transfers regarding small balances.
+  - Suppress logs for zero-balance wallets to reduce noise.
+  - Improve error logging to explicitly state why a transfer is skipped (e.g., `skip:owner_not_found`, `skip:owner_address_invalid`).
+  - Added transaction summary report at the end of execution.
 
-### Improvements
+- **CDP Wallet**: Exposed `close_cdp_client` method in `intentkit/wallets/cdp.py` for better resource management.
 
-- **Logging**: Added summary logging to the CDP transfer script to show total agents processed and skipped.
-- **Logging**: Refined log levels to reduce noise; skipped transfers are now logged at DEBUG level.
+## New Features
 
-[Full Changelog](https://github.com/crestalnetwork/intentkit/compare/v0.9.29...v0.9.30)
+- **Diagnostic Tool**: Added `scripts/list_agent_assets.py` to list agent assets and wallet addresses for verification.
+
+Full Changelog: [v0.9.30...v0.9.31](https://github.com/crestalnetwork/intentkit/compare/v0.9.30...v0.9.31)

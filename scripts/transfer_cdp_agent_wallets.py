@@ -180,7 +180,12 @@ async def process_agent(
         return f"skip:bad_network:{exc}", f"skip:bad_network:{exc}"
 
     cdp_client = get_cdp_client()
-    account = await cdp_client.evm.get_account(address=wallet_address)
+    try:
+        account = await cdp_client.evm.get_account(address=wallet_address)
+    except ApiError as e:
+        if e.http_code == 404:
+            return "skip:cdp_account_not_found", "skip:cdp_account_not_found"
+        raise
 
     usdc_amount, usdc_tx = await transfer_usdc(
         account=account,
