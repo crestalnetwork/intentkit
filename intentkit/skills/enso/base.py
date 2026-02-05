@@ -14,7 +14,7 @@ from intentkit.config.config import config
 from intentkit.skills.onchain import IntentKitOnChainSkill
 from intentkit.utils.chain import (
     network_to_id,
-    resolve_quicknode_network,
+    resolve_supported_network,
 )
 
 base_url = "https://api.enso.finance"
@@ -82,7 +82,7 @@ class EnsoBaseTool(IntentKitOnChainSkill):
 
         agent = context.agent
         try:
-            network = resolve_quicknode_network(agent.network_id)
+            network = resolve_supported_network(str(agent.network_id or ""))
         except ValueError as exc:  # pragma: no cover - defensive
             raise ToolException(
                 f"Unsupported network configured for agent: {agent.network_id}"

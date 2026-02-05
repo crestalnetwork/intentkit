@@ -208,9 +208,16 @@ class Config:
         )
         # RPC Providers
         self.quicknode_api_key: str | None = self.load("QUICKNODE_API_KEY")
+        self.infura_api_key: str | None = self.load("INFURA_API_KEY")
         self.chain_provider: ChainProvider | None = None
         if self.quicknode_api_key:
             self.chain_provider = QuicknodeChainProvider(self.quicknode_api_key)
+        elif self.infura_api_key and self.infura_api_key.strip():
+            # Avoid circular import, import here
+            from intentkit.utils.chain import InfuraChainProvider
+
+            self.chain_provider = InfuraChainProvider(self.infura_api_key.strip())
+
         if self.chain_provider:
             self.chain_provider.init_chain_configs()
 
