@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
 from cron_validator import CronValidator
 from epyxid import XID
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class AgentUserInput(AgentCore):
     """Agent update model."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         title="AgentUserInput",
         from_attributes=True,
         json_schema_extra={
@@ -124,7 +124,7 @@ class AgentUserInput(AgentCore):
 class AgentUpdate(AgentUserInput):
     """Agent update model."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         title="Agent",
         from_attributes=True,
         json_schema_extra={

@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict
@@ -66,7 +66,7 @@ class X402OrderCreate(X402OrderBase):
 class X402Order(X402OrderBase):
     """Full x402 order model with auto-generated fields."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[str, PydanticField(description="Unique identifier for the order")]
     created_at: Annotated[datetime, PydanticField(description="Timestamp when created")]

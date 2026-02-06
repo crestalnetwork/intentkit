@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from langchain.chat_models.base import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
@@ -213,7 +213,7 @@ class LLMModelInfoTable(Base):
 class LLMModelInfo(BaseModel):
     """Information about an LLM model."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         use_enum_values=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},

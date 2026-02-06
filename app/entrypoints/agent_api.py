@@ -9,7 +9,7 @@ This module provides the unified Agent API including:
 import logging
 import textwrap
 import time
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
 from fastapi import (
@@ -141,7 +141,7 @@ class ChatMessagesResponse(BaseModel):
     has_more: bool = False
     next_cursor: str | None = None
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_schema_extra={
             "example": {"data": [], "has_more": False, "next_cursor": None}
@@ -162,7 +162,7 @@ class ChatUpdateRequest(BaseModel):
         ),
     ]
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         json_schema_extra={"example": {"summary": "Updated chat summary"}},
     )
 
@@ -232,7 +232,7 @@ class ChatMessageRequest(BaseModel):
         ),
     ]
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         json_schema_extra={
             "example": {

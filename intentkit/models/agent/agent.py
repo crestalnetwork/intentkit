@@ -8,7 +8,7 @@ import warnings
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 import jsonref
 import yaml
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class Agent(AgentCreate, AgentPublicInfo):
     """Agent model."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     slug: Annotated[
         str | None,

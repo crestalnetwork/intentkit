@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
@@ -140,7 +140,7 @@ class TemplateTable(Base):
 class Template(AgentCore):
     """Template model that extends AgentCore with additional fields."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,

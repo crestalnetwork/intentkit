@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
@@ -58,7 +58,7 @@ class AgentSkillDataTable(Base):
 class AgentSkillDataCreate(BaseModel):
     """Base model for creating agent skill data records."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     agent_id: Annotated[str, Field(description="ID of the agent this data belongs to")]
     skill: Annotated[str, Field(description="Name of the skill this data is for")]
@@ -130,7 +130,7 @@ class AgentSkillData(AgentSkillDataCreate):
     skill-specific data for agents in a flexible way.
     """
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
@@ -246,7 +246,7 @@ class ChatSkillDataTable(Base):
 class ChatSkillDataCreate(BaseModel):
     """Base model for creating chat skill data records."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     chat_id: Annotated[str, Field(description="ID of the chat this data belongs to")]
     skill: Annotated[str, Field(description="Name of the skill this data is for")]
@@ -290,7 +290,7 @@ class ChatSkillData(ChatSkillDataCreate):
     as a required field for tracking ownership.
     """
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
@@ -463,7 +463,7 @@ class SkillTable(Base):
 class Skill(BaseModel):
     """Pydantic model for Skill."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={
             datetime: lambda v: v.isoformat(timespec="milliseconds"),

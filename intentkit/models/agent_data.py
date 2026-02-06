@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
@@ -117,7 +117,7 @@ class AgentDataTable(Base):
 class AgentData(BaseModel):
     """Agent data model for storing additional data related to the agent."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,
@@ -442,7 +442,7 @@ class AgentPluginData(BaseModel):
         data: JSON data stored for this key
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     agent_id: Annotated[
         str,
@@ -595,7 +595,7 @@ class AgentQuotaTable(Base):
 class AgentQuota(BaseModel):
     """AgentQuota model."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str, PydanticField(description="ID of the agent this quota belongs to")

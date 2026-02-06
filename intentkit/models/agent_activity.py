@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict
@@ -32,7 +32,7 @@ class AgentActivityCreate(AgentActivityBase):
 
 
 class AgentActivity(AgentActivityBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[str, PydanticField(description="Unique identifier for the activity")]
     created_at: Annotated[datetime, PydanticField(description="Timestamp when created")]

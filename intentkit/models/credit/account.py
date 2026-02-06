@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -156,7 +156,7 @@ class CreditAccountTable(Base):
 class CreditAccount(BaseModel):
     """Credit account model with all fields."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
         json_encoders={

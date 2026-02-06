@@ -125,6 +125,7 @@ override-dependencies = ["bcl>=3.0.0"]
 
 [tool.basedpyright]
 reportAny = false
+reportExplicitAny = false
 reportMissingTypeStubs = false
 reportCallInDefaultInitializer = false
 reportUnknownMemberType = false

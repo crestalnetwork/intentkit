@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -103,7 +103,7 @@ class AgentPostCreate(AgentPostBase):
 class AgentPost(AgentPostBase):
     """Model for a full AgentPost."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,
@@ -122,7 +122,7 @@ class AgentPost(AgentPostBase):
 class AgentPostBrief(BaseModel):
     """Brief model for AgentPost listing with truncated content."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,

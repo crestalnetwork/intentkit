@@ -2,7 +2,7 @@ import time
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import DateTime, String, func, select
@@ -70,7 +70,7 @@ class AppSettingTable(Base):
 class PaymentSettings(BaseModel):
     """Payment settings model."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         json_schema_extra={
             "example": {
                 "credit_per_usdc": 1000,
@@ -145,7 +145,7 @@ class PaymentSettings(BaseModel):
 class AppSetting(BaseModel):
     """App setting model with all fields."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={
             datetime: lambda v: v.isoformat(timespec="milliseconds"),

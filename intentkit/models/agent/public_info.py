@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
@@ -45,7 +45,7 @@ class AgentExample(BaseModel):
 class AgentPublicInfo(BaseModel):
     """Public information of the agent."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         title="AgentPublicInfo",
         from_attributes=True,
     )

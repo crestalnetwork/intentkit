@@ -534,7 +534,10 @@ class ChatTable(Base):
 class ChatCreate(BaseModel):
     """Base model for creating chats with fields needed for creation."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
+    )
 
     id: Annotated[
         str,
@@ -569,7 +572,7 @@ class ChatCreate(BaseModel):
 class Chat(ChatCreate):
     """Chat model with all fields including server-generated ones."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )

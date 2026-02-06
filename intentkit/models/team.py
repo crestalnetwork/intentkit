@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -85,7 +85,7 @@ class TeamTable(Base):
 class TeamCreate(BaseModel):
     """Team creation model."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,
@@ -140,7 +140,7 @@ class TeamCreate(BaseModel):
 class Team(TeamCreate):
     """Team model with all fields."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )

@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, TypeVar
+from typing import Annotated, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, Index, Integer, String, func, select
@@ -126,7 +126,7 @@ class UserTable(Base):
 class UserUpdate(BaseModel):
     """User update model without id and timestamps."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
         json_encoders={
             datetime: lambda v: v.isoformat(timespec="milliseconds"),

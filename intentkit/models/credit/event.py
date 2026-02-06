@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
 from fastapi import HTTPException
@@ -295,7 +295,7 @@ class CreditEventTable(Base):
 class CreditEvent(BaseModel):
     """Credit event model with all fields."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
         json_encoders={

@@ -4,7 +4,7 @@ import hashlib
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Annotated, Any, Literal, override
+from typing import Annotated, Any, ClassVar, Literal, override
 
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
@@ -19,7 +19,7 @@ from intentkit.models.agent_data import AgentData
 class AgentResponse(Agent):
     """Agent response model that excludes sensitive fields from JSON output and schema."""
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         title="AgentPublic",
         from_attributes=True,
         # json_encoders={
