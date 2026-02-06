@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Any, ClassVar, NotRequired, TypedDict, final
+from typing import Annotated, Any, ClassVar, NotRequired, TypedDict, final, override
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -403,6 +403,7 @@ class ChatMessage(ChatMessageCreate):
         datetime, Field(description="Timestamp when this message was created")
     ]
 
+    @override
     def __str__(self):
         resp = ""
         if self.skill_calls:
@@ -424,7 +425,7 @@ class ChatMessage(ChatMessageCreate):
             resp += "[ Agent cold start ... ]\n"
             resp += f"\n------------------- start cost: {self.cold_start_cost:.3f} seconds\n\n"
 
-        if self.author_type == AuthorType.SKILL:
+        if self.author_type == AuthorType.SKILL and self.skill_calls:
             resp += f"[ Skill Calls: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
             for skill_call in self.skill_calls:
                 resp += f" {skill_call['name']}: {skill_call['parameters']}\n"
@@ -585,7 +586,7 @@ class Chat(ChatCreate):
     ]
 
     @classmethod
-    async def get(cls, id: str) -> "Chat" | None:
+    async def get(cls, id: str) -> Chat | None:
         """Get a chat by its ID.
 
         Args:

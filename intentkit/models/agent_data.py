@@ -8,6 +8,7 @@ from typing import Annotated, Any, ClassVar
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -650,7 +651,9 @@ class AgentQuota(BaseModel):
         return True
 
     @staticmethod
-    async def add_free_income_in_session(session, id: str, amount: Decimal) -> None:
+    async def add_free_income_in_session(
+        session: AsyncSession, id: str, amount: Decimal
+    ) -> None:
         """Add free income to an agent's quota directly in the database.
 
         Args:
@@ -680,7 +683,7 @@ class AgentQuota(BaseModel):
                     )
                     + amount
                 )
-                await session.execute(stmt)
+                _ = await session.execute(stmt)
         except Exception as e:
             logger.error(f"Error adding free income: {str(e)}")
             raise IntentKitAPIError(
@@ -725,7 +728,10 @@ class AgentQuota(BaseModel):
 
                 # Update this instance
                 await db.refresh(quota_record)
-                self.model_validate(quota_record)
+                self.autonomous_count_total = quota_record.autonomous_count_total
+                self.autonomous_count_monthly = quota_record.autonomous_count_monthly
+                self.last_autonomous_time = quota_record.last_autonomous_time
+                self.updated_at = quota_record.updated_at
 
     async def add_twitter_message(self) -> None:
         """Add a twitter message to the agent's twitter count.
@@ -746,7 +752,10 @@ class AgentQuota(BaseModel):
 
                 # Update this instance
                 await db.refresh(quota_record)
-                self.model_validate(quota_record)
+                self.twitter_count_total = quota_record.twitter_count_total
+                self.twitter_count_daily = quota_record.twitter_count_daily
+                self.last_twitter_time = quota_record.last_twitter_time
+                self.updated_at = quota_record.updated_at
 
     @staticmethod
     async def reset_daily_quotas():
@@ -761,7 +770,7 @@ class AgentQuota(BaseModel):
                 twitter_count_daily=0,
                 free_income_daily=0,
             )
-            await session.execute(stmt)
+            _ = await session.execute(stmt)
             await session.commit()
 
     @staticmethod
@@ -775,5 +784,5 @@ class AgentQuota(BaseModel):
             stmt = update(AgentQuotaTable).values(
                 message_count_monthly=0, autonomous_count_monthly=0
             )
-            await session.execute(stmt)
+            _ = await session.execute(stmt)
             await session.commit()
