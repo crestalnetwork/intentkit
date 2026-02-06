@@ -7,7 +7,7 @@ class Kind(Enum):
 
 def is_valid_kind(kind: int):
     try:
-        Kind(kind)
+        _ = Kind(kind)
         return True
     except ValueError:
         return False

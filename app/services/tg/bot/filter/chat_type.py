@@ -7,10 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class ChatTypeFilter(BaseFilter):
+    chat_type: str | list[str]
+
     def __init__(self, chat_type: str | list[str]):
         self.chat_type = chat_type
 
-    async def __call__(self, message: Message) -> bool:
+    async def __call__(self, message: Message) -> bool:  # pyright: ignore[reportImplicitOverride]
         try:
             if isinstance(self.chat_type, str):
                 return message.chat.type == self.chat_type

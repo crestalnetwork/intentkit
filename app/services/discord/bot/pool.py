@@ -1,7 +1,6 @@
-"""Discord bot pool management."""
-
 import asyncio
 import logging
+from typing import Any
 
 import discord
 
@@ -13,18 +12,19 @@ from app.services.discord.bot.types.bot import BotPoolItem
 logger = logging.getLogger(__name__)
 
 # Global caches (similar to Telegram)
-_bots = {}  # token -> BotPoolItem
-_agent_bots = {}  # agent_id -> BotPoolAgentItem
+# Global caches (similar to Telegram)
+_bots: dict[str, BotPoolItem] = {}  # token -> BotPoolItem
+_agent_bots: dict[str, BotPoolAgentItem] = {}  # agent_id -> BotPoolAgentItem
 _failed_agents = set()  # Failed agent IDs
-_bot_tasks = {}  # agent_id -> asyncio.Task
+_bot_tasks: dict[str, asyncio.Task[Any]] = {}  # agent_id -> asyncio.Task
 
 
-def bot_by_token(token: str) -> BotPoolItem:
+def bot_by_token(token: str) -> BotPoolItem | None:
     """Get bot by token."""
     return _bots.get(token)
 
 
-def agent_by_id(agent_id: str) -> BotPoolAgentItem:
+def agent_by_id(agent_id: str) -> BotPoolAgentItem | None:
     """Get agent by ID."""
     return _agent_bots.get(agent_id)
 
@@ -38,23 +38,6 @@ def add_failed_agent(agent_id: str):
     """Add agent to failed cache."""
     _failed_agents.add(agent_id)
     logger.warning(f"Agent {agent_id} added to failed cache")
-
-
-def agent_chat_id(guild_memory_public: bool, channel_id: int, guild_id: int = None):
-    """
-    Generate chat_id similar to Telegram pattern.
-
-    Args:
-        guild_memory_public: If True, share memory across guild
-        channel_id: Discord channel ID
-        guild_id: Discord guild/server ID
-
-    Returns:
-        Chat ID string for memory management
-    """
-    if guild_memory_public and guild_id:
-        return f"discord-guild-{guild_id}"
-    return f"discord-channel-{channel_id}"
 
 
 class BotPool:
@@ -72,6 +55,9 @@ class BotPool:
 
             # Setup event handlers
             self._setup_handlers(bot_item)
+
+            if not bot_item.token:
+                raise ValueError("Bot token is empty")
 
             # Start bot in background task
             task = asyncio.create_task(self._run_bot(bot_item))
@@ -92,6 +78,8 @@ class BotPool:
     async def _run_bot(self, bot_item: BotPoolItem):
         """Run the Discord bot (blocking call)."""
         try:
+            if not bot_item.token:
+                raise ValueError("Token is empty")
             await bot_item.bot.start(bot_item.token)
         except Exception as e:
             logger.error(f"Bot {bot_item.agent_id} crashed: {e}")
@@ -104,18 +92,18 @@ class BotPool:
         )
 
         @bot_item.bot.event
-        async def on_ready():
+        async def on_ready():  # pyright: ignore[reportUnusedFunction]
             await on_ready_handler(bot_item)
 
         @bot_item.bot.event
-        async def on_message(message: discord.Message):
+        async def on_message(message: discord.Message):  # pyright: ignore[reportUnusedFunction]
             await on_message_handler(message, bot_item)
 
     async def stop_bot(self, agent_id: str):
         """Stop a Discord bot."""
         try:
             agent_item = agent_by_id(agent_id)
-            if not agent_item:
+            if not agent_item or not agent_item.token:
                 return
 
             bot_item = bot_by_token(agent_item.token)
@@ -124,7 +112,7 @@ class BotPool:
 
             # Cancel the task
             if agent_id in _bot_tasks:
-                _bot_tasks[agent_id].cancel()
+                _ = _bot_tasks[agent_id].cancel()
                 try:
                     await _bot_tasks[agent_id]
                 except asyncio.CancelledError:
@@ -146,7 +134,7 @@ class BotPool:
         """Update bot configuration."""
         try:
             agent_item = agent_by_id(agent.id)
-            if not agent_item:
+            if not agent_item or not agent_item.token:
                 return
 
             bot_item = bot_by_token(agent_item.token)

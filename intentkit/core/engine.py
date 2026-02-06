@@ -10,6 +10,8 @@ This module provides functionality for initializing and executing AI agents. It 
 The module uses a global cache to store initialized agents for better performance.
 """
 
+# pyright: reportImportCycles=false
+
 import importlib
 import logging
 import re

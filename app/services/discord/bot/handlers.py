@@ -14,19 +14,26 @@ from epyxid import XID
 
 from intentkit.core.engine import execute_agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.chat import AuthorType, ChatMessageCreate
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessageAttachment,
+    ChatMessageAttachmentType,
+    ChatMessageCreate,
+)
 
-from app.services.discord.bot.pool import agent_chat_id
+from app.services.discord.bot.types.bot import BotPoolItem
 
 logger = logging.getLogger(__name__)
 
 
-async def on_ready_handler(bot_item):
+async def on_ready_handler(bot_item: BotPoolItem):
     """Handle bot ready event."""
     logger.info(f"Discord bot {bot_item.bot.user} is ready")
 
     # Update agent data with bot info
     try:
+        if not bot_item.bot.user:
+            return
         agent_data = await AgentData.get(bot_item.agent_id)
         agent_data.discord_id = str(bot_item.bot.user.id)
         agent_data.discord_username = bot_item.bot.user.name
@@ -36,10 +43,12 @@ async def on_ready_handler(bot_item):
         logger.error(f"Failed to update agent data: {e}")
 
 
-async def on_message_handler(message: discord.Message, bot_item):
+async def on_message_handler(message: discord.Message, bot_item: BotPoolItem):
     """Handle incoming Discord messages."""
+    from app.services.discord.bot.utils import agent_chat_id
+
     # Don't respond to self
-    if message.author == bot_item.bot.user:
+    if not bot_item.bot.user or message.author == bot_item.bot.user:
         return
 
     # Check if should respond
@@ -60,12 +69,30 @@ async def on_message_handler(message: discord.Message, bot_item):
                 )
 
             # Check if owner
-            is_owner = (
+            is_owner = bot_item.owner_discord_id and str(message.author.id) == str(
                 bot_item.owner_discord_id
-                and str(message.author.id) == bot_item.owner_discord_id
             )
 
             # Create standardized message
+            attachments: list[ChatMessageAttachment] | None = None
+            if message.attachments:
+                attachments = []
+                for att in message.attachments:
+                    att_type = ChatMessageAttachmentType.FILE
+                    if att.content_type and att.content_type.startswith("image/"):
+                        att_type = ChatMessageAttachmentType.IMAGE
+
+                    attachments.append(
+                        {
+                            "type": att_type,
+                            "url": att.url,
+                            "json": {
+                                "filename": att.filename,
+                                "content_type": att.content_type,
+                            },
+                        }
+                    )
+
             input_message = ChatMessageCreate(
                 id=str(XID()),
                 agent_id=bot_item.agent_id,
@@ -75,18 +102,7 @@ async def on_message_handler(message: discord.Message, bot_item):
                 author_type=AuthorType.DISCORD,
                 thread_type=AuthorType.DISCORD,
                 message=message.content,
-                attachments=(
-                    [
-                        {
-                            "url": att.url,
-                            "filename": att.filename,
-                            "content_type": att.content_type,
-                        }
-                        for att in message.attachments
-                    ]
-                    if message.attachments
-                    else None
-                ),
+                attachments=attachments,
             )
 
             # Execute agent
@@ -97,23 +113,23 @@ async def on_message_handler(message: discord.Message, bot_item):
 
             # Reply to the original message (like Telegram does)
             if len(response_text) <= 2000:
-                await message.reply(response_text)
+                _ = await message.reply(response_text)
             else:
                 # For long messages, split and send first as reply, rest as regular messages
                 chunks = [
                     response_text[i : i + 2000]
                     for i in range(0, len(response_text), 2000)
                 ]
-                await message.reply(chunks[0])
+                _ = await message.reply(chunks[0])
                 for chunk in chunks[1:]:
-                    await message.channel.send(chunk)
+                    _ = await message.channel.send(chunk)
 
         except Exception as e:
             logger.error(f"Error processing Discord message: {e}")
-            await message.channel.send("Sorry, I encountered an error.")
+            _ = await message.channel.send("Sorry, I encountered an error.")
 
 
-async def should_respond(message: discord.Message, bot_item) -> bool:
+async def should_respond(message: discord.Message, bot_item: BotPoolItem) -> bool:
     """
     Determine if bot should respond to this message.
 
@@ -141,13 +157,15 @@ async def should_respond(message: discord.Message, bot_item) -> bool:
 
     # Check if replying to bot's message
     if message.reference and message.reference.resolved:
-        if message.reference.resolved.author == bot_item.bot.user:
-            return bot_item.respond_to_replies
+        resolved = message.reference.resolved
+        if isinstance(resolved, discord.Message):
+            if resolved.author == bot_item.bot.user:
+                return bot_item.respond_to_replies
 
     return False
 
 
-async def send_discord_response(channel, text: str):
+async def send_discord_response(channel: discord.abc.Messageable, text: str):
     """
     Send response, splitting if over Discord's 2000 char limit.
 
@@ -156,9 +174,9 @@ async def send_discord_response(channel, text: str):
         text: Message text to send
     """
     if len(text) <= 2000:
-        await channel.send(text)
+        _ = await channel.send(text)
     else:
         # Split into chunks of 2000 characters
         chunks = [text[i : i + 2000] for i in range(0, len(text), 2000)]
         for chunk in chunks:
-            await channel.send(chunk)
+            _ = await channel.send(chunk)

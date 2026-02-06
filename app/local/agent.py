@@ -316,7 +316,7 @@ async def clean_memory(
                 message=f"Agent with id {request.agent_id} not found",
             )
 
-        await clean_agent_memory(
+        _ = await clean_agent_memory(
             request.agent_id,
             request.chat_id or "",
             clean_agent=request.clean_agent_memory,
@@ -508,7 +508,7 @@ async def import_agent(
         raise IntentKitAPIError(400, "BadRequest", f"Invalid agent configuration: {e}")
 
     # Get the latest agent from create_or_update
-    latest_agent, agent_data = await deploy_agent(agent_id, agent, "admin")
+    _ = await deploy_agent(agent_id, agent, "admin")
 
     return "Agent import successful"
 

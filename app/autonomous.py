@@ -57,7 +57,7 @@ scheduler = AsyncIOScheduler(jobstores=jobstores)
 HEAD_JOB_ID = "head"
 
 if config.sentry_dsn:
-    sentry_sdk.init(
+    _ = sentry_sdk.init(
         dsn=config.sentry_dsn,
         sample_rate=config.sentry_sample_rate,
         # traces_sample_rate=config.sentry_traces_sample_rate,
@@ -244,7 +244,7 @@ async def schedule_agent_autonomous_tasks():
                         logger.info(
                             f"Scheduling cron task {task_id} with cron: {autonomous.cron}"
                         )
-                        scheduler.add_job(
+                        _ = scheduler.add_job(
                             run_autonomous_task,
                             CronTrigger.from_crontab(autonomous.cron),
                             id=task_id,
@@ -286,7 +286,7 @@ if __name__ == "__main__":
         # Initialize database
         await init_db(**config.db)
         # Initialize Redis
-        await init_redis(
+        _ = await init_redis(
             host=config.redis_host,
             port=config.redis_port,
             db=config.redis_db,
@@ -299,7 +299,7 @@ if __name__ == "__main__":
         jobs = scheduler.get_jobs()
         job_ids = [job.id for job in jobs]
         if HEAD_JOB_ID not in job_ids:
-            scheduler.add_job(
+            _ = scheduler.add_job(
                 schedule_agent_autonomous_tasks,
                 "interval",
                 id=HEAD_JOB_ID,
@@ -309,7 +309,7 @@ if __name__ == "__main__":
             )
 
         # Add job to send heartbeat every 5 minutes
-        scheduler.add_job(
+        _ = scheduler.add_job(
             send_autonomous_heartbeat,
             trigger=CronTrigger(minute="*", timezone="UTC"),  # Run every minute
             id="autonomous_heartbeat",
@@ -354,7 +354,7 @@ if __name__ == "__main__":
             logger.info(
                 "Autonomous process running. Press Ctrl+C or send SIGTERM to exit."
             )
-            await shutdown_event.wait()
+            _ = await shutdown_event.wait()
             logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
             logger.error(f"Error in autonomous process: {e}")

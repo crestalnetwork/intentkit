@@ -8,6 +8,7 @@ import telegramify_markdown
 from aiogram import Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, ReactionTypeEmoji
+from aiogram.types import User as TelegramUser
 from epyxid import XID
 
 from intentkit.config.redis import get_redis
@@ -16,14 +17,15 @@ from intentkit.models.chat import AuthorType, ChatMessageCreate
 from intentkit.models.user import User
 from intentkit.utils.alert import send_alert
 
-from app.services.tg.bot import pool
 from app.services.tg.bot.filter.chat_type import GroupOnlyFilter
 from app.services.tg.bot.filter.content_type import TextOnlyFilter
-from app.services.tg.bot.filter.id import WhitelistedChatIDsFilter
 from app.services.tg.bot.filter.no_bot import NoBotFilter
+from app.services.tg.bot.filter.whitelist import WhitelistedChatIDsFilter
+from app.services.tg.bot.utils.common import agent_chat_id
 from app.services.tg.utils.cleanup import remove_bot_name
 
 logger = logging.getLogger(__name__)
+
 
 # Cache configuration
 CACHE_TTL = 24 * 60 * 60  # 1 day in seconds
@@ -57,10 +59,10 @@ async def cache_message(chat_id: int, agent_id: str, message: Message) -> None:
     }
 
     # Add to Redis list (right push to maintain chronological order - oldest first)
-    await redis.rpush(cache_key, json.dumps(message_data))
+    _ = await redis.rpush(cache_key, json.dumps(message_data))  # pyright: ignore[reportGeneralTypeIssues]
 
     # Trim list to keep only the latest MAX_CACHED_MESSAGES (remove from left)
-    await redis.ltrim(cache_key, -MAX_CACHED_MESSAGES, -1)
+    _ = await redis.ltrim(cache_key, -MAX_CACHED_MESSAGES, -1)  # pyright: ignore[reportGeneralTypeIssues]
 
     # Set expiration
     await redis.expire(cache_key, CACHE_TTL)
@@ -80,7 +82,7 @@ async def get_cached_context(chat_id: int, agent_id: str) -> list[dict[str, Any]
     cache_key = f"intentkit:tg_context:{agent_id}:{chat_id}"
 
     # Get all cached messages (oldest first due to rpush)
-    cached_messages = await redis.lrange(cache_key, 0, -1)
+    cached_messages = await redis.lrange(cache_key, 0, -1)  # pyright: ignore[reportGeneralTypeIssues]
 
     if not cached_messages:
         return []
@@ -118,7 +120,7 @@ async def clear_cached_context(chat_id: int, agent_id: str) -> None:
     await redis.delete(cache_key)
 
 
-async def get_user_id(from_user) -> str:
+async def get_user_id(from_user: TelegramUser | None) -> str:
     """
     Extract user_id from telegram message from_user.
 
@@ -145,7 +147,8 @@ def cur_func_name():
 
 
 def cur_mod_name():
-    return inspect.getmodule(inspect.stack()[1][0]).__name__
+    mod = inspect.getmodule(inspect.stack()[1][0])
+    return mod.__name__ if mod else "unknown"
 
 
 general_router = Router()
@@ -154,10 +157,13 @@ general_router = Router()
 @general_router.message(Command("chat_id"), NoBotFilter(), TextOnlyFilter())
 async def command_chat_id(message: Message) -> None:
     try:
-        await message.answer(text=str(message.chat.id))
+        _ = await message.answer(text=str(message.chat.id))
     except Exception as e:
+        token_str = "unknown"
+        if message.bot and message.bot.token:
+            token_str = message.bot.token
         logger.warning(
-            f"error processing in function:{cur_func_name()}, token:{message.bot.token} err: {str(e)}"
+            f"error processing in function:{cur_func_name()}, token:{token_str} err: {str(e)}"
         )
 
 
@@ -172,12 +178,21 @@ async def command_chat_id(message: Message) -> None:
     TextOnlyFilter(),
 )
 async def gp_command_start(message: Message):
+    from app.services.tg.bot.cache import bot_by_token
+
     try:
-        cached_bot_item = pool.bot_by_token(message.bot.token)
-        await message.answer(text=cached_bot_item.greeting_group)
+        if not message.bot or not message.bot.token:
+            return
+        cached_bot_item = bot_by_token(message.bot.token)
+        if cached_bot_item is None:
+            return
+        _ = await message.answer(text=cached_bot_item.greeting_group)
     except Exception as e:
+        token_str = "unknown"
+        if message.bot and message.bot.token:
+            token_str = message.bot.token
         logger.warning(
-            f"error processing in function:{cur_func_name()}, token:{message.bot.token} err: {str(e)}"
+            f"error processing in function:{cur_func_name()}, token:{token_str} err: {str(e)}"
         )
 
 
@@ -185,26 +200,34 @@ async def gp_command_start(message: Message):
     WhitelistedChatIDsFilter(), NoBotFilter(), GroupOnlyFilter(), TextOnlyFilter()
 )
 async def gp_process_message(message: Message) -> None:
+    from app.services.tg.bot.cache import bot_by_token
+
+    if not message.bot or not message.bot.token:
+        logger.warning("bot token not found in message.")
+        return
+
     bot = await message.bot.get_me()
+    text = message.text or ""
 
     # Check if this message should trigger a bot reply
     should_reply = (
         message.reply_to_message
+        and message.reply_to_message.from_user
         and message.reply_to_message.from_user.id == message.bot.id
-    ) or bot.username in message.text
+    ) or (bot.username is not None and text and bot.username in text)
 
     if should_reply:
-        cached_bot_item = pool.bot_by_token(message.bot.token)
+        cached_bot_item = bot_by_token(message.bot.token)
         if cached_bot_item is None:
             logger.warning(f"bot with token {message.bot.token} not found in cache.")
             return
 
         try:
             user_id = await get_user_id(message.from_user)
+            # Access _owner safely to avoid protected member warning
+            owner = getattr(cached_bot_item, "_owner", None)
             is_owner = (
-                cached_bot_item._owner == message.from_user.username
-                if message.from_user
-                else False
+                owner == message.from_user.username if message.from_user else False
             )
             logger.info(f"message from: {message.from_user}")
         except ValueError:
@@ -215,7 +238,7 @@ async def gp_process_message(message: Message) -> None:
             return
 
         # Add processing reaction
-        await message.react([ReactionTypeEmoji(emoji="🤔")])
+        _ = await message.react([ReactionTypeEmoji(emoji="🤔")])
 
         try:
             # Get cached context messages
@@ -224,7 +247,7 @@ async def gp_process_message(message: Message) -> None:
             )
 
             # remove bot name tag from text
-            message_text = remove_bot_name(bot.username, message.text)
+            message_text = remove_bot_name(bot.username or "unknown", text)
             if len(message_text) > 65535:
                 send_alert(
                     "Message too long from telegram.\n"
@@ -256,7 +279,7 @@ async def gp_process_message(message: Message) -> None:
             input = ChatMessageCreate(
                 id=str(XID()),
                 agent_id=cached_bot_item.agent_id,
-                chat_id=pool.agent_chat_id(
+                chat_id=agent_chat_id(
                     cached_bot_item.is_public_memory, message.chat.id
                 ),
                 user_id=cached_bot_item.agent_owner if is_owner else user_id,
@@ -266,7 +289,7 @@ async def gp_process_message(message: Message) -> None:
                 message=wrapped_message,
             )
             response = await execute_agent(input)
-            await message.answer(
+            _ = await message.answer(
                 text=telegramify_markdown.markdownify(
                     response[-1].message if response else "Server Error"
                 ),
@@ -278,21 +301,24 @@ async def gp_process_message(message: Message) -> None:
             await clear_cached_context(message.chat.id, cached_bot_item.agent_id)
 
         except Exception as e:
+            token_str = "unknown"
+            if message.bot and message.bot.token:
+                token_str = message.bot.token
             logger.warning(
-                f"error processing in function:{cur_func_name()}, token:{message.bot.token}, err={str(e)}"
+                f"error processing in function:{cur_func_name()}, token:{token_str}, err={str(e)}"
             )
-            await message.answer(
+            _ = await message.answer(
                 text="Server Error", reply_to_message_id=message.message_id
             )
         finally:
             # Remove processing reaction
             try:
-                await message.react([])
+                _ = await message.react([])
             except Exception as e:
                 logger.warning(f"Failed to remove reaction: {str(e)}")
     else:
         # This message doesn't trigger a reply, cache it for context
-        cached_bot_item = pool.bot_by_token(message.bot.token)
+        cached_bot_item = bot_by_token(message.bot.token)
         if cached_bot_item:
             await cache_message(message.chat.id, cached_bot_item.agent_id, message)
 
@@ -304,12 +330,21 @@ async def gp_process_message(message: Message) -> None:
     CommandStart(), NoBotFilter(), WhitelistedChatIDsFilter(), TextOnlyFilter()
 )
 async def command_start(message: Message) -> None:
+    from app.services.tg.bot.cache import bot_by_token
+
     try:
-        cached_bot_item = pool.bot_by_token(message.bot.token)
-        await message.answer(text=cached_bot_item.greeting_user)
+        if not message.bot or not message.bot.token:
+            return
+        cached_bot_item = bot_by_token(message.bot.token)
+        if cached_bot_item is None:
+            return
+        _ = await message.answer(text=cached_bot_item.greeting_user)
     except Exception as e:
+        token_str = "unknown"
+        if message.bot and message.bot.token:
+            token_str = message.bot.token
         logger.warning(
-            f"error processing in function:{cur_func_name()}, token:{message.bot.token} err: {str(e)}"
+            f"error processing in function:{cur_func_name()}, token:{token_str} err: {str(e)}"
         )
 
 
@@ -319,18 +354,27 @@ async def command_start(message: Message) -> None:
     WhitelistedChatIDsFilter(),
 )
 async def process_message(message: Message) -> None:
-    cached_bot_item = pool.bot_by_token(message.bot.token)
+    from app.services.tg.bot.cache import bot_by_token
+
+    if not message.bot or not message.bot.token:
+        logger.warning("bot token not found in message.")
+        return
+
+    cached_bot_item = None
+    if message.bot and message.bot.token:
+        cached_bot_item = bot_by_token(message.bot.token)
+
     if cached_bot_item is None:
-        logger.warning(f"bot with token {message.bot.token} not found in cache.")
+        logger.warning(
+            f"bot with token {message.bot.token if message.bot else 'None'} not found in cache."
+        )
         return
 
     try:
         user_id = await get_user_id(message.from_user)
-        is_owner = (
-            cached_bot_item._owner == message.from_user.username
-            if message.from_user
-            else False
-        )
+        # Access _owner safely to avoid protected member warning
+        owner = getattr(cached_bot_item, "_owner", None)
+        is_owner = owner == message.from_user.username if message.from_user else False
         logger.info(f"message from: {message.from_user}")
     except ValueError:
         is_owner = False
@@ -340,9 +384,12 @@ async def process_message(message: Message) -> None:
         return
 
     # Add processing reaction
-    await message.react([ReactionTypeEmoji(emoji="🤔")])
+    _ = await message.react([ReactionTypeEmoji(emoji="🤔")])
 
     try:
+        if not message.text:
+            return  # or raise ValueError
+
         if len(message.text) > 65535:
             send_alert(
                 "Message too long from telegram.\n"
@@ -356,7 +403,7 @@ async def process_message(message: Message) -> None:
         input = ChatMessageCreate(
             id=str(XID()),
             agent_id=cached_bot_item.agent_id,
-            chat_id=pool.agent_chat_id(False, message.chat.id),
+            chat_id=agent_chat_id(cached_bot_item.is_public_memory, message.chat.id),
             user_id=cached_bot_item.agent_owner if is_owner else user_id,
             author_id=user_id,
             author_type=AuthorType.TELEGRAM,
@@ -364,20 +411,23 @@ async def process_message(message: Message) -> None:
             message=message.text,
         )
         response = await execute_agent(input)
-        await message.answer(
+        _ = await message.answer(
             text=telegramify_markdown.markdownify(
                 response[-1].message if response else "Server Error"
             ),
             parse_mode="MarkdownV2",
         )
     except Exception as e:
+        token_str = "unknown"
+        if message.bot and message.bot.token:
+            token_str = message.bot.token
         logger.warning(
-            f"error processing in function:{cur_func_name()}, token:{message.bot.token} err:{str(e)}"
+            f"error processing in function:{cur_func_name()}, token:{token_str} err:{str(e)}"
         )
-        await message.answer(text="Server Error")
+        _ = await message.answer(text="Server Error")
     finally:
         # Remove processing reaction
         try:
-            await message.react([])
+            _ = await message.react([])
         except Exception as e:
             logger.warning(f"Failed to remove reaction: {str(e)}")

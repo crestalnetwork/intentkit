@@ -8,4 +8,5 @@ GOD_BOT_TOKEN = getenv("TG_TOKEN_GOD_BOT")
 
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot):
-    await bot.set_webhook(f"{BASE_URL}{GOD_BOT_PATH}")
+    _ = dispatcher
+    _ = await bot.set_webhook(f"{BASE_URL}{GOD_BOT_PATH}")

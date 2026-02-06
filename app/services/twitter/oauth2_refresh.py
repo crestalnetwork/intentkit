@@ -2,7 +2,9 @@
 
 import asyncio
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import select
 
@@ -14,7 +16,7 @@ from app.services.twitter.oauth2 import oauth2_user_handler
 logger = logging.getLogger(__name__)
 
 
-async def get_expiring_tokens(minutes_threshold: int = 10) -> list[AgentDataTable]:
+async def get_expiring_tokens(minutes_threshold: int = 10) -> Sequence[AgentDataTable]:
     """Get all agents with tokens expiring within the specified threshold.
 
     Args:
@@ -45,24 +47,25 @@ async def refresh_token(agent_data_record: AgentDataTable):
         agent_data_record: Agent data record containing refresh token
     """
     try:
+        if not agent_data_record.twitter_refresh_token:
+            return
+
         # Get new token using refresh token without blocking the event loop
         token = await asyncio.to_thread(
             oauth2_user_handler.refresh, agent_data_record.twitter_refresh_token
         )
 
-        token = {} if token is None else token
-
-        agent_data = AgentData(id=agent_data_record.id)
-
         # Update token information
-        agent_data.twitter_access_token = token.get("access_token")
-        agent_data.twitter_refresh_token = token.get("refresh_token")
+        update_data: dict[str, Any] = {
+            "twitter_access_token": token.get("access_token"),
+            "twitter_refresh_token": token.get("refresh_token"),
+        }
         if "expires_at" in token:
-            agent_data.twitter_access_token_expires_at = datetime.fromtimestamp(
+            update_data["twitter_access_token_expires_at"] = datetime.fromtimestamp(
                 token["expires_at"], UTC
             )
 
-        await agent_data.save()
+        _ = await AgentData.patch(agent_data_record.id, update_data)
 
         logger.info(
             f"Successfully refreshed Twitter token for agent {agent_data_record.id}, "
@@ -84,4 +87,4 @@ async def refresh_expiring_tokens():
     if not agents:
         return
 
-    await asyncio.gather(*(refresh_token(agent) for agent in agents))
+    _ = await asyncio.gather(*(refresh_token(agent) for agent in agents))

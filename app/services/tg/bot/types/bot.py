@@ -1,7 +1,7 @@
-from typing import NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 from aiogram import Bot
-from aiogram.client.bot import DefaultBotProperties
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from intentkit.models.agent import Agent
@@ -11,7 +11,7 @@ from app.services.tg.utils.cleanup import clean_token_str
 
 class TelegramConfig(TypedDict):
     token: str
-    kind: NotRequired[int] = 1
+    kind: NotRequired[int]
     group_memory_public: NotRequired[bool]
     whitelist_chat_ids: NotRequired[list[int]]
     greeting_group: NotRequired[str]
@@ -21,16 +21,30 @@ class TelegramConfig(TypedDict):
 
 class BotPoolItem:
     def __init__(self, agent: Agent):
-        self._agent_id = agent.id
-        self._agent_owner = agent.owner
+        self._agent_id: str = agent.id
+        self._agent_owner: str | None = agent.owner
 
-        self._token = clean_token_str(agent.telegram_config.get("token"))
-        if self._token is None:
+        self._is_public_memory: bool
+        self._whitelist_chat_ids: list[int] | None
+        self._greeting_group: str
+        self._greeting_user: str
+        self._owner: str | None
+        self._token: str
+        self._kind: int
+        self._bot: Bot
+
+        if not agent.telegram_config:
+            raise ValueError("telegram config can not be empty")
+
+        token_raw = agent.telegram_config.get("token")
+        if not isinstance(token_raw, str) or not token_raw:
             raise ValueError("bot token can not be empty")
+
+        self._token = clean_token_str(token_raw)
 
         self._kind = 1
 
-        self.update_conf(agent.telegram_config)
+        self.update_conf(cast(TelegramConfig, cast(object, agent.telegram_config)))
 
         self._bot = Bot(
             token=self._token,

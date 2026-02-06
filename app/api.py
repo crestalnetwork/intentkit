@@ -48,7 +48,7 @@ from app.services.twitter.oauth2_callback import twitter_callback_router
 logger = logging.getLogger(__name__)
 
 if config.sentry_dsn:
-    sentry_sdk.init(
+    _ = sentry_sdk.init(
         dsn=config.sentry_dsn,
         sample_rate=config.sentry_sample_rate,
         # traces_sample_rate=config.sentry_traces_sample_rate,
@@ -102,15 +102,15 @@ agent_app = FastAPI(
 )
 
 # Add exception handlers to the Agent API sub-application
-agent_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
-agent_app.exception_handler(RequestValidationError)(
+_ = agent_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+_ = agent_app.exception_handler(RequestValidationError)(
     request_validation_exception_handler
 )
-agent_app.exception_handler(StarletteHTTPException)(http_exception_handler)
-agent_app.exception_handler(Exception)(intentkit_other_error_handler)
+_ = agent_app.exception_handler(StarletteHTTPException)(http_exception_handler)
+_ = agent_app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware to the Agent API sub-application
-agent_app.add_middleware(
+_ = agent_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
     allow_methods=["*"],  # Allows all methods
@@ -118,11 +118,12 @@ agent_app.add_middleware(
 )
 
 # Add routers to the Agent API sub-application
-agent_app.include_router(agent_api_router)
+_ = agent_app.include_router(agent_api_router)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _ = app
     """Manage application lifecycle.
 
     This context manager:
@@ -137,7 +138,7 @@ async def lifespan(app: FastAPI):
     await init_db(**config.db)
 
     # Initialize Redis
-    await init_redis(
+    _ = await init_redis(
         host=config.redis_host,
         port=config.redis_port,
         db=config.redis_db,
@@ -174,13 +175,13 @@ app = FastAPI(
     },
 )
 
-app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
-app.exception_handler(RequestValidationError)(request_validation_exception_handler)
-app.exception_handler(StarletteHTTPException)(http_exception_handler)
-app.exception_handler(Exception)(intentkit_other_error_handler)
+_ = app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
+_ = app.exception_handler(RequestValidationError)(request_validation_exception_handler)
+_ = app.exception_handler(StarletteHTTPException)(http_exception_handler)
+_ = app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware
-app.add_middleware(
+_ = app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
     allow_methods=["*"],  # Allows all methods
@@ -189,19 +190,19 @@ app.add_middleware(
 
 
 # Mount the Agent API sub-application
-app.mount("/v1", agent_app)
+_ = app.mount("/v1", agent_app)
 
-app.include_router(agent_router)
-app.include_router(autonomous_router)
-app.include_router(chat_router)
-app.include_router(content_router)
-app.include_router(debug_router)
-app.include_router(metadata_router)
-app.include_router(schema_router)
-app.include_router(core_router)
-app.include_router(twitter_callback_router, include_in_schema=False)
-app.include_router(twitter_oauth2_router)
-app.include_router(health_router)
+_ = app.include_router(agent_router)
+_ = app.include_router(autonomous_router)
+_ = app.include_router(chat_router)
+_ = app.include_router(content_router)
+_ = app.include_router(debug_router)
+_ = app.include_router(metadata_router)
+_ = app.include_router(schema_router)
+_ = app.include_router(core_router)
+_ = app.include_router(twitter_callback_router, include_in_schema=False)
+_ = app.include_router(twitter_oauth2_router)
+_ = app.include_router(health_router)
 
 
 async def create_example_agent() -> None:

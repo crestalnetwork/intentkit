@@ -642,7 +642,7 @@ async def create_chat(
         summary="",
         rounds=0,
     )
-    await chat.save()
+    _ = await chat.save()
     # Retrieve the full Chat object with auto-generated fields
     full_chat = await Chat.get(chat.id)
     return full_chat
@@ -824,7 +824,7 @@ async def send_message(
     # Update summary if it's empty
     if not chat.summary:
         summary = textwrap.shorten(request.message, width=20, placeholder="...")
-        await chat.update_summary(summary)
+        _ = await chat.update_summary(summary)
 
     # Increment the round count
     await chat.add_round()
@@ -977,7 +977,7 @@ async def retry_message(
             chat_id=chat_id,
             user_id=real_user_id,
             author_id=agent_id,
-            thread_type=last_message.thread_type,
+            thread_type=last_message.thread_type or AuthorType.API,
             reply_to=last_message.id,
             time_cost=0.0,
         )

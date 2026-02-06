@@ -43,7 +43,7 @@ async def get_skills(db: AsyncSession = Depends(get_db)):
     summary="Get all LLM models",
     description="Returns a list of all available LLM models in the system",
 )
-async def get_llms(db: AsyncSession = Depends(get_db)):
+async def get_llms(db: AsyncSession = Depends(get_db)):  # pyright: ignore[reportUnknownParameterType]
     """
     Get all LLM models available in the system.
 
@@ -53,11 +53,7 @@ async def get_llms(db: AsyncSession = Depends(get_db)):
     try:
         result_models = []
         for model_info in await LLMModelInfo.get_all(db):
-            provider = (
-                LLMProvider(model_info.provider)
-                if isinstance(model_info.provider, str)
-                else model_info.provider
-            )
+            provider = LLMProvider(model_info.provider)
             result_models.append(
                 LLMModelInfoWithProviderName(
                     **model_info.model_dump(),

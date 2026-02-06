@@ -4,6 +4,7 @@ import asyncio
 import logging
 import signal
 import sys
+from typing import Any
 
 from sqlalchemy import select
 
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 class AgentScheduler:
     """Syncs Discord-enabled agents from database (similar to Telegram)."""
 
+    bot_pool: BotPool
+
     def __init__(self, bot_pool: BotPool):
         self.bot_pool = bot_pool
 
@@ -30,13 +33,13 @@ class AgentScheduler:
         async with get_session() as db:
             # Get only discord-enabled agents
             agents = await db.scalars(
-                select(AgentTable).where(AgentTable.discord_entrypoint_enabled)
+                select(AgentTable).where(AgentTable.discord_entrypoint_enabled == True)
             )
 
         for item in agents:
             agent = Agent.model_validate(item)
             try:
-                if agent.id not in pool_module._agent_bots:
+                if not pool_module.agent_by_id(agent.id):
                     # Skip failed agents
                     if is_agent_failed(agent.id):
                         logger.debug(
@@ -51,6 +54,8 @@ class AgentScheduler:
                 else:
                     # Check for updates
                     cached = agent_by_id(agent.id)
+                    if not cached:
+                        continue
                     updated_at = agent.deployed_at or agent.updated_at
                     if cached.updated_at != updated_at:
                         if not agent.discord_entrypoint_enabled:
@@ -82,7 +87,7 @@ async def run_discord_server() -> None:
     await init_db(**config.db)
 
     # Initialize Redis
-    await init_redis(
+    _ = await init_redis(
         host=config.redis_host,
         port=config.redis_port,
         db=config.redis_db,
@@ -91,14 +96,14 @@ async def run_discord_server() -> None:
     )
 
     # Signal handler for graceful shutdown
-    def signal_handler(signum, frame):
+    def signal_handler(_signum: Any, _frame: Any):
         logger.info("Received termination signal. Shutting down gracefully...")
         cleanup_alert()
         sys.exit(0)
 
     # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    _ = signal.signal(signal.SIGINT, signal_handler)
+    _ = signal.signal(signal.SIGTERM, signal_handler)
 
     logger.info("Initializing Discord bot pool...")
     bot_pool = BotPool()
@@ -106,7 +111,9 @@ async def run_discord_server() -> None:
     scheduler = AgentScheduler(bot_pool)
 
     # Start the scheduler
-    asyncio.create_task(scheduler.start(int(config.discord_new_agent_poll_interval)))
+    _ = asyncio.create_task(
+        scheduler.start(int(config.discord_new_agent_poll_interval))
+    )
 
     # Keep the server running
     try:

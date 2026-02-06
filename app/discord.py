@@ -12,7 +12,7 @@ from app.entrypoints.discord import run_discord_server
 logger = logging.getLogger(__name__)
 
 if config.sentry_dsn:
-    sentry_sdk.init(
+    _ = sentry_sdk.init(
         dsn=config.sentry_dsn,
         sample_rate=config.sentry_sample_rate,
         environment=config.env,

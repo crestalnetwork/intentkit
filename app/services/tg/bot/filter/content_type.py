@@ -7,10 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class ContentTypeFilter(BaseFilter):
+    content_types: ContentType | list[ContentType]
+
     def __init__(self, content_types: ContentType | list[ContentType]):
         self.content_types = content_types
 
-    async def __call__(self, message: Message) -> bool:
+    async def __call__(self, message: Message) -> bool:  # pyright: ignore[reportImplicitOverride]
         try:
             return message.content_type in self.content_types
         except Exception as e:

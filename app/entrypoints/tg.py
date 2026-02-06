@@ -2,6 +2,7 @@ import asyncio
 import logging
 import signal
 import sys
+from typing import Any
 
 from sqlalchemy import select
 
@@ -12,14 +13,16 @@ from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.alert import cleanup_alert
 
-from app.services.tg.bot import pool
-from app.services.tg.bot.pool import BotPool, bot_by_token, is_agent_failed
+from app.services.tg.bot.cache import is_agent_failed
+from app.services.tg.bot.pool import BotPool
 from app.services.tg.utils.cleanup import clean_token_str
 
 logger = logging.getLogger(__name__)
 
 
 class AgentScheduler:
+    bot_pool: BotPool
+
     def __init__(self, bot_pool: BotPool):
         self.bot_pool = bot_pool
 
@@ -27,13 +30,15 @@ class AgentScheduler:
         async with get_session() as db:
             # Get only telegram-enabled agents
             agents = await db.scalars(
-                select(AgentTable).where(AgentTable.telegram_entrypoint_enabled)
+                select(AgentTable).where(AgentTable.telegram_entrypoint_enabled == True)
             )
 
         for item in agents:
             agent = Agent.model_validate(item)
             try:
-                if agent.id not in pool._agent_bots:
+                from app.services.tg.bot.cache import agent_by_id, bot_by_token
+
+                if not agent_by_id(agent.id):
                     # Skip agents that have failed with unauthorized errors
                     if is_agent_failed(agent.id):
                         logger.debug(
@@ -42,8 +47,8 @@ class AgentScheduler:
                         continue
 
                     if agent.telegram_config and agent.telegram_config.get("token"):
-                        token = clean_token_str(agent.telegram_config["token"])
-                        if token in pool._bots:
+                        token = clean_token_str(str(agent.telegram_config["token"]))
+                        if bot_by_token(token):
                             logger.warning(
                                 f"there is an existing bot with {token}, skipping agent {agent.id}..."
                             )
@@ -67,10 +72,13 @@ class AgentScheduler:
                             )
                         await agent_data.save()
                 else:
-                    cached_agent = pool._agent_bots[agent.id]
+                    cached_agent = agent_by_id(agent.id)
+                    if not cached_agent:
+                        continue
                     updated_at = agent.deployed_at or agent.updated_at
                     if cached_agent.updated_at != updated_at:
-                        if agent.telegram_config.get("token") not in pool._bots:
+                        token = (agent.telegram_config or {}).get("token")
+                        if token and not bot_by_token(str(token)):
                             await self.bot_pool.change_bot_token(agent)
                             await asyncio.sleep(2)
                         else:
@@ -80,7 +88,7 @@ class AgentScheduler:
                     f"failed to process agent {agent.id}, skipping this to the next agent: {e}"
                 )
 
-    async def start(self, interval):
+    async def start(self, interval: int):
         logger.info("New agent addition tracking started...")
         while True:
             logger.info("sync agents...")
@@ -97,7 +105,7 @@ async def run_telegram_server() -> None:
     await init_db(**config.db)
 
     # Initialize Redis
-    await init_redis(
+    _ = await init_redis(
         host=config.redis_host,
         port=config.redis_port,
         db=config.redis_db,
@@ -106,17 +114,17 @@ async def run_telegram_server() -> None:
     )
 
     # Signal handler for graceful shutdown
-    def signal_handler(signum, frame):
+    def signal_handler(_signum: Any, _frame: Any):
         logger.info("Received termination signal. Shutting down gracefully...")
         cleanup_alert()
         sys.exit(0)
 
     # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    _ = signal.signal(signal.SIGINT, signal_handler)
+    _ = signal.signal(signal.SIGTERM, signal_handler)
 
     logger.info("Initialize bot pool...")
-    bot_pool = BotPool(config.tg_base_url)
+    bot_pool = BotPool(config.tg_base_url or "")
 
     bot_pool.init_god_bot()
     bot_pool.init_all_dispatchers()
@@ -124,7 +132,7 @@ async def run_telegram_server() -> None:
     scheduler = AgentScheduler(bot_pool)
 
     # Start the scheduler
-    asyncio.create_task(scheduler.start(int(config.tg_new_agent_poll_interval)))
+    _ = asyncio.create_task(scheduler.start(int(config.tg_new_agent_poll_interval)))
 
     # Start the bot pool
     await bot_pool.start(

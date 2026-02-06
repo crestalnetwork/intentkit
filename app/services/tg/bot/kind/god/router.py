@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramUnauthorizedError
@@ -11,7 +11,7 @@ god_router = Router()
 
 def is_bot_token(value: str) -> bool | dict[str, Any]:
     try:
-        validate_token(value)
+        _ = validate_token(value)
     except TokenValidationError:
         return False
     return True
@@ -19,7 +19,7 @@ def is_bot_token(value: str) -> bool | dict[str, Any]:
 
 @god_router.message(Command("add", magic=F.args.func(is_bot_token)))
 async def command_add_bot(message: Message, command: CommandObject, bot: Bot) -> Any:
-    new_bot = Bot(token=command.args, session=bot.session)
+    new_bot = Bot(token=cast(str, command.args), session=bot.session)
     try:
         bot_user = await new_bot.get_me()
     except TelegramUnauthorizedError:

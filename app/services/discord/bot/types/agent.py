@@ -1,4 +1,4 @@
-"""Discord bot pool agent item."""
+from datetime import datetime
 
 from intentkit.models.agent import Agent
 
@@ -6,8 +6,12 @@ from intentkit.models.agent import Agent
 class BotPoolAgentItem:
     """Represents an agent's Discord bot metadata in the pool."""
 
+    _token: str | None
+    _id: str
+    _updated_at: datetime | None
+
     def __init__(self, agent: Agent):
-        self._token = agent.discord_config.get("token")
+        self._token = (agent.discord_config or {}).get("token")
         if not self._token:
             raise ValueError("Token cannot be empty for agent item")
 
@@ -27,5 +31,5 @@ class BotPoolAgentItem:
         return self._updated_at
 
     @updated_at.setter
-    def updated_at(self, val):
+    def updated_at(self, val: datetime | None):
         self._updated_at = val

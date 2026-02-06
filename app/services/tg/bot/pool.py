@@ -1,7 +1,8 @@
 import logging
+from typing import Any
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.bot import DefaultBotProperties
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -11,10 +12,10 @@ from aiogram.webhook.aiohttp_server import (
     setup_application,
 )
 from aiohttp import web
+from aiohttp.web import Request
 
 from intentkit.models.agent import Agent
 
-from app.services.tg.bot.kind.ai_relayer.router import general_router
 from app.services.tg.bot.kind.god.router import god_router
 from app.services.tg.bot.kind.god.startup import GOD_BOT_PATH, GOD_BOT_TOKEN, on_startup
 from app.services.tg.bot.types.agent import BotPoolAgentItem
@@ -27,63 +28,40 @@ logger = logging.getLogger(__name__)
 
 BOTS_PATH = "/webhook/tgbot/{kind}/{bot_token}"
 
-_bots = {}
-_agent_bots = {}
-_failed_agents = set()  # Cache for agents that failed with 'Unauthorized' errors
+from app.services.tg.bot.cache import (
+    add_failed_agent,
+    agent_by_id,
+    bot_by_token,
+    delete_cache_agent,
+    delete_cache_bot,
+    get_all_agent_bots,
+    set_cache_agent,
+    set_cache_bot,
+)
 
 
-def bot_by_token(token) -> BotPoolItem:
-    return _bots.get(token)
-
-
-def set_cache_bot(bot: BotPoolItem):
-    _bots[bot.token] = bot
-
-
-def agent_by_id(agent_id) -> BotPoolAgentItem:
-    return _agent_bots.get(agent_id)
-
-
-def set_cache_agent(agent: BotPoolAgentItem):
-    _agent_bots[agent.id] = agent
-
-
-def is_agent_failed(agent_id: str) -> bool:
-    """Check if an agent is in the failed cache."""
-    return agent_id in _failed_agents
-
-
-def add_failed_agent(agent_id: str):
-    """Add an agent to the failed cache."""
-    _failed_agents.add(agent_id)
-    logger.warning(f"Agent {agent_id} added to failed cache due to unauthorized error")
-
-
-def clear_failed_agents():
-    """Clear the failed agents cache."""
-    _failed_agents.clear()
-    logger.info("Failed agents cache cleared")
-
-
-def agent_chat_id(group_memory_public, chat_id):
-    if group_memory_public:
-        return "public"
-    return f"telegram-{chat_id}"
-
-
-async def health_handler(request):
+async def health_handler(request: Request):
+    _ = request
     """Health check endpoint handler."""
     return web.json_response({"status": "healthy"})
 
 
 class BotPool:
-    def __init__(self, base_url):
+    app: web.Application
+    base_url: str
+    routers: dict[Kind, RouterObj]
+    god_bot: Bot | None
+
+    def __init__(self, base_url: str):
+        from app.services.tg.bot.kind.ai_relayer.router import general_router
+
         self.app = web.Application()
-        self.app.router.add_get("/health", health_handler)
+        _ = self.app.router.add_get("/health", health_handler)
         self.base_url = f"{base_url}{BOTS_PATH}"
         self.routers = {
             Kind.AiRelayer: RouterObj(general_router),
         }
+        self.god_bot = None
 
     def init_god_bot(self):
         if GOD_BOT_TOKEN:
@@ -97,7 +75,7 @@ class BotPool:
                 # In order to use RedisStorage you need to use Key Builder with bot ID:
                 # storage = RedisStorage.from_url(TG_REDIS_DSN, key_builder=DefaultKeyBuilder(with_bot_id=True))
                 dp = Dispatcher(storage=storage)
-                dp.include_router(god_router)
+                _ = dp.include_router(god_router)
                 dp.startup.register(on_startup)
                 SimpleRequestHandler(dispatcher=dp, bot=self.god_bot).register(
                     self.app, path=GOD_BOT_PATH
@@ -113,7 +91,7 @@ class BotPool:
             # In order to use RedisStorage you need to use Key Builder with bot ID:
             # storage = RedisStorage.from_url(TG_REDIS_DSN, key_builder=DefaultKeyBuilder(with_bot_id=True))
             b.set_dispatcher(Dispatcher(storage=storage))
-            b.get_dispatcher().include_router(b.get_router())
+            _ = b.get_dispatcher().include_router(b.get_router())
             TokenBasedRequestHandler(
                 dispatcher=b.get_dispatcher(),
                 default=DefaultBotProperties(parse_mode=ParseMode.HTML),
@@ -130,8 +108,8 @@ class BotPool:
             bot_item = BotPoolItem(agent)
             agent_item = BotPoolAgentItem(agent)
 
-            await bot_item.bot.delete_webhook(drop_pending_updates=True)
-            await bot_item.bot.set_webhook(
+            _ = await bot_item.bot.delete_webhook(drop_pending_updates=True)
+            _ = await bot_item.bot.set_webhook(
                 self.base_url.format(kind=bot_item.kind, bot_token=bot_item.token)
             )
 
@@ -158,16 +136,25 @@ class BotPool:
     async def change_bot_token(self, agent: Agent):
         if not agent.telegram_entrypoint_enabled:
             old_agent_item = agent_by_id(agent.id)
-            await self.stop_bot(agent.id, old_agent_item.bot_token)
+            if old_agent_item:
+                await self.stop_bot(agent.id, old_agent_item.bot_token)
             return
 
-        try:
-            new_bot_success = False
-            old_bot_stopped = False
-            new_bot_item = None
+        new_bot_success = False
+        old_bot_stopped = False
+        new_bot_item = None
+        old_bot = None
 
-            for _, v in _agent_bots.items():
-                if v.bot_token == agent.telegram_config.get("agent"):
+        try:
+            if not agent.telegram_config:
+                raise Exception(f"agent {agent.id} has no telegram config")
+
+            new_token = agent.telegram_config.get("token")
+            if not isinstance(new_token, str):
+                raise Exception(f"agent {agent.id} has invalid telegram token")
+
+            for _, v in get_all_agent_bots().items():
+                if v.bot_token == new_token:
                     raise Exception(
                         f"there is an existing bot for agent {agent.id} with token {v.bot_token}."
                     )
@@ -176,28 +163,34 @@ class BotPool:
             new_agent_item = BotPoolAgentItem(agent)
 
             old_agent_item = agent_by_id(agent.id)
+            if not old_agent_item:
+                raise Exception(f"agent {agent.id} not found in pool to change token")
+
             old_cached_bot_item = bot_by_token(old_agent_item.bot_token)
 
             if old_cached_bot_item and old_cached_bot_item.bot:
                 old_bot = old_cached_bot_item.bot
             else:
                 old_bot = Bot(
-                    token=old_cached_bot_item.token,
+                    token=old_agent_item.bot_token,
                     default=DefaultBotProperties(parse_mode=ParseMode.HTML),
                 )
 
             await old_bot.session.close()
-            await old_bot.delete_webhook(drop_pending_updates=True)
+            _ = await old_bot.delete_webhook(drop_pending_updates=True)
             old_bot_stopped = True
 
-            await new_bot_item.bot.delete_webhook(drop_pending_updates=True)
-            await new_bot_item.bot.set_webhook(
+            if not new_bot_item:
+                raise ValueError("new_bot_item is None")
+
+            _ = await new_bot_item.bot.delete_webhook(drop_pending_updates=True)
+            _ = await new_bot_item.bot.set_webhook(
                 self.base_url.format(
-                    kind=new_bot_item.kind, bot_token=new_bot_item.token
+                    kind=str(new_bot_item.kind), bot_token=new_bot_item.token
                 )
             )
 
-            del _bots[old_cached_bot_item.token]
+            delete_cache_bot(old_agent_item.bot_token)
             set_cache_bot(new_bot_item)
             set_cache_agent(new_agent_item)
 
@@ -217,7 +210,7 @@ class BotPool:
             if not new_bot_success and new_bot_item and new_bot_item.bot:
                 await new_bot_item.bot.session.close()
 
-    async def stop_bot(self, agent_id, token):
+    async def stop_bot(self, agent_id: str, token: str | None):
         bot = None
         try:
             if token is None:
@@ -231,15 +224,15 @@ class BotPool:
                 bot = cached_bot_item.bot
             else:
                 bot = Bot(
-                    token=cached_bot_item.token,
+                    token=token,
                     default=DefaultBotProperties(parse_mode=ParseMode.HTML),
                 )
 
             await bot.session.close()
-            await bot.delete_webhook(drop_pending_updates=True)
+            _ = await bot.delete_webhook(drop_pending_updates=True)
 
-            del _bots[token]
-            del _agent_bots[agent_id]
+            delete_cache_bot(token)
+            delete_cache_agent(agent_id)
 
             logger.info(f"Bot with token {token} for agent {agent_id} stopped...")
         except Exception as e:
@@ -251,10 +244,14 @@ class BotPool:
     async def modify_config(self, agent: Agent):
         old_agent_item = agent_by_id(agent.id)
 
+        if not agent.telegram_config:
+            raise Exception(f"agent {agent.id} has no telegram config")
+
         token = agent.telegram_config.get("token")
-        if old_agent_item.bot_token != clean_token_str(
-            agent.telegram_config.get("token")
-        ):
+        if not isinstance(token, str):
+            raise Exception(f"agent {agent.id} has invalid telegram token")
+
+        if not old_agent_item or old_agent_item.bot_token != clean_token_str(token):
             raise Exception(
                 f"illegal modification of agent configurations, the bot token for agent {agent.id} does not match existing token of the cache."
             )
@@ -265,7 +262,14 @@ class BotPool:
 
         try:
             old_bot_item = bot_by_token(old_agent_item.bot_token)
-            old_bot_item.update_conf(agent.telegram_config)
+            if old_bot_item:
+                from typing import cast
+
+                from app.services.tg.bot.types.bot import TelegramConfig
+
+                old_bot_item.update_conf(
+                    cast(TelegramConfig, cast(object, agent.telegram_config))
+                )
             old_agent_item.updated_at = agent.deployed_at or agent.updated_at
 
             # if old_bot_item.kind != agent.telegram_config.get("kind"):
@@ -284,7 +288,8 @@ class BotPool:
                 f"failed to change the configs of the bot for agent {agent.id}: {str(e)}"
             )
 
-    async def start(self, asyncio_loop, host, port):
+    async def start(self, asyncio_loop: Any, host: str, port: int):
+        _ = asyncio_loop
         runner = web.AppRunner(self.app)
         await runner.setup()
         site = web.TCPSite(runner, host, port)

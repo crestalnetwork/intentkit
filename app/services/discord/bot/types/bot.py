@@ -10,6 +10,20 @@ from intentkit.models.agent import Agent
 class BotPoolItem:
     """Represents a Discord bot instance in the pool."""
 
+    _agent_id: str
+    _agent_owner: str | None
+    _token: str | None
+    _guild_whitelist: list[int] | None
+    _channel_whitelist: list[int] | None
+    _respond_to_mentions: bool
+    _respond_to_replies: bool
+    _respond_to_dm: bool
+    _guild_memory_public: bool
+    _greeting_server: str
+    _greeting_dm: str
+    _owner_discord_id: str | int | None
+    _bot: discord.Client
+
     def __init__(self, agent: Agent):
         self._agent_id = agent.id
         self._agent_owner = agent.owner

@@ -25,7 +25,7 @@ from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
 logger = logging.getLogger(__name__)
 
 if config.sentry_dsn:
-    sentry_sdk.init(
+    _ = sentry_sdk.init(
         dsn=config.sentry_dsn,
         sample_rate=config.sentry_sample_rate,
         # traces_sample_rate=config.sentry_traces_sample_rate,
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         await init_db(**config.db)
 
         # Initialize Redis
-        await init_redis(
+        _ = await init_redis(
             host=config.redis_host,
             port=config.redis_port,
             db=config.redis_db,
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
         scheduler = create_scheduler(jobstores=jobstores)
 
-        scheduler.add_job(
+        _ = scheduler.add_job(
             refresh_expiring_tokens,
             trigger=CronTrigger(minute="*/5", timezone="UTC"),
             id="refresh_twitter_tokens",
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             replace_existing=True,
         )
 
-        scheduler.add_job(
+        _ = scheduler.add_job(
             send_scheduler_heartbeat,
             trigger=CronTrigger(minute="*", timezone="UTC"),
             id="scheduler_heartbeat",
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             logger.info(
                 "Scheduler process running. Press Ctrl+C or send SIGTERM to exit."
             )
-            await shutdown_event.wait()
+            _ = await shutdown_event.wait()
             logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
             logger.error(f"Error in scheduler process: {e}")

@@ -1,6 +1,7 @@
 """Twitter OAuth2 callback handler."""
 
 from datetime import UTC, datetime
+from typing import Any, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import tweepy
@@ -60,6 +61,7 @@ async def twitter_oauth_callback(
             message="Missing state parameter",
         )
 
+    redirect_uri = ""
     try:
         # Parse state parameter
         state_params = parse_qs(state)
@@ -109,19 +111,23 @@ async def twitter_oauth_callback(
         )
 
         # Get user info
-        client = tweepy.Client(bearer_token=token["access_token"], return_type=dict)
-        me = client.get_me(
+        # Get user info
+        client = tweepy.Client(
+            bearer_token=token["access_token"], return_type=cast(Any, dict)
+        )
+        me: dict[str, Any] | Any = client.get_me(
             user_auth=False,
             user_fields="id,username,name,verified",
         )
 
         username = None
         if me and "data" in me:
-            agent_data.twitter_id = me.get("data").get("id")
-            username = me.get("data").get("username")
+            data = me["data"]
+            agent_data.twitter_id = data.get("id")
+            username = data.get("username")
             agent_data.twitter_username = username
-            agent_data.twitter_name = me.get("data").get("name")
-            agent_data.twitter_is_verified = me.get("data").get("verified")
+            agent_data.twitter_name = data.get("name")
+            agent_data.twitter_is_verified = data.get("verified")
 
         # Commit changes
         await agent_data.save()
