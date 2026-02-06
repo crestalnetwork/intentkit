@@ -1,4 +1,5 @@
 import logging
+from typing import Any, override
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -246,7 +247,7 @@ Extract the URLs now:"""
 
         return list(set(urls))  # Remove duplicates
 
-    async def _call_ai_model(self, prompt: str, context) -> str:
+    async def _call_ai_model(self, prompt: str, context: Any) -> str:
         """Call OpenAI GPT-4o-mini to extract URLs from sitemap content."""
         try:
             # Get OpenAI API key using the standard pattern
@@ -269,21 +270,22 @@ Extract the URLs now:"""
                 temperature=0.1,
             )
 
-            return response.choices[0].message.content.strip()
+            return (response.choices[0].message.content or "").strip()
 
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {e}")
             raise
 
+    @override
     async def _arun(
         self,
         base_url: str,
         max_urls: int = 50,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-        include_patterns: list[str] = None,
-        exclude_patterns: list[str] = None,
-        **kwargs,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        **kwargs: Any,
     ) -> str:
         """Discover website sitemaps, extract URLs with AI, and delegate to scrape_and_index."""
         try:
@@ -296,10 +298,6 @@ Extract the URLs now:"""
             parsed_url = urlparse(base_url)
             if not parsed_url.netloc:
                 return "Error: Invalid base URL provided. Please provide a valid URL (e.g., https://example.com)"
-
-                # Get agent context - throw error if not available
-                # TODO: Fix config reference
-                raise ValueError("Configuration is required but not provided")
 
             context = self.get_context()
             if not context or not context.agent_id:

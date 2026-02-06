@@ -1,6 +1,7 @@
 """WETH wrap_eth skill - Wrap ETH to WETH."""
 
 from decimal import Decimal
+from typing import override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -41,6 +42,7 @@ Important notes:
 """
     args_schema: ArgsSchema | None = WrapEthInput
 
+    @override
     async def _arun(
         self,
         amount_to_wrap: str,
@@ -94,7 +96,7 @@ Important notes:
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            _ = await wallet.wait_for_receipt(tx_hash)
 
             return f"Wrapped {amount_to_wrap} ETH to WETH.\nTransaction hash: {tx_hash}"
 

@@ -1,6 +1,7 @@
 """WOW buy token skill."""
 
 import math
+from typing import override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field, field_validator
@@ -54,6 +55,7 @@ Important notes:
 """
     args_schema: ArgsSchema | None = BuyTokenInput
 
+    @override
     async def _arun(
         self,
         contract_address: str,
@@ -134,7 +136,7 @@ Important notes:
             )
 
             # Wait for receipt
-            receipt = await wallet.wait_for_transaction_receipt(tx_hash)
+            receipt = await wallet.wait_for_receipt(tx_hash)
 
             if receipt.get("status") == 0:
                 return (

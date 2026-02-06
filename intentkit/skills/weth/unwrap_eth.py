@@ -1,6 +1,7 @@
 """WETH unwrap_eth skill - Unwrap WETH to ETH."""
 
 from decimal import Decimal
+from typing import override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -41,6 +42,7 @@ Important notes:
 """
     args_schema: ArgsSchema | None = UnwrapEthInput
 
+    @override
     async def _arun(
         self,
         amount_to_unwrap: str,
@@ -72,7 +74,7 @@ Important notes:
             checksum_address = w3.to_checksum_address(wallet.address)
 
             # Check WETH balance before unwrapping
-            weth_balance = await wallet.read_contract(
+            weth_balance = await wallet.call_contract(
                 contract_address=checksum_weth,
                 abi=ERC20_ABI,
                 function_name="balanceOf",
@@ -98,7 +100,7 @@ Important notes:
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            _ = await wallet.wait_for_receipt(tx_hash)
 
             return f"Unwrapped {amount_to_unwrap} WETH to ETH.\nTransaction hash: {tx_hash}"
 

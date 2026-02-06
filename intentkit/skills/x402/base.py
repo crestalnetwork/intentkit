@@ -11,8 +11,9 @@ import logging
 from typing import Any
 
 import httpx
-from eth_abi import encode
-from eth_utils import keccak, to_checksum_address
+from eth_abi.abi import encode
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from x402.schemas import PaymentRequired, PaymentRequiredV1
 
 from intentkit.config.config import config
@@ -201,6 +202,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
     """
 
     category: str = "x402"
+    description: str = ""
 
     def _validate_wallet_provider(self) -> None:
         """Validate that the wallet provider supports x402 operations.
@@ -415,7 +417,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
             transfer_amount,
         )
         privy_client = PrivyClient()
-        await transfer_erc20_gasless(
+        _ = await transfer_erc20_gasless(
             privy_client=privy_client,
             privy_wallet_id=privy_wallet_id,
             privy_wallet_address=privy_wallet_address,

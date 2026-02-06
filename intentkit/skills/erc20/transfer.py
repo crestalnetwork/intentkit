@@ -1,6 +1,7 @@
 """ERC20 transfer skill."""
 
 from decimal import Decimal
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -48,11 +49,13 @@ Important notes:
 """
     args_schema: ArgsSchema | None = TransferInput
 
+    @override
     async def _arun(
         self,
         contract_address: str,
         destination_address: str,
         amount: str,
+        **kwargs: Any,
     ) -> str:
         """Transfer ERC20 tokens to a destination address.
 
@@ -123,7 +126,7 @@ Important notes:
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            _ = await wallet.wait_for_receipt(tx_hash)
 
             return (
                 f"Transferred {amount} of {token_details.name} ({contract_address}) "

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from eth_abi import decode
+from eth_abi.abi import decode
 from web3 import Web3
 
 from intentkit.skills.erc20.constants import (
@@ -69,7 +69,7 @@ async def get_token_details(
 
         # Execute multicall
         checksum_multicall = w3.to_checksum_address(MULTICALL3_ADDRESS)
-        results = await wallet.read_contract(
+        results = await wallet.call_contract(
             contract_address=checksum_multicall,
             abi=MULTICALL3_ABI,
             function_name="aggregate3",
@@ -131,28 +131,28 @@ async def get_token_details_simple(
         checksum_check = w3.to_checksum_address(check_address)
 
         # Make individual calls
-        name = await wallet.read_contract(
+        name = await wallet.call_contract(
             contract_address=checksum_contract,
             abi=ERC20_ABI,
             function_name="name",
             args=[],
         )
 
-        symbol = await wallet.read_contract(
+        symbol = await wallet.call_contract(
             contract_address=checksum_contract,
             abi=ERC20_ABI,
             function_name="symbol",
             args=[],
         )
 
-        decimals = await wallet.read_contract(
+        decimals = await wallet.call_contract(
             contract_address=checksum_contract,
             abi=ERC20_ABI,
             function_name="decimals",
             args=[],
         )
 
-        balance = await wallet.read_contract(
+        balance = await wallet.call_contract(
             contract_address=checksum_contract,
             abi=ERC20_ABI,
             function_name="balanceOf",

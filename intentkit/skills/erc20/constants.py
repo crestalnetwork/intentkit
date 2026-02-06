@@ -1,4 +1,4 @@
-"""Constants for ERC20 skills."""
+from typing import Any
 
 # Token symbol to address mappings for frequently used tokens
 TOKEN_ADDRESSES_BY_SYMBOLS: dict[str, dict[str, str]] = {
@@ -39,7 +39,8 @@ TOKEN_ADDRESSES_BY_SYMBOLS: dict[str, dict[str, str]] = {
     },
 }
 
-ERC20_ABI: list[dict] = [
+
+ERC20_ABI: list[dict[str, Any]] = [
     {
         "type": "function",
         "name": "balanceOf",
@@ -151,7 +152,7 @@ ERC20_ABI: list[dict] = [
 ]
 
 # Multicall3 contract ABI - only the aggregate3 function we need
-MULTICALL3_ABI: list[dict] = [
+MULTICALL3_ABI: list[dict[str, Any]] = [
     {
         "inputs": [
             {

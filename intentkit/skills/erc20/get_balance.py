@@ -1,5 +1,7 @@
 """ERC20 get_balance skill."""
 
+from typing import Any, override
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
@@ -40,10 +42,12 @@ Important notes:
 """
     args_schema: ArgsSchema | None = GetBalanceInput
 
+    @override
     async def _arun(
         self,
         contract_address: str,
         address: str | None = None,
+        **kwargs: Any,
     ) -> str:
         """Get the balance of an ERC20 token for a given address.
 

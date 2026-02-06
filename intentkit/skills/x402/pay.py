@@ -4,7 +4,7 @@ This skill performs a paid HTTP request with a configurable maximum payment amou
 """
 
 import logging
-from typing import Any, override
+from typing import Any, cast, override
 from urllib.parse import urlparse
 
 import httpx
@@ -107,13 +107,8 @@ class X402Pay(X402BaseSkill):
                 request_kwargs["json"] = data
             elif isinstance(data, str):
                 request_kwargs["content"] = data
-            elif data is not None:
-                raise ToolException(
-                    "POST body must be either a JSON-serializable object or a string."
-                )
-        elif data is not None:
-            raise ToolException("Request body is only supported for POST requests.")
 
+        client: X402HttpxCompatClient | None = None
         try:
             await self._prefund_safe_wallet(
                 method=method_upper,
@@ -127,15 +122,17 @@ class X402Pay(X402BaseSkill):
                 max_value=max_value,
                 timeout=timeout,
             ) as client:
-                response = await client.request(method_upper, **request_kwargs)
-                response.raise_for_status()
+                http_response = cast(
+                    Any, await client.request(method_upper, **request_kwargs)
+                )
+                _ = http_response.raise_for_status()
 
                 # Get the address we paid to from the hooks
                 pay_to = client.payment_hooks.last_paid_to
 
                 # Record the order
                 await self.record_order(
-                    response=response,
+                    response=http_response,
                     skill_name=self.name,
                     method=method_upper,
                     url=url,
@@ -143,13 +140,13 @@ class X402Pay(X402BaseSkill):
                     pay_to_fallback=pay_to,
                 )
 
-                return self.format_response(response)
+                return self.format_response(http_response)
         except ValueError as exc:
             # x402HttpxClient raises ValueError when payment exceeds max_value
             raise ToolException(str(exc)) from exc
         except PaymentError as exc:
             error_context = None
-            if "client" in locals():
+            if client:
                 error_context = client.payment_hooks.last_payment_error
             if error_context:
                 raise ToolException(

@@ -6,7 +6,7 @@ the payment requirements (price information) without making a payment.
 
 import json
 import logging
-from typing import Any
+from typing import Any, override
 from urllib.parse import urlparse
 
 import httpx
@@ -73,6 +73,7 @@ class X402CheckPrice(X402BaseSkill):
     )
     args_schema: ArgsSchema | None = X402CheckPriceInput
 
+    @override
     async def _arun(
         self,
         method: str,
@@ -109,10 +110,13 @@ class X402CheckPrice(X402BaseSkill):
                 request_kwargs["json"] = data
             elif isinstance(data, str):
                 request_kwargs["content"] = data
-            elif data is not None:
-                raise ToolException(
-                    "POST body must be either a JSON-serializable object or a string."
-                )
+            # The 'data' parameter is typed as dict | str | None.
+            # If method_upper is POST, and data is not dict or str, it must be None.
+            # So, this 'elif data is not None' branch is unreachable.
+            # elif data is not None:
+            #     raise ToolException(
+            #         "POST body must be either a JSON-serializable object or a string."
+            #     )
         elif data is not None:
             raise ToolException("Request body is only supported for POST requests.")
 

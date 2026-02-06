@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast, override
 from urllib.parse import urlparse
 
 import httpx
@@ -52,6 +52,7 @@ class X402HttpRequest(X402BaseSkill):
     )
     args_schema: ArgsSchema | None = X402HttpRequestInput
 
+    @override
     async def _arun(
         self,
         method: str,
@@ -88,12 +89,6 @@ class X402HttpRequest(X402BaseSkill):
                 request_kwargs["json"] = data
             elif isinstance(data, str):
                 request_kwargs["content"] = data
-            elif data is not None:
-                raise ToolException(
-                    "POST body must be either a JSON-serializable object or a string."
-                )
-        elif data is not None:
-            raise ToolException("Request body is only supported for POST requests.")
 
         try:
             await self._prefund_safe_wallet(
@@ -106,20 +101,22 @@ class X402HttpRequest(X402BaseSkill):
                 account=account,
                 timeout=timeout,
             ) as client:
-                response = await client.request(method_upper, **request_kwargs)
-                response.raise_for_status()
+                http_response = cast(
+                    Any, await client.request(method_upper, **request_kwargs)
+                )
+                _ = http_response.raise_for_status()
 
                 # Record the order
                 pay_to = client.payment_hooks.last_paid_to
                 await self.record_order(
-                    response=response,
+                    response=http_response,
                     skill_name=self.name,
                     method=method_upper,
                     url=url,
                     pay_to_fallback=pay_to,
                 )
 
-                return self.format_response(response)
+                return self.format_response(http_response)
         except ValueError as exc:
             raise ToolException(str(exc)) from exc
         except PaymentError as exc:

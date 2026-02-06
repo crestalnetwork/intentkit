@@ -1,5 +1,7 @@
 """ERC20 get_token_address skill."""
 
+from typing import Any, override
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -45,9 +47,11 @@ Supported tokens vary by network:
 """
     args_schema: ArgsSchema | None = GetTokenAddressInput
 
+    @override
     async def _arun(
         self,
         symbol: str,
+        **kwargs: Any,
     ) -> str:
         """Get the contract address for a token symbol on the current network.
 

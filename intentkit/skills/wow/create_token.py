@@ -1,5 +1,7 @@
 """WOW create token skill."""
 
+from typing import override
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3 import Web3
@@ -46,6 +48,7 @@ Important notes:
 """
     args_schema: ArgsSchema | None = CreateTokenInput
 
+    @override
     async def _arun(
         self,
         name: str,
@@ -105,7 +108,7 @@ Important notes:
             )
 
             # Wait for receipt
-            receipt = await wallet.wait_for_transaction_receipt(tx_hash)
+            receipt = await wallet.wait_for_receipt(tx_hash)
 
             if receipt.get("status") == 0:
                 return (

@@ -1,8 +1,10 @@
 """Constants for WETH skills."""
 
+from typing import Any
+
 from intentkit.skills.erc20.constants import ERC20_ABI, TOKEN_ADDRESSES_BY_SYMBOLS
 
-WETH_ABI: list[dict] = [
+WETH_ABI: list[dict[str, Any]] = [
     {
         "inputs": [],
         "name": "deposit",

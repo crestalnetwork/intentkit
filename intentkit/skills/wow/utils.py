@@ -92,7 +92,7 @@ async def get_has_graduated(wallet: "EvmWallet", token_address: str) -> bool:
         True if the token has graduated, False otherwise.
     """
     try:
-        market_type = await wallet.read_contract(
+        market_type = await wallet.call_contract(
             contract_address=token_address,
             abi=WOW_ABI,
             function_name="marketType",
@@ -132,7 +132,7 @@ async def get_buy_quote(
 
     # Use bonding curve quote
     try:
-        token_quote = await wallet.read_contract(
+        token_quote = await wallet.call_contract(
             contract_address=token_address,
             abi=WOW_ABI,
             function_name="getEthBuyQuote",
@@ -176,7 +176,7 @@ async def get_sell_quote(
 
     # Use bonding curve quote
     try:
-        eth_quote = await wallet.read_contract(
+        eth_quote = await wallet.call_contract(
             contract_address=token_address,
             abi=WOW_ABI,
             function_name="getTokenSellQuote",
@@ -203,31 +203,31 @@ async def get_pool_info(wallet: "EvmWallet", pool_address: str) -> PoolInfo | No
         PoolInfo object or None if failed.
     """
     try:
-        token0 = await wallet.read_contract(
+        token0 = await wallet.call_contract(
             contract_address=pool_address,
             abi=UNISWAP_V3_ABI,
             function_name="token0",
             args=[],
         )
-        token1 = await wallet.read_contract(
+        token1 = await wallet.call_contract(
             contract_address=pool_address,
             abi=UNISWAP_V3_ABI,
             function_name="token1",
             args=[],
         )
-        fee = await wallet.read_contract(
+        fee = await wallet.call_contract(
             contract_address=pool_address,
             abi=UNISWAP_V3_ABI,
             function_name="fee",
             args=[],
         )
-        liquidity = await wallet.read_contract(
+        liquidity = await wallet.call_contract(
             contract_address=pool_address,
             abi=UNISWAP_V3_ABI,
             function_name="liquidity",
             args=[],
         )
-        slot0 = await wallet.read_contract(
+        slot0 = await wallet.call_contract(
             contract_address=pool_address,
             abi=UNISWAP_V3_ABI,
             function_name="slot0",
@@ -235,13 +235,13 @@ async def get_pool_info(wallet: "EvmWallet", pool_address: str) -> PoolInfo | No
         )
 
         # Get balances
-        balance0 = await wallet.read_contract(
+        balance0 = await wallet.call_contract(
             contract_address=token0,
             abi=WOW_ABI,
             function_name="balanceOf",
             args=[pool_address],
         )
-        balance1 = await wallet.read_contract(
+        balance1 = await wallet.call_contract(
             contract_address=token1,
             abi=WOW_ABI,
             function_name="balanceOf",
@@ -290,7 +290,7 @@ async def exact_input_single(
 
         quoter_address = ADDRESSES[network]["uniswap_quoter"]
 
-        result = await wallet.read_contract(
+        result = await wallet.call_contract(
             contract_address=quoter_address,
             abi=UNISWAP_QUOTER_ABI,
             function_name="quoteExactInputSingle",
@@ -342,7 +342,7 @@ async def get_uniswap_quote(
 
     # Get pool address from token
     try:
-        pool_address = await wallet.read_contract(
+        pool_address = await wallet.call_contract(
             contract_address=token_address,
             abi=WOW_ABI,
             function_name="poolAddress",
@@ -427,7 +427,7 @@ async def get_token_balance(
         holder_address = wallet.address
 
     try:
-        balance = await wallet.read_contract(
+        balance = await wallet.call_contract(
             contract_address=token_address,
             abi=WOW_ABI,
             function_name="balanceOf",

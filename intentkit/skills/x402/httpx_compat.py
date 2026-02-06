@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any, cast, override
 
 import httpx
 from x402 import max_amount, x402Client
@@ -30,6 +30,8 @@ class MissingRequestConfigError(PaymentError):
 class IntentKitEvmSignerAdapter:
     """Adapter to satisfy x402 ClientEvmSigner protocol."""
 
+    _signer: Any
+
     def __init__(self, signer: Any) -> None:
         self._signer = signer
 
@@ -44,6 +46,8 @@ class IntentKitEvmSignerAdapter:
         primary_type: str,
         message: dict[str, Any],
     ) -> bytes:
+        # primary_type is unused in this adapter implementation
+        _ = primary_type
         domain_data = {
             "name": domain.name,
             "version": domain.version,
@@ -89,13 +93,13 @@ def _normalize_payment_error(exc: Exception) -> str:
 
 
 def _wrap_selector(
-    selector: Optional[Callable[[int, list], Any]],
-    hooks: "X402HttpxCompatHooks" | None,
-) -> Optional[Callable[[int, list], Any]]:
+    selector: Callable[[int, list[Any]], Any] | None,
+    hooks: "X402HttpxCompatHooks | None",
+) -> Callable[[int, list[Any]], Any] | None:
     if hooks is None:
         return selector
 
-    def wrapped(version: int, requirements: list) -> Any:
+    def wrapped(version: int, requirements: list[Any]) -> Any:
         if not requirements:
             raise ValueError("Payment requirements list is empty.")
         selected = selector(version, requirements) if selector else requirements[0]
@@ -108,18 +112,29 @@ def _wrap_selector(
 class X402HttpxCompatHooks:
     """Compatibility container to expose last_paid_to."""
 
+    last_paid_to: str | None
+    last_payment_required: Any | None
+    last_payment_required_version: int | None
+    last_payment_error: str | None
+    last_selected_requirements: Any | None
+
     def __init__(self) -> None:
-        self.last_paid_to: str | None = None
-        self.last_payment_required: Any | None = None
-        self.last_payment_required_version: int | None = None
-        self.last_payment_error: str | None = None
-        self.last_selected_requirements: Any | None = None
+        self.last_paid_to = None
+        self.last_payment_required = None
+        self.last_payment_required_version = None
+        self.last_payment_error = None
+        self.last_selected_requirements = None
 
 
 class X402CompatTransport(httpx.AsyncBaseTransport):
     """Async transport that handles 402 responses using x402 v2 client."""
 
-    RETRY_KEY = "_x402_is_retry"
+    RETRY_KEY: str = "_x402_is_retry"
+
+    _client: x402Client
+    _http_client: x402HTTPClient
+    _transport: httpx.AsyncBaseTransport
+    _payment_hooks: X402HttpxCompatHooks
 
     def __init__(
         self,
@@ -132,6 +147,7 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
         self._transport = transport or httpx.AsyncHTTPTransport()
         self._payment_hooks = payment_hooks
 
+    @override
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         response = await self._transport.handle_async_request(request)
         if response.status_code != 402:
@@ -140,9 +156,9 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
         if request.extensions.get(self.RETRY_KEY):
             return response
 
+        body_data: Any = None
         try:
-            await response.aread()
-            body_data: Any = None
+            _ = await response.aread()
             try:
                 body_data = response.json()
             except Exception:
@@ -161,6 +177,8 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
             payment_payload = await self._client.create_payment_payload(
                 payment_required
             )
+            # Cast to Any to handle dynamic attributes like 'accepted' which might not be statically typed
+            payment_payload = cast(Any, payment_payload)
 
             if hasattr(payment_payload, "accepted"):
                 self._payment_hooks.last_selected_requirements = (
@@ -227,29 +245,30 @@ class X402CompatTransport(httpx.AsyncBaseTransport):
                 f"body={response_body}"
             ) from exc
 
+    @override
     async def aclose(self) -> None:
         await self._transport.aclose()
 
 
 def _build_x402_client(
     signer: Any,
-    max_value: Optional[int] = None,
-    payment_requirements_selector: Optional[Callable[[int, list], Any]] = None,
-    hooks: "X402HttpxCompatHooks" | None = None,
+    max_value: int | None = None,
+    payment_requirements_selector: Callable[[int, list[Any]], Any] | None = None,
+    hooks: "X402HttpxCompatHooks | None" = None,
 ) -> x402Client:
     wrapped_selector = _wrap_selector(payment_requirements_selector, hooks)
     client = x402Client(payment_requirements_selector=wrapped_selector)
     policies = [max_amount(max_value)] if max_value is not None else None
     adapter = IntentKitEvmSignerAdapter(signer)
-    register_exact_evm_client(client, adapter, policies=policies)
+    _ = register_exact_evm_client(client, adapter, policies=policies)
     return client
 
 
 def x402_compat_payment_hooks(
     account: Any,
-    max_value: Optional[int] = None,
-    payment_requirements_selector: Optional[Callable[[int, list], Any]] = None,
-) -> tuple[dict[str, list], X402HttpxCompatHooks]:
+    max_value: int | None = None,
+    payment_requirements_selector: Callable[[int, list[Any]], Any] | None = None,
+) -> tuple[dict[str, list[Any]], X402HttpxCompatHooks]:
     """Return empty hooks and a compatibility hooks container."""
     hooks = X402HttpxCompatHooks()
     _ = _build_x402_client(
@@ -264,11 +283,13 @@ def x402_compat_payment_hooks(
 class X402HttpxCompatClient(httpx.AsyncClient):
     """AsyncClient with built-in x402 v2 transport and v1 compatibility."""
 
+    payment_hooks: X402HttpxCompatHooks
+
     def __init__(
         self,
         account: Any,
-        max_value: Optional[int] = None,
-        payment_requirements_selector: Optional[Callable[[int, list], Any]] = None,
+        max_value: int | None = None,
+        payment_requirements_selector: Callable[[int, list[Any]], Any] | None = None,
         **kwargs: Any,
     ) -> None:
         payment_hooks = X402HttpxCompatHooks()
