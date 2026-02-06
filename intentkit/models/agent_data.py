@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class AgentDataTable(Base):
     """Agent data model for database storage of additional data related to the agent."""
 
-    __tablename__ = "agent_data"
+    __tablename__: str = "agent_data"
 
     id: Mapped[str] = mapped_column(
         String, primary_key=True, comment="Same as Agent.id"

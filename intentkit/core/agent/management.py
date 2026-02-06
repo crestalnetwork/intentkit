@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from intentkit.config.db import get_session
@@ -173,13 +173,17 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     if not agent.owner:
         agent.owner = "system"
     # Check for existing agent by upstream_id, forward compatibility, raise error after 3.0
-    existing = await agent.get_by_upstream_id()
-    if existing:
-        raise IntentKitAPIError(
-            status_code=400,
-            key="BadRequest",
-            message="Agent with this upstream ID already exists",
-        )
+    if agent.upstream_id:
+        async with get_session() as db:
+            existing = await db.scalar(
+                select(AgentTable).where(AgentTable.upstream_id == agent.upstream_id)
+            )
+            if existing:
+                raise IntentKitAPIError(
+                    status_code=400,
+                    key="BadRequest",
+                    message="Agent with this upstream ID already exists",
+                )
 
     # Validate autonomous schedule settings if present
     if agent.autonomous:

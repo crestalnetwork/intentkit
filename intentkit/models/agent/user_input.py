@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from cron_validator import CronValidator
 from epyxid import XID
 from pydantic import ConfigDict, field_validator
 from pydantic import Field as PydanticField
-from sqlalchemy import select
 
-from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import AgentAutonomous
 from intentkit.models.agent.core import AgentCore, AgentVisibility
-from intentkit.models.agent.db import AgentTable
 from intentkit.utils.error import IntentKitAPIError
-
-if TYPE_CHECKING:
-    from intentkit.models.agent.agent import Agent
 
 
 class AgentUserInput(AgentCore):
@@ -235,7 +229,7 @@ class AgentUpdate(AgentUserInput):
                 # First validate the cron expression format using cron-validator
 
                 try:
-                    CronValidator.parse(autonomous_config.cron)
+                    _ = CronValidator.parse(autonomous_config.cron)
                 except ValueError:
                     raise IntentKitAPIError(
                         status_code=400,
@@ -251,7 +245,7 @@ class AgentUpdate(AgentUserInput):
                         message="Invalid cron expression format",
                     )
 
-                minute, hour, day_of_month, month, day_of_week = parts[:5]
+                minute, hour, *_ = parts[:5]
 
                 # Check if minutes or hours have too frequent intervals
                 if "*" in minute and "*" in hour:
@@ -334,30 +328,3 @@ class AgentCreate(AgentUpdate):
             max_length=50,
         ),
     ]
-
-    async def check_upstream_id(self) -> None:
-        if not self.upstream_id:
-            return None
-        async with get_session() as db:
-            existing = await db.scalar(
-                select(AgentTable).where(AgentTable.upstream_id == self.upstream_id)
-            )
-            if existing:
-                raise IntentKitAPIError(
-                    status_code=400,
-                    key="UpstreamIdConflict",
-                    message="Upstream id already in use",
-                )
-
-    async def get_by_upstream_id(self) -> Agent | None:
-        from intentkit.models.agent.agent import Agent
-
-        if not self.upstream_id:
-            return None
-        async with get_session() as db:
-            existing = await db.scalar(
-                select(AgentTable).where(AgentTable.upstream_id == self.upstream_id)
-            )
-            if existing:
-                return Agent.model_validate(existing)
-            return None

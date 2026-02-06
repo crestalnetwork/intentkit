@@ -383,7 +383,7 @@ class Agent(AgentCreate, AgentPublicInfo):
 
                     provider = (
                         LLMProvider(model_info.provider)
-                        if isinstance(model_info.provider, str)
+                        if model_info.provider
                         else model_info.provider
                     )
 
@@ -416,7 +416,7 @@ class Agent(AgentCreate, AgentPublicInfo):
                 if skill_model.enabled:
                     category_states[skill_model.config_name] = skill_model
                 else:
-                    category_states.pop(skill_model.config_name, None)
+                    _ = category_states.pop(skill_model.config_name, None)
 
             enabled_categories = {
                 category for category, states in skill_states_map.items() if states
