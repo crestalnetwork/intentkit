@@ -7,8 +7,7 @@ from cron_validator import CronValidator
 from epyxid import XID
 from pydantic import ConfigDict, field_validator
 from pydantic import Field as PydanticField
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 
 from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import AgentAutonomous
@@ -282,7 +281,7 @@ class AgentUpdate(AgentUserInput):
                     )
 
     @staticmethod
-    def _normalize_autonomous_statuses(
+    def normalize_autonomous_statuses(
         tasks: list[AgentAutonomous] | list[dict[str, Any]] | None,
     ) -> list[dict[str, Any]] | None:
         if not tasks:
@@ -296,66 +295,6 @@ class AgentUpdate(AgentUserInput):
             )
             normalized.append(model.normalize_status_defaults().model_dump())
         return normalized
-
-    # deprecated, use override instead
-    async def update(self, agent_id: str) -> "Agent":
-        from intentkit.models.agent.agent import Agent
-
-        # Validate autonomous schedule settings if present
-        if "autonomous" in self.model_dump(exclude_unset=True):
-            self.validate_autonomous_schedule()
-
-        async with get_session() as db:
-            db_agent = await db.get(AgentTable, agent_id)
-            if not db_agent:
-                raise IntentKitAPIError(
-                    status_code=404,
-                    key="AgentNotFound",
-                    message="Agent not found",
-                )
-            # update
-            update_data = self.model_dump(exclude_unset=True)
-            if "autonomous" in update_data:
-                update_data["autonomous"] = self._normalize_autonomous_statuses(
-                    update_data["autonomous"]
-                )
-            for key, value in update_data.items():
-                setattr(db_agent, key, value)
-            db_agent.version = self.hash()
-            db_agent.deployed_at = func.now()
-            await db.commit()
-            await db.refresh(db_agent)
-            return Agent.model_validate(db_agent)
-
-    async def override(self, agent_id: str) -> "Agent":
-        from intentkit.models.agent.agent import Agent
-
-        # Validate autonomous schedule settings if present
-        if "autonomous" in self.model_dump(exclude_unset=True):
-            self.validate_autonomous_schedule()
-
-        async with get_session() as db:
-            db_agent = await db.get(AgentTable, agent_id)
-            if not db_agent:
-                raise IntentKitAPIError(
-                    status_code=404,
-                    key="AgentNotFound",
-                    message="Agent not found",
-                )
-            # update
-            update_data = self.model_dump()
-            if "autonomous" in update_data:
-                update_data["autonomous"] = self._normalize_autonomous_statuses(
-                    update_data["autonomous"]
-                )
-            for key, value in update_data.items():
-                setattr(db_agent, key, value)
-            # version
-            db_agent.version = self.hash()
-            db_agent.deployed_at = func.now()
-            await db.commit()
-            await db.refresh(db_agent)
-            return Agent.model_validate(db_agent)
 
 
 class AgentCreate(AgentUpdate):
@@ -422,32 +361,3 @@ class AgentCreate(AgentUpdate):
             if existing:
                 return Agent.model_validate(existing)
             return None
-
-    async def create(self) -> "Agent":
-        from intentkit.models.agent.agent import Agent
-
-        # Validate autonomous schedule settings if present
-        if self.autonomous:
-            self.validate_autonomous_schedule()
-
-        async with get_session() as db:
-            try:
-                create_data = self.model_dump()
-                if "autonomous" in create_data:
-                    create_data["autonomous"] = self._normalize_autonomous_statuses(
-                        create_data["autonomous"]
-                    )
-                db_agent = AgentTable(**create_data)
-                db_agent.version = self.hash()
-                db_agent.deployed_at = func.now()
-                db.add(db_agent)
-                await db.commit()
-                await db.refresh(db_agent)
-                return Agent.model_validate(db_agent)
-            except IntegrityError:
-                await db.rollback()
-                raise IntentKitAPIError(
-                    status_code=400,
-                    key="AgentExists",
-                    message=f"Agent with ID '{self.id}' already exists",
-                )

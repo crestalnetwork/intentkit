@@ -1,6 +1,11 @@
 import logging
 
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
+from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentCreate, AgentUpdate
+from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
 
@@ -43,8 +48,33 @@ async def override_agent(
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "Forbidden", "forbidden")
 
-    # Update agent
-    latest_agent = await agent.override(agent_id)
+    # Validate autonomous schedule settings if present
+    if "autonomous" in agent.model_dump(exclude_unset=True):
+        agent.validate_autonomous_schedule()
+
+    async with get_session() as db:
+        db_agent = await db.get(AgentTable, agent_id)
+        if not db_agent:
+            raise IntentKitAPIError(
+                status_code=404,
+                key="AgentNotFound",
+                message="Agent not found",
+            )
+        # update
+        update_data = agent.model_dump()
+        if "autonomous" in update_data:
+            update_data["autonomous"] = agent.normalize_autonomous_statuses(
+                update_data["autonomous"]
+            )
+        for key, value in update_data.items():
+            setattr(db_agent, key, value)
+        # version
+        db_agent.version = agent.hash()
+        db_agent.deployed_at = func.now()
+        await db.commit()
+        await db.refresh(db_agent)
+        latest_agent = Agent.model_validate(db_agent)
+
     agent_data = await process_agent_wallet(
         latest_agent,
         existing_agent.wallet_provider,
@@ -87,8 +117,32 @@ async def patch_agent(
     if owner and owner != existing_agent.owner:
         raise IntentKitAPIError(403, "Forbidden", "forbidden")
 
-    # Update agent with only provided fields
-    latest_agent = await agent.update(agent_id)
+    # Validate autonomous schedule settings if present
+    if "autonomous" in agent.model_dump(exclude_unset=True):
+        agent.validate_autonomous_schedule()
+
+    async with get_session() as db:
+        db_agent = await db.get(AgentTable, agent_id)
+        if not db_agent:
+            raise IntentKitAPIError(
+                status_code=404,
+                key="AgentNotFound",
+                message="Agent not found",
+            )
+        # update
+        update_data = agent.model_dump(exclude_unset=True)
+        if "autonomous" in update_data:
+            update_data["autonomous"] = agent.normalize_autonomous_statuses(
+                update_data["autonomous"]
+            )
+        for key, value in update_data.items():
+            setattr(db_agent, key, value)
+        db_agent.version = agent.hash()
+        db_agent.deployed_at = func.now()
+        await db.commit()
+        await db.refresh(db_agent)
+        latest_agent = Agent.model_validate(db_agent)
+
     agent_data = await process_agent_wallet(
         latest_agent,
         existing_agent.wallet_provider,
@@ -127,8 +181,32 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
             message="Agent with this upstream ID already exists",
         )
 
-    # Create new agent
-    latest_agent = await agent.create()
+    # Validate autonomous schedule settings if present
+    if agent.autonomous:
+        agent.validate_autonomous_schedule()
+
+    async with get_session() as db:
+        try:
+            create_data = agent.model_dump()
+            if "autonomous" in create_data:
+                create_data["autonomous"] = agent.normalize_autonomous_statuses(
+                    create_data["autonomous"]
+                )
+            db_agent = AgentTable(**create_data)
+            db_agent.version = agent.hash()
+            db_agent.deployed_at = func.now()
+            db.add(db_agent)
+            await db.commit()
+            await db.refresh(db_agent)
+            latest_agent = Agent.model_validate(db_agent)
+        except IntegrityError:
+            await db.rollback()
+            raise IntentKitAPIError(
+                status_code=400,
+                key="AgentExists",
+                message=f"Agent with ID '{agent.id}' already exists",
+            )
+
     agent_data = await process_agent_wallet(latest_agent)
     send_agent_notification(latest_agent, agent_data, "Agent Deployed")
 
