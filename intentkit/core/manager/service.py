@@ -6,7 +6,7 @@ import json
 import logging
 from importlib import resources
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import jsonref
 from fastapi import status
@@ -25,7 +25,7 @@ def agent_draft_json_schema() -> dict[str, object]:
 
     fields_to_remove = {"autonomous", "frequency_penalty", "presence_penalty"}
     for field in fields_to_remove:
-        properties.pop(field, None)
+        _ = properties.pop(field, None)
 
     if "required" in schema and isinstance(schema["required"], list):
         schema["required"] = [
@@ -36,34 +36,38 @@ def agent_draft_json_schema() -> dict[str, object]:
     if not isinstance(skills_property, dict):
         return schema
 
+    skills_property = cast(dict[str, Any], skills_property)
+
     skills_properties: dict[str, object] = {}
     try:
-        skills_root = resources.files("intentkit.skills")
-    except (AttributeError, ModuleNotFoundError):
+        traversable = resources.files("intentkit.skills")
+        with resources.as_file(traversable) as skills_root:
+            for entry in skills_root.iterdir():
+                if not entry.is_dir():
+                    continue
+
+                schema_path = entry / "schema.json"
+                if not schema_path.is_file():
+                    continue
+
+                try:
+                    skills_properties[entry.name] = _load_skill_schema(schema_path)
+                except (
+                    OSError,
+                    ValueError,
+                    json.JSONDecodeError,
+                    jsonref.JsonRefError,
+                ) as exc:
+                    logger.warning(
+                        "Failed to load schema for skill '%s': %s", entry.name, exc
+                    )
+                    continue
+    except (AttributeError, ModuleNotFoundError, ImportError):
         logger.warning("intentkit skills package not found when building schema")
         return schema
 
-    for entry in skills_root.iterdir():
-        if not entry.is_dir():
-            continue
-
-        schema_path = entry / "schema.json"
-        if not schema_path.is_file():
-            continue
-
-        try:
-            skills_properties[entry.name] = _load_skill_schema(schema_path)
-        except (
-            OSError,
-            ValueError,
-            json.JSONDecodeError,
-            jsonref.JsonRefError,
-        ) as exc:
-            logger.warning("Failed to load schema for skill '%s': %s", entry.name, exc)
-            continue
-
     if skills_properties:
-        skills_property.setdefault("type", "object")
+        _ = skills_property.setdefault("type", "object")
         skills_property["properties"] = skills_properties
 
     return schema
@@ -72,55 +76,56 @@ def agent_draft_json_schema() -> dict[str, object]:
 def get_skills_hierarchical_text() -> str:
     """Extract skills organized by category and return as hierarchical text."""
     try:
-        skills_root = resources.files("intentkit.skills")
-    except (AttributeError, ModuleNotFoundError):
+        traversable = resources.files("intentkit.skills")
+        with resources.as_file(traversable) as skills_root:
+            # Group skills by category (x-tags)
+            categories: dict[str, list[Any]] = {}
+            for entry in skills_root.iterdir():
+                if not entry.is_dir():
+                    continue
+
+                schema_path = entry / "schema.json"
+                if not schema_path.is_file():
+                    continue
+
+                try:
+                    skill_schema = _load_skill_schema(schema_path)
+                    skill_name = entry.name
+                    skill_title = skill_schema.get(
+                        "title", skill_name.replace("_", " ").title()
+                    )
+                    skill_description = skill_schema.get(
+                        "description", "No description available"
+                    )
+                    skill_tags = cast(list[str], skill_schema.get("x-tags", ["Other"]))
+
+                    # Use the first tag as the primary category
+                    primary_category = skill_tags[0] if skill_tags else "Other"
+
+                    if primary_category not in categories:
+                        categories[primary_category] = []
+
+                    categories[primary_category].append(
+                        {
+                            "name": skill_name,
+                            "title": skill_title,
+                            "description": skill_description,
+                        }
+                    )
+
+                except (
+                    OSError,
+                    ValueError,
+                    json.JSONDecodeError,
+                    jsonref.JsonRefError,
+                ) as exc:
+                    logger.warning(
+                        "Failed to load schema for skill '%s': %s", entry.name, exc
+                    )
+                    continue
+    except (AttributeError, ModuleNotFoundError, ImportError):
         logger.warning("intentkit skills package not found when building skills text")
         return "No skills available"
-
-    # Group skills by category (x-tags)
-    categories: dict[str, list[Any]] = {}
-
-    for entry in skills_root.iterdir():
-        if not entry.is_dir():
-            continue
-
-        schema_path = entry / "schema.json"
-        if not schema_path.is_file():
-            continue
-
-        try:
-            skill_schema = _load_skill_schema(schema_path)
-            skill_name = entry.name
-            skill_title = skill_schema.get(
-                "title", skill_name.replace("_", " ").title()
-            )
-            skill_description = skill_schema.get(
-                "description", "No description available"
-            )
-            skill_tags = skill_schema.get("x-tags", ["Other"])
-
-            # Use the first tag as the primary category
-            primary_category = skill_tags[0] if skill_tags else "Other"
-
-            if primary_category not in categories:
-                categories[primary_category] = []
-
-            categories[primary_category].append(
-                {
-                    "name": skill_name,
-                    "title": skill_title,
-                    "description": skill_description,
-                }
-            )
-
-        except (
-            OSError,
-            ValueError,
-            json.JSONDecodeError,
-            jsonref.JsonRefError,
-        ) as exc:
-            logger.warning("Failed to load schema for skill '%s': %s", entry.name, exc)
-            continue
 
     # Build hierarchical text
     text_lines = []
@@ -146,12 +151,17 @@ def get_skills_hierarchical_text() -> str:
 def _load_skill_schema(schema_path: Path) -> dict[str, object]:
     base_uri = f"file://{schema_path}"
     with schema_path.open("r", encoding="utf-8") as schema_file:
-        embedded_schema: dict[str, object] = jsonref.load(
-            schema_file, base_uri=base_uri, proxies=False, lazy_load=False
+        embedded_schema: dict[str, object] = cast(
+            dict[str, object],
+            jsonref.load(
+                schema_file, base_uri=base_uri, proxies=False, lazy_load=False
+            ),
         )
 
     schema_copy = dict(embedded_schema)
-    schema_copy.setdefault("title", schema_path.parent.name.replace("_", " ").title())
+    _ = schema_copy.setdefault(
+        "title", schema_path.parent.name.replace("_", " ").title()
+    )
     return schema_copy
 
 

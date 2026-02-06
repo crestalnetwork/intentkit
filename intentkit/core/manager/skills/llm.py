@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -23,6 +23,7 @@ class GetAvailableLLMs(ManagerSkill):
     )
     args_schema: ArgsSchema | None = NoArgsSchema
 
+    @override
     async def _arun(self, **kwargs: Any) -> GetAvailableLLMsOutput:
         """Retrieve available LLM models."""
         models = await LLMModelInfo.get_all()

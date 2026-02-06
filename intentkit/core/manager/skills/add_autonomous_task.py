@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -37,6 +37,7 @@ class AddAutonomousTask(ManagerSkill):
     )
     args_schema: ArgsSchema | None = AddAutonomousTaskInput
 
+    @override
     async def _arun(
         self,
         cron: str,

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -34,6 +34,7 @@ class DeleteAutonomousTask(ManagerSkill):
     )
     args_schema: ArgsSchema | None = DeleteAutonomousTaskInput
 
+    @override
     async def _arun(
         self,
         task_id: str,

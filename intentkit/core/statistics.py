@@ -136,7 +136,7 @@ async def get_agent_statistics(
         quota = (
             AgentQuota.model_validate(quota_row)
             if quota_row
-            else AgentQuota(id=agent_id)
+            else AgentQuota.model_construct(id=agent_id)
         )
 
         return AgentStatistics(
@@ -162,6 +162,7 @@ async def get_agent_statistics(
             statistics = await _compute(managed)
             await managed.commit()
             return statistics
+    assert session is not None
     return await _compute(session)
 
 

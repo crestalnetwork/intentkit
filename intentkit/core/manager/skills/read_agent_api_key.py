@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -40,6 +40,7 @@ class ReadAgentApiKey(ManagerSkill):
     )
     args_schema: ArgsSchema | None = ReadAgentApiKeyInput
 
+    @override
     async def _arun(self, **kwargs: Any) -> ReadAgentApiKeyOutput:
         """Retrieve or generate an API key for the agent."""
         # Get context from runnable config to access agent.id

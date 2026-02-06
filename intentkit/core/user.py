@@ -135,7 +135,7 @@ async def create_user_server_wallet(
                 "status": "privy_created",
             },
         )
-        await partial_wallet_data.save()
+        _ = await partial_wallet_data.save()
         logger.info(
             f"Created Privy wallet {existing_privy_wallet_id} for user {user_id}"
         )
@@ -189,13 +189,13 @@ async def create_user_server_wallet(
         key=USER_SERVER_WALLET_KEY,
         data=wallet_data,
     )
-    await final_wallet_data.save()
+    _ = await final_wallet_data.save()
 
     # Update user's server_wallet_address
     user_update = UserUpdate.model_construct(
         server_wallet_address=server_wallet_address,
     )
-    await user_update.patch(user_id)
+    _ = await user_update.patch(user_id)
 
     logger.info(
         f"Created {mode} server wallet for user {user_id}: {server_wallet_address}"

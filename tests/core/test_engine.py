@@ -54,7 +54,7 @@ async def test_build_agent(mock_agent, mock_agent_data):
         ) as mock_create_model,
         patch("intentkit.core.engine.create_langchain_agent") as mock_create_lc_agent,
         patch("intentkit.core.engine.get_checkpointer"),
-        patch("intentkit.core.engine.get_system_skills", return_value=[]),
+        patch("intentkit.core.system_skills.get_system_skills", return_value=[]),
     ):
         mock_llm_instance = AsyncMock()
         mock_model = AsyncMock()

@@ -18,16 +18,17 @@ import time
 import traceback
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Any
+from decimal import Decimal
+from typing import Any, cast
 
 import sqlalchemy
 from epyxid import XID
 from langchain.agents import create_agent as create_langchain_agent
-from langchain.agents.middleware import AgentMiddleware
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.errors import GraphRecursionError
@@ -53,7 +54,8 @@ from intentkit.core.middleware import (
     TrimMessagesMiddleware,
 )
 from intentkit.core.prompt import explain_prompt
-from intentkit.core.system_skills import get_system_skills
+
+# from intentkit.core.system_skills import get_system_skills (moved to build_agent)
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -105,7 +107,7 @@ async def build_agent(
     agent: Agent,
     agent_data: AgentData,
     custom_skills: Sequence[BaseTool] = (),
-) -> CompiledStateGraph[AgentState, AgentContext, Any, Any]:
+) -> CompiledStateGraph[Any, Any, Any, Any]:
     """Build an AI agent with specified configuration and tools.
 
     This function:
@@ -175,11 +177,23 @@ async def build_agent(
         private_tools.extend(custom_skills)
 
     # add system skills to private tools
+    from intentkit.core.system_skills import get_system_skills
+
     private_tools.extend(get_system_skills())
 
     # filter the duplicate tools
-    tools = list({tool.name: tool for tool in tools}.values())
-    private_tools = list({tool.name: tool for tool in private_tools}.values())
+    tools = list(
+        {
+            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
+            for tool in tools
+        }.values()
+    )
+    private_tools = list(
+        {
+            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
+            for tool in private_tools
+        }.values()
+    )
 
     for tool in private_tools:
         logger.info(
@@ -188,7 +202,7 @@ async def build_agent(
 
     base_model = await llm_model.create_instance()
 
-    middleware: list[AgentMiddleware] = [
+    middleware: list[Any] = [
         ToolBindingMiddleware(llm_model, tools, private_tools),
         DynamicPromptMiddleware(agent, agent_data),
     ]
@@ -224,7 +238,7 @@ async def build_agent(
 
 async def create_agent(
     agent: Agent,
-) -> CompiledStateGraph[AgentState, AgentContext, Any, Any]:
+) -> CompiledStateGraph[Any, Any, Any, Any]:
     """Create an AI agent with specified configuration and tools.
 
     This function maintains backward compatibility by calling build_agent internally.
@@ -240,7 +254,7 @@ async def create_agent(
     return await build_agent(agent, agent_data)
 
 
-async def initialize_agent(aid):
+async def initialize_agent(aid: str):
     """Initialize an AI agent with specified configuration and tools.
 
     This function:
@@ -275,7 +289,7 @@ async def initialize_agent(aid):
 
 async def agent_executor(
     agent_id: str,
-) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], float]:
+) -> tuple[CompiledStateGraph[Any, Any, Any, Any], float]:
     start = time.perf_counter()
     agent = await get_agent(agent_id)
     if not agent:
@@ -315,6 +329,10 @@ async def stream_agent(message: ChatMessageCreate):
         ChatMessage: Individual response messages including timing information
     """
     agent = await get_agent(message.agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message="Agent not found"
+        )
     executor, cold_start_cost = await agent_executor(message.agent_id)
     message.cold_start_cost = cold_start_cost
     async for chat_message in stream_agent_raw(message, agent, executor):
@@ -344,7 +362,7 @@ async def stream_agent_raw(
         user_message.message.strip(),
         re.IGNORECASE,
     ):
-        await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+        _ = await clear_thread_memory(user_message.agent_id, user_message.chat_id)
 
         confirmation_message = ChatMessageCreate(
             id=str(XID()),
@@ -384,7 +402,7 @@ async def stream_agent_raw(
             SystemMessageType.HOURLY_BUDGET_EXCEEDED,
             agent_id=user_message.agent_id,
             chat_id=user_message.chat_id,
-            user_id=user_message.user_id,
+            user_id=user_message.user_id or "",
             author_id=user_message.agent_id,
             thread_type=user_message.author_type,
             reply_to=user_message.id,
@@ -419,7 +437,7 @@ async def stream_agent_raw(
                 yield error_message
                 return
         # user account
-        user_account = await CreditAccount.get_or_create(OwnerType.USER, payer)
+        user_account = await CreditAccount.get_or_create(OwnerType.USER, payer or "")
         # quota
         quota = await AgentQuota.get(message.agent_id)
         # payment settings
@@ -450,7 +468,7 @@ async def stream_agent_raw(
         avg_count = 1
         if quota and quota.avg_action_cost > 0:
             avg_count = quota.avg_action_cost
-        if not user_account.has_sufficient_credits(avg_count):
+        if not user_account.has_sufficient_credits(Decimal(avg_count)):
             error_message_create = await ChatMessageCreate.from_system_message(
                 SystemMessageType.INSUFFICIENT_BALANCE,
                 agent_id=user_message.agent_id,
@@ -480,9 +498,12 @@ async def stream_agent_raw(
     image_urls = []
     if user_message.attachments:
         image_urls = [
-            att["url"]
+            str(att["url"])
             for att in user_message.attachments
-            if "type" in att and att["type"] == "image" and "url" in att
+            if "type" in att
+            and att["type"] == "image"
+            and "url" in att
+            and att["url"] is not None
         ]
 
     # Process input message to handle @skill patterns
@@ -523,7 +544,7 @@ async def stream_agent_raw(
             messages.extend(
                 [
                     HumanMessage(
-                        content={"type": "image_url", "image_url": {"url": image_url}}
+                        content=[{"type": "image_url", "image_url": {"url": image_url}}]
                     )
                     for image_url in image_urls
                 ]
@@ -531,7 +552,7 @@ async def stream_agent_raw(
 
     # stream config
     thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
-    stream_config = {
+    stream_config: RunnableConfig = {
         "configurable": {
             "thread_id": thread_id,
         },
@@ -566,7 +587,7 @@ async def stream_agent_raw(
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
 
             if isinstance(chunk, tuple) and len(chunk) == 2:
-                event_kind, payload = chunk
+                _, payload = chunk
                 chunk = payload
 
             if isinstance(chunk, dict) and "credit_check" in chunk:
@@ -596,7 +617,7 @@ async def stream_agent_raw(
                         SystemMessageType.INSUFFICIENT_BALANCE,
                         agent_id=user_message.agent_id,
                         chat_id=user_message.chat_id,
-                        user_id=user_message.user_id,
+                        user_id=user_message.user_id or "",
                         author_id=user_message.agent_id,
                         thread_type=user_message.author_type,
                         reply_to=user_message.id,
@@ -666,7 +687,7 @@ async def stream_agent_raw(
                                     break
                         credit_event = await expense_message(
                             session,
-                            payer,
+                            payer or "",
                             chat_message_create.id,
                             user_message.id,
                             amount,
@@ -763,7 +784,7 @@ async def stream_agent_raw(
                         )
                         message_payment_event = await expense_message(
                             session,
-                            payer,
+                            payer or "",
                             skill_message_create.id,
                             user_message.id,
                             message_amount,
@@ -781,10 +802,10 @@ async def stream_agent_raw(
                             continue
                         payment_event = await expense_skill(
                             session,
-                            payer,
+                            payer or "",
                             skill_message_create.id,
                             user_message.id,
-                            skill_call["id"],
+                            cast(str, skill_call.get("id", "")),
                             skill_call["name"],
                             agent,
                         )
@@ -836,7 +857,7 @@ async def stream_agent_raw(
                                 SystemMessageType.INSUFFICIENT_BALANCE,
                                 agent_id=user_message.agent_id,
                                 chat_id=user_message.chat_id,
-                                user_id=user_message.user_id,
+                                user_id=user_message.user_id or "",
                                 author_id=user_message.agent_id,
                                 thread_type=user_message.author_type,
                                 reply_to=user_message.id,
@@ -856,7 +877,7 @@ async def stream_agent_raw(
             SystemMessageType.AGENT_INTERNAL_ERROR,
             agent_id=user_message.agent_id,
             chat_id=user_message.chat_id,
-            user_id=user_message.user_id,
+            user_id=user_message.user_id or "",
             author_id=user_message.agent_id,
             thread_type=user_message.author_type,
             reply_to=user_message.id,
@@ -875,7 +896,7 @@ async def stream_agent_raw(
             SystemMessageType.STEP_LIMIT_EXCEEDED,
             agent_id=user_message.agent_id,
             chat_id=user_message.chat_id,
-            user_id=user_message.user_id,
+            user_id=user_message.user_id or "",
             author_id=user_message.agent_id,
             thread_type=user_message.author_type,
             reply_to=user_message.id,
@@ -894,7 +915,7 @@ async def stream_agent_raw(
             SystemMessageType.AGENT_INTERNAL_ERROR,
             agent_id=user_message.agent_id,
             chat_id=user_message.chat_id,
-            user_id=user_message.user_id,
+            user_id=user_message.user_id or "",
             author_id=user_message.agent_id,
             thread_type=user_message.author_type,
             reply_to=user_message.id,
@@ -902,7 +923,7 @@ async def stream_agent_raw(
         )
         error_message = await error_message_create.save()
         yield error_message
-        await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+        _ = await clear_thread_memory(user_message.agent_id, user_message.chat_id)
         return
 
 
@@ -975,19 +996,19 @@ async def clean_agent_memory(
                     q_suffix = chat_id
 
                 deletion_param = {"value": agent_id + "-" + q_suffix}
-                await db.execute(
+                _ = await db.execute(
                     sqlalchemy.text(
                         "DELETE FROM checkpoints WHERE thread_id like :value",
                     ),
                     deletion_param,
                 )
-                await db.execute(
+                _ = await db.execute(
                     sqlalchemy.text(
                         "DELETE FROM checkpoint_writes WHERE thread_id like :value",
                     ),
                     deletion_param,
                 )
-                await db.execute(
+                _ = await db.execute(
                     sqlalchemy.text(
                         "DELETE FROM checkpoint_blobs WHERE thread_id like :value",
                     ),
@@ -995,7 +1016,7 @@ async def clean_agent_memory(
                 )
 
             # update the updated_at field so that the agent instance will all reload
-            await db.execute(
+            _ = await db.execute(
                 update(AgentTable)
                 .where(AgentTable.id == agent_id)
                 .values(updated_at=func.now())
@@ -1015,7 +1036,9 @@ async def clean_agent_memory(
 
 async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:
     thread_id = f"{agent_id}-{chat_id}"
-    stream_config = {"configurable": {"thread_id": thread_id}}
+    from langchain_core.runnables import RunnableConfig
+
+    stream_config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     executor, _ = await agent_executor(agent_id)
     snap = await executor.aget_state(stream_config)
     if snap.values and "messages" in snap.values:

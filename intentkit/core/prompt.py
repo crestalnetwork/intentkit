@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 
-from eth_utils import is_address
+from eth_utils.address import is_address
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.config.config import config
@@ -65,8 +65,7 @@ def _build_agent_identity_section(agent: Agent) -> str:
 
 def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
     """Build social accounts information section."""
-    if not agent_data:
-        return ""
+    """Build social accounts information section."""
 
     social_parts = []
 
@@ -109,8 +108,7 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
 
 def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
     """Build wallet information section."""
-    if not agent_data:
-        return ""
+    """Build wallet information section."""
 
     wallet_parts = []
     network_id = agent.network_id
@@ -258,7 +256,7 @@ def agent_prompt(agent: Agent, agent_data: AgentData, context: AgentContext) -> 
 async def explain_prompt(message: str) -> str:
     pattern = r"@skill:([^:]+):([^\s]+)\b"
 
-    async def replace_skill_pattern(match):
+    async def replace_skill_pattern(match: re.Match[str]) -> str:
         category = match.group(1)
         config_name = match.group(2)
 

@@ -2,8 +2,9 @@
 
 import logging
 import time
+from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy import desc, select
@@ -96,7 +97,7 @@ async def _get_draft_executor(
 
     if not cached_executor or cached_updated != draft.updated_at:
         start = time.perf_counter()
-        agent_data = AgentData(id=agent.id)
+        agent_data = AgentData(id=agent.id, created_at=now, updated_at=now)
         cached_executor = await build_agent(agent, agent_data)
         cold_start_cost = time.perf_counter() - start
         _draft_executors[agent.id] = cached_executor
@@ -113,7 +114,7 @@ def _cleanup_cache(now: datetime) -> None:
     expired_before = now - _CACHE_TTL
     for agent_id, cached_time in list(_draft_cached_at.items()):
         if cached_time < expired_before:
-            _draft_cached_at.pop(agent_id, None)
-            _draft_updated_at.pop(agent_id, None)
-            _draft_executors.pop(agent_id, None)
+            _ = _draft_cached_at.pop(agent_id, None)
+            _ = _draft_updated_at.pop(agent_id, None)
+            _ = _draft_executors.pop(agent_id, None)
             logger.debug("Removed expired draft executor for agent %s", agent_id)

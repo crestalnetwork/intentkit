@@ -38,7 +38,7 @@ async def cleanup_checkpoints(days: int = 90, dry_run: bool = False) -> int:
 
     async with get_session() as session:
         result = await session.execute(count_query, {"cutoff": cutoff_date})
-        thread_count = result.scalar()
+        thread_count = int(result.scalar() or 0)
 
     logger.info(f"Found {thread_count} threads to delete.")
 
@@ -74,7 +74,7 @@ async def cleanup_checkpoints(days: int = 90, dry_run: bool = False) -> int:
                 WHERE cp.thread_id = ot.thread_id AND cp.checkpoint_ns = ot.checkpoint_ns
             """)
 
-            await session.execute(delete_stmt, {"cutoff": cutoff_date})
+            _ = await session.execute(delete_stmt, {"cutoff": cutoff_date})
             logger.info("Deletion completed.")
 
     return thread_count
