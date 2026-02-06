@@ -193,7 +193,7 @@ class AgentSkillData(AgentSkillDataCreate):
             key: Data key
         """
         async with get_session() as db:
-            await db.execute(
+            _ = await db.execute(
                 delete(AgentSkillDataTable).where(
                     AgentSkillDataTable.agent_id == agent_id,
                     AgentSkillDataTable.skill == skill,
@@ -210,7 +210,7 @@ class AgentSkillData(AgentSkillDataCreate):
             agent_id: ID of the agent
         """
         async with get_session() as db:
-            await db.execute(
+            _ = await db.execute(
                 delete(AgentSkillDataTable).where(
                     AgentSkillDataTable.agent_id == agent_id
                 )
@@ -345,14 +345,14 @@ class ChatSkillData(ChatSkillDataCreate):
         """
         async with get_session() as db:
             if chat_id and chat_id != "":
-                await db.execute(
+                _ = await db.execute(
                     delete(ChatSkillDataTable).where(
                         ChatSkillDataTable.agent_id == agent_id,
                         ChatSkillDataTable.chat_id == chat_id,
                     )
                 )
             else:
-                await db.execute(
+                _ = await db.execute(
                     delete(ChatSkillDataTable).where(
                         ChatSkillDataTable.agent_id == agent_id
                     )
@@ -542,7 +542,7 @@ class Skill(BaseModel):
         return None
 
     @staticmethod
-    async def get_by_config_name(category: str, config_name: str) -> "Skill" | None:
+    async def get_by_config_name(category: str, config_name: str) -> Skill | None:
         """Get a skill by category and config_name.
 
         Args:

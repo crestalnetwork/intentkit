@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, Any, ClassVar, TypeVar
+from typing import Annotated, Any, ClassVar, TypeVar, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, Index, Integer, String, func, select
@@ -24,10 +24,10 @@ class UserRegistry:
     """Registry for extended model classes."""
 
     def __init__(self):
-        self._user_table_class: type[UserTableType] | None = None
-        self._user_model_class: type[UserModelType] | None = None
+        self._user_table_class: type["UserTable"] | None = None
+        self._user_model_class: type["User"] | None = None
 
-    def register_user_table(self, user_table_class: type[UserTableType]) -> None:
+    def register_user_table(self, user_table_class: type["UserTable"]) -> None:
         """Register extended UserTable class.
 
         Args:
@@ -35,11 +35,11 @@ class UserRegistry:
         """
         self._user_table_class = user_table_class
 
-    def get_user_table_class(self) -> type[UserTableType]:
+    def get_user_table_class(self) -> type["UserTable"]:
         """Get registered UserTable class or default."""
         return self._user_table_class or UserTable
 
-    def register_user_model(self, user_model_class: type[UserModelType]) -> None:
+    def register_user_model(self, user_model_class: type["User"]) -> None:
         """Register extended UserModel class.
 
         Args:
@@ -47,7 +47,7 @@ class UserRegistry:
         """
         self._user_model_class = user_model_class
 
-    def get_user_model_class(self) -> type[UserModelType]:
+    def get_user_model_class(self) -> type["User"]:
         """Get registered UserModel class or default."""
         return self._user_model_class or User
 
@@ -192,7 +192,7 @@ class UserUpdate(BaseModel):
         logger.info(
             f"Updating daily quota for user {id} due to NFT count change to {new_nft_count}"
         )
-        await CreditAccount.update_daily_quota(
+        _ = await CreditAccount.update_daily_quota(
             db,
             id,
             free_quota=free_quota,
@@ -201,7 +201,7 @@ class UserUpdate(BaseModel):
             note=note,
         )
 
-    async def patch(self, id: str) -> UserModelType:
+    async def patch(self, id: str) -> "User":
         """Update only the provided fields of a user in the database.
         If the user doesn't exist, create a new one with the provided ID and fields.
         If nft_count changes, update the daily quota accordingly.
@@ -239,9 +239,9 @@ class UserUpdate(BaseModel):
             await db.commit()
             await db.refresh(db_user)
 
-            return user_model_class.model_validate(db_user)
+            return cast(Any, user_model_class.model_validate(db_user))
 
-    async def put(self, id: str) -> UserModelType:
+    async def put(self, id: str) -> "User":
         """Replace all fields of a user in the database with the provided values.
         If the user doesn't exist, create a new one with the provided ID and fields.
         If nft_count changes, update the daily quota accordingly.
@@ -278,7 +278,7 @@ class UserUpdate(BaseModel):
             await db.commit()
             await db.refresh(db_user)
 
-            return user_model_class.model_validate(db_user)
+            return cast(Any, user_model_class.model_validate(db_user))
 
 
 class User(UserUpdate):
@@ -296,7 +296,7 @@ class User(UserUpdate):
     ]
 
     @classmethod
-    async def get(cls, user_id: str) -> UserModelType | None:
+    async def get(cls, user_id: str) -> "User | None":
         """Get a user by ID.
 
         Args:
@@ -309,9 +309,7 @@ class User(UserUpdate):
             return await cls.get_in_session(session, user_id)
 
     @classmethod
-    async def get_in_session(
-        cls, session: AsyncSession, user_id: str
-    ) -> UserModelType | None:
+    async def get_in_session(cls, session: AsyncSession, user_id: str) -> "User | None":
         """Get a user by ID using the provided session.
 
         Args:
@@ -331,10 +329,10 @@ class User(UserUpdate):
         user = result.scalars().first()
         if user is None:
             return None
-        return user_model_class.model_validate(user)
+        return cast(Any, user_model_class.model_validate(user))
 
     @classmethod
-    async def get_by_tg(cls, telegram_username: str) -> UserModelType | None:
+    async def get_by_tg(cls, telegram_username: str) -> "User | None":
         """Get a user by telegram username.
 
         Args:
@@ -357,10 +355,10 @@ class User(UserUpdate):
             user = result.scalars().first()
             if user is None:
                 return None
-            return user_model_class.model_validate(user)
+            return cast(Any, user_model_class.model_validate(user))
 
     @classmethod
-    async def get_by_evm_wallet(cls, evm_wallet_address: str) -> UserModelType | None:
+    async def get_by_evm_wallet(cls, evm_wallet_address: str) -> "User | None":
         """Get a user by EVM wallet address or matching ID."""
         user_model_class = user_model_registry.get_user_model_class()
         assert issubclass(user_model_class, User)
@@ -375,9 +373,9 @@ class User(UserUpdate):
             )
             user = result.scalars().first()
             if user is not None:
-                return user_model_class.model_validate(user)
+                return cast(Any, user_model_class.model_validate(user))
 
             fallback_user = await session.get(user_table_class, evm_wallet_address)
             if fallback_user is None:
                 return None
-            return user_model_class.model_validate(fallback_user)
+            return cast(Any, user_model_class.model_validate(fallback_user))

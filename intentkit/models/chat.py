@@ -199,7 +199,7 @@ class ChatMessageTable(Base):
     """Chat message database table model."""
 
     __tablename__: str = "chat_messages"
-    __table_args__: Any = (  # pyright: ignore[reportAny]
+    __table_args__: Any = (
         Index("ix_chat_messages_chat_id", "chat_id"),
         Index("ix_chat_messages_agent_id_author_type", "agent_id", "author_type"),
         Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
@@ -511,13 +511,13 @@ class ChatTable(Base):
         String,
         nullable=False,
     )
-    summary: Mapped[str] = mapped_column(
-        String,
-        default="",
-    )
     rounds: Mapped[int] = mapped_column(
         Integer,
         default=0,
+    )
+    summary: Mapped[str] = mapped_column(
+        String,
+        default="",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -585,6 +585,9 @@ class Chat(ChatCreate):
         datetime, Field(description="Timestamp when this chat was updated")
     ]
 
+    rounds: int
+    summary: str
+
     @classmethod
     async def get(cls, id: str) -> Chat | None:
         """Get a chat by its ID.
@@ -621,7 +624,7 @@ class Chat(ChatCreate):
                 .where(ChatTable.id == self.id)
                 .values(rounds=ChatTable.rounds + 1)
             )
-            await db.execute(stmt)
+            _ = await db.execute(stmt)
             await db.commit()
 
             # Update local object
@@ -642,7 +645,7 @@ class Chat(ChatCreate):
             stmt = (
                 update(ChatTable).where(ChatTable.id == self.id).values(summary=summary)
             )
-            await db.execute(stmt)
+            _ = await db.execute(stmt)
             await db.commit()
 
             # Update local object

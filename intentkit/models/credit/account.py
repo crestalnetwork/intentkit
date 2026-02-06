@@ -397,11 +397,11 @@ class CreditAccount(BaseModel):
     ) -> "CreditAccount":
         """Deduct credits from an account. Not checking balance"""
         # check first, create if not exists
-        await cls.get_or_create_in_session(session, owner_type, owner_id)
+        _ = await cls.get_or_create_in_session(session, owner_type, owner_id)
 
         # Quantize the amount to ensure proper precision
         quantized_amount = amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-        values_dict = {
+        values_dict: dict[str, Any] = {
             credit_type.value: getattr(CreditAccountTable, credit_type.value)
             - quantized_amount,
             "expense_at": datetime.now(UTC),
@@ -485,7 +485,7 @@ class CreditAccount(BaseModel):
                 details[CreditType.PERMANENT] = amount_left
 
         # Create values dict based on what's in details, defaulting to 0 for missing keys
-        values_dict = {
+        values_dict: dict[str, Any] = {
             "expense_at": datetime.now(UTC),
         }
         if event_id:
@@ -565,9 +565,9 @@ class CreditAccount(BaseModel):
         event_id: str | None = None,
     ) -> "CreditAccount":
         # check first, create if not exists
-        await cls.get_or_create_in_session(session, owner_type, owner_id)
+        _ = await cls.get_or_create_in_session(session, owner_type, owner_id)
         # income
-        values_dict = {
+        values_dict: dict[str, Any] = {
             "income_at": datetime.now(UTC),
         }
         if event_id:
@@ -694,7 +694,7 @@ class CreditAccount(BaseModel):
         # Only user accounts have first refill
         if owner_type == OwnerType.USER:
             # First refill account
-            await cls.deduction_in_session(
+            _ = await cls.deduction_in_session(
                 session,
                 OwnerType.PLATFORM,
                 DEFAULT_PLATFORM_ACCOUNT_REFILL,

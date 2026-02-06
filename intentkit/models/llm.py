@@ -7,11 +7,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any, ClassVar
 
-from langchain.chat_models.base import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
+from typing_extensions import override
 
 from intentkit.config.base import Base
 from intentkit.config.config import config
@@ -52,61 +53,59 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
         reader = csv.DictReader(csvfile)
         for row in reader:
             try:
+                row_id = row.get("id")
+                if not row_id:
+                    continue
+
                 timestamp = datetime.now(UTC)
-                model = LLMModelInfo(
-                    id=row["id"],
-                    name=row["name"],
-                    provider=LLMProvider(row["provider"]),
-                    enabled=_parse_bool(row.get("enabled")),
-                    input_price=Decimal(row["input_price"]),
-                    output_price=Decimal(row["output_price"]),
-                    price_level=_parse_optional_int(row.get("price_level")),
-                    context_length=int(row["context_length"]),
-                    output_length=int(row["output_length"]),
-                    intelligence=int(row["intelligence"]),
-                    speed=int(row["speed"]),
-                    supports_image_input=_parse_bool(row.get("supports_image_input")),
-                    supports_skill_calls=_parse_bool(row.get("supports_skill_calls")),
-                    supports_structured_output=_parse_bool(
+                provider_val = row.get("provider", "")
+                if not provider_val:
+                    continue
+                provider = LLMProvider(provider_val)
+
+                # Use a dict to gather attributes for cleaner instantiation
+                attrs: dict[str, Any] = {
+                    "id": row_id,
+                    "name": row.get("name") or row_id,
+                    "provider": provider,
+                    "enabled": _parse_bool(row.get("enabled")),
+                    "input_price": Decimal(row.get("input_price", "0")),
+                    "output_price": Decimal(row.get("output_price", "0")),
+                    "price_level": _parse_optional_int(row.get("price_level")),
+                    "context_length": int(row.get("context_length") or 0),
+                    "output_length": int(row.get("output_length") or 0),
+                    "intelligence": int(row.get("intelligence") or 1),
+                    "speed": int(row.get("speed") or 1),
+                    "supports_image_input": _parse_bool(
+                        row.get("supports_image_input")
+                    ),
+                    "supports_skill_calls": _parse_bool(
+                        row.get("supports_skill_calls")
+                    ),
+                    "supports_structured_output": _parse_bool(
                         row.get("supports_structured_output")
                     ),
-                    has_reasoning=_parse_bool(row.get("has_reasoning")),
-                    supports_search=_parse_bool(row.get("supports_search")),
-                    supports_temperature=_parse_bool(row.get("supports_temperature")),
-                    supports_frequency_penalty=_parse_bool(
+                    "has_reasoning": _parse_bool(row.get("has_reasoning")),
+                    "supports_search": _parse_bool(row.get("supports_search")),
+                    "supports_temperature": _parse_bool(
+                        row.get("supports_temperature")
+                    ),
+                    "supports_frequency_penalty": _parse_bool(
                         row.get("supports_frequency_penalty")
                     ),
-                    supports_presence_penalty=_parse_bool(
+                    "supports_presence_penalty": _parse_bool(
                         row.get("supports_presence_penalty")
                     ),
-                    api_base=row.get("api_base", "").strip() or None,
-                    timeout=int(row.get("timeout", "") or 180),
-                    created_at=timestamp,
-                    updated_at=timestamp,
-                )
+                    "api_base": row.get("api_base", "").strip() or None,
+                    "timeout": int(row.get("timeout") or 180),
+                    "created_at": timestamp,
+                    "updated_at": timestamp,
+                }
+                model = LLMModelInfo(**attrs)
                 if not model.enabled:
                     continue
 
-                # Check if provider is configured
-                is_configured = True
-                if model.provider == LLMProvider.OPENAI:
-                    is_configured = bool(config.openai_api_key)
-                elif model.provider == LLMProvider.GOOGLE:
-                    is_configured = bool(config.google_api_key)
-                elif model.provider == LLMProvider.DEEPSEEK:
-                    is_configured = bool(config.deepseek_api_key)
-                elif model.provider == LLMProvider.XAI:
-                    is_configured = bool(config.xai_api_key)
-                elif model.provider == LLMProvider.OPENROUTER:
-                    is_configured = bool(config.openrouter_api_key)
-                elif model.provider == LLMProvider.ETERNAL:
-                    is_configured = bool(config.eternal_api_key)
-                elif model.provider == LLMProvider.REIGENT:
-                    is_configured = bool(config.reigent_api_key)
-                elif model.provider == LLMProvider.VENICE:
-                    is_configured = bool(config.venice_api_key)
-
-                if not is_configured:
+                if not model.provider.is_configured:
                     continue
             except Exception as exc:
                 logger.error(
@@ -128,6 +127,22 @@ class LLMProvider(str, Enum):
     REIGENT = "reigent"
     VENICE = "venice"
     OLLAMA = "ollama"
+
+    @property
+    def is_configured(self) -> bool:
+        """Check if the provider is configured with an API key."""
+        config_map = {
+            self.OPENAI: bool(config.openai_api_key),
+            self.GOOGLE: bool(config.google_api_key),
+            self.DEEPSEEK: bool(config.deepseek_api_key),
+            self.XAI: bool(config.xai_api_key),
+            self.OPENROUTER: bool(config.openrouter_api_key),
+            self.ETERNAL: bool(config.eternal_api_key),
+            self.REIGENT: bool(config.reigent_api_key),
+            self.VENICE: bool(config.venice_api_key),
+            self.OLLAMA: True,  # Ollama usually doesn't need a key
+        }
+        return config_map.get(self, False)
 
     def display_name(self) -> str:
         """Return user-friendly display name for the provider."""
@@ -215,7 +230,6 @@ class LLMModelInfo(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        use_enum_values=True,
         json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
@@ -256,14 +270,14 @@ class LLMModelInfo(BaseModel):
         datetime,
         Field(
             description="Timestamp when this data was created",
-            default=datetime.now(UTC),
+            default_factory=lambda: datetime.now(UTC),
         ),
     ]
     updated_at: Annotated[
         datetime,
         Field(
             description="Timestamp when this data was updated",
-            default=datetime.now(UTC),
+            default_factory=lambda: datetime.now(UTC),
         ),
     ]
 
@@ -352,10 +366,11 @@ class LLMModelInfo(BaseModel):
         return list(models.values())
 
     async def calculate_cost(self, input_tokens: int, output_tokens: int) -> Decimal:
+        """Calculate the cost for a given number of tokens."""
         global _credit_per_usdc
         if not _credit_per_usdc:
             _credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
-        """Calculate the cost for a given number of tokens."""
+
         input_cost = (
             _credit_per_usdc
             * Decimal(input_tokens)
@@ -398,6 +413,7 @@ class LLMModel(BaseModel):
     # This will be implemented by subclasses to return the appropriate LLM instance
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return the LLM instance based on the configuration."""
+        _ = params
         raise NotImplementedError("Subclasses must implement create_instance")
 
     async def get_token_limit(self) -> int:
@@ -414,13 +430,14 @@ class LLMModel(BaseModel):
 class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model_name": self.model_name,
             "openai_api_key": config.openai_api_key,
             "timeout": info.timeout,
@@ -456,6 +473,7 @@ class OpenAILLM(LLMModel):
 class DeepseekLLM(LLMModel):
     """Deepseek LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatDeepseek instance."""
 
@@ -463,7 +481,7 @@ class DeepseekLLM(LLMModel):
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": self.model_name,
             "api_key": config.deepseek_api_key,
             "timeout": info.timeout,
@@ -492,6 +510,7 @@ class DeepseekLLM(LLMModel):
 class XAILLM(LLMModel):
     """XAI (Grok) LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatXAI instance."""
 
@@ -499,7 +518,7 @@ class XAILLM(LLMModel):
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model_name": self.model_name,
             "xai_api_key": config.xai_api_key,
             "timeout": info.timeout,
@@ -524,13 +543,14 @@ class XAILLM(LLMModel):
 class OpenRouterLLM(LLMModel):
     """OpenRouter LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for OpenRouter."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": self.model_name,
             "api_key": config.openrouter_api_key,
             "base_url": "https://openrouter.ai/api/v1",
@@ -557,6 +577,7 @@ class OpenRouterLLM(LLMModel):
 class EternalLLM(LLMModel):
     """Eternal AI LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Eternal AI."""
         from langchain_openai import ChatOpenAI
@@ -566,7 +587,7 @@ class EternalLLM(LLMModel):
         # Override model name for Eternal AI
         actual_model = "unsloth/Llama-3.3-70B-Instruct-bnb-4bit"
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model_name": actual_model,
             "openai_api_key": config.eternal_api_key,
             "openai_api_base": info.api_base,
@@ -592,13 +613,14 @@ class EternalLLM(LLMModel):
 class ReigentLLM(LLMModel):
     """Reigent LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Reigent."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "openai_api_key": config.reigent_api_key,
             "openai_api_base": info.api_base,
             "timeout": info.timeout,
@@ -617,13 +639,14 @@ class ReigentLLM(LLMModel):
 class VeniceLLM(LLMModel):
     """Venice LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOpenAI instance configured for Venice."""
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "openai_api_key": config.venice_api_key,
             "openai_api_base": info.api_base,
             "timeout": info.timeout,
@@ -638,13 +661,14 @@ class VeniceLLM(LLMModel):
 class GoogleLLM(LLMModel):
     """Google LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatGoogleGenerativeAI instance."""
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": self.model_name,
             "google_api_key": config.google_api_key,
             "timeout": info.timeout,
@@ -664,13 +688,14 @@ class GoogleLLM(LLMModel):
 class OllamaLLM(LLMModel):
     """Ollama LLM configuration."""
 
+    @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
         """Create and return a ChatOllama instance."""
         from langchain_ollama import ChatOllama
 
         info = await self.model_info()
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": self.model_name,
             "base_url": info.api_base or "http://localhost:11434",
             "temperature": self.temperature,
@@ -711,32 +736,24 @@ async def create_llm_model(
     """
     info = await LLMModelInfo.get(model_name)
 
-    base_params = {
-        "model_name": model_name,
-        "temperature": temperature,
-        "frequency_penalty": frequency_penalty,
-        "presence_penalty": presence_penalty,
-        "info": info,
+    provider_map: dict[LLMProvider, type[LLMModel]] = {
+        LLMProvider.GOOGLE: GoogleLLM,
+        LLMProvider.DEEPSEEK: DeepseekLLM,
+        LLMProvider.XAI: XAILLM,
+        LLMProvider.ETERNAL: EternalLLM,
+        LLMProvider.REIGENT: ReigentLLM,
+        LLMProvider.VENICE: VeniceLLM,
+        LLMProvider.OPENROUTER: OpenRouterLLM,
+        LLMProvider.OLLAMA: OllamaLLM,
+        LLMProvider.OPENAI: OpenAILLM,
     }
 
-    provider = info.provider
+    model_class = provider_map.get(info.provider, OpenAILLM)
 
-    if provider == LLMProvider.GOOGLE:
-        return GoogleLLM(**base_params)
-    elif provider == LLMProvider.DEEPSEEK:
-        return DeepseekLLM(**base_params)
-    elif provider == LLMProvider.XAI:
-        return XAILLM(**base_params)
-    elif provider == LLMProvider.ETERNAL:
-        return EternalLLM(**base_params)
-    elif provider == LLMProvider.REIGENT:
-        return ReigentLLM(**base_params)
-    elif provider == LLMProvider.VENICE:
-        return VeniceLLM(**base_params)
-    elif provider == LLMProvider.OPENROUTER:
-        return OpenRouterLLM(**base_params)
-    elif provider == LLMProvider.OLLAMA:
-        return OllamaLLM(**base_params)
-    else:
-        # Default to OpenAI
-        return OpenAILLM(**base_params)
+    return model_class(
+        model_name=model_name,
+        temperature=temperature,
+        frequency_penalty=frequency_penalty,
+        presence_penalty=presence_penalty,
+        info=info,
+    )

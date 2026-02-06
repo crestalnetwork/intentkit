@@ -86,24 +86,19 @@ class PaymentSettings(BaseModel):
 
     credit_per_usdc: Annotated[
         Decimal,
-        Field(default=Decimal("1000"), description="Number of credits per USDC"),
+        Field(description="Number of credits per USDC"),
     ] = Decimal("1000")
     fee_platform_percentage: Annotated[
         Decimal,
-        Field(
-            default=Decimal("100"), description="Platform fee percentage", ge=0, le=100
-        ),
+        Field(description="Platform fee percentage", ge=0, le=100),
     ] = Decimal("100")
     fee_dev_percentage: Annotated[
         Decimal,
-        Field(
-            default=Decimal("20"), description="Developer fee percentage", ge=0, le=100
-        ),
+        Field(description="Developer fee percentage", ge=0, le=100),
     ] = Decimal("20")
     free_quota: Annotated[
         Decimal,
         Field(
-            default=Decimal("480"),
             description="Daily free credit quota for new users",
             ge=0,
         ),
@@ -111,18 +106,17 @@ class PaymentSettings(BaseModel):
     refill_amount: Annotated[
         Decimal,
         Field(
-            default=Decimal("20"),
             description="Hourly refill amount for free credits",
             ge=0,
         ),
     ] = Decimal("20")
     agent_whitelist_enabled: Annotated[
         bool,
-        Field(default=False, description="Whether agent whitelist is enabled"),
+        Field(description="Whether agent whitelist is enabled"),
     ] = False
     agent_whitelist: Annotated[
         list[str],
-        Field(default_factory=list, description="List of whitelisted agent IDs"),
+        Field(description="List of whitelisted agent IDs"),
     ] = []
 
     @field_validator(

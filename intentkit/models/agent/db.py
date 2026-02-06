@@ -14,7 +14,7 @@ from intentkit.config.base import Base
 class AgentUserInputColumns:
     """Abstract base class containing columns that are common to AgentTable and other tables."""
 
-    __abstract__ = True
+    __abstract__: bool = True
 
     # Basic information fields from AgentCore
     name: Mapped[str | None] = mapped_column(
