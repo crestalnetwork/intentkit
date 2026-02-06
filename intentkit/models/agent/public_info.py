@@ -10,6 +10,8 @@ from pydantic import Field as PydanticField
 class AgentExample(BaseModel):
     """Agent example configuration."""
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
+
     name: Annotated[
         str,
         PydanticField(

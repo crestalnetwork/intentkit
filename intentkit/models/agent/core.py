@@ -3,9 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 from enum import IntEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 
 
@@ -25,6 +25,8 @@ class AgentVisibility(IntEnum):
 
 class AgentCore(BaseModel):
     """Agent core model."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     name: Annotated[
         str | None,

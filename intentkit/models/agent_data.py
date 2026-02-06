@@ -408,7 +408,7 @@ class AgentPluginDataTable(Base):
         data: JSON data stored for this key
     """
 
-    __tablename__ = "agent_plugin_data"
+    __tablename__: str = "agent_plugin_data"
 
     agent_id: Mapped[str] = mapped_column(String, primary_key=True)
     plugin: Mapped[str] = mapped_column(String, primary_key=True)
@@ -543,7 +543,7 @@ class AgentPluginData(BaseModel):
 class AgentQuotaTable(Base):
     """AgentQuota database table model."""
 
-    __tablename__ = "agent_quotas"
+    __tablename__: str = "agent_quotas"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     plan: Mapped[str] = mapped_column(String, default="self-hosted")

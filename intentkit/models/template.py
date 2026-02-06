@@ -18,7 +18,7 @@ from intentkit.models.agent import AgentCore
 class TemplateTable(Base):
     """Template table db model."""
 
-    __tablename__ = "templates"
+    __tablename__: str = "templates"
 
     id: Mapped[str] = mapped_column(
         String,

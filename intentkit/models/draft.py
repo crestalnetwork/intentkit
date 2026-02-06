@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 
 from epyxid import XID
 from fastapi import status
@@ -44,10 +44,10 @@ class AgentExtra(BaseModel):
 class AgentDraftTable(Base, AgentUserInputColumns):
     """Agent table db model."""
 
-    __tablename__ = "agent_drafts"
+    __tablename__: str = "agent_drafts"
 
     # Indexes for optimal query performance
-    __table_args__ = (
+    __table_args__: Any = (
         # Index for queries filtering by agent_id and owner (most common pattern)
         Index("idx_agent_drafts_agent_owner", "agent_id", "owner"),
         # Index for queries ordering by created_at (for latest draft queries)

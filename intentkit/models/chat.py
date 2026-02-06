@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, ClassVar, NotRequired, TypedDict, final
+from typing import Annotated, Any, ClassVar, NotRequired, TypedDict, final
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -198,8 +198,8 @@ class ChatMessageRequest(BaseModel):
 class ChatMessageTable(Base):
     """Chat message database table model."""
 
-    __tablename__ = "chat_messages"
-    __table_args__ = (  # pyright: ignore[reportAny]
+    __tablename__: str = "chat_messages"
+    __table_args__: Any = (  # pyright: ignore[reportAny]
         Index("ix_chat_messages_chat_id", "chat_id"),
         Index("ix_chat_messages_agent_id_author_type", "agent_id", "author_type"),
         Index("ix_chat_messages_agent_id_chat_id", "agent_id", "chat_id"),
@@ -495,8 +495,8 @@ class ChatMessage(ChatMessageCreate):
 class ChatTable(Base):
     """Chat database table model."""
 
-    __tablename__ = "chats"
-    __table_args__ = (Index("ix_chats_agent_user", "agent_id", "user_id"),)
+    __tablename__: str = "chats"
+    __table_args__: Any = (Index("ix_chats_agent_user", "agent_id", "user_id"),)
 
     id: Mapped[str] = mapped_column(
         String,

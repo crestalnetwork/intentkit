@@ -148,7 +148,7 @@ class LLMProvider(str, Enum):
 class LLMModelInfoTable(Base):
     """Database table model for LLM model information."""
 
-    __tablename__ = "llm_models"
+    __tablename__: str = "llm_models"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
@@ -377,6 +377,8 @@ AVAILABLE_MODELS = _load_default_llm_models()
 
 class LLMModel(BaseModel):
     """Base model for LLM configuration."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     model_name: str
     temperature: float = 0.7

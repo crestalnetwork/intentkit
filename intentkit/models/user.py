@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Annotated, ClassVar, TypeVar
+from typing import Annotated, Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, Index, Integer, String, func, select
@@ -59,8 +59,8 @@ user_model_registry = UserRegistry()
 class UserTable(Base):
     """User database table model."""
 
-    __tablename__ = "users"
-    __table_args__ = (
+    __tablename__: str = "users"
+    __table_args__: Any = (
         Index("ix_users_x_username", "x_username"),
         Index("ix_users_telegram_username", "telegram_username"),
     )

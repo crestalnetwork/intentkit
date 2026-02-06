@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Annotated, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,8 +24,8 @@ class TeamRole(str, Enum):
 class TeamMemberTable(Base):
     """Team member database table model."""
 
-    __tablename__ = "team_members"
-    __table_args__ = (
+    __tablename__: str = "team_members"
+    __table_args__: Any = (
         Index("ix_team_members_team_user", "team_id", "user_id", unique=True),
         Index("ix_team_members_user_team", "user_id", "team_id"),
     )
@@ -55,7 +55,7 @@ class TeamMemberTable(Base):
 class TeamTable(Base):
     """Team database table model."""
 
-    __tablename__ = "teams"
+    __tablename__: str = "teams"
 
     id: Mapped[str] = mapped_column(
         String,

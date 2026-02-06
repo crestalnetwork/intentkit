@@ -54,8 +54,8 @@ class CreditTransactionTable(Base):
     Records the flow of credits in and out of accounts.
     """
 
-    __tablename__ = "credit_transactions"
-    __table_args__ = (
+    __tablename__: str = "credit_transactions"
+    __table_args__: Any = (
         Index("ix_credit_transactions_account", "account_id"),
         Index("ix_credit_transactions_event_id", "event_id"),
     )

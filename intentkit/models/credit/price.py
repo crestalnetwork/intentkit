@@ -39,7 +39,7 @@ class CreditPriceTable(Base):
     Stores price information for different types of services.
     """
 
-    __tablename__ = "credit_prices"
+    __tablename__: str = "credit_prices"
 
     id: Mapped[str] = mapped_column(
         String,
@@ -127,7 +127,7 @@ class CreditPriceLogTable(Base):
     Records history of price changes.
     """
 
-    __tablename__ = "credit_price_logs"
+    __tablename__: str = "credit_price_logs"
 
     id: Mapped[str] = mapped_column(
         String,

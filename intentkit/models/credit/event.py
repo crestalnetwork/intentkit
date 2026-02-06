@@ -77,8 +77,8 @@ class CreditEventTable(Base):
     Records business events for user, like message processing, skill calls, etc.
     """
 
-    __tablename__ = "credit_events"
-    __table_args__ = (
+    __tablename__: str = "credit_events"
+    __table_args__: Any = (
         Index(
             "ix_credit_events_upstream", "upstream_type", "upstream_tx_id", unique=True
         ),

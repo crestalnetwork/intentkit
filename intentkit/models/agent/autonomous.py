@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from pydantic import Field as PydanticField
 
 
@@ -20,6 +20,8 @@ class AgentAutonomousStatus(str, Enum):
 
 class AutonomousCreateRequest(BaseModel):
     """Request model for creating a new autonomous task."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     name: str | None = PydanticField(
         default=None,
@@ -52,6 +54,8 @@ class AutonomousCreateRequest(BaseModel):
 
 class AutonomousUpdateRequest(BaseModel):
     """Request model for modifying an autonomous task."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     name: str | None = PydanticField(
         default=None,
@@ -108,6 +112,8 @@ def minutes_to_cron(minutes: int) -> str:
 
 class AgentAutonomous(BaseModel):
     """Autonomous agent configuration."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
     id: Annotated[
         str,

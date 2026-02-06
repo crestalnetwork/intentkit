@@ -30,7 +30,7 @@ class UserDataTable(Base):
         data: JSON data stored for this key
     """
 
-    __tablename__ = "user_data"
+    __tablename__: str = "user_data"
 
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
     key: Mapped[str] = mapped_column(String, primary_key=True)

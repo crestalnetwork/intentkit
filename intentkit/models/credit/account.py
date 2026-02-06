@@ -47,8 +47,8 @@ logger = logging.getLogger(__name__)
 class CreditAccountTable(Base):
     """Credit account database table model."""
 
-    __tablename__ = "credit_accounts"
-    __table_args__ = (Index("ix_credit_accounts_owner", "owner_type", "owner_id"),)
+    __tablename__: str = "credit_accounts"
+    __table_args__: Any = (Index("ix_credit_accounts_owner", "owner_type", "owner_id"),)
 
     id: Mapped[str] = mapped_column(
         String,

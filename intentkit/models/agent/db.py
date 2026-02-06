@@ -158,7 +158,7 @@ class AgentUserInputColumns:
 class AgentTable(Base, AgentUserInputColumns):
     """Agent table db model."""
 
-    __tablename__ = "agents"
+    __tablename__: str = "agents"
 
     id: Mapped[str] = mapped_column(
         String,

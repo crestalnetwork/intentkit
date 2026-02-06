@@ -39,7 +39,7 @@ class AgentActivity(AgentActivityBase):
 
 
 class AgentActivityTable(Base):
-    __tablename__ = "agent_activities"
+    __tablename__: str = "agent_activities"
 
     id: Mapped[str] = mapped_column(
         String,

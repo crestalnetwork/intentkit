@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class AgentSkillDataTable(Base):
     """Database table model for storing skill-specific data for agents."""
 
-    __tablename__ = "agent_skill_data"
+    __tablename__: str = "agent_skill_data"
 
     agent_id: Mapped[str] = mapped_column(String, primary_key=True)
     skill: Mapped[str] = mapped_column(String, primary_key=True)
@@ -221,7 +221,7 @@ class AgentSkillData(AgentSkillDataCreate):
 class ChatSkillDataTable(Base):
     """Database table model for storing skill-specific data for chats."""
 
-    __tablename__ = "chat_skill_data"
+    __tablename__: str = "chat_skill_data"
 
     chat_id: Mapped[str] = mapped_column(String, primary_key=True)
     skill: Mapped[str] = mapped_column(String, primary_key=True)
@@ -433,7 +433,7 @@ def _load_default_skills() -> tuple[dict[str, "Skill"], dict[tuple[str, str], "S
 class SkillTable(Base):
     """Database table model for Skill."""
 
-    __tablename__ = "skills"
+    __tablename__: str = "skills"
 
     name: Mapped[str] = mapped_column(String, primary_key=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

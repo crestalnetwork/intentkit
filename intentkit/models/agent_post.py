@@ -214,7 +214,7 @@ class AgentPostBrief(BaseModel):
 class AgentPostTable(Base):
     """SQLAlchemy model for AgentPost."""
 
-    __tablename__ = "agent_posts"
+    __tablename__: str = "agent_posts"
 
     id: Mapped[str] = mapped_column(
         String,

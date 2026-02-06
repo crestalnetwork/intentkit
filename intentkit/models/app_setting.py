@@ -44,7 +44,7 @@ _cache_ttl = 180  # 3 minutes in seconds
 class AppSettingTable(Base):
     """App settings database table model."""
 
-    __tablename__ = "app_settings"
+    __tablename__: str = "app_settings"
 
     key: Mapped[str] = mapped_column(
         String,

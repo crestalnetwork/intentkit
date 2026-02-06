@@ -133,7 +133,7 @@ class X402Order(X402OrderBase):
 class X402OrderTable(Base):
     """SQLAlchemy table model for x402 orders."""
 
-    __tablename__ = "x402_orders"
+    __tablename__: str = "x402_orders"
 
     id: Mapped[str] = mapped_column(
         String,
