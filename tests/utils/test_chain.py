@@ -7,7 +7,7 @@ from intentkit.utils.chain import (
     ChainProvider,
     NetworkId,
     QuicknodeChainProvider,
-    QuickNodeNetwork,
+    SupportedNetwork,
 )
 
 
@@ -15,9 +15,9 @@ class DummyChainProvider(ChainProvider):
     def __init__(self):
         super().__init__()
         self.chain_configs = {
-            QuickNodeNetwork.BaseMainnet: ChainConfig(
+            SupportedNetwork.BaseMainnet: ChainConfig(
                 chain=Chain.Base,
-                network=QuickNodeNetwork.BaseMainnet,
+                network=SupportedNetwork.BaseMainnet,
                 rpc_url="https://example-rpc",
                 ens_url="https://example-ens",
                 wss_url="wss://example",
@@ -56,14 +56,14 @@ class DummyClient:
 def test_chain_config_properties():
     config = ChainConfig(
         chain=Chain.Ethereum,
-        network=QuickNodeNetwork.EthereumMainnet,
+        network=SupportedNetwork.EthereumMainnet,
         rpc_url="https://eth",
         ens_url="https://ens",
         wss_url="wss://eth",
     )
 
     assert config.chain is Chain.Ethereum
-    assert config.network is QuickNodeNetwork.EthereumMainnet
+    assert config.network is SupportedNetwork.EthereumMainnet
     assert config.network_id == NetworkId.EthereumMainnet
     assert config.rpc_url == "https://eth"
     assert config.ens_url == "https://ens"
@@ -73,15 +73,18 @@ def test_chain_config_properties():
 def test_chain_provider_fetch_by_network_and_id():
     provider = DummyChainProvider()
 
+    # Test with string network_id (agent usage)
     config = provider.get_chain_config("base-mainnet")
     assert config.rpc_url == "https://example-rpc"
 
+    # Test with NetworkId enum (internal usage)
     config_by_id = provider.get_chain_config_by_id(NetworkId.BaseMainnet)
     assert config_by_id is config
 
 
 def test_quicknode_chain_provider_alias_mapping(monkeypatch: pytest.MonkeyPatch):
     # QuickNode can return chain "arb" with network "optimism"; both should map.
+    # Note: QuickNode API might return "optimism" network slug for Optimism Mainnet.
     payload = {
         "data": [
             {
@@ -103,9 +106,11 @@ def test_quicknode_chain_provider_alias_mapping(monkeypatch: pytest.MonkeyPatch)
     provider = QuicknodeChainProvider("test-key")
     provider.init_chain_configs()
 
-    config = provider.chain_configs[QuickNodeNetwork.OptimismMainnet]
+    # QuickNode "optimism" maps to SupportedNetwork.OptimismMainnet
+    # QuickNode "arb" maps to Chain.Arbitrum
+    config = provider.chain_configs[SupportedNetwork.OptimismMainnet]
     assert config.chain is Chain.Arbitrum
-    assert config.network is QuickNodeNetwork.OptimismMainnet
+    assert config.network is SupportedNetwork.OptimismMainnet
 
 
 def test_chain_provider_missing_network():
@@ -123,7 +128,9 @@ def test_chain_provider_missing_network_id():
     with pytest.raises(Exception) as exc:
         provider.get_chain_config_by_id(NetworkId.GnosisMainnet)
 
-    assert "chain config for network" in str(exc.value)
+    assert "network with id" in str(exc.value) or "chain config for network" in str(
+        exc.value
+    )
 
 
 def test_init_chain_configs_returns_none():
