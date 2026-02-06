@@ -8,7 +8,6 @@ from typing import Annotated, Any, ClassVar
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func, select
-from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -215,7 +214,7 @@ class AgentData(BaseModel):
             default=False,
             description="Whether the Twitter account is verified",
         ),
-    ] = None
+    ] = False
     telegram_id: Annotated[
         str | None,
         PydanticField(
@@ -393,151 +392,6 @@ class AgentData(BaseModel):
             await db.commit()
             await db.refresh(agent_data)
             return AgentData.model_validate(agent_data)
-
-
-class AgentPluginDataTable(Base):
-    """Database model for storing plugin-specific data for agents.
-
-    This model uses a composite primary key of (agent_id, plugin, key) to store
-    plugin-specific data for agents in a flexible way.
-
-    Attributes:
-        agent_id: ID of the agent this data belongs to
-        plugin: Name of the plugin this data is for
-        key: Key for this specific piece of data
-        data: JSON data stored for this key
-    """
-
-    __tablename__: str = "agent_plugin_data"
-
-    agent_id: Mapped[str] = mapped_column(String, primary_key=True)
-    plugin: Mapped[str] = mapped_column(String, primary_key=True)
-    key: Mapped[str] = mapped_column(String, primary_key=True)
-    data: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON().with_variant(JSONB(), "postgresql"), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=lambda: datetime.now(UTC),
-    )
-
-
-class AgentPluginData(BaseModel):
-    """Model for storing plugin-specific data for agents.
-
-    This model uses a composite primary key of (agent_id, plugin, key) to store
-    plugin-specific data for agents in a flexible way.
-
-    Attributes:
-        agent_id: ID of the agent this data belongs to
-        plugin: Name of the plugin this data is for
-        key: Key for this specific piece of data
-        data: JSON data stored for this key
-    """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
-
-    agent_id: Annotated[
-        str,
-        PydanticField(description="ID of the agent this data belongs to"),
-    ]
-    plugin: Annotated[
-        str,
-        PydanticField(description="Name of the plugin this data is for"),
-    ]
-    key: Annotated[
-        str,
-        PydanticField(description="Key for this specific piece of data"),
-    ]
-    data: Annotated[
-        dict[str, Any],
-        PydanticField(default=None, description="JSON data stored for this key"),
-    ]
-    created_at: Annotated[
-        datetime,
-        PydanticField(
-            description="Timestamp when this data was created",
-            default_factory=lambda: datetime.now(UTC),
-        ),
-    ]
-    updated_at: Annotated[
-        datetime,
-        PydanticField(
-            description="Timestamp when this data was last updated",
-            default_factory=lambda: datetime.now(UTC),
-        ),
-    ]
-
-    @classmethod
-    async def get(
-        cls, agent_id: str, plugin: str, key: str
-    ) -> "AgentPluginData" | None:
-        """Get plugin data for an agent.
-
-        Args:
-            agent_id: ID of the agent
-            plugin: Name of the plugin
-            key: Data key
-
-        Returns:
-            AgentPluginData if found, None otherwise
-
-        Raises:
-            HTTPException: If there are database errors
-        """
-        async with get_session() as db:
-            item = await db.scalar(
-                select(AgentPluginDataTable).where(
-                    AgentPluginDataTable.agent_id == agent_id,
-                    AgentPluginDataTable.plugin == plugin,
-                    AgentPluginDataTable.key == key,
-                )
-            )
-            if item:
-                return cls.model_validate(item)
-            return None
-
-    async def save(self) -> None:
-        """Save or update plugin data.
-
-        Raises:
-            HTTPException: If there are database errors
-        """
-        async with get_session() as db:
-            plugin_data = await db.scalar(
-                select(AgentPluginDataTable).where(
-                    AgentPluginDataTable.agent_id == self.agent_id,
-                    AgentPluginDataTable.plugin == self.plugin,
-                    AgentPluginDataTable.key == self.key,
-                )
-            )
-
-            if plugin_data:
-                # Update existing record
-                plugin_data.data = self.data
-                db.add(plugin_data)
-            else:
-                # Create new record
-                plugin_data = AgentPluginDataTable(
-                    agent_id=self.agent_id,
-                    plugin=self.plugin,
-                    key=self.key,
-                    data=self.data,
-                )
-                db.add(plugin_data)
-
-            await db.commit()
-            await db.refresh(plugin_data)
-
-            # Refresh the model with updated data
-            self.model_validate(plugin_data)
 
 
 class AgentQuotaTable(Base):

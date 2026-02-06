@@ -9,7 +9,7 @@ from intentkit.models.user import User, UserTable
 
 @pytest_asyncio.fixture()
 async def sqlite_engine():
-    from intentkit.models import db as db_module
+    from intentkit.config import db as db_module
 
     test_engine = create_async_engine(
         "sqlite+aiosqlite://",
