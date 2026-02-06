@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, override
 
 from sqlalchemy import select, text
 
@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 class AccountCheckingResult:
     """Result of an account checking operation."""
 
+    check_type: str
+    status: bool
+    details: dict[str, Any]
+    timestamp: datetime
+
     def __init__(
         self, check_type: str, status: bool, details: dict[str, Any] | None = None
     ):
@@ -31,6 +36,7 @@ class AccountCheckingResult:
         self.details = details or {}
         self.timestamp = datetime.now(UTC)
 
+    @override
     def __str__(self) -> str:
         status_str = "PASSED" if self.status else "FAILED"
         return f"[{self.timestamp.isoformat()}] {self.check_type}: {status_str} - {self.details}"
@@ -523,10 +529,18 @@ async def check_total_credit_balance() -> list[AccountCheckingResult]:
         result = await session.execute(query)
         balance_data = result.fetchone()
 
-        total_free_credits = balance_data.total_free_credits or Decimal("0")
-        total_reward_credits = balance_data.total_reward_credits or Decimal("0")
-        total_permanent_credits = balance_data.total_permanent_credits or Decimal("0")
-        grand_total = balance_data.grand_total or Decimal("0")
+        if balance_data is None:
+            total_free_credits = Decimal("0")
+            total_reward_credits = Decimal("0")
+            total_permanent_credits = Decimal("0")
+            grand_total = Decimal("0")
+        else:
+            total_free_credits = balance_data.total_free_credits or Decimal("0")
+            total_reward_credits = balance_data.total_reward_credits or Decimal("0")
+            total_permanent_credits = balance_data.total_permanent_credits or Decimal(
+                "0"
+            )
+            grand_total = balance_data.grand_total or Decimal("0")
 
         # Check if the grand total is zero (or very close to zero due to potential floating point issues)
         is_balanced = grand_total == Decimal("0")
@@ -581,8 +595,12 @@ async def check_transaction_total_balance() -> list[AccountCheckingResult]:
         result = await session.execute(query)
         balance_data = result.fetchone()
 
-        total_credits = balance_data.total_credits or Decimal("0")
-        total_debits = balance_data.total_debits or Decimal("0")
+        if balance_data is None:
+            total_credits = Decimal("0")
+            total_debits = Decimal("0")
+        else:
+            total_credits = balance_data.total_credits or Decimal("0")
+            total_debits = balance_data.total_debits or Decimal("0")
         difference = total_credits - total_debits
 
         # Check if credits and debits are balanced (difference should be zero)
@@ -670,7 +688,9 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
         notify = "<!channel> "  # Notify channel for failures
 
     # Create attachments with check details
-    attachments = [{"color": color, "title": title, "text": text, "fields": []}]
+    attachments: list[dict[str, Any]] = [
+        {"color": color, "title": title, "text": text, "fields": []}
+    ]
 
     # Add fields for each check type
     for check_name, check_results in results.items():
@@ -750,7 +770,9 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
         notify = "<!channel> "  # Notify channel for failures
 
     # Create attachments with check details
-    attachments = [{"color": color, "title": title, "text": text, "fields": []}]
+    attachments: list[dict[str, Any]] = [
+        {"color": color, "title": title, "text": text, "fields": []}
+    ]
 
     # Add fields for each check type
     for check_name, check_results in results.items():

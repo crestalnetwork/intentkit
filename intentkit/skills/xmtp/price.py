@@ -1,5 +1,6 @@
-from typing import Literal
+from typing import Literal, override
 
+from cdp.actions.evm.swap.types import SwapPriceResult
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -27,6 +28,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
     response_format: Literal["content", "content_and_artifact"] = "content"
     args_schema: ArgsSchema | None = SwapPriceInput
 
+    @override
     async def _arun(
         self,
         from_token: str,
@@ -49,11 +51,11 @@ class XmtpGetSwapPrice(XmtpBaseTool):
                 f"Swap price only supported on {', '.join(supported_networks)}. Current: {agent.network_id}"
             )
 
-        network_for_cdp = self.get_cdp_network(agent.network_id)
+        network_for_cdp = self._resolve_cdp_network_name(agent.network_id)
 
         cdp_client = get_cdp_client()
         # Note: Don't use async with context manager as get_cdp_client returns a managed global client
-        price = await cdp_client.evm.get_swap_price(
+        price: SwapPriceResult = await cdp_client.evm.get_swap_price(
             from_token=from_token,
             to_token=to_token,
             from_amount=str(from_amount),
@@ -62,17 +64,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
         )
 
         # Try to format a readable message from typical fields
-        try:
-            amount_out = getattr(price, "to_amount", None) or (
-                price.get("to_amount") if isinstance(price, dict) else None
-            )
-            route = getattr(price, "route", None) or (
-                price.get("route") if isinstance(price, dict) else None
-            )
-            route_str = f" via {route}" if route else ""
-            if amount_out:
-                return f"Estimated output: {amount_out} units of {to_token}{route_str} on {agent.network_id}."
-        except Exception:
-            pass
+        if price.to_amount:
+            return f"Estimated output: {price.to_amount} units of {price.to_token} on {agent.network_id}."
 
         return f"Swap price result (raw): {price}"

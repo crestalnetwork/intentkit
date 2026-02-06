@@ -1,3 +1,5 @@
+from typing import cast, override
+
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 from web3.exceptions import ContractLogicError
@@ -32,6 +34,7 @@ class XmtpTransfer(XmtpBaseTool):
     """
     args_schema: ArgsSchema | None = TransferInput
 
+    @override
     async def _arun(
         self,
         from_address: str,
@@ -55,6 +58,9 @@ class XmtpTransfer(XmtpBaseTool):
         # Get context and check network
         context = self.get_context()
         agent = context.agent
+
+        if not agent.network_id:
+            raise ValueError("Agent network_id is not configured")
 
         # Validate network and get chain ID
         chain_id_hex = self.validate_network_and_get_chain_id(
@@ -189,7 +195,7 @@ class XmtpTransfer(XmtpBaseTool):
         attachment: ChatMessageAttachment = {
             "type": ChatMessageAttachmentType.XMTP,
             "url": None,
-            "json": wallet_send_calls,
+            "json": cast(dict[str, object], wallet_send_calls),
         }
 
         # Create user message

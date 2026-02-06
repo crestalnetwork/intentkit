@@ -50,7 +50,7 @@ class XmtpBaseTool(IntentKitOnChainSkill):
             )
         return self.CHAIN_ID_HEX_BY_NETWORK[network_id]
 
-    def get_cdp_network(self, network_id: str) -> str:
+    def _resolve_cdp_network_name(self, network_id: str) -> str:
         """Get CDP network name for the given network ID.
 
         Args:

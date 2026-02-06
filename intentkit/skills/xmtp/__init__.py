@@ -61,7 +61,7 @@ async def get_skills(
 
 def get_xmtp_skill(
     name: str,
-) -> XmtpBaseTool:
+) -> XmtpBaseTool | None:
     """Get an XMTP skill by name.
 
     Args:

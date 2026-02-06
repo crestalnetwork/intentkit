@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, override
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 class RateLimitExceeded(Exception):
     """Rate limit exceeded"""
 
+    message: str | None
+
     def __init__(self, message: str | None = "Rate limit exceeded"):
         self.message = message
         super().__init__(self.message)
@@ -27,14 +29,21 @@ class IntentKitAPIError(Exception):
     """All 3 parameters: status_code, key and message is required.
     The key is PascalCase string, to allow the frontend to test errors."""
 
+    key: str
+    message: str
+    status_code: int
+
     def __init__(self, status_code: int, key: str, message: str):
         self.key = key
         self.message = message
         self.status_code = status_code
+        super().__init__(message)
 
+    @override
     def __str__(self):
         return f"{self.key}: {self.message}"
 
+    @override
     def __repr__(self):
         return f"IntentKitAPIError({self.key}, {self.message}, {self.status_code})"
 
@@ -106,7 +115,7 @@ def format_validation_errors(errors: Sequence[Any]) -> str:
 
 
 async def request_validation_exception_handler(
-    request: Request, exc: RequestValidationError
+    _request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     formatted_msg = format_validation_errors(exc.errors())
     return JSONResponse(
@@ -124,18 +133,24 @@ class IntentKitLookUpError(LookupError):
 class AgentError(Exception):
     """Custom exception for agent-related errors."""
 
+    agent_id: str
+
     def __init__(self, agent_id: str, message: str | None = None):
         self.agent_id = agent_id
         if message is None:
             message = f"Agent error occurred for agent_id: {agent_id}"
         super().__init__(message)
 
+    @override
     def __str__(self):
         return f"AgentError(agent_id={self.agent_id}): {super().__str__()}"
 
 
 class SkillError(ToolException):
     """Custom exception for skill-related errors."""
+
+    agent_id: str
+    skill_name: str
 
     def __init__(self, agent_id: str, skill_name: str, message: str | None = None):
         self.agent_id = agent_id
@@ -144,5 +159,6 @@ class SkillError(ToolException):
             message = f"Skill error occurred for agent_id: {agent_id}, skill_name: {skill_name}"
         super().__init__(message)
 
+    @override
     def __str__(self):
         return f"SkillError(agent_id={self.agent_id}, skill_name={self.skill_name}): {super().__str__()}"

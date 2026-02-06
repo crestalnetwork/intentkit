@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 from datetime import UTC, datetime, timedelta
-from typing import Any, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict, cast, override
 from urllib.parse import urlencode
 
 import httpx
@@ -89,11 +89,11 @@ class TwitterClient(TwitterABC):
             agent_id: The ID of the agent
             config: Configuration dictionary that may contain API keys
         """
-        self.agent_id = agent_id
+        self.agent_id: str = agent_id
         self._client: AsyncClient | None = None
         self._agent_data: AgentData | None = None
-        self.use_key = _is_self_key(config)
-        self._config = config
+        self.use_key: bool = _is_self_key(config)
+        self._config: dict[str, Any] = config
 
     async def _get_agent_data(self) -> AgentData:
         """Retrieve cached agent data, loading from the database if needed."""
@@ -108,6 +108,7 @@ class TwitterClient(TwitterABC):
         self._agent_data = await AgentData.get(self.agent_id)
         return self._agent_data
 
+    @override
     async def get_client(self) -> AsyncClient:
         """Get the initialized Twitter client.
 
@@ -125,7 +126,7 @@ class TwitterClient(TwitterABC):
                     consumer_secret=self._config["consumer_secret"],
                     access_token=self._config["access_token"],
                     access_token_secret=self._config["access_token_secret"],
-                    return_type=dict,
+                    return_type=cast(Any, dict),
                 )
                 # refresh userinfo if needed
                 if not agent_data.twitter_self_key_refreshed_at or (
@@ -133,11 +134,12 @@ class TwitterClient(TwitterABC):
                     < datetime.now(tz=UTC) - timedelta(days=1)
                 ):
                     me = await self._client.get_me(
-                        user_auth=self.use_key,
                         user_fields="id,username,name,verified",
                     )
+                    # Cast to dict because return_type=dict is used
+                    me = cast(dict[str, Any], me)
                     if me and "data" in me and "id" in me["data"]:
-                        await AgentData.patch(
+                        _ = await AgentData.patch(
                             self.agent_id,
                             {
                                 "twitter_id": me["data"]["id"],
@@ -164,31 +166,42 @@ class TwitterClient(TwitterABC):
                 raise Exception(
                     f"[{self.agent_id}] Twitter access token expiration not found"
                 )
-            if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
+            if (
+                agent_data.twitter_access_token_expires_at
+                and agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC)
+            ):
                 raise Exception(f"[{self.agent_id}] Twitter access token has expired")
             self._client = AsyncClient(
                 bearer_token=agent_data.twitter_access_token,
-                return_type=dict,
+                return_type=cast(Any, dict),
             )
             return self._client
 
         if not self.use_key:
             # check if access token has expired
-            if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
+            if (
+                agent_data.twitter_access_token_expires_at
+                and agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC)
+            ):
                 agent_data = await self._refresh_agent_data()
-                if agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC):
+                if (
+                    agent_data.twitter_access_token_expires_at
+                    and agent_data.twitter_access_token_expires_at
+                    <= datetime.now(tz=UTC)
+                ):
                     raise Exception(
                         f"[{self.agent_id}] Twitter access token has expired"
                     )
                 self._client = AsyncClient(
                     bearer_token=agent_data.twitter_access_token,
-                    return_type=dict,
+                    return_type=cast(Any, dict),
                 )
                 return self._client
 
         return self._client
 
     @property
+    @override
     def self_id(self) -> str | None:
         """Get the Twitter user ID.
 
@@ -202,6 +215,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_id
 
     @property
+    @override
     def self_username(self) -> str | None:
         """Get the Twitter username.
 
@@ -215,6 +229,7 @@ class TwitterClient(TwitterABC):
         return self._agent_data.twitter_username
 
     @property
+    @override
     def self_name(self) -> str | None:
         """Get the Twitter display name.
 
@@ -253,9 +268,10 @@ class TwitterClient(TwitterABC):
         if not response.get("data"):
             return result
 
+        includes = response.get("includes") or {}
         # Create lookup dictionaries from includes
         users_dict = {}
-        if response.get("includes") and "users" in response.get("includes"):
+        if "users" in includes:
             users_dict = {
                 user["id"]: TwitterUser(
                     id=str(user["id"]),
@@ -263,25 +279,25 @@ class TwitterClient(TwitterABC):
                     username=user["username"],
                     description=user["description"],
                     public_metrics=user["public_metrics"],
-                    is_following="following" in user.get("connection_status", []),
-                    is_follower="followed_by" in user.get("connection_status", []),
+                    is_following="following" in (user.get("connection_status") or []),
+                    is_follower="followed_by" in (user.get("connection_status") or []),
                 )
-                for user in response.get("includes", {}).get("users", [])
+                for user in includes.get("users", [])
             }
 
         media_dict = {}
-        if response.get("includes") and "media" in response.get("includes"):
+        if "media" in includes:
             media_dict = {
                 media["media_key"]: TwitterMedia(
                     media_key=media["media_key"],
                     type=media["type"],
                     url=media.get("url"),
                 )
-                for media in response.get("includes", {}).get("media", [])
+                for media in includes.get("media", [])
             }
 
         tweets_dict = {}
-        if response.get("includes") and "tweets" in response.get("includes"):
+        if "tweets" in includes:
             tweets_dict = {
                 tweet["id"]: Tweet(
                     id=str(tweet["id"]),
@@ -364,7 +380,7 @@ class TwitterClient(TwitterABC):
             if response.status_code == 200:
                 # Create a temporary file to store the image
                 with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file.write(response.content)
+                    _ = tmp_file.write(response.content)
                     tmp_file_path = tmp_file.name
 
                 # tweepy is outdated, we need to use httpx call new API
@@ -457,14 +473,23 @@ class OAuth2UserHandler(OAuth2Session):
     authentication handler
     """
 
-    def __init__(self, *, client_id, redirect_uri, scope, client_secret=None):
+    def __init__(
+        self,
+        *,
+        client_id: str,
+        redirect_uri: str,
+        scope: list[str],
+        client_secret: str | None = None,
+    ):
         super().__init__(client_id, redirect_uri=redirect_uri, scope=scope)
         if client_secret is not None:
-            self.auth = HTTPBasicAuth(client_id, client_secret)
+            self.auth: Any = HTTPBasicAuth(client_id, client_secret)
         else:
             self.auth = None
-        self.code_verifier = None
-        self.code_challenge = None
+        self.code_verifier: str | None = None
+        self.code_challenge: str | None = None
+        # _client is an internal attribute of OAuth2Session/WebApplicationClient
+        self._client: Any = getattr(self, "_client", None)
 
     async def get_authorization_url(self, agent_id: str, redirect_uri: str):
         """Get the authorization URL to redirect the user to
@@ -482,6 +507,8 @@ class OAuth2UserHandler(OAuth2Session):
                 self.code_challenge = self._client.create_code_challenge(
                     self.code_verifier, "S256"
                 )
+                assert self.code_verifier is not None
+                assert self.code_challenge is not None
                 await kv.set(_VERIFIER_KEY, self.code_verifier)
                 await kv.set(_CHALLENGE_KEY, self.code_challenge)
         state_params = {"agent_id": agent_id, "redirect_uri": redirect_uri}
@@ -493,7 +520,7 @@ class OAuth2UserHandler(OAuth2Session):
         )
         return authorization_url
 
-    def get_token(self, authorization_response):
+    def get_token(self, authorization_response: str):
         """After user has authorized the app, fetch access token with
         authorization response URL
         """

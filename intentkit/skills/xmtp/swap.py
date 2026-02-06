@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, cast, override
 
+from cdp.actions.evm.swap.types import QuoteSwapResult, SwapUnavailableResult
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
@@ -45,6 +46,7 @@ class XmtpSwap(XmtpBaseTool):
     )
     args_schema: ArgsSchema | None = SwapInput
 
+    @override
     async def _arun(
         self,
         from_address: str,
@@ -77,11 +79,7 @@ class XmtpSwap(XmtpBaseTool):
         except ValueError as e:
             raise ValueError(f"from_amount must be a valid positive integer: {e}")
 
-        if (
-            not isinstance(slippage_bps, int)
-            or slippage_bps < 0
-            or slippage_bps > 10000
-        ):
+        if slippage_bps < 0 or slippage_bps > 10000:
             raise ValueError("slippage_bps must be between 0 and 10000 (0% to 100%)")
 
         # Resolve agent context and target network
@@ -106,7 +104,7 @@ class XmtpSwap(XmtpBaseTool):
         # Get CDP network name
         # Reference: CDP SDK examples for swap quote and price
         # https://github.com/coinbase/cdp-sdk/blob/main/examples/python/evm/swaps/create_swap_quote.py
-        network_for_cdp = self.get_cdp_network(agent.network_id)
+        network_for_cdp = self._resolve_cdp_network_name(agent.network_id)
 
         # Get CDP client from the global helper (server-side credentials)
         cdp_client = get_cdp_client()
@@ -117,7 +115,9 @@ class XmtpSwap(XmtpBaseTool):
             # Attempt the canonical method per CDP SDK examples
             # create_swap_quote(from_token, to_token, from_amount, network, taker, slippage_bps, signer_address)
             # Note: Don't use async with context manager as get_cdp_client returns a managed global client
-            quote = await cdp_client.evm.create_swap_quote(
+            quote_result: (
+                QuoteSwapResult | SwapUnavailableResult
+            ) = await cdp_client.evm.create_swap_quote(
                 from_token=from_token,
                 to_token=to_token,
                 from_amount=str(from_amount),
@@ -126,6 +126,16 @@ class XmtpSwap(XmtpBaseTool):
                 slippage_bps=slippage_bps,
                 signer_address=from_address,
             )
+
+            # Check if swap is available
+            if not quote_result.liquidity_available:
+                raise ValueError(
+                    "Swap unavailable due to insufficient liquidity or other issues."
+                )
+
+            # Narrow type to QuoteSwapResult
+            quote: QuoteSwapResult = cast(QuoteSwapResult, quote_result)
+
         except Exception as e:  # pragma: no cover - defensive
             raise ValueError(f"Failed to create swap quote via CDP: {e!s}")
 
@@ -134,6 +144,7 @@ class XmtpSwap(XmtpBaseTool):
         calls: list[dict[str, Any]] = []
 
         # Validate that we have the required fields from CDP
+        # Note: Pydantic model guarantees these fields exist, but keeping checks for safety isn't harmful
         if not hasattr(quote, "to") or not hasattr(quote, "data"):
             raise ValueError(
                 "CDP swap quote missing required transaction fields (to, data)"
@@ -142,7 +153,7 @@ class XmtpSwap(XmtpBaseTool):
         # Format value field - ensure it's a hex string
         value_hex = "0x0"
         if hasattr(quote, "value") and quote.value:
-            if isinstance(quote.value, str) and quote.value.startswith("0x"):
+            if quote.value.startswith("0x"):
                 value_hex = quote.value
             else:
                 value_hex = hex(int(quote.value)) if quote.value != "0" else "0x0"
@@ -191,7 +202,7 @@ class XmtpSwap(XmtpBaseTool):
         attachment: ChatMessageAttachment = {
             "type": ChatMessageAttachmentType.XMTP,
             "url": None,
-            "json": wallet_send_calls,
+            "json": cast(dict[str, object], wallet_send_calls),
         }
 
         # Human-friendly message with more details

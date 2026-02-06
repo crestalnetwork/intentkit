@@ -42,7 +42,7 @@ class SkillConfig(TypedDict):
     """Abstract base class for skill configuration."""
 
     enabled: bool
-    states: dict[str, SkillState | SkillOwnerState]
+    states: Any
     api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[dict[str, Any]]
 
