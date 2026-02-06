@@ -21,13 +21,6 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-# Legacy skill name mapping (legacy names -> IntentKit names)
-_LEGACY_NAME_MAP: dict[str, str] = {
-    "SuperfluidActionProvider_create_flow": "superfluid_create_flow",
-    "SuperfluidActionProvider_update_flow": "superfluid_update_flow",
-    "SuperfluidActionProvider_delete_flow": "superfluid_delete_flow",
-}
-
 # Skill registry
 _SKILLS: dict[str, type[SuperfluidBaseTool]] = {
     "superfluid_create_flow": SuperfluidCreateFlow,
@@ -37,11 +30,6 @@ _SKILLS: dict[str, type[SuperfluidBaseTool]] = {
 
 # Cache for skill instances
 _cache: dict[str, SuperfluidBaseTool] = {}
-
-
-def _normalize_skill_name(name: str) -> str:
-    """Normalize legacy skill names to new names."""
-    return _LEGACY_NAME_MAP.get(name, name)
 
 
 async def get_skills(
@@ -64,16 +52,14 @@ async def get_skills(
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            # Normalize legacy skill names
-            normalized_name = _normalize_skill_name(skill_name)
             # Check cache first
-            if normalized_name in _cache:
-                tools.append(_cache[normalized_name])
+            if skill_name in _cache:
+                tools.append(_cache[skill_name])
             else:
-                skill_class = _SKILLS.get(normalized_name)
+                skill_class = _SKILLS.get(skill_name)
                 if skill_class:
                     skill_instance = skill_class()
-                    _cache[normalized_name] = skill_instance
+                    _cache[skill_name] = skill_instance
                     tools.append(skill_instance)
 
     return tools

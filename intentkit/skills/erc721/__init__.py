@@ -28,20 +28,9 @@ _SKILLS: dict[str, type[ERC721BaseTool]] = {
     "erc721_transfer": ERC721Transfer,
 }
 
-# Legacy skill name mapping (legacy names -> IntentKit names)
-_LEGACY_NAME_MAP: dict[str, str] = {
-    "Erc721ActionProvider_get_balance": "erc721_get_balance",
-    "Erc721ActionProvider_mint": "erc721_mint",
-    "Erc721ActionProvider_transfer": "erc721_transfer",
-}
 
 # Cache for skill instances
 _cache: dict[str, ERC721BaseTool] = {}
-
-
-def _normalize_skill_name(name: str) -> str:
-    """Normalize legacy skill names to new names."""
-    return _LEGACY_NAME_MAP.get(name, name)
 
 
 async def get_skills(
@@ -64,16 +53,14 @@ async def get_skills(
         if state == "disabled":
             continue
         if state == "public" or (state == "private" and is_private):
-            # Normalize legacy names to new names
-            normalized_name = _normalize_skill_name(skill_name)
             # Check cache first
-            if normalized_name in _cache:
-                tools.append(_cache[normalized_name])
+            if skill_name in _cache:
+                tools.append(_cache[skill_name])
             else:
-                skill_class = _SKILLS.get(normalized_name)
+                skill_class = _SKILLS.get(skill_name)
                 if skill_class:
                     skill_instance = skill_class()
-                    _cache[normalized_name] = skill_instance
+                    _cache[skill_name] = skill_instance
                     tools.append(skill_instance)
 
     return tools
