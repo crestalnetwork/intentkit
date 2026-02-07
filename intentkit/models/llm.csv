@@ -1,5 +1,5 @@
 id,name,provider,enabled,input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,supports_skill_calls,supports_structured_output,has_reasoning,supports_search,supports_temperature,supports_frequency_penalty,supports_presence_penalty,api_base,timeout
-minimax/minimax-m2:free,MiniMax M2,openrouter,FALSE,0,0,1,204800,131000,4,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,,300
+openrouter/free,OpenRouter Free,openrouter,TRUE,0,0,1,200000,20000,2,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,,300
 qwen/qwen3-coder:exacto,Qwen3 Coder,openrouter,FALSE,0.38,1.53,2,262000,262000,3,3,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,,300
 google/gemini-2.5-flash,Gemini 2.5 Flash,openrouter,FALSE,0.3,2.5,2,1050000,65000,3,4,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,,300
 google/gemini-2.5-pro,Gemini 2.5 Pro,openrouter,FALSE,1.25,10,4,1050000,65000,4,2,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,,300
