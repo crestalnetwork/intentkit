@@ -34,10 +34,10 @@ interface SkillsFormData {
  * Each skill category is rendered as a collapsible card.
  */
 export function SkillsField(props: FieldProps<SkillsFormData>) {
-    const { schema, formData = {}, onChange, idSchema, fieldPathId } = props;
+    const { schema, formData, onChange, idSchema, fieldPathId } = props;
 
     const skillCategories = (schema.properties || {}) as Record<string, SkillCategorySchema>;
-    const currentFormData = formData as SkillsFormData;
+    const currentFormData = (formData || {}) as SkillsFormData;
 
     const handleCategoryEnabledChange = (categoryKey: string, enabled: boolean) => {
         const newFormData = {

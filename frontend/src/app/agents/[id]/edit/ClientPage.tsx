@@ -196,8 +196,9 @@ export default function EditAgentPage() {
             }
         }
 
+        const { autonomous, ...restData } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
-            ...data,
+            ...restData,
             skills: Object.keys(cleanedSkills).length > 0 ? cleanedSkills : undefined,
         };
     };
