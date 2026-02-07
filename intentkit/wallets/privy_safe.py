@@ -2,11 +2,12 @@ import logging
 from typing import Any, Literal, cast, overload
 
 import httpx
-from eth_abi import encode
+from eth_abi.abi import encode
 from eth_account import Account
-from eth_utils import keccak, to_checksum_address
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from web3 import AsyncWeb3
-from web3.types import TxParams, TxReceipt
+from web3.types import TxParams, TxReceipt, Wei
 
 from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
@@ -18,6 +19,7 @@ from intentkit.wallets.privy_types import (
     SAFE_FALLBACK_HANDLER_ADDRESS,
     SAFE_PROXY_FACTORY_ADDRESS,
     ChainConfig,
+    TransactionRequest,
     TransactionResult,
     WalletProvider,
 )
@@ -38,12 +40,12 @@ class SafeClient:
         network_id: str = "base-mainnet",
         rpc_url: str | None = None,
     ) -> None:
-        self.network_id = network_id
-        self.chain_config = CHAIN_CONFIGS.get(network_id)
+        self.network_id: str = network_id
+        self.chain_config: ChainConfig | None = CHAIN_CONFIGS.get(network_id)
         if not self.chain_config:
             raise ValueError(f"Unsupported network: {network_id}")
 
-        self.rpc_url = rpc_url or self.chain_config.rpc_url
+        self.rpc_url: str | None = rpc_url or self.chain_config.rpc_url
         self.api_key: str | None = config.safe_api_key
 
     def _get_headers(self) -> dict[str, str]:
@@ -160,6 +162,107 @@ class SafeClient:
 
         return to_checksum_address(address_bytes)
 
+    def _encode_multi_send(self, transactions: list[TransactionRequest]) -> bytes:
+        """Encode a list of transactions for the MultiSend contract."""
+        # MultiSend format:
+        # operation (1 byte) | to (20 bytes) | value (32 bytes) | data_length (32 bytes) | data (bytes)
+        packed_data = b""
+        for tx in transactions:
+            operation = 0  # Call
+            to = bytes.fromhex(tx.to[2:] if tx.to.startswith("0x") else tx.to)
+            value = tx.value
+            data = tx.data
+            data_len = len(data)
+
+            packed_data += (
+                bytes([operation])
+                + to
+                + value.to_bytes(32, "big")
+                + data_len.to_bytes(32, "big")
+                + data
+            )
+
+        # multiSend(bytes transactions)
+        # selector: 8d80ff0a
+        selector = bytes.fromhex("8d80ff0a")
+        return selector + encode(["bytes"], [packed_data])
+
+    def get_transaction_hash(
+        self,
+        safe_address: str,
+        to: str,
+        value: int,
+        data: bytes,
+        operation: int,
+        safe_tx_gas: int,
+        base_gas: int,
+        gas_price: int,
+        gas_token: str,
+        refund_receiver: str,
+        nonce: int,
+    ) -> bytes:
+        """Calculate the Safe transaction hash (EIP-712)."""
+        if self.chain_config is None:
+            raise ValueError("Chain config not initialized")
+
+        # 1. Calculate Domain Separator
+        # DOMAIN_SEPARATOR_TYPEHASH = keccak256("EIP712Domain(uint256 chainId,address verifyingContract)")
+        domain_separator_typehash = keccak(
+            text="EIP712Domain(uint256 chainId,address verifyingContract)"
+        )
+        domain_separator = keccak(
+            encode(
+                ["bytes32", "uint256", "address"],
+                [
+                    domain_separator_typehash,
+                    self.chain_config.chain_id,
+                    to_checksum_address(safe_address),
+                ],
+            )
+        )
+
+        # 2. Calculate SafeTx Hash
+        # SAFE_TX_TYPEHASH = keccak256("SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)")
+        safe_tx_typehash = keccak(
+            text="SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+        )
+
+        data_hash = keccak(data)
+
+        safe_tx_hash = keccak(
+            encode(
+                [
+                    "bytes32",
+                    "address",
+                    "uint256",
+                    "bytes32",
+                    "uint8",
+                    "uint256",
+                    "uint256",
+                    "uint256",
+                    "address",
+                    "address",
+                    "uint256",
+                ],
+                [
+                    safe_tx_typehash,
+                    to_checksum_address(to),
+                    value,
+                    data_hash,
+                    operation,
+                    safe_tx_gas,
+                    base_gas,
+                    gas_price,
+                    to_checksum_address(gas_token),
+                    to_checksum_address(refund_receiver),
+                    nonce,
+                ],
+            )
+        )
+
+        # 3. Calculate EIP-712 Struct Hash: keccak256("\x19\x01" || domainSeparator || hashStruct(message))
+        return keccak(b"\x19\x01" + domain_separator + safe_tx_hash)
+
     async def is_deployed(self, address: str, rpc_url: str) -> bool:
         """Check if a contract is deployed at the given address."""
         async with httpx.AsyncClient() as client:
@@ -257,10 +360,148 @@ class SafeWalletProvider(WalletProvider):
         self.rpc_url = rpc_url
         self.privy_client = PrivyClient()
         self.safe_client = SafeClient(network_id, rpc_url)
+        self.master_wallet_private_key: str | None = config.master_wallet_private_key
 
     async def get_address(self) -> str:
         """Get the Safe smart account address."""
         return self.safe_address
+
+    async def send_batch_transaction(
+        self,
+        transactions: list[TransactionRequest],
+        chain_id: int | None = None,
+    ) -> TransactionResult:
+        """
+        Execute a batch of transactions in a single on-chain transaction.
+
+        If a master wallet is configured, it acts as a relayer (paying gas).
+        Otherwise, the Privy wallet pays gas.
+        """
+        try:
+            if self.chain_config is None:
+                return TransactionResult(
+                    success=False, error="Chain config not initialized"
+                )
+            target_chain_id = chain_id or self.chain_config.chain_id
+            rpc_url = self._get_rpc_url_for_chain(target_chain_id)
+
+            if not rpc_url:
+                return TransactionResult(
+                    success=False,
+                    error=f"No RPC URL configured for chain {target_chain_id}",
+                )
+
+            # 1. Encode the batch
+            multi_send_data = self.safe_client._encode_multi_send(transactions)
+
+            # MultiSend Call: to=MULTI_SEND_CALL_ONLY, value=0, data=multi_send_data, operation=1 (DelegateCall)
+            to = MULTI_SEND_CALL_ONLY_ADDRESS
+            value = 0
+            data = multi_send_data
+            operation = 1  # DelegateCall
+
+            # 2. Check for Master Wallet (Gasless Mode)
+            if self.master_wallet_private_key:
+                # --- Gasless Flow ---
+                logger.info("Executing gasless batch transaction via Master Wallet")
+
+                # a. Get Safe Nonce
+                nonce = await self.safe_client.get_nonce(self.safe_address, rpc_url)
+
+                # b. Calculate Transaction Hash for Owner Signature
+                safe_tx_gas = 0
+                base_gas = 0
+                gas_price = 0
+                gas_token = "0x0000000000000000000000000000000000000000"
+                refund_receiver = "0x0000000000000000000000000000000000000000"
+
+                safe_tx_hash = self.safe_client.get_transaction_hash(
+                    safe_address=self.safe_address,
+                    to=to,
+                    value=value,
+                    data=data,
+                    operation=operation,
+                    safe_tx_gas=safe_tx_gas,
+                    base_gas=base_gas,
+                    gas_price=gas_price,
+                    gas_token=gas_token,
+                    refund_receiver=refund_receiver,
+                    nonce=nonce,
+                )
+
+                # c. Sign Hash with Privy (Owner)
+                signature = await self.privy_client.sign_hash(
+                    self.privy_wallet_id, safe_tx_hash
+                )
+                sig_bytes = bytes.fromhex(
+                    signature[2:] if signature.startswith("0x") else signature
+                )
+
+                # d. Encode execTransaction calldata with DelegateCall
+                exec_tx_data = self._encode_safe_exec_transaction(
+                    to=to,
+                    value=value,
+                    data=data,
+                    signature=sig_bytes,
+                    operation=operation,
+                )
+
+                # e. Send transaction via Master Wallet
+                w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(rpc_url))
+                master_account = Account.from_key(self.master_wallet_private_key)
+
+                # Get nonce and gas price for master wallet
+                master_nonce = await w3.eth.get_transaction_count(
+                    master_account.address
+                )
+                gas_price_wei = await w3.eth.gas_price
+
+                # Estimate gas
+                tx_params: TxParams = {
+                    "from": master_account.address,
+                    "to": self.safe_address,
+                    "value": Wei(0),
+                    "data": exec_tx_data,
+                    "nonce": master_nonce,
+                    "gasPrice": gas_price_wei,
+                    "chainId": target_chain_id,
+                }
+                estimated_gas = await w3.eth.estimate_gas(tx_params)
+                tx_params["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
+
+                # Sign and send
+                signed_tx = master_account.sign_transaction(tx_params)
+                tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+                return TransactionResult(success=True, tx_hash=tx_hash.hex())
+
+            else:
+                # --- Standard Flow (Privy pays) ---
+                logger.info("Executing batch transaction via Privy wallet")
+
+                # Encode execTransaction with DelegateCall and pre-validated signature
+                exec_tx_data = self._encode_safe_exec_transaction(
+                    to=to,
+                    value=value,
+                    data=data,
+                    signature=None,  # pre-validated signature for msg.sender == owner
+                    operation=operation,
+                )
+
+                # Send via Privy
+                tx_hash = await self.privy_client.send_transaction(
+                    wallet_id=self.privy_wallet_id,
+                    chain_id=target_chain_id,
+                    to=self.safe_address,
+                    value=0,
+                    data="0x" + exec_tx_data.hex(),
+                )
+
+                return TransactionResult(success=True, tx_hash=tx_hash)
+
+        except Exception as e:
+            logger.error(f"Batch transaction execution failed: {e}")
+            return TransactionResult(success=False, error=str(e))
 
     async def execute_transaction(
         self,
@@ -558,6 +799,7 @@ class SafeWalletProvider(WalletProvider):
         value: int,
         data: bytes,
         signature: bytes | None = None,
+        operation: int = 0,
     ) -> bytes:
         """Encode a Safe execTransaction call.
 
@@ -567,6 +809,7 @@ class SafeWalletProvider(WalletProvider):
             data: Call data
             signature: Optional ECDSA signature. If not provided, uses pre-validated
                        signature format (requires msg.sender == owner).
+            operation: 0 for Call, 1 for DelegateCall.
         """
         # execTransaction(address to, uint256 value, bytes data, uint8 operation,
         #                 uint256 safeTxGas, uint256 baseGas, uint256 gasPrice,
@@ -604,7 +847,7 @@ class SafeWalletProvider(WalletProvider):
                 to_checksum_address(to),
                 value,
                 data,
-                0,  # operation (0 = Call)
+                operation,
                 0,  # safeTxGas
                 0,  # baseGas
                 0,  # gasPrice
