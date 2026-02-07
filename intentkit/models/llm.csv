@@ -1,4 +1,5 @@
 id,name,provider,enabled,input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,supports_skill_calls,supports_structured_output,has_reasoning,supports_search,supports_temperature,supports_frequency_penalty,supports_presence_penalty,api_base,timeout
+moonshotai/kimi-k2.5,Moonshot Kimi K2.5,openrouter,TRUE,0.6,3,2,262000,64000,4,3,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,,300
 openrouter/free,OpenRouter Free,openrouter,TRUE,0,0,1,200000,20000,2,2,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,,300
 qwen/qwen3-coder:exacto,Qwen3 Coder,openrouter,FALSE,0.38,1.53,2,262000,262000,3,3,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,,300
 google/gemini-2.5-flash,Gemini 2.5 Flash,openrouter,FALSE,0.3,2.5,2,1050000,65000,3,4,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,,300
