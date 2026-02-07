@@ -16,6 +16,16 @@ from aiohttp.web import Request
 
 from intentkit.models.agent import Agent
 
+from app.services.tg.bot.cache import (
+    add_failed_agent,
+    agent_by_id,
+    bot_by_token,
+    delete_cache_agent,
+    delete_cache_bot,
+    get_all_agent_bots,
+    set_cache_agent,
+    set_cache_bot,
+)
 from app.services.tg.bot.kind.god.router import god_router
 from app.services.tg.bot.kind.god.startup import GOD_BOT_PATH, GOD_BOT_TOKEN, on_startup
 from app.services.tg.bot.types.agent import BotPoolAgentItem
@@ -27,17 +37,6 @@ from app.services.tg.utils.cleanup import clean_token_str
 logger = logging.getLogger(__name__)
 
 BOTS_PATH = "/webhook/tgbot/{kind}/{bot_token}"
-
-from app.services.tg.bot.cache import (
-    add_failed_agent,
-    agent_by_id,
-    bot_by_token,
-    delete_cache_agent,
-    delete_cache_bot,
-    get_all_agent_bots,
-    set_cache_agent,
-    set_cache_bot,
-)
 
 
 async def health_handler(request: Request):

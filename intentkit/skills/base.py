@@ -53,8 +53,8 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
     """
 
     # overwrite the value of BaseTool
-    handle_tool_error: bool | str | Callable[[ToolException], str] | None = (
-        lambda e: f"tool error: {e}"
+    handle_tool_error: bool | str | Callable[[ToolException], str] | None = lambda e: (
+        f"tool error: {e}"
     )
     """Handle the content of the ToolException thrown."""
 

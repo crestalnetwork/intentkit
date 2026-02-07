@@ -30,7 +30,7 @@ class AgentScheduler:
         async with get_session() as db:
             # Get only telegram-enabled agents
             agents = await db.scalars(
-                select(AgentTable).where(AgentTable.telegram_entrypoint_enabled == True)
+                select(AgentTable).where(AgentTable.telegram_entrypoint_enabled)
             )
 
         for item in agents:
