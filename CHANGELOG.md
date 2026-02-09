@@ -1,9 +1,16 @@
+# Release v0.10.1
+
+## New Features
+
+- **LLM Models**: Added new LLM models to configuration
+
+Full Changelog: [v0.10.0...v0.10.1](https://github.com/crestalnetwork/intentkit/compare/v0.10.0...v0.10.1)
+
 # Release v0.10.0
 
 ## New Features
 
 - **Gasless Batch Transactions**: Added support for batching multiple transactions into a single on-chain transaction for Safe wallets. When a master wallet is configured, transactions can be executed gaslessly (master wallet pays for gas).
-- **LLM Models**: Added new LLM models to configuration
 
 ## Improvements
 
