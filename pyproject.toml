@@ -161,3 +161,6 @@ known_first_party = ["intentkit"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "bdd: mark test as BDD integration test",
+]

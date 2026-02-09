@@ -67,3 +67,7 @@ IntentKit is an autonomous agent framework that enables creation and management 
 ## Ops Guide
 
 **When you need to perform Git commits, pull requests, or releases**, read the detailed guide: `agent_docs/ops_guide.md`
+
+## Test Guide
+
+**When you need to perform testing**, read the detailed guide: `agent_docs/test.md`
