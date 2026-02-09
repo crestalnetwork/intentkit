@@ -212,7 +212,10 @@ async def build_agent(
     if agent.short_term_memory_strategy == "trim":
         middleware.append(TrimMessagesMiddleware(max_summary_tokens=2048))
     elif agent.short_term_memory_strategy == "summarize":
-        summarize_llm = await create_llm_model(model_name="gpt-5-mini")
+        from intentkit.core.model_picker import pick_summarize_model
+
+        summarize_model_name = pick_summarize_model()
+        summarize_llm = await create_llm_model(model_name=summarize_model_name)
         summarize_model = await summarize_llm.create_instance()
         middleware.append(
             SummarizationMiddleware(
