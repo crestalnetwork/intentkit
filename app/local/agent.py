@@ -260,6 +260,39 @@ async def get_agent(
     )
 
 
+@agent_router.get(
+    "/agents/{agent_id}/editable",
+    tags=["Agent"],
+    operation_id="get_agent_editable",
+)
+async def get_agent_editable(
+    agent_id: str = Path(..., description="ID of the agent to retrieve"),
+) -> Response:
+    """Get a single agent by ID with full editable fields.
+
+    **Path Parameters:**
+    * `agent_id` - ID of the agent to retrieve
+
+    **Returns:**
+    * `AgentUpdate` - Full agent configuration for editing
+
+    **Raises:**
+    * `IntentKitAPIError`:
+        - 404: Agent not found
+    """
+    agent = await get_agent_by_id(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
+
+    editable_agent = AgentUpdate.model_validate(agent)
+    return Response(
+        content=editable_agent.model_dump_json(),
+        media_type="application/json",
+    )
+
+
 class MemCleanRequest(BaseModel):
     """Request model for agent memory cleanup endpoint.
 

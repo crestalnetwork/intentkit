@@ -90,6 +90,17 @@ export const agentApi = {
   },
 
   /**
+   * Get a single agent by ID with full editable fields
+   */
+  async getEditableById(agentId: string): Promise<Record<string, unknown>> {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/editable`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch editable agent: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
    * Patch an existing agent with partial updates
    * PATCH /api/agents/{agentId}
    */
@@ -572,4 +583,3 @@ export const autonomousApi = {
     }
   },
 };
-

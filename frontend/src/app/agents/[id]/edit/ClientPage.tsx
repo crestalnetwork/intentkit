@@ -81,8 +81,8 @@ export default function EditAgentPage() {
 
     // Fetch the existing agent data
     const { data: agent, isLoading: isAgentLoading, error: agentError } = useQuery({
-        queryKey: ["agent", agentId],
-        queryFn: () => agentApi.getById(agentId),
+        queryKey: ["agent-editable", agentId],
+        queryFn: () => agentApi.getEditableById(agentId),
         enabled: !!agentId,
     });
 
