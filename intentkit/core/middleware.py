@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable, Sequence
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, Any, override
 
 from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
@@ -119,10 +119,10 @@ class DynamicPromptMiddleware(AgentMiddleware[AgentState, AgentContext]):
     @override
     async def awrap_model_call(  # type: ignore[override]
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[AgentContext],
+        handler: Callable[[ModelRequest[AgentContext]], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        context = cast(AgentContext, request.runtime.context)
+        context: AgentContext = request.runtime.context
         system_prompt = await build_system_prompt(self.agent, self.agent_data, context)
         updated_request = request.override(system_prompt=system_prompt)  # pyright: ignore[reportCallIssue]
         return await handler(updated_request)
@@ -149,10 +149,10 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     @override
     async def awrap_model_call(  # type: ignore[override]
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        request: ModelRequest[AgentContext],
+        handler: Callable[[ModelRequest[AgentContext]], Awaitable[ModelResponse]],
     ) -> ModelResponse:
-        context = cast(AgentContext, request.runtime.context)
+        context: AgentContext = request.runtime.context
 
         llm_params: dict[str, Any] = {}
         tools: list[BaseTool | dict[str, Any]] = (
