@@ -3,6 +3,7 @@
 ## New Features
 
 - **Gasless Batch Transactions**: Added support for batching multiple transactions into a single on-chain transaction for Safe wallets. When a master wallet is configured, transactions can be executed gaslessly (master wallet pays for gas).
+- **LLM Models**: Added new LLM models to configuration
 
 ## Improvements
 
