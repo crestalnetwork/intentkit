@@ -31,7 +31,7 @@ class AgentUserInput(AgentCore):
             default=None,
             description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
         ),
-    ]
+    ] = None
     # only when wallet provider is privy
     weekly_spending_limit: Annotated[
         float | None,
@@ -40,28 +40,15 @@ class AgentUserInput(AgentCore):
             description="Weekly spending limit in USDC when wallet_provider is safe. This limits how much USDC the agent can spend per week.",
             ge=0.0,
         ),
-    ]
+    ] = None
     # autonomous mode
     autonomous: Annotated[
         list[AgentAutonomous] | None,
         PydanticField(
             default=None,
-            description=(
-                "Autonomous agent configurations.\\n"
-                "autonomous:\\n"
-                "  - id: a\\n"
-                "    name: TestA\\n"
-                "    minutes: 1\\n"
-                "    prompt: |-\\n"
-                "      Say hello [sequence], use number for sequence.\\n"
-                "  - id: b\\n"
-                "    name: TestB\\n"
-                '    cron: "0/3 * * * *"\\n'
-                "    prompt: |-\\n"
-                "      Say hi [sequence], use number for sequence.\\n"
-            ),
+            description=("Autonomous agent configurations."),
         ),
-    ]
+    ] = None
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled: Annotated[
         bool | None,
@@ -69,7 +56,7 @@ class AgentUserInput(AgentCore):
             default=False,
             description="Whether the agent can play telegram bot",
         ),
-    ]
+    ] = False
     telegram_entrypoint_prompt: Annotated[
         str | None,
         PydanticField(
@@ -77,14 +64,14 @@ class AgentUserInput(AgentCore):
             description="Extra prompt for telegram entrypoint",
             max_length=10000,
         ),
-    ]
+    ] = None
     telegram_config: Annotated[
         dict[str, object] | None,
         PydanticField(
             default=None,
             description="Telegram integration configuration settings",
         ),
-    ]
+    ] = None
     discord_entrypoint_enabled: Annotated[
         bool | None,
         PydanticField(
@@ -94,7 +81,7 @@ class AgentUserInput(AgentCore):
                 "x-group": "entrypoint",
             },
         ),
-    ]
+    ] = False
     discord_config: Annotated[
         dict[str, Any] | None,
         PydanticField(
@@ -104,7 +91,7 @@ class AgentUserInput(AgentCore):
                 "x-group": "entrypoint",
             },
         ),
-    ]
+    ] = None
     xmtp_entrypoint_prompt: Annotated[
         str | None,
         PydanticField(
@@ -112,7 +99,7 @@ class AgentUserInput(AgentCore):
             description="Extra prompt for xmtp entrypoint, xmtp support is in beta",
             max_length=10000,
         ),
-    ]
+    ] = None
 
 
 class AgentUpdate(AgentUserInput):
@@ -133,7 +120,7 @@ class AgentUpdate(AgentUserInput):
             description="External reference ID for idempotent operations",
             max_length=100,
         ),
-    ]
+    ] = None
     upstream_extra: Annotated[
         dict[str, Any] | None,
         PydanticField(
@@ -143,7 +130,7 @@ class AgentUpdate(AgentUserInput):
                 "x-group": "internal",
             },
         ),
-    ]
+    ] = None
     extra_prompt: Annotated[
         str | None,
         PydanticField(
@@ -151,21 +138,21 @@ class AgentUpdate(AgentUserInput):
             description="Only when the agent is created from a template.",
             max_length=20000,
         ),
-    ]
+    ] = None
     visibility: Annotated[
         AgentVisibility | None,
         PydanticField(
             default=None,
             description="Visibility level of the agent: PRIVATE(0), TEAM(10), or PUBLIC(20)",
         ),
-    ]
+    ] = None
     archived_at: Annotated[
         datetime | None,
         PydanticField(
             default=None,
             description="Timestamp when the agent was archived. NULL means not archived",
         ),
-    ]
+    ] = None
 
     @field_validator(
         "purpose",
@@ -311,7 +298,7 @@ class AgentCreate(AgentUpdate):
             description="Owner identifier of the agent, used for access control",
             max_length=50,
         ),
-    ]
+    ] = None
     team_id: Annotated[
         str | None,
         PydanticField(
@@ -319,7 +306,7 @@ class AgentCreate(AgentUpdate):
             description="Team identifier of the agent",
             max_length=50,
         ),
-    ]
+    ] = None
     template_id: Annotated[
         str | None,
         PydanticField(
@@ -327,4 +314,4 @@ class AgentCreate(AgentUpdate):
             description="Template identifier of the agent",
             max_length=50,
         ),
-    ]
+    ] = None

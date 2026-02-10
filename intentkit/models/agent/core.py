@@ -36,14 +36,14 @@ class AgentCore(BaseModel):
             description="Display name of the agent",
             max_length=50,
         ),
-    ]
+    ] = None
     picture: Annotated[
         str | None,
         PydanticField(
             default=None,
             description="Avatar of the agent",
         ),
-    ]
+    ] = None
     purpose: Annotated[
         str | None,
         PydanticField(
@@ -51,7 +51,7 @@ class AgentCore(BaseModel):
             description="Purpose or role of the agent",
             max_length=20000,
         ),
-    ]
+    ] = None
     personality: Annotated[
         str | None,
         PydanticField(
@@ -59,7 +59,7 @@ class AgentCore(BaseModel):
             description="Personality traits of the agent",
             max_length=20000,
         ),
-    ]
+    ] = None
     principles: Annotated[
         str | None,
         PydanticField(
@@ -67,7 +67,7 @@ class AgentCore(BaseModel):
             description="Principles or values of the agent",
             max_length=20000,
         ),
-    ]
+    ] = None
     # AI part
     model: Annotated[
         str,
@@ -75,7 +75,7 @@ class AgentCore(BaseModel):
             default="gpt-5-mini",
             description="LLM of the agent",
         ),
-    ]
+    ] = "gpt-5-mini"
     prompt: Annotated[
         str | None,
         PydanticField(
@@ -83,7 +83,7 @@ class AgentCore(BaseModel):
             description="Base system prompt that defines the agent's behavior and capabilities",
             max_length=20000,
         ),
-    ]
+    ] = None
     prompt_append: Annotated[
         str | None,
         PydanticField(
@@ -91,7 +91,7 @@ class AgentCore(BaseModel):
             description="Additional system prompt that has higher priority than the base prompt",
             max_length=20000,
         ),
-    ]
+    ] = None
     temperature: Annotated[
         float | None,
         PydanticField(
@@ -100,7 +100,7 @@ class AgentCore(BaseModel):
             ge=0.0,
             le=2.0,
         ),
-    ]
+    ] = 0.7
     frequency_penalty: Annotated[
         float | None,
         PydanticField(
@@ -109,7 +109,7 @@ class AgentCore(BaseModel):
             ge=-2.0,
             le=2.0,
         ),
-    ]
+    ] = 0.0
     presence_penalty: Annotated[
         float | None,
         PydanticField(
@@ -118,21 +118,21 @@ class AgentCore(BaseModel):
             ge=-2.0,
             le=2.0,
         ),
-    ]
+    ] = 0.0
     short_term_memory_strategy: Annotated[
         Literal["trim", "summarize"] | None,
         PydanticField(
             default="trim",
             description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
         ),
-    ]
+    ] = "trim"
     wallet_provider: Annotated[
         Literal["cdp", "native", "readonly", "safe", "privy", "none"] | None,
         PydanticField(
             default=None,
             description="Provider of the agent's wallet",
         ),
-    ]
+    ] = None
     network_id: Annotated[
         Literal[
             "base-mainnet",
@@ -149,14 +149,14 @@ class AgentCore(BaseModel):
             default="base-mainnet",
             description="Network identifier",
         ),
-    ]
+    ] = "base-mainnet"
     skills: Annotated[
         dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Dict of skills and their corresponding configurations",
         ),
-    ]
+    ] = None
 
     def hash(self) -> str:
         """

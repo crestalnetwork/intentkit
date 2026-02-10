@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
 
 # Load .env file for BDD tests
@@ -10,16 +11,18 @@ load_dotenv()
 os.environ["DB_NAME"] = "bdd"
 
 
-def pytest_collection_modifyitems(items):
+def pytest_collection_modifyitems(items) -> None:
     """Mark all tests in this directory as BDD tests automatically."""
     for item in items:
         item.add_marker(pytest.mark.bdd)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_bdd_database():
-    """Drop and recreate 'bdd' database before BDD tests run."""
+@pytest_asyncio.fixture(scope="session", autouse=True, loop_scope="session")
+async def setup_bdd_database():
+    """Drop and recreate 'bdd' database before BDD tests run, and initialize tables."""
     import psycopg
+
+    from intentkit.config.db import init_db
 
     host = os.getenv("DB_HOST", "localhost")
     port = os.getenv("DB_PORT", "5432")
@@ -34,7 +37,7 @@ def setup_bdd_database():
     if password:
         conn_string += f" password={password}"
 
-    # Use synchronous psycopg for setup
+    # Use synchronous psycopg for setup (drop/create database)
     with psycopg.connect(conn_string, autocommit=True) as conn:
         with conn.cursor() as cur:
             # Terminate existing connections to bdd database
@@ -50,10 +53,23 @@ def setup_bdd_database():
             _ = cur.execute(f"DROP DATABASE IF EXISTS {bdd_db}")
             _ = cur.execute(f"CREATE DATABASE {bdd_db}")
 
+    # Initialize tables using init_db (which runs migrations if auto_migrate=True)
+    # This runs in the same event loop as the tests
+    await init_db(
+        host=host,
+        username=username,
+        password=password,
+        dbname=bdd_db,
+        port=port,
+        auto_migrate=True,
+    )
+
     yield
 
-    # Cleanup after tests (optional: drop database)
-    # Uncomment the following if you want to drop the database after tests:
-    # with psycopg.connect(conn_string, autocommit=True) as conn:
-    #     with conn.cursor() as cur:
-    #         cur.execute(f"DROP DATABASE IF EXISTS {bdd_db}")
+    # Cleanup after tests: close the engine to release connections
+    from intentkit.config import db
+
+    if db.engine:
+        await db.engine.dispose()
+    if db._connection_pool:
+        await db._connection_pool.close()

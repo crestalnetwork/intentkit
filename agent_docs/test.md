@@ -6,7 +6,7 @@
 
 ## BDD Database Isolation
 - BDD tests use a separate `bdd` database (overrides `DB_NAME` from `.env`).
-- `tests/bdd/conftest.py` drops and recreates `bdd` database before each test session.
+- `tests/bdd/conftest.py` drops, recreates `bdd` database, and **initializes tables** before each test session.
 - Requires PostgreSQL running with access to create/drop databases.
 
 ## Commands
