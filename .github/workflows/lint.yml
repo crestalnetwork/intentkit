@@ -27,3 +27,7 @@ jobs:
     - name: Ruff Check
       run: |
         sh lint.sh ci
+
+    - name: Unit Tests
+      run: |
+        uv run pytest -m "not bdd"

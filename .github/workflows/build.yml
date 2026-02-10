@@ -1,12 +1,6 @@
 name: Build Docker Image and Deploy
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - ".github/**"
-      - "docs/**"
-      - "*.md"
   release:
     types: [prereleased, released]
 
@@ -59,37 +53,6 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Build Start
-        id: ci_start
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: ${{ secrets.SLACK_CHANNEL }}
-            text: "Build started 👀"
-            attachments:
-              - color: "dbab09"
-                fields:
-                  - title: "Repository"
-                    short: true
-                    value: ${{ github.repository }}
-                  - title: "Status"
-                    short: true
-                    value: "In Progress"
-                  - title: "Branch"
-                    short: true
-                    value: ${{ github.ref }}
-                  - title: "Author"
-                    short: true
-                    value: ${{ github.actor }}
-                  - title: "Action"
-                    value: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                  - title: "Diff"
-                    value: ${{ github.event.head_commit.url }}
-                  - title: "Changes"
-                    value: ${{ toJSON(github.event.head_commit.message) }}
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
@@ -126,66 +89,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build Success
+      - name: Build Success Notification
         if: ${{ success() }}
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
+        uses: appleboy/telegram-action@master
         with:
-          method: chat.update
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: ${{ secrets.SLACK_CHANNEL }}
-            ts: "${{ steps.ci_start.outputs.ts }}"
-            text: "Build Succeeded ✅"
-            attachments:
-              - color: "28a745"
-                fields:
-                  - title: "Repository"
-                    short: true
-                    value: ${{ github.repository }}
-                  - title: "Status"
-                    short: true
-                    value: "Completed"
-                  - title: "Branch"
-                    short: true
-                    value: ${{ github.ref }}
-                  - title: "Author"
-                    short: true
-                    value: ${{ github.actor }}
-                  - title: "Image"
-                    value: https://hub.docker.com/r/crestal/intentkit/tags
-                  - title: "Diff"
-                    value: ${{  github.event.head_commit.url }}
-                  - title: "Changes"
-                    value: ${{ toJSON(github.event.head_commit.message) }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ✅ *Build Succeeded*
+            *Repository:* `${{ github.repository }}`
+            *Status:* Completed
+            *Branch:* `${{ github.ref }}`
+            *Author:* ${{ github.actor }}
+            *Image:* [Docker Hub](https://hub.docker.com/r/crestal/intentkit/tags)
 
-      - name: Build Failure
+      - name: Build Failure Notification
         if: ${{ failure() }}
-        uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d
+        uses: appleboy/telegram-action@master
         with:
-          method: chat.update
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: ${{ secrets.SLACK_CHANNEL }}
-            ts: "${{ steps.ci_start.outputs.ts }}"
-            text: "Build Failed ❌"
-            attachments:
-              - color: "dc3545"
-                fields:
-                  - title: "Repository"
-                    short: true
-                    value: ${{ github.repository }}
-                  - title: "Status"
-                    short: true
-                    value: "Failed"
-                  - title: "Branch"
-                    short: true
-                    value: ${{ github.ref }}
-                  - title: "Author"
-                    short: true
-                    value: ${{ github.actor }}
-                  - title: "Action"
-                    value: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-                  - title: "Diff"
-                    value: ${{ github.event.head_commit.url }}
-                  - title: "Changes"
-                    value: ${{ toJSON(github.event.head_commit.message) }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ❌ *Build Failed*
+            *Repository:* `${{ github.repository }}`
+            *Status:* Failed
+            *Branch:* `${{ github.ref }}`
+            *Author:* ${{ github.actor }}
+            *Action:* [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
