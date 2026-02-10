@@ -44,7 +44,6 @@ Follow Semantic Versioning:
 1. Make a `git pull --rebase` first. If the local branch is main,  `git push` it.
 2. Find the last version number in release or pre-release.
 3. Change the version number in `pyproject.toml` and run a `uv sync` to update the lock file.
-4. Diff `origin/main` with it, summarize release notes to business language, not a technical one. List new features. For bug fixes and improvements, provide vague descriptions, such as "fixed bugs in the xxx module". Then save it to `latest_changelog.md` for later use. Add a diff link to release note too, the from and to should be the version number.
-5. If the release is **not pre-release**, also insert the release note to the beginning of `CHANGELOG.md` (This file contains all history release notes, don't use it in gh command). Commit and push `latest_changelog.md` and `CHANGELOG.md`.
-6. Construct `gh release create` command, use `latest_changelog.md` as notes file in gh command.
-7. Use `gh` to publish release only, don't create branch, tag, or pull request.
+4. Diff `origin/main` with it, summarize release notes to business language, not a technical one. List new features. For bug fixes and improvements, provide vague descriptions, such as "fixed bugs in the xxx module". Then save it to `release_notes.md` for later use. Add a diff link to release note too, the from and to should be the version number.
+5. If the release is **not pre-release**, also insert the release note to the beginning of `CHANGELOG.md` (This file contains all history release notes, don't use it in gh command). Commit and push `release_notes.md` and `CHANGELOG.md`.
+6. Construct `gh release create` command, use `release_notes.md` as notes file in gh command.
