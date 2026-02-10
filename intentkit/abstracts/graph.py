@@ -24,6 +24,7 @@ class AgentState(BaseAgentState[Any]):
 
     context: dict[str, Any]
     error: NotRequired[AgentError]
+    step_count: NotRequired[int]
     __extra__: NotRequired[dict[str, Any]]
 
 

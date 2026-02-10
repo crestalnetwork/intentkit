@@ -251,9 +251,24 @@ class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return {}
 
 
+class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):
+    """Middleware that tracks the number of steps in the agent execution."""
+
+    @override
+    async def abefore_model(
+        self, state: AgentState, runtime: Runtime[AgentContext]
+    ) -> dict[str, Any]:
+        del runtime
+        step_count = state.get("step_count", 0)
+        step_count += 1
+        logger.debug(f"Step tracking: {step_count}")
+        return {"step_count": step_count}
+
+
 __all__ = [
     "CreditCheckMiddleware",
     "DynamicPromptMiddleware",
+    "StepTrackingMiddleware",
     "SummarizationMiddleware",
     "ToolBindingMiddleware",
     "TrimMessagesMiddleware",

@@ -51,6 +51,7 @@ from intentkit.core.credit import expense_message, expense_skill
 from intentkit.core.middleware import (
     CreditCheckMiddleware,
     DynamicPromptMiddleware,
+    StepTrackingMiddleware,
     SummarizationMiddleware,
     ToolBindingMiddleware,
     TrimMessagesMiddleware,
@@ -207,6 +208,7 @@ async def build_agent(
     middleware: list[Any] = [
         ToolBindingMiddleware(llm_model, tools, private_tools),
         DynamicPromptMiddleware(agent, agent_data),
+        StepTrackingMiddleware(),
     ]
 
     if agent.short_term_memory_strategy == "trim":
@@ -515,13 +517,13 @@ async def stream_agent_raw(
     input_message = await explain_prompt(user_message.message)
 
     # super mode
-    recursion_limit = 30
+    recursion_limit = config.recursion_limit
     if (
         re.search(r"@super\b", input_message)
         or user_message.super_mode
         or agent.has_super()
     ):
-        recursion_limit = 300
+        recursion_limit = max(config.super_recursion_limit, 300)
         input_message = re.sub(r"@super\b", "", input_message).strip()
 
     # llm native search
@@ -799,6 +801,11 @@ async def stream_agent_raw(
                         skill_message_create.credit_cost = (
                             message_payment_event.total_amount
                         )
+                        skill_message = await skill_message_create.save_in_session(
+                            session
+                        )
+                        await session.commit()
+                        yield skill_message
                     for skill_call in skill_calls:
                         if not skill_call["success"]:
                             continue
@@ -898,7 +905,7 @@ async def stream_agent_raw(
             extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         error_message_create = await ChatMessageCreate.from_system_message(
-            SystemMessageType.STEP_LIMIT_EXCEEDED,
+            SystemMessageType.RECURSION_LIMIT_EXCEEDED,
             agent_id=user_message.agent_id,
             chat_id=user_message.chat_id,
             user_id=user_message.user_id or "",

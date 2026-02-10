@@ -23,6 +23,7 @@ class SystemMessageType(str, Enum):
     STEP_LIMIT_EXCEEDED = "step_limit_exceeded"
     SKILL_INTERRUPTED = "skill_interrupted"
     HOURLY_BUDGET_EXCEEDED = "hourly_budget_exceeded"
+    RECURSION_LIMIT_EXCEEDED = "recursion_limit_exceeded"
 
 
 # Default system messages
@@ -34,6 +35,7 @@ DEFAULT_SYSTEM_MESSAGES = {
     "step_limit_exceeded": "This Agent tried to process too many steps. Try again with @super for higher step limit.",
     "skill_interrupted": "You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
     "hourly_budget_exceeded": "Hourly budget exceeded. Please try again later.",
+    "recursion_limit_exceeded": "The agent reached the maximum recursion limit. Please type 'continue' to resume execution.",
 }
 
 # In-memory cache for app settings

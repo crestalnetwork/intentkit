@@ -225,6 +225,10 @@ class Config:
         self.nation_api_key: str | None = self.load("NATION_API_KEY")
         self.nation_api_url: str = self.load("NATION_API_URL", "")
 
+        # Agent Execution Limits
+        self.recursion_limit: int = self.load_int("RECURSION_LIMIT", 100)
+        self.super_recursion_limit: int = self.load_int("SUPER_RECURSION_LIMIT", 1000)
+
         # ===== config loaded
         # Now we know the env, set up logging
         setup_logging(self.env, self.debug)
