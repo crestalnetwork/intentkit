@@ -64,7 +64,7 @@ class AgentPublicInfo(BaseModel):
                 "x-step": 0.01,
             },
         ),
-    ]
+    ] = 0.01
     description: Annotated[
         str | None,
         PydanticField(
@@ -74,7 +74,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "Introduce your agent",
             },
         ),
-    ]
+    ] = None
     external_website: Annotated[
         str | None,
         PydanticField(
@@ -85,7 +85,7 @@ class AgentPublicInfo(BaseModel):
                 "format": "uri",
             },
         ),
-    ]
+    ] = None
     ticker: Annotated[
         str | None,
         PydanticField(
@@ -97,7 +97,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "If one day, your agent has it's own token, what will it be?",
             },
         ),
-    ]
+    ] = None
     token_address: Annotated[
         str | None,
         PydanticField(
@@ -108,7 +108,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "The contract address of the agent token",
             },
         ),
-    ]
+    ] = None
     token_pool: Annotated[
         str | None,
         PydanticField(
@@ -119,7 +119,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "The contract address of the agent token pool",
             },
         ),
-    ]
+    ] = None
     fee_percentage: Annotated[
         Decimal | None,
         PydanticField(
@@ -130,7 +130,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "Agent will charge service fee according to this ratio.",
             },
         ),
-    ]
+    ] = None
     example_intro: Annotated[
         str | None,
         PydanticField(
@@ -141,7 +141,7 @@ class AgentPublicInfo(BaseModel):
                 "x-placeholder": "Add a short introduction in new chat",
             },
         ),
-    ]
+    ] = None
     examples: Annotated[
         list[AgentExample] | None,
         PydanticField(
@@ -152,11 +152,11 @@ class AgentPublicInfo(BaseModel):
                 "x-inline": True,
             },
         ),
-    ]
+    ] = None
     public_extra: Annotated[
         dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Public extra data of the agent",
         ),
-    ]
+    ] = None

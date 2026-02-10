@@ -132,6 +132,7 @@ reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
 reportImplicitStringConcatenation = false
+reportUnusedCallResult = false
 
 [build-system]
 requires = ["hatchling"]
