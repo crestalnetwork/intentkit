@@ -1,5 +1,7 @@
 """Skill for calling another agent."""
 
+import asyncio
+import logging
 from typing import cast, override
 
 from epyxid import XID
@@ -10,6 +12,11 @@ from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.models.chat import AuthorType, ChatMessageCreate
+
+logger = logging.getLogger(__name__)
+
+# Default timeout for calling another agent (in seconds)
+CALL_AGENT_TIMEOUT = 180  # 3 minutes
 
 
 class CallAgentInput(BaseModel):
@@ -66,7 +73,7 @@ class CallAgentSkill(BaseTool):
             The response message from the called agent.
 
         Raises:
-            ToolException: If no response received, or the last message is not from agent.
+            ToolException: If no response received, timeout, or the last message is not from agent.
         """
         # Import here to avoid circular dependency
         # When initializing an agent, it may import this skill,
@@ -91,8 +98,19 @@ class CallAgentSkill(BaseTool):
             message=message,
         )
 
-        # Execute the called agent
-        results = await execute_agent(chat_message)
+        # Execute the called agent with a timeout
+        try:
+            async with asyncio.timeout(CALL_AGENT_TIMEOUT):
+                results = await execute_agent(chat_message)
+        except TimeoutError:
+            logger.error(
+                f"call_agent timed out after {CALL_AGENT_TIMEOUT}s "
+                f"waiting for agent '{agent_id}'"
+            )
+            raise ToolException(
+                f"Agent '{agent_id}' did not respond within "
+                f"{CALL_AGENT_TIMEOUT} seconds"
+            )
 
         if not results:
             raise ToolException(
