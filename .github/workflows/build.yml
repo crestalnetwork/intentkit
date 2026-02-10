@@ -96,6 +96,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
+          disable_web_page_preview: true
           message: |
             ✅ *Build Succeeded*
             *Repository:* `${{ github.repository }}`
@@ -111,6 +112,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
+          disable_web_page_preview: true
           message: |
             ❌ *Build Failed*
             *Repository:* `${{ github.repository }}`
