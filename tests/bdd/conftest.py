@@ -23,6 +23,7 @@ async def setup_bdd_database():
     import psycopg
 
     from intentkit.config.db import init_db
+    from intentkit.config.redis import init_redis
 
     host = os.getenv("DB_HOST", "localhost")
     port = os.getenv("DB_PORT", "5432")
@@ -64,12 +65,32 @@ async def setup_bdd_database():
         auto_migrate=True,
     )
 
+    # Initialize Redis (needed for LLMModelInfo caching, etc.)
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    redis_port = int(os.getenv("REDIS_PORT", "6379"))
+    redis_db = int(os.getenv("REDIS_DB", "0"))
+    redis_password = os.getenv("REDIS_PASSWORD")
+    redis_ssl = os.getenv("REDIS_SSL", "false") == "true"
+    await init_redis(
+        host=redis_host,
+        port=redis_port,
+        db=redis_db,
+        password=redis_password,
+        ssl=redis_ssl,
+    )
+
     yield
 
     # Cleanup after tests: close the engine to release connections
     from intentkit.config import db
+    from intentkit.config.redis import get_redis
 
     if db.engine:
         await db.engine.dispose()
     if db._connection_pool:
         await db._connection_pool.close()
+    try:
+        redis_client = get_redis()
+        await redis_client.aclose()
+    except RuntimeError:
+        pass
