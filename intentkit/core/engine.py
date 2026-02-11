@@ -784,6 +784,7 @@ async def stream_agent_raw(
                 )
                 last = this_time
                 async with get_session() as session:
+                    # 1. Message-level credit event (if applicable)
                     if have_first_call_in_cache:
                         message_amount = await model.calculate_cost(
                             skill_message_create.input_tokens,
@@ -801,11 +802,7 @@ async def stream_agent_raw(
                         skill_message_create.credit_cost = (
                             message_payment_event.total_amount
                         )
-                        skill_message = await skill_message_create.save_in_session(
-                            session
-                        )
-                        await session.commit()
-                        yield skill_message
+                    # 2. Per-skill credit events
                     for skill_call in skill_calls:
                         if not skill_call["success"]:
                             continue
@@ -826,20 +823,21 @@ async def stream_agent_raw(
                         logger.info(
                             f"[{user_message.agent_id}] skill payment: {skill_call}"
                         )
+                    # 3. Single insert with all credit info populated
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
                     yield skill_message
             else:
-                for node_name, update in chunk.items():
+                for node_name, node_update in chunk.items():
                     if (
                         node_name.endswith("CreditCheckMiddleware.after_model")
-                        and isinstance(update, dict)
-                        and update.get("error") == AgentError.INSUFFICIENT_CREDITS
+                        and isinstance(node_update, dict)
+                        and node_update.get("error") == AgentError.INSUFFICIENT_CREDITS
                     ):
                         ai_messages = [
                             message
-                            for message in update.get("messages", [])
+                            for message in node_update.get("messages", [])
                             if isinstance(message, BaseMessage)
                         ]
                         content = ""
