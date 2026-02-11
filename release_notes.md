@@ -1,15 +1,8 @@
-# Release v0.10.3
+# Release Notes v0.10.4
 
-## New Features
+- Fixed issues with Grok search functionality.
+- Fixed search bugs in OpenRouter and XAI integrations.
+- Addressed various engine bugs.
+- Fixed lint errors.
 
-- **Testing**: Initialized BDD testing framework.
-
-## Bug Fixes
-
-- **Agent Model**: Fixed default values for agent models.
-
-## Improvements
-
-- **Dependencies**: Upgraded project dependencies.
-
-Full Changelog: [v0.10.2...v0.10.3](https://github.com/crestalnetwork/intentkit/compare/v0.10.2...v0.10.3)
+[Changes](https://github.com/crestalnetwork/intentkit/compare/v0.10.3...v0.10.4)

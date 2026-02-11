@@ -1,3 +1,13 @@
+# Release v0.10.4
+
+## Bug Fixes
+
+- **Search**: Fixed issues with Grok, OpenRouter, and XAI search functionality.
+- **Engine**: Addressed various engine bugs.
+- **Linting**: Resolved code linting errors.
+
+Full Changelog: [v0.10.3...v0.10.4](https://github.com/crestalnetwork/intentkit/compare/v0.10.3...v0.10.4)
+
 # Release v0.10.3
 
 ## New Features
