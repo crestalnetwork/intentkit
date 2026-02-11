@@ -41,56 +41,56 @@ class Agent(AgentCreate, AgentPublicInfo):
             max_length=100,
             min_length=2,
         ),
-    ]
+    ] = None
     version: Annotated[
         str | None,
         PydanticField(
             default=None,
             description="Version hash of the agent",
         ),
-    ]
+    ] = None
     statistics: Annotated[
         dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Statistics of the agent, update every 1 hour for query",
         ),
-    ]
+    ] = None
     assets: Annotated[
         dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Assets of the agent, update every 1 hour for query",
         ),
-    ]
+    ] = None
     account_snapshot: Annotated[
         CreditAccount | None,
         PydanticField(
             default=None,
             description="Account snapshot of the agent, update every 1 hour for query",
         ),
-    ]
+    ] = None
     extra: Annotated[
         dict[str, Any] | None,
         PydanticField(
             default=None,
             description="Other helper data fields for query, come from agent and agent data",
         ),
-    ]
+    ] = None
     deployed_at: Annotated[
         datetime | None,
         PydanticField(
             default=None,
             description="Timestamp when the agent was deployed",
         ),
-    ]
+    ] = None
     public_info_updated_at: Annotated[
         datetime | None,
         PydanticField(
             default=None,
             description="Timestamp when the agent public info was last updated",
         ),
-    ]
+    ] = None
     # auto timestamp
     created_at: Annotated[
         datetime,

@@ -6,7 +6,7 @@ import pytest
 
 import intentkit.wallets.privy as privy_module
 from intentkit.core.agent import process_agent_wallet
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.agent_data import AgentData
 
 
@@ -24,7 +24,7 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
         skills={},
         prompt="You are a helper.",
         temperature=0.7,
-        visibility=0,
+        visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
         wallet_provider="safe",
         weekly_spending_limit=200.0,
@@ -103,7 +103,7 @@ async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkey
         skills={},
         prompt="You are a helper.",
         temperature=0.7,
-        visibility=0,
+        visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
         wallet_provider="safe",
         weekly_spending_limit=None,

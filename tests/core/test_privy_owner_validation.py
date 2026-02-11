@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from intentkit.core.agent import process_agent_wallet
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
 
@@ -24,7 +24,7 @@ async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
         skills={},
         prompt="You are a helper.",
         temperature=0.7,
-        visibility=0,
+        visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
         wallet_provider="safe",
         weekly_spending_limit=200.0,

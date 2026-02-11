@@ -5,7 +5,7 @@ import pytest
 from langgraph.errors import GraphRecursionError
 
 from intentkit.core.engine import stream_agent
-from intentkit.models.agent import Agent
+from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
@@ -24,7 +24,7 @@ def mock_agent():
         skills={},
         prompt="You are a helper.",
         temperature=0.7,
-        visibility=0,
+        visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
     )
 
