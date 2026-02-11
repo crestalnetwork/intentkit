@@ -551,7 +551,7 @@ export default function AgentChatPage() {
 
                     {/* Message Content */}
                     {msg.role === "agent" ? (
-                      <MarkdownRenderer className={markdownProseClass}>
+                      <MarkdownRenderer className={markdownProseClass} enableBreaks>
                         {msg.content}
                       </MarkdownRenderer>
                     ) : (
