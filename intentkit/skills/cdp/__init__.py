@@ -25,15 +25,12 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-# Skill registry
-_SKILLS: dict[str, type[CDPBaseTool]] = {
-    "cdp_get_balance": CDPGetBalance,
-    "cdp_get_wallet_details": CDPGetWalletDetails,
-    "cdp_native_transfer": CDPNativeTransfer,
-}
-
 # Cache for skill instances
-_cache: dict[str, CDPBaseTool] = {}
+_cache: dict[str, CDPBaseTool] = {
+    "cdp_get_balance": CDPGetBalance(),
+    "cdp_get_wallet_details": CDPGetWalletDetails(),
+    "cdp_native_transfer": CDPNativeTransfer(),
+}
 
 
 async def get_skills(
@@ -59,12 +56,6 @@ async def get_skills(
             # Check cache first
             if skill_name in _cache:
                 tools.append(_cache[skill_name])
-            else:
-                skill_class = _SKILLS.get(skill_name)
-                if skill_class:
-                    skill_instance = skill_class()
-                    _cache[skill_name] = skill_instance
-                    tools.append(skill_instance)
 
     return tools
 

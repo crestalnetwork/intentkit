@@ -21,15 +21,12 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-# Skill registry
-_SKILLS: dict[str, type[SuperfluidBaseTool]] = {
-    "superfluid_create_flow": SuperfluidCreateFlow,
-    "superfluid_update_flow": SuperfluidUpdateFlow,
-    "superfluid_delete_flow": SuperfluidDeleteFlow,
-}
-
 # Cache for skill instances
-_cache: dict[str, SuperfluidBaseTool] = {}
+_cache: dict[str, SuperfluidBaseTool] = {
+    "superfluid_create_flow": SuperfluidCreateFlow(),
+    "superfluid_update_flow": SuperfluidUpdateFlow(),
+    "superfluid_delete_flow": SuperfluidDeleteFlow(),
+}
 
 
 async def get_skills(
@@ -55,12 +52,6 @@ async def get_skills(
             # Check cache first
             if skill_name in _cache:
                 tools.append(_cache[skill_name])
-            else:
-                skill_class = _SKILLS.get(skill_name)
-                if skill_class:
-                    skill_instance = skill_class()
-                    _cache[skill_name] = skill_instance
-                    tools.append(skill_instance)
 
     return tools
 

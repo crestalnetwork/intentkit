@@ -19,14 +19,11 @@ class Config(SkillConfig):
     states: SkillStates
 
 
-# Skill registry
-_SKILLS: dict[str, type[MorphoBaseTool]] = {
-    "morpho_deposit": MorphoDeposit,
-    "morpho_withdraw": MorphoWithdraw,
-}
-
 # Cache for skill instances
-_cache: dict[str, MorphoBaseTool] = {}
+_cache: dict[str, MorphoBaseTool] = {
+    "morpho_deposit": MorphoDeposit(),
+    "morpho_withdraw": MorphoWithdraw(),
+}
 
 
 async def get_skills(
@@ -52,12 +49,6 @@ async def get_skills(
             # Check cache first
             if skill_name in _cache:
                 tools.append(_cache[skill_name])
-            else:
-                skill_class = _SKILLS.get(skill_name)
-                if skill_class:
-                    skill_instance = skill_class()
-                    _cache[skill_name] = skill_instance
-                    tools.append(skill_instance)
 
     return tools
 
