@@ -512,15 +512,15 @@ class XAILLM(LLMModel):
 
     @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
-        """Create and return a ChatXAI instance."""
-
-        from langchain_xai import ChatXAI
+        """Create and return a ChatOpenAI instance configured for xAI."""
+        from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
             "model_name": self.model_name,
-            "xai_api_key": config.xai_api_key,
+            "openai_api_key": config.xai_api_key,
+            "openai_api_base": "https://api.x.ai/v1",
             "timeout": info.timeout,
         }
 
@@ -537,7 +537,7 @@ class XAILLM(LLMModel):
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
-        return ChatXAI(**kwargs)
+        return ChatOpenAI(**kwargs)
 
 
 class OpenRouterLLM(LLMModel):

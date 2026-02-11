@@ -135,6 +135,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         texts = [
             self.prompt,
             self.prompt_append,
+            self.extra_prompt,
             self.purpose,
             self.personality,
             self.principles,
@@ -148,6 +149,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         texts = [
             self.prompt,
             self.prompt_append,
+            self.extra_prompt,
             self.purpose,
             self.personality,
             self.principles,

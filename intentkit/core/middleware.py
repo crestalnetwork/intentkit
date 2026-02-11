@@ -174,7 +174,9 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
                 ):
                     llm_params["reasoning_effort"] = "medium"
                 if self.llm_model.info.provider == LLMProvider.XAI:
-                    llm_params["search_parameters"] = {"mode": "auto"}
+                    tools.extend([{"type": "web_search"}, {"type": "x_search"}])
+                if self.llm_model.info.provider == LLMProvider.OPENROUTER:
+                    llm_params["extra_body"] = {"plugins": [{"id": "web"}]}
             else:
                 logger.debug(
                     "Search requested but model does not support native search"
