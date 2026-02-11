@@ -1,13 +1,19 @@
 import csv
 import json
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, Callable, ClassVar
 
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -522,6 +528,7 @@ class XAILLM(LLMModel):
             "openai_api_key": config.xai_api_key,
             "openai_api_base": "https://api.x.ai/v1",
             "timeout": info.timeout,
+            "use_responses_api": True,
         }
 
         # Add optional parameters based on model support
@@ -537,7 +544,97 @@ class XAILLM(LLMModel):
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
-        return ChatOpenAI(**kwargs)
+        from langchain_core.utils.function_calling import convert_to_openai_tool
+
+        class ChatXAIAdapter(ChatOpenAI):
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                formatted_tools = []
+                for tool in tools:
+                    if isinstance(tool, dict) and tool.get("type") in {
+                        "web_search",
+                        "x_search",
+                    }:
+                        formatted_tools.append(tool)
+                    else:
+                        formatted_tools.append(
+                            convert_to_openai_tool(tool, strict=kwargs.get("strict"))
+                        )
+                return self.bind(tools=formatted_tools, **kwargs)
+
+            @override
+            def _generate(
+                self,
+                messages: list[BaseMessage],
+                stop: list[str] | None = None,
+                run_manager: Any | None = None,
+                **kwargs: Any,
+            ) -> ChatResult:
+                """Override generate to filter out xAI tools from the response."""
+                result = super()._generate(messages, stop, run_manager, **kwargs)
+                for generation in result.generations:
+                    message = generation.message
+                    if isinstance(message, AIMessage) and message.tool_calls:
+                        # filter out xAI tools
+                        message.tool_calls = [
+                            tool
+                            for tool in message.tool_calls
+                            if tool["name"]
+                            not in {
+                                "x_semantic_search",
+                                "x_keyword_search",
+                                "x_search",
+                                "web_search",
+                            }
+                        ]
+                        # if no tools left, reset finish_reason
+                        if not message.tool_calls:
+                            if (
+                                hasattr(generation, "generation_info")
+                                and generation.generation_info
+                            ):
+                                generation.generation_info["finish_reason"] = "stop"
+                return result
+
+            @override
+            async def _agenerate(
+                self,
+                messages: list[BaseMessage],
+                stop: list[str] | None = None,
+                run_manager: Any | None = None,
+                **kwargs: Any,
+            ) -> ChatResult:
+                """Override agenerate to filter out xAI tools from the response."""
+                result = await super()._agenerate(messages, stop, run_manager, **kwargs)
+                for generation in result.generations:
+                    message = generation.message
+                    if isinstance(message, AIMessage) and message.tool_calls:
+                        # filter out xAI tools
+                        message.tool_calls = [
+                            tool
+                            for tool in message.tool_calls
+                            if tool["name"]
+                            not in {
+                                "x_semantic_search",
+                                "x_keyword_search",
+                                "x_search",
+                                "web_search",
+                            }
+                        ]
+                        # if no tools left, reset finish_reason
+                        if not message.tool_calls:
+                            if (
+                                hasattr(generation, "generation_info")
+                                and generation.generation_info
+                            ):
+                                generation.generation_info["finish_reason"] = "stop"
+                return result
+
+        return ChatXAIAdapter(**kwargs)
 
 
 class OpenRouterLLM(LLMModel):
