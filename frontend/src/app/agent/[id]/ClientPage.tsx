@@ -39,8 +39,13 @@ import { cn } from "@/lib/utils";
 import { agentApi, chatApi } from "@/lib/api";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { toast } from "@/hooks/use-toast";
 import type { UIMessage, ChatThread, ChatMessage } from "@/types/chat";
+
+// Tailwind prose classes for markdown rendering in chat bubbles
+const markdownProseClass =
+  "prose prose-sm dark:prose-invert max-w-none break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0";
 
 // Check if a thread is older than 3 days
 function isThreadOlderThanThreeDays(thread: ChatThread): boolean {
@@ -545,7 +550,13 @@ export default function AgentChatPage() {
                     )}
 
                     {/* Message Content */}
-                    <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                    {msg.role === "agent" ? (
+                      <MarkdownRenderer className={markdownProseClass} enableBreaks>
+                        {msg.content}
+                      </MarkdownRenderer>
+                    ) : (
+                      <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                    )}
                   </div>
                 </div>
               ))
