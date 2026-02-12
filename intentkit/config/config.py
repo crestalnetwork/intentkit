@@ -231,17 +231,7 @@ class Config:
 
         # ===== config loaded
         # Now we know the env, set up logging
-        setup_logging(self.env, self.debug)
-        logger.info("config loaded")
-
-        # Initialize unified alert system (Telegram > Slack > None)
-        _ = init_alert(
-            telegram_bot_token=self.tg_alert_bot_token,
-            telegram_chat_id=self.tg_alert_chat_id,
-            slack_token=self.slack_alert_token,
-            slack_channel=self.slack_alert_channel,
-        )
-
+        setup_logging(self.env, self.debug, self.release)
         # Set up alert handler for ERROR+ logs (only if alert is enabled)
         _ = setup_alert_handler(
             redis_host=self.redis_host,
@@ -316,3 +306,13 @@ class Config:
 
 
 config: Config = Config()
+
+logger.info("config loaded")
+
+# Initialize unified alert system (Telegram > Slack > None)
+_ = init_alert(
+    telegram_bot_token=config.tg_alert_bot_token,
+    telegram_chat_id=config.tg_alert_chat_id,
+    slack_token=config.slack_alert_token,
+    slack_channel=config.slack_alert_channel,
+)

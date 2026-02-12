@@ -1,5 +1,8 @@
 """
-Logging configuration module
+Logging configuration module.
+
+This module must remain independent of intentkit.config to avoid circular imports.
+The config module calls setup_logging() and passes env/release values directly.
 """
 
 import datetime
@@ -9,29 +12,23 @@ import logging
 from collections.abc import Callable
 from typing import Any, override
 
-# Lazy import to avoid circular dependency
-_config = None
-
-
-def get_config():
-    """Lazy import config to avoid circular dependency."""
-    global _config
-    if _config is None:
-        from intentkit.config.config import config
-
-        _config = config
-    return _config
-
 
 class ContextFilter(logging.Filter):
     """Filter that adds env and release to all log records."""
 
+    env: str
+    release: str
+
+    def __init__(self, env: str = "unknown", release: str = "unknown") -> None:
+        super().__init__()
+        self.env = env
+        self.release = release
+
     @override
     def filter(self, record: logging.LogRecord) -> bool:
         """Add env and release to the log record."""
-        config = get_config()
-        record.env = getattr(config, "env", "unknown")
-        record.release = getattr(config, "release", "unknown")
+        record.env = self.env  # type: ignore[attr-defined]
+        record.release = self.release  # type: ignore[attr-defined]
         return True
 
 
@@ -112,17 +109,21 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_obj, cls=JsonEncoder)
 
 
-def setup_logging(_env: str, debug: bool = False) -> None:
+def setup_logging(env: str, debug: bool = False, release: str = "unknown") -> None:
     """
     Setup global logging configuration.
 
+    This function is config-independent. The caller (e.g. Config.__init__)
+    is responsible for passing the correct env and release values.
+
     Args:
-        _env: Environment name ('local', 'prod', etc.)
+        env: Environment name ('local', 'prod', etc.)
         debug: Debug mode flag
+        release: Release/version identifier
     """
 
     # Create and add context filter to inject env and release
-    context_filter = ContextFilter()
+    context_filter = ContextFilter(env=env, release=release)
 
     if debug:
         # Set up logging configuration for local/debug
