@@ -5,6 +5,7 @@ go 1.25.7
 require (
 	github.com/go-resty/resty/v2 v2.17.1
 	github.com/hack-fan/config v0.0.0-20200528030741-0a9be90586b6
+	github.com/joho/godotenv v1.5.1
 	github.com/mymmrac/telego v1.6.0
 	github.com/rs/xid v1.6.0
 	gorm.io/datatypes v1.2.7
@@ -22,7 +23,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grbit/go-json v0.11.0 // indirect
-	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.8.0 // indirect
@@ -42,6 +43,6 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 )

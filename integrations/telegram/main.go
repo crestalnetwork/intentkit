@@ -9,6 +9,7 @@ import (
 	"github.com/crestalnetwork/intentkit/integrations/telegram/api"
 	"github.com/crestalnetwork/intentkit/integrations/telegram/bot"
 	"github.com/crestalnetwork/intentkit/integrations/telegram/config"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -17,6 +18,11 @@ func main() {
 	// Initialize Logger
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Load .env file
+    // We ignore the error because in production (k8s/docker) the env vars might be injected directly
+    // and no .env file might be present. But for local dev it is useful.
+	_ = godotenv.Load()
 
 	// Load Configuration
 	cfg, err := config.Load()
