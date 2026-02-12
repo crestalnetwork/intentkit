@@ -6,12 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/crestalnetwork/intentkit/integrations/telegram/api"
-	"github.com/crestalnetwork/intentkit/integrations/telegram/bot"
-	"github.com/crestalnetwork/intentkit/integrations/telegram/config"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/crestalnetwork/intentkit/integrations/telegram/api"
+	"github.com/crestalnetwork/intentkit/integrations/telegram/bot"
+	"github.com/crestalnetwork/intentkit/integrations/telegram/config"
 )
 
 func main() {
@@ -20,8 +21,8 @@ func main() {
 	slog.SetDefault(logger)
 
 	// Load .env file
-    // We ignore the error because in production (k8s/docker) the env vars might be injected directly
-    // and no .env file might be present. But for local dev it is useful.
+	// We ignore the error because in production (k8s/docker) the env vars might be injected directly
+	// and no .env file might be present. But for local dev it is useful.
 	_ = godotenv.Load()
 
 	// Load Configuration
@@ -30,7 +31,12 @@ func main() {
 		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("Configuration loaded", "env", cfg.Env, "internal_base_url", cfg.InternalBaseURL)
+	logger = logger.With("env", cfg.Env)
+
+	if cfg.Release != "" {
+		logger = logger.With("release", cfg.Release)
+	}
+	slog.SetDefault(logger)
 
 	// Initialize Database
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseDSN()), &gorm.Config{})

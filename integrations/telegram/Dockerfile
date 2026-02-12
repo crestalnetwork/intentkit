@@ -20,6 +20,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o intent-telegram .
 # Run stage
 FROM alpine:latest
 
+ARG RELEASE
+ENV RELEASE=${RELEASE}
+
 WORKDIR /app
 
 # Install ca-certificates for HTTPS requests (required for Telegram API and Core API)

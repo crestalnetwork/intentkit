@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Env   string `default:"local"`
-	Debug bool   `default:"false"`
+	Env     string `default:"local"`
+	Debug   bool   `default:"false"`
+	Release string `env:"RELEASE"`
 
 	// DB
 	DBHost     string `env:"DB_HOST"`
