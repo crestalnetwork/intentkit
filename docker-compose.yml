@@ -3,6 +3,7 @@ volumes:
   rustfs_data:
   redis_data:
 
+
 services:
   db:
     image: postgres:18.1-trixie
@@ -13,7 +14,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,7 +31,7 @@ services:
     volumes:
       - rustfs_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -40,12 +41,12 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  intent-api:
+  api:
     build: .
     volumes:
       - ./.env:/app/.env
@@ -58,17 +59,11 @@ services:
         condition: service_healthy
     environment:
       - ENV=${ENV:-local}
-      - RELEASE=${RELEASE:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${POSTGRES_DB:-intentkit}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
-      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
-      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -80,9 +75,14 @@ services:
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
     ports:
       - "8000:8000"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health').raise_for_status()" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
 
-  intent-autonomous:
+  autonomous:
     build: .
     volumes:
       - ./.env:/app/.env
@@ -93,19 +93,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_healthy
     environment:
       - ENV=${ENV:-local}
-      - RELEASE=${RELEASE:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${POSTGRES_DB:-intentkit}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
-      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
-      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -116,9 +112,14 @@ services:
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
       - INTERNAL_BASE_URL=http://api:8000
+    healthcheck:
+      test: [ "CMD", "python", "scripts/check_heartbeat.py", "autonomous" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: python -m app.autonomous
 
-  intent-scheduler:
+  scheduler:
     build: .
     volumes:
       - ./.env:/app/.env
@@ -131,17 +132,11 @@ services:
         condition: service_healthy
     environment:
       - ENV=${ENV:-local}
-      - RELEASE=${RELEASE:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${POSTGRES_DB:-intentkit}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - CDP_API_KEY_ID=${CDP_API_KEY_ID}
-      - CDP_API_KEY_SECRET=${CDP_API_KEY_SECRET}
-      - CDP_WALLET_SECRET=${CDP_WALLET_SECRET}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
@@ -151,4 +146,31 @@ services:
       - AWS_S3_SECRET_ACCESS_KEY=${AWS_S3_SECRET_ACCESS_KEY:-minioadmin}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
+    healthcheck:
+      test: [ "CMD", "python", "scripts/check_heartbeat.py", "scheduler" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: python -m app.scheduler
+
+  telegram:
+    build:
+      context: ./integrations/telegram
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      - ENV=${ENV:-local}
+      - RELEASE=${RELEASE}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_NAME=${POSTGRES_DB:-intentkit}
+      - REDIS_HOST=redis
+      - INTERNAL_BASE_URL=http://api:8000
+      - TG_NEW_AGENT_POLL_INTERVAL=10
