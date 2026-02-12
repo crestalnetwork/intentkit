@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o intent-telegram .
 # Run stage
 FROM alpine:latest
 
-ARG RELEASE
+ARG RELEASE=local
 ENV RELEASE=${RELEASE}
 
 WORKDIR /app

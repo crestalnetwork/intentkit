@@ -61,7 +61,7 @@ DEVELOPMENT.md
 SECURITY.md
 
 # Scripts not needed in production
-scripts/
+
 
 # Tests
 tests/

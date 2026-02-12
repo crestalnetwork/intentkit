@@ -49,7 +49,7 @@ COPY --from=builder /app/intentkit /app/intentkit
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/scripts /app/scripts
 
-ARG RELEASE
+ARG RELEASE=local
 ENV RELEASE=$RELEASE
 ENV PATH="/app/.venv/bin:$PATH"
 

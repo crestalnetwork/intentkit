@@ -47,7 +47,10 @@ services:
       retries: 5
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        - RELEASE=${RELEASE:-latest}
     volumes:
       - ./.env:/app/.env
       - ./intentkit:/app/intentkit
@@ -58,7 +61,6 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - ENV=${ENV:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
@@ -83,7 +85,10 @@ services:
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
 
   autonomous:
-    build: .
+    build:
+      context: .
+      args:
+        - RELEASE=${RELEASE:-latest}
     volumes:
       - ./.env:/app/.env
       - ./intentkit:/app/intentkit
@@ -96,7 +101,6 @@ services:
       api:
         condition: service_healthy
     environment:
-      - ENV=${ENV:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
@@ -120,7 +124,10 @@ services:
     command: python -m app.autonomous
 
   scheduler:
-    build: .
+    build:
+      context: .
+      args:
+        - RELEASE=${RELEASE:-latest}
     volumes:
       - ./.env:/app/.env
       - ./intentkit:/app/intentkit
@@ -131,7 +138,6 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - ENV=${ENV:-local}
       - DB_USERNAME=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - DB_HOST=db
@@ -156,6 +162,8 @@ services:
   telegram:
     build:
       context: ./integrations/telegram
+      args:
+        - RELEASE=${RELEASE:-latest}
     depends_on:
       db:
         condition: service_healthy
@@ -164,8 +172,6 @@ services:
       api:
         condition: service_healthy
     environment:
-      - ENV=${ENV:-local}
-      - RELEASE=${RELEASE}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USERNAME=${POSTGRES_USER:-postgres}

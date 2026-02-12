@@ -44,8 +44,8 @@ def load_from_aws(name: str) -> SecretsMap:
 class Config:
     def __init__(self) -> None:
         # ==== this part can only be load from env
-        self.env: str = os.getenv("ENV", "local")
-        self.release: str = os.getenv("RELEASE", "local")
+        self.env: str = os.getenv("ENV") or "local"
+        self.release: str = os.getenv("RELEASE") or "local"
         secret_name: str | None = os.getenv("AWS_SECRET_NAME")
         db_secret_name: str | None = os.getenv("AWS_DB_SECRET_NAME")
         # ==== load from aws secrets manager
