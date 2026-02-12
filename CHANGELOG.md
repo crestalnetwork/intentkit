@@ -1,3 +1,11 @@
+# Release v0.10.5
+
+## New Features
+
+- **Telegram**: Added Telegram Go image service to docker-compose.
+
+Full Changelog: [v0.10.4...v0.10.5](https://github.com/crestalnetwork/intentkit/compare/v0.10.4...v0.10.5)
+
 # Release v0.10.4
 
 ## Bug Fixes
