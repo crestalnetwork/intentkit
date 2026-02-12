@@ -1,20 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable static export for production build
-  // We only enable this in production because 'rewrites' (used in dev) are incompatible with 'export'
-  output: process.env.NODE_ENV === "development" ? undefined : "export",
+  // Use Next.js runtime (SSR/Node server) in all environments.
+  // This disables static export so dynamic routes like /agent/[id]/tasks can build.
+  output: undefined,
 
-  // Disable image optimization for static export compatibility
+  // Keep image optimization enabled for runtime mode
   images: {
-    unoptimized: true,
+    unoptimized: false,
   },
 
   // Proxy API requests to FastAPI backend during development
   // Note: You can bypass this proxy by setting NEXT_PUBLIC_API_BASE_URL
   // in .env.local to directly access the backend (e.g., "http://localhost:8000")
   async rewrites() {
-    // Rewrites are not supported in static export, so we only return them in development
     if (process.env.NODE_ENV !== "development") {
       return [];
     }

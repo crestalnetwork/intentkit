@@ -3,7 +3,6 @@ volumes:
   rustfs_data:
   redis_data:
 
-
 services:
   db:
     image: postgres:18.1-trixie
@@ -14,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,7 +30,7 @@ services:
     volumes:
       - rustfs_data:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -41,7 +40,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -78,7 +77,13 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health').raise_for_status()" ]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health').raise_for_status()",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -117,7 +122,7 @@ services:
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
       - INTERNAL_BASE_URL=http://api:8000
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "autonomous" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "autonomous"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -153,11 +158,25 @@ services:
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-intentkit}
       - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "scheduler" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "scheduler"]
       interval: 10s
       timeout: 5s
       retries: 3
     command: python -m app.scheduler
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
 
   telegram:
     build:

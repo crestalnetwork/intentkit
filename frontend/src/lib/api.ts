@@ -6,7 +6,7 @@ import type {
 } from "@/types/chat";
 import type { AgentResponse } from "@/types/agent";
 
-const API_BASE = "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 /**
  * Generate a unique chat ID
@@ -73,7 +73,9 @@ export const agentApi = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `Failed to create agent: ${response.statusText}`);
+      throw new Error(
+        errorData.detail || `Failed to create agent: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -151,7 +153,8 @@ export const agentApi = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to reactivate agent: ${response.statusText}`,
+        errorData.detail ||
+          `Failed to reactivate agent: ${response.statusText}`,
       );
     }
   },
@@ -422,10 +425,17 @@ export const activityApi = {
    * Get activities for a specific agent
    * GET /agents/{agentId}/activities
    */
-  async getByAgent(agentId: string, limit: number = 50): Promise<ActivityItem[]> {
-    const response = await fetch(`${API_BASE}/agents/${agentId}/activities?limit=${limit}`);
+  async getByAgent(
+    agentId: string,
+    limit: number = 50,
+  ): Promise<ActivityItem[]> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/activities?limit=${limit}`,
+    );
     if (!response.ok) {
-      throw new Error(`Failed to fetch agent activities: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch agent activities: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -451,7 +461,9 @@ export const postApi = {
    * GET /agents/{agentId}/posts
    */
   async getByAgent(agentId: string, limit: number = 50): Promise<PostItem[]> {
-    const response = await fetch(`${API_BASE}/agents/${agentId}/posts?limit=${limit}`);
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/posts?limit=${limit}`,
+    );
     if (!response.ok) {
       throw new Error(`Failed to fetch agent posts: ${response.statusText}`);
     }
@@ -473,7 +485,9 @@ export const postApi = {
    * Get a single post by Slug
    */
   async getBySlug(agentId: string, slug: string): Promise<PostItem> {
-    const response = await fetch(`${API_BASE}/agents/${agentId}/posts/slug/${slug}`);
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/posts/slug/${slug}`,
+    );
     if (!response.ok) {
       throw new Error(`Failed to fetch post by slug: ${response.statusText}`);
     }
@@ -510,7 +524,9 @@ export const autonomousApi = {
   async listTasks(agentId: string): Promise<AutonomousTask[]> {
     const response = await fetch(`${API_BASE}/agents/${agentId}/autonomous`);
     if (!response.ok) {
-      throw new Error(`Failed to list autonomous tasks: ${response.statusText}`);
+      throw new Error(
+        `Failed to list autonomous tasks: ${response.statusText}`,
+      );
     }
     return response.json();
   },
@@ -533,7 +549,8 @@ export const autonomousApi = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to create autonomous task: ${response.statusText}`,
+        errorData.detail ||
+          `Failed to create autonomous task: ${response.statusText}`,
       );
     }
     return response.json();
@@ -561,7 +578,8 @@ export const autonomousApi = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to update autonomous task: ${response.statusText}`,
+        errorData.detail ||
+          `Failed to update autonomous task: ${response.statusText}`,
       );
     }
     return response.json();
@@ -579,7 +597,9 @@ export const autonomousApi = {
       },
     );
     if (!response.ok) {
-      throw new Error(`Failed to delete autonomous task: ${response.statusText}`);
+      throw new Error(
+        `Failed to delete autonomous task: ${response.statusText}`,
+      );
     }
   },
 };
