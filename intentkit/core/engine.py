@@ -896,10 +896,9 @@ async def stream_agent_raw(
         error_message = await error_message_create.save()
         yield error_message
         return
-    except GraphRecursionError as e:
-        error_traceback = traceback.format_exc()
+    except GraphRecursionError:
         logger.error(
-            f"reached recursion limit: {str(e)}\n{error_traceback}",
+            f"Recursion limit reached for Agent {user_message.agent_id} (Thread: {thread_id}). Sending error message to chat.",
             extra={"thread_id": thread_id, "agent_id": user_message.agent_id},
         )
         error_message_create = await ChatMessageCreate.from_system_message(
