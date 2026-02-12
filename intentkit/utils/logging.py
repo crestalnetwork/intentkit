@@ -54,6 +54,8 @@ class JsonEncoder(json.JSONEncoder):
 
 
 class JsonFormatter(logging.Formatter):
+    filter_func: Callable[[logging.LogRecord], bool] | None
+
     def __init__(self, filter_func: Callable[[logging.LogRecord], bool] | None = None):
         super().__init__()
         self.filter_func = filter_func
@@ -110,12 +112,12 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_obj, cls=JsonEncoder)
 
 
-def setup_logging(env: str, debug: bool = False) -> None:
+def setup_logging(_env: str, debug: bool = False) -> None:
     """
     Setup global logging configuration.
 
     Args:
-        env: Environment name ('local', 'prod', etc.)
+        _env: Environment name ('local', 'prod', etc.)
         debug: Debug mode flag
     """
 

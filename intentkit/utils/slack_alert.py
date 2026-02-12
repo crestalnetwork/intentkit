@@ -3,7 +3,8 @@ Slack notification module for sending messages to Slack channels.
 """
 
 import logging
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError

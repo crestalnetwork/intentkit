@@ -2,7 +2,7 @@ import random
 import string
 
 
-def generate_tx_confirm_string(length) -> str:
+def generate_tx_confirm_string(length: int) -> str:
     """
     Generates a random string of the specified length for the transaction reference.
 

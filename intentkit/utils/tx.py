@@ -1,12 +1,30 @@
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from pydantic import BaseModel, Field
 from web3 import Web3
 
 
+class EvmTx(BaseModel):
+    data: str | None = Field(None, description="Data of the transaction.")
+    to: str | None = Field(
+        None, description="Address of the receiver of the transaction."
+    )
+    from_: str | None = Field(
+        None, description="Address of the sender of the transaction."
+    )
+    value: str | None = Field(None, description="Amount of token to send.")
+    gas: int | None = Field(None, description="Gas amount.")
+    gasPrice: int | None = Field(None, description="Gas Price.")
+    nonce: int | None = Field(None, description="Nonce of transaction.")
+
+
 class EvmContractWrapper:
+    evm_tx: EvmTx
+    fn: Any
+    fn_args: dict[str, Any]
+
     def __init__(
-        self, rpc_url: str, abi: list[dict[str, Any]], tx_data: Dict[str, Any]
+        self, rpc_url: str, abi: list[dict[str, Any]], tx_data: dict[str, Any]
     ):
         w3 = Web3(Web3.HTTPProvider(rpc_url))
         contract = w3.eth.contract(abi=abi)
@@ -23,23 +41,9 @@ class EvmContractWrapper:
                 ]  # Convert list of bytes to list of hex strings
 
     @property
-    def fn_and_args(self) -> Tuple[Any, Dict[str, Any]]:
+    def fn_and_args(self) -> tuple[Any, dict[str, Any]]:
         return self.fn, self.fn_args
 
     @property
     def dst_addr(self) -> str | None:
         return self.evm_tx.to
-
-
-class EvmTx(BaseModel):
-    data: str | None = Field(None, description="Data of the transaction.")
-    to: str | None = Field(
-        None, description="Address of the receiver of the transaction."
-    )
-    from_: str | None = Field(
-        None, description="Address of the sender of the transaction."
-    )
-    value: str | None = Field(None, description="Amount of token to send.")
-    gas: int | None = Field(None, description="Gas amount.")
-    gasPrice: int | None = Field(None, description="Gas Price.")
-    nonce: int | None = Field(None, description="Nonce of transaction.")
