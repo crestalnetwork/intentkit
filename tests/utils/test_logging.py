@@ -14,7 +14,7 @@ def create_log_record(message: str) -> logging.LogRecord:
         args=(),
         exc_info=None,
     )
-    record.__dict__["extra"] = {"component": "tests"}
+    record.__dict__.update({"component": "tests"})
     return record
 
 
