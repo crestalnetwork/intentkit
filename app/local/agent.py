@@ -31,6 +31,7 @@ from intentkit.core.agent import (
 from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
+from intentkit.core.avatar import generate_avatar
 from intentkit.core.engine import clean_agent_memory
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
@@ -77,6 +78,14 @@ async def create_agent_endpoint(
     """
     new_agent = AgentCreate.model_validate(agent)
     new_agent.owner = "system"
+
+    if not new_agent.picture:
+        try:
+            generated_avatar = await generate_avatar(new_agent.id, new_agent)
+            if generated_avatar:
+                new_agent.picture = generated_avatar
+        except Exception as e:
+            logger.error(f"Failed to auto-generate avatar: {e}")
     latest_agent, agent_data = await create_agent(new_agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
@@ -120,6 +129,14 @@ async def override_agent_endpoint(
         - 404: Agent not found
         - 500: Database error
     """
+    if not agent.picture:
+        try:
+            generated_avatar = await generate_avatar(agent_id, agent)
+            if generated_avatar:
+                agent.picture = generated_avatar
+        except Exception as e:
+            logger.error(f"Failed to auto-generate avatar: {e}")
+
     latest_agent, agent_data = await override_agent(agent_id, agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
