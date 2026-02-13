@@ -1,19 +1,15 @@
 """Skill for calling another agent."""
 
 import asyncio
-import logging
-from typing import cast, override
+from typing import override
 
 from epyxid import XID
-from langchain_core.tools import ArgsSchema, BaseTool
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.graph import AgentContext
+from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.chat import AuthorType, ChatMessageCreate
-
-logger = logging.getLogger(__name__)
 
 # Default timeout for calling another agent (in seconds)
 CALL_AGENT_TIMEOUT = 180  # 3 minutes
@@ -32,7 +28,7 @@ class CallAgentInput(BaseModel):
     )
 
 
-class CallAgentSkill(BaseTool):
+class CallAgentSkill(SystemSkill):
     """Skill for calling another agent and getting its response.
 
     This skill allows an agent to delegate tasks to other agents
@@ -46,16 +42,6 @@ class CallAgentSkill(BaseTool):
         "The called agent will execute with the provided message and return its final response."
     )
     args_schema: ArgsSchema | None = CallAgentInput
-
-    @override
-    def _run(
-        self,
-        agent_id: str,
-        message: str,
-    ) -> str:
-        raise NotImplementedError(
-            "Use _arun instead, IntentKit only supports asynchronous skill calls"
-        )
 
     @override
     async def _arun(
@@ -80,10 +66,7 @@ class CallAgentSkill(BaseTool):
         # and this skill imports engine, which imports skills
         from intentkit.core.engine import execute_agent
 
-        runtime = get_runtime(AgentContext)
-        context = cast(AgentContext | None, runtime.context)
-        if context is None:
-            raise ToolException("No AgentContext found")
+        context = self.get_context()
 
         # Create a chat message for the called agent
         # Inherit context from the current skill execution
@@ -103,7 +86,7 @@ class CallAgentSkill(BaseTool):
             async with asyncio.timeout(CALL_AGENT_TIMEOUT):
                 results = await execute_agent(chat_message)
         except TimeoutError:
-            logger.error(
+            self.logger.error(
                 f"call_agent timed out after {CALL_AGENT_TIMEOUT}s "
                 f"waiting for agent '{agent_id}'"
             )

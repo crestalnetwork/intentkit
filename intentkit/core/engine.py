@@ -582,6 +582,8 @@ async def stream_agent_raw(
     )
 
     # run
+    yielded_any = False
+    raw_chunks = []
     cached_tool_step = None
     try:
         async for chunk in executor.astream(
@@ -592,6 +594,7 @@ async def stream_agent_raw(
         ):
             this_time = time.perf_counter()
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
+            raw_chunks.append(chunk)
 
             if isinstance(chunk, tuple) and len(chunk) == 2:
                 _, payload = chunk
@@ -618,6 +621,7 @@ async def stream_agent_raw(
                     )
                     last = this_time
                     credit_message = await credit_message_create.save()
+                    yielded_any = True
                     yield credit_message
 
                     error_message_create = await ChatMessageCreate.from_system_message(
@@ -709,6 +713,7 @@ async def stream_agent_raw(
                             session
                         )
                         await session.commit()
+                        yielded_any = True
                         yield chat_message
             elif "tools" in chunk and "messages" in chunk["tools"]:
                 if not cached_tool_step:
@@ -827,6 +832,7 @@ async def stream_agent_raw(
                     skill_message_create.skill_calls = skill_calls
                     skill_message = await skill_message_create.save_in_session(session)
                     await session.commit()
+                    yielded_any = True
                     yield skill_message
             else:
                 for node_name, node_update in chunk.items():
@@ -860,6 +866,7 @@ async def stream_agent_raw(
                         )
                         last = this_time
                         post_model_message = await post_model_message_create.save()
+                        yielded_any = True
                         yield post_model_message
 
                         error_message_create = (
@@ -934,6 +941,28 @@ async def stream_agent_raw(
         yield error_message
         _ = await clear_thread_memory(user_message.agent_id, user_message.chat_id)
         return
+
+    # If the stream completed normally but yielded zero messages,
+    # the LLM likely returned an empty response (no content, no tool calls).
+    if not yielded_any:
+        logger.error(
+            f"Agent {user_message.agent_id} produced no output messages. "
+            f"Total chunks received: {len(raw_chunks)}. "
+            f"Raw chunks: {raw_chunks}",
+            extra={"thread_id": thread_id},
+        )
+        empty_message_create = await ChatMessageCreate.from_system_message(
+            SystemMessageType.AGENT_INTERNAL_ERROR,
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id or "",
+            author_id=user_message.agent_id,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
+            time_cost=time.perf_counter() - start,
+        )
+        empty_message = await empty_message_create.save()
+        yield empty_message
 
 
 async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:

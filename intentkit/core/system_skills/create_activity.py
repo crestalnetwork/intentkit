@@ -1,14 +1,13 @@
 """Skill for creating agent activities."""
 
-from typing import cast, override
+from typing import override
 
-from langchain_core.tools import ArgsSchema, BaseTool
-from langgraph.runtime import get_runtime
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent import get_agent
 from intentkit.core.agent_activity import create_agent_activity
+from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.agent_activity import AgentActivityCreate
 
 
@@ -33,7 +32,7 @@ class CreateActivityInput(BaseModel):
     )
 
 
-class CreateActivitySkill(BaseTool):
+class CreateActivitySkill(SystemSkill):
     """Skill for creating a new agent activity.
 
     This skill allows an agent to create an activity with text content,
@@ -47,18 +46,6 @@ class CreateActivitySkill(BaseTool):
         "Use this to share updates, media content, or announcements."
     )
     args_schema: ArgsSchema | None = CreateActivityInput
-
-    @override
-    def _run(
-        self,
-        text: str,
-        images: list[str] | None = None,
-        video: str | None = None,
-        post_id: str | None = None,
-    ) -> str:
-        raise NotImplementedError(
-            "Use _arun instead, IntentKit only supports asynchronous skill calls"
-        )
 
     @override
     async def _arun(
@@ -79,10 +66,7 @@ class CreateActivitySkill(BaseTool):
         Returns:
             A message indicating success with the activity ID.
         """
-        runtime = get_runtime(AgentContext)
-        context = cast(AgentContext | None, runtime.context)
-        if context is None:
-            raise ValueError("No AgentContext found")
+        context = self.get_context()
         agent_id = context.agent_id
 
         agent = await get_agent(agent_id)

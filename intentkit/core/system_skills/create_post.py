@@ -1,15 +1,14 @@
 """Skill for creating agent posts."""
 
-from typing import cast, override
+from typing import override
 
-from langchain_core.tools import ArgsSchema, BaseTool
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from langgraph.runtime import get_runtime
 from pydantic import BaseModel, Field
 
-from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.agent_post import create_agent_post
+from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.agent_activity import AgentActivityCreate
 from intentkit.models.agent_post import AgentPostCreate
 
@@ -53,7 +52,7 @@ class CreatePostInput(BaseModel):
     )
 
 
-class CreatePostSkill(BaseTool):
+class CreatePostSkill(SystemSkill):
     """Skill for creating a new agent post.
 
     This skill allows an agent to create a post with a title,
@@ -67,20 +66,6 @@ class CreatePostSkill(BaseTool):
         "Use this to publish articles, announcements, or long-form content."
     )
     args_schema: ArgsSchema | None = CreatePostInput
-
-    @override
-    def _run(
-        self,
-        title: str,
-        markdown: str,
-        slug: str,
-        excerpt: str,
-        tags: list[str],
-        cover: str | None = None,
-    ) -> str:
-        raise NotImplementedError(
-            "Use _arun instead, IntentKit only supports asynchronous skill calls"
-        )
 
     @override
     async def _arun(
@@ -106,10 +91,7 @@ class CreatePostSkill(BaseTool):
             A message indicating success with the post ID.
         """
 
-        runtime = get_runtime(AgentContext)
-        context = cast(AgentContext | None, runtime.context)
-        if context is None:
-            raise ToolException("No AgentContext found")
+        context = self.get_context()
         agent_id = context.agent_id
 
         from intentkit.core.agent import get_agent

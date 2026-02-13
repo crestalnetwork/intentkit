@@ -1,16 +1,15 @@
 """Skill for retrieving agent's recent activities."""
 
-from typing import cast, override
+from typing import override
 
-from langchain_core.tools import ArgsSchema, BaseTool
-from langgraph.runtime import get_runtime
+from langchain_core.tools import ArgsSchema
 
-from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent_activity import get_agent_activities
+from intentkit.core.system_skills.base import SystemSkill
 from intentkit.skills.base import NoArgsSchema
 
 
-class RecentActivitiesSkill(BaseTool):
+class RecentActivitiesSkill(SystemSkill):
     """Skill for retrieving the agent's recent activities.
 
     This skill allows an agent to retrieve its own recent activities,
@@ -25,22 +24,13 @@ class RecentActivitiesSkill(BaseTool):
     args_schema: ArgsSchema | None = NoArgsSchema
 
     @override
-    def _run(self) -> str:
-        raise NotImplementedError(
-            "Use _arun instead, IntentKit only supports asynchronous skill calls"
-        )
-
-    @override
     async def _arun(self) -> str:
         """Retrieve the agent's recent activities.
 
         Returns:
             A formatted string containing the agent's 10 most recent activities.
         """
-        runtime = get_runtime(AgentContext)
-        context = cast(AgentContext | None, runtime.context)
-        if context is None:
-            raise ValueError("No AgentContext found")
+        context = self.get_context()
         agent_id = context.agent_id
 
         activities = await get_agent_activities(agent_id, limit=10)
