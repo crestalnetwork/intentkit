@@ -3,6 +3,7 @@ from typing import Any, cast, override
 from urllib.parse import urlparse
 
 import httpx
+from epyxid import XID
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
@@ -39,6 +40,13 @@ class X402HttpRequestInput(BaseModel):
         default=30.0,
         description="Request timeout in seconds.",
     )
+    idempotency_key: str | None = Field(
+        default=None,
+        description=(
+            "Optional idempotency key to prevent duplicate payments. "
+            "If not provided, a random UUID will be generated automatically."
+        ),
+    )
 
 
 class X402HttpRequest(X402BaseSkill):
@@ -61,6 +69,7 @@ class X402HttpRequest(X402BaseSkill):
         params: dict[str, Any] | None = None,
         data: dict[str, Any] | str | None = None,
         timeout: float = 30.0,
+        idempotency_key: str | None = None,
         **_: Any,
     ) -> str:
         method_upper = method.upper()
@@ -73,7 +82,12 @@ class X402HttpRequest(X402BaseSkill):
         if not (parsed.scheme and parsed.netloc):
             raise ToolException("URL must include scheme and host (absolute URL).")
 
+        # Ensure idempotency key is set
+        if not idempotency_key:
+            idempotency_key = str(XID())
+
         request_headers = dict(headers or {})
+        request_headers["Idempotency-Key"] = idempotency_key
         request_kwargs: dict[str, Any] = {
             "url": url,
             "headers": request_headers or None,
