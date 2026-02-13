@@ -181,9 +181,11 @@ async def patch_agent_endpoint(
         - 500: Database error
     """
     # Check if we should auto-generate an avatar
-    # Only generate if picture is not being explicitly set AND the existing agent has no picture
+    # Generate if picture is not being explicitly set to a truthy value
+    # AND the existing agent has no picture
     update_fields = agent.model_dump(exclude_unset=True)
-    if "picture" not in update_fields:
+    picture_explicitly_set = "picture" in update_fields and update_fields["picture"]
+    if not picture_explicitly_set:
         existing_agent = await get_agent_by_id(agent_id)
         if existing_agent and not existing_agent.picture:
             try:
