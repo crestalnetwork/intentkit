@@ -44,11 +44,10 @@ class AgentUserInputColumns:
     )
 
     # AI model configuration fields from AgentCore
-    model: Mapped[str | None] = mapped_column(
+    model: Mapped[str] = mapped_column(
         String,
-        nullable=True,
-        default="gpt-5-mini",
-        comment="AI model identifier to be used by this agent for processing requests. Available models: gpt-4o, gpt-4o-mini, deepseek-chat, deepseek-reasoner, grok-2, eternalai",
+        nullable=False,
+        comment="AI model identifier to be used by this agent for processing requests.",
     )
     prompt: Mapped[str | None] = mapped_column(
         String,

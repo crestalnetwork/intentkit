@@ -5,8 +5,10 @@ import json
 from enum import IntEnum
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
+
+from intentkit.models.llm_picker import pick_default_model
 
 
 class AgentVisibility(IntEnum):
@@ -72,10 +74,17 @@ class AgentCore(BaseModel):
     model: Annotated[
         str,
         PydanticField(
-            default="gpt-5-mini",
             description="LLM of the agent",
         ),
-    ] = "gpt-5-mini"
+    ]
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def _set_model_default(cls, v: str | None) -> str:
+        if v is None or v == "":
+            return pick_default_model()
+        return v
+
     prompt: Annotated[
         str | None,
         PydanticField(

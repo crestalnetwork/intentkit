@@ -78,7 +78,6 @@
       "title": "AI Model",
       "type": "string",
       "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
-      "default": "gpt-5-mini",
       "enum": [],
       "x-component": "category-select",
       "x-enum-title": [],

@@ -399,12 +399,19 @@ class Agent(AgentCreate, AgentPublicInfo):
                 model_property["x-enum-category"] = new_enum_category
                 model_property["x-support-skill"] = new_enum_support_skill
 
-                if (
-                    "default" in model_property
-                    and model_property["default"] not in new_enum
-                    and new_enum
-                ):
-                    model_property["default"] = new_enum[0]
+                if new_enum:
+                    from intentkit.models.llm_picker import pick_default_model
+
+                    try:
+                        default_model = pick_default_model()
+                    except RuntimeError:
+                        default_model = new_enum[0]
+                    current_default = model_property.get("default")
+                    if not current_default or current_default not in new_enum:
+                        if default_model in new_enum:
+                            model_property["default"] = default_model
+                        else:
+                            model_property["default"] = new_enum[0]
 
             # Process skills property using data from Skill.get_all instead of agent_schema.json
             skills_property = schema.get("properties", {}).get("skills", {})

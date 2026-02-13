@@ -225,10 +225,10 @@ async def create_example_agent() -> None:
             example_agent = AgentTable(
                 id="example",
                 name="Example",
-                owner="intentkit",
+                owner="system",
                 skills={
-                    "system": {
-                        "states": {"read_agent_api_key": "private"},
+                    "common": {
+                        "states": {"common_current_time": "public"},
                         "enabled": True,
                     }
                 },
