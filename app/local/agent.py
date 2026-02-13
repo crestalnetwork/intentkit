@@ -180,6 +180,19 @@ async def patch_agent_endpoint(
         - 404: Agent not found
         - 500: Database error
     """
+    # Check if we should auto-generate an avatar
+    # Only generate if picture is not being explicitly set AND the existing agent has no picture
+    update_fields = agent.model_dump(exclude_unset=True)
+    if "picture" not in update_fields:
+        existing_agent = await get_agent_by_id(agent_id)
+        if existing_agent and not existing_agent.picture:
+            try:
+                generated_avatar = await generate_avatar(agent_id, agent)
+                if generated_avatar:
+                    agent.picture = generated_avatar
+            except Exception as e:
+                logger.error(f"Failed to auto-generate avatar: {e}")
+
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
