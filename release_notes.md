@@ -1,10 +1,8 @@
-# Release v0.11.0
+# Release v0.11.1
 
-## New Features
+## Improvements
 
-- **Frontend**: Added containerization support with a new Dockerfile.
-- **Frontend**: Refactored API client for better authentication and error handling.
-- **DevOps**: Improved Docker Compose setup with version-aware builds.
-- **Telegram**: Optimized Telegram integration container setup.
+- Introduced a unified base class for system skills, reducing code duplication and improving consistency across built-in agent capabilities.
+- Added detection and error reporting for cases where the AI model produces an empty response, preventing silent failures during conversations.
 
-Full Changelog: [v0.10.5...v0.11.0](https://github.com/crestalnetwork/intentkit/compare/v0.10.5...v0.11.0)
+Full Changelog: [v0.11.0...v0.11.1](https://github.com/crestalnetwork/intentkit/compare/v0.11.0...v0.11.1)
