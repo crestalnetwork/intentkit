@@ -1,6 +1,6 @@
 [project]
 name = "intentkit"
-version = "0.11.0"
+version = "0.0.0"
 description = "Intent-based AI Agent Platform - Core Package"
 authors = [
     { name = "Ruihua", email = "ruihua@crestal.network" },
