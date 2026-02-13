@@ -41,7 +41,7 @@ def get_s3_client() -> S3Client | None:
 
     _bucket = config.aws_s3_bucket
     _cdn_url = config.aws_s3_cdn_url
-    _prefix = f"{config.env}/intentkit/"
+    _prefix = f"{config.env}/"
 
     try:
         if config.aws_s3_endpoint_url:

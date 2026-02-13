@@ -188,13 +188,15 @@ def _build_agent_profile(agent_id: str, agent: Any) -> str:
 async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
     """Use a cheap LLM to turn agent profile into an image generation prompt."""
     from intentkit.models.llm import create_llm_model
+    from intentkit.models.llm_picker import pick_summarize_model
 
     profile = _build_agent_profile(agent_id, agent)
 
     try:
         from langchain_core.messages import HumanMessage, SystemMessage
 
-        llm = await create_llm_model("gpt-4o-mini", temperature=0.9)
+        model_name = pick_summarize_model()
+        llm = await create_llm_model(model_name, temperature=0.9)
         model = await llm.create_instance()
 
         response = await model.ainvoke(
