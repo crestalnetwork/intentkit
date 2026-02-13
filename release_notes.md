@@ -1,8 +1,12 @@
-# Release v0.11.1
+# Release v0.11.2
+
+## New Features
+
+- Added support for new AI models: MiniMax M2.5 with enhanced intelligence and structured output capabilities, and GLM 5 with improved performance and reasoning abilities.
 
 ## Improvements
 
-- Introduced a unified base class for system skills, reducing code duplication and improving consistency across built-in agent capabilities.
-- Added detection and error reporting for cases where the AI model produces an empty response, preventing silent failures during conversations.
+- Enhanced error logging in autonomous tasks with detailed exception information and stack traces for better debugging.
+- Updated model configurations to reflect the latest available models and their capabilities.
 
-Full Changelog: [v0.11.0...v0.11.1](https://github.com/crestalnetwork/intentkit/compare/v0.11.0...v0.11.1)
+Full Changelog: [v0.11.1...v0.11.2](https://github.com/crestalnetwork/intentkit/compare/v0.11.1...v0.11.2)
