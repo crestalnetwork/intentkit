@@ -12,12 +12,12 @@ import {
   AlertCircle,
   MoreVertical,
   Archive,
-
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getImageUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -122,7 +122,8 @@ export default function AgentChatPage() {
     } else {
       // Sort by updated_at descending and pick the first
       const sorted = [...threads].sort(
-        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        (a, b) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
       );
       const mostRecent = sorted[0];
 
@@ -144,7 +145,7 @@ export default function AgentChatPage() {
     // Don't load messages while sending - this prevents overwriting the user's message
     // that was just added to state when we switch from isNewThread to an actual thread
     if (isSending) return;
-    
+
     if (!currentThreadId || !agentId || isNewThread) {
       setMessages([]);
       return;
@@ -192,7 +193,7 @@ export default function AgentChatPage() {
       await chatApi.updateChatSummary(agentId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
@@ -206,7 +207,9 @@ export default function AgentChatPage() {
         const remaining = threads.filter((t) => t.id !== threadId);
         if (remaining.length > 0) {
           const sorted = [...remaining].sort(
-            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            (a, b) =>
+              new Date(b.updated_at).getTime() -
+              new Date(a.updated_at).getTime(),
           );
           setCurrentThreadId(sorted[0].id);
           setIsNewThread(false);
@@ -217,7 +220,7 @@ export default function AgentChatPage() {
         }
       }
     },
-    [agentId, refetchThreads, currentThreadId, threads]
+    [agentId, refetchThreads, currentThreadId, threads],
   );
 
   // Send message with streaming
@@ -251,7 +254,11 @@ export default function AgentChatPage() {
         }
 
         // Stream the response
-        for await (const msg of chatApi.sendMessageStream(agentId, threadId, userMessage.content)) {
+        for await (const msg of chatApi.sendMessageStream(
+          agentId,
+          threadId,
+          userMessage.content,
+        )) {
           const uiMsg = apiMessageToUIMessage(msg);
           setMessages((prev) => {
             // Check if message already exists (by id)
@@ -266,7 +273,8 @@ export default function AgentChatPage() {
         // Refetch threads to update the summary/timestamp
         await refetchThreads();
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to send message";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to send message";
         setError(errorMessage);
         // Remove the user message on error
         setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
@@ -274,14 +282,21 @@ export default function AgentChatPage() {
         setIsSending(false);
       }
     },
-    [inputValue, isSending, agentId, currentThreadId, isNewThread, refetchThreads]
+    [
+      inputValue,
+      isSending,
+      agentId,
+      currentThreadId,
+      isNewThread,
+      refetchThreads,
+    ],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Check if IME is composing (e.g., inputting Chinese characters)
     // When isComposing is true, Enter is used to confirm IME selection, not to send message
     if (e.nativeEvent.isComposing) return;
-    
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -324,7 +339,9 @@ export default function AgentChatPage() {
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
           <p className="font-medium">Error loading agent</p>
           <p className="text-sm mt-1">
-            {agentError instanceof Error ? agentError.message : "Agent not found"}
+            {agentError instanceof Error
+              ? agentError.message
+              : "Agent not found"}
           </p>
           <Button asChild variant="outline" className="mt-4">
             <Link href="/">
@@ -366,10 +383,10 @@ export default function AgentChatPage() {
               </Link>
             </Button>
             <div className="flex items-center gap-3">
-              {agent.picture ? (
+              {getImageUrl(agent.picture) ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={agent.picture}
+                  src={getImageUrl(agent.picture)!}
                   alt={displayName}
                   className="h-10 w-10 rounded-full object-cover"
                 />
@@ -412,17 +429,22 @@ export default function AgentChatPage() {
             </DropdownMenu>
 
             {/* Archive Confirmation Dialog */}
-            <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+            <AlertDialog
+              open={showArchiveDialog}
+              onOpenChange={setShowArchiveDialog}
+            >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Archive Agent</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to archive this agent? Archived agents will be hidden
-                    from the agent list.
+                    Are you sure you want to archive this agent? Archived agents
+                    will be hidden from the agent list.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isArchiving}>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     disabled={isArchiving}
                     onClick={async (e) => {
@@ -430,7 +452,9 @@ export default function AgentChatPage() {
                       setIsArchiving(true);
                       try {
                         await agentApi.archive(agentId);
-                        await queryClient.invalidateQueries({ queryKey: ["agents"] });
+                        await queryClient.invalidateQueries({
+                          queryKey: ["agents"],
+                        });
                         toast({
                           title: "Agent archived",
                           description: "The agent has been archived.",
@@ -440,7 +464,10 @@ export default function AgentChatPage() {
                       } catch (err) {
                         toast({
                           title: "Error",
-                          description: err instanceof Error ? err.message : "Failed to archive agent",
+                          description:
+                            err instanceof Error
+                              ? err.message
+                              : "Failed to archive agent",
                           variant: "destructive",
                         });
                         setShowArchiveDialog(false);
@@ -490,7 +517,12 @@ export default function AgentChatPage() {
           <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{error}</span>
-            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setError(null)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              onClick={() => setError(null)}
+            >
               Dismiss
             </Button>
           </div>
@@ -502,7 +534,10 @@ export default function AgentChatPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Bot className="h-4 w-4" />
               <span>
-                {isNewThread ? "New Chat" : threads.find((t) => t.id === currentThreadId)?.summary || "Chat Session"}
+                {isNewThread
+                  ? "New Chat"
+                  : threads.find((t) => t.id === currentThreadId)?.summary ||
+                    "Chat Session"}
               </span>
               <span className="text-xs">
                 ({messages.length} message{messages.length !== 1 ? "s" : ""})
@@ -510,12 +545,17 @@ export default function AgentChatPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+          <CardContent
+            className="flex-1 overflow-y-auto p-4 space-y-4"
+            ref={scrollRef}
+          >
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <Bot className="h-12 w-12 mb-4 opacity-50" />
                 <p className="text-lg font-medium">Start a conversation</p>
-                <p className="text-sm">Send a message to chat with {displayName}</p>
+                <p className="text-sm">
+                  Send a message to chat with {displayName}
+                </p>
               </div>
             ) : (
               messages.map((msg) => (
@@ -523,23 +563,29 @@ export default function AgentChatPage() {
                   key={msg.id}
                   className={cn(
                     "flex w-full gap-2 max-w-[85%]",
-                    msg.role === "user" ? "ml-auto flex-row-reverse" : ""
+                    msg.role === "user" ? "ml-auto flex-row-reverse" : "",
                   )}
                 >
                   <div
                     className={cn(
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
-                      msg.role === "agent" ? "bg-primary text-primary-foreground" : "bg-muted"
+                      msg.role === "agent"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted",
                     )}
                   >
-                    {msg.role === "agent" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    {msg.role === "agent" ? (
+                      <Bot className="h-4 w-4" />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
                   </div>
                   <div
                     className={cn(
                       "rounded-lg px-4 py-2 text-sm",
                       msg.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                        : "bg-muted text-foreground",
                     )}
                   >
                     {/* Skill Call Badges */}
@@ -551,11 +597,16 @@ export default function AgentChatPage() {
 
                     {/* Message Content */}
                     {msg.role === "agent" ? (
-                      <MarkdownRenderer className={markdownProseClass} enableBreaks>
+                      <MarkdownRenderer
+                        className={markdownProseClass}
+                        enableBreaks
+                      >
                         {msg.content}
                       </MarkdownRenderer>
                     ) : (
-                      <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                      <div className="whitespace-pre-wrap break-words">
+                        {msg.content}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -578,7 +629,9 @@ export default function AgentChatPage() {
           <div className="p-4 border-t bg-background">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
-                placeholder={isSending ? "Waiting for response..." : "Type a message..."}
+                placeholder={
+                  isSending ? "Waiting for response..." : "Type a message..."
+                }
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -588,7 +641,9 @@ export default function AgentChatPage() {
               <Button
                 type="submit"
                 disabled={isSending || !inputValue.trim()}
-                title={isSending ? "Please wait for the response" : "Send message"}
+                title={
+                  isSending ? "Please wait for the response" : "Send message"
+                }
               >
                 <Send className="h-4 w-4" />
                 <span className="sr-only">Send</span>

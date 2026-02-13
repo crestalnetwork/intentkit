@@ -4,6 +4,7 @@ from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.clients import get_twitter_client
+from intentkit.clients.s3 import get_cdn_url
 from intentkit.config.config import config
 from intentkit.skills.twitter.base import TwitterBaseTool
 
@@ -69,11 +70,16 @@ class TwitterReplyTweet(TwitterBaseTool):
 
             # Handle image upload if provided
             if image:
-                # Validate image URL - must be from system's S3 CDN
+                # Validate image URL - must be from system's S3 CDN.
+                # The agent outputs full CDN URLs (skills prepend cdn_url after upload).
                 aws_s3_cdn_url = config.aws_s3_cdn_url
                 if aws_s3_cdn_url and image.startswith(aws_s3_cdn_url):
                     # Use the TwitterClient method to upload the image
                     media_ids = await twitter.upload_media(context.agent_id, image)
+                elif not image.startswith("http") and aws_s3_cdn_url:
+                    # Relative path — build full CDN URL before uploading
+                    full_url = get_cdn_url(image)
+                    media_ids = await twitter.upload_media(context.agent_id, full_url)
                 else:
                     # Image is not from system's S3 CDN, skip upload but warn
                     image_warning = "Warning: The provided image URL is not from the system's S3 CDN and has been ignored. "

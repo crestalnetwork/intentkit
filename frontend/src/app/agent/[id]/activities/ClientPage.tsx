@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { agentApi, chatApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 export default function AgentActivitiesPage() {
   const params = useParams();
@@ -43,7 +44,7 @@ export default function AgentActivitiesPage() {
     (threadId: string) => {
       window.location.href = `/agent/${agentId}?thread=${threadId}`;
     },
-    [agentId]
+    [agentId],
   );
 
   const handleNewThread = useCallback(() => {
@@ -55,7 +56,7 @@ export default function AgentActivitiesPage() {
       await chatApi.updateChatSummary(agentId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
@@ -63,7 +64,7 @@ export default function AgentActivitiesPage() {
       await chatApi.deleteChat(agentId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const displayName = agent?.name || agent?.id || agentId;
@@ -112,7 +113,7 @@ export default function AgentActivitiesPage() {
               {agent?.picture ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={agent.picture}
+                  src={getImageUrl(agent.picture) ?? ""}
                   alt={displayName}
                   className="h-10 w-10 rounded-full object-cover"
                 />
@@ -155,7 +156,9 @@ export default function AgentActivitiesPage() {
 
         {/* Page Title */}
         <div className="mb-4">
-          <h2 className="text-2xl font-bold tracking-tight">Agent Activities</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Agent Activities
+          </h2>
           <p className="text-muted-foreground">
             Recent activities and events for this agent.
           </p>
@@ -163,7 +166,10 @@ export default function AgentActivitiesPage() {
 
         {/* Content */}
         <div className="flex-1 rounded-xl border bg-card text-card-foreground shadow p-6 overflow-y-auto">
-          <Timeline agentId={agentId} agentPicture={agent?.picture} />
+          <Timeline
+            agentId={agentId}
+            agentPicture={getImageUrl(agent?.picture)}
+          />
         </div>
       </div>
     </div>

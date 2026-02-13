@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { agentApi, chatApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 export default function AgentPostsPage() {
   const params = useParams();
@@ -43,7 +44,7 @@ export default function AgentPostsPage() {
     (threadId: string) => {
       window.location.href = `/agent/${agentId}?thread=${threadId}`;
     },
-    [agentId]
+    [agentId],
   );
 
   const handleNewThread = useCallback(() => {
@@ -55,7 +56,7 @@ export default function AgentPostsPage() {
       await chatApi.updateChatSummary(agentId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
@@ -63,7 +64,7 @@ export default function AgentPostsPage() {
       await chatApi.deleteChat(agentId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const displayName = agent?.name || agent?.id || agentId;
@@ -112,7 +113,7 @@ export default function AgentPostsPage() {
               {agent?.picture ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={agent.picture}
+                  src={getImageUrl(agent.picture)!}
                   alt={displayName}
                   className="h-10 w-10 rounded-full object-cover"
                 />

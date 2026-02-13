@@ -203,7 +203,7 @@ class TestGenerateAvatar:
             patch(
                 "intentkit.core.avatar.store_image_bytes",
                 new_callable=AsyncMock,
-                return_value="https://cdn.example.com/test/intentkit/avatars/test-agent-123/abc.png",
+                return_value="test/avatars/test-agent-123/abc.png",
             ) as mock_store,
         ):
             path = await generate_avatar("test-agent-123", mock_agent)
@@ -214,7 +214,8 @@ class TestGenerateAvatar:
             assert "avatars/test-agent-123/" in call_args[0][1]
             assert call_args[1]["content_type"] == "image/png"
 
-            assert path == "test/intentkit/avatars/test-agent-123/abc.png"
+            # store_image_bytes now returns a relative path directly
+            assert path == "test/avatars/test-agent-123/abc.png"
 
     @pytest.mark.asyncio
     async def test_generate_avatar_returns_none_on_image_failure(

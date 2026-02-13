@@ -21,6 +21,16 @@ export const config = {
    *   if served from the same domain
    */
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "/api",
+
+  /**
+   * AWS S3 CDN URL for resolving relative image paths stored in the database.
+   *
+   * Images are stored as relative paths in the database. This URL is used
+   * as a prefix to construct full, accessible image URLs on the frontend.
+   *
+   * Example: "https://cdn.example.com"
+   */
+  awsS3CdnUrl: process.env.NEXT_PUBLIC_AWS_S3_CDN_URL || "",
 } as const;
 
 /**

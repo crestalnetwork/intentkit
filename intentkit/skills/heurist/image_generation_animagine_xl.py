@@ -5,7 +5,7 @@ from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.clients.s3 import store_image
+from intentkit.clients.s3 import get_cdn_url, store_image
 from intentkit.config.config import config
 from intentkit.skills.heurist.base import HeuristBaseTool
 
@@ -136,11 +136,11 @@ class ImageGenerationAnimagineXL(HeuristBaseTool):
             image_url = response.text.strip('"')
             # Generate a key with agent ID as prefix
             image_key = f"{context.agent_id}/heurist/{job_id}"
-            # Store the image and get the CDN URL
-            stored_url = await store_image(image_url, image_key)
+            # Store the image and get the relative path
+            stored_path = await store_image(image_url, image_key)
 
-            # Return the stored image URL
-            return stored_url
+            # Return the full CDN URL so the agent can output an accessible link
+            return get_cdn_url(stored_path)
 
         except httpx.HTTPStatusError as e:
             # Extract error details from response

@@ -12,7 +12,7 @@ from typing import Any
 
 import httpx
 
-from intentkit.clients.s3 import store_image_bytes
+from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +106,11 @@ async def _handle_response(
 
             logger.info(f"[{category}/{tool_name}] Storing image with key: {key}")
 
-            stored_url = await store_image_bytes(
+            stored_path = await store_image_bytes(
                 upscaled_image_bytes, key, content_type=content_type
             )
 
-            return {"success": True, "result": stored_url}, None
+            return {"success": True, "result": get_cdn_url(stored_path)}, None
 
         except Exception as e:
             error_msg = f"Error processing image response: {e}"

@@ -8,7 +8,7 @@ from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.clients.s3 import store_image_bytes
+from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 from intentkit.skills.openai.base import OpenAIBaseTool
 
 logger = logging.getLogger(__name__)
@@ -84,13 +84,14 @@ class GPTAvatarGenerator(OpenAIBaseTool):
 
             image_key = f"{context.agent_id}/gpt-avatar/{job_id}"
 
-            stored_url = await store_image_bytes(
+            stored_path = await store_image_bytes(
                 image_bytes,
                 image_key,
                 "image/jpeg",
             )
 
-            return stored_url
+            # Return full CDN URL so the agent can output an accessible URL
+            return get_cdn_url(stored_path)
 
         except openai.OpenAIError as e:
             error_message = f"OpenAI API error: {str(e)}"

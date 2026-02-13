@@ -67,6 +67,25 @@ def get_s3_client() -> S3Client | None:
         return None
 
 
+def get_cdn_url(relative_path: str) -> str:
+    """
+    Build a full CDN URL from a relative path.
+
+    This should be used by skills when they need to return an accessible URL
+    to the agent. The database should always store relative paths.
+
+    Args:
+        relative_path: The relative path (e.g. "env/agent_id/image.png")
+
+    Returns:
+        str: The full CDN URL (e.g. "https://cdn.example.com/env/agent_id/image.png")
+    """
+    cdn_base = _cdn_url or config.aws_s3_cdn_url
+    if not cdn_base:
+        return relative_path
+    return f"{cdn_base}/{relative_path}"
+
+
 async def store_image(url: str, key: str) -> str:
     """
     Store an image from a URL to S3 asynchronously.
@@ -76,7 +95,7 @@ async def store_image(url: str, key: str) -> str:
         key: Key to store the image under (without prefix)
 
     Returns:
-        str: The CDN URL of the stored image, or the original URL if S3 is not initialized
+        str: The relative path of the stored image, or the original URL if S3 is not initialized
 
     Raises:
         ClientError: If the upload fails
@@ -119,10 +138,9 @@ async def store_image(url: str, key: str) -> str:
                 ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
             )
 
-            # Return the CDN URL
-            cdn_url = f"{_cdn_url}/{prefixed_key}"
-            logger.info(f"Image uploaded successfully to {cdn_url}")
-            return cdn_url
+            # Return the relative path
+            logger.info(f"Image uploaded successfully to {prefixed_key}")
+            return prefixed_key
 
     except httpx.HTTPError:
         raise
@@ -142,7 +160,7 @@ async def store_image_bytes(
         content_type: Content type of the image. If None, will attempt to detect it.
 
     Returns:
-        str: The CDN URL of the stored image, or an empty string if S3 is not initialized
+        str: The relative path of the stored image, or an empty string if S3 is not initialized
 
     Raises:
         ClientError: If the upload fails
@@ -183,10 +201,9 @@ async def store_image_bytes(
             ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
         )
 
-        # Return the CDN URL
-        cdn_url = f"{_cdn_url}/{prefixed_key}"
-        logger.info(f"image is uploaded to {cdn_url}")
-        return cdn_url
+        # Return the relative path
+        logger.info(f"image is uploaded to {prefixed_key}")
+        return prefixed_key
 
     except ClientError:
         raise
@@ -248,9 +265,9 @@ async def store_file(
         },
     )
 
-    cdn_url = f"{_cdn_url}/{prefixed_key}"
-    logger.info("File uploaded successfully to %s", cdn_url)
-    return cdn_url
+    # Return the relative path
+    logger.info("File uploaded successfully to %s", prefixed_key)
+    return prefixed_key
 
 
 async def store_file_bytes(
@@ -269,7 +286,7 @@ async def store_file_bytes(
         size_limit_bytes: Optional size limit in bytes
 
     Returns:
-        str: The CDN URL of the stored file, or an empty string if S3 is not initialized
+        str: The relative path of the stored file, or an empty string if S3 is not initialized
 
     Raises:
         ClientError: If the upload fails
@@ -329,10 +346,9 @@ async def store_file_bytes(
             ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
         )
 
-        # Return the CDN URL
-        cdn_url = f"{_cdn_url}/{prefixed_key}"
-        logger.info(f"{file_type} uploaded successfully to {cdn_url}")
-        return cdn_url
+        # Return the relative path
+        logger.info(f"{file_type} uploaded successfully to {prefixed_key}")
+        return prefixed_key
 
     except ClientError:
         raise

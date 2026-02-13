@@ -8,7 +8,7 @@ import openai
 from epyxid import XID
 from langchain_core.tools import ArgsSchema
 
-from intentkit.clients.s3 import store_image_bytes
+from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 from intentkit.skills.openai.base import OpenAIBaseTool
 from intentkit.skills.openai.gpt_image_generation import GPTImageGenerationInput
 
@@ -77,9 +77,10 @@ class GPTImageMiniGenerator(OpenAIBaseTool):
 
             image_key = f"{context.agent_id}/gpt-image-mini/{job_id}"
 
-            stored_url = await store_image_bytes(image_bytes, image_key, content_type)
+            stored_path = await store_image_bytes(image_bytes, image_key, content_type)
 
-            return stored_url
+            # Return full CDN URL so the agent can output an accessible URL
+            return get_cdn_url(stored_path)
 
         except openai.OpenAIError as e:
             error_message = f"OpenAI API error: {str(e)}"

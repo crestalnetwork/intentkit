@@ -9,7 +9,7 @@ from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.clients.s3 import store_image_bytes
+from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 from intentkit.skills.openai.base import OpenAIBaseTool
 
 logger = logging.getLogger(__name__)
@@ -133,11 +133,11 @@ class GPTImageGeneration(OpenAIBaseTool):
             # Generate a key with agent ID as prefix
             image_key = f"{context.agent_id}/gpt-image/{job_id}"
 
-            # Store the image bytes and get the CDN URL
-            stored_url = await store_image_bytes(image_bytes, image_key, content_type)
+            # Store the image bytes and get the relative path
+            stored_path = await store_image_bytes(image_bytes, image_key, content_type)
 
-            # Return the stored image URL
-            return stored_url
+            # Return the full CDN URL so the agent can output an accessible URL
+            return get_cdn_url(stored_path)
 
         except openai.OpenAIError as e:
             error_message = f"OpenAI API error: {str(e)}"

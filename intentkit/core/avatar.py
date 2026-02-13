@@ -248,17 +248,15 @@ async def generate_avatar(agent_id: str, agent: Any) -> str | None:
         from epyxid import XID
 
         key = f"avatars/{agent_id}/{XID()}.png"
-        cdn_url = await store_image_bytes(image_bytes, key, content_type="image/png")
+        relative_path = await store_image_bytes(
+            image_bytes, key, content_type="image/png"
+        )
 
-        if not cdn_url:
-            logger.error("store_image_bytes returned empty URL")
+        if not relative_path:
+            logger.error("store_image_bytes returned empty path")
             return None
 
-        # Strip the CDN prefix to return just the path
-        if config.aws_s3_cdn_url and cdn_url.startswith(config.aws_s3_cdn_url):
-            return cdn_url[len(config.aws_s3_cdn_url) :].lstrip("/")
-
-        return cdn_url
+        return relative_path
     except Exception as e:
         logger.error(f"Failed to upload avatar to S3: {e}")
         return None

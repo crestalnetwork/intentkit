@@ -7,7 +7,7 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import Field
 
-from intentkit.clients.s3 import store_image_bytes
+from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 
 # Import the generic base
 from intentkit.skills.venice_image.base import VeniceImageBaseTool
@@ -99,13 +99,14 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
             image_hash = hashlib.sha256(image_bytes).hexdigest()
             key = f"{self.category}/{self.model_id}/{image_hash}.{file_extension}"
 
-            stored_url = await store_image_bytes(
+            stored_path = await store_image_bytes(
                 image_bytes, key, content_type=content_type
             )
 
             # Cleanup & enrich the response
             result.pop("images", None)
-            result["image_url"] = stored_url
+            # Return full CDN URL so the agent can output an accessible link
+            result["image_url"] = get_cdn_url(stored_path)
             result["image_bytes_sha256"] = image_hash
 
             return result

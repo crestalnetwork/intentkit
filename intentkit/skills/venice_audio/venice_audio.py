@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 from langchain_core.tools import ArgsSchema
 
-from intentkit.clients.s3 import store_file
+from intentkit.clients.s3 import get_cdn_url, store_file
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.input import AllowedAudioFormat, VeniceAudioInput
 
@@ -172,14 +172,14 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                         if content_type_header
                         else None
                     )
-                    stored_url = await store_file(
+                    stored_path = await store_file(
                         content=audio_bytes,
                         key=key,
                         content_type=mime_type,
                         size=audio_size,
                     )
 
-                    if not stored_url:
+                    if not stored_path:
                         message = "Failed to store audio: S3 storage is not configured."
                         logger.error(
                             f"Failed to store audio (Voice: {voice_model}): S3 storage is not configured."
@@ -192,12 +192,14 @@ class VeniceAudioTool(VeniceAudioBaseTool):
                             "requested_format": final_response_format,
                         }
 
+                    # Build full CDN URL for the agent to use
+                    audio_url = get_cdn_url(stored_path)
                     logger.info(
-                        f"Venice TTS success: Voice='{voice_model}', Format='{final_response_format}', Stored='{stored_url}'"
+                        f"Venice TTS success: Voice='{voice_model}', Format='{final_response_format}', Stored='{audio_url}'"
                     )
                     # --- Return Success Dictionary ---
                     return {
-                        "audio_url": stored_url,
+                        "audio_url": audio_url,
                         "audio_bytes_sha256": audio_hash,
                         "content_type": mime_type or content_type_header,
                         "voice_model": voice_model,

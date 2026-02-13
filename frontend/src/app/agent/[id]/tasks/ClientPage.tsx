@@ -3,9 +3,20 @@
 import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bot, Pencil, MoreVertical, Archive, Plus, MoreHorizontal, Trash, Power } from "lucide-react";
+import {
+  ArrowLeft,
+  Bot,
+  Pencil,
+  MoreVertical,
+  Archive,
+  Plus,
+  MoreHorizontal,
+  Trash,
+  Power,
+} from "lucide-react";
 import Link from "next/link";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import cronstrue from "cronstrue";
@@ -47,10 +58,10 @@ export default function AgentTasksPage() {
   });
 
   // Fetch autonomous tasks
-  const { 
-    data: tasks = [], 
+  const {
+    data: tasks = [],
     isLoading: isLoadingTasks,
-    refetch: refetchTasks 
+    refetch: refetchTasks,
   } = useQuery({
     queryKey: ["tasks", agentId],
     queryFn: () => autonomousApi.listTasks(agentId),
@@ -134,7 +145,7 @@ export default function AgentTasksPage() {
     (threadId: string) => {
       window.location.href = `/agent/${agentId}?thread=${threadId}`;
     },
-    [agentId]
+    [agentId],
   );
 
   const handleNewThread = useCallback(() => {
@@ -146,7 +157,7 @@ export default function AgentTasksPage() {
       await chatApi.updateChatSummary(agentId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
@@ -154,7 +165,7 @@ export default function AgentTasksPage() {
       await chatApi.deleteChat(agentId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads]
+    [agentId, refetchThreads],
   );
 
   const displayName = agent?.name || agent?.id || agentId;
@@ -203,7 +214,7 @@ export default function AgentTasksPage() {
               {agent?.picture ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={agent.picture}
+                  src={getImageUrl(agent.picture) ?? undefined}
                   alt={displayName}
                   className="h-10 w-10 rounded-full object-cover"
                 />
@@ -247,7 +258,9 @@ export default function AgentTasksPage() {
         {/* Page Title */}
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Autonomous Tasks</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Autonomous Tasks
+            </h2>
             <p className="text-muted-foreground">
               Manage autonomous scheduled tasks for this agent.
             </p>
@@ -263,7 +276,10 @@ export default function AgentTasksPage() {
           {isLoadingTasks ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-32 bg-muted animate-pulse rounded-md" />
+                <div
+                  key={i}
+                  className="h-32 bg-muted animate-pulse rounded-md"
+                />
               ))}
             </div>
           ) : tasks.length === 0 ? (
@@ -286,16 +302,17 @@ export default function AgentTasksPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {task.has_memory && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-100 text-blue-800 hover:bg-blue-100"
+                          >
                             Memory
                           </Badge>
                         )}
-                        <Badge
-                          variant={task.enabled ? "default" : "secondary"}
-                        >
+                        <Badge variant={task.enabled ? "default" : "secondary"}>
                           {task.enabled ? "Enabled" : "Disabled"}
                         </Badge>
-                        
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -304,17 +321,25 @@ export default function AgentTasksPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setActionTask({ task, type: "toggle" })}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setActionTask({ task, type: "toggle" })
+                              }
+                            >
                               <Power className="mr-2 h-4 w-4" />
                               {task.enabled ? "Disable" : "Enable"}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                            <DropdownMenuItem
+                              onClick={() => handleEditTask(task)}
+                            >
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => setActionTask({ task, type: "delete" })}
+                              onClick={() =>
+                                setActionTask({ task, type: "delete" })
+                              }
                             >
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
@@ -332,13 +357,15 @@ export default function AgentTasksPage() {
                         </span>
                         {task.cron ? (
                           <div className="flex flex-col">
-                            <span>{(() => {
-                              try {
-                                return cronstrue.toString(task.cron);
-                              } catch (e) {
-                                return task.cron;
-                              }
-                            })()}</span>
+                            <span>
+                              {(() => {
+                                try {
+                                  return cronstrue.toString(task.cron);
+                                } catch (e) {
+                                  return task.cron;
+                                }
+                              })()}
+                            </span>
                             <span className="text-xs text-muted-foreground font-mono mt-0.5">
                               {task.cron}
                             </span>
@@ -351,15 +378,19 @@ export default function AgentTasksPage() {
                         <span className="font-semibold text-muted-foreground">
                           Next Run:{" "}
                         </span>
-                         {task.next_run_time ? new Date(task.next_run_time).toLocaleString() : "Not scheduled"}
+                        {task.next_run_time
+                          ? new Date(task.next_run_time).toLocaleString()
+                          : "Not scheduled"}
                       </div>
                     </div>
                     {task.prompt && (
                       <div className="mt-4">
-                         <div className="text-xs font-semibold text-muted-foreground mb-1">Prompt:</div>
-                         <div className="p-3 bg-muted/50 rounded-md font-mono text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
-                            {task.prompt}
-                         </div>
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">
+                          Prompt:
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-md font-mono text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
+                          {task.prompt}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -370,18 +401,20 @@ export default function AgentTasksPage() {
         </div>
       </div>
 
-      <AlertDialog open={!!actionTask} onOpenChange={(open) => !open && setActionTask(null)}>
+      <AlertDialog
+        open={!!actionTask}
+        onOpenChange={(open) => !open && setActionTask(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {actionTask && (
-                actionTask.type === "toggle"
+              {actionTask &&
+                (actionTask.type === "toggle"
                   ? `This will ${
                       actionTask.task.enabled ? "disable" : "enable"
                     } the task "${actionTask.task.name ?? "Untitled"}".`
-                  : `This will permanently delete the task "${actionTask.task.name ?? "Untitled"}". This action cannot be undone.`
-              )}
+                  : `This will permanently delete the task "${actionTask.task.name ?? "Untitled"}". This action cannot be undone.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -393,8 +426,8 @@ export default function AgentTasksPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <TaskDialog 
-        open={isTaskDialogOpen} 
+      <TaskDialog
+        open={isTaskDialogOpen}
         onOpenChange={setIsTaskDialogOpen}
         task={editingTask}
         onSave={handleSaveTask}
