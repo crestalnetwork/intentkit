@@ -119,14 +119,15 @@ async def run_autonomous_task(
 
     except Exception as e:
         logger.error(
-            f"Error in autonomous task {task_id} for agent {agent_id}: {str(e)}"
+            f"Error in autonomous task {task_id} for agent {agent_id}: {repr(e)}",
+            exc_info=True,
         )
         try:
             activity = AgentActivityCreate(
                 agent_id=agent_id,
                 agent_name=agent_name,
                 agent_picture=agent_picture,
-                text=f"Autonomous task exception: {str(e)}",
+                text=f"Autonomous task exception: {repr(e)}",
             )
             _ = await create_agent_activity(activity)
         except Exception as activity_error:
