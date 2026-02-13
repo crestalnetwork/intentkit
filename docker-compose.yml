@@ -13,6 +13,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-intentkit}
     volumes:
       - postgres_data:/var/lib/postgresql
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
@@ -30,6 +31,7 @@ services:
       - RUSTFS_CONSOLE_ENABLE=true
     volumes:
       - rustfs_data:/data
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
@@ -40,6 +42,7 @@ services:
     image: redis:8.4-bookworm
     volumes:
       - redis_data:/data
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -82,6 +85,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
 
   autonomous:
@@ -121,6 +125,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
     command: python -m app.autonomous
 
   scheduler:
@@ -157,6 +162,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
     command: python -m app.scheduler
 
   frontend:
@@ -178,8 +184,10 @@ services:
         condition: service_healthy
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NODE_OPTIONS=--max-old-space-size=2048
     ports:
       - "3000:3000"
+    restart: unless-stopped
     command: npm run dev
 
   telegram:
@@ -203,3 +211,4 @@ services:
       - REDIS_HOST=redis
       - INTERNAL_BASE_URL=http://api:8000
       - TG_NEW_AGENT_POLL_INTERVAL=10
+    restart: unless-stopped
