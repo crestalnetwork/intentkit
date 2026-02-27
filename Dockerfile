@@ -38,16 +38,22 @@ RUN apt-get update \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 # Set the working directory
 WORKDIR /app
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
-# Copy application code
-COPY --from=builder /app/intentkit /app/intentkit
-COPY --from=builder /app/app /app/app
-COPY --from=builder /app/scripts /app/scripts
+# Copy application code with correct ownership
+COPY --from=builder --chown=appuser:appuser /app/intentkit /app/intentkit
+COPY --from=builder --chown=appuser:appuser /app/app /app/app
+COPY --from=builder --chown=appuser:appuser /app/scripts /app/scripts
+
+# Switch to non-root user
+USER appuser
 
 ARG RELEASE=local
 ENV RELEASE=$RELEASE

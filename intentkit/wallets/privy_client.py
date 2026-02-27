@@ -244,10 +244,9 @@ class PrivyClient:
 
             if response.status_code not in (200, 201):
                 logger.info(
-                    "Privy create_wallet response: status=%s auth_sig_count=%s body=%s",
+                    "Privy create_wallet response: status=%s auth_sig_count=%s",
                     response.status_code,
                     signature_count,
-                    response.text,
                 )
 
                 raise IntentKitAPIError(
@@ -351,12 +350,11 @@ class PrivyClient:
 
             if response.status_code not in (200, 201):
                 logger.info(
-                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s",
                     wallet_id,
                     payload.get("method"),
                     response.status_code,
                     signature_count,
-                    response.text,
                 )
 
                 raise IntentKitAPIError(
@@ -428,12 +426,11 @@ class PrivyClient:
 
             if response.status_code not in (200, 201):
                 logger.info(
-                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s",
                     wallet_id,
                     payload.get("method"),
                     response.status_code,
                     signature_count,
-                    response.text,
                 )
 
                 raise IntentKitAPIError(
@@ -497,12 +494,11 @@ class PrivyClient:
 
             if response.status_code not in (200, 201):
                 logger.info(
-                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s",
                     wallet_id,
                     payload.get("method"),
                     response.status_code,
                     signature_count,
-                    response.text,
                 )
 
                 raise IntentKitAPIError(
@@ -580,18 +576,17 @@ class PrivyClient:
 
             if response.status_code not in (200, 201):
                 logger.info(
-                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s body=%s",
+                    "Privy rpc response: wallet_id=%s method=%s status=%s auth_sig_count=%s",
                     wallet_id,
                     payload.get("method"),
                     response.status_code,
                     signature_count,
-                    response.text,
                 )
 
                 raise IntentKitAPIError(
                     response.status_code,
                     "PrivyAPIError",
-                    f"Failed to send transaction: {response.text}",
+                    "Failed to send transaction with Privy wallet",
                 )
 
             data_response = response.json()
