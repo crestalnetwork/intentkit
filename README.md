@@ -1,43 +1,55 @@
 # IntentKit
 
 <div align="center">
-    <img src="frontend/src/app/icon.svg" alt="IntentKit" width="10%" height="10%"/>
+    <img src="frontend/src/app/icon.svg" alt="IntentKit" width="20%" height="20%"/>
 </div>
-<br>
+<div align="center">
+    <h3>Your Cloud-Native Agent Team</h3>
+</div>
+<div align="center">
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/pypi/l/intentkit" alt="PyPI - License"></a>
+  <a href="https://pypi.org/project/intentkit/#history" target="_blank"><img src="https://img.shields.io/pypi/v/intentkit?label=%20" alt="Version"></a>
+  <a href="https://hub.docker.com/r/crestal/intentkit" target="_blank"><img src="https://img.shields.io/docker/v/crestal/intentkit?label=Docker" alt="Docker"></a>
+</div>
 
-IntentKit is an open-source, self-hosted cloud Agent cluster that manages a collaborative Agent team for you.
+IntentKit is an open-source, self-hosted cloud agent cluster that manages a collaborative team of AI agents for you.
 
 ## Why IntentKit
 
-Current AI agents follow two paths: one is Local First, like OpenClaw, which can serve as your toy or assistant. Running it requires an expensive physical device, and the permissions it has enable it to do many things. The other is like all the other web apps you use—it runs in the cloud, needs few resources, requires no maintenance from you, and can more reliably complete your tasks. If you want this kind, try IntentKit.
+Current AI agents generally follow two paths:
+
+1. **Local-First** (e.g., OpenClaw): These serve as personal assistants or experimental tools. However, they often require expensive hardware and extensive local permissions.
+2. **Cloud-Native**: Similar to modern web apps, these run in the cloud, consume minimal local resources, require zero maintenance, and offer high reliability for completing tasks.
+
+If you are looking for a robust, cloud-native solution, IntentKit is for you.
 
 ## Features
 
-- ☁️ Cloud-Based, Ultimate Resource Savings
-- 🤖 Multiple Mutually Callable Agents
-- 🔄 Everything Out of the Box
-- 🔗 Optional Crypto-Friendly Integration
-- 🐦 Social Media Integration
-- 🛠️ Extensible Skill System
+- ☁️ **Cloud-Native:** Ultimate resource efficiency.
+- 🤖 **Collaborative AI:** Multiple agents that can call and interact with each other.
+- 🔄 **Out-of-the-Box Ready:** Fully configured and ready to use.
+- 🔗 **Crypto-Friendly:** Optional Web3 and blockchain integrations.
+- 🐦 **Social Media Integration:** Seamlessly connects with social platforms.
+- 🛠️ **Extensible Skill System:** Easily add new capabilities.
 
 ## Documentation
 
-Check out [Documentation](docs/) before you start.
+Please check out the [Documentation](docs/) before getting started.
 
 ## Deployment
 
-Read [Deployment Guide](docs/content/en/deployment) to get started with your setup.
+Read the [Deployment Guide](docs/content/en/deployment) to get started with your setup.
 
-## Other Use Case
+## Other Use Cases
 
-Besides self-deploying IntentKit, here are other ways to use this project:
+Besides self-deploying IntentKit, you can also use the project in the following ways:
 
-- IntentKit is actually a Python library that you can import and extend, or use to add Agent cluster support to your existing projects.
-- Regardless of the deployment method, each individual Agent can enable its own API, allowing you to call that Agent from other projects. [Agent API Documentation](docs/content/en/docs/others/agent_api.md)
+- **As a Python Library:** Import and extend IntentKit, or use it to add agent cluster capabilities to your existing projects.
+- **Via API:** Regardless of the deployment method, each individual agent can expose its own API, allowing you to interact with them from external applications. See the [Agent API Documentation](docs/content/en/docs/others/agent_api.md).
 
 ## Contributing
 
-Due to the rapid development of AI Coding, we no longer accept contributions via Pull Requests. Submitting Feature Requests and reporting Bugs in the Issues area is the best way to contribute.
+Due to the rapid pace of AI development, we currently do not accept code contributions via Pull Requests. However, submitting feature requests and reporting bugs in the GitHub Issues section is highly appreciated and the best way to contribute.
 
 ## License
 
