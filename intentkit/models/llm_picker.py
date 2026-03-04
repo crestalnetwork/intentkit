@@ -18,7 +18,7 @@ def pick_summarize_model() -> str:
     # 5. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
         ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
-        ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),
+        ("gemini-3.1-flash-lite-preview", LLMProvider.GOOGLE),
         ("gpt-5-mini", LLMProvider.OPENAI),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
