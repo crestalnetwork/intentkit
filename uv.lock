@@ -290,30 +290,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.42.59"
+version = "1.42.60"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/4e/499cb52aaee9468c346bcc1158965e24e72b4e2a20052725b680e0ac949b/boto3-1.42.59.tar.gz", hash = "sha256:6c4a14a4eb37b58a9048901bdeefbe1c529638b73e8f55413319a25f010ca211", size = 112725, upload-time = "2026-02-27T20:25:33.228Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/e0/071e00265d3d8127b28c27ba3918ba283f49b39943864a389ac3f5096ef3/boto3-1.42.60.tar.gz", hash = "sha256:3d549d15c821dcc871a0821319049e7d493ae3317121eb01e4b1f5230c19d5d4", size = 112786, upload-time = "2026-03-03T21:21:07.199Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/c0/22d868b9408dc5a33935a72896ec8d638b2766c459668d1b37c3e5ac2066/boto3-1.42.59-py3-none-any.whl", hash = "sha256:7a66e3e8e2087ea4403e135e9de592e6d63fc9a91080d8dac415bb74df873a72", size = 140557, upload-time = "2026-02-27T20:25:31.774Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/30/156ff2b5afb7dd03383b5f97d0e32535e9c0e783917380c476fe2fbc1874/boto3-1.42.60-py3-none-any.whl", hash = "sha256:c0cc3d93cd76c99461f6e109e04bb020defe3ffcd04c6163c72836dff5591614", size = 140554, upload-time = "2026-03-03T21:21:05.194Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.42.59"
+version = "1.42.60"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/45/ae/50fb33bdf1911c216d50f98d989dd032a506f054cf829ebd737c6fa7e3e6/botocore-1.42.59.tar.gz", hash = "sha256:5314f19e1da8fc0ebc41bdb8bbe17c9a7397d87f4d887076ac8bdef972a34138", size = 14950271, upload-time = "2026-02-27T20:25:20.614Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/d7/bfe8413cc7dc167e04ca9c68ea136251307960f662ec5889512615565b25/botocore-1.42.60.tar.gz", hash = "sha256:de9278810fb2e92a9ffe3dc8ffa68f1066e6d2caf19da9460760743b39ca5215", size = 14950855, upload-time = "2026-03-03T21:20:51.529Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/df/9d52819e0d804ead073d53ab1823bc0f0cb172a250fba31107b0b43fbb04/botocore-1.42.59-py3-none-any.whl", hash = "sha256:d2f2ff7ecc31e86ef46b5daee112cfbca052c13801285fb23af909f7bff5b657", size = 14619293, upload-time = "2026-02-27T20:25:17.455Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/63/5cf970a00e9ddcbb9e65ecc79276717a9555a77d3d0571bd962676e19c3b/botocore-1.42.60-py3-none-any.whl", hash = "sha256:d8b4aab06cc134e21d294c068cb94e0eeb59bacd27c836fb6b882b61433df2f4", size = 14621726, upload-time = "2026-03-03T21:20:47.935Z" },
 ]
 
 [[package]]
@@ -619,15 +619,15 @@ wheels = [
 
 [[package]]
 name = "discord-py"
-version = "2.7.0"
+version = "2.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "audioop-lts" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3b/6e/8c6ceba65e2c832fd00906bbfa3801c3a175eafc3039b47a7f587978e01f/discord_py-2.7.0.tar.gz", hash = "sha256:b40a36fd09232c958cef0640c7830f3cdc9b1d476e63355b91728576ac7dd1ba", size = 1106358, upload-time = "2026-02-27T18:53:17.074Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/57/9a2d9abdabdc9db8ef28ce0cf4129669e1c8717ba28d607b5ba357c4de3b/discord_py-2.7.1.tar.gz", hash = "sha256:24d5e6a45535152e4b98148a9dd6b550d25dc2c9fb41b6d670319411641249da", size = 1106326, upload-time = "2026-03-03T18:40:46.24Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/92/eb023fe59414e179e17e3b20d4708da5248714c2832b4af55b8c0386bedd/discord_py-2.7.0-py3-none-any.whl", hash = "sha256:6abe8392d8127213b02ef714be41f843dd053775500bb2e7c596abb77e802b9b", size = 1227558, upload-time = "2026-02-27T18:53:15.381Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/a7/17208c3b3f92319e7fad259f1c6d5a5baf8fd0654c54846ced329f83c3eb/discord_py-2.7.1-py3-none-any.whl", hash = "sha256:849dca2c63b171146f3a7f3f8acc04248098e9e6203412ce3cf2745f284f7439", size = 1227550, upload-time = "2026-03-03T18:40:44.492Z" },
 ]
 
 [[package]]
@@ -1545,7 +1545,7 @@ wheels = [
 
 [[package]]
 name = "langsmith"
-version = "0.7.10"
+version = "0.7.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1558,9 +1558,9 @@ dependencies = [
     { name = "xxhash" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/26/aa913264d81039f5ea1a396507042534f4fa848621a4a96b104cd44b8aaf/langsmith-0.7.10.tar.gz", hash = "sha256:50163f7016f182907077eb086dbfa84bf576a4b3d6b21ef2565f52169de3579d", size = 1105854, upload-time = "2026-03-03T02:31:00.823Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/43/db660d35fb59577490b072fa7bee4043ee4ba9d21c3185882efb3713fe59/langsmith-0.7.11.tar.gz", hash = "sha256:71df5fb9fa1ee0d3b494c14393566d33130739656de5ef96486bcbb0b5e4d329", size = 1109819, upload-time = "2026-03-03T20:29:18.406Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/28/a2d78620dbdc82119151c832b214a68dbf8962636b25ed7ac25de7820484/langsmith-0.7.10-py3-none-any.whl", hash = "sha256:90b92623c2d7b832ce081a7b3f214ac2e5ec6c5f5af1b28c14b5d32ad6726fcc", size = 344388, upload-time = "2026-03-03T02:30:58.922Z" },
+    { url = "https://files.pythonhosted.org/packages/da/c1/aec40ba797c3ce0f9c41536491394704ae2d7253794405cb813748dcddbe/langsmith-0.7.11-py3-none-any.whl", hash = "sha256:0aff5b4316341d6ab6bcb6abf405a6a098f469020bad4889cafb6098650b8603", size = 346485, upload-time = "2026-03-03T20:29:16.685Z" },
 ]
 
 [[package]]
@@ -2292,11 +2292,11 @@ wheels = [
 
 [[package]]
 name = "pytz"
-version = "2025.2"
+version = "2026.1.post1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884, upload-time = "2025-03-25T02:25:00.538Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/db/b8721d71d945e6a8ac63c0fc900b2067181dbb50805958d4d4661cf7d277/pytz-2026.1.post1.tar.gz", hash = "sha256:3378dde6a0c3d26719182142c56e60c7f9af7e968076f31aae569d72a0358ee1", size = 321088, upload-time = "2026-03-03T07:47:50.683Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225, upload-time = "2025-03-25T02:24:58.468Z" },
+    { url = "https://files.pythonhosted.org/packages/10/99/781fe0c827be2742bcc775efefccb3b048a3a9c6ce9aec0cbf4a101677e5/pytz-2026.1.post1-py2.py3-none-any.whl", hash = "sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a", size = 510489, upload-time = "2026-03-03T07:47:49.167Z" },
 ]
 
 [[package]]
