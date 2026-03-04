@@ -12,12 +12,12 @@ from intentkit.skills.erc721.constants import ERC721_ABI
 class TransferInput(BaseModel):
     """Input schema for ERC721 transfer."""
 
-    contract_address: str = Field(..., description="The NFT contract address")
-    token_id: str = Field(..., description="The ID of the specific NFT to transfer")
-    destination: str = Field(..., description="The onchain address to send the NFT to")
+    contract_address: str = Field(..., description="NFT contract address")
+    token_id: str = Field(..., description="Token ID of the NFT")
+    destination: str = Field(..., description="Recipient address")
     from_address: str | None = Field(
         default=None,
-        description="The address to transfer from. If not provided, uses the wallet's address",
+        description="Sender address. Defaults to wallet address.",
     )
 
 
@@ -29,19 +29,7 @@ class ERC721Transfer(ERC721BaseTool):
     """
 
     name: str = "erc721_transfer"
-    description: str = """Transfer an NFT (ERC721 token) from the wallet to another onchain address.
-
-Inputs:
-- contract_address: The NFT contract address
-- token_id: The ID of the specific NFT to transfer
-- destination: Onchain address to send the NFT to
-- from_address: (Optional) The address to transfer from. If not provided, uses the wallet's address
-
-Important notes:
-- Ensure you have ownership of the NFT before attempting transfer
-- Ensure there is sufficient native token balance for gas fees
-- The wallet must either own the NFT or have approval to transfer it
-"""
+    description: str = "Transfer an ERC721 NFT to another address. Wallet must own or have approval for the NFT. Ensure sufficient gas."
     args_schema: ArgsSchema | None = TransferInput
 
     async def _arun(

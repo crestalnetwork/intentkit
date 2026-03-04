@@ -13,33 +13,28 @@ class ElfaGetTrendingTokensInput(BaseModel):
     """Input parameters for trending tokens."""
 
     timeWindow: str | None = Field(
-        "7d",
-        description="Time window for trending analysis (e.g., '30m', '1h', '4h', '24h', '7d', '30d')",
+        "7d", description="Time window (e.g., '1h', '7d', '30d')"
     )
-    page: int | None = Field(1, description="Page number for pagination")
-    pageSize: int | None = Field(50, description="Number of items per page")
-    minMentions: int | None = Field(
-        5, description="Minimum number of mentions required"
-    )
+    page: int | None = Field(1, description="Page number")
+    pageSize: int | None = Field(50, description="Items per page")
+    minMentions: int | None = Field(5, description="Minimum mentions required")
 
 
 class TrendingToken(BaseModel):
     """Individual trending token data."""
 
-    token: str | None = Field(None, description="Token symbol")
-    current_count: int | None = Field(None, description="Current mention count")
-    previous_count: int | None = Field(None, description="Previous mention count")
-    change_percent: float | None = Field(None, description="Change percentage")
+    token: str | None = None
+    current_count: int | None = None
+    previous_count: int | None = None
+    change_percent: float | None = None
 
 
 class ElfaGetTrendingTokensOutput(BaseModel):
     """Output structure for trending tokens response."""
 
     success: bool
-    data: list[TrendingToken] | None = Field(
-        None, description="List of trending tokens"
-    )
-    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
+    data: list[TrendingToken] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class ElfaGetTrendingTokens(ElfaBaseTool):
@@ -57,10 +52,9 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
     """
 
     name: str = "elfa_get_trending_tokens"
-    description: str = """Get trending tokens ranked by smart mentions count for a given time period. 
-    Updated every 5 minutes. Smart mentions provide sophisticated discussion volume measurement beyond simple keyword counts.
-    
-    Use this to identify tokens gaining traction, gauge market sentiment, and research potential investments."""
+    description: str = (
+        "Get trending tokens ranked by smart mentions count. Updated every 5 minutes."
+    )
     args_schema: ArgsSchema | None = ElfaGetTrendingTokensInput
 
     async def _arun(

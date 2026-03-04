@@ -19,11 +19,9 @@ class ConnectedNetwork(BaseModel):
     Represents a single network connection.
     """
 
-    id: int | None = Field(None, description="Unique identifier of the network")
-    name: str | None = Field(None, description="Name of the network")
-    isConnected: bool | None = Field(
-        None, description="Indicates if the network is connected"
-    )
+    id: int | None = Field(None, description="Network ID")
+    name: str | None = Field(None, description="Network name")
+    isConnected: bool | None = Field(None, description="Connected status")
 
 
 class EnsoGetNetworksOutput(BaseModel):
@@ -31,9 +29,7 @@ class EnsoGetNetworksOutput(BaseModel):
     Output model for retrieving networks.
     """
 
-    res: list[ConnectedNetwork] | None = Field(
-        None, description="Response containing networks and metadata"
-    )
+    res: list[ConnectedNetwork] | None = Field(None, description="List of networks")
 
 
 logger = logging.getLogger(__name__)

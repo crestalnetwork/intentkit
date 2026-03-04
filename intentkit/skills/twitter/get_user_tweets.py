@@ -12,33 +12,22 @@ logger = logging.getLogger(__name__)
 
 NAME = "twitter_get_user_tweets"
 PROMPT = (
-    "Get tweets from a specific Twitter user by their user ID. "
-    "The result is a json object containing a list of tweets."
-    'If the result is `{"meta": {"result_count": 0}}`, means no tweets found, don\'t retry this tool.'
+    "Get tweets from a specific user by user ID. If result_count is 0, don't retry."
 )
 
 
 class TwitterGetUserTweetsInput(BaseModel):
     """Input for TwitterGetUserTweets tool."""
 
-    user_id: str = Field(description="The Twitter user ID to fetch tweets from")
+    user_id: str = Field(description="Twitter user ID")
     exclude: list[str] | None = Field(
         default=["replies", "retweets"],
-        description="Types of tweets to exclude (e.g., 'replies', 'retweets')",
+        description="Tweet types to exclude: 'replies', 'retweets'",
     )
 
 
 class TwitterGetUserTweets(TwitterBaseTool):
-    """Tool for getting tweets from a specific Twitter user.
-
-    This tool uses the Twitter API v2 to retrieve tweets from a specific user
-    by their user ID.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Get tweets from a specific Twitter user."""
 
     name: str = NAME
     description: str = PROMPT

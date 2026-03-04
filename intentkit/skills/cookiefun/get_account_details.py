@@ -12,22 +12,15 @@ from intentkit.skills.cookiefun.constants import DEFAULT_HEADERS, ENDPOINTS
 class GetAccountDetailsInput(BaseModel):
     """Input for GetAccountDetails tool."""
 
-    username: str | None = Field(
-        default=None,
-        description="Twitter username (either username or userId is required)",
-    )
-
-    userId: str | None = Field(
-        default=None,
-        description="Twitter user ID (either username or userId is required)",
-    )
+    username: str | None = Field(default=None, description="Twitter username")
+    userId: str | None = Field(default=None, description="Twitter user ID")
 
 
 class GetAccountDetails(CookieFunBaseTool):
     """Tool to get detailed information about a Twitter account."""
 
     name: str = "cookiefun_get_account_details"
-    description: str = "Retrieves detailed information about a Twitter account including followers, following, posts, metrics, and engagement data."
+    description: str = "Get detailed Twitter account info including followers, metrics, and engagement data."
     args_schema: ArgsSchema | None = GetAccountDetailsInput
 
     async def _arun(

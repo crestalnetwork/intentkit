@@ -14,48 +14,46 @@ logger = logging.getLogger(__name__)
 class FirecrawlScrapeInput(BaseModel):
     """Input for Firecrawl scrape tool."""
 
-    url: str = Field(
-        description="The URL to scrape. Must be a valid HTTP or HTTPS URL."
-    )
+    url: str = Field(description="URL to scrape.")
     formats: list[str] = Field(
-        description="Output formats to include in the response. Options: 'markdown', 'html', 'rawHtml', 'screenshot', 'links', 'json'",
+        description="Output formats: markdown, html, rawHtml, screenshot, links, json.",
         default=["markdown"],
     )
     only_main_content: bool = Field(
-        description="Whether to extract only the main content (excluding headers, footers, navigation, etc.)",
+        description="Extract only main content, excluding nav/footer.",
         default=True,
     )
     include_tags: list[str] | None = Field(
-        description="HTML tags, classes, or IDs to include in the response (e.g., ['h1', 'p', '.main-content'])",
+        description="HTML tags/classes/IDs to include.",
         default=None,
     )
     exclude_tags: list[str] | None = Field(
-        description="HTML tags, classes, or IDs to exclude from the response (e.g., ['#ad', '#footer'])",
+        description="HTML tags/classes/IDs to exclude.",
         default=None,
     )
     wait_for: int = Field(
-        description="Wait time in milliseconds before scraping (use only as last resort)",
+        description="Wait ms before scraping. Use as last resort.",
         default=0,
         ge=0,
     )
     timeout: int = Field(
-        description="Maximum timeout in milliseconds for the scraping operation",
+        description="Max timeout in ms.",
         default=30000,
         ge=1000,
         le=120000,
     )
     index_content: bool = Field(
-        description="Whether to index the scraped content for later querying (default: True)",
+        description="Index scraped content for later querying.",
         default=True,
     )
     chunk_size: int = Field(
-        description="Size of text chunks for indexing (default: 1000)",
+        description="Text chunk size for indexing.",
         default=1000,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
-        description="Overlap between chunks (default: 200)",
+        description="Overlap between chunks.",
         default=200,
         ge=0,
         le=1000,
@@ -77,10 +75,8 @@ class FirecrawlScrape(FirecrawlBaseTool):
 
     name: str = "firecrawl_scrape"
     description: str = (
-        "Scrape a single web page and REPLACE any existing indexed content for that URL. "
-        "Unlike regular scrape, this tool removes old content before adding new content, preventing duplicates. "
-        "This tool can handle JavaScript-rendered content, PDFs, and dynamic websites. "
-        "Use this when you want to refresh/update content from a URL that was previously scraped."
+        "Scrape a web page and replace any existing indexed content for that URL. "
+        "Handles JS-rendered content, PDFs, and dynamic sites."
     )
     args_schema: ArgsSchema | None = FirecrawlScrapeInput
 

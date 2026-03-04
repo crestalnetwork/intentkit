@@ -16,45 +16,45 @@ logger = logging.getLogger(__name__)
 class TokenBalancesInput(BaseModel):
     """Input for token balances tool."""
 
-    address: str = Field(description="The wallet address to check token balances for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     to_block: int | None = Field(
-        description="The block number up to which the balances will be checked.",
+        description="Max block number for balances.",
         default=None,
     )
     token_addresses: list[str] | None = Field(
-        description="The specific token addresses to get balances for.",
+        description="Filter by token addresses.",
         default=None,
     )
     exclude_spam: bool | None = Field(
-        description="Exclude spam tokens from the result.",
+        description="Exclude spam tokens.",
         default=True,
     )
     exclude_unverified_contracts: bool | None = Field(
-        description="Exclude unverified contracts from the result.",
+        description="Exclude unverified contracts.",
         default=True,
     )
     cursor: str | None = Field(
-        description="The cursor for pagination.",
+        description="Pagination cursor.",
         default=None,
     )
     limit: int | None = Field(
-        description="The number of results per page.",
+        description="Results per page.",
         default=DEFAULT_LIMIT,
     )
     exclude_native: bool | None = Field(
-        description="Exclude native balance from the result.",
+        description="Exclude native balance.",
         default=None,
     )
     max_token_inactivity: int | None = Field(
-        description="Exclude tokens inactive for more than the given amount of days.",
+        description="Exclude tokens inactive for more than N days.",
         default=None,
     )
     min_pair_side_liquidity_usd: float | None = Field(
-        description="Exclude tokens with liquidity less than the specified amount in USD.",
+        description="Min liquidity in USD to include token.",
         default=None,
     )
 
@@ -67,10 +67,7 @@ class TokenBalances(PortfolioBaseTool):
     """
 
     name: str = "portfolio_token_balances"
-    description: str = (
-        "Get token balances for a specific wallet address and their token prices in USD. "
-        "Includes options to exclude spam and unverified contracts."
-    )
+    description: str = "Get token balances and prices in USD for a wallet address."
     args_schema: ArgsSchema | None = TokenBalancesInput
 
     async def _arun(

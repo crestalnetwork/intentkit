@@ -24,41 +24,30 @@ logger = logging.getLogger(__name__)
 class X402PayInput(BaseModel):
     """Arguments for a paid x402 HTTP request with max value limit."""
 
-    method: str = Field(description="HTTP method to use. Supported values: GET, POST.")
-    url: str = Field(
-        description="Absolute URL for the request (must include scheme and host)."
-    )
+    method: str = Field(description="HTTP method (GET or POST).")
+    url: str = Field(description="Absolute URL (must include scheme and host).")
     max_value: int = Field(
-        description=(
-            "Maximum allowed payment amount in base units (e.g., for USDC with 6 decimals, "
-            "1000000 = 1 USDC). The request will fail if the required payment exceeds this limit."
-        ),
+        description="Max payment in base units (e.g. 1000000 = 1 USDC). Fails if cost exceeds this.",
     )
     headers: dict[str, str] | None = Field(
         default=None,
-        description="Optional headers to include in the request.",
+        description="Optional request headers.",
     )
     params: dict[str, Any] | None = Field(
         default=None,
-        description="Optional query parameters to include in the request.",
+        description="Optional query parameters.",
     )
     data: dict[str, Any] | str | None = Field(
         default=None,
-        description=(
-            "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
-            "Only supported for POST requests."
-        ),
+        description="Optional body (dict as JSON, str as raw). POST only.",
     )
     timeout: float | None = Field(
         default=30.0,
-        description="Request timeout in seconds.",
+        description="Timeout in seconds.",
     )
     idempotency_key: str | None = Field(
         default=None,
-        description=(
-            "Optional idempotency key to prevent duplicate payments. "
-            "If not provided, a random UUID will be generated automatically."
-        ),
+        description="Optional key to prevent duplicate payments. Auto-generated if omitted.",
     )
 
 
@@ -67,12 +56,8 @@ class X402Pay(X402BaseSkill):
 
     name: str = "x402_pay"
     description: str = (
-        "Send a paid HTTP GET or POST request using the x402 payment protocol "
-        "with a specified maximum payment limit. "
-        "You MUST specify max_value to limit the maximum payment amount in base units. "
-        "For example, with USDC (6 decimals): 1000000 = 1 USDC, 100000 = 0.1 USDC. "
-        "The request will automatically fail if the required payment exceeds max_value. "
-        "Use x402_check_price first to know the exact cost before paying."
+        "Send a paid x402 HTTP request with a max payment limit (max_value in base units, e.g. 1000000 = 1 USDC). "
+        "Use x402_check_price first to preview costs."
     )
     args_schema: ArgsSchema | None = X402PayInput
 

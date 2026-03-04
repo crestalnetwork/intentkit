@@ -13,51 +13,39 @@ SUPPORTED_CURRENCIES = ["BTC", "ETH"]
 class CryptopanicSentimentInput(BaseModel):
     """Input schema for fetching crypto market insights."""
 
-    currency: str = Field(default="BTC", description="Currency to analyze (BTC or ETH)")
+    currency: str = Field(default="BTC", description="BTC or ETH")
 
 
 class CryptopanicSentimentOutput(BaseModel):
     """Output schema for crypto market insights."""
 
-    currency: str = Field(description="Currency analyzed")
-    total_posts: int = Field(description="Number of news items analyzed")
-    headlines: list[str] = Field(description="List of news headlines")
-    prompt: str = Field(description="Formatted prompt for LLM insights")
-    summary: str = Field(description="Summary of analysis process")
+    currency: str
+    total_posts: int
+    headlines: list[str]
+    prompt: str
+    summary: str
 
 
 class CryptopanicNewsOutput(BaseModel):
     """Output schema for fetching crypto news (used internally)."""
 
-    currency: str = Field(description="Currency news was fetched for")
-    news_items: list[BaseModel] = Field(description="List of news items")
-    summary: str = Field(description="Summary of fetched news")
+    currency: str
+    news_items: list[BaseModel]
+    summary: str
 
 
 class FetchCryptoSentiment(CryptopanicBaseTool):
     """Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
 
     name: str = "fetch_crypto_sentiment"
-    description: str = (
-        "Provides AI-driven insights on market conditions for BTC or ETH, including trends, "
-        "opportunities, risks, and outlook, based on news fetched from fetch_crypto_news "
-        "with all posts sorted by recency. Triggered by 'sentiment' or 'market state' queries. "
-        "Defaults to BTC."
-    )
+    description: str = "Provides AI-driven market sentiment analysis for BTC or ETH based on recent news."
     args_schema: ArgsSchema | None = CryptopanicSentimentInput
 
     INSIGHTS_PROMPT: ClassVar[str] = """
-CryptoPanic Headlines for {currency}:
+{currency} Headlines ({total_posts} posts):
 {headlines}
 
-Total Posts: {total_posts}
-Currency: {currency}
-
-Based on these headlines, provide AI-driven insights into the market conditions for {currency}. 
-Summarize key trends (e.g., price movements, adoption, network developments) inferred from the news. 
-Identify significant opportunities (e.g., growth potential) and risks (e.g., negative sentiment, competition). 
-Classify the overall market outlook as Bullish, Bearish and provide opinion on wether to buy, sell or hold.
-Conclude with a short-term outlook for {currency}. Provide a concise, professional analysis without headings.
+Analyze these headlines for {currency}. Summarize trends, opportunities, and risks. Classify outlook as Bullish/Bearish with buy/sell/hold opinion. Provide concise analysis without headings.
     """
 
     async def _arun(

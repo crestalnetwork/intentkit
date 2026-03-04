@@ -15,22 +15,10 @@ from intentkit.models.agent_activity import AgentActivityCreate
 class CreateActivityInput(BaseModel):
     """Input schema for creating an agent activity."""
 
-    text: str = Field(
-        ...,
-        description="Content of the activity",
-    )
-    images: list[str] | None = Field(
-        default=None,
-        description="List of image URLs to attach to the activity",
-    )
-    video: str | None = Field(
-        default=None,
-        description="Video URL to attach to the activity",
-    )
-    post_id: str | None = Field(
-        default=None,
-        description="ID of a related post, if this activity references a post",
-    )
+    text: str = Field(..., description="Activity content")
+    images: list[str] | None = Field(default=None, description="Image URLs")
+    video: str | None = Field(default=None, description="Video URL")
+    post_id: str | None = Field(default=None, description="Related post ID")
 
 
 class CreateActivitySkill(SystemSkill):
@@ -41,11 +29,7 @@ class CreateActivitySkill(SystemSkill):
     """
 
     name: str = "create_activity"
-    description: str = (
-        "Create a new activity for the agent. Activities can include text, "
-        "images, video, and optionally reference a related post. "
-        "Use this to share updates, media content, or announcements."
-    )
+    description: str = "Create an activity with text, optional images, video, or a related post reference."
     args_schema: ArgsSchema | None = CreateActivityInput
 
     @override

@@ -31,23 +31,23 @@ class TokenExecuteInput(BaseModel):
     """Input for the TokenExecute skill."""
 
     from_chain: str = Field(
-        description="The source chain (e.g., 'ETH', 'POL', 'ARB', 'DAI'). Can be chain ID or chain key."
+        description="Source chain (e.g. 'ETH', 'POL', 'ARB'). Chain ID or key."
     )
     to_chain: str = Field(
-        description="The destination chain (e.g., 'ETH', 'POL', 'ARB', 'DAI'). Can be chain ID or chain key."
+        description="Destination chain (e.g. 'ETH', 'POL', 'ARB'). Chain ID or key."
     )
     from_token: str = Field(
-        description="The token to send (e.g., 'USDC', 'ETH', 'DAI'). Can be token address or symbol."
+        description="Token to send (e.g. 'USDC', 'ETH'). Address or symbol."
     )
     to_token: str = Field(
-        description="The token to receive (e.g., 'USDC', 'ETH', 'DAI'). Can be token address or symbol."
+        description="Token to receive (e.g. 'USDC', 'ETH'). Address or symbol."
     )
     from_amount: str = Field(
-        description="The amount to send, including all decimals (e.g., '1000000' for 1 USDC with 6 decimals)."
+        description="Amount in smallest unit (e.g. '1000000' for 1 USDC)."
     )
     slippage: float = Field(
         default=0.03,
-        description="Maximum acceptable slippage as a decimal (e.g., 0.03 for 3%). Default is 3%.",
+        description="Max slippage as decimal (e.g. 0.03 for 3%).",
     )
 
 
@@ -60,10 +60,8 @@ class TokenExecute(LiFiBaseTool):
 
     name: str = "lifi_token_execute"
     description: str = (
-        "Execute a token transfer across blockchains or swap tokens on the same chain.\n"
-        "This requires a CDP wallet with sufficient funds and proper network configuration.\n"
-        "Use token_quote first to check rates and fees before executing.\n"
-        "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
+        "Execute a cross-chain token transfer or same-chain swap via LiFi. "
+        "Use token_quote first to check rates. Requires CDP wallet with sufficient funds."
     )
     args_schema: ArgsSchema | None = TokenExecuteInput
     api_url: str = LIFI_API_URL

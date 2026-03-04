@@ -20,33 +20,33 @@ class DocumentIndexerInput(BaseModel):
     """Input for DocumentIndexer tool."""
 
     text_content: str = Field(
-        description="The text content to add to the vector database. Can be content from Google Docs, Notion, or any other text source",
+        description="Text content to index.",
         min_length=10,
         max_length=100000,
     )
     title: str = Field(
-        description="Title or name for this text content (will be used as metadata)",
+        description="Title for this content.",
         max_length=200,
     )
     source: str = Field(
-        description="Source of the text content (e.g., 'Google Doc', 'Notion Page', 'Manual Entry')",
+        description="Content source (e.g., Google Doc, Notion).",
         default="Manual Entry",
         max_length=100,
     )
     chunk_size: int = Field(
-        description="Size of text chunks for indexing (default: 1000)",
+        description="Text chunk size for indexing.",
         default=1000,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
-        description="Overlap between chunks (default: 200)",
+        description="Overlap between chunks.",
         default=200,
         ge=0,
         le=1000,
     )
     tags: str = Field(
-        description="Optional tags for categorizing the content (comma-separated)",
+        description="Comma-separated tags for categorization.",
         default="",
         max_length=500,
     )
@@ -62,9 +62,7 @@ class DocumentIndexer(WebScraperBaseTool):
 
     name: str = "web_scraper_document_indexer"
     description: str = (
-        "Import and index document content directly to the vector database. "
-        "Perfect for adding content from Google Docs, Notion pages, PDFs, or any other document sources. "
-        "The indexed content can then be queried using the query_indexed_content tool."
+        "Index document content into the vector database for later querying."
     )
     args_schema: ArgsSchema | None = DocumentIndexerInput
 

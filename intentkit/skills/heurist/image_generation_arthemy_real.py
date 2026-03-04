@@ -16,23 +16,13 @@ logger = logging.getLogger(__name__)
 class ImageGenerationArthemyRealInput(BaseModel):
     """Input for ImageGenerationArthemyReal tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
-        description="Negative prompt describing what to avoid in the generated image.",
+        description="What to avoid in the image.",
     )
-    width: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Width of the generated image.",
-    )
-    height: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Height of the generated image.",
-    )
+    width: int | None = Field(default=1024, le=1024, description="Image width.")
+    height: int | None = Field(default=1024, le=1024, description="Image height.")
 
 
 class ImageGenerationArthemyReal(HeuristBaseTool):
@@ -49,10 +39,8 @@ class ImageGenerationArthemyReal(HeuristBaseTool):
 
     name: str = "heurist_image_generation_arthemy_real"
     description: str = (
-        "Generate realistic images using Heurist AI's ArthemyReal model.\n"
-        "Provide a text prompt describing the realistic image you want to generate.\n"
-        "ArthemyReal specializes in creating photorealistic, lifelike images with fine details.\n"
-        "If you have height and width, remember to specify them.\n"
+        "Generate photorealistic images using Heurist ArthemyReal model. "
+        "Provide a text prompt and optionally specify width/height."
     )
     args_schema: ArgsSchema | None = ImageGenerationArthemyRealInput
 

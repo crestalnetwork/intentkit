@@ -24,12 +24,7 @@ class CDPGetBalance(CDPBaseTool):
     """
 
     name: str = "cdp_get_balance"
-    description: str = """Get the native currency balance of the connected wallet.
-
-Returns the balance in both atomic units (wei) and human-readable format (ETH).
-
-No inputs required - returns the balance for the connected wallet address.
-"""
+    description: str = "Get the native token balance (ETH, MATIC, etc.) of the connected wallet. No inputs required."
     args_schema: ArgsSchema | None = GetBalanceInput
 
     @override

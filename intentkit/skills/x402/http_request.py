@@ -17,35 +17,27 @@ logger = logging.getLogger(__name__)
 class X402HttpRequestInput(BaseModel):
     """Arguments for a generic x402 HTTP request."""
 
-    method: str = Field(description="HTTP method to use. Supported values: GET, POST.")
-    url: str = Field(
-        description="Absolute URL for the request (must include scheme and host)."
-    )
+    method: str = Field(description="HTTP method (GET or POST).")
+    url: str = Field(description="Absolute URL (must include scheme and host).")
     headers: dict[str, str] | None = Field(
         default=None,
-        description="Optional headers to include in the request.",
+        description="Optional request headers.",
     )
     params: dict[str, Any] | None = Field(
         default=None,
-        description="Optional query parameters to include in the request.",
+        description="Optional query parameters.",
     )
     data: dict[str, Any] | str | None = Field(
         default=None,
-        description=(
-            "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
-            "Only supported for POST requests."
-        ),
+        description="Optional body (dict as JSON, str as raw). POST only.",
     )
     timeout: float | None = Field(
         default=30.0,
-        description="Request timeout in seconds.",
+        description="Timeout in seconds.",
     )
     idempotency_key: str | None = Field(
         default=None,
-        description=(
-            "Optional idempotency key to prevent duplicate payments. "
-            "If not provided, a random UUID will be generated automatically."
-        ),
+        description="Optional key to prevent duplicate payments. Auto-generated if omitted.",
     )
 
 
@@ -53,11 +45,7 @@ class X402HttpRequest(X402BaseSkill):
     """Skill that performs signed HTTP requests via the x402 client."""
 
     name: str = "x402_http_request"
-    description: str = (
-        "Send an HTTP GET or POST request using the x402 payment protocol. "
-        "Provide the method, absolute URL, optional headers, query parameters, and request body. "
-        "Returns the response status and body text."
-    )
+    description: str = "Send a paid HTTP request using the x402 protocol. Returns response status and body."
     args_schema: ArgsSchema | None = X402HttpRequestInput
 
     @override

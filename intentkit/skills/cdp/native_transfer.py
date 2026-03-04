@@ -13,10 +13,10 @@ from intentkit.skills.cdp.base import CDPBaseTool
 class NativeTransferInput(BaseModel):
     """Input schema for native_transfer."""
 
-    to: str = Field(..., description="The destination address to receive the funds")
+    to: str = Field(..., description="Destination address")
     value: str = Field(
         ...,
-        description="The amount to transfer in whole units (e.g. '0.1' for 0.1 ETH)",
+        description="Amount in whole units (e.g. '0.1' for 0.1 ETH)",
     )
 
 
@@ -27,16 +27,7 @@ class CDPNativeTransfer(CDPBaseTool):
     """
 
     name: str = "cdp_native_transfer"
-    description: str = """Transfer native tokens (ETH for EVM networks) from the wallet to another onchain address.
-
-Inputs:
-- to: The destination address to receive the funds
-- value: The amount to transfer in whole units (e.g. '0.1' for 0.1 ETH)
-
-Important notes:
-- Ensure sufficient balance of the native asset before transferring
-- Ensure there is sufficient balance for the transfer itself AND the gas cost of this transfer
-"""
+    description: str = "Transfer native tokens (ETH, MATIC, etc.) to another address. Ensure sufficient balance for transfer and gas."
     args_schema: ArgsSchema | None = NativeTransferInput
 
     @override

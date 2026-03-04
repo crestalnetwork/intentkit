@@ -22,10 +22,7 @@ from intentkit.skills.casino.utils import (
 )
 
 NAME = "casino_dice_roll"
-PROMPT = (
-    "Roll quantum random dice using true quantum randomness. "
-    "Can roll multiple 6-sided dice at once for games."
-)
+PROMPT = "Roll quantum random dice (1-10 six-sided dice)."
 
 logger = logging.getLogger(__name__)
 

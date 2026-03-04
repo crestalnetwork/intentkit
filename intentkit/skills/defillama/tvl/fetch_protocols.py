@@ -6,19 +6,9 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_protocols
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_PROTOCOLS_PROMPT = """
-This tool fetches information about all protocols tracked by DeFi Llama.
-No input parameters are required. Returns comprehensive data for each protocol including:
-- Basic information (name, description, website, logo)
-- TVL metrics (total and per-chain breakdowns)
-- Audit status and security information
-- Token details and market metrics
-- Chain support and deployment information
-- Social media and development links
-- Protocol relationships (forks, oracles)
-- Historical events and significant updates
-Returns the complete list of protocols or an error if the request fails.
-"""
+FETCH_PROTOCOLS_PROMPT = (
+    """Fetch all DeFi protocols tracked by DefiLlama with TVL, chain, and metadata."""
+)
 
 
 class Hallmark(BaseModel):
@@ -31,86 +21,54 @@ class Hallmark(BaseModel):
 class Protocol(BaseModel):
     """Model representing a DeFi protocol."""
 
-    # Basic Info
-    id: str = Field(..., description="Protocol unique identifier")
-    name: str = Field(..., description="Protocol name")
-    address: str | None = Field(None, description="Protocol's main contract address")
-    symbol: str = Field(..., description="Protocol token symbol")
-    url: str | None = Field(None, description="Protocol website")
-    description: str | None = Field(None, description="Protocol description")
-    chain: str | None = Field(None, description="Main chain of the protocol")
-    logo: str | None = Field(None, description="URL to protocol logo")
-
-    # Audit Information
-    audits: str | int = Field("0", description="Number of audits")
-    audit_note: str | None = Field(None, description="Additional audit information")
-    audit_links: list[str] | None = Field(None, description="Links to audit reports")
-
-    # External IDs
+    id: str = Field(..., description="ID")
+    name: str = Field(..., description="Name")
+    address: str | None = Field(None, description="Contract address")
+    symbol: str = Field(..., description="Token symbol")
+    url: str | None = Field(None, description="Website")
+    description: str | None = Field(None, description="Description")
+    chain: str | None = Field(None, description="Main chain")
+    logo: str | None = Field(None, description="Logo URL")
+    audits: str | int = Field("0", description="Audit count")
+    audit_note: str | None = Field(None, description="Audit note")
+    audit_links: list[str] | None = Field(None, description="Audit links")
     gecko_id: str | None = Field(None, description="CoinGecko ID")
-    cmcId: str | int | None = Field(None, description="CoinMarketCap ID")
-
-    # Classification
-    category: str = Field(..., description="Protocol category")
-    chains: list[str] = Field(
-        default_factory=list, description="Chains the protocol operates on"
-    )
-
-    # Module and Related Info
-    module: str = Field(..., description="Module name in DefiLlama")
-    parentProtocol: str | None = Field(None, description="Parent protocol identifier")
-
-    # Social and Development
-    twitter: str | None = Field(None, description="Twitter handle")
-    github: list[str] | None = Field(None, description="GitHub organization names")
-
-    # Protocol Relationships
-    oracles: list[str] = Field(default_factory=list, description="Oracle services used")
-    forkedFrom: list[str] = Field(
-        default_factory=list, description="Protocols this one was forked from"
-    )
-
-    # Additional Metadata
-    methodology: str | None = Field(None, description="TVL calculation methodology")
-    listedAt: int | None = Field(None, description="Timestamp when protocol was listed")
-    openSource: bool | None = Field(None, description="Whether protocol is open source")
-    treasury: str | None = Field(None, description="Treasury information")
-    misrepresentedTokens: bool | None = Field(
-        None, description="Whether tokens are misrepresented"
-    )
-    hallmarks: list[Hallmark] | None = Field(
-        None, description="Significant protocol events"
-    )
-
-    # TVL Related Data
-    tvl: float | None = Field(None, description="Total Value Locked in USD")
+    cmcId: str | int | None = Field(None, description="CMC ID")
+    category: str = Field(..., description="Category")
+    chains: list[str] = Field(default_factory=list, description="Chains")
+    module: str = Field(..., description="Module")
+    parentProtocol: str | None = Field(None, description="Parent protocol")
+    twitter: str | None = Field(None, description="Twitter")
+    github: list[str] | None = Field(None, description="GitHub orgs")
+    oracles: list[str] = Field(default_factory=list, description="Oracles used")
+    forkedFrom: list[str] = Field(default_factory=list, description="Forked from")
+    methodology: str | None = Field(None, description="TVL methodology")
+    listedAt: int | None = Field(None, description="Listed timestamp")
+    openSource: bool | None = Field(None, description="Open source")
+    treasury: str | None = Field(None, description="Treasury")
+    misrepresentedTokens: bool | None = Field(None, description="Misrepresented tokens")
+    hallmarks: list[Hallmark] | None = Field(None, description="Key events")
+    tvl: float | None = Field(None, description="TVL in USD")
     chainTvls: dict[str, float] = Field(
-        default_factory=dict,
-        description="TVL breakdown by chain including special types (staking, borrowed, etc.)",
+        default_factory=dict, description="TVL by chain"
     )
-    change_1h: float | None = Field(None, description="1 hour TVL change percentage")
-    change_1d: float | None = Field(None, description="1 day TVL change percentage")
-    change_7d: float | None = Field(None, description="7 day TVL change percentage")
-
-    # Additional TVL Components
-    staking: float | None = Field(None, description="Value in staking")
-    pool2: float | None = Field(None, description="Value in pool2")
-    borrowed: float | None = Field(None, description="Value borrowed")
-
-    # Token Information
+    change_1h: float | None = Field(None, description="1h change %")
+    change_1d: float | None = Field(None, description="1d change %")
+    change_7d: float | None = Field(None, description="7d change %")
+    staking: float | None = Field(None, description="Staking value")
+    pool2: float | None = Field(None, description="Pool2 value")
+    borrowed: float | None = Field(None, description="Borrowed value")
     tokenBreakdowns: dict[str, float] = Field(
-        default_factory=dict, description="TVL breakdown by token"
+        default_factory=dict, description="TVL by token"
     )
-    mcap: float | None = Field(None, description="Market capitalization")
+    mcap: float | None = Field(None, description="Market cap")
 
 
 class DefiLlamaProtocolsOutput(BaseModel):
     """Output model for the protocols fetching tool."""
 
-    protocols: list[Protocol] = Field(
-        default_factory=list, description="List of fetched protocols"
-    )
-    error: str | None = Field(None, description="Error message if any")
+    protocols: list[Protocol] = Field(default_factory=list, description="Protocols")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchProtocols(DefiLlamaBaseTool):

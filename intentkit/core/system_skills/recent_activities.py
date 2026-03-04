@@ -18,10 +18,7 @@ class RecentActivitiesSkill(SystemSkill):
     """
 
     name: str = "recent_activities"
-    description: str = (
-        "Retrieve your 10 most recent activities to understand what you have done recently. "
-        "Use this to review your past actions and maintain context of your work."
-    )
+    description: str = "Retrieve your 10 most recent activities."
     args_schema: ArgsSchema | None = NoArgsSchema
 
     @override

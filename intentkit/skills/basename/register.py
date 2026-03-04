@@ -26,14 +26,11 @@ class RegisterBasenameInput(BaseModel):
 
     basename: str = Field(
         ...,
-        description=(
-            "The Basename to register (e.g., 'myname.base.eth' for mainnet "
-            "or 'myname.basetest.eth' for testnet)"
-        ),
+        description="Basename to register (e.g., 'myname.base.eth' or 'myname.basetest.eth')",
     )
     amount: str = Field(
         default="0.002",
-        description="The amount of ETH to pay for registration. Default is 0.002 ETH.",
+        description="ETH amount for registration (default 0.002)",
     )
 
 
@@ -44,27 +41,11 @@ class BasenameRegister(BasenameBaseTool):
     """
 
     name: str = "basename_register_basename"
-    description: str = """Register a Basename ENS-style domain for the agent.
-
-This tool will register a Basename for the agent. The agent should have a wallet
-associated to register a Basename.
-
-When your network ID is 'base-mainnet' (also sometimes known simply as 'base'),
-the name must end with .base.eth, and when your network ID is 'base-sepolia',
-it must end with .basetest.eth.
-
-Do not suggest any alternatives and never try to register a Basename with another
-postfix. The prefix of the name must be unique so if the registration of the
-Basename fails, you should prompt to try again with a more unique name.
-
-Inputs:
-- basename: The Basename to register (e.g., 'example.base.eth' or 'example.basetest.eth')
-- amount: The amount of ETH to pay for registration. Default is 0.002 ETH.
-
-Important notes:
-- Ensure you have sufficient ETH balance for registration fee plus gas
-- Names are first-come, first-served - if registration fails, try a more unique name
-"""
+    description: str = (
+        "Register a Basename ENS-style domain on Base network. "
+        "Use .base.eth suffix for base-mainnet and .basetest.eth for base-sepolia. "
+        "Names are first-come, first-served; if registration fails, try a more unique name."
+    )
     args_schema: ArgsSchema | None = RegisterBasenameInput
 
     async def _arun(

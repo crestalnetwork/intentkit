@@ -26,11 +26,9 @@ class GetTokenPairsInput(BaseModel):
     """Input schema for the DexScreener get_token_pairs tool."""
 
     chain_id: str = Field(
-        description="The blockchain chain ID (e.g., 'ethereum', 'solana', 'bsc', 'polygon', 'arbitrum', 'base', 'avalanche')"
+        description="Blockchain chain ID (e.g., ethereum, solana, bsc)"
     )
-    token_address: str = Field(
-        description="The token contract address (e.g., '0x1234...abcd' for Ethereum-based chains)"
-    )
+    token_address: str = Field(description="Token contract address")
 
 
 class GetTokenPairs(DexScreenerBaseTool):
@@ -40,10 +38,7 @@ class GetTokenPairs(DexScreenerBaseTool):
 
     name: str = "dexscreener_get_token_pairs"
     description: str = (
-        "Finds all trading pairs for a specific token using chain ID and token address. "
-        "Returns a list of all pools/pairs where this token is traded, including pair addresses, "
-        "DEX information, liquidity, volume, and pricing data for each pair. "
-        "Use this tool to analyze all available trading venues and liquidity sources for a specific token."
+        "Find all trading pairs for a token by chain ID and token address."
     )
     args_schema: ArgsSchema | None = GetTokenPairsInput
 

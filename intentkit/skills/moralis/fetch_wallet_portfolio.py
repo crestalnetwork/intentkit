@@ -22,18 +22,14 @@ logger = logging.getLogger(__name__)
 class FetchWalletPortfolioInput(BaseModel):
     """Input for FetchWalletPortfolio tool."""
 
-    address: str = Field(
-        ..., description="Wallet address to analyze (Ethereum or Solana)"
-    )
+    address: str = Field(..., description="Wallet address (EVM or Solana).")
     chains: list[int] | None = Field(
         default=None,
-        description="List of EVM chain IDs to check (default: all supported)",
+        description="EVM chain IDs to check (all if empty).",
     )
-    include_solana: bool = Field(
-        default=True, description="Whether to include Solana in the analysis"
-    )
+    include_solana: bool = Field(default=True, description="Include Solana.")
     solana_network: str = Field(
-        default="mainnet", description="Solana network to use (mainnet or devnet)"
+        default="mainnet", description="Network: mainnet or devnet."
     )
 
 
@@ -66,14 +62,7 @@ class FetchWalletPortfolio(WalletBaseTool):
     """
 
     name: str = "moralis_fetch_wallet_portfolio"
-    description: str = (
-        "Get comprehensive portfolio data for a wallet including:\n"
-        "- Token balances and prices across multiple chains (EVM and Solana)\n"
-        "- Total net worth estimation\n"
-        "- Chain distribution of assets\n"
-        "Use this tool whenever the user asks about their crypto holdings, portfolio value, "
-        "or wallet contents across multiple blockchains."
-    )
+    description: str = "Fetch wallet portfolio across EVM chains and Solana, including balances and net worth."
     args_schema: ArgsSchema | None = FetchWalletPortfolioInput
 
     async def _arun(

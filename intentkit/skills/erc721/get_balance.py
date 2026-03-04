@@ -12,12 +12,10 @@ from intentkit.skills.erc721.constants import ERC721_ABI
 class GetBalanceInput(BaseModel):
     """Input schema for ERC721 get_balance."""
 
-    contract_address: str = Field(
-        ..., description="The contract address of the ERC721 NFT collection"
-    )
+    contract_address: str = Field(..., description="ERC721 NFT contract address")
     address: str | None = Field(
         default=None,
-        description="The address to check the NFT balance for. If not provided, uses the wallet's address",
+        description="Address to check. Defaults to wallet address.",
     )
 
 
@@ -29,14 +27,9 @@ class ERC721GetBalance(ERC721BaseTool):
     """
 
     name: str = "erc721_get_balance"
-    description: str = """Get the NFT (ERC721 token) balance for a given address.
-
-Inputs:
-- contract_address: The NFT contract address to check balance for
-- address: (Optional) The address to check NFT balance for. If not provided, uses the wallet's address
-
-Returns the number of NFTs owned by the address for the specified collection.
-"""
+    description: str = (
+        "Get the number of NFTs (ERC721) owned by an address for a given contract."
+    )
     args_schema: ArgsSchema | None = GetBalanceInput
 
     async def _arun(

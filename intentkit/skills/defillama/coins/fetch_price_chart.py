@@ -6,51 +6,38 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_price_chart
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_PRICE_CHART_PROMPT = """
-This tool fetches price chart data from DeFi Llama for multiple tokens.
-Provide a list of token identifiers in the format:
-- Ethereum tokens: 'ethereum:0x...'
-- Other chains: 'chainname:0x...'
-- CoinGecko IDs: 'coingecko:bitcoin'
-Returns price chart data including:
-- Historical price points for the last 24 hours
-- Token symbol and metadata
-- Confidence scores for price data
-- Token decimals (if available)
-"""
+FETCH_PRICE_CHART_PROMPT = """Fetch 24h price chart data for tokens via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class PricePoint(BaseModel):
     """Model representing a single price point in the chart."""
 
-    timestamp: int = Field(..., description="Unix timestamp of the price data")
-    price: float = Field(..., description="Token price in USD at the timestamp")
+    timestamp: int = Field(..., description="Unix timestamp")
+    price: float = Field(..., description="Price in USD")
 
 
 class TokenPriceChart(BaseModel):
     """Model representing price chart data for a single token."""
 
-    symbol: str = Field(..., description="Token symbol")
-    confidence: float = Field(..., description="Confidence score for the price data")
-    decimals: int | None = Field(None, description="Token decimals")
-    prices: list[PricePoint] = Field(..., description="List of historical price points")
+    symbol: str = Field(..., description="Symbol")
+    confidence: float = Field(..., description="Confidence score")
+    decimals: int | None = Field(None, description="Decimals")
+    prices: list[PricePoint] = Field(..., description="Price points")
 
 
 class FetchPriceChartInput(BaseModel):
     """Input schema for fetching token price charts."""
 
-    coins: list[str] = Field(
-        ..., description="List of token identifiers to fetch price charts for"
-    )
+    coins: list[str] = Field(..., description="Token IDs to query")
 
 
 class FetchPriceChartResponse(BaseModel):
     """Response schema for token price charts."""
 
     coins: dict[str, TokenPriceChart] = Field(
-        default_factory=dict, description="Price chart data keyed by token identifier"
+        default_factory=dict, description="Charts by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):

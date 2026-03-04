@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 class WalletDefiPositionsInput(BaseModel):
     """Input for wallet DeFi positions tool."""
 
-    address: str = Field(description="The wallet address to get DeFi positions for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
 
@@ -28,10 +28,7 @@ class WalletDefiPositions(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_defi_positions"
-    description: str = (
-        "Get the DeFi positions summary of a wallet address. "
-        "Returns information about liquidity positions, staking, lending, and other DeFi activities."
-    )
+    description: str = "Get DeFi positions for a wallet (liquidity, staking, lending)."
     args_schema: ArgsSchema | None = WalletDefiPositionsInput
 
     async def _arun(

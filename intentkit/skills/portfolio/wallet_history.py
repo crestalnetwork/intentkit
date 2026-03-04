@@ -17,47 +17,45 @@ logger = logging.getLogger(__name__)
 class WalletHistoryInput(BaseModel):
     """Input for wallet transaction history tool."""
 
-    address: str = Field(
-        description="The address of the wallet to get transaction history for."
-    )
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     limit: int | None = Field(
-        description="The desired page size of the result.",
+        description="Results per page.",
         default=DEFAULT_LIMIT,
     )
     cursor: str | None = Field(
-        description="The cursor returned in the previous response (for pagination).",
+        description="Pagination cursor.",
         default=None,
     )
     from_block: int | None = Field(
-        description="The minimum block number to get transactions from.",
+        description="Min block number.",
         default=None,
     )
     to_block: int | None = Field(
-        description="The maximum block number to get transactions from.",
+        description="Max block number.",
         default=None,
     )
     from_date: str | None = Field(
-        description="The start date to get transactions from (format in seconds or datestring).",
+        description="Start date filter.",
         default=None,
     )
     to_date: str | None = Field(
-        description="The end date to get transactions from (format in seconds or datestring).",
+        description="End date filter.",
         default=None,
     )
     include_internal_transactions: bool | None = Field(
-        description="If the result should contain the internal transactions.",
+        description="Include internal transactions.",
         default=None,
     )
     nft_metadata: bool | None = Field(
-        description="If the result should contain the NFT metadata.",
+        description="Include NFT metadata.",
         default=None,
     )
     order: str | None = Field(
-        description="The order of the result, in ascending (ASC) or descending (DESC).",
+        description="Sort order: ASC or DESC.",
         default=DEFAULT_ORDER,
     )
 
@@ -70,10 +68,7 @@ class WalletHistory(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_history"
-    description: str = (
-        "Retrieve the full transaction history of a specified wallet address, including sends, "
-        "receives, token and NFT transfers, and contract interactions."
-    )
+    description: str = "Get transaction history for a wallet address."
     args_schema: ArgsSchema | None = WalletHistoryInput
 
     async def _arun(

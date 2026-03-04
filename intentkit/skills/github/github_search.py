@@ -20,15 +20,13 @@ class SearchType(str, Enum):
 class GitHubSearchInput(BaseModel):
     """Input for GitHub search tool."""
 
-    query: str = Field(
-        description="The search query to look up on GitHub.",
-    )
+    query: str = Field(description="GitHub search query.")
     search_type: SearchType = Field(
-        description="Type of GitHub search to perform (repositories, users, or code).",
+        description="Search type: repositories, users, or code.",
         default=SearchType.REPOSITORIES,
     )
     max_results: int = Field(
-        description="Maximum number of search results to return (1-30).",
+        description="Max results to return (1-30).",
         default=5,
         ge=1,
         le=30,
@@ -48,13 +46,7 @@ class GitHubSearch(GitHubBaseTool):
     """
 
     name: str = "github_search"
-    description: str = (
-        "Search GitHub for repositories, users, or code. Use this tool when you need to find:\n"
-        "- GitHub repositories by name, description, or topics\n"
-        "- GitHub users by username or real name\n"
-        "- Code snippets across GitHub repositories\n"
-        "You must call this tool whenever the user asks about finding something on GitHub."
-    )
+    description: str = "Search GitHub for repositories, users, or code snippets."
     args_schema: ArgsSchema | None = GitHubSearchInput
 
     async def _arun(

@@ -13,9 +13,7 @@ CRYPTO_COMPARE_BASE_URL = "https://min-api.cryptocompare.com"
 class FetchNewsInput(BaseModel):
     """Input schema for fetching news."""
 
-    token: str = Field(
-        ..., description="Token symbol to fetch news for (e.g., BTC, ETH, SOL)"
-    )
+    token: str = Field(..., description="Token symbol (e.g., BTC, ETH)")
 
 
 class FetchPriceInput(BaseModel):
@@ -23,11 +21,11 @@ class FetchPriceInput(BaseModel):
 
     from_symbol: str = Field(
         ...,
-        description="Base cryptocurrency symbol to get prices for (e.g., 'BTC', 'ETH')",
+        description="Base crypto symbol (e.g., BTC, ETH)",
     )
     to_symbols: list[str] = Field(
         ...,
-        description="List of target currencies (fiat or crypto) (e.g., ['USD', 'EUR', 'JPY'])",
+        description="Target currency symbols (e.g., [USD, EUR])",
     )
 
 
@@ -36,7 +34,7 @@ class FetchTradingSignalsInput(BaseModel):
 
     from_symbol: str = Field(
         ...,
-        description="Cryptocurrency symbol to fetch trading signals for (e.g., 'BTC')",
+        description="Crypto symbol (e.g., BTC)",
     )
 
 
@@ -45,28 +43,21 @@ class FetchTopMarketCapInput(BaseModel):
 
     to_symbol: str = Field(
         "USD",
-        description="Quote currency for market cap calculation (e.g., 'USD', 'EUR')",
+        description="Quote currency symbol",
     )
 
 
 class FetchTopExchangesInput(BaseModel):
     """Input schema for fetching top exchanges for a trading pair."""
 
-    from_symbol: str = Field(
-        ..., description="Base cryptocurrency symbol for the trading pair (e.g., 'BTC')"
-    )
-    to_symbol: str = Field(
-        "USD",
-        description="Quote currency symbol for the trading pair. Defaults to 'USD'",
-    )
+    from_symbol: str = Field(..., description="Base crypto symbol (e.g., BTC)")
+    to_symbol: str = Field("USD", description="Quote currency symbol")
 
 
 class FetchTopVolumeInput(BaseModel):
     """Input schema for fetching top cryptocurrencies by trading volume."""
 
-    to_symbol: str = Field(
-        "USD", description="Quote currency for volume calculation. Defaults to 'USD'"
-    )
+    to_symbol: str = Field("USD", description="Quote currency symbol")
 
 
 # API Functions

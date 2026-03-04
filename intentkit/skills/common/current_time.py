@@ -15,7 +15,7 @@ class CurrentTimeInput(BaseModel):
     """Input for CurrentTime tool."""
 
     timezone: str = Field(
-        description="Timezone to format the time in (e.g., 'UTC', 'US/Pacific', 'Europe/London', 'Asia/Tokyo'). Default is UTC.",
+        description="Timezone name, e.g. 'UTC', 'US/Pacific', 'Asia/Tokyo'.",
         default="UTC",
     )
 
@@ -33,10 +33,7 @@ class CurrentTime(CommonBaseTool):
     """
 
     name: str = "common_current_time"
-    description: str = (
-        "Get the current time, converted to a specified timezone.\n"
-        "You must call this tool whenever the user asks for the time."
-    )
+    description: str = "Get the current time in a specified timezone."
     args_schema: ArgsSchema | None = CurrentTimeInput
 
     async def _arun(self, timezone: str, **kwargs) -> str:

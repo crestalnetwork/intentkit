@@ -49,7 +49,7 @@ class X402GetOrdersInput(BaseModel):
 
     limit: int = Field(
         default=5,
-        description="Maximum number of orders to retrieve (1-10). Default is 5.",
+        description="Max orders to retrieve (1-10).",
         ge=1,
         le=10,
     )
@@ -59,11 +59,7 @@ class X402GetOrders(X402BaseSkill):
     """Skill that retrieves recent successful x402 payment orders for the current agent."""
 
     name: str = "x402_get_orders"
-    description: str = (
-        "Retrieve recent successful x402 payment orders made by this agent. "
-        "Returns the most recent orders including URL, description, amount, and transaction hash. "
-        "Use this to review past payment activities."
-    )
+    description: str = "Retrieve recent x402 payment orders for this agent, including URL, amount, and tx hash."
     args_schema: ArgsSchema | None = X402GetOrdersInput
 
     @override

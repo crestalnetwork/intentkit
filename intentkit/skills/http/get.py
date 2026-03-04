@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 class HttpGetInput(BaseModel):
     """Input for HTTP GET request."""
 
-    url: str = Field(description="The URL to send the GET request to")
+    url: str = Field(description="Target URL.")
     headers: dict[str, str] | None = Field(
-        description="Optional headers to include in the request",
+        description="Request headers.",
         default=None,
     )
     params: dict[str, Any] | None = Field(
-        description="Optional query parameters to include in the request",
+        description="Query parameters.",
         default=None,
     )
     timeout: float | None = Field(
-        description="Request timeout in seconds (default: 30)",
+        description="Timeout in seconds.",
         default=30.0,
     )
 
@@ -42,10 +42,7 @@ class HttpGet(HttpBaseTool):
 
     name: str = "http_get"
     description: str = (
-        "Make an HTTP GET request to a specified URL. "
-        "You can include custom headers and query parameters. "
-        "Returns the response content as text. "
-        "Use this when you need to fetch data from web APIs or websites."
+        "Make an HTTP GET request to a URL. Returns the response as text."
     )
     args_schema: ArgsSchema | None = HttpGetInput
 

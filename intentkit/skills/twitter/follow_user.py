@@ -7,29 +7,18 @@ from intentkit.clients import get_twitter_client
 from intentkit.skills.twitter.base import TwitterBaseTool
 
 NAME = "twitter_follow_user"
-PROMPT = (
-    "Follow a Twitter user, if you don't know the user ID, "
-    "use twitter_get_user_by_username tool to get it."
-)
+PROMPT = "Follow a Twitter user by user ID. Use twitter_get_user_by_username to get the ID if needed."
 logger = logging.getLogger(__name__)
 
 
 class TwitterFollowUserInput(BaseModel):
     """Input for TwitterFollowUser tool."""
 
-    user_id: str = Field(description="The ID of the user to follow")
+    user_id: str = Field(description="User ID to follow")
 
 
 class TwitterFollowUser(TwitterBaseTool):
-    """Tool for following a Twitter user.
-
-    This tool uses the Twitter API v2 to follow a user on Twitter.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Follow a Twitter user."""
 
     name: str = NAME
     description: str = PROMPT

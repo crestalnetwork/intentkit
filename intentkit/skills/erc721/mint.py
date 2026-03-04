@@ -12,12 +12,8 @@ from intentkit.skills.erc721.constants import ERC721_ABI
 class MintInput(BaseModel):
     """Input schema for ERC721 mint."""
 
-    contract_address: str = Field(
-        ..., description="The contract address of the ERC721 NFT to mint"
-    )
-    destination: str = Field(
-        ..., description="The onchain address that will receive the minted NFT"
-    )
+    contract_address: str = Field(..., description="ERC721 NFT contract address")
+    destination: str = Field(..., description="Address to receive the minted NFT")
 
 
 class ERC721Mint(ERC721BaseTool):
@@ -29,18 +25,7 @@ class ERC721Mint(ERC721BaseTool):
     """
 
     name: str = "erc721_mint"
-    description: str = """Mint an NFT (ERC-721) to a specified destination address onchain via a contract invocation.
-
-Inputs:
-- contract_address: The contract address of the NFT to mint
-- destination: The onchain address that will receive the minted NFT
-
-Important notes:
-- Do not use the contract address as the destination address
-- If you are unsure of the destination address, please ask the user before proceeding
-- The contract must support the mint function
-- The wallet must have permission to mint (some contracts restrict who can mint)
-"""
+    description: str = "Mint an ERC721 NFT to a destination address. Do not use the contract address as destination. The contract must support mint and wallet must have permission."
     args_schema: ArgsSchema | None = MintInput
 
     async def _arun(

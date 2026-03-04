@@ -28,9 +28,8 @@ class VeniceAudioTool(VeniceAudioBaseTool):
 
     name: str = "venice_audio_text_to_speech"
     description: str = (
-        "Converts text to speech using a configured Venice AI voice model. "
-        "Requires input text. Optional parameters include speed (0.25-4.0, default 1.0) "
-        "and audio format (mp3, opus, aac, flac, wav, pcm, default mp3)."
+        "Convert text to speech using Venice AI. "
+        "Supports speed adjustment and multiple audio formats."
     )
     args_schema: ArgsSchema | None = VeniceAudioInput
 

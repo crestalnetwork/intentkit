@@ -23,10 +23,7 @@ from intentkit.skills.casino.utils import (
 )
 
 NAME = "casino_deck_shuffle"
-PROMPT = (
-    "Create and shuffle a new deck of cards. You can specify the number of decks "
-    "to use (default is 1) and optionally include jokers."
-)
+PROMPT = "Create and shuffle a new card deck."
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +31,8 @@ logger = logging.getLogger(__name__)
 class CasinoDeckShuffleInput(BaseModel):
     """Input for CasinoDeckShuffle tool."""
 
-    deck_count: int = Field(
-        default=1, description="Number of decks to use (1-6, default 1)"
-    )
-    jokers_enabled: bool = Field(
-        default=False, description="Whether to include jokers in the deck"
-    )
+    deck_count: int = Field(default=1, description="Number of decks (1-6).")
+    jokers_enabled: bool = Field(default=False, description="Include jokers.")
 
 
 class CasinoDeckShuffle(CasinoBaseTool):

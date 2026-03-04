@@ -18,7 +18,7 @@ class GetTokenAddressInput(BaseModel):
 
     symbol: str = Field(
         ...,
-        description="The token symbol (e.g. USDC, EURC, CBBTC, WETH)",
+        description="Token symbol (e.g. USDC, WETH)",
     )
 
 
@@ -30,22 +30,7 @@ class ERC20GetTokenAddress(ERC20BaseTool):
     """
 
     name: str = "erc20_get_token_address"
-    description: str = """Get the contract address for frequently used ERC20 tokens on different networks.
-
-Inputs:
-- symbol: The token symbol (e.g. USDC, EURC, CBBTC, WETH)
-
-Returns the contract address for the token on the current network.
-If the token is not found, returns available token symbols for the network.
-
-Supported tokens vary by network:
-- base-mainnet: USDC, EURC, CBBTC, CBETH, WETH, ZORA, AERO, BNKR, CLANKER
-- base-sepolia: USDC, EURC, CBBTC, WETH
-- ethereum-mainnet: USDC, EURC, CBBTC, WETH, CBETH
-- polygon-mainnet: USDC
-- arbitrum-mainnet: USDC, WETH
-- optimism-mainnet: USDC, WETH
-"""
+    description: str = "Get the contract address for a token symbol on the current network. Returns available symbols if not found."
     args_schema: ArgsSchema | None = GetTokenAddressInput
 
     @override

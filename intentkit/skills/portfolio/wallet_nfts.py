@@ -13,41 +13,41 @@ logger = logging.getLogger(__name__)
 class WalletNFTsInput(BaseModel):
     """Input for wallet NFTs tool."""
 
-    address: str = Field(description="The address of the wallet to get NFTs for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'base', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     format: str | None = Field(
-        description="The format of the token ID ('decimal' or 'hex').",
+        description="Token ID format: decimal or hex.",
         default="decimal",
     )
     limit: int | None = Field(
-        description="The desired page size of the result.",
+        description="Results per page.",
         default=DEFAULT_LIMIT,
     )
     exclude_spam: bool | None = Field(
-        description="Should spam NFTs be excluded from the result?",
+        description="Exclude spam NFTs.",
         default=True,
     )
     token_addresses: list[str] | None = Field(
-        description="The non-fungible token (NFT) addresses to get balances for.",
+        description="Filter by NFT contract addresses.",
         default=None,
     )
     cursor: str | None = Field(
-        description="The cursor returned in the previous response (for pagination).",
+        description="Pagination cursor.",
         default=None,
     )
     normalize_metadata: bool | None = Field(
-        description="The option to enable metadata normalization.",
+        description="Normalize metadata.",
         default=True,
     )
     media_items: bool | None = Field(
-        description="Should preview media data be returned?",
+        description="Include preview media.",
         default=False,
     )
     include_prices: bool | None = Field(
-        description="Should NFT last sale prices be included in the result?",
+        description="Include last sale prices.",
         default=False,
     )
 
@@ -60,10 +60,7 @@ class WalletNFTs(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_nfts"
-    description: str = (
-        "Get NFTs owned by a given wallet address. Results include token details, "
-        "metadata, collection information, and optionally prices."
-    )
+    description: str = "Get NFTs owned by a wallet address."
     args_schema: ArgsSchema | None = WalletNFTsInput
 
     async def _arun(

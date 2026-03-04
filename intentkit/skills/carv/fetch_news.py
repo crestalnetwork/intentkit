@@ -27,8 +27,7 @@ class FetchNewsTool(CarvBaseTool):
 
     name: str = "carv_fetch_news"
     description: str = (
-        "Fetches the latest news articles from the CARV API. "
-        "Returns a list of news items, each with a title, URL, and a short summary (card_text)."
+        "Fetch latest news articles from CARV API with title, URL, and summary."
     )
     args_schema: ArgsSchema | None = CarvNewsInput
 

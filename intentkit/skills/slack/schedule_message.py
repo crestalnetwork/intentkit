@@ -12,17 +12,17 @@ class SlackScheduleMessageSchema(BaseModel):
     """Input schema for SlackScheduleMessage."""
 
     channel_id: str = Field(
-        description="The ID of the channel to send the scheduled message to",
+        description="Channel ID",
     )
     text: str = Field(
-        description="The text content of the message to schedule",
+        description="Message text",
     )
     post_at: str = Field(
-        description="The time to send the message in ISO format (e.g., '2023-12-25T10:00:00Z')",
+        description="Send time in ISO format, e.g. '2023-12-25T10:00:00Z'",
     )
     thread_ts: str | None = Field(
         None,
-        description="The timestamp of the thread to reply to, if sending a thread reply",
+        description="Thread timestamp to reply to",
     )
 
 
@@ -30,7 +30,7 @@ class SlackScheduleMessage(SlackBaseTool):
     """Tool for scheduling messages to be sent to a Slack channel or thread."""
 
     name: str = "slack_schedule_message"
-    description: str = "Schedule a message to be sent to a Slack channel or thread at a specific time, if you need current time, use skill common_current_time"
+    description: str = "Schedule a Slack message for a specific time. Use common_current_time for current time."
     args_schema: ArgsSchema | None = SlackScheduleMessageSchema
 
     async def _arun(

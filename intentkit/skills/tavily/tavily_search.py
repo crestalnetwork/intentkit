@@ -15,20 +15,20 @@ class TavilySearchInput(BaseModel):
     """Input for Tavily search tool."""
 
     query: str = Field(
-        description="The search query to look up on the web.",
+        description="Search query.",
     )
     max_results: int = Field(
-        description="Maximum number of search results to return (1-10).",
+        description="Number of results (1-10).",
         default=5,
         ge=1,
         le=10,
     )
     include_images: bool = Field(
-        description="Whether to include image URLs in the results.",
+        description="Include image URLs.",
         default=False,
     )
     include_raw_content: bool = Field(
-        description="Whether to include raw HTML content in the results.",
+        description="Include raw HTML content.",
         default=False,
     )
 
@@ -45,12 +45,7 @@ class TavilySearch(TavilyBaseTool):
     """
 
     name: str = "tavily_search"
-    description: str = (
-        "Search the web for current information on a topic. Use this tool when you need to find"
-        " up-to-date information, facts, news, or any content available online.\n"
-        "You must call this tool whenever the user asks for information that may not be in your training data,"
-        " requires current data, or when you're unsure about facts."
-    )
+    description: str = "Search the web for current information on a topic."
     args_schema: ArgsSchema | None = TavilySearchInput
 
     async def _arun(

@@ -9,103 +9,94 @@ from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_dex_overview
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_DEX_OVERVIEW_PROMPT = """
-This tool fetches comprehensive overview data for DEX protocols from DeFi Llama.
-Returns:
-- Chain statistics and breakdowns
-- Protocol-specific metrics
-- Change percentages
-- Total volume data
-"""
+FETCH_DEX_OVERVIEW_PROMPT = """Fetch DEX volume overview from DefiLlama with totals, changes, and per-protocol data."""
 
 
 class MethodologyInfo(BaseModel):
     """Model representing methodology information."""
 
-    UserFees: str | None = Field(None, description="User fee information")
-    Fees: str | None = Field(None, description="Fee structure")
-    Revenue: str | None = Field(None, description="Revenue model")
-    ProtocolRevenue: str | None = Field(None, description="Protocol revenue info")
-    HoldersRevenue: str | None = Field(None, description="Holder revenue info")
-    SupplySideRevenue: str | None = Field(None, description="Supply side revenue info")
+    UserFees: str | None = Field(None, description="User fees")
+    Fees: str | None = Field(None, description="Fees")
+    Revenue: str | None = Field(None, description="Revenue")
+    ProtocolRevenue: str | None = Field(None, description="Protocol revenue")
+    HoldersRevenue: str | None = Field(None, description="Holder revenue")
+    SupplySideRevenue: str | None = Field(None, description="Supply side revenue")
 
 
 class ProtocolInfo(BaseModel):
     """Model representing individual protocol data."""
 
     total24h: float | None = Field(None, description="24h total")
-    total48hto24h: float | None = Field(None, description="48h to 24h total")
+    total48hto24h: float | None = Field(None, description="48h-24h total")
     total7d: float | None = Field(None, description="7d total")
-    total14dto7d: float | None = Field(None, description="14d to 7d total")
-    total60dto30d: float | None = Field(None, description="60d to 30d total")
+    total14dto7d: float | None = Field(None, description="14d-7d total")
+    total60dto30d: float | None = Field(None, description="60d-30d total")
     total30d: float | None = Field(None, description="30d total")
     total1y: float | None = Field(None, description="1y total")
-    totalAllTime: float | None = Field(None, description="All time total")
-    average1y: float | None = Field(None, description="1y average")
-    change_1d: float | None = Field(None, description="1d change")
-    change_7d: float | None = Field(None, description="7d change")
-    change_1m: float | None = Field(None, description="1m change")
-    change_7dover7d: float | None = Field(None, description="7d over 7d change")
-    change_30dover30d: float | None = Field(None, description="30d over 30d change")
+    totalAllTime: float | None = Field(None, description="All-time total")
+    average1y: float | None = Field(None, description="1y avg")
+    change_1d: float | None = Field(None, description="1d change %")
+    change_7d: float | None = Field(None, description="7d change %")
+    change_1m: float | None = Field(None, description="1m change %")
+    change_7dover7d: float | None = Field(None, description="7d/7d change %")
+    change_30dover30d: float | None = Field(None, description="30d/30d change %")
     breakdown24h: dict[str, dict[str, float]] | None = Field(
-        None, description="24h breakdown by chain"
+        None, description="24h by chain"
     )
     breakdown30d: dict[str, dict[str, float]] | None = Field(
-        None, description="30d breakdown by chain"
+        None, description="30d by chain"
     )
-    total7DaysAgo: float | None = Field(None, description="Total 7 days ago")
-    total30DaysAgo: float | None = Field(None, description="Total 30 days ago")
-    defillamaId: str | None = Field(None, description="DeFi Llama ID")
-    name: str = Field(..., description="Protocol name")
+    total7DaysAgo: float | None = Field(None, description="7d ago total")
+    total30DaysAgo: float | None = Field(None, description="30d ago total")
+    defillamaId: str | None = Field(None, description="DefiLlama ID")
+    name: str = Field(..., description="Name")
     displayName: str = Field(..., description="Display name")
-    module: str = Field(..., description="Module name")
-    category: str = Field(..., description="Protocol category")
+    module: str = Field(..., description="Module")
+    category: str = Field(..., description="Category")
     logo: str | None = Field(None, description="Logo URL")
-    chains: list[str] = Field(..., description="Supported chains")
-    protocolType: str = Field(..., description="Protocol type")
+    chains: list[str] = Field(..., description="Chains")
+    protocolType: str = Field(..., description="Type")
     methodologyURL: str | None = Field(None, description="Methodology URL")
-    methodology: MethodologyInfo | None = Field(None, description="Methodology details")
-    latestFetchIsOk: bool = Field(..., description="Latest fetch status")
-    disabled: bool | None = Field(None, description="Whether protocol is disabled")
+    methodology: MethodologyInfo | None = Field(None, description="Methodology")
+    latestFetchIsOk: bool = Field(..., description="Fetch OK")
+    disabled: bool | None = Field(None, description="Disabled")
     parentProtocol: str | None = Field(None, description="Parent protocol")
-    slug: str = Field(..., description="Protocol slug")
+    slug: str = Field(..., description="Slug")
     linkedProtocols: list[str] | None = Field(None, description="Linked protocols")
-    id: str = Field(..., description="Protocol ID")
+    id: str = Field(..., description="ID")
 
 
 class FetchDexOverviewResponse(BaseModel):
     """Response schema for DEX overview data."""
 
-    totalDataChart: list[Any] = Field(
-        default_factory=list, description="Total data chart points"
-    )
+    totalDataChart: list[Any] = Field(default_factory=list, description="Chart data")
     totalDataChartBreakdown: list[Any] = Field(
-        default_factory=list, description="Total data chart breakdown"
+        default_factory=list, description="Chart breakdown"
     )
     breakdown24h: dict[str, dict[str, float]] | None = Field(
-        None, description="24h breakdown by chain"
+        None, description="24h by chain"
     )
     breakdown30d: dict[str, dict[str, float]] | None = Field(
-        None, description="30d breakdown by chain"
+        None, description="30d by chain"
     )
-    chain: str | None = Field(None, description="Specific chain")
-    allChains: list[str] = Field(..., description="List of all chains")
+    chain: str | None = Field(None, description="Chain")
+    allChains: list[str] = Field(..., description="All chains")
     total24h: float = Field(..., description="24h total")
-    total48hto24h: float = Field(..., description="48h to 24h total")
+    total48hto24h: float = Field(..., description="48h-24h total")
     total7d: float = Field(..., description="7d total")
-    total14dto7d: float = Field(..., description="14d to 7d total")
-    total60dto30d: float = Field(..., description="60d to 30d total")
+    total14dto7d: float = Field(..., description="14d-7d total")
+    total60dto30d: float = Field(..., description="60d-30d total")
     total30d: float = Field(..., description="30d total")
     total1y: float = Field(..., description="1y total")
-    change_1d: float = Field(..., description="1d change")
-    change_7d: float = Field(..., description="7d change")
-    change_1m: float = Field(..., description="1m change")
-    change_7dover7d: float = Field(..., description="7d over 7d change")
-    change_30dover30d: float = Field(..., description="30d over 30d change")
-    total7DaysAgo: float = Field(..., description="Total 7 days ago")
-    total30DaysAgo: float = Field(..., description="Total 30 days ago")
-    protocols: list[ProtocolInfo] = Field(..., description="List of protocol data")
-    error: str | None = Field(None, description="Error message if any")
+    change_1d: float = Field(..., description="1d change %")
+    change_7d: float = Field(..., description="7d change %")
+    change_1m: float = Field(..., description="1m change %")
+    change_7dover7d: float = Field(..., description="7d/7d change %")
+    change_30dover30d: float = Field(..., description="30d/30d change %")
+    total7DaysAgo: float = Field(..., description="7d ago total")
+    total30DaysAgo: float = Field(..., description="30d ago total")
+    protocols: list[ProtocolInfo] = Field(..., description="Protocols")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):

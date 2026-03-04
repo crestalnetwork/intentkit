@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 class TokenAnalyticsInput(BaseModel):
     """Input for token analytics tool."""
 
-    address: str = Field(description="The token address to get analytics for.")
+    address: str = Field(description="Token address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query, e.g. 'eth', 'bsc', 'polygon'.",
         default=DEFAULT_CHAIN,
     )
 
@@ -29,8 +29,7 @@ class TokenAnalytics(TokenBaseTool):
 
     name: str = "token_analytics"
     description: str = (
-        "Get analytics for a token by token address. "
-        "Returns trading volumes, number of buyers/sellers, and liquidity information over various time periods."
+        "Get token analytics: trading volume, buyers/sellers, and liquidity."
     )
     args_schema: ArgsSchema | None = TokenAnalyticsInput
 

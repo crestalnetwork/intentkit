@@ -35,52 +35,25 @@ class SortOrder(IntEnum):
 class GetAccountFeedInput(BaseModel):
     """Input for GetAccountFeed tool."""
 
-    username: str | None = Field(
-        default=None,
-        description="Twitter username (either username or userId is required)",
-    )
-
-    userId: str | None = Field(
-        default=None,
-        description="Twitter user ID (either username or userId is required)",
-    )
-
-    startDate: str | None = Field(
-        default=None,
-        description="Start date for filtering in format dd/mm/yyyy (default: 30 days ago)",
-    )
-
-    endDate: str | None = Field(
-        default=None,
-        description="End date for filtering in format dd/mm/yyyy (default: now)",
-    )
-
+    username: str | None = Field(default=None, description="Twitter username")
+    userId: str | None = Field(default=None, description="Twitter user ID")
+    startDate: str | None = Field(default=None, description="Start date (dd/mm/yyyy)")
+    endDate: str | None = Field(default=None, description="End date (dd/mm/yyyy)")
     type: int | None = Field(
-        default=None,
-        description="Type of tweets to filter: 0 for Original, 1 for Reply, 2 for Quote (leave empty for all types)",
+        default=None, description="Tweet type: 0=Original, 1=Reply, 2=Quote"
     )
-
-    hasMedia: bool | None = Field(
-        default=None,
-        description="Filter to only include tweets with media if true",
-    )
-
-    sortBy: int | None = Field(
-        default=None,
-        description="Sort by: 0 for CreatedDate, 1 for Impressions",
-    )
-
-    sortOrder: int | None = Field(
-        default=None,
-        description="Sort order: 0 for Ascending, 1 for Descending",
-    )
+    hasMedia: bool | None = Field(default=None, description="Filter tweets with media")
+    sortBy: int | None = Field(default=None, description="0=CreatedDate, 1=Impressions")
+    sortOrder: int | None = Field(default=None, description="0=Ascending, 1=Descending")
 
 
 class GetAccountFeed(CookieFunBaseTool):
     """Tool to get the feed (tweets) of a Twitter account."""
 
     name: str = "cookiefun_get_account_feed"
-    description: str = "Retrieves a list of tweets for a specific Twitter account with various filtering options."
+    description: str = (
+        "Get tweets for a Twitter account with filtering and sorting options."
+    )
     args_schema: ArgsSchema | None = GetAccountFeedInput
 
     async def _arun(

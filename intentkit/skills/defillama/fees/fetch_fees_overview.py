@@ -6,74 +6,59 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_fees_overview
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_FEES_OVERVIEW_PROMPT = """
-This tool fetches comprehensive overview data for protocol fees from DeFi Llama.
-Returns detailed metrics including:
-- Total fees across different timeframes
-- Change percentages
-- Protocol-specific data
-- Chain breakdowns
-"""
+FETCH_FEES_OVERVIEW_PROMPT = """Fetch protocol fees overview from DefiLlama, including totals, changes, and per-protocol breakdowns."""
 
 
 class ProtocolMethodology(BaseModel):
     """Model representing protocol methodology data."""
 
-    UserFees: str | None = Field(None, description="Description of user fees")
-    Fees: str | None = Field(None, description="Description of fees")
-    Revenue: str | None = Field(None, description="Description of revenue")
-    ProtocolRevenue: str | None = Field(
-        None, description="Description of protocol revenue"
-    )
-    HoldersRevenue: str | None = Field(
-        None, description="Description of holders revenue"
-    )
-    SupplySideRevenue: str | None = Field(
-        None, description="Description of supply side revenue"
-    )
+    UserFees: str | None = Field(None, description="User fees")
+    Fees: str | None = Field(None, description="Fees")
+    Revenue: str | None = Field(None, description="Revenue")
+    ProtocolRevenue: str | None = Field(None, description="Protocol revenue")
+    HoldersRevenue: str | None = Field(None, description="Holders revenue")
+    SupplySideRevenue: str | None = Field(None, description="Supply side revenue")
 
 
 class Protocol(BaseModel):
     """Model representing protocol data."""
 
-    name: str = Field(..., description="Protocol name")
-    displayName: str = Field(..., description="Display name of protocol")
-    category: str = Field(..., description="Protocol category")
+    name: str = Field(..., description="Name")
+    displayName: str = Field(..., description="Display name")
+    category: str = Field(..., description="Category")
     logo: str = Field(..., description="Logo URL")
-    chains: list[str] = Field(..., description="Supported chains")
-    module: str = Field(..., description="Protocol module")
-    total24h: float | None = Field(None, description="24-hour total fees")
-    total7d: float | None = Field(None, description="7-day total fees")
-    total30d: float | None = Field(None, description="30-day total fees")
-    total1y: float | None = Field(None, description="1-year total fees")
-    totalAllTime: float | None = Field(None, description="All-time total fees")
-    change_1d: float | None = Field(None, description="24-hour change percentage")
-    change_7d: float | None = Field(None, description="7-day change percentage")
-    change_1m: float | None = Field(None, description="30-day change percentage")
-    methodology: ProtocolMethodology | None = Field(
-        None, description="Protocol methodology"
-    )
+    chains: list[str] = Field(..., description="Chains")
+    module: str = Field(..., description="Module")
+    total24h: float | None = Field(None, description="24h fees")
+    total7d: float | None = Field(None, description="7d fees")
+    total30d: float | None = Field(None, description="30d fees")
+    total1y: float | None = Field(None, description="1y fees")
+    totalAllTime: float | None = Field(None, description="All-time fees")
+    change_1d: float | None = Field(None, description="1d change %")
+    change_7d: float | None = Field(None, description="7d change %")
+    change_1m: float | None = Field(None, description="1m change %")
+    methodology: ProtocolMethodology | None = Field(None, description="Methodology")
     breakdown24h: dict[str, dict[str, float]] | None = Field(
-        None, description="24-hour breakdown by chain"
+        None, description="24h by chain"
     )
     breakdown30d: dict[str, dict[str, float]] | None = Field(
-        None, description="30-day breakdown by chain"
+        None, description="30d by chain"
     )
 
 
 class FetchFeesOverviewResponse(BaseModel):
     """Response schema for fees overview data."""
 
-    total24h: float = Field(..., description="Total fees in last 24 hours")
-    total7d: float = Field(..., description="Total fees in last 7 days")
-    total30d: float = Field(..., description="Total fees in last 30 days")
-    total1y: float = Field(..., description="Total fees in last year")
-    change_1d: float = Field(..., description="24-hour change percentage")
-    change_7d: float = Field(..., description="7-day change percentage")
-    change_1m: float = Field(..., description="30-day change percentage")
-    allChains: list[str] = Field(..., description="List of all chains")
-    protocols: list[Protocol] = Field(..., description="List of protocols")
-    error: str | None = Field(None, description="Error message if any")
+    total24h: float = Field(..., description="24h total fees")
+    total7d: float = Field(..., description="7d total fees")
+    total30d: float = Field(..., description="30d total fees")
+    total1y: float = Field(..., description="1y total fees")
+    change_1d: float = Field(..., description="1d change %")
+    change_7d: float = Field(..., description="7d change %")
+    change_1m: float = Field(..., description="1m change %")
+    allChains: list[str] = Field(..., description="All chains")
+    protocols: list[Protocol] = Field(..., description="Protocols")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):

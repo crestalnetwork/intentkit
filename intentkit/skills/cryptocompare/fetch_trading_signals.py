@@ -16,7 +16,7 @@ class CryptoCompareFetchTradingSignalsInput(BaseModel):
 
     from_symbol: str = Field(
         ...,
-        description="Cryptocurrency symbol to fetch trading signals for (e.g., 'BTC')",
+        description="Crypto symbol (e.g., BTC)",
     )
 
 
@@ -31,19 +31,10 @@ class TradingSignal(BaseModel):
 
 
 class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
-    """Tool for fetching cryptocurrency trading signals from CryptoCompare.
-
-    This tool uses the CryptoCompare API to retrieve the latest trading signals
-    for a specific cryptocurrency. These signals can help inform trading decisions.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for fetching cryptocurrency trading signals from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_trading_signals"
-    description: str = "Fetch the latest trading signals for a specific cryptocurrency"
+    description: str = "Fetch latest trading signals for a cryptocurrency."
     args_schema: ArgsSchema | None = CryptoCompareFetchTradingSignalsInput
 
     async def _arun(

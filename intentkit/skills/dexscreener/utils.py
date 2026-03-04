@@ -47,10 +47,8 @@ MAX_TOKENS_BATCH = 30
 # Common disclaimer for search results
 SEARCH_DISCLAIMER = {
     "disclaimer": (
-        "Search results may include unofficial, duplicate, or potentially malicious tokens. "
-        "If multiple unrelated tokens share a similar name or ticker, ask the user for the exact token address. "
-        "If the correct token is not found, re-run the tool using the provided address. "
-        "Also advise the user to verify the token's legitimacy via its official social links included in the result."
+        "Results may include unofficial or malicious tokens. "
+        "If ambiguous, ask user for exact token address. Advise verifying legitimacy via official links."
     )
 }
 

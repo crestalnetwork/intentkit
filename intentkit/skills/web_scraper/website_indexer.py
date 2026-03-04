@@ -25,33 +25,33 @@ class WebsiteIndexerInput(BaseModel):
     """Input for WebsiteIndexer tool."""
 
     base_url: str = Field(
-        description="Base URL of the website to index (e.g., https://example.com). The tool will discover sitemaps and extract all URLs",
+        description="Website base URL to index.",
         min_length=1,
     )
     max_urls: int = Field(
-        description="Maximum number of URLs to scrape from the sitemap (default: 50)",
+        description="Max URLs to scrape from sitemap.",
         default=50,
         ge=1,
         le=200,
     )
     chunk_size: int = Field(
-        description="Size of text chunks for indexing (default: 1000)",
+        description="Text chunk size for indexing.",
         default=DEFAULT_CHUNK_SIZE,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
-        description="Overlap between chunks (default: 200)",
+        description="Overlap between chunks.",
         default=DEFAULT_CHUNK_OVERLAP,
         ge=0,
         le=1000,
     )
     include_patterns: list[str] = Field(
-        description="URL patterns to include (e.g., ['/blog/', '/docs/']). If empty, all URLs are included",
+        description="URL patterns to include. Empty means all.",
         default=[],
     )
     exclude_patterns: list[str] = Field(
-        description="URL patterns to exclude (e.g., ['/admin/', '/private/'])",
+        description="URL patterns to exclude.",
         default=[],
     )
 
@@ -65,11 +65,7 @@ class WebsiteIndexer(WebScraperBaseTool):
     """
 
     name: str = "web_scraper_website_indexer"
-    description: str = (
-        "Index an entire website by discovering sitemaps and extracting URLs efficiently. "
-        "This tool finds sitemaps from robots.txt, parses the XML content to extract URLs, "
-        "and then uses the reliable scrape_and_index functionality for content indexing."
-    )
+    description: str = "Index a website by discovering sitemaps, extracting URLs, and indexing content."
     args_schema: ArgsSchema | None = WebsiteIndexerInput
 
     def _normalize_url(self, url: str) -> str:

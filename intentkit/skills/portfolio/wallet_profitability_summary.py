@@ -13,15 +13,13 @@ logger = logging.getLogger(__name__)
 class WalletProfitabilitySummaryInput(BaseModel):
     """Input for wallet profitability summary tool."""
 
-    address: str = Field(
-        description="The wallet address to get profitability summary for."
-    )
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     days: str | None = Field(
-        description="Timeframe in days for the profitability summary. Options: 'all', '7', '30', '60', '90'.",
+        description="Timeframe: all, 7, 30, 60, or 90.",
         default="all",
     )
 
@@ -34,10 +32,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_profitability_summary"
-    description: str = (
-        "Retrieve a summary of wallet profitability including total profit/loss, "
-        "trade volume, and other metrics. Filter by time period."
-    )
+    description: str = "Get wallet profitability summary (total P&L, trade volume)."
     args_schema: ArgsSchema | None = WalletProfitabilitySummaryInput
 
     async def _arun(

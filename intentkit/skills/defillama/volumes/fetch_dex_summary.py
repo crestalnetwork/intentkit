@@ -8,69 +8,60 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_dex_summary
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_DEX_SUMMARY_PROMPT = """
-This tool fetches summary data for a specific DEX protocol from DeFi Llama.
-Required:
-- Protocol identifier
-Returns:
-- Protocol details and metadata
-- Volume metrics
-- Social links and identifiers
-- Child protocols and versions
-"""
+FETCH_DEX_SUMMARY_PROMPT = (
+    """Fetch summary data for a specific DEX protocol via DefiLlama."""
+)
 
 
 class FetchDexSummaryInput(BaseModel):
     """Input schema for fetching DEX protocol summary."""
 
-    protocol: str = Field(..., description="Protocol identifier (e.g. 'uniswap')")
+    protocol: str = Field(..., description="Protocol slug (e.g. 'uniswap')")
 
 
 class FetchDexSummaryResponse(BaseModel):
     """Response schema for DEX protocol summary data."""
 
-    id: str = Field(..., description="Protocol ID")
-    name: str = Field(..., description="Protocol name")
-    url: str | None = Field(None, description="Protocol website URL")
-    description: str | None = Field(None, description="Protocol description")
+    id: str = Field(..., description="ID")
+    name: str = Field(..., description="Name")
+    url: str | None = Field(None, description="Website")
+    description: str | None = Field(None, description="Description")
     logo: str | None = Field(None, description="Logo URL")
     gecko_id: str | None = Field(None, description="CoinGecko ID")
-    cmcId: str | None = Field(None, description="CoinMarketCap ID")
-    chains: list[str] = Field(default_factory=list, description="Supported chains")
-    twitter: str | None = Field(None, description="Twitter handle")
-    treasury: str | None = Field(None, description="Treasury identifier")
+    cmcId: str | None = Field(None, description="CMC ID")
+    chains: list[str] = Field(default_factory=list, description="Chains")
+    twitter: str | None = Field(None, description="Twitter")
+    treasury: str | None = Field(None, description="Treasury")
     governanceID: list[str] | None = Field(None, description="Governance IDs")
-    github: list[str] | None = Field(None, description="GitHub organizations")
+    github: list[str] | None = Field(None, description="GitHub orgs")
     childProtocols: list[str] | None = Field(None, description="Child protocols")
     linkedProtocols: list[str] | None = Field(None, description="Linked protocols")
-    disabled: bool | None = Field(None, description="Whether protocol is disabled")
+    disabled: bool | None = Field(None, description="Disabled")
     displayName: str = Field(..., description="Display name")
-    module: str | None = Field(None, description="Module name")
-    category: str | None = Field(None, description="Protocol category")
+    module: str | None = Field(None, description="Module")
+    category: str | None = Field(None, description="Category")
     methodologyURL: str | None = Field(None, description="Methodology URL")
-    methodology: dict[str, Any] | None = Field(None, description="Methodology details")
-    forkedFrom: list[str] | None = Field(None, description="Forked from protocols")
-    audits: str | None = Field(None, description="Audit information")
-    address: str | None = Field(None, description="Contract address")
+    methodology: dict[str, Any] | None = Field(None, description="Methodology")
+    forkedFrom: list[str] | None = Field(None, description="Forked from")
+    audits: str | None = Field(None, description="Audits")
+    address: str | None = Field(None, description="Address")
     audit_links: list[str] | None = Field(None, description="Audit links")
     versionKey: str | None = Field(None, description="Version key")
     parentProtocol: str | None = Field(None, description="Parent protocol")
     previousNames: list[str] | None = Field(None, description="Previous names")
-    latestFetchIsOk: bool = Field(..., description="Latest fetch status")
-    slug: str = Field(..., description="Protocol slug")
-    protocolType: str = Field(..., description="Protocol type")
-    total24h: float | None = Field(None, description="24h total volume")
-    total48hto24h: float | None = Field(None, description="48h to 24h total volume")
-    total7d: float | None = Field(None, description="7d total volume")
-    totalAllTime: float | None = Field(None, description="All time total volume")
-    totalDataChart: list[Any] = Field(
-        default_factory=list, description="Total data chart"
-    )
+    latestFetchIsOk: bool = Field(..., description="Fetch OK")
+    slug: str = Field(..., description="Slug")
+    protocolType: str = Field(..., description="Type")
+    total24h: float | None = Field(None, description="24h volume")
+    total48hto24h: float | None = Field(None, description="48h-24h volume")
+    total7d: float | None = Field(None, description="7d volume")
+    totalAllTime: float | None = Field(None, description="All-time volume")
+    totalDataChart: list[Any] = Field(default_factory=list, description="Chart data")
     totalDataChartBreakdown: list[Any] = Field(
         default_factory=list, description="Chart breakdown"
     )
-    change_1d: float | None = Field(None, description="1d change percentage")
-    error: str | None = Field(None, description="Error message if any")
+    change_1d: float | None = Field(None, description="1d change %")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchDexSummary(DefiLlamaBaseTool):

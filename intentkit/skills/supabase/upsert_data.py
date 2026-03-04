@@ -8,9 +8,7 @@ from supabase import Client, create_client
 from intentkit.skills.supabase.base import SupabaseBaseTool
 
 NAME = "supabase_upsert_data"
-PROMPT = (
-    "Upsert (insert or update) data in a Supabase table based on conflict resolution."
-)
+PROMPT = "Upsert (insert or update) data in a Supabase table."
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +16,14 @@ logger = logging.getLogger(__name__)
 class SupabaseUpsertDataInput(BaseModel):
     """Input for SupabaseUpsertData tool."""
 
-    table: str = Field(description="The name of the table to upsert data into")
+    table: str = Field(description="Table name")
     data: dict[str, Any] | list[dict[str, Any]] = Field(
-        description="The data to upsert. Can be a single object or a list of objects"
+        description="Object or list of objects to upsert"
     )
     on_conflict: str = Field(
-        description="The column(s) to use for conflict resolution (e.g., 'id' or 'email,username')"
+        description="Conflict column(s), e.g. 'id' or 'email,username'"
     )
-    returning: str = Field(
-        default="*", description="Columns to return after upsert (default: '*' for all)"
-    )
+    returning: str = Field(default="*", description="Columns to return after upsert")
 
 
 class SupabaseUpsertData(SupabaseBaseTool):

@@ -9,10 +9,7 @@ from intentkit.config.config import config
 from intentkit.skills.twitter.base import TwitterBaseTool
 
 NAME = "twitter_post_tweet"
-PROMPT = (
-    "Post a new tweet to Twitter. If you want to post image, "
-    "you must provide image url in parameters, do not add image link in text."
-)
+PROMPT = "Post a new tweet. To attach an image, use the image parameter instead of adding a link in text."
 
 logger = logging.getLogger(__name__)
 
@@ -21,24 +18,14 @@ class TwitterPostTweetInput(BaseModel):
     """Input for TwitterPostTweet tool."""
 
     text: str = Field(
-        description="Tweet text (280 chars for regular users, 25,000 bytes for verified)",
+        description="Tweet text",
         max_length=25000,
     )
-    image: str | None = Field(
-        default=None, description="Optional URL of an image to attach to the tweet"
-    )
+    image: str | None = Field(default=None, description="Image URL to attach")
 
 
 class TwitterPostTweet(TwitterBaseTool):
-    """Tool for posting tweets to Twitter.
-
-    This tool uses the Twitter API v2 to post new tweets to Twitter.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Post a new tweet to Twitter."""
 
     name: str = NAME
     description: str = PROMPT

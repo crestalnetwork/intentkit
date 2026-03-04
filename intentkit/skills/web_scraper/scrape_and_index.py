@@ -21,18 +21,18 @@ class ScrapeAndIndexInput(BaseModel):
     """Input for ScrapeAndIndex tool."""
 
     urls: list[str] = Field(
-        description="List of URLs to scrape and index. Each URL should be a valid web address starting with http:// or https://",
+        description="URLs to scrape (http/https).",
         min_items=1,
         max_items=25,
     )
     chunk_size: int = Field(
-        description="Size of text chunks for indexing (default: 1000)",
+        description="Text chunk size for indexing.",
         default=DEFAULT_CHUNK_SIZE,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
-        description="Overlap between chunks (default: 200)",
+        description="Overlap between chunks.",
         default=DEFAULT_CHUNK_OVERLAP,
         ge=0,
         le=1000,
@@ -43,12 +43,12 @@ class QueryIndexInput(BaseModel):
     """Input for QueryIndex tool."""
 
     query: str = Field(
-        description="Question or query to search in the indexed content",
+        description="Search query for indexed content.",
         min_length=1,
         max_length=500,
     )
     max_results: int = Field(
-        description="Maximum number of relevant documents to return (default: 4)",
+        description="Max relevant documents to return.",
         default=4,
         ge=1,
         le=10,
@@ -64,9 +64,8 @@ class ScrapeAndIndex(WebScraperBaseTool):
 
     name: str = "web_scraper_scrape_and_index"
     description: str = (
-        "Scrape content from one or more web URLs and index them into a vector store for later querying.\n"
-        "Use this tool to collect and index web content that you want to reference later.\n"
-        "The indexed content can then be queried using the query_indexed_content tool."
+        "Scrape web URLs and index content into a vector store. "
+        "Query later with query_indexed_content tool."
     )
     args_schema: ArgsSchema | None = ScrapeAndIndexInput
 
@@ -172,9 +171,7 @@ class QueryIndexedContent(WebScraperBaseTool):
 
     name: str = "web_scraper_query_indexed_content"
     description: str = (
-        "Query previously indexed web content to find relevant information and answer questions.\n"
-        "Use this tool to search through content that was previously scraped and indexed.\n"
-        "This tool can help answer questions based on the indexed web content."
+        "Query previously indexed web content to find relevant information."
     )
     args_schema: ArgsSchema | None = QueryIndexInput
 

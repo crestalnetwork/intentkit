@@ -14,32 +14,20 @@ logger = logging.getLogger(__name__)
 class CryptoCompareFetchTopMarketCapInput(BaseModel):
     """Input for CryptoCompareFetchTopMarketCap tool."""
 
-    to_symbol: str = Field(
-        "USD",
-        description="Quote currency for market cap calculation (e.g., 'USD', 'EUR')",
-    )
+    to_symbol: str = Field("USD", description="Quote currency symbol")
     limit: int = Field(
         10,
-        description="Number of cryptocurrencies to fetch (max 100)",
+        description="Number of results (max 100)",
         ge=1,
         le=100,
     )
 
 
 class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
-    """Tool for fetching top cryptocurrencies by market cap from CryptoCompare.
-
-    This tool uses the CryptoCompare API to retrieve the top cryptocurrencies
-    ranked by market capitalization in a specified quote currency.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for fetching top cryptocurrencies by market cap from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_top_market_cap"
-    description: str = "Fetch top cryptocurrencies ranked by market capitalization"
+    description: str = "Fetch top cryptocurrencies ranked by market cap."
     args_schema: ArgsSchema | None = CryptoCompareFetchTopMarketCapInput
 
     async def _arun(

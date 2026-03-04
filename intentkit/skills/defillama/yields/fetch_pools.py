@@ -7,74 +7,60 @@ from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_pools
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_POOLS_PROMPT = """
-This tool fetches comprehensive data about yield-generating pools from DeFi Llama.
-Returns data including:
-- Pool details (chain, project, symbol)
-- TVL and APY information
-- Statistical metrics (mean, standard deviation)
-- Risk assessments and predictions
-- Historical performance data
-"""
+FETCH_POOLS_PROMPT = (
+    """Fetch all yield pools from DefiLlama with TVL, APY, and risk data."""
+)
 
 
 class PredictionData(BaseModel):
     """Model representing prediction data for a pool."""
 
-    predictedClass: str | None = Field(
-        None, description="Predicted direction of APY movement"
-    )
+    predictedClass: str | None = Field(None, description="APY direction prediction")
     predictedProbability: float | None = Field(
-        None, description="Probability of the prediction"
+        None, description="Prediction probability"
     )
-    binnedConfidence: int | None = Field(None, description="Confidence level bucket")
+    binnedConfidence: int | None = Field(None, description="Confidence bucket")
 
 
 class PoolData(BaseModel):
     """Model representing a single pool's data."""
 
-    chain: str = Field(..., description="Blockchain network")
-    project: str = Field(..., description="Protocol or project name")
-    symbol: str = Field(..., description="Token or pool symbol")
-    tvlUsd: float = Field(..., description="Total Value Locked in USD")
-    apyBase: float | None = Field(None, description="Base APY without rewards")
-    apyReward: float | None = Field(None, description="Additional APY from rewards")
-    apy: float | None = Field(None, description="Total APY including rewards")
-    rewardTokens: list[str] | None = Field(
-        None, description="List of reward token addresses"
-    )
-    pool: str | None = Field(None, description="Pool identifier")
-    apyPct1D: float | None = Field(None, description="1-day APY percentage change")
-    apyPct7D: float | None = Field(None, description="7-day APY percentage change")
-    apyPct30D: float | None = Field(None, description="30-day APY percentage change")
-    stablecoin: bool = Field(False, description="Whether pool involves stablecoins")
-    ilRisk: str = Field("no", description="Impermanent loss risk assessment")
-    exposure: str = Field("single", description="Asset exposure type")
-    predictions: PredictionData | None = Field(
-        None, description="APY movement predictions"
-    )
-    poolMeta: str | None = Field(None, description="Additional pool metadata")
-    mu: float | None = Field(None, description="Mean APY value")
-    sigma: float | None = Field(None, description="APY standard deviation")
-    count: int | None = Field(None, description="Number of data points")
-    outlier: bool = Field(False, description="Whether pool is an outlier")
-    underlyingTokens: list[str] | None = Field(
-        None, description="List of underlying token addresses"
-    )
-    il7d: float | None = Field(None, description="7-day impermanent loss")
-    apyBase7d: float | None = Field(None, description="7-day base APY")
-    apyMean30d: float | None = Field(None, description="30-day mean APY")
-    volumeUsd1d: float | None = Field(None, description="24h volume in USD")
-    volumeUsd7d: float | None = Field(None, description="7-day volume in USD")
-    apyBaseInception: float | None = Field(None, description="Base APY since inception")
+    chain: str = Field(..., description="Chain")
+    project: str = Field(..., description="Project")
+    symbol: str = Field(..., description="Symbol")
+    tvlUsd: float = Field(..., description="TVL in USD")
+    apyBase: float | None = Field(None, description="Base APY")
+    apyReward: float | None = Field(None, description="Reward APY")
+    apy: float | None = Field(None, description="Total APY")
+    rewardTokens: list[str] | None = Field(None, description="Reward tokens")
+    pool: str | None = Field(None, description="Pool ID")
+    apyPct1D: float | None = Field(None, description="1d APY change %")
+    apyPct7D: float | None = Field(None, description="7d APY change %")
+    apyPct30D: float | None = Field(None, description="30d APY change %")
+    stablecoin: bool = Field(False, description="Stablecoin pool")
+    ilRisk: str = Field("no", description="IL risk")
+    exposure: str = Field("single", description="Exposure type")
+    predictions: PredictionData | None = Field(None, description="APY predictions")
+    poolMeta: str | None = Field(None, description="Pool metadata")
+    mu: float | None = Field(None, description="Mean APY")
+    sigma: float | None = Field(None, description="APY std dev")
+    count: int | None = Field(None, description="Data points")
+    outlier: bool = Field(False, description="Outlier")
+    underlyingTokens: list[str] | None = Field(None, description="Underlying tokens")
+    il7d: float | None = Field(None, description="7d IL")
+    apyBase7d: float | None = Field(None, description="7d base APY")
+    apyMean30d: float | None = Field(None, description="30d mean APY")
+    volumeUsd1d: float | None = Field(None, description="24h volume USD")
+    volumeUsd7d: float | None = Field(None, description="7d volume USD")
+    apyBaseInception: float | None = Field(None, description="Inception base APY")
 
 
 class FetchPoolsResponse(BaseModel):
     """Response schema for pool data."""
 
-    status: str = Field("success", description="Response status")
-    data: list[PoolData] = Field(default_factory=list, description="List of pool data")
-    error: str | None = Field(None, description="Error message if any")
+    status: str = Field("success", description="Status")
+    data: list[PoolData] = Field(default_factory=list, description="Pools")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchPools(DefiLlamaBaseTool):

@@ -17,20 +17,20 @@ class EnsoRouteShortcutInput(BaseModel):
 
     broadcast_requested: bool = Field(
         False,
-        description="Whether to broadcast the transaction or not, this is false by default.",
+        description="Whether to broadcast the transaction (default false)",
     )
     chainId: int | None = Field(
         None,
-        description="(Optional) Chain ID of the network to execute the transaction on. Defaults to the agent's configured network.",
+        description="Chain ID (defaults to agent network)",
     )
     amountIn: list[int] = Field(
-        description="Amount of tokenIn to swap in wei, you should multiply user's requested value by token decimals."
+        description="Amount in wei (multiply value by token decimals)"
     )
     tokenIn: list[str] = Field(
-        description="Ethereum address of the token to swap or enter into a position from (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)."
+        description="Token address to swap from (ETH: 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)"
     )
     tokenOut: list[str] = Field(
-        description="Ethereum address of the token to swap or enter into a position to (For ETH, use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)."
+        description="Token address to swap to (ETH: 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)"
     )
     # Optional inputs
     # routingStrategy: Literal["router", "delegate", "ensowallet", None] = Field(
@@ -77,18 +77,10 @@ class EnsoRouteShortcutInput(BaseModel):
 
 
 class Route(BaseModel):
-    tokenIn: list[str] | None = Field(
-        None,
-        description="Ethereum address of the token to swap or enter into a position from.",
-    )
-    tokenOut: list[str] | None = Field(
-        None,
-        description="Ethereum address of the token to swap or enter into a position to.",
-    )
-    protocol: str | None = Field(None, description="Protocol used for finding route.")
-    action: str | None = Field(
-        None, description="Action has been done for route (e.g. swap)."
-    )
+    tokenIn: list[str] | None = Field(None, description="Source token address")
+    tokenOut: list[str] | None = Field(None, description="Destination token address")
+    protocol: str | None = Field(None, description="Protocol used")
+    action: str | None = Field(None, description="Action type, e.g. swap")
     # internalRoutes: list[str] | None = Field(
     #     None, description="Internal routes needed for the route."
     # )
@@ -100,19 +92,17 @@ class EnsoRouteShortcutOutput(BaseModel):
     """
 
     network: str = Field(
-        "The network name of the transaction.",
+        "Network name",
     )
     amountOut: str | dict[str, Any] | None = Field(
         None,
-        description="The final calculated amountOut as an object. you should multiply its value by tokenOut decimals.",
+        description="Output amount (divide by tokenOut decimals)",
     )
     priceImpact: float | None = Field(
         None,
-        description="Price impact in basis points, it is null if USD price is not found.",
+        description="Price impact in basis points",
     )
-    txHash: str | None = Field(
-        None, description="The transaction hash of the broadcasted transaction."
-    )
+    txHash: str | None = Field(None, description="Transaction hash if broadcasted")
     # gas: str | None = Field(
     #     None,
     #     description="Estimated gas amount for the transaction.",
@@ -155,7 +145,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
     """
 
     name: str = "enso_route_shortcut"
-    description: str = "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId."
+    description: str = "Find optimal swap/deposit route across DeFi protocols. Can broadcast if requested."
     args_schema: ArgsSchema | None = EnsoRouteShortcutInput
 
     async def _arun(

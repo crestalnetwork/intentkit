@@ -12,15 +12,11 @@ from intentkit.skills.pyth.base import PythBaseTool
 class FetchPriceFeedInput(BaseModel):
     """Input schema for fetching Pyth price feed ID."""
 
-    token_symbol: str = Field(
-        ..., description="The asset ticker/symbol to fetch the price feed ID for"
-    )
-    quote_currency: str = Field(
-        default="USD", description="The quote currency to filter by (defaults to USD)"
-    )
+    token_symbol: str = Field(..., description="Asset ticker/symbol (e.g., BTC, AAPL)")
+    quote_currency: str = Field(default="USD", description="Quote currency")
     asset_type: str = Field(
         default="crypto",
-        description="The asset type to search for (crypto, equity, fx, metal)",
+        description="Asset type: crypto, equity, fx, or metal",
     )
 
 
@@ -32,19 +28,7 @@ class PythFetchPriceFeed(PythBaseTool):
     """
 
     name: str = "pyth_fetch_price_feed"
-    description: str = """Fetch the price feed ID for a given token symbol from Pyth.
-
-Inputs:
-- token_symbol: The asset ticker/symbol to fetch the price feed ID for (e.g. BTC, ETH, COIN, XAU, EUR)
-- quote_currency: The quote currency to filter by (defaults to USD)
-- asset_type: The asset type to search for (crypto, equity, fx, metal) - defaults to crypto
-
-Examples:
-- Crypto: BTC, ETH, SOL
-- Equities: COIN, AAPL, TSLA
-- FX: EUR, GBP, JPY
-- Metals: XAU (Gold), XAG (Silver), XPT (Platinum), XPD (Palladium)
-"""
+    description: str = "Look up a Pyth price feed ID by asset symbol. Supports crypto, equities, FX, and metals."
     args_schema: ArgsSchema | None = FetchPriceFeedInput
 
     async def _arun(

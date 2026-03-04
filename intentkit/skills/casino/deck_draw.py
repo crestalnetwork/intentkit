@@ -24,10 +24,7 @@ from intentkit.skills.casino.utils import (
 )
 
 NAME = "casino_deck_draw"
-PROMPT = (
-    "Draw cards from the current deck. If no deck exists, a new one will be created. "
-    "Returns detailed card information including images."
-)
+PROMPT = "Draw cards from the current deck, creating one if needed."
 
 logger = logging.getLogger(__name__)
 

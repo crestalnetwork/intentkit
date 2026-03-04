@@ -15,15 +15,11 @@ from intentkit.skills.superfluid.constants import (
 class CreateFlowInput(BaseModel):
     """Input schema for create_flow."""
 
-    token_address: str = Field(
-        ..., description="The Super token contract address to stream"
-    )
-    recipient: str = Field(
-        ..., description="The wallet address to receive the token stream"
-    )
+    token_address: str = Field(..., description="Super Token contract address")
+    recipient: str = Field(..., description="Recipient wallet address")
     flow_rate: str = Field(
         ...,
-        description="The flowrate of the stream in wei per second (must be a whole number, no decimals)",
+        description="Flow rate in wei/second (whole number, no decimals)",
     )
 
 
@@ -36,20 +32,7 @@ class SuperfluidCreateFlow(SuperfluidBaseTool):
     """
 
     name: str = "superfluid_create_flow"
-    description: str = """Create a money stream to a specified recipient using Superfluid.
-
-Inputs:
-- token_address: The Super token contract address to stream
-- recipient: The wallet address to receive the token stream
-- flow_rate: The flowrate of the stream in wei per second
-
-Important notes:
-- The token must be a Superfluid Super token. If errors occur, confirm that the token is a valid Superfluid Super token.
-- The flowrate cannot have any decimal points, since the unit of measurement is wei per second.
-- Make sure to use the exact amount provided.
-- 1 wei = 0.000000000000000001 ETH
-- Example: To stream 1 token per month, calculate: 1e18 / (30 * 24 * 60 * 60) ≈ 385802469135802 wei/second
-"""
+    description: str = "Create a Superfluid money stream. Token must be a Super Token. Flow rate in wei/second (no decimals). Example: 1 token/month ~ 385802469135802 wei/s."
     args_schema: ArgsSchema | None = CreateFlowInput
 
     async def _arun(

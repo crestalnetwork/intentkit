@@ -19,8 +19,8 @@ class ElfaGetSmartStatsOutput(BaseModel):
     """Output structure for smart stats response."""
 
     success: bool
-    data: SmartStatsData | None = Field(None, description="Smart stats data")
-    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
+    data: SmartStatsData | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class ElfaGetSmartStats(ElfaBaseTool):
@@ -41,9 +41,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
     """
 
     name: str = "elfa_get_smart_stats"
-    description: str = """Get comprehensive social media metrics for a username including smart following count, 
-    engagement scores, and follower analytics. Use this for competitor analysis, influencer identification, 
-    and social media performance audits."""
+    description: str = "Get social media metrics for a username: smart followers, engagement, and reach."
     args_schema: ArgsSchema | None = ElfaGetSmartStatsInput
 
     async def _arun(self, username: str, **kwargs) -> ElfaGetSmartStatsOutput:

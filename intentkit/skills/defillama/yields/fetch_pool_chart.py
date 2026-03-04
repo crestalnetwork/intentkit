@@ -6,43 +6,35 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_pool_chart
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_POOL_CHART_PROMPT = """
-This tool fetches historical chart data from DeFi Llama for a specific pool.
-Required:
-- Pool ID
-Returns historical data including:
-- TVL in USD
-- APY metrics (base, reward, total)
-- Timestamps for each data point
-"""
+FETCH_POOL_CHART_PROMPT = (
+    """Fetch historical TVL and APY chart data for a yield pool via DefiLlama."""
+)
 
 
 class PoolDataPoint(BaseModel):
     """Model representing a single historical data point."""
 
-    timestamp: str = Field(..., description="ISO formatted timestamp of the data point")
-    tvlUsd: float = Field(..., description="Total Value Locked in USD")
-    apy: float | None = Field(None, description="Total APY including rewards")
-    apyBase: float | None = Field(None, description="Base APY without rewards")
-    apyReward: float | None = Field(None, description="Additional APY from rewards")
-    il7d: float | None = Field(None, description="7-day impermanent loss")
-    apyBase7d: float | None = Field(None, description="7-day base APY")
+    timestamp: str = Field(..., description="ISO timestamp")
+    tvlUsd: float = Field(..., description="TVL in USD")
+    apy: float | None = Field(None, description="Total APY")
+    apyBase: float | None = Field(None, description="Base APY")
+    apyReward: float | None = Field(None, description="Reward APY")
+    il7d: float | None = Field(None, description="7d IL")
+    apyBase7d: float | None = Field(None, description="7d base APY")
 
 
 class FetchPoolChartInput(BaseModel):
     """Input schema for fetching pool chart data."""
 
-    pool_id: str = Field(..., description="ID of the pool to fetch chart data for")
+    pool_id: str = Field(..., description="Pool ID")
 
 
 class FetchPoolChartResponse(BaseModel):
     """Response schema for pool chart data."""
 
-    status: str = Field("success", description="Response status")
-    data: list[PoolDataPoint] = Field(
-        default_factory=list, description="List of historical data points"
-    )
-    error: str | None = Field(None, description="Error message if any")
+    status: str = Field("success", description="Status")
+    data: list[PoolDataPoint] = Field(default_factory=list, description="Data points")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):

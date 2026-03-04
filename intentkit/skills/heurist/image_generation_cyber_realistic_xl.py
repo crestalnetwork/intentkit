@@ -16,23 +16,13 @@ logger = logging.getLogger(__name__)
 class ImageGenerationCyberRealisticXLInput(BaseModel):
     """Input for ImageGenerationCyberRealisticXL tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
-        description="Negative prompt describing what to avoid in the generated image.",
+        description="What to avoid in the image.",
     )
-    width: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Width of the generated image.",
-    )
-    height: int | None = Field(
-        default=680,
-        le=1024,
-        description="Height of the generated image.",
-    )
+    width: int | None = Field(default=1024, le=1024, description="Image width.")
+    height: int | None = Field(default=680, le=1024, description="Image height.")
 
 
 class ImageGenerationCyberRealisticXL(HeuristBaseTool):
@@ -49,10 +39,8 @@ class ImageGenerationCyberRealisticXL(HeuristBaseTool):
 
     name: str = "heurist_image_generation_cyber_realistic_xl"
     description: str = (
-        "Generate hyperrealistic cyberpunk photography using Heurist AI's CyberRealisticXL model.\n"
-        "Provide a text prompt describing the hyperrealistic cyberpunk image you want to generate.\n"
-        "CyberRealisticXL specializes in creating high-quality hyperrealistic photographs with a cyberpunk aesthetic.\n"
-        "If you have height and width, remember to specify them.\n"
+        "Generate hyperrealistic cyberpunk images using Heurist CyberRealisticXL model. "
+        "Provide a text prompt and optionally specify width/height."
     )
     args_schema: ArgsSchema | None = ImageGenerationCyberRealisticXLInput
 

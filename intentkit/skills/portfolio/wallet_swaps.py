@@ -17,41 +17,41 @@ logger = logging.getLogger(__name__)
 class WalletSwapsInput(BaseModel):
     """Input for wallet swaps tool."""
 
-    address: str = Field(description="The wallet address to get swap transactions for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     cursor: str | None = Field(
-        description="The cursor for pagination.",
+        description="Pagination cursor.",
         default=None,
     )
     limit: int | None = Field(
-        description="The number of results per page.",
+        description="Results per page.",
         default=DEFAULT_LIMIT,
     )
     from_block: str | None = Field(
-        description="The minimum block number to get transactions from.",
+        description="Min block number.",
         default=None,
     )
     to_block: str | None = Field(
-        description="The maximum block number to get transactions from.",
+        description="Max block number.",
         default=None,
     )
     from_date: str | None = Field(
-        description="The start date to get transactions from (format in seconds or datestring).",
+        description="Start date filter.",
         default=None,
     )
     to_date: str | None = Field(
-        description="The end date to get transactions from (format in seconds or datestring).",
+        description="End date filter.",
         default=None,
     )
     order: str | None = Field(
-        description="The order of the result (ASC or DESC).",
+        description="Sort order: ASC or DESC.",
         default=DEFAULT_ORDER,
     )
     transaction_types: list[str] | None = Field(
-        description="Array of transaction types. Allowed values are 'buy', 'sell'.",
+        description="Filter by type: buy, sell.",
         default=None,
     )
 
@@ -64,10 +64,7 @@ class WalletSwaps(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_swaps"
-    description: str = (
-        "Get all swap-related transactions (buy, sell) for a wallet address. "
-        "Note that swaps data is only available from September 2024 onwards."
-    )
+    description: str = "Get swap transactions (buy/sell) for a wallet."
     args_schema: ArgsSchema | None = WalletSwapsInput
 
     async def _arun(

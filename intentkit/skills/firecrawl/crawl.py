@@ -15,56 +15,52 @@ logger = logging.getLogger(__name__)
 class FirecrawlCrawlInput(BaseModel):
     """Input for Firecrawl crawl tool."""
 
-    url: str = Field(
-        description="The base URL to crawl. All accessible subpages will be crawled."
-    )
-    limit: int = Field(
-        description="Maximum number of pages to crawl", default=10, ge=1, le=1000
-    )
+    url: str = Field(description="Base URL to crawl.")
+    limit: int = Field(description="Max pages to crawl.", default=10, ge=1, le=1000)
     formats: list[str] = Field(
-        description="Output formats to include in the response. Options: 'markdown', 'html', 'rawHtml', 'screenshot', 'links', 'json'",
+        description="Output formats: markdown, html, rawHtml, screenshot, links, json.",
         default=["markdown"],
     )
     include_paths: list[str] | None = Field(
-        description="Regex patterns to include in the crawl (e.g., ['^/blog/.*$'])",
+        description="Regex patterns for paths to include.",
         default=None,
     )
     exclude_paths: list[str] | None = Field(
-        description="Regex patterns to exclude from the crawl (e.g., ['^/admin/.*$'])",
+        description="Regex patterns for paths to exclude.",
         default=None,
     )
     max_depth: int | None = Field(
-        description="Maximum depth to crawl from the base URL",
+        description="Max crawl depth from base URL.",
         default=None,
         ge=1,
         le=10,
     )
     allow_backward_links: bool = Field(
-        description="Allow crawling parent and sibling URLs, not just child paths",
+        description="Allow crawling parent/sibling URLs.",
         default=False,
     )
     allow_external_links: bool = Field(
-        description="Allow crawling external domains (use with caution)", default=False
+        description="Allow crawling external domains.", default=False
     )
     allow_subdomains: bool = Field(
-        description="Allow crawling subdomains of the main domain", default=False
+        description="Allow crawling subdomains.", default=False
     )
     only_main_content: bool = Field(
-        description="Whether to extract only the main content (excluding headers, footers, navigation, etc.)",
+        description="Extract only main content, excluding nav/footer.",
         default=True,
     )
     index_content: bool = Field(
-        description="Whether to index the crawled content for later querying (default: True)",
+        description="Index crawled content for later querying.",
         default=True,
     )
     chunk_size: int = Field(
-        description="Size of text chunks for indexing (default: 1000)",
+        description="Text chunk size for indexing.",
         default=1000,
         ge=100,
         le=4000,
     )
     chunk_overlap: int = Field(
-        description="Overlap between chunks (default: 200)",
+        description="Overlap between chunks.",
         default=200,
         ge=0,
         le=1000,
@@ -86,11 +82,8 @@ class FirecrawlCrawl(FirecrawlBaseTool):
 
     name: str = "firecrawl_crawl"
     description: str = (
-        "Crawl an entire website and extract content from multiple pages. "
-        "This tool can follow links, handle JavaScript-rendered content, and extract "
-        "structured data from all accessible pages on a website. "
-        "Optionally indexes all crawled content for later querying using the firecrawl_query_indexed_content tool. "
-        "Use this when you need to gather comprehensive information from a website."
+        "Crawl a website to extract content from multiple pages. "
+        "Optionally indexes content for querying via firecrawl_query_indexed_content."
     )
     args_schema: ArgsSchema | None = FirecrawlCrawlInput
 

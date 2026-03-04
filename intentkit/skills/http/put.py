@@ -13,21 +13,21 @@ logger = logging.getLogger(__name__)
 class HttpPutInput(BaseModel):
     """Input for HTTP PUT request."""
 
-    url: str = Field(description="The URL to send the PUT request to")
+    url: str = Field(description="Target URL.")
     data: dict[str, Any] | str | None = Field(
-        description="The data to send in the request body. Can be a dictionary (will be sent as JSON) or a string",
+        description="Request body. Dict sends as JSON, string as raw.",
         default=None,
     )
     headers: dict[str, str] | None = Field(
-        description="Optional headers to include in the request",
+        description="Request headers.",
         default=None,
     )
     params: dict[str, Any] | None = Field(
-        description="Optional query parameters to include in the request",
+        description="Query parameters.",
         default=None,
     )
     timeout: float | None = Field(
-        description="Request timeout in seconds (default: 30)",
+        description="Timeout in seconds.",
         default=30.0,
     )
 
@@ -46,11 +46,7 @@ class HttpPut(HttpBaseTool):
 
     name: str = "http_put"
     description: str = (
-        "Make an HTTP PUT request to a specified URL. "
-        "You can include custom headers, query parameters, and request body data. "
-        "Data can be provided as a dictionary (sent as JSON) or as a string. "
-        "Returns the response content as text. "
-        "Use this when you need to update or replace data on web APIs."
+        "Make an HTTP PUT request to a URL. Returns the response as text."
     )
     args_schema: ArgsSchema | None = HttpPutInput
 

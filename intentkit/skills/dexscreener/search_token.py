@@ -33,15 +33,15 @@ class SearchTokenInput(BaseModel):
     """Input schema for the DexScreener search_token tool."""
 
     query: str = Field(
-        description="The search query string (e.g., token symbol 'WIF', pair address, token address '0x...', token name 'Dogwifhat', or ticker '$WIF'). Prefixing with '$' filters results to match the base token symbol exactly (case-insensitive)."
+        description="Token symbol, name, address, or $TICKER for exact match"
     )
     sort_by: SortBy | None = Field(
         default=SortBy.LIQUIDITY,
-        description="Sort preference for the results. Options: 'liquidity' (default) or 'volume'",
+        description="Sort by 'liquidity' (default) or 'volume'",
     )
     volume_timeframe: VolumeTimeframe | None = Field(
         default=VolumeTimeframe.TWENTY_FOUR_HOUR,
-        description="Define which timeframe should we use if the 'sort_by' is 'volume'. Available options: '5_minutes', '1_hour', '6_hour', '24_hour'",
+        description="Volume timeframe when sorting by volume",
     )
 
 
@@ -52,13 +52,8 @@ class SearchToken(DexScreenerBaseTool):
 
     name: str = "dexscreener_search_token"
     description: str = (
-        f"Searches DexScreener for token pairs matching the provided query string "
-        f"(e.g., token symbol like 'WIF', pair address, token name like 'Dogwifhat', or ticker like '$WIF'). "
-        f"If the query starts with '$', it filters results to only include pairs where the base token symbol exactly matches the ticker (case-insensitive). "
-        f"Returns a list of matching pairs with details like price, volume, liquidity, etc., "
-        f"sorted by the specified criteria (via 'sort_by': 'liquidity', 'volume'; defaults to 'liquidity'), "
-        f"limited to the top {MAX_SEARCH_RESULTS}. "
-        f"Use this tool to find token information based on user queries."
+        f"Search DexScreener for token pairs by symbol, name, address, or $TICKER. "
+        f"Returns top {MAX_SEARCH_RESULTS} results sorted by liquidity or volume."
     )
     args_schema: ArgsSchema | None = SearchTokenInput
 

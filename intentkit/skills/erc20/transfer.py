@@ -16,15 +16,11 @@ from intentkit.skills.erc20.utils import get_token_details
 class TransferInput(BaseModel):
     """Input schema for ERC20 transfer."""
 
-    contract_address: str = Field(
-        ..., description="The contract address of the ERC20 token to transfer"
-    )
-    destination_address: str = Field(
-        ..., description="The address to send the tokens to"
-    )
+    contract_address: str = Field(..., description="ERC20 token contract address")
+    destination_address: str = Field(..., description="Recipient address")
     amount: str = Field(
         ...,
-        description="The amount to transfer in whole units (e.g. '10.5' for 10.5 USDC)",
+        description="Amount in whole units (e.g. '10.5' for 10.5 USDC)",
     )
 
 
@@ -35,19 +31,7 @@ class ERC20Transfer(ERC20BaseTool):
     """
 
     name: str = "erc20_transfer"
-    description: str = """Transfer ERC20 tokens from the wallet to another onchain address.
-
-Inputs:
-- contract_address: The contract address of the token to transfer
-- destination_address: The address to send the tokens to
-- amount: The amount to transfer in whole units (e.g. '10.5' for 10.5 USDC)
-
-Important notes:
-- Never assume token or destination addresses, they have to be provided as inputs
-- If only token symbol is provided, use the erc20_get_token_address tool to get the token address first
-- Ensure sufficient balance of the input asset before transferring
-- When sending native assets (e.g. 'eth' on base-mainnet), ensure there is sufficient balance for the transfer itself AND the gas cost
-"""
+    description: str = "Transfer ERC20 tokens to another address. Use erc20_get_token_address first if only a symbol is provided. Ensure sufficient balance for transfer and gas."
     args_schema: ArgsSchema | None = TransferInput
 
     @override

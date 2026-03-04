@@ -17,12 +17,10 @@ class CarvInput(BaseModel):
     """
 
     question: str = Field(
-        ...,
-        description="The question to query on-chain data.",
+        ..., description="Natural language question about on-chain data"
     )
     chain: Literal["ethereum", "base", "bitcoin", "solana"] = Field(
-        ...,
-        description="supported chain is ethereum, base, bitcoin, solana",
+        ..., description="Target blockchain"
     )
 
 
@@ -42,22 +40,9 @@ class OnchainQueryTool(CarvBaseTool):
 
     name: str = "carv_onchain_query"
     description: str = (
-        "Query blockchain data from Ethereum, Base, Bitcoin, or Solana using natural language. "
-        "This tool provides access to detailed metrics including block information (timestamps, hashes, miners, gas used/limits), "
-        "transaction details (hashes, sender/receiver addresses, amounts, gas prices), and overall network utilization. "
-        "It supports aggregate analytics such as daily transaction counts, average gas prices, top wallet activity, and blockchain growth trends. "
-        "You can filter results by time range, address type, transaction value, and other parameters.\n\n"
-        "IMPORTANT Rules:\n"
-        "- Only Ethereum, Base, Bitcoin, and Solana are supported.\n"
-        "- Always infer the target blockchain from the user's query.\n"
-        "- If an unsupported blockchain is requested, clearly explain the limitation.\n"
-        "- Convert user input into a specific and actionable natural language query (e.g., "
-        '"What\'s the most active address on Ethereum over the past 24 hours?" or '
-        '"Show the largest ETH transaction in the last 30 days").\n'
-        "- Respond in clear, concise natural language using only the data returned by the tool.\n"
-        "- Avoid markdown or bullet points unless explicitly requested.\n"
-        "- ETH values are denominated in 18 decimals—consider 10^18 when interpreting amounts.\n"
-        "- Never fabricate or infer data beyond what the tool provides."
+        "Query on-chain data from Ethereum, Base, Bitcoin, or Solana using natural language. "
+        "Supports block info, transaction details, and aggregate analytics. "
+        "Only these four chains are supported; infer the target chain from user query."
     )
     args_schema: ArgsSchema | None = CarvInput
 

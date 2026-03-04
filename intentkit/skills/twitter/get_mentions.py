@@ -9,10 +9,7 @@ from intentkit.clients.twitter import Tweet, get_twitter_client
 from .base import TwitterBaseTool
 
 NAME = "twitter_get_mentions"
-PROMPT = (
-    "Get tweets that mention you, the result is a json object containing a list of tweets."
-    'If the result is `{"meta": {"result_count": 0}}`, means no new mentions, don\'t retry this tool.'
-)
+PROMPT = "Get tweets that mention you. If result_count is 0, don't retry."
 
 logger = logging.getLogger(__name__)
 
@@ -24,16 +21,7 @@ class TwitterGetMentionsInput(BaseModel):
 
 
 class TwitterGetMentions(TwitterBaseTool):
-    """Tool for getting mentions from Twitter.
-
-    This tool uses the Twitter API v2 to retrieve mentions (tweets in which the authenticated
-    user is mentioned) from Twitter.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Get tweets mentioning the authenticated user."""
 
     name: str = NAME
     description: str = PROMPT

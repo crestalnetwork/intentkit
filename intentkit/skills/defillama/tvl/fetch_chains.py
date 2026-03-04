@@ -6,32 +6,20 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_chains
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_CHAINS_PROMPT = """
-This tool fetches current Total Value Locked (TVL) data for all blockchains tracked by DeFi Llama.
-No input parameters are required. Returns a comprehensive list including:
-- Chain name and identifiers
-- Current TVL in USD
-- Chain metadata (token symbol, IDs)
-- Aggregated total TVL across all chains
-Returns the complete list of chains and total TVL or an error if the request fails.
-"""
+FETCH_CHAINS_PROMPT = """Fetch current TVL for all chains tracked by DefiLlama."""
 
 
 class ChainTVLData(BaseModel):
     """Model representing TVL data for a single chain."""
 
     name: str = Field(..., description="Chain name")
-    tvl: float = Field(..., description="Total Value Locked in USD")
-    gecko_id: str | None = Field(None, description="CoinGecko identifier")
+    tvl: float = Field(..., description="TVL in USD")
+    gecko_id: str | None = Field(None, description="CoinGecko ID")
     token_symbol: str | None = Field(
-        None, alias="tokenSymbol", description="Native token symbol"
+        None, alias="tokenSymbol", description="Token symbol"
     )
-    cmc_id: str | None = Field(
-        None, alias="cmcId", description="CoinMarketCap identifier"
-    )
-    chain_id: int | str | None = Field(
-        None, alias="chainId", description="Chain identifier"
-    )
+    cmc_id: str | None = Field(None, alias="cmcId", description="CMC ID")
+    chain_id: int | str | None = Field(None, alias="chainId", description="Chain ID")
 
 
 class FetchChainsInput(BaseModel):
@@ -48,10 +36,10 @@ class FetchChainsResponse(BaseModel):
     """Response schema for all chains' TVL data."""
 
     chains: list[ChainTVLData] = Field(
-        default_factory=list, description="List of chains with their TVL data"
+        default_factory=list, description="Chains with TVL"
     )
-    total_tvl: float = Field(..., description="Total TVL across all chains in USD")
-    error: str | None = Field(None, description="Error message if any")
+    total_tvl: float = Field(..., description="Total TVL in USD")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchChains(DefiLlamaBaseTool):

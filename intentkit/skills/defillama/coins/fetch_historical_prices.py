@@ -6,39 +6,24 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_historical_prices
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_HISTORICAL_PRICES_PROMPT = """
-This tool fetches historical token prices from DeFi Llama for a specific timestamp.
-Provide a timestamp and list of token identifiers in the format:
-- Ethereum tokens: 'ethereum:0x...'
-- Other chains: 'chainname:0x...'
-- CoinGecko IDs: 'coingecko:bitcoin'
-Returns historical price data including:
-- Price in USD at the specified time
-- Token symbol
-- Token decimals (if available)
-- Actual timestamp of the price data
-Uses a 4-hour search window around the specified timestamp.
-"""
+FETCH_HISTORICAL_PRICES_PROMPT = """Fetch token prices at a specific timestamp via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class HistoricalTokenPrice(BaseModel):
     """Model representing historical token price data."""
 
-    price: float = Field(..., description="Token price in USD at the specified time")
-    symbol: str | None = Field(None, description="Token symbol")
-    timestamp: int = Field(..., description="Unix timestamp of the price data")
-    decimals: int | None = Field(None, description="Token decimals, if available")
+    price: float = Field(..., description="Price in USD")
+    symbol: str | None = Field(None, description="Symbol")
+    timestamp: int = Field(..., description="Price timestamp")
+    decimals: int | None = Field(None, description="Token decimals")
 
 
 class FetchHistoricalPricesInput(BaseModel):
     """Input schema for fetching historical token prices."""
 
-    timestamp: int = Field(
-        ..., description="Unix timestamp for historical price lookup"
-    )
+    timestamp: int = Field(..., description="Unix timestamp to query")
     coins: list[str] = Field(
-        ...,
-        description="List of token identifiers (e.g. 'ethereum:0x...', 'coingecko:ethereum')",
+        ..., description="Token IDs, e.g. 'ethereum:0x...' or 'coingecko:bitcoin'"
     )
 
 
@@ -46,10 +31,9 @@ class FetchHistoricalPricesResponse(BaseModel):
     """Response schema for historical token prices."""
 
     coins: dict[str, HistoricalTokenPrice] = Field(
-        default_factory=dict,
-        description="Historical token prices keyed by token identifier",
+        default_factory=dict, description="Prices by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):

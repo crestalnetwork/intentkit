@@ -6,42 +6,30 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_first_price
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_FIRST_PRICE_PROMPT = """
-This tool fetches the first recorded price data from DeFi Llama for multiple tokens.
-Provide a list of token identifiers in the format:
-- Ethereum tokens: 'ethereum:0x...'
-- Other chains: 'chainname:0x...'
-- CoinGecko IDs: 'coingecko:bitcoin'
-Returns first price data including:
-- Initial price in USD
-- Token symbol
-- Timestamp of first recorded price
-"""
+FETCH_FIRST_PRICE_PROMPT = """Fetch the earliest recorded price for tokens via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class FirstPriceData(BaseModel):
     """Model representing first price data for a single token."""
 
-    symbol: str = Field(..., description="Token symbol")
-    price: float = Field(..., description="First recorded price in USD")
-    timestamp: int = Field(..., description="Unix timestamp of first recorded price")
+    symbol: str = Field(..., description="Symbol")
+    price: float = Field(..., description="First price in USD")
+    timestamp: int = Field(..., description="First recorded timestamp")
 
 
 class FetchFirstPriceInput(BaseModel):
     """Input schema for fetching first token prices."""
 
-    coins: list[str] = Field(
-        ..., description="List of token identifiers to fetch first prices for"
-    )
+    coins: list[str] = Field(..., description="Token IDs to query")
 
 
 class FetchFirstPriceResponse(BaseModel):
     """Response schema for first token prices."""
 
     coins: dict[str, FirstPriceData] = Field(
-        default_factory=dict, description="First price data keyed by token identifier"
+        default_factory=dict, description="First prices by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):

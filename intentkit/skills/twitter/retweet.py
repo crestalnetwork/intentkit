@@ -15,19 +15,11 @@ logger = logging.getLogger(__name__)
 class TwitterRetweetInput(BaseModel):
     """Input for TwitterRetweet tool."""
 
-    tweet_id: str = Field(description="The ID of the tweet to retweet")
+    tweet_id: str = Field(description="Tweet ID to retweet")
 
 
 class TwitterRetweet(TwitterBaseTool):
-    """Tool for retweeting tweets on Twitter.
-
-    This tool uses the Twitter API v2 to retweet tweets on Twitter.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Retweet a tweet on Twitter."""
 
     name: str = NAME
     description: str = PROMPT

@@ -17,7 +17,7 @@ class WrapEthInput(BaseModel):
 
     amount_to_wrap: str = Field(
         ...,
-        description="Amount of ETH to wrap in human-readable format (e.g., '0.1' for 0.1 ETH)",
+        description="Amount of ETH to wrap (e.g. '0.1')",
     )
 
 
@@ -29,18 +29,7 @@ class WETHWrapEth(WethBaseTool):
     """
 
     name: str = "weth_wrap_eth"
-    description: str = """Wrap ETH to WETH (Wrapped ETH).
-
-Inputs:
-- amount_to_wrap: Amount of ETH to wrap in human-readable format (e.g., '0.1' for 0.1 ETH)
-
-WETH is an ERC20 token representation of ETH, useful for DeFi protocols that require ERC20 tokens.
-The conversion rate is always 1:1 (1 ETH = 1 WETH).
-
-Important notes:
-- Ensure sufficient ETH balance before wrapping
-- Some ETH will be needed for gas fees in addition to the amount being wrapped
-"""
+    description: str = "Wrap ETH to WETH (1:1 conversion). Ensure sufficient ETH for the amount plus gas fees."
     args_schema: ArgsSchema | None = WrapEthInput
 
     @override

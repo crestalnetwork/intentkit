@@ -24,16 +24,7 @@ class CDPGetWalletDetails(CDPBaseTool):
     """
 
     name: str = "cdp_get_wallet_details"
-    description: str = """Get details about the connected wallet.
-
-Returns wallet details including:
-- Wallet address
-- Network information (network ID, chain ID)
-- Native token balance (in wei and human-readable format)
-- Wallet provider type
-
-No inputs required.
-"""
+    description: str = "Get connected wallet details including address, network, balance, and provider type. No inputs required."
     args_schema: ArgsSchema | None = GetWalletDetailsInput
 
     @override

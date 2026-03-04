@@ -18,7 +18,7 @@ class UnwrapEthInput(BaseModel):
 
     amount_to_unwrap: str = Field(
         ...,
-        description="Amount of WETH to unwrap in human-readable format (e.g., '0.1' for 0.1 WETH)",
+        description="Amount of WETH to unwrap (e.g. '0.1')",
     )
 
 
@@ -29,18 +29,7 @@ class WETHUnwrapEth(WethBaseTool):
     """
 
     name: str = "weth_unwrap_eth"
-    description: str = """Unwrap WETH (Wrapped ETH) to native ETH.
-
-Inputs:
-- amount_to_unwrap: Amount of WETH to unwrap in human-readable format (e.g., '0.1' for 0.1 WETH)
-
-WETH is an ERC20 token representation of ETH. This tool converts it back to native ETH.
-The conversion rate is always 1:1 (1 WETH = 1 ETH).
-
-Important notes:
-- Ensure sufficient WETH balance before unwrapping
-- Some ETH will be needed for gas fees
-"""
+    description: str = "Unwrap WETH to native ETH (1:1 conversion). Ensure sufficient WETH balance and ETH for gas."
     args_schema: ArgsSchema | None = UnwrapEthInput
 
     @override

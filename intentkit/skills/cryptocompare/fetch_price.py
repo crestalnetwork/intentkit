@@ -16,31 +16,19 @@ class CryptoCompareFetchPriceInput(BaseModel):
 
     from_symbol: str = Field(
         ...,
-        description="Base cryptocurrency symbol to get prices for (e.g., 'BTC', 'ETH')",
+        description="Base crypto symbol (e.g., BTC, ETH)",
     )
     to_symbols: list[str] = Field(
         ...,
-        description="List of target currencies (fiat or crypto) (e.g., ['USD', 'EUR', 'JPY'])",
+        description="Target currency symbols (e.g., [USD, EUR])",
     )
 
 
 class CryptoCompareFetchPrice(CryptoCompareBaseTool):
-    """Tool for fetching cryptocurrency prices from CryptoCompare.
-
-    This tool uses the CryptoCompare API to retrieve real-time cryptocurrency price data
-    with multi-currency support. Provide a base currency (e.g., 'BTC', 'ETH') and a list
-    of target currencies (e.g., ['USD', 'EUR', 'JPY']) to get current exchange rates.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for fetching cryptocurrency prices from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_price"
-    description: str = (
-        "Fetch real-time cryptocurrency price data with multi-currency support"
-    )
+    description: str = "Fetch real-time crypto prices in multiple currencies."
     args_schema: ArgsSchema | None = CryptoCompareFetchPriceInput
 
     async def _arun(

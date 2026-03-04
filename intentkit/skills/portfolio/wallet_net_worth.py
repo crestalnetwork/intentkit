@@ -12,25 +12,25 @@ logger = logging.getLogger(__name__)
 class WalletNetWorthInput(BaseModel):
     """Input for wallet net worth tool."""
 
-    address: str = Field(description="The wallet address to calculate net worth for.")
+    address: str = Field(description="Wallet address.")
     chains: list[str] | None = Field(
-        description="The chains to query (e.g., ['eth', 'bsc', 'polygon']).",
+        description="Chains to query.",
         default=None,
     )
     exclude_spam: bool | None = Field(
-        description="Exclude spam tokens from the result.",
+        description="Exclude spam tokens.",
         default=True,
     )
     exclude_unverified_contracts: bool | None = Field(
-        description="Exclude unverified contracts from the result.",
+        description="Exclude unverified contracts.",
         default=True,
     )
     max_token_inactivity: int | None = Field(
-        description="Exclude tokens inactive for more than the given amount of days.",
+        description="Exclude tokens inactive for more than N days.",
         default=1,
     )
     min_pair_side_liquidity_usd: float | None = Field(
-        description="Exclude tokens with liquidity less than the specified amount in USD.",
+        description="Min liquidity in USD to include token.",
         default=1000,
     )
 
@@ -43,10 +43,7 @@ class WalletNetWorth(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_net_worth"
-    description: str = (
-        "Get the net worth of a wallet in USD across multiple chains. "
-        "Filters out spam tokens and low-liquidity assets for more accurate results."
-    )
+    description: str = "Get wallet net worth in USD across multiple chains."
     args_schema: ArgsSchema | None = WalletNetWorthInput
 
     async def _arun(

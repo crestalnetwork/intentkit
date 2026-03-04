@@ -6,18 +6,16 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_historical_tvl
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_TOTAL_HISTORICAL_TVL_PROMPT = """
-This tool fetches historical Total Value Locked (TVL) data across all blockchains.
-Returns a time series of aggregate TVL values with their corresponding dates.
-No input parameters are required as this endpoint returns global DeFi TVL data.
-"""
+FETCH_TOTAL_HISTORICAL_TVL_PROMPT = (
+    """Fetch historical aggregate TVL across all chains via DefiLlama."""
+)
 
 
 class HistoricalTVLDataPoint(BaseModel):
     """Model representing a single TVL data point."""
 
-    date: int = Field(..., description="Unix timestamp of the TVL measurement")
-    tvl: float = Field(..., description="Total Value Locked in USD at this timestamp")
+    date: int = Field(..., description="Unix timestamp")
+    tvl: float = Field(..., description="TVL in USD")
 
 
 class FetchHistoricalTVLInput(BaseModel):
@@ -34,10 +32,9 @@ class FetchHistoricalTVLResponse(BaseModel):
     """Response schema for historical TVL data."""
 
     data: list[HistoricalTVLDataPoint] = Field(
-        default_factory=list,
-        description="List of historical TVL data points across all chains",
+        default_factory=list, description="TVL data points"
     )
-    error: str | None = Field(default=None, description="Error message if any")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):

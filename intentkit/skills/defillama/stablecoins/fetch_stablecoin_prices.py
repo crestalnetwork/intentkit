@@ -7,31 +7,23 @@ from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_stablecoin_prices
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_STABLECOIN_PRICES_PROMPT = """
-This tool fetches current price data for stablecoins from DeFi Llama.
-Returns:
-- Historical price points with timestamps
-- Current prices for each stablecoin
-- Prices indexed by stablecoin identifier
-"""
+FETCH_STABLECOIN_PRICES_PROMPT = """Fetch current stablecoin prices via DefiLlama."""
 
 
 class PriceDataPoint(BaseModel):
     """Model representing a price data point."""
 
-    date: str = Field(..., description="Unix timestamp for the price data")
-    prices: dict[str, float] = Field(
-        ..., description="Dictionary of stablecoin prices indexed by identifier"
-    )
+    date: str = Field(..., description="Unix timestamp")
+    prices: dict[str, float] = Field(..., description="Prices by stablecoin ID")
 
 
 class FetchStablecoinPricesResponse(BaseModel):
     """Response schema for stablecoin prices data."""
 
     data: list[PriceDataPoint] = Field(
-        default_factory=list, description="List of price data points"
+        default_factory=list, description="Price data points"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):

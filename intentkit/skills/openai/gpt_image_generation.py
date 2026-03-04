@@ -19,43 +19,26 @@ logger = logging.getLogger(__name__)
 class GPTImageGenerationInput(BaseModel):
     """Input for GPTImageGeneration tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = Field(
         default="auto",
-        description="Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto",
+        description="1024x1024, 1536x1024, 1024x1536, or auto",
     )
     quality: Literal["high", "medium", "low", "auto"] = Field(
         default="auto",
-        description="Quality of the generated image. Options: high, medium, low, auto",
+        description="high, medium, low, or auto",
     )
     background: Literal["transparent", "opaque", "auto"] = Field(
         default="auto",
-        description="Background transparency. Options: transparent, opaque, auto",
+        description="transparent, opaque, or auto",
     )
 
 
 class GPTImageGeneration(OpenAIBaseTool):
-    """Tool for generating high-quality images using OpenAI's GPT-Image-1 model.
-
-    This tool takes a text prompt and uses OpenAI's API to generate
-    an image based on the description using the GPT-Image-1 model.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for generating images using OpenAI's GPT-Image-1 model."""
 
     name: str = "gpt_image_generation"
-    description: str = (
-        "Generate images using OpenAI's GPT-Image-1 model.\n"
-        "Provide a text prompt describing the image you want to generate.\n"
-        "GPT-Image-1 is a powerful image generation model capable of creating detailed, "
-        "high-quality images from text descriptions.\n"
-        "You can specify size, quality, and background parameters for more control.\n"
-    )
+    description: str = "Generate images from text prompts using GPT-Image-1."
     args_schema: ArgsSchema | None = GPTImageGenerationInput
 
     async def _arun(

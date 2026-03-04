@@ -11,31 +11,27 @@ from .base import EnsoBaseTool, base_url
 class EnsoGetBalancesInput(BaseModel):
     """Input model for retrieving wallet balances."""
 
-    chainId: int | None = Field(None, description="Chain ID of the blockchain network")
+    chainId: int | None = Field(None, description="Chain ID")
 
 
 class WalletBalance(BaseModel):
-    token: str | None = Field(None, description="The address of the token")
-    amount: str | None = Field(None, description="The unformatted balance of the token")
-    decimals: int | None = Field(None, ge=0, description="The number of decimals")
-    price: float | None = Field(None, description="Price of the token in usd")
+    token: str | None = Field(None, description="Token address")
+    amount: str | None = Field(None, description="Raw balance")
+    decimals: int | None = Field(None, ge=0, description="Token decimals")
+    price: float | None = Field(None, description="USD price")
 
 
 class EnsoGetBalancesOutput(BaseModel):
     """Output model for retrieving wallet balances."""
 
-    res: list[WalletBalance] | None = Field(
-        None, description="The wallet's balances along with token details."
-    )
+    res: list[WalletBalance] | None = Field(None, description="Wallet balances")
 
 
 class EnsoGetWalletBalances(EnsoBaseTool):
     """Retrieve token balances of a wallet on a specified blockchain network."""
 
     name: str = "enso_get_wallet_balances"
-    description: str = (
-        "Retrieve token balances of a wallet on a specified blockchain network."
-    )
+    description: str = "Get wallet token balances on a blockchain network."
     args_schema: ArgsSchema | None = EnsoGetBalancesInput
 
     async def _arun(
@@ -81,33 +77,29 @@ class EnsoGetWalletBalances(EnsoBaseTool):
 class EnsoGetApprovalsInput(BaseModel):
     """Input model for retrieving wallet approvals."""
 
-    chainId: int | None = Field(None, description="Chain ID of the blockchain network")
+    chainId: int | None = Field(None, description="Chain ID")
     routingStrategy: Literal["ensowallet", "router", "delegate"] | None = Field(
-        None, description="Routing strategy to use"
+        None, description="Routing strategy"
     )
 
 
 class WalletAllowance(BaseModel):
-    token: str | None = Field(None, description="The token address")
-    allowance: str | None = Field(None, description="The amount of tokens approved")
-    spender: str | None = Field(None, description="The spender address")
+    token: str | None = Field(None, description="Token address")
+    allowance: str | None = Field(None, description="Approved amount")
+    spender: str | None = Field(None, description="Spender address")
 
 
 class EnsoGetApprovalsOutput(BaseModel):
     """Output model for retrieving wallet approvals."""
 
-    res: list[WalletAllowance] | None = Field(
-        None, description="Response containing the list of token approvals."
-    )
+    res: list[WalletAllowance] | None = Field(None, description="Token approvals")
 
 
 class EnsoGetWalletApprovals(EnsoBaseTool):
     """Retrieve token spend approvals for a wallet on a specified blockchain network."""
 
     name: str = "enso_get_wallet_approvals"
-    description: str = (
-        "Retrieve token spend approvals for a wallet on a specified blockchain network."
-    )
+    description: str = "Get wallet token spend approvals on a blockchain network."
     args_schema: ArgsSchema | None = EnsoGetApprovalsInput
 
     async def _arun(
@@ -158,41 +150,35 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 class EnsoWalletApproveInput(BaseModel):
     """Input model for approving token spend for the wallet."""
 
-    tokenAddress: str = Field(description="ERC20 token address of the token to approve")
-    amount: int = Field(description="Amount of tokens to approve in wei")
-    chainId: int | None = Field(None, description="Chain ID of the blockchain network")
+    tokenAddress: str = Field(description="ERC20 token address")
+    amount: int = Field(description="Amount to approve in wei")
+    chainId: int | None = Field(None, description="Chain ID")
     routingStrategy: Literal["ensowallet", "router", "delegate"] | None = Field(
-        None, description="Routing strategy to use"
+        None, description="Routing strategy"
     )
 
 
 class EnsoWalletApproveOutput(BaseModel):
     """Output model for approve token for the wallet."""
 
-    gas: str | None = Field(None, description="The gas estimate for the transaction")
-    token: str | None = Field(None, description="The token address to approve")
-    amount: str | None = Field(None, description="The amount of tokens to approve")
-    spender: str | None = Field(None, description="The spender address to approve")
+    gas: str | None = Field(None, description="Gas estimate")
+    token: str | None = Field(None, description="Token address")
+    amount: str | None = Field(None, description="Approved amount")
+    spender: str | None = Field(None, description="Spender address")
 
 
 class EnsoWalletApproveArtifact(BaseModel):
     """Artifact returned after broadcasting an approval transaction."""
 
-    tx: object | None = Field(
-        None, description="The transaction object to use in `ethers`"
-    )
-    txHash: str | None = Field(None, description="The transaction hash")
+    tx: object | None = Field(None, description="Transaction object")
+    txHash: str | None = Field(None, description="Transaction hash")
 
 
 class EnsoWalletApprove(EnsoBaseTool):
     """Broadcast an ERC20 token spending approval transaction."""
 
     name: str = "enso_wallet_approve"
-    description: str = (
-        "This tool is used specifically for broadcasting a ERC20 token spending approval transaction to the "
-        "network. It should only be used when the user explicitly requests to broadcast an approval transaction "
-        "with a specific amount for a certain token."
-    )
+    description: str = "Broadcast an ERC20 token spending approval transaction."
     args_schema: ArgsSchema | None = EnsoWalletApproveInput
     response_format: str = "content_and_artifact"
 

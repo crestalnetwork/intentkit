@@ -6,36 +6,31 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_block
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_BLOCK_PROMPT = """
-This tool fetches current block data from DeFi Llama for a specific chain.
-Provide:
-- Chain name (e.g. "ethereum", "bsc", "solana")
-Returns:
-- Block height
-- Block timestamp
-"""
+FETCH_BLOCK_PROMPT = (
+    """Fetch current block height and timestamp for a chain via DefiLlama."""
+)
 
 
 class BlockData(BaseModel):
     """Model representing block data."""
 
-    height: int = Field(..., description="Block height number")
-    timestamp: int = Field(..., description="Unix timestamp of the block")
+    height: int = Field(..., description="Block height")
+    timestamp: int = Field(..., description="Block timestamp")
 
 
 class FetchBlockInput(BaseModel):
     """Input schema for fetching block data."""
 
-    chain: str = Field(..., description="Chain name to fetch block data for")
+    chain: str = Field(..., description="Chain name (e.g. 'ethereum')")
 
 
 class FetchBlockResponse(BaseModel):
     """Response schema for block data."""
 
-    chain: str = Field(..., description="Normalized chain name")
-    height: int | None = Field(None, description="Block height number")
-    timestamp: int | None = Field(None, description="Unix timestamp of the block")
-    error: str | None = Field(None, description="Error message if any")
+    chain: str = Field(..., description="Chain name")
+    height: int | None = Field(None, description="Block height")
+    timestamp: int | None = Field(None, description="Block timestamp")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchBlock(DefiLlamaBaseTool):

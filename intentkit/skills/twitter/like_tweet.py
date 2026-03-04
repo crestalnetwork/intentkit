@@ -15,19 +15,11 @@ logger = logging.getLogger(__name__)
 class TwitterLikeTweetInput(BaseModel):
     """Input for TwitterLikeTweet tool."""
 
-    tweet_id: str = Field(description="The ID of the tweet to like")
+    tweet_id: str = Field(description="Tweet ID to like")
 
 
 class TwitterLikeTweet(TwitterBaseTool):
-    """Tool for liking tweets on Twitter.
-
-    This tool uses the Twitter API v2 to like tweets on Twitter.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Like a tweet on Twitter."""
 
     name: str = NAME
     description: str = PROMPT

@@ -15,25 +15,25 @@ logger = logging.getLogger(__name__)
 class TextToSpeechInput(BaseModel):
     """Input for TextToSpeech tool."""
 
-    text: str = Field(description="The text to convert to speech. Required.")
+    text: str = Field(description="Text to convert to speech.")
 
     voice_id: str = Field(
-        description="The voice ID to use for speech synthesis. Options include: 'af_bella', 'af_sarah', 'af_nicole', 'af_sky', 'am_adam', 'am_michael', 'bf_emma', 'bf_isabella', 'bm_george', 'bm_lewis'.",
+        description="Voice ID (e.g., af_bella, af_sarah, am_adam, bf_emma, bm_george).",
         default="af_sarah",
     )
 
     bitrate: str = Field(
-        description="The audio bitrate. Higher values provide better quality but larger file sizes. Options: '64k', '96k', '128k', '192k', '256k', '320k'.",
+        description="Audio bitrate: 64k, 96k, 128k, 192k, 256k, or 320k.",
         default="192k",
     )
 
     speed: float = Field(
-        description="The speech speed adjustment. Range: -1.0 (slower) to 1.0 (faster), with 0.0 being the normal speed.",
+        description="Speed: -1.0 (slower) to 1.0 (faster), 0.0 is normal.",
         default=0.0,
     )
 
     timestamp_type: Literal["word", "sentence"] | None = Field(
-        description="The type of timestamps to include in the response. 'word' for word-level timestamps, 'sentence' for sentence-level, or None for no timestamps.",
+        description="Timestamp type: word, sentence, or None.",
         default="word",
     )
 
@@ -48,10 +48,8 @@ class TextToSpeech(UnrealSpeechBaseTool):
 
     name: str = "text_to_speech"
     description: str = (
-        "Converts text to natural-sounding speech using UnrealSpeech.\n"
-        "Use this tool when you need to generate spoken audio from text.\n"
-        "Returns URLs to the generated audio file and word-level timestamps.\n"
-        "Provides various voice options and speech customization parameters."
+        "Convert text to speech using UnrealSpeech. "
+        "Returns audio URL and optional timestamps."
     )
     args_schema: ArgsSchema | None = TextToSpeechInput
 

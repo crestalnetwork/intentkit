@@ -20,12 +20,7 @@ class GPTImageMiniGenerator(OpenAIBaseTool):
     """Tool for generating images using OpenAI's GPT-Image-1-Mini model."""
 
     name: str = "gpt_image_mini_generator"
-    description: str = (
-        "Generate images using OpenAI's GPT-Image-1-Mini model.\n"
-        "Provide a text prompt describing the image you want to generate.\n"
-        "GPT-Image-1-Mini delivers high-quality images with faster performance at a lower cost.\n"
-        "You can specify size, quality, and background parameters for more control.\n"
-    )
+    description: str = "Generate images from text prompts using GPT-Image-1-Mini. Faster and lower cost."
     args_schema: ArgsSchema | None = GPTImageGenerationInput
 
     async def _arun(

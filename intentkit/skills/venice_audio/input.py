@@ -7,32 +7,27 @@ AllowedAudioFormat = Literal["mp3", "opus", "aac", "flac", "wav", "pcm"]
 
 
 class VeniceAudioInput(BaseModel):
-    """
-    Input schema for Venice AI Text-to-Speech (/audio/speech endpoint).
-    Defines parameters controllable by the user when invoking the tool.
-    """
+    """Input schema for Venice AI Text-to-Speech."""
 
     voice_input: str = Field(
-        ...,  # Ellipsis (...) indicates this field is required
-        description="The text to generate audio for. Maximum length is 4096 characters.",
-        min_length=1,  # As per API docs: Required string length: 1
-        max_length=4096,  # As per API docs: The maximum length is 4096 characters.
+        ...,
+        description="Text to generate audio for (max 4096 chars).",
+        min_length=1,
+        max_length=4096,
     )
 
-    voice_model: str = Field(
-        description="voice model to used to generate voice from text_to_speech tool."
-    )
+    voice_model: str = Field(description="Voice model for TTS generation.")
 
     speed: float | None = Field(
-        default=1.0,  # As per API docs: default: 1 (using float for consistency)
-        description="The speed of the generated audio. 1.0 is normal speed. Allowed range: 0.25 to 4.0.",
-        ge=0.25,  # As per API docs: Required range: 0.25 <= x
-        le=4.0,  # As per API docs: Required range: x <= 4
+        default=1.0,
+        description="Audio speed, 0.25-4.0. Default 1.0.",
+        ge=0.25,
+        le=4.0,
     )
 
     response_format: AllowedAudioFormat | None = Field(
-        default="mp3",  # As per API docs: default: mp3
-        description="The desired audio format for the output file.",
+        default="mp3",
+        description="Output audio format.",
     )
 
     # --- Note on other API parameters ---

@@ -21,16 +21,10 @@ logger = logging.getLogger(__name__)
 class SolanaPortfolioInput(BaseModel):
     """Input for FetchSolanaPortfolio tool."""
 
-    address: str = Field(..., description="Solana wallet address")
-    network: str = Field(
-        default="mainnet", description="Solana network to use (mainnet or devnet)"
-    )
-    include_nfts: bool = Field(
-        default=False, description="Whether to include NFTs in the response"
-    )
-    include_price_data: bool = Field(
-        default=True, description="Whether to include price data for tokens"
-    )
+    address: str = Field(..., description="Solana wallet address.")
+    network: str = Field(default="mainnet", description="Network: mainnet or devnet.")
+    include_nfts: bool = Field(default=False, description="Include NFTs.")
+    include_price_data: bool = Field(default=True, description="Include token prices.")
 
 
 class SolanaTokenInfo(BaseModel):
@@ -85,12 +79,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
 
     name: str = "moralis_fetch_solana_portfolio"
     description: str = (
-        "Get comprehensive portfolio data for a Solana wallet including:\n"
-        "- Native SOL balance\n"
-        "- SPL token balances\n"
-        "- NFT holdings (optional)\n"
-        "- USD values of assets\n"
-        "Use this tool whenever the user asks specifically about Solana holdings."
+        "Fetch Solana wallet portfolio: SOL balance, SPL tokens, and optional NFTs."
     )
     args_schema: ArgsSchema | None = SolanaPortfolioInput
 

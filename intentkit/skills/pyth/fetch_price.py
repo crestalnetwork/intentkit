@@ -12,9 +12,7 @@ from intentkit.skills.pyth.base import PythBaseTool
 class FetchPriceInput(BaseModel):
     """Input schema for fetching Pyth price."""
 
-    price_feed_id: str = Field(
-        ..., description="The price feed ID to fetch the price for"
-    )
+    price_feed_id: str = Field(..., description="Pyth price feed ID")
 
 
 class PythFetchPrice(PythBaseTool):
@@ -25,16 +23,7 @@ class PythFetchPrice(PythBaseTool):
     """
 
     name: str = "pyth_fetch_price"
-    description: str = """Fetch the price of a price feed from Pyth.
-
-Inputs:
-- price_feed_id: Price feed ID (string)
-
-Important notes:
-- Do not assume that a random ID is a Pyth price feed ID. If you are confused, ask a clarifying question.
-- This action only fetches price inputs from Pyth price feeds. No other source.
-- If you are asked to fetch the price from Pyth for a ticker symbol such as BTC, you must first use the pyth_fetch_price_feed action to retrieve the price feed ID before invoking this action.
-"""
+    description: str = "Fetch price from a Pyth price feed by ID. Use pyth_fetch_price_feed first to get the feed ID from a ticker symbol."
     args_schema: ArgsSchema | None = FetchPriceInput
 
     async def _arun(

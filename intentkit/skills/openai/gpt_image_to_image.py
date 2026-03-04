@@ -21,41 +21,24 @@ logger = logging.getLogger(__name__)
 class GPTImageToImageInput(BaseModel):
     """Input for GPTImageToImage tool."""
 
-    image_url: str = Field(
-        description="URL of the source image to edit.",
-    )
-    prompt: str = Field(
-        description="Text prompt describing the desired edits to the image.",
-    )
+    image_url: str = Field(description="URL of the source image.")
+    prompt: str = Field(description="Desired edits to apply.")
     size: Literal["1024x1024", "1536x1024", "1024x1536", "auto"] = Field(
         default="auto",
-        description="Size of the generated image. Options: 1024x1024, 1536x1024, 1024x1536, auto",
+        description="1024x1024, 1536x1024, 1024x1536, or auto",
     )
     quality: Literal["high", "medium", "low", "auto"] = Field(
         default="auto",
-        description="Quality of the generated image. Options: high, medium, low, auto",
+        description="high, medium, low, or auto",
     )
 
 
 class GPTImageToImage(OpenAIBaseTool):
-    """Tool for editing images using OpenAI's GPT-Image-1 model.
-
-    This tool takes a source image URL and a text prompt, then uses OpenAI's API to
-    generate an edited version of the image based on the description.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for editing images using OpenAI's GPT-Image-1 model."""
 
     name: str = "gpt_image_to_image"
     description: str = (
-        "Edit images using OpenAI's GPT-Image-1 model.\n"
-        "Provide a source image URL and a text prompt describing the desired edits.\n"
-        "GPT-Image-1 is a powerful image editing model capable of transforming images "
-        "based on text descriptions.\n"
-        "You can specify size and quality parameters for more control.\n"
+        "Edit an existing image based on a text prompt using GPT-Image-1."
     )
     args_schema: ArgsSchema | None = GPTImageToImageInput
 

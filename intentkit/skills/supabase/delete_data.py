@@ -8,7 +8,7 @@ from supabase import Client, create_client
 from intentkit.skills.supabase.base import SupabaseBaseTool
 
 NAME = "supabase_delete_data"
-PROMPT = "Delete data from a Supabase table based on filtering conditions."
+PROMPT = "Delete records from a Supabase table using filters."
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 class SupabaseDeleteDataInput(BaseModel):
     """Input for SupabaseDeleteData tool."""
 
-    table: str = Field(description="The name of the table to delete data from")
+    table: str = Field(description="Table name")
     filters: dict[str, Any] = Field(
-        description="Dictionary of filters to identify which records to delete (e.g., {'id': 123})"
+        description="Filters to match records, e.g. {'id': 123}"
     )
     returning: str = Field(
         default="*",
-        description="Columns to return from deleted records (default: '*' for all)",
+        description="Columns to return from deleted records",
     )
 
 

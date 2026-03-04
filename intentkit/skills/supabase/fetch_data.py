@@ -8,7 +8,7 @@ from supabase import Client, create_client
 from intentkit.skills.supabase.base import SupabaseBaseTool
 
 NAME = "supabase_fetch_data"
-PROMPT = "Fetch data from a Supabase table with optional filtering, ordering, and pagination."
+PROMPT = "Fetch data from a Supabase table with filtering, ordering, and pagination."
 
 logger = logging.getLogger(__name__)
 
@@ -16,24 +16,20 @@ logger = logging.getLogger(__name__)
 class SupabaseFetchDataInput(BaseModel):
     """Input for SupabaseFetchData tool."""
 
-    table: str = Field(description="The name of the table to fetch data from")
+    table: str = Field(description="Table name")
     columns: str | None = Field(
         default="*",
-        description="Comma-separated list of columns to select (default: '*' for all)",
+        description="Columns to select, comma-separated",
     )
     filters: dict[str, Any] | None = Field(
         default=None,
-        description="Dictionary of filters to apply (e.g., {'column': 'value', 'age': {'gte': 18}})",
+        description="Filters, e.g. {'column': 'value', 'age': {'gte': 18}}",
     )
     order_by: str | None = Field(default=None, description="Column to order by")
-    ascending: bool = Field(
-        default=True, description="Whether to order in ascending order (default: True)"
-    )
-    limit: int | None = Field(
-        default=None, description="Maximum number of records to return"
-    )
+    ascending: bool = Field(default=True, description="Ascending order if true")
+    limit: int | None = Field(default=None, description="Max records to return")
     offset: int | None = Field(
-        default=None, description="Number of records to skip for pagination"
+        default=None, description="Records to skip for pagination"
     )
 
 

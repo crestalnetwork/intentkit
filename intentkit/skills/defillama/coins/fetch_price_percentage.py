@@ -6,35 +6,22 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_price_percentage
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_PRICE_PERCENTAGE_PROMPT = """
-This tool fetches 24-hour price percentage changes from DeFi Llama for multiple tokens.
-Provide a list of token identifiers in the format:
-- Ethereum tokens: 'ethereum:0x...'
-- Other chains: 'chainname:0x...'
-- CoinGecko IDs: 'coingecko:bitcoin'
-Returns price percentage changes:
-- Negative values indicate price decrease
-- Positive values indicate price increase
-- Changes are calculated from current time
-"""
+FETCH_PRICE_PERCENTAGE_PROMPT = """Fetch 24h price percentage changes for tokens via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class FetchPricePercentageInput(BaseModel):
     """Input schema for fetching token price percentage changes."""
 
-    coins: list[str] = Field(
-        ..., description="List of token identifiers to fetch price changes for"
-    )
+    coins: list[str] = Field(..., description="Token IDs to query")
 
 
 class FetchPricePercentageResponse(BaseModel):
     """Response schema for token price percentage changes."""
 
     coins: dict[str, float] = Field(
-        default_factory=dict,
-        description="Price percentage changes keyed by token identifier",
+        default_factory=dict, description="24h % changes by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):

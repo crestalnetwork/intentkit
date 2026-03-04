@@ -12,15 +12,14 @@ from intentkit.skills.xmtp.base import XmtpBaseTool
 class TransferInput(BaseModel):
     """Input for XMTP transfer skill."""
 
-    from_address: str = Field(description="The sender address for the transfer")
-    to_address: str = Field(description="The recipient address for the transfer")
+    from_address: str = Field(description="Sender address")
+    to_address: str = Field(description="Recipient address")
     amount: str = Field(
-        description="The amount to transfer in human-readable format (e.g., '1.5' for 1.5 ETH, '100' for 100 USDC). Do NOT multiply by token decimals."
+        description="Amount in human-readable format (e.g., '1.5'). Do NOT multiply by decimals."
     )
-    currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC', 'NATION')")
+    currency: str = Field(description="Currency symbol (e.g., 'ETH', 'USDC')")
     token_contract_address: str | None = Field(
-        default=None,
-        description="Token contract address for ERC20 transfers. Leave empty for ETH transfers.",
+        default=None, description="ERC20 contract address (empty for ETH)"
     )
 
 
@@ -28,11 +27,10 @@ class XmtpTransfer(XmtpBaseTool):
     """Skill for creating XMTP transfer transactions."""
 
     name: str = "xmtp_transfer"
-    description: str = """Create an XMTP transaction request for transferring ETH or ERC20 tokens.
-    This skill generates a wallet_sendCalls transaction request according to XMTP protocol 
-    that can be sent to users for signing. 
-    Supports Ethereum, Polygon, Base, Arbitrum, and Optimism networks (both mainnet and testnet).
-    """
+    description: str = (
+        "Create XMTP transaction for transferring ETH or ERC20 tokens. "
+        "Supports Ethereum, Base, Arbitrum, and Optimism networks."
+    )
     args_schema: ArgsSchema | None = TransferInput
 
     @override

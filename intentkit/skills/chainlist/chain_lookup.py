@@ -14,19 +14,19 @@ class ChainLookupInput(BaseModel):
     """Input for ChainLookup tool."""
 
     search_term: str | None = Field(
-        description="Term to search for (chain name, symbol, or chain ID)",
+        description="Chain name, symbol, or ID to search.",
         default=None,
     )
     chain_id: int | None = Field(
-        description="Specific chain ID to look up",
+        description="Chain ID to look up.",
         default=None,
     )
     no_tracking: bool | None = Field(
-        description="Whether to return only RPC endpoints with no tracking",
+        description="Only return no-tracking RPCs.",
         default=False,
     )
     limit: int | None = Field(
-        description="Limit the number of results returned",
+        description="Max results.",
         default=5,
     )
 
@@ -35,10 +35,7 @@ class ChainLookup(ChainlistBaseTool):
     """Tool for looking up blockchain RPC endpoints from Chainlist."""
 
     name: str = "chain_lookup"
-    description: str = (
-        "Look up blockchain RPC endpoints and details by chain name, symbol, or chain ID.\n"
-        "Returns information about blockchains including RPC endpoints, native currency, and explorers."
-    )
+    description: str = "Look up blockchain RPC endpoints by chain name, symbol, or ID."
     args_schema: ArgsSchema | None = ChainLookupInput
 
     def _normalize_text(self, text: str) -> str:

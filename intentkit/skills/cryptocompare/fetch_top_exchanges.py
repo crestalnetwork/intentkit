@@ -14,37 +14,21 @@ logger = logging.getLogger(__name__)
 class CryptoCompareFetchTopExchangesInput(BaseModel):
     """Input for CryptoCompareFetchTopExchanges tool."""
 
-    from_symbol: str = Field(
-        ..., description="Base cryptocurrency symbol for the trading pair (e.g., 'BTC')"
-    )
-    to_symbol: str = Field(
-        "USD",
-        description="Quote currency symbol for the trading pair. Defaults to 'USD'",
-    )
+    from_symbol: str = Field(..., description="Base crypto symbol (e.g., BTC)")
+    to_symbol: str = Field("USD", description="Quote currency symbol")
     limit: int = Field(
         10,
-        description="Number of exchanges to fetch (max 100)",
+        description="Number of results (max 100)",
         ge=1,
         le=100,
     )
 
 
 class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
-    """Tool for fetching top exchanges for a cryptocurrency pair from CryptoCompare.
-
-    This tool uses the CryptoCompare API to retrieve the top exchanges
-    for a specific cryptocurrency trading pair, ranked by volume.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for fetching top exchanges from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_top_exchanges"
-    description: str = (
-        "Fetch top exchanges for a cryptocurrency trading pair, ranked by volume"
-    )
+    description: str = "Fetch top exchanges for a crypto pair, ranked by volume."
     args_schema: ArgsSchema | None = CryptoCompareFetchTopExchangesInput
 
     async def _arun(

@@ -19,7 +19,7 @@ class NftCheckInput(BaseModel):
 
 class NftCheck(NationBaseTool):
     name: str = "nft_check"
-    description: str = "Check user nation pass NFTs stats in nation, including usage status and linked agents.By default, it will use the user_id as the wallet address. If you want to check other wallet address, please pass the nation_wallet_address parameter."
+    description: str = "Check nation pass NFT stats including usage status and linked agents. Uses user_id as wallet by default."
     args_schema: ArgsSchema | None = NftCheckInput
 
     async def _arun(self, nation_wallet_address: str | None = None) -> str:

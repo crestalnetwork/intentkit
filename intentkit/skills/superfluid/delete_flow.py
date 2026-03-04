@@ -15,12 +15,10 @@ from intentkit.skills.superfluid.constants import (
 class DeleteFlowInput(BaseModel):
     """Input schema for delete_flow."""
 
-    token_address: str = Field(
-        ..., description="The Super token contract address being streamed"
-    )
+    token_address: str = Field(..., description="Super Token contract address")
     recipient: str = Field(
         ...,
-        description="The wallet address that is receiving or sending the token stream",
+        description="Address receiving or sending the stream",
     )
 
 
@@ -32,16 +30,9 @@ class SuperfluidDeleteFlow(SuperfluidBaseTool):
     """
 
     name: str = "superfluid_delete_flow"
-    description: str = """Delete an existing money stream to a token recipient using Superfluid.
-
-Inputs:
-- token_address: The Super token contract address being streamed
-- recipient: The wallet address that is receiving or sending the token stream
-
-Important notes:
-- A stream must exist to the recipient before it can be deleted.
-- Once deleted, the stream will stop immediately and no more tokens will be transferred.
-"""
+    description: str = (
+        "Delete an existing Superfluid money stream. The stream stops immediately."
+    )
     args_schema: ArgsSchema | None = DeleteFlowInput
 
     async def _arun(

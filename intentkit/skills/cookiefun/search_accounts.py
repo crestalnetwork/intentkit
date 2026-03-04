@@ -36,31 +36,24 @@ class SortOrder(IntEnum):
 class SearchAccountsInput(BaseModel):
     """Input for SearchAccounts tool."""
 
-    searchQuery: str = Field(
-        description="Search query to find Twitter accounts that authored tweets matching the criteria"
-    )
-
+    searchQuery: str = Field(description="Search query for tweet content")
     type: int | None = Field(
-        default=None,
-        description="Type of tweets to search for: 0 for Original, 1 for Reply, 2 for Quote (leave empty for all types)",
+        default=None, description="Tweet type: 0=Original, 1=Reply, 2=Quote"
     )
-
     sortBy: int | None = Field(
         default=None,
-        description="Sort by: 0 for SmartEngagementPoints, 1 for Impressions, 2 for MatchingTweetsCount",
+        description="0=SmartEngagementPoints, 1=Impressions, 2=MatchingTweetsCount",
     )
-
-    sortOrder: int | None = Field(
-        default=None,
-        description="Sort order: 0 for Ascending, 1 for Descending",
-    )
+    sortOrder: int | None = Field(default=None, description="0=Ascending, 1=Descending")
 
 
 class SearchAccounts(CookieFunBaseTool):
     """Tool to search for Twitter accounts based on tweet content."""
 
     name: str = "cookiefun_search_accounts"
-    description: str = "Searches for Twitter accounts that authored tweets matching specified search criteria."
+    description: str = (
+        "Search Twitter accounts by tweet content with engagement metrics."
+    )
     args_schema: ArgsSchema | None = SearchAccountsInput
 
     async def _arun(

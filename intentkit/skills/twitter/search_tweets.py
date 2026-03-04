@@ -17,19 +17,11 @@ PROMPT = "Search for recent tweets on Twitter using a query keyword."
 class TwitterSearchTweetsInput(BaseModel):
     """Input for TwitterSearchTweets tool."""
 
-    query: str = Field(description="The search query to find tweets")
+    query: str = Field(description="Search query")
 
 
 class TwitterSearchTweets(TwitterBaseTool):
-    """Tool for searching recent tweets on Twitter.
-
-    This tool uses the Twitter API v2 to search for recent tweets based on a query.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Search recent tweets by query."""
 
     name: str = NAME
     description: str = PROMPT

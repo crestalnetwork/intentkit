@@ -8,60 +8,48 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_protocol
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_PROTOCOL_PROMPT = """
-This tool fetches comprehensive details about a specific DeFi protocol.
-Provide the protocol identifier (e.g., "aave", "curve") to get detailed information including:
-- Basic protocol information (name, description, website)
-- TVL data across different chains
-- Token information and historical amounts
-- Social media and development links
-- Funding history and significant events
-- Market metrics and related protocols
-Returns complete protocol details or an error if the protocol is not found.
-"""
+FETCH_PROTOCOL_PROMPT = """Fetch detailed protocol info from DefiLlama including TVL, tokens, chains, and metadata. Provide protocol slug (e.g. 'aave')."""
 
 
 class TokenAmount(BaseModel):
     """Model representing token amounts at a specific date."""
 
-    date: int = Field(..., description="Unix timestamp")
-    tokens: dict[str, float] = Field(..., description="Token amounts keyed by symbol")
+    date: int = Field(..., description="Timestamp")
+    tokens: dict[str, float] = Field(..., description="Token amounts by symbol")
 
 
 class ChainTVLData(BaseModel):
     """Model representing TVL data for a specific chain."""
 
-    tvl: list[dict[str, float]] = Field(..., description="Historical TVL data points")
-    tokens: dict[str, float] | None = Field(None, description="Current token amounts")
-    tokensInUsd: dict[str, float] | None = Field(
-        None, description="Current token amounts in USD"
-    )
+    tvl: list[dict[str, float]] = Field(..., description="TVL history")
+    tokens: dict[str, float] | None = Field(None, description="Token amounts")
+    tokensInUsd: dict[str, float] | None = Field(None, description="Token amounts USD")
 
 
 class HistoricalTVL(BaseModel):
     """Model representing a historical TVL data point."""
 
-    date: int = Field(..., description="Unix timestamp")
-    totalLiquidityUSD: float = Field(..., description="Total TVL in USD")
+    date: int = Field(..., description="Timestamp")
+    totalLiquidityUSD: float = Field(..., description="TVL in USD")
 
 
 class Raise(BaseModel):
     """Model representing a funding round."""
 
-    date: int = Field(..., description="Funding date")
-    name: str = Field(..., description="Protocol name")
-    round: str = Field(..., description="Funding round type")
-    amount: float = Field(..., description="Amount raised in millions")
-    chains: list[str] = Field(..., description="Chains involved")
-    sector: str = Field(..., description="Business sector")
-    category: str = Field(..., description="Protocol category")
+    date: int = Field(..., description="Date")
+    name: str = Field(..., description="Name")
+    round: str = Field(..., description="Round type")
+    amount: float = Field(..., description="Amount raised (M)")
+    chains: list[str] = Field(..., description="Chains")
+    sector: str = Field(..., description="Sector")
+    category: str = Field(..., description="Category")
     categoryGroup: str = Field(..., description="Category group")
-    source: str = Field(..., description="Information source")
+    source: str = Field(..., description="Source")
     leadInvestors: list[str] = Field(default_factory=list, description="Lead investors")
     otherInvestors: list[str] = Field(
         default_factory=list, description="Other investors"
     )
-    valuation: float | None = Field(None, description="Valuation at time of raise")
+    valuation: float | None = Field(None, description="Valuation")
     defillamaId: str | None = Field(None, description="DefiLlama ID")
 
 
@@ -75,64 +63,43 @@ class Hallmark(BaseModel):
 class ProtocolDetail(BaseModel):
     """Model representing detailed protocol information."""
 
-    # Basic Info
-    id: str = Field(..., description="Protocol unique identifier")
-    name: str = Field(..., description="Protocol name")
-    address: str | None = Field(None, description="Protocol address")
-    symbol: str = Field(..., description="Protocol token symbol")
-    url: str = Field(..., description="Protocol website")
-    description: str = Field(..., description="Protocol description")
+    id: str = Field(..., description="ID")
+    name: str = Field(..., description="Name")
+    address: str | None = Field(None, description="Address")
+    symbol: str = Field(..., description="Token symbol")
+    url: str = Field(..., description="Website")
+    description: str = Field(..., description="Description")
     logo: str = Field(..., description="Logo URL")
-
-    # Chain Info
-    chains: list[str] = Field(default_factory=list, description="Supported chains")
-    currentChainTvls: dict[str, float] = Field(..., description="Current TVL by chain")
-    chainTvls: dict[str, ChainTVLData] = Field(
-        ..., description="Historical TVL data by chain"
-    )
-
-    # Identifiers
+    chains: list[str] = Field(default_factory=list, description="Chains")
+    currentChainTvls: dict[str, float] = Field(..., description="TVL by chain")
+    chainTvls: dict[str, ChainTVLData] = Field(..., description="TVL history by chain")
     gecko_id: str | None = Field(None, description="CoinGecko ID")
-    cmcId: str | None = Field(None, description="CoinMarketCap ID")
-
-    # Social & Development
-    twitter: str | None = Field(None, description="Twitter handle")
-    treasury: str | None = Field(None, description="Treasury information")
-    governanceID: list[str] | None = Field(None, description="Governance identifiers")
-    github: list[str] | None = Field(None, description="GitHub repositories")
-
-    # Protocol Relationships
-    isParentProtocol: bool | None = Field(
-        None, description="Whether this is a parent protocol"
-    )
+    cmcId: str | None = Field(None, description="CMC ID")
+    twitter: str | None = Field(None, description="Twitter")
+    treasury: str | None = Field(None, description="Treasury")
+    governanceID: list[str] | None = Field(None, description="Governance IDs")
+    github: list[str] | None = Field(None, description="GitHub repos")
+    isParentProtocol: bool | None = Field(None, description="Is parent protocol")
     otherProtocols: list[str] | None = Field(None, description="Related protocols")
-
-    # Historical Data
-    tokens: list[TokenAmount] = Field(
-        default_factory=list, description="Historical token amounts"
-    )
-    tvl: list[HistoricalTVL] = Field(..., description="Historical TVL data points")
+    tokens: list[TokenAmount] = Field(default_factory=list, description="Token history")
+    tvl: list[HistoricalTVL] = Field(..., description="TVL history")
     raises: list[Raise] | None = Field(None, description="Funding rounds")
-    hallmarks: list[Hallmark] | None = Field(None, description="Significant events")
-
-    # Market Data
-    mcap: float | None = Field(None, description="Market capitalization")
-    metrics: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metrics"
-    )
+    hallmarks: list[Hallmark] | None = Field(None, description="Key events")
+    mcap: float | None = Field(None, description="Market cap")
+    metrics: dict[str, Any] = Field(default_factory=dict, description="Metrics")
 
 
 class DefiLlamaProtocolInput(BaseModel):
     """Input model for fetching protocol details."""
 
-    protocol: str = Field(..., description="Protocol identifier to fetch")
+    protocol: str = Field(..., description="Protocol slug (e.g. 'aave')")
 
 
 class DefiLlamaProtocolOutput(BaseModel):
     """Output model for the protocol fetching tool."""
 
-    protocol: ProtocolDetail | None = Field(None, description="Protocol details")
-    error: str | None = Field(None, description="Error message if any")
+    protocol: ProtocolDetail | None = Field(None, description="Protocol data")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchProtocol(DefiLlamaBaseTool):

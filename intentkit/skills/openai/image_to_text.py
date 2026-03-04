@@ -16,37 +16,22 @@ logger = logging.getLogger(__name__)
 class ImageToTextInput(BaseModel):
     """Input for ImageToText tool."""
 
-    image: str = Field(
-        description="URL of the image to convert to text.",
-    )
+    image: str = Field(description="URL of the image to analyze.")
 
 
 class ImageToTextOutput(BaseModel):
     """Output for ImageToText tool."""
 
-    description: str = Field(description="Detailed text description of the image.")
-    width: int = Field(description="Width of the processed image.")
-    height: int = Field(description="Height of the processed image.")
+    description: str = Field(description="Text description of the image.")
+    width: int = Field(description="Image width.")
+    height: int = Field(description="Image height.")
 
 
 class ImageToText(OpenAIBaseTool):
-    """Tool for converting images to text using OpenAI's GPT-4o model.
-
-    This tool takes an image URL and uses OpenAI's vision capabilities
-    to generate a detailed text description of the image content.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for converting images to text descriptions using OpenAI's GPT-4o model."""
 
     name: str = "image_to_text"
-    description: str = (
-        "Convert an image to detailed text description.\n"
-        "Provide a URL to the image to analyze and get a comprehensive textual description.\n"
-        "Optimized for DALL-E generated images and preserves as many details as possible."
-    )
+    description: str = "Describe an image in detail given its URL. Returns a text description with dimensions."
     args_schema: ArgsSchema | None = ImageToTextInput
 
     async def _arun(self, image: str, **kwargs) -> ImageToTextOutput:

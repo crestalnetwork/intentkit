@@ -6,9 +6,7 @@ from intentkit.skills.jupiter.base import JupiterBaseTool
 
 
 class JupiterGetPriceInput(BaseModel):
-    ids: str = Field(
-        description="Comma-separated list of token symbols or mint addresses (e.g., 'SOL,BONK' or 'So111...')."
-    )
+    ids: str = Field(description="Comma-separated token symbols or mint addresses")
 
 
 class JupiterGetPrice(JupiterBaseTool):

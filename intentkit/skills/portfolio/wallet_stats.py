@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 class WalletStatsInput(BaseModel):
     """Input for wallet stats tool."""
 
-    address: str = Field(description="The wallet address to get stats for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
 
@@ -28,10 +28,7 @@ class WalletStats(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_stats"
-    description: str = (
-        "Get statistical information about a wallet, including the number of NFTs, "
-        "collections, and transaction counts."
-    )
+    description: str = "Get wallet stats (NFT count, collections, transactions)."
     args_schema: ArgsSchema | None = WalletStatsInput
 
     async def _arun(

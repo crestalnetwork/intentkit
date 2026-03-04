@@ -12,19 +12,17 @@ from intentkit.wallets.cdp import get_cdp_client
 class SwapPriceInput(BaseModel):
     """Input for querying swap price via CDP."""
 
-    from_token: str = Field(description="The contract address to swap from")
-    to_token: str = Field(description="The contract address to swap to")
-    from_amount: str = Field(description="Input amount in smallest units (as string)")
-    from_address: str = Field(
-        description="The address where the from_token balance is located"
-    )
+    from_token: str = Field(description="Contract address to swap from")
+    to_token: str = Field(description="Contract address to swap to")
+    from_amount: str = Field(description="Amount in smallest units (string)")
+    from_address: str = Field(description="Address holding the from_token")
 
 
 class XmtpGetSwapPrice(XmtpBaseTool):
     """Skill for fetching indicative swap price using CDP SDK."""
 
     name: str = "xmtp_get_swap_price"
-    description: str = "Get an indicative swap price/quote for token pair and amount on Ethereum, Base, Arbitrum, and Optimism mainnet networks using CDP."
+    description: str = "Get indicative swap price for a token pair on Ethereum, Base, Arbitrum, or Optimism mainnet via CDP."
     response_format: Literal["content", "content_and_artifact"] = "content"
     args_schema: ArgsSchema | None = SwapPriceInput
 

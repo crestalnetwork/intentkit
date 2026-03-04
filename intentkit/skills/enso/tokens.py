@@ -47,11 +47,11 @@ from intentkit.skills.enso.base import EnsoBaseTool, base_url
 class EnsoGetTokensInput(BaseModel):
     chainId: int | None = Field(
         None,
-        description="The blockchain chain ID. Defaults to the agent's configured network.",
+        description="Chain ID (defaults to agent network)",
     )
     protocolSlug: str | None = Field(
         None,
-        description="The protocol slug (e.g., 'aave-v2', 'aave-v3', 'compound-v2')",
+        description="Protocol slug, e.g. 'aave-v3'",
     )
     # address: str | None = Field(
     #     None,
@@ -72,42 +72,30 @@ class EnsoGetTokensInput(BaseModel):
 
 
 class UnderlyingTokenCompact(BaseModel):
-    address: str | None = Field(None, description="The address of the token")
-    type: str | None = Field(
-        None, description="The type of the token (e.g., base token)"
-    )
-    name: str | None = Field(None, description="The name of the token")
-    symbol: str | None = Field(None, description="The symbol of the token")
-    decimals: int | None = Field(
-        None, description="The number of decimals for the token"
-    )
+    address: str | None = Field(None, description="Token address")
+    type: str | None = Field(None, description="Token type")
+    name: str | None = Field(None, description="Token name")
+    symbol: str | None = Field(None, description="Token symbol")
+    decimals: int | None = Field(None, description="Token decimals")
 
 
 class TokenResponseCompact(BaseModel):
-    name: str | None = Field(None, description="The name of the token")
-    symbol: str | None = Field(None, description="The symbol of the token")
-    address: str | None = Field(None, description="The address of the token")
-    primaryAddress: str | None = Field(
-        None, description="The primary address associated with the token"
-    )
-    type: str | None = Field(
-        None, description="The type of the token (e.g., defi, base, etc.)"
-    )
-    apy: float | None = Field(
-        None, description="The annual percentage yield (APY) for the token"
-    )
+    name: str | None = Field(None, description="Token name")
+    symbol: str | None = Field(None, description="Token symbol")
+    address: str | None = Field(None, description="Token address")
+    primaryAddress: str | None = Field(None, description="Primary contract address")
+    type: str | None = Field(None, description="Token type (defi, base, etc.)")
+    apy: float | None = Field(None, description="APY")
     underlyingTokens: list[UnderlyingTokenCompact] | None = Field(
-        None, description="List of underlying tokens"
+        None, description="Underlying tokens"
     )
-    decimals: int | None = Field(
-        None, description="The number of decimals for the token"
-    )
+    decimals: int | None = Field(None, description="Token decimals")
 
 
 class EnsoGetTokensOutput(BaseModel):
     res: list[TokenResponseCompact] = Field(
         default_factory=list,
-        description="List of token information entries",
+        description="Token list",
     )
 
 
@@ -129,8 +117,7 @@ class EnsoGetTokens(EnsoBaseTool):
 
     name: str = "enso_get_tokens"
     description: str = (
-        "Enso Finance Token Information Tool: Retrieves detailed token information from the Enso Finance API, "
-        "including APY, symbol, address, protocol slug, token type, and underlying tokens."
+        "Get token info including APY, symbol, address, and underlying tokens."
     )
     args_schema: ArgsSchema | None = EnsoGetTokensInput
 

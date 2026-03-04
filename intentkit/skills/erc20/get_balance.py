@@ -14,12 +14,10 @@ from intentkit.skills.erc20.utils import get_token_details
 class GetBalanceInput(BaseModel):
     """Input schema for ERC20 get_balance."""
 
-    contract_address: str = Field(
-        ..., description="The contract address of the ERC20 token"
-    )
+    contract_address: str = Field(..., description="ERC20 token contract address")
     address: str | None = Field(
         default=None,
-        description="The address to check the balance for. If not provided, uses the wallet's address",
+        description="Address to check balance for. Defaults to wallet address.",
     )
 
 
@@ -31,16 +29,7 @@ class ERC20GetBalance(ERC20BaseTool):
     """
 
     name: str = "erc20_get_balance"
-    description: str = """Get the balance of an ERC20 token for a given address.
-
-Inputs:
-- contract_address: The contract address of the token to get the balance for
-- address: (Optional) The address to check the balance for. If not provided, uses the wallet's address
-
-Important notes:
-- Never assume token or address, they have to be provided as inputs
-- If only token symbol is provided, use the erc20_get_token_address tool to get the token address first
-"""
+    description: str = "Get an ERC20 token balance. Use erc20_get_token_address first if only a symbol is provided."
     args_schema: ArgsSchema | None = GetBalanceInput
 
     @override

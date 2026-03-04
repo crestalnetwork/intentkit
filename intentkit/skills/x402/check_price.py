@@ -36,28 +36,23 @@ def _format_amount(requirement: Any) -> str:
 class X402CheckPriceInput(BaseModel):
     """Arguments for checking the price of a 402-protected resource."""
 
-    method: str = Field(description="HTTP method to use. Supported values: GET, POST.")
-    url: str = Field(
-        description="Absolute URL for the request (must include scheme and host)."
-    )
+    method: str = Field(description="HTTP method (GET or POST).")
+    url: str = Field(description="Absolute URL (must include scheme and host).")
     headers: dict[str, str] | None = Field(
         default=None,
-        description="Optional headers to include in the request.",
+        description="Optional request headers.",
     )
     params: dict[str, Any] | None = Field(
         default=None,
-        description="Optional query parameters to include in the request.",
+        description="Optional query parameters.",
     )
     data: dict[str, Any] | str | None = Field(
         default=None,
-        description=(
-            "Optional request body. Dictionaries are sent as JSON; strings are sent as raw data. "
-            "Only supported for POST requests."
-        ),
+        description="Optional body (dict as JSON, str as raw). POST only.",
     )
     timeout: float | None = Field(
         default=30.0,
-        description="Request timeout in seconds.",
+        description="Timeout in seconds.",
     )
 
 
@@ -66,10 +61,8 @@ class X402CheckPrice(X402BaseSkill):
 
     name: str = "x402_check_price"
     description: str = (
-        "Check the price of a 402-protected HTTP resource. "
-        "Sends a request without payment to retrieve payment requirements. "
-        "Returns the price information including amount, asset, network, and description. "
-        "Use this to preview costs before making a paid request."
+        "Check the price of a 402-protected resource without paying. "
+        "Returns payment requirements (amount, asset, network)."
     )
     args_schema: ArgsSchema | None = X402CheckPriceInput
 

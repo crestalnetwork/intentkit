@@ -16,17 +16,15 @@ class DappLookerTokenDataInput(BaseModel):
     """Input for DappLooker token data tool."""
 
     token_tickers: str | None = Field(
-        description="Comma-separated list of AI agent token tickers (e.g., 'aixbt,vader'). "
-        "Either token_tickers or token_addresses must be provided.",
+        description="Comma-separated token tickers (e.g., 'aixbt,vader').",
         default=None,
     )
     token_addresses: str | None = Field(
-        description="Comma-separated list of AI agent token contract addresses (e.g., '0x4F9Fd6Be4a90f2620860d680c0d4d5Fb53d1A825'). "
-        "Either token_tickers or token_addresses must be provided.",
+        description="Comma-separated token contract addresses.",
         default=None,
     )
     chain: str = Field(
-        description="Blockchain network to query (e.g., 'base', 'ethereum').",
+        description="Blockchain network (e.g., base, ethereum).",
         default="base",
     )
 
@@ -45,12 +43,8 @@ class DappLookerTokenData(DappLookerBaseTool):
 
     name: str = "dapplooker_token_data"
     description: str = (
-        "Retrieve detailed token market data and analytics for AI agent tokens using DappLooker. "
-        "Use this tool when you need current information about AI-focused crypto tokens, "
-        "including price, market cap, volume, technical indicators, holder insights, and developer activity.\n"
-        "You can query by token ticker (e.g., 'aixbt', 'vader') or by token contract address. "
-        "Note that this tool is specialized for AI agent tokens and may not return data for general cryptocurrencies like ETH, BTC, or SOL.\n"
-        "Either token_tickers or token_addresses must be provided."
+        "Fetch AI agent token market data from DappLooker. "
+        "Query by ticker or contract address. Provide token_tickers or token_addresses."
     )
     args_schema: ArgsSchema | None = DappLookerTokenDataInput
 

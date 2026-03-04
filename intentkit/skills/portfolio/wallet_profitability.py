@@ -13,19 +13,17 @@ logger = logging.getLogger(__name__)
 class WalletProfitabilityInput(BaseModel):
     """Input for wallet profitability breakdown tool."""
 
-    address: str = Field(
-        description="The wallet address to get profitability breakdown for."
-    )
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     days: str | None = Field(
-        description="Timeframe in days for which profitability is calculated. Options: 'all', '7', '30', '60', '90'.",
+        description="Timeframe: all, 7, 30, 60, or 90.",
         default="all",
     )
     token_addresses: list[str] | None = Field(
-        description="The token addresses list to filter the result with.",
+        description="Filter by token addresses.",
         default=None,
     )
 
@@ -38,10 +36,7 @@ class WalletProfitability(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_profitability"
-    description: str = (
-        "Retrieve detailed profitability breakdown for a wallet, including profit/loss per token, "
-        "average buy/sell prices, and realized profits. Can be filtered by specific tokens."
-    )
+    description: str = "Get per-token profitability breakdown for a wallet."
     args_schema: ArgsSchema | None = WalletProfitabilityInput
 
     async def _arun(

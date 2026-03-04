@@ -6,36 +6,32 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_chain_historical_tvl
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_HISTORICAL_TVL_PROMPT = """
-This tool fetches historical Total Value Locked (TVL) data for a specific blockchain.
-Provide the chain name (e.g., "ethereum", "solana") to get its TVL history.
-Returns a time series of TVL values with their corresponding dates.
-"""
+FETCH_HISTORICAL_TVL_PROMPT = (
+    """Fetch historical TVL for a specific chain via DefiLlama."""
+)
 
 
 class HistoricalTVLDataPoint(BaseModel):
     """Model representing a single TVL data point."""
 
-    date: int = Field(..., description="Unix timestamp of the TVL measurement")
-    tvl: float = Field(..., description="Total Value Locked in USD at this timestamp")
+    date: int = Field(..., description="Unix timestamp")
+    tvl: float = Field(..., description="TVL in USD")
 
 
 class FetchChainHistoricalTVLInput(BaseModel):
     """Input schema for fetching chain-specific historical TVL data."""
 
-    chain: str = Field(
-        ..., description="Chain name to fetch TVL for (e.g., 'ethereum', 'solana')"
-    )
+    chain: str = Field(..., description="Chain name (e.g. 'ethereum')")
 
 
 class FetchChainHistoricalTVLResponse(BaseModel):
     """Response schema for chain-specific historical TVL data."""
 
-    chain: str = Field(..., description="Normalized chain name")
+    chain: str = Field(..., description="Chain name")
     data: list[HistoricalTVLDataPoint] = Field(
-        default_factory=list, description="List of historical TVL data points"
+        default_factory=list, description="TVL data points"
     )
-    error: str | None = Field(default=None, description="Error message if any")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchChainHistoricalTvl(DefiLlamaBaseTool):

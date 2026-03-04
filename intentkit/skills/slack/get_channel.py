@@ -12,11 +12,11 @@ class SlackGetChannelSchema(BaseModel):
 
     channel_id: str | None = Field(
         None,
-        description="The ID of the channel to get information about. Provide either channel_id or channel_name.",
+        description="Channel ID (provide either ID or name)",
     )
     channel_name: str | None = Field(
         None,
-        description="The name of the channel to get information about. Provide either channel_id or channel_name.",
+        description="Channel name (provide either ID or name)",
     )
 
 

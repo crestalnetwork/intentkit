@@ -9,14 +9,14 @@ class SlackSendMessageSchema(BaseModel):
     """Input schema for SlackSendMessage."""
 
     channel_id: str = Field(
-        description="The ID of the channel to send the message to",
+        description="Channel ID",
     )
     text: str = Field(
-        description="The text content of the message to send",
+        description="Message text",
     )
     thread_ts: str | None = Field(
         None,
-        description="The timestamp of the thread to reply to, if sending a thread reply",
+        description="Thread timestamp to reply to",
     )
 
 

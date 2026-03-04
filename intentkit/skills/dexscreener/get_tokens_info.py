@@ -29,11 +29,10 @@ class GetTokensInfoInput(BaseModel):
     """Input schema for the DexScreener get_tokens_info tool."""
 
     chain_id: str = Field(
-        description="The blockchain chain ID (e.g., 'ethereum', 'solana', 'bsc', 'polygon', 'arbitrum', 'base', 'avalanche')"
+        description="Blockchain chain ID (e.g., ethereum, solana, bsc)"
     )
     token_addresses: list[str] = Field(
-        description=f"List of token contract addresses to retrieve info for (maximum {MAX_TOKENS_BATCH} addresses). "
-        "Each address should be in the format '0x1234...abcd' for Ethereum-based chains."
+        description=f"List of token contract addresses (max {MAX_TOKENS_BATCH})"
     )
 
     @field_validator("token_addresses")
@@ -59,13 +58,7 @@ class GetTokensInfo(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_get_tokens_info"
-    description: str = (
-        f"Retrieves detailed trading pair information for multiple tokens (up to {MAX_TOKENS_BATCH}) "
-        "using chain ID and a list of token addresses. For each token, returns all available "
-        "trading pairs with price, volume, liquidity, market data, and DEX information. "
-        "This is more efficient than making individual calls when you need info for multiple tokens. "
-        "Use this tool for portfolio analysis or comparing multiple tokens at once."
-    )
+    description: str = f"Get trading pair info for multiple tokens (up to {MAX_TOKENS_BATCH}) by chain ID and addresses."
     args_schema: ArgsSchema | None = GetTokensInfoInput
 
     async def _arun(

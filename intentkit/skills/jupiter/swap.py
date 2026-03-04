@@ -6,28 +6,15 @@ from intentkit.skills.jupiter.base import JupiterBaseTool
 
 
 class JupiterGetQuoteInput(BaseModel):
-    input_mint: str = Field(
-        description="The Mint Address of the token to swap FROM. (e.g., 'So111...' or 'SOL')"
-    )
-    output_mint: str = Field(
-        description="The Mint Address of the token to swap TO. (e.g., 'EPj...' or 'USDC')"
-    )
-    amount: int = Field(
-        description="The amount to swap in atomic units (e.g., 1000000000 for 1 SOL)."
-    )
-    slippage_bps: int = Field(
-        default=50,
-        description="Slippage tolerance in basis points. 50 = 0.5%.",
-    )
+    input_mint: str = Field(description="Token to swap FROM (symbol or mint address)")
+    output_mint: str = Field(description="Token to swap TO (symbol or mint address)")
+    amount: int = Field(description="Amount in atomic units")
+    slippage_bps: int = Field(default=50, description="Slippage in basis points")
 
 
 class JupiterGetQuote(JupiterBaseTool):
     name: str = "jupiter_get_quote"
-    description: str = (
-        "Get a swap quote from Jupiter Aggregator V6. "
-        "Returns the best route and estimated output amount. "
-        "Does NOT execute the swap."
-    )
+    description: str = "Get a swap quote from Jupiter. Returns best route and estimated output. Does NOT execute."
     args_schema: ArgsSchema | None = JupiterGetQuoteInput
 
     async def _arun(

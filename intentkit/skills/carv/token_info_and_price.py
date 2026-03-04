@@ -11,14 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class TokenInfoAndPriceInput(BaseModel):
-    ticker: str = Field(
-        description="The token's ticker symbol (e.g., 'eth', 'btc', 'sol', 'xrp')."
-    )
-    token_name: str = Field(
-        description="The token name (e.g ethereum, bitcoin, solana, ripple)"
-    )
+    ticker: str = Field(description="Token ticker symbol (e.g., 'eth', 'btc')")
+    token_name: str = Field(description="Token name (e.g., 'ethereum', 'bitcoin')")
     amount: float | None = Field(
-        description="(optional) amount of token, fill this if user asking for how much x amount of specific token worth"
+        description="Token amount for value calculation (optional)"
     )
 
 
@@ -33,11 +29,8 @@ class TokenInfoAndPriceTool(CarvBaseTool):
 
     name: str = "carv_token_info_and_price"
     description: str = (
-        "Fetches detailed information and the current USD price of a cryptocurrency token from the CARV API, "
-        "given its ticker symbol (e.g., 'eth', 'btc', 'aave'). or token name"
-        "Returns metadata including the token's name, symbol, platform, category tags, and contract addresses "
-        "Useful for understanding a token's identity, ecosystem, and market value"
-        "Use this tool when you need comprehensive token data and live pricing from CARV."
+        "Get token info and current USD price from CARV by ticker or name. "
+        "Returns metadata including symbol, platform, tags, and contract addresses."
     )
     args_schema: ArgsSchema | None = TokenInfoAndPriceInput
 

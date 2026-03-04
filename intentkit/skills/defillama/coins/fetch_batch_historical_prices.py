@@ -6,42 +6,29 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_batch_historical_prices
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_BATCH_HISTORICAL_PRICES_PROMPT = """
-This tool fetches historical token prices from DeFi Llama for multiple tokens at multiple timestamps.
-Provide a dictionary mapping token identifiers to lists of timestamps in the format:
-- Ethereum tokens: {"ethereum:0x...": [timestamp1, timestamp2]}
-- Other chains: {"chainname:0x...": [timestamp1, timestamp2]}
-- CoinGecko IDs: {"coingecko:bitcoin": [timestamp1, timestamp2]}
-Returns historical price data including:
-- Prices in USD at each timestamp
-- Token symbols
-- Confidence scores for price data
-Uses a 4-hour search window around each specified timestamp.
-"""
+FETCH_BATCH_HISTORICAL_PRICES_PROMPT = """Fetch historical prices for multiple tokens at multiple timestamps via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class HistoricalPricePoint(BaseModel):
     """Model representing a single historical price point."""
 
-    timestamp: int = Field(..., description="Unix timestamp of the price data")
-    price: float = Field(..., description="Token price in USD at the timestamp")
-    confidence: float = Field(..., description="Confidence score for the price data")
+    timestamp: int = Field(..., description="Unix timestamp")
+    price: float = Field(..., description="Price in USD")
+    confidence: float = Field(..., description="Confidence score")
 
 
 class TokenPriceHistory(BaseModel):
     """Model representing historical price data for a single token."""
 
-    symbol: str = Field(..., description="Token symbol")
-    prices: list[HistoricalPricePoint] = Field(
-        ..., description="List of historical price points"
-    )
+    symbol: str = Field(..., description="Symbol")
+    prices: list[HistoricalPricePoint] = Field(..., description="Price points")
 
 
 class FetchBatchHistoricalPricesInput(BaseModel):
     """Input schema for fetching batch historical token prices."""
 
     coins_timestamps: dict[str, list[int]] = Field(
-        ..., description="Dictionary mapping token identifiers to lists of timestamps"
+        ..., description="Map of token ID to list of unix timestamps"
     )
 
 
@@ -49,10 +36,9 @@ class FetchBatchHistoricalPricesResponse(BaseModel):
     """Response schema for batch historical token prices."""
 
     coins: dict[str, TokenPriceHistory] = Field(
-        default_factory=dict,
-        description="Historical token prices keyed by token identifier",
+        default_factory=dict, description="Prices by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):

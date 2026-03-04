@@ -13,43 +13,41 @@ logger = logging.getLogger(__name__)
 class ERC20TransfersInput(BaseModel):
     """Input for ERC20 transfers tool."""
 
-    address: str = Field(
-        description="The address of the wallet to get ERC20 token transfers for."
-    )
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query, e.g. 'eth', 'bsc', 'polygon'.",
         default=DEFAULT_CHAIN,
     )
     contract_addresses: list[str] | None = Field(
-        description="List of contract addresses of transfers to filter by.",
+        description="Filter by contract addresses.",
         default=None,
     )
     from_block: int | None = Field(
-        description="The minimum block number from which to get the transactions.",
+        description="Minimum block number.",
         default=None,
     )
     to_block: int | None = Field(
-        description="The maximum block number from which to get the transactions.",
+        description="Maximum block number.",
         default=None,
     )
     from_date: str | None = Field(
-        description="The start date from which to get the transactions (any format accepted by momentjs).",
+        description="Start date filter.",
         default=None,
     )
     to_date: str | None = Field(
-        description="Get the transactions up to this date (any format accepted by momentjs).",
+        description="End date filter.",
         default=None,
     )
     limit: int | None = Field(
-        description="The desired page size of the result.",
+        description="Page size.",
         default=DEFAULT_LIMIT,
     )
     order: str | None = Field(
-        description="The order of the result, in ascending (ASC) or descending (DESC).",
+        description="Sort order: ASC or DESC.",
         default=DEFAULT_ORDER,
     )
     cursor: str | None = Field(
-        description="The cursor returned in the previous response (for pagination).",
+        description="Pagination cursor.",
         default=None,
     )
 
@@ -62,10 +60,7 @@ class ERC20Transfers(TokenBaseTool):
     """
 
     name: str = "token_erc20_transfers"
-    description: str = (
-        "Get ERC20 token transactions for a wallet address, ordered by block number. "
-        "Returns transaction details, token information, and wallet interactions."
-    )
+    description: str = "Get ERC20 token transfers for a wallet address."
     args_schema: ArgsSchema | None = ERC20TransfersInput
 
     async def _arun(

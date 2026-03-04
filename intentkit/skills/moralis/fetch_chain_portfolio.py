@@ -14,58 +14,52 @@ logger = logging.getLogger(__name__)
 class FetchChainPortfolioInput(BaseModel):
     """Input for FetchChainPortfolio tool."""
 
-    address: str = Field(..., description="Wallet address")
-    chain_id: int = Field(..., description="Chain ID to fetch portfolio for")
+    address: str = Field(..., description="Wallet address.")
+    chain_id: int = Field(..., description="Chain ID.")
     include_approvals: bool = Field(
-        default=False, description="Whether to include token approvals in the response"
+        default=False, description="Include token approvals."
     )
 
 
 class ChainTokenBalance(BaseModel):
     """Model for token balance on a specific chain."""
 
-    contract_address: str = Field(..., description="Token contract address")
-    symbol: str = Field(..., description="Token symbol")
-    name: str = Field(..., description="Token name")
-    logo: str | None = Field(None, description="Token logo URL")
-    decimals: int = Field(..., description="Token decimals")
-    balance: float = Field(..., description="Token balance")
-    balance_raw: str = Field(..., description="Raw token balance")
-    balance_usd: float = Field(0.0, description="USD value of token balance")
+    contract_address: str = Field(..., description="Contract address.")
+    symbol: str = Field(..., description="Token symbol.")
+    name: str = Field(..., description="Token name.")
+    logo: str | None = Field(None, description="Logo URL.")
+    decimals: int = Field(..., description="Decimals.")
+    balance: float = Field(..., description="Balance.")
+    balance_raw: str = Field(..., description="Raw balance.")
+    balance_usd: float = Field(0.0, description="USD value.")
 
 
 class TokenApproval(BaseModel):
     """Model for token approval."""
 
-    token_address: str = Field(..., description="Token contract address")
-    token_symbol: str | None = Field(None, description="Token symbol")
-    token_name: str | None = Field(None, description="Token name")
-    spender: str = Field(..., description="Spender address (contract)")
-    spender_name: str | None = Field(None, description="Spender name if known")
-    allowance: str = Field(..., description="Raw approval amount")
-    allowance_formatted: float | None = Field(
-        None, description="Formatted approval amount"
-    )
-    unlimited: bool = Field(False, description="Whether the approval is unlimited")
+    token_address: str = Field(..., description="Token address.")
+    token_symbol: str | None = Field(None, description="Token symbol.")
+    token_name: str | None = Field(None, description="Token name.")
+    spender: str = Field(..., description="Spender address.")
+    spender_name: str | None = Field(None, description="Spender name.")
+    allowance: str = Field(..., description="Raw allowance.")
+    allowance_formatted: float | None = Field(None, description="Formatted allowance.")
+    unlimited: bool = Field(False, description="Unlimited approval.")
 
 
 class ChainPortfolioOutput(BaseModel):
     """Output for FetchChainPortfolio tool."""
 
-    address: str = Field(..., description="Wallet address")
-    chain_id: int = Field(..., description="Chain ID")
-    chain_name: str = Field(..., description="Chain name")
-    native_token: ChainTokenBalance | None = Field(
-        None, description="Native token balance"
-    )
+    address: str = Field(..., description="Wallet address.")
+    chain_id: int = Field(..., description="Chain ID.")
+    chain_name: str = Field(..., description="Chain name.")
+    native_token: ChainTokenBalance | None = Field(None, description="Native token.")
     tokens: list[ChainTokenBalance] = Field(
-        default_factory=list, description="List of token balances"
+        default_factory=list, description="Token balances."
     )
-    total_usd_value: float = Field(0.0, description="Total USD value on this chain")
-    approvals: list[TokenApproval] | None = Field(
-        None, description="Token approvals if requested"
-    )
-    error: str | None = Field(None, description="Error message if any")
+    total_usd_value: float = Field(0.0, description="Total USD value.")
+    approvals: list[TokenApproval] | None = Field(None, description="Token approvals.")
+    error: str | None = Field(None, description="Error message.")
 
 
 class FetchChainPortfolio(WalletBaseTool):
@@ -77,15 +71,7 @@ class FetchChainPortfolio(WalletBaseTool):
 
     name: str = "moralis_fetch_chain_portfolio"
     description: str = (
-        "This tool fetches wallet portfolio data for a specific blockchain.\n"
-        "Provide a wallet address and chain ID to get detailed information about tokens and their values.\n"
-        "Returns:\n"
-        "- Token balances for the specified chain\n"
-        "- USD value of each token\n"
-        "- Total chain value\n"
-        "- Token metadata (symbol, name, decimals)\n"
-        "- Token approvals (optional)\n"
-        "Use this tool whenever a user wants to see their holdings on a specific blockchain."
+        "Fetch wallet token balances and USD values for a specific blockchain."
     )
     args_schema: ArgsSchema | None = FetchChainPortfolioInput
 

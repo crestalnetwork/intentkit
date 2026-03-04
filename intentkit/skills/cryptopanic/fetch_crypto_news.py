@@ -16,26 +16,24 @@ BASE_URL = "https://cryptopanic.com/api/v1/posts/"
 class CryptopanicNewsInput(BaseModel):
     """Input schema for fetching crypto news."""
 
-    query: str = Field(description="Query to specify currency (e.g., 'btc news')")
-    currency: str = Field(
-        default="BTC", description="Currency to fetch news for (BTC or ETH)"
-    )
+    query: str = Field(description="Search query (e.g., 'btc news')")
+    currency: str = Field(default="BTC", description="BTC or ETH")
 
 
 class NewsItem(BaseModel):
     """Data model for a single news item."""
 
-    title: str = Field(description="News headline")
-    published_at: str = Field(description="Publication timestamp")
-    source: str = Field(description="News source domain")
+    title: str
+    published_at: str
+    source: str
 
 
 class CryptopanicNewsOutput(BaseModel):
     """Output schema for fetching crypto news."""
 
-    currency: str = Field(description="Currency news was fetched for")
-    news_items: list[NewsItem] = Field(description="List of news items")
-    summary: str = Field(description="Summary of fetched news")
+    currency: str
+    news_items: list[NewsItem]
+    summary: str
 
 
 class FetchCryptoNews(CryptopanicBaseTool):
@@ -43,8 +41,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
 
     name: str = "fetch_crypto_news"
     description: str = (
-        "Fetches all crypto market news posts from CryptoPanic for BTC or ETH, "
-        "sorted by publication date (newest first). Defaults to BTC."
+        "Fetch latest crypto news for BTC or ETH from CryptoPanic, sorted by recency."
     )
     args_schema: ArgsSchema | None = CryptopanicNewsInput
 

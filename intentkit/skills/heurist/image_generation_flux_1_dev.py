@@ -16,23 +16,12 @@ logger = logging.getLogger(__name__)
 class ImageGenerationFlux1DevInput(BaseModel):
     """Input for ImageGenerationFlux1Dev tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     neg_prompt: str | None = Field(
-        default="",
-        description="Negative prompt describing what to avoid in the generated image.",
+        default="", description="What to avoid in the image."
     )
-    width: int | None = Field(
-        default=1024,
-        le=2048,
-        description="Width of the generated image.",
-    )
-    height: int | None = Field(
-        default=1024,
-        le=2048,
-        description="Height of the generated image.",
-    )
+    width: int | None = Field(default=1024, le=2048, description="Image width.")
+    height: int | None = Field(default=1024, le=2048, description="Image height.")
 
 
 class ImageGenerationFlux1Dev(HeuristBaseTool):
@@ -49,10 +38,8 @@ class ImageGenerationFlux1Dev(HeuristBaseTool):
 
     name: str = "heurist_image_generation_flux_1_dev"
     description: str = (
-        "Generate images using Heurist AI's Flux.1-dev model.\n"
-        "Provide a text prompt describing the image you want to generate.\n"
-        "Flux.1-dev is a versatile, general-purpose model capable of generating images in any style.\n"
-        "If you have height and width, remember to specify them.\n"
+        "Generate images using Heurist Flux.1-dev model, a versatile general-purpose model. "
+        "Provide a text prompt and optionally specify width/height."
     )
     args_schema: ArgsSchema | None = ImageGenerationFlux1DevInput
 

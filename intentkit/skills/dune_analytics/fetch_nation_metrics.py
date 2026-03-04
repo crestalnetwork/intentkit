@@ -52,28 +52,24 @@ class NationMetricsInput(BaseModel):
 
     metric: str = Field(
         default="",
-        description="Metric name (e.g., total_users, agents) or query ID (e.g., 4858003). Empty for all configured metrics.",
+        description="Metric name or query ID. Empty for all metrics.",
     )
-    limit: int = Field(
-        default=1000, description="Maximum number of results to fetch (default 1000)."
-    )
+    limit: int = Field(default=1000, description="Max results to fetch.")
 
 
 class MetricData(BaseModel):
     """Data model for a single metric result."""
 
-    metric: str = Field(description="Metric name or query ID")
-    data: dict[str, Any] = Field(description="Metric data from Dune API")
-    error: str = Field(default="", description="Error message if fetch failed")
+    metric: str = Field(description="Metric name or query ID.")
+    data: dict[str, Any] = Field(description="Metric data.")
+    error: str = Field(default="", description="Error message.")
 
 
 class NationMetricsOutput(BaseModel):
     """Output schema for Crestal Nation metrics."""
 
-    metrics: dict[str, MetricData] = Field(
-        description="Dictionary of metric names or query IDs to their data"
-    )
-    summary: str = Field(description="Summary of fetched metrics")
+    metrics: dict[str, MetricData] = Field(description="Metric results.")
+    summary: str = Field(description="Summary.")
 
 
 class FetchNationMetrics(DuneBaseTool):
@@ -81,9 +77,8 @@ class FetchNationMetrics(DuneBaseTool):
 
     name: str = "dune_fetch_nation_metrics"
     description: str = (
-        "Fetches Crestal Nation metrics (e.g., total_users, agents/citizens, market_cap) from Dune Analytics API. "
-        "Supports predefined metrics, direct query IDs, or all configured metrics if none specified. "
-        "Handles rate limits with retries."
+        "Fetch Crestal Nation metrics from Dune Analytics. "
+        "Supports predefined metrics or direct query IDs."
     )
     args_schema: ArgsSchema | None = NationMetricsInput
 

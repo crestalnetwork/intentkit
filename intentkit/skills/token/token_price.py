@@ -13,31 +13,29 @@ logger = logging.getLogger(__name__)
 class TokenPriceInput(BaseModel):
     """Input for token price tool."""
 
-    address: str = Field(
-        description="The address of the token contract to get price for."
-    )
+    address: str = Field(description="Token contract address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query, e.g. 'eth', 'bsc', 'polygon'.",
         default=DEFAULT_CHAIN,
     )
     include: str | None = Field(
-        description="If the result should contain the 24hr percent change (use 'percent_change').",
+        description="Set to 'percent_change' for 24hr change.",
         default=None,
     )
     exchange: str | None = Field(
-        description="The factory name or address of the token exchange.",
+        description="Exchange name or address.",
         default=None,
     )
     to_block: int | None = Field(
-        description="The block number from which the token price should be checked.",
+        description="Block number for price check.",
         default=None,
     )
     max_token_inactivity: int | None = Field(
-        description="Exclude tokens inactive for more than the given amount of days.",
+        description="Max inactive days to exclude.",
         default=None,
     )
     min_pair_side_liquidity_usd: int | None = Field(
-        description="Exclude tokens with liquidity less than the specified amount in USD.",
+        description="Min liquidity in USD.",
         default=None,
     )
 
@@ -50,10 +48,7 @@ class TokenPrice(TokenBaseTool):
     """
 
     name: str = "token_price"
-    description: str = (
-        "Get the token price denominated in the blockchain's native token and USD for a given token contract address. "
-        "Returns price, token information and exchange data."
-    )
+    description: str = "Get token price in native currency and USD."
     args_schema: ArgsSchema | None = TokenPriceInput
 
     async def _arun(

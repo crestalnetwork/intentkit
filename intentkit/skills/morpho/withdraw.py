@@ -14,16 +14,12 @@ from intentkit.skills.morpho.constants import METAMORPHO_ABI, SUPPORTED_NETWORKS
 class WithdrawInput(BaseModel):
     """Input schema for Morpho withdraw."""
 
-    vault_address: str = Field(
-        ..., description="The address of the Morpho Vault to withdraw from"
-    )
+    vault_address: str = Field(..., description="Morpho Vault address")
     assets: str = Field(
         ...,
-        description="The amount of assets to withdraw in whole units (e.g., '1' for 1 WETH)",
+        description="Amount in whole units (e.g. '1' for 1 WETH)",
     )
-    receiver: str = Field(
-        ..., description="The address to receive the withdrawn assets"
-    )
+    receiver: str = Field(..., description="Address to receive withdrawn assets")
 
 
 class MorphoWithdraw(MorphoBaseTool):
@@ -33,17 +29,7 @@ class MorphoWithdraw(MorphoBaseTool):
     """
 
     name: str = "morpho_withdraw"
-    description: str = """Withdraw assets from a Morpho Vault.
-
-Inputs:
-- vault_address: The address of the Morpho Vault to withdraw from
-- assets: The amount of assets to withdraw in whole units (e.g., '1' for 1 WETH)
-- receiver: The address to receive the withdrawn assets
-
-Important notes:
-- Make sure you have enough shares in the vault to cover the withdrawal.
-- The assets amount should be in whole units (e.g., '1' for 1 token, '0.5' for 0.5 tokens).
-"""
+    description: str = "Withdraw assets from a Morpho Vault. Ensure sufficient vault shares. Amount in whole units."
     args_schema: ArgsSchema | None = WithdrawInput
 
     async def _arun(

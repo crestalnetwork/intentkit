@@ -7,76 +7,52 @@ from intentkit.skills.base import NoArgsSchema
 from intentkit.skills.defillama.api import fetch_stablecoins
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_STABLECOINS_PROMPT = """
-This tool fetches comprehensive stablecoin data from DeFi Llama.
-Returns:
-- List of stablecoins with details like name, symbol, market cap
-- Per-chain circulating amounts
-- Historical circulating amounts (day/week/month)
-- Current prices and price history
-- Peg mechanism and type information
-"""
+FETCH_STABLECOINS_PROMPT = """Fetch all stablecoins data from DefiLlama including supply, prices, and peg info."""
 
 
 class CirculatingAmount(BaseModel):
     """Model representing circulating amounts for a specific peg type."""
 
-    peggedUSD: float = Field(..., description="Amount pegged to USD")
+    peggedUSD: float = Field(..., description="USD pegged amount")
 
 
 class ChainCirculating(BaseModel):
     """Model representing circulating amounts on a specific chain."""
 
-    current: CirculatingAmount = Field(..., description="Current circulating amount")
-    circulatingPrevDay: CirculatingAmount = Field(
-        ..., description="Circulating amount from previous day"
-    )
-    circulatingPrevWeek: CirculatingAmount = Field(
-        ..., description="Circulating amount from previous week"
-    )
-    circulatingPrevMonth: CirculatingAmount = Field(
-        ..., description="Circulating amount from previous month"
-    )
+    current: CirculatingAmount = Field(..., description="Current")
+    circulatingPrevDay: CirculatingAmount = Field(..., description="Previous day")
+    circulatingPrevWeek: CirculatingAmount = Field(..., description="Previous week")
+    circulatingPrevMonth: CirculatingAmount = Field(..., description="Previous month")
 
 
 class Stablecoin(BaseModel):
     """Model representing a single stablecoin's data."""
 
-    id: str = Field(..., description="Unique identifier")
-    name: str = Field(..., description="Stablecoin name")
-    symbol: str = Field(..., description="Token symbol")
-    gecko_id: str | None = Field(None, description="CoinGecko ID if available")
-    pegType: str = Field(..., description="Type of peg (e.g. peggedUSD)")
-    priceSource: str = Field(..., description="Source of price data")
-    pegMechanism: str = Field(..., description="Mechanism maintaining the peg")
-    circulating: CirculatingAmount = Field(
-        ..., description="Current total circulating amount"
-    )
-    circulatingPrevDay: CirculatingAmount = Field(
-        ..., description="Total circulating amount from previous day"
-    )
-    circulatingPrevWeek: CirculatingAmount = Field(
-        ..., description="Total circulating amount from previous week"
-    )
-    circulatingPrevMonth: CirculatingAmount = Field(
-        ..., description="Total circulating amount from previous month"
-    )
+    id: str = Field(..., description="ID")
+    name: str = Field(..., description="Name")
+    symbol: str = Field(..., description="Symbol")
+    gecko_id: str | None = Field(None, description="CoinGecko ID")
+    pegType: str = Field(..., description="Peg type")
+    priceSource: str = Field(..., description="Price source")
+    pegMechanism: str = Field(..., description="Peg mechanism")
+    circulating: CirculatingAmount = Field(..., description="Current circulating")
+    circulatingPrevDay: CirculatingAmount = Field(..., description="Previous day")
+    circulatingPrevWeek: CirculatingAmount = Field(..., description="Previous week")
+    circulatingPrevMonth: CirculatingAmount = Field(..., description="Previous month")
     chainCirculating: dict[str, ChainCirculating] = Field(
-        ..., description="Circulating amounts per chain"
+        ..., description="Per-chain circulating"
     )
-    chains: list[str] = Field(
-        ..., description="List of chains where the stablecoin is present"
-    )
-    price: float = Field(..., description="Current price in USD")
+    chains: list[str] = Field(..., description="Chains present on")
+    price: float = Field(..., description="Price in USD")
 
 
 class FetchStablecoinsResponse(BaseModel):
     """Response schema for stablecoin data."""
 
     peggedAssets: list[Stablecoin] = Field(
-        default_factory=list, description="List of stablecoins with their data"
+        default_factory=list, description="Stablecoins"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchStablecoins(DefiLlamaBaseTool):

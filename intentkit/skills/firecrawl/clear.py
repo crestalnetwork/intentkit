@@ -14,7 +14,7 @@ class FirecrawlClearInput(BaseModel):
     """Input for Firecrawl clear tool."""
 
     confirm: bool = Field(
-        description="Confirmation to clear all indexed content (must be true)",
+        description="Must be true to confirm deletion.",
         default=False,
     )
 
@@ -27,11 +27,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
     """
 
     name: str = "firecrawl_clear_indexed_content"
-    description: str = (
-        "Clear all previously indexed Firecrawl content from the vector store.\n"
-        "This will permanently delete all indexed content and cannot be undone.\n"
-        "Use this tool when you want to start fresh with new content."
-    )
+    description: str = "Permanently clear all indexed Firecrawl content from the vector store. Cannot be undone."
     args_schema: ArgsSchema | None = FirecrawlClearInput
 
     async def _arun(

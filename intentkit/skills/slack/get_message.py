@@ -11,19 +11,19 @@ class SlackGetMessageSchema(BaseModel):
     """Input schema for SlackGetMessage."""
 
     channel_id: str = Field(
-        description="The ID of the channel containing the message",
+        description="Channel ID",
     )
     ts: str | None = Field(
         None,
-        description="The timestamp of a specific message to retrieve. If not provided, returns recent messages.",
+        description="Message timestamp to retrieve a specific message",
     )
     thread_ts: str | None = Field(
         None,
-        description="If provided, retrieve messages from this thread instead of the channel.",
+        description="Thread timestamp to retrieve thread replies",
     )
     limit: int | None = Field(
         10,
-        description="The maximum number of messages to return (1-100, default 10).",
+        description="Max messages to return (1-100)",
     )
 
 

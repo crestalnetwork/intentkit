@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 class SupabaseInsertDataInput(BaseModel):
     """Input for SupabaseInsertData tool."""
 
-    table: str = Field(description="The name of the table to insert data into")
+    table: str = Field(description="Table name")
     data: dict[str, Any] | list[dict[str, Any]] = Field(
-        description="The data to insert. Can be a single object or a list of objects"
+        description="Object or list of objects to insert"
     )
     returning: str = Field(
         default="*",
-        description="Columns to return after insertion (default: '*' for all)",
+        description="Columns to return after insertion",
     )
 
 

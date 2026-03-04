@@ -24,9 +24,7 @@ AVATAR_PROMPT_PREFIX = (
 class GPTAvatarGeneratorInput(BaseModel):
     """Input schema for the GPT avatar generator skill."""
 
-    prompt: str = Field(
-        description="Description of the avatar or profile image to generate.",
-    )
+    prompt: str = Field(description="Avatar description prompt.")
 
 
 class GPTAvatarGenerator(OpenAIBaseTool):

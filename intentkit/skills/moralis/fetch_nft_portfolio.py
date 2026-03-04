@@ -16,63 +16,50 @@ logger = logging.getLogger(__name__)
 class FetchNftPortfolioInput(BaseModel):
     """Input for FetchNftPortfolio tool."""
 
-    address: str = Field(..., description="Wallet address")
-    chain_id: int | None = Field(
-        None,
-        description="Chain ID (if not specified, fetches from all supported chains)",
-    )
-    include_solana: bool = Field(
-        default=False, description="Whether to include Solana NFTs"
-    )
+    address: str = Field(..., description="Wallet address.")
+    chain_id: int | None = Field(None, description="Chain ID (all chains if empty).")
+    include_solana: bool = Field(default=False, description="Include Solana NFTs.")
     solana_network: str = Field(
-        default="mainnet", description="Solana network to use (mainnet or devnet)"
+        default="mainnet", description="Solana network: mainnet or devnet."
     )
-    limit: int | None = Field(100, description="Maximum number of NFTs to return")
-    normalize_metadata: bool = Field(
-        True, description="Whether to normalize metadata across different standards"
-    )
+    limit: int | None = Field(100, description="Max NFTs to return.")
+    normalize_metadata: bool = Field(True, description="Normalize metadata.")
 
 
 class NftMetadata(BaseModel):
     """Model for NFT metadata."""
 
-    name: str | None = Field(None, description="NFT name")
-    description: str | None = Field(None, description="NFT description")
-    image: str | None = Field(None, description="NFT image URL")
-    animation_url: str | None = Field(None, description="NFT animation URL")
-    attributes: list[dict[str, Any]] | None = Field(
-        None, description="NFT attributes/traits"
-    )
-    external_url: str | None = Field(None, description="External URL")
+    name: str | None = Field(None, description="Name.")
+    description: str | None = Field(None, description="Description.")
+    image: str | None = Field(None, description="Image URL.")
+    animation_url: str | None = Field(None, description="Animation URL.")
+    attributes: list[dict[str, Any]] | None = Field(None, description="Traits.")
+    external_url: str | None = Field(None, description="External URL.")
 
 
 class NftItem(BaseModel):
     """Model for an NFT item."""
 
-    token_id: str = Field(..., description="NFT token ID")
-    token_address: str = Field(..., description="NFT contract address")
-    contract_type: str | None = Field(
-        None, description="NFT contract type (ERC721, ERC1155, etc.)"
-    )
-    name: str | None = Field(None, description="NFT name")
-    symbol: str | None = Field(None, description="NFT symbol")
-    owner_of: str = Field(..., description="Owner address")
-    metadata: NftMetadata | None = Field(None, description="NFT metadata")
-    floor_price: float | None = Field(None, description="Floor price if available")
-    chain: str = Field("eth", description="Blockchain network")
+    token_id: str = Field(..., description="Token ID.")
+    token_address: str = Field(..., description="Contract address.")
+    contract_type: str | None = Field(None, description="Contract type.")
+    name: str | None = Field(None, description="Name.")
+    symbol: str | None = Field(None, description="Symbol.")
+    owner_of: str = Field(..., description="Owner address.")
+    metadata: NftMetadata | None = Field(None, description="Metadata.")
+    floor_price: float | None = Field(None, description="Floor price.")
+    chain: str = Field("eth", description="Chain.")
 
 
 class NftPortfolioOutput(BaseModel):
     """Output for FetchNftPortfolio tool."""
 
-    address: str = Field(..., description="Wallet address")
-    nfts: list[NftItem] = Field(default_factory=list, description="List of NFT items")
-    total_count: int = Field(0, description="Total count of NFTs")
-    chains: list[str] = Field(
-        default_factory=list, description="Chains included in the response"
-    )
-    cursor: str | None = Field(None, description="Cursor for pagination")
-    error: str | None = Field(None, description="Error message if any")
+    address: str = Field(..., description="Wallet address.")
+    nfts: list[NftItem] = Field(default_factory=list, description="NFT items.")
+    total_count: int = Field(0, description="Total NFTs.")
+    chains: list[str] = Field(default_factory=list, description="Chains queried.")
+    cursor: str | None = Field(None, description="Pagination cursor.")
+    error: str | None = Field(None, description="Error message.")
 
 
 class FetchNftPortfolio(WalletBaseTool):
@@ -84,14 +71,7 @@ class FetchNftPortfolio(WalletBaseTool):
 
     name: str = "moralis_fetch_nft_portfolio"
     description: str = (
-        "This tool fetches NFT holdings for a wallet address.\n"
-        "Provide a wallet address and optionally a chain ID to get detailed information about NFTs.\n"
-        "Returns:\n"
-        "- NFT collection data\n"
-        "- NFT metadata and attributes\n"
-        "- Media URLs if available\n"
-        "- Floor prices if available\n"
-        "Use this tool whenever a user asks about their NFTs or digital collectibles."
+        "Fetch NFT holdings for a wallet, including metadata and floor prices."
     )
     args_schema: ArgsSchema | None = FetchNftPortfolioInput
 

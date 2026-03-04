@@ -6,37 +6,24 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_current_prices
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_PRICES_PROMPT = """
-This tool fetches current token prices from DeFi Llama with a 4-hour search window.
-Provide a list of token identifiers in the format:
-- Ethereum tokens: 'ethereum:0x...'
-- Other chains: 'chainname:0x...'
-- CoinGecko IDs: 'coingecko:bitcoin'
-Returns price data including:
-- Current price in USD
-- Token symbol
-- Price confidence score
-- Token decimals (if available)
-- Last update timestamp
-"""
+FETCH_PRICES_PROMPT = """Fetch current token prices via DefiLlama. Token format: 'chain:address' or 'coingecko:id'."""
 
 
 class TokenPrice(BaseModel):
     """Model representing token price data."""
 
-    price: float = Field(..., description="Current token price in USD")
-    symbol: str = Field(..., description="Token symbol")
-    timestamp: int = Field(..., description="Unix timestamp of last price update")
-    confidence: float = Field(..., description="Confidence score for the price data")
-    decimals: int | None = Field(None, description="Token decimals, if available")
+    price: float = Field(..., description="Price in USD")
+    symbol: str = Field(..., description="Symbol")
+    timestamp: int = Field(..., description="Last update timestamp")
+    confidence: float = Field(..., description="Confidence score")
+    decimals: int | None = Field(None, description="Token decimals")
 
 
 class FetchCurrentPricesInput(BaseModel):
     """Input schema for fetching current token prices with a 4-hour search window."""
 
     coins: list[str] = Field(
-        ...,
-        description="List of token identifiers (e.g. 'ethereum:0x...', 'coingecko:ethereum')",
+        ..., description="Token IDs, e.g. 'ethereum:0x...' or 'coingecko:bitcoin'"
     )
 
 
@@ -44,9 +31,9 @@ class FetchCurrentPricesResponse(BaseModel):
     """Response schema for current token prices."""
 
     coins: dict[str, TokenPrice] = Field(
-        default_factory=dict, description="Token prices keyed by token identifier"
+        default_factory=dict, description="Prices by token ID"
     )
-    error: str | None = Field(None, description="Error message if any")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):

@@ -21,7 +21,7 @@ class KOLBuysInput(BaseModel):
 
     limit: int = Field(
         default=10,
-        description="Maximum number of buy transactions to fetch (default 10).",
+        description="Max transactions to fetch.",
         ge=1,
     )
 
@@ -29,15 +29,15 @@ class KOLBuysInput(BaseModel):
 class KOLBuyData(BaseModel):
     """Data model for KOL buy results."""
 
-    data: dict[str, Any] = Field(description="KOL buy data from Dune API")
-    error: str = Field(default="", description="Error message if fetch failed")
+    data: dict[str, Any] = Field(description="KOL buy data.")
+    error: str = Field(default="", description="Error message.")
 
 
 class KOLBuysOutput(BaseModel):
     """Output schema for KOL memecoin buys."""
 
-    buys: KOLBuyData = Field(description="KOL buy transaction data")
-    summary: str = Field(description="Summary of fetched data")
+    buys: KOLBuyData = Field(description="Buy transactions.")
+    summary: str = Field(description="Summary.")
 
 
 class FetchKOLBuys(DuneBaseTool):
@@ -45,8 +45,7 @@ class FetchKOLBuys(DuneBaseTool):
 
     name: str = "dune_fetch_kol_buys"
     description: str = (
-        "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API using query ID 4832844. "
-        "Supports a configurable limit for the number of results. Handles rate limits with retries."
+        "Fetch KOL memecoin buy transactions on Solana from Dune Analytics."
     )
     args_schema: ArgsSchema | None = KOLBuysInput
 

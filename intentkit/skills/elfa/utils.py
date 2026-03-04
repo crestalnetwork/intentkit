@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .base import base_url
 
@@ -96,30 +96,28 @@ class Account(BaseModel):
 class MentionData(BaseModel):
     """Base mention data structure used across multiple endpoints."""
 
-    tweetId: str | None = Field(None, description="Tweet ID")
-    link: str | None = Field(None, description="Link to the tweet")
-    likeCount: int | None = Field(None, description="Number of likes")
-    repostCount: int | None = Field(None, description="Number of reposts")
-    viewCount: int | None = Field(None, description="Number of views")
-    quoteCount: int | None = Field(None, description="Number of quotes")
-    replyCount: int | None = Field(None, description="Number of replies")
-    bookmarkCount: int | None = Field(None, description="Number of bookmarks")
-    mentionedAt: str | None = Field(None, description="When mentioned")
-    type: str | None = Field(None, description="Post type")
-    account: Account | None = Field(None, description="Account information")
-    repostBreakdown: RepostBreakdown | None = Field(
-        None, description="Repost breakdown"
-    )
+    tweetId: str | None = None
+    link: str | None = None
+    likeCount: int | None = None
+    repostCount: int | None = None
+    viewCount: int | None = None
+    quoteCount: int | None = None
+    replyCount: int | None = None
+    bookmarkCount: int | None = None
+    mentionedAt: str | None = None
+    type: str | None = None
+    account: Account | None = None
+    repostBreakdown: RepostBreakdown | None = None
 
 
 class SmartStatsData(BaseModel):
     """Smart stats data structure."""
 
-    smartFollowingCount: int | None = Field(None, description="Smart following count")
-    averageEngagement: float | None = Field(None, description="Average engagement")
-    averageReach: float | None = Field(None, description="Average reach")
-    smartFollowerCount: int | None = Field(None, description="Smart follower count")
-    followerCount: int | None = Field(None, description="Total follower count")
+    smartFollowingCount: int | None = None
+    averageEngagement: float | None = None
+    averageReach: float | None = None
+    smartFollowerCount: int | None = None
+    followerCount: int | None = None
 
 
 def clean_params(params: dict[str, Any]) -> dict[str, Any]:

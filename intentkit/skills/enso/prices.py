@@ -7,19 +7,19 @@ from .base import EnsoBaseTool, base_url
 
 
 class EnsoGetPricesInput(BaseModel):
-    chainId: int | None = Field(None, description="Blockchain chain ID of the token")
+    chainId: int | None = Field(None, description="Chain ID")
     address: str = Field(
         "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        description="Contract address of the token",
+        description="Token contract address",
     )
 
 
 class EnsoGetPricesOutput(BaseModel):
-    decimals: int | None = Field(None, ge=0, description="Number of decimals")
-    price: float | None = Field(None, gt=0, description="Price in the smallest unit")
-    address: str | None = Field(None, description="Contract address")
+    decimals: int | None = Field(None, ge=0, description="Token decimals")
+    price: float | None = Field(None, gt=0, description="USD price")
+    address: str | None = Field(None, description="Token address")
     symbol: str | None = Field(None, description="Token symbol")
-    timestamp: int | None = Field(None, ge=0, description="Timestamp in seconds")
+    timestamp: int | None = Field(None, ge=0, description="Timestamp")
     chainId: int | None = Field(None, ge=0, description="Chain ID")
 
 
@@ -34,7 +34,7 @@ class EnsoGetPrices(EnsoBaseTool):
     """
 
     name: str = "enso_get_prices"
-    description: str = "Retrieve the price of a token by chain ID and contract address"
+    description: str = "Get token USD price by chain ID and address."
     args_schema: ArgsSchema | None = EnsoGetPricesInput
 
     async def _arun(

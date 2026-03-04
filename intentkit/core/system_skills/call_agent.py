@@ -18,14 +18,8 @@ CALL_AGENT_TIMEOUT = 180  # 3 minutes
 class CallAgentInput(BaseModel):
     """Input schema for calling another agent."""
 
-    agent_id: str = Field(
-        ...,
-        description="The ID of the agent to call",
-    )
-    message: str = Field(
-        ...,
-        description="The message to send to the agent",
-    )
+    agent_id: str = Field(..., description="Target agent ID")
+    message: str = Field(..., description="Message to send")
 
 
 class CallAgentSkill(SystemSkill):
@@ -36,11 +30,7 @@ class CallAgentSkill(SystemSkill):
     """
 
     name: str = "call_agent"
-    description: str = (
-        "Call another agent with a message and get its response. "
-        "This allows the current agent to delegate tasks to other agents. "
-        "The called agent will execute with the provided message and return its final response."
-    )
+    description: str = "Delegate a task to another agent by sending it a message and receiving its response."
     args_schema: ArgsSchema | None = CallAgentInput
 
     @override

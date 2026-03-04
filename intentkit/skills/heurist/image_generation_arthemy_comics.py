@@ -16,23 +16,13 @@ logger = logging.getLogger(__name__)
 class ImageGenerationArthemyComicsInput(BaseModel):
     """Input for ImageGenerationArthemyComics tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
-        description="Negative prompt describing what to avoid in the generated image.",
+        description="What to avoid in the image.",
     )
-    width: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Width of the generated image.",
-    )
-    height: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Height of the generated image.",
-    )
+    width: int | None = Field(default=1024, le=1024, description="Image width.")
+    height: int | None = Field(default=1024, le=1024, description="Image height.")
 
 
 class ImageGenerationArthemyComics(HeuristBaseTool):
@@ -49,10 +39,8 @@ class ImageGenerationArthemyComics(HeuristBaseTool):
 
     name: str = "heurist_image_generation_arthemy_comics"
     description: str = (
-        "Generate comic-style images using Heurist AI's ArthemyComics model.\n"
-        "Provide a text prompt describing the comic-style image you want to generate.\n"
-        "ArthemyComics specializes in creating vibrant, stylized comic book illustrations.\n"
-        "If you have height and width, remember to specify them.\n"
+        "Generate comic-style images using Heurist ArthemyComics model. "
+        "Provide a text prompt and optionally specify width/height."
     )
     args_schema: ArgsSchema | None = ImageGenerationArthemyComicsInput
 

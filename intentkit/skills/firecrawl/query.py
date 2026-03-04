@@ -13,12 +13,12 @@ class FirecrawlQueryInput(BaseModel):
     """Input for Firecrawl query tool."""
 
     query: str = Field(
-        description="Question or query to search in the indexed content",
+        description="Search query for indexed content.",
         min_length=1,
         max_length=500,
     )
     max_results: int = Field(
-        description="Maximum number of relevant documents to return (default: 4)",
+        description="Max relevant documents to return.",
         default=4,
         ge=1,
         le=10,
@@ -34,9 +34,7 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
 
     name: str = "firecrawl_query_indexed_content"
     description: str = (
-        "Query previously indexed Firecrawl content to find relevant information and answer questions.\n"
-        "Use this tool to search through content that was previously scraped and indexed using Firecrawl tools.\n"
-        "This tool can help answer questions based on the indexed web content from Firecrawl scraping/crawling."
+        "Search previously indexed Firecrawl content to find relevant information."
     )
     args_schema: ArgsSchema | None = FirecrawlQueryInput
 

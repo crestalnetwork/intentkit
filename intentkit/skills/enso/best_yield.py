@@ -13,49 +13,41 @@ class EnsoGetBestYieldInput(BaseModel):
 
     token_symbol: str = Field(
         "USDC",
-        description="Symbol of the token to find the best yield for (e.g., 'USDC', 'ETH', 'USDT')",
+        description="Token symbol, e.g. 'USDC', 'ETH'",
     )
     chain_id: int | None = Field(
         None,
-        description="The blockchain chain ID. Defaults to the agent's configured network.",
+        description="Chain ID (defaults to agent network)",
     )
     top_n: int = Field(
         5,
-        description="Number of top yield options to return",
+        description="Number of top results to return",
     )
 
 
 class YieldOption(BaseModel):
     """Represents a yield option for a token."""
 
-    protocol_name: str = Field(
-        None, description="Name of the protocol offering the yield"
-    )
-    protocol_slug: str = Field(None, description="Slug of the protocol")
-    token_name: str = Field(None, description="Name of the yield-bearing token")
-    token_symbol: str = Field(None, description="Symbol of the yield-bearing token")
-    token_address: str = Field(
-        None, description="Contract address of the yield-bearing token"
-    )
-    primary_address: str = Field(
-        None, description="Primary contract address for interacting with the protocol"
-    )
-    apy: float = Field(None, description="Annual Percentage Yield")
-    tvl: float | None = Field(None, description="Total Value Locked in the protocol")
-    underlying_tokens: list[str] = Field(
-        [], description="List of underlying token symbols"
-    )
+    protocol_name: str = Field(None, description="Protocol name")
+    protocol_slug: str = Field(None, description="Protocol slug")
+    token_name: str = Field(None, description="Yield token name")
+    token_symbol: str = Field(None, description="Yield token symbol")
+    token_address: str = Field(None, description="Yield token address")
+    primary_address: str = Field(None, description="Protocol contract address")
+    apy: float = Field(None, description="APY")
+    tvl: float | None = Field(None, description="TVL")
+    underlying_tokens: list[str] = Field([], description="Underlying token symbols")
 
 
 class EnsoGetBestYieldOutput(BaseModel):
     """Output containing the best yield options."""
 
     best_options: list[YieldOption] = Field(
-        [], description="List of best yield options sorted by APY (descending)"
+        [], description="Yield options sorted by APY descending"
     )
-    token_symbol: str = Field(None, description="Symbol of the token searched for")
-    chain_id: int = Field(None, description="Chain ID searched")
-    chain_name: str = Field(None, description="Name of the chain searched")
+    token_symbol: str = Field(None, description="Token searched")
+    chain_id: int = Field(None, description="Chain ID")
+    chain_name: str = Field(None, description="Chain name")
 
 
 class EnsoGetBestYield(EnsoBaseTool):
@@ -66,8 +58,7 @@ class EnsoGetBestYield(EnsoBaseTool):
 
     name: str = "enso_get_best_yield"
     description: str = (
-        "Find the best yield options for a specific token (default: USDC) across all protocols "
-        "on a blockchain network (default: Base). Results are sorted by APY in descending order."
+        "Find best yield options for a token across DeFi protocols, sorted by APY."
     )
     args_schema: ArgsSchema | None = EnsoGetBestYieldInput
 

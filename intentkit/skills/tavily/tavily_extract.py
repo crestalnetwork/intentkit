@@ -14,14 +14,14 @@ class TavilyExtractInput(BaseModel):
     """Input for Tavily extract tool."""
 
     urls: str = Field(
-        description="The URL to extract content from.",
+        description="URL to extract content from.",
     )
     include_images: bool = Field(
-        description="Include a list of images extracted from the URLs in the response.",
+        description="Include extracted images.",
         default=False,
     )
     extract_depth: str = Field(
-        description="The depth of the extraction process. 'advanced' retrieves more data including tables and embedded content with higher success but may increase latency. 'basic' costs 1 credit per 5 successful URL extractions, while 'advanced' costs 2 credits per 5 successful URL extractions.",
+        description="'basic' or 'advanced'. Advanced gets more data but costs more.",
         default="basic",
     )
 
@@ -38,11 +38,7 @@ class TavilyExtract(TavilyBaseTool):
     """
 
     name: str = "tavily_extract"
-    description: str = (
-        "Extract web page content from a specified URL using Tavily Extract. "
-        "This tool is useful when you need to get the full text content from a webpage. "
-        "You must call this tool whenever the user asks to extract or scrape content from a specific URL."
-    )
+    description: str = "Extract full text content from a web page URL."
     args_schema: ArgsSchema | None = TavilyExtractInput
 
     async def _arun(

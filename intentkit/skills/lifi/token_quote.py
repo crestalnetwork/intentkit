@@ -22,23 +22,23 @@ class TokenQuoteInput(BaseModel):
     """Input for the TokenQuote skill."""
 
     from_chain: str = Field(
-        description="The source chain (e.g., 'ETH', 'POL', 'ARB', 'DAI'). Can be chain ID or chain key."
+        description="Source chain (e.g. 'ETH', 'POL', 'ARB'). Chain ID or key."
     )
     to_chain: str = Field(
-        description="The destination chain (e.g., 'ETH', 'POL', 'ARB', 'DAI'). Can be chain ID or chain key."
+        description="Destination chain (e.g. 'ETH', 'POL', 'ARB'). Chain ID or key."
     )
     from_token: str = Field(
-        description="The token to send (e.g., 'USDC', 'ETH', 'DAI'). Can be token address or symbol."
+        description="Token to send (e.g. 'USDC', 'ETH'). Address or symbol."
     )
     to_token: str = Field(
-        description="The token to receive (e.g., 'USDC', 'ETH', 'DAI'). Can be token address or symbol."
+        description="Token to receive (e.g. 'USDC', 'ETH'). Address or symbol."
     )
     from_amount: str = Field(
-        description="The amount to send, including all decimals (e.g., '1000000' for 1 USDC with 6 decimals)."
+        description="Amount in smallest unit (e.g. '1000000' for 1 USDC)."
     )
     slippage: float = Field(
         default=0.03,
-        description="The maximum allowed slippage for the transaction (0.03 represents 3%).",
+        description="Max slippage as decimal (e.g. 0.03 for 3%).",
     )
 
 
@@ -50,9 +50,8 @@ class TokenQuote(LiFiBaseTool):
 
     name: str = "lifi_token_quote"
     description: str = (
-        "Get a quote for transferring tokens across blockchains or swapping tokens.\n"
-        "Use this tool to check rates, fees, and estimated time for token transfers without executing them.\n"
-        "Supports all major chains like Ethereum, Polygon, Arbitrum, Optimism, Base, and more."
+        "Get a quote for cross-chain token transfers or same-chain swaps via LiFi. "
+        "Returns rates, fees, and estimated time without executing."
     )
     args_schema: ArgsSchema | None = TokenQuoteInput
     api_url: str = LIFI_API_URL

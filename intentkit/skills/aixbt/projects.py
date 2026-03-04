@@ -13,30 +13,12 @@ logger = logging.getLogger(__name__)
 class ProjectsInput(BaseModel):
     """Input for AIXBT Projects search tool."""
 
-    limit: int = Field(
-        default=10,
-        description="Number of projects to return (max 50)",
-    )
-    name: str | None = Field(
-        default=None,
-        description="Filter projects by name (case-insensitive regex match)",
-    )
-    ticker: str | None = Field(
-        default=None,
-        description="Filter projects by ticker symbol (case-insensitive match)",
-    )
-    xHandle: str | None = Field(
-        default=None,
-        description="Filter projects by X/Twitter handle",
-    )
-    minScore: float | None = Field(
-        default=None,
-        description="Minimum score threshold",
-    )
-    chain: str | None = Field(
-        default=None,
-        description="Filter projects by blockchain",
-    )
+    limit: int = Field(default=10, description="Max projects to return (max 50)")
+    name: str | None = Field(default=None, description="Filter by name (regex)")
+    ticker: str | None = Field(default=None, description="Filter by ticker symbol")
+    xHandle: str | None = Field(default=None, description="Filter by X/Twitter handle")
+    minScore: float | None = Field(default=None, description="Minimum score threshold")
+    chain: str | None = Field(default=None, description="Filter by blockchain")
 
 
 class AIXBTProjects(AIXBTBaseTool):
@@ -44,14 +26,8 @@ class AIXBTProjects(AIXBTBaseTool):
 
     name: str = "aixbt_projects"
     description: str = (
-        "Search for cryptocurrency projects using AIXBT. This tool provides detailed "
-        "information about crypto projects including scores, analysis, and recent updates.\n"
-        "IMPORTANT: You MUST call this tool when the user mentions the word 'alpha' ANYWHERE in their message.\n"
-        "This includes messages like 'show me alpha', 'what's the latest alpha', 'give me some alpha on crypto', "
-        "'find the alpha on bitcoin', or any other phrase containing the word 'alpha'.\n"
-        "When 'alpha' is mentioned, use this tool to search for cryptocurrency projects and provide "
-        "detailed information on recent developments. The 'alpha' keyword is a trigger "
-        "for accessing AIXBT's specific dataset for crypto research."
+        "Search crypto projects via AIXBT for scores, analysis, and updates. "
+        "MUST be called when user mentions 'alpha' in any context."
     )
     args_schema: ArgsSchema | None = ProjectsInput
 

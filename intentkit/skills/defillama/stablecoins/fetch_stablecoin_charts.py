@@ -6,58 +6,40 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_stablecoin_charts
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_STABLECOIN_CHARTS_PROMPT = """
-This tool fetches historical circulating supply data from DeFi Llama for a specific stablecoin.
-Required:
-- Stablecoin ID
-Optional:
-- Chain name for chain-specific data
-Returns historical data including:
-- Total circulating supply
-- Circulating supply in USD
-- Daily data points
-"""
+FETCH_STABLECOIN_CHARTS_PROMPT = """Fetch historical circulating supply for a stablecoin via DefiLlama. Optionally filter by chain."""
 
 
 class CirculatingSupply(BaseModel):
     """Model representing circulating supply amounts."""
 
-    peggedUSD: float = Field(..., description="Amount pegged to USD")
+    peggedUSD: float = Field(..., description="USD pegged amount")
 
 
 class StablecoinDataPoint(BaseModel):
     """Model representing a single historical data point."""
 
-    date: str = Field(..., description="Unix timestamp of the data point")
-    totalCirculating: CirculatingSupply = Field(
-        ..., description="Total circulating supply"
-    )
+    date: str = Field(..., description="Unix timestamp")
+    totalCirculating: CirculatingSupply = Field(..., description="Circulating supply")
     totalCirculatingUSD: CirculatingSupply = Field(
-        ..., description="Total circulating supply in USD"
+        ..., description="Circulating in USD"
     )
 
 
 class FetchStablecoinChartsInput(BaseModel):
     """Input schema for fetching stablecoin chart data."""
 
-    stablecoin_id: str = Field(
-        ..., description="ID of the stablecoin to fetch data for"
-    )
-    chain: str | None = Field(
-        None, description="Optional chain name for chain-specific data"
-    )
+    stablecoin_id: str = Field(..., description="Stablecoin ID")
+    chain: str | None = Field(None, description="Optional chain filter")
 
 
 class FetchStablecoinChartsResponse(BaseModel):
     """Response schema for stablecoin chart data."""
 
     data: list[StablecoinDataPoint] = Field(
-        default_factory=list, description="List of historical data points"
+        default_factory=list, description="Historical data points"
     )
-    chain: str | None = Field(
-        None, description="Chain name if chain-specific data was requested"
-    )
-    error: str | None = Field(None, description="Error message if any")
+    chain: str | None = Field(None, description="Chain filter applied")
+    error: str | None = Field(None, description="Error message")
 
 
 class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):

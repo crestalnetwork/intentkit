@@ -12,19 +12,17 @@ logger = logging.getLogger(__name__)
 class TokenSearchInput(BaseModel):
     """Input for token search tool."""
 
-    query: str = Field(
-        description="Search query - can be token address, token name or token symbol."
-    )
+    query: str = Field(description="Token address, name, or symbol.")
     chains: list[str] | None = Field(
-        description="The chain(s) to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chains to search, e.g. 'eth', 'bsc'.",
         default=None,
     )
     limit: int | None = Field(
-        description="The desired page size of the result.",
+        description="Max results.",
         default=None,
     )
     is_verified_contract: bool | None = Field(
-        description="Whether the contract is verified.",
+        description="Filter verified contracts only.",
         default=None,
     )
 
@@ -41,9 +39,7 @@ class TokenSearch(TokenBaseTool):
 
     name: str = "token_search"
     description: str = (
-        "Search for tokens based on contract address, token name or token symbol. "
-        "Returns token information including price, market cap, and security information. "
-        "NOTE: This is a premium endpoint that requires a Moralis Business plan."
+        "Search tokens by address, name, or symbol. Requires Moralis Business plan."
     )
     args_schema: ArgsSchema | None = TokenSearchInput
 

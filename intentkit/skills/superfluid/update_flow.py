@@ -15,15 +15,11 @@ from intentkit.skills.superfluid.constants import (
 class UpdateFlowInput(BaseModel):
     """Input schema for update_flow."""
 
-    token_address: str = Field(
-        ..., description="The Super token contract address being streamed"
-    )
-    recipient: str = Field(
-        ..., description="The wallet address that is receiving the token stream"
-    )
+    token_address: str = Field(..., description="Super Token contract address")
+    recipient: str = Field(..., description="Recipient wallet address")
     new_flow_rate: str = Field(
         ...,
-        description="The new flowrate of the stream in wei per second (must be a whole number, no decimals)",
+        description="New flow rate in wei/second (whole number, no decimals)",
     )
 
 
@@ -35,19 +31,7 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
     """
 
     name: str = "superfluid_update_flow"
-    description: str = """Update an existing money stream to a specified recipient using Superfluid.
-
-Inputs:
-- token_address: The Super token contract address being streamed
-- recipient: The wallet address that is receiving the token stream
-- new_flow_rate: The new flowrate of the stream in wei per second
-
-Important notes:
-- The flowrate cannot have any decimal points, since the unit of measurement is wei per second.
-- Make sure to use the exact amount provided.
-- 1 wei = 0.000000000000000001 ETH
-- A stream must already exist to the recipient before it can be updated.
-"""
+    description: str = "Update the flow rate of an existing Superfluid stream. Rate in wei/second (no decimals). Stream must already exist."
     args_schema: ArgsSchema | None = UpdateFlowInput
 
     async def _arun(

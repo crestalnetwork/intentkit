@@ -14,25 +14,14 @@ logger = logging.getLogger(__name__)
 class CryptoCompareFetchNewsInput(BaseModel):
     """Input for CryptoCompareFetchNews tool."""
 
-    token: str = Field(
-        ..., description="Token symbol to fetch news for (e.g., BTC, ETH, SOL)"
-    )
+    token: str = Field(..., description="Token symbol (e.g., BTC, ETH)")
 
 
 class CryptoCompareFetchNews(CryptoCompareBaseTool):
-    """Tool for fetching cryptocurrency news from CryptoCompare.
-
-    This tool uses the CryptoCompare API to retrieve the latest news articles
-    related to a specific cryptocurrency token.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for fetching cryptocurrency news from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_news"
-    description: str = "Fetch the latest cryptocurrency news for a specific token"
+    description: str = "Fetch latest crypto news for a specific token."
     args_schema: ArgsSchema | None = CryptoCompareFetchNewsInput
 
     async def _arun(

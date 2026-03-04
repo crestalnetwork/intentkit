@@ -13,20 +13,20 @@ from .utils import MentionData, make_elfa_request
 class ElfaGetTopMentionsInput(BaseModel):
     """Input parameters for top mentions."""
 
-    ticker: str = Field(description="Stock ticker symbol (e.g., ETH, $ETH, BTC, $BTC)")
+    ticker: str = Field(description="Ticker symbol (e.g., ETH, BTC)")
     timeWindow: str | None = Field(
         "1h", description="Time window (e.g., '1h', '24h', '7d')"
     )
-    page: int | None = Field(1, description="Page number for pagination")
-    pageSize: int | None = Field(10, description="Number of items per page")
+    page: int | None = Field(1, description="Page number")
+    pageSize: int | None = Field(10, description="Items per page")
 
 
 class ElfaGetTopMentionsOutput(BaseModel):
     """Output structure for top mentions response."""
 
     success: bool
-    data: list[MentionData] | None = Field(None, description="List of top mentions")
-    metadata: dict[str, Any] | None = Field(None, description="Response metadata")
+    data: list[MentionData] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class ElfaGetTopMentions(ElfaBaseTool):
@@ -44,10 +44,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
     """
 
     name: str = "elfa_get_top_mentions"
-    description: str = """Get top mentions for a specific ticker symbol ranked by view count. 
-    Updated hourly. Returns engagement metrics and account information for market sentiment analysis.
-    
-    Use this to track public opinion, identify trending news, and monitor investor discussions."""
+    description: str = "Get top mentions for a ticker ranked by view count. Updated hourly with engagement metrics."
     args_schema: ArgsSchema | None = ElfaGetTopMentionsInput
 
     async def _arun(
@@ -104,30 +101,20 @@ class ElfaGetTopMentions(ElfaBaseTool):
 class ElfaSearchMentionsInput(BaseModel):
     """Input parameters for search mentions."""
 
-    keywords: str | None = Field(
-        None,
-        description="Up to 5 keywords to search for, separated by commas. Phrases accepted",
-    )
-    accountName: str | None = Field(
-        None,
-        description="Account username to filter by (optional if keywords provided)",
-    )
-    timeWindow: str | None = Field("7d", description="Time window for search")
-    limit: int | None = Field(20, description="Number of results to return (max 30)")
-    searchType: str | None = Field("or", description="Type of search ('and' or 'or')")
-    cursor: str | None = Field(None, description="Cursor for pagination")
+    keywords: str | None = Field(None, description="Up to 5 comma-separated keywords")
+    accountName: str | None = Field(None, description="Account username filter")
+    timeWindow: str | None = Field("7d", description="Time window (e.g., '7d')")
+    limit: int | None = Field(20, description="Results to return (max 30)")
+    searchType: str | None = Field("or", description="Search type: 'and' or 'or'")
+    cursor: str | None = Field(None, description="Pagination cursor")
 
 
 class ElfaSearchMentionsOutput(BaseModel):
     """Output structure for search mentions response."""
 
     success: bool
-    data: list[MentionData] | None = Field(
-        None, description="List of matching mentions"
-    )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Response metadata with cursor"
-    )
+    data: list[MentionData] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class ElfaSearchMentions(ElfaBaseTool):
@@ -146,10 +133,7 @@ class ElfaSearchMentions(ElfaBaseTool):
     """
 
     name: str = "elfa_search_mentions"
-    description: str = """Search tweets by keywords or account name with engagement data and sentiment analysis. 
-    Updated every 5 minutes. Access 30 days of recent data or historical archives.
-    
-    Use this for market research, brand monitoring, opinion tracking, and competitive analysis."""
+    description: str = "Search tweets by keywords or account name with engagement and sentiment data. Updated every 5 minutes."
     args_schema: ArgsSchema | None = ElfaSearchMentionsInput
 
     async def _arun(

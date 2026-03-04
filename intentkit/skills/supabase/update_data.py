@@ -8,7 +8,7 @@ from supabase import Client, create_client
 from intentkit.skills.supabase.base import SupabaseBaseTool
 
 NAME = "supabase_update_data"
-PROMPT = "Update existing data in a Supabase table with filtering conditions."
+PROMPT = "Update records in a Supabase table using filters."
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +16,12 @@ logger = logging.getLogger(__name__)
 class SupabaseUpdateDataInput(BaseModel):
     """Input for SupabaseUpdateData tool."""
 
-    table: str = Field(description="The name of the table to update data in")
-    data: dict[str, Any] = Field(
-        description="The data to update (key-value pairs of columns and new values)"
-    )
+    table: str = Field(description="Table name")
+    data: dict[str, Any] = Field(description="Column-value pairs to update")
     filters: dict[str, Any] = Field(
-        description="Dictionary of filters to identify which records to update (e.g., {'id': 123})"
+        description="Filters to match records, e.g. {'id': 123}"
     )
-    returning: str = Field(
-        default="*", description="Columns to return after update (default: '*' for all)"
-    )
+    returning: str = Field(default="*", description="Columns to return after update")
 
 
 class SupabaseUpdateData(SupabaseBaseTool):

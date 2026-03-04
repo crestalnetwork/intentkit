@@ -10,28 +10,17 @@ from .base import TwitterBaseTool
 logger = logging.getLogger(__name__)
 
 NAME = "twitter_get_user_by_username"
-PROMPT = (
-    "Get a Twitter user's information by their username."
-    "Returns detailed user information as a json object."
-)
+PROMPT = "Get a Twitter user's information by username."
 
 
 class TwitterGetUserByUsernameInput(BaseModel):
     """Input for TwitterGetUserByUsername tool."""
 
-    username: str = Field(description="The Twitter username to lookup")
+    username: str = Field(description="Twitter username to look up")
 
 
 class TwitterGetUserByUsername(TwitterBaseTool):
-    """Tool for getting a Twitter user by their username.
-
-    This tool uses the Twitter API v2 to retrieve user information by username.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Look up a Twitter user by username."""
 
     name: str = NAME
     description: str = PROMPT

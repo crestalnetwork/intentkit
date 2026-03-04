@@ -6,28 +6,28 @@ class VeniceImageConfig(BaseModel):
 
     api_key_provider: str = Field(
         default="agent_owner",
-        description="Provider of the API Key, could be agent_owner or platform",
+        description="API key provider: agent_owner or platform.",
     )
     safe_mode: bool = Field(
         default=True,
-        description="Whether to use safe mode. If enabled, this will blur images that are classified as having adult content",
+        description="Blur adult content if enabled.",
     )
     hide_watermark: bool = Field(
         default=True,
-        description="Whether to hide the Venice watermark. Venice may ignore this parameter for certain generated content.",
+        description="Hide Venice watermark.",
     )
     embed_exif_metadata: bool = Field(
-        default=False, description="Whether to embed EXIF metadata in the image."
+        default=False, description="Embed EXIF metadata in the image."
     )
     negative_prompt: str = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
-        description="The default negative prompt used when no other prompt is provided.",
+        description="Default negative prompt.",
     )
     rate_limit_number: int | None = Field(
         default=None,
-        description="Maximum number of allowed calls within the specified time window.",
+        description="Max calls within the time window.",
     )
     rate_limit_minutes: int | None = Field(
         default=None,
-        description="Duration of the time window (in minutes) for rate limiting.",
+        description="Time window in minutes for rate limiting.",
     )

@@ -21,11 +21,9 @@ class GetPairInfoInput(BaseModel):
     """Input schema for the DexScreener get_pair_info tool."""
 
     chain_id: str = Field(
-        description="The blockchain chain ID (e.g., 'ethereum', 'solana', 'bsc', 'polygon', 'arbitrum', 'base', 'avalanche')"
+        description="Blockchain chain ID (e.g., ethereum, solana, bsc)"
     )
-    pair_address: str = Field(
-        description="The trading pair contract address (e.g., '0x1234...abcd' for Ethereum-based chains)"
-    )
+    pair_address: str = Field(description="Trading pair contract address")
 
 
 class GetPairInfo(DexScreenerBaseTool):
@@ -34,12 +32,7 @@ class GetPairInfo(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_get_pair_info"
-    description: str = (
-        "Retrieves detailed information about a specific trading pair using chain ID and pair address. "
-        "Returns comprehensive data including current price, volume, liquidity, price changes, "
-        "market cap, FDV, transaction counts, and social links. "
-        "Use this tool when you have a specific pair address and need detailed trading metrics."
-    )
+    description: str = "Get detailed trading pair info (price, volume, liquidity, market cap) by chain ID and pair address."
     args_schema: ArgsSchema | None = GetPairInfoInput
 
     async def _arun(

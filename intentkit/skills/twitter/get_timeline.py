@@ -11,10 +11,7 @@ from .base import TwitterBaseTool
 logger = logging.getLogger(__name__)
 
 NAME = "twitter_get_timeline"
-PROMPT = (
-    "Get tweets from your timeline, the result is a json object containing a list of tweets."
-    'If the result is `{"meta": {"result_count": 0}}`, means no new tweets, don\'t retry this tool.'
-)
+PROMPT = "Get tweets from your timeline. If result_count is 0, don't retry."
 
 
 class TwitterGetTimelineInput(BaseModel):
@@ -22,16 +19,7 @@ class TwitterGetTimelineInput(BaseModel):
 
 
 class TwitterGetTimeline(TwitterBaseTool):
-    """Tool for getting the user's timeline from Twitter.
-
-    This tool uses the Twitter API v2 to retrieve tweets from the authenticated user's
-    timeline.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Get the authenticated user's timeline."""
 
     name: str = NAME
     description: str = PROMPT

@@ -16,17 +16,17 @@ logger = logging.getLogger(__name__)
 class WalletApprovalsInput(BaseModel):
     """Input for wallet token approvals tool."""
 
-    address: str = Field(description="The wallet address to check token approvals for.")
+    address: str = Field(description="Wallet address.")
     chain: str = Field(
-        description="The chain to query (e.g., 'eth', 'bsc', 'polygon').",
+        description="Chain to query.",
         default=DEFAULT_CHAIN,
     )
     cursor: str | None = Field(
-        description="The cursor for pagination.",
+        description="Pagination cursor.",
         default=None,
     )
     limit: int | None = Field(
-        description="The number of results per page.",
+        description="Results per page.",
         default=DEFAULT_LIMIT,
     )
 
@@ -39,10 +39,7 @@ class WalletApprovals(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_approvals"
-    description: str = (
-        "Retrieve active ERC20 token approvals for the specified wallet address. "
-        "This helps identify which contracts have permission to spend tokens."
-    )
+    description: str = "Get active ERC20 token approvals for a wallet."
     args_schema: ArgsSchema | None = WalletApprovalsInput
 
     async def _arun(

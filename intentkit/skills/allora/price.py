@@ -11,31 +11,17 @@ from .base import base_url
 
 
 class AlloraGetPriceInput(BaseModel):
-    token: Literal["ETH", "BTC"] = Field(
-        description="Token to get price prediction for"
-    )
-    time_frame: Literal["5m", "8h"] = Field(
-        description="Time frame for price prediction, it can be 5 minutes or 8 hours"
-    )
+    token: Literal["ETH", "BTC"] = Field(description="ETH or BTC")
+    time_frame: Literal["5m", "8h"] = Field(description="5m or 8h")
 
 
 class InferenceData(BaseModel):
-    network_inference: str = Field(description="Network Inference")
-    network_inference_normalized: str = Field(
-        description="Model's prediction or estimate, scaled or adjusted to a standard range or unit."
-    )
-    confidence_interval_percentiles: list[str] = Field(
-        description="Represent a range of values within which the model predicts the actual price is likely to fall, with a certain level of confidence."
-    )
-    confidence_interval_percentiles_normalized: list[str] = Field(
-        description="a range of values within which the model predicts the actual price is likely to fall), but the values defining the interval have been normalized."
-    )
-    confidence_interval_values: list[str] = Field(
-        description=" is a list (or array) of values that define the boundaries of a confidence interval in a prediction.  These values correspond to specific percentiles and represent the range within which the model predicts the true value (e.g., future price) is likely to fall."
-    )
-    confidence_interval_values_normalized: list[str] = Field(
-        description="is a list (or array) of values that define the boundaries of a confidence interval, just like confidence_interval_values, but these values have been normalized.  Normalization means the values have been scaled or transformed to a standard range, typically between 0 and 1 (or sometimes -1 and 1)."
-    )
+    network_inference: str
+    network_inference_normalized: str
+    confidence_interval_percentiles: list[str]
+    confidence_interval_percentiles_normalized: list[str]
+    confidence_interval_values: list[str]
+    confidence_interval_values_normalized: list[str]
     # topic_id: str
     # timestamp: int
     # extra_data: str
@@ -54,21 +40,12 @@ class AlloraGetPriceOutput(BaseModel):
 
 
 class AlloraGetPrice(AlloraBaseTool):
-    """
-    The Allora Price Prediction Feed tool fetches the price prediction feed from the Allora API.
-    Ethereum (ETH) or Bitcoin (BTC) price predictions (5-minute, 8-hour)
-
-    Attributes:
-        name (str): Name of the tool, specifically "get_price_prediction".
-        description (str): Comprehensive description of the tool's purpose and functionality.
-        args_schema (Type[BaseModel]): Schema for input arguments, specifying expected parameters.
-    """
+    """Fetch ETH/BTC price predictions from Allora API."""
 
     name: str = "allora_get_price_prediction"
-    description: str = """
-        The Allora Price Prediction Feed tool fetches the price prediction feed from the Allora API.
-        Ethereum (ETH) or Bitcoin (BTC) price predictions (5-minute, 8-hour)
-        """
+    description: str = (
+        "Get ETH or BTC price prediction from Allora (5-minute or 8-hour)."
+    )
     args_schema: ArgsSchema | None = AlloraGetPriceInput
 
     def _run(self, question: str) -> AlloraGetPriceOutput:

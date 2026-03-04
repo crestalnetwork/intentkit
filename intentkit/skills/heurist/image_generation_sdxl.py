@@ -16,23 +16,13 @@ logger = logging.getLogger(__name__)
 class ImageGenerationSDXLInput(BaseModel):
     """Input for ImageGenerationSDXL tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     neg_prompt: str | None = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
-        description="Negative prompt describing what to avoid in the generated image.",
+        description="What to avoid in the image.",
     )
-    width: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Width of the generated image.",
-    )
-    height: int | None = Field(
-        default=1024,
-        le=1024,
-        description="Height of the generated image.",
-    )
+    width: int | None = Field(default=1024, le=1024, description="Image width.")
+    height: int | None = Field(default=1024, le=1024, description="Image height.")
 
 
 class ImageGenerationSDXL(HeuristBaseTool):
@@ -49,10 +39,8 @@ class ImageGenerationSDXL(HeuristBaseTool):
 
     name: str = "heurist_image_generation_sdxl"
     description: str = (
-        "Generate images using Heurist AI's SDXL model.\n"
-        "Provide a text prompt describing the image you want to generate.\n"
-        "SDXL is a versatile, general-purpose model capable of generating high-quality images in any style.\n"
-        "If you have height and width, remember to specify them.\n"
+        "Generate high-quality images using Heurist SDXL model. "
+        "Provide a text prompt and optionally specify width/height."
     )
     args_schema: ArgsSchema | None = ImageGenerationSDXLInput
 

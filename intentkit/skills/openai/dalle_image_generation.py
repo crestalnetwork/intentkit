@@ -17,43 +17,20 @@ logger = logging.getLogger(__name__)
 class DALLEImageGenerationInput(BaseModel):
     """Input for DALLEImageGeneration tool."""
 
-    prompt: str = Field(
-        description="Text prompt describing the image to generate.",
-    )
+    prompt: str = Field(description="Image description prompt.")
     size: str = Field(
         default="1024x1024",
-        description="Size of the generated image. Options: 1024x1024, 1024x1792, 1792x1024",
+        description="1024x1024, 1024x1792, or 1792x1024",
     )
-    quality: str = Field(
-        default="hd",
-        description="Quality of the generated image. Options: standard, hd",
-    )
-    style: str = Field(
-        default="vivid",
-        description="Style of the generated image. Options: vivid, natural",
-    )
+    quality: str = Field(default="hd", description="standard or hd")
+    style: str = Field(default="vivid", description="vivid or natural")
 
 
 class DALLEImageGeneration(OpenAIBaseTool):
-    """Tool for generating high-quality images using OpenAI's DALL-E 3 model.
-
-    This tool takes a text prompt and uses OpenAI's API to generate
-    an image based on the description using the DALL-E 3 model.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Tool for generating images using OpenAI's DALL-E 3 model."""
 
     name: str = "dalle_image_generation"
-    description: str = (
-        "Generate images using OpenAI's DALL-E 3 model.\n"
-        "Provide a text prompt describing the image you want to generate.\n"
-        "DALL-E 3 is a powerful image generation model capable of creating detailed, "
-        "high-quality images from text descriptions.\n"
-        "You can specify size, quality, and style parameters for more control.\n"
-    )
+    description: str = "Generate images from text prompts using DALL-E 3."
     args_schema: ArgsSchema | None = DALLEImageGenerationInput
 
     async def _arun(

@@ -17,18 +17,11 @@ class SwapInput(BaseModel):
     that a user can review and sign via XMTP wallet_sendCalls.
     """
 
-    from_address: str = Field(description="The sender address for the swap")
-    from_token: str = Field(
-        description="The contract address of the token to swap from"
-    )
-    to_token: str = Field(description="The contract address of the token to swap to")
-    from_amount: str = Field(
-        description="The input amount in the smallest unit of from_token (as string)"
-    )
-    slippage_bps: int = Field(
-        default=100,
-        description="Maximum slippage in basis points (100 = 1%). Defaults to 100.",
-    )
+    from_address: str = Field(description="Sender address")
+    from_token: str = Field(description="Contract address of token to swap from")
+    to_token: str = Field(description="Contract address of token to swap to")
+    from_amount: str = Field(description="Amount in smallest unit (string)")
+    slippage_bps: int = Field(default=100, description="Max slippage in bps (100=1%)")
 
 
 class XmtpSwap(XmtpBaseTool):
@@ -41,9 +34,8 @@ class XmtpSwap(XmtpBaseTool):
 
     name: str = "xmtp_swap"
     description: str = (
-        "Create an XMTP transaction request for swapping tokens using CDP swap quote. "
-        "Returns a wallet_sendCalls payload that can include an optional approval call and the swap call. "
-        "Supports Ethereum, Base, Arbitrum, and Optimism mainnet networks."
+        "Create XMTP swap transaction via CDP quote. "
+        "Supports Ethereum, Base, Arbitrum, and Optimism mainnet."
     )
     args_schema: ArgsSchema | None = SwapInput
 

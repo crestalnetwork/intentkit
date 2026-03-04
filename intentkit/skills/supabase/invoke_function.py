@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 class SupabaseInvokeFunctionInput(BaseModel):
     """Input for SupabaseInvokeFunction tool."""
 
-    function_name: str = Field(description="The name of the Edge Function to invoke")
+    function_name: str = Field(description="Edge Function name")
     parameters: dict[str, Any] | None = Field(
-        default=None, description="Optional parameters to pass to the function"
+        default=None, description="Parameters to pass to the function"
     )
     headers: dict[str, str] | None = Field(
-        default=None, description="Optional headers to include in the request"
+        default=None, description="Additional request headers"
     )
 
 

@@ -9,10 +9,7 @@ from intentkit.config.config import config
 from intentkit.skills.twitter.base import TwitterBaseTool
 
 NAME = "twitter_reply_tweet"
-PROMPT = (
-    "Reply to an existing tweet on Twitter. Do not reply to your own tweet. "
-    "If you want to post image, you must provide image url in parameters, do not add image link in text."
-)
+PROMPT = "Reply to a tweet. Do not reply to your own tweets. Use the image parameter for attachments instead of adding links in text."
 
 logger = logging.getLogger(__name__)
 
@@ -20,26 +17,16 @@ logger = logging.getLogger(__name__)
 class TwitterReplyTweetInput(BaseModel):
     """Input for TwitterReplyTweet tool."""
 
-    tweet_id: str = Field(description="The ID of the tweet to reply to")
+    tweet_id: str = Field(description="Tweet ID to reply to")
     text: str = Field(
-        description="Tweet text (280 chars for regular users, 25,000 bytes for verified)",
+        description="Reply text",
         max_length=25000,
     )
-    image: str | None = Field(
-        default=None, description="Optional URL of an image to attach to the reply"
-    )
+    image: str | None = Field(default=None, description="Image URL to attach")
 
 
 class TwitterReplyTweet(TwitterBaseTool):
-    """Tool for replying to tweets on Twitter.
-
-    This tool uses the Twitter API v2 to post reply tweets to existing tweets.
-
-    Attributes:
-        name: The name of the tool.
-        description: A description of what the tool does.
-        args_schema: The schema for the tool's input arguments.
-    """
+    """Reply to a tweet on Twitter."""
 
     name: str = NAME
     description: str = PROMPT

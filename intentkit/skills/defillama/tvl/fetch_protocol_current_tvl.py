@@ -6,27 +6,21 @@ from pydantic import BaseModel, Field
 from intentkit.skills.defillama.api import fetch_protocol_current_tvl
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
 
-FETCH_TVL_PROMPT = """
-This tool fetches the current Total Value Locked (TVL) for a specific DeFi protocol.
-Provide the protocol slug (e.g., "aave", "curve") to get its current TVL in USD.
-Returns the normalized protocol name and its TVL value.
-"""
+FETCH_TVL_PROMPT = """Fetch current TVL for a DeFi protocol via DefiLlama. Provide protocol slug (e.g. 'aave')."""
 
 
 class FetchProtocolCurrentTVLInput(BaseModel):
     """Input schema for fetching current protocol TVL."""
 
-    protocol: str = Field(
-        ..., description="Protocol slug to fetch TVL for (e.g., 'aave', 'curve')"
-    )
+    protocol: str = Field(..., description="Protocol slug (e.g. 'aave')")
 
 
 class FetchProtocolCurrentTVLResponse(BaseModel):
     """Response schema for current protocol TVL."""
 
-    protocol: str = Field(..., description="Normalized protocol slug")
-    tvl: float = Field(..., description="Current Total Value Locked in USD")
-    error: str | None = Field(default=None, description="Error message if any")
+    protocol: str = Field(..., description="Protocol slug")
+    tvl: float = Field(..., description="TVL in USD")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchProtocolCurrentTvl(DefiLlamaBaseTool):
