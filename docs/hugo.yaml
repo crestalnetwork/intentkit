@@ -1,7 +1,7 @@
-baseURL: "https://docs.example.com/"
+baseURL: "https://hack.fan/docs/"
 title: "IntentKit"
 languageCode: "en-us"
-defaultContentLanguageInSubdir: true
+defaultContentLanguageInSubdir: false
 
 module:
   imports:
