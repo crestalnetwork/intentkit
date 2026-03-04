@@ -1,4 +1,4 @@
-baseURL: "https://hack.fan/docs/"
+baseURL: "https://hack.fan/"
 title: "IntentKit"
 languageCode: "en-us"
 defaultContentLanguageInSubdir: false
@@ -18,21 +18,13 @@ languages:
 
 menu:
   main:
-    - name: "Docs"
-      pageRef: /docs
-      weight: 1
     - name: "Search"
-      weight: 2
+      weight: 1
       params:
         type: search
-    - name: "Theme"
-      weight: 3
-      params:
-        type: theme-toggle
-        label: true
     - name: "GitHub"
       url: "https://github.com/crestalnetwork/intentkit"
-      weight: 4
+      weight: 2
       params:
         icon: github
 
@@ -41,9 +33,10 @@ author:
   email: "hello@crestal.network"
 
 params:
+  theme:
+    default: light
   navbar:
     displayTitle: true
     displayLogo: false
   editURL:
-    enable: true
-    base: "https://github.com/crestalnetwork/intentkit/edit/main/docs/content"
+    enable: false
