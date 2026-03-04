@@ -1,11 +1,11 @@
-# Release v0.11.10
+## What's New
 
-## New Features
-- Introduced a new abstract logo design for the frontend
+- **Optimized LLM context usage**: Shortened tool descriptions and field schemas across all skills to reduce token consumption and improve response quality.
 
-## Improvements & Bug Fixes
-- Improved blockchain transaction reliability by fixing nonce management issues
-- Fixed a bug in the asynchronous Web3 client to ensure smoother network interactions
-- Added missing configuration files for improved test suite organization
+## Documentation
 
-Full Changelog: [v0.11.9...v0.11.10](https://github.com/crestalnetwork/intentkit/compare/v0.11.9...v0.11.10)
+- Restructured the documentation site with a cleaner layout and improved navigation.
+- Added a proper introduction page.
+- Documentation site now defaults to light theme.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.17...v0.11.18
