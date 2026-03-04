@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "PancakeSwap",
+  "description": "Swap tokens on PancakeSwap V3 DEX",
+  "x-icon": "https://ai.service.crestal.dev/skills/pancakeswap/pancakeswap.png",
+  "x-tags": [
+    "DeFi"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "quote": {
+          "type": "string",
+          "title": "Swap Quote",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Get swap quotes from PancakeSwap V3"
+        },
+        "swap": {
+          "type": "string",
+          "title": "Execute Swap",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Execute token swaps on PancakeSwap V3 (requires wallet)"
+        }
+      },
+      "required": [
+        "quote",
+        "swap"
+      ],
+      "description": "States for each PancakeSwap skill"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}

@@ -86,6 +86,10 @@ author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
 author_github = "spidemen"
 author_wallet = "0x275960ad41DbE218bBf72cDF612F88b5C6f40648"
 
+[pancakeswap]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [openai]
 author_github = "hyacinthus"
 author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
