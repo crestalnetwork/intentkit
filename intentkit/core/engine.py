@@ -235,7 +235,15 @@ async def build_agent(
         middleware.append(
             SummarizationMiddleware(
                 model=summarize_model,
-                max_tokens_before_summary=llm_model.info.context_length // 2,
+                trigger=[
+                    ("fraction", 0.8),
+                    ("tokens", int(llm_model.info.context_length * 0.8)),
+                ]
+                if agent.super_mode
+                else [
+                    ("fraction", 0.6),
+                    ("tokens", int(llm_model.info.context_length * 0.6)),
+                ],
             )
         )
 
@@ -529,20 +537,10 @@ async def stream_agent_raw(
     # Process input message to handle @skill patterns
     input_message = await explain_prompt(user_message.message)
 
-    # super mode
+    # super mode — determined by agent config
     recursion_limit = config.recursion_limit
-    if (
-        re.search(r"@super\b", input_message)
-        or user_message.super_mode
-        or agent.has_super()
-    ):
-        recursion_limit = max(config.super_recursion_limit, 300)
-        input_message = re.sub(r"@super\b", "", input_message).strip()
-
-    # llm native search
-    search = user_message.search_mode if user_message.search_mode is not None else False
-    if re.search(r"@search\b", input_message) or re.search(r"@web\b", input_message):
-        search = True
+    if agent.super_mode:
+        recursion_limit = max(config.super_recursion_limit, 1000)
 
     # content to llm
     messages = [
@@ -590,7 +588,6 @@ async def stream_agent_raw(
         app_id=user_message.app_id,
         entrypoint=user_message.author_type,
         is_private=is_private,
-        search=search,
         payer=payer if payment_enabled else None,
     )
 

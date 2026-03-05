@@ -166,6 +166,20 @@ class AgentCore(BaseModel):
             description="Dict of skills and their corresponding configurations",
         ),
     ] = None
+    search_internet: Annotated[
+        bool | None,
+        PydanticField(
+            default=None,
+            description="Enable LLM native internet search for this agent",
+        ),
+    ] = None
+    super_mode: Annotated[
+        bool | None,
+        PydanticField(
+            default=None,
+            description="Enable super mode with higher recursion limit for this agent",
+        ),
+    ] = None
 
     def hash(self) -> str:
         """

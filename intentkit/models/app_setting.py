@@ -33,7 +33,7 @@ DEFAULT_SYSTEM_MESSAGES = {
     "daily_usage_limit_exceeded": "This Agent has reached its free daily usage limit. Add credits to continue, or wait until tomorrow.",
     "insufficient_balance": "You don't have enough credits to complete this action.",
     "agent_internal_error": "Something went wrong. Please try again.",
-    "step_limit_exceeded": "This Agent tried to process too many steps. Try again with @super for higher step limit.",
+    "step_limit_exceeded": "This Agent tried to process too many steps. Please try again later or contact the agent owner to enable super mode.",
     "skill_interrupted": "You were interrupted after executing a skill. Please retry with caution to avoid repeating the skill.",
     "hourly_budget_exceeded": "Hourly budget exceeded. Please try again later.",
     "recursion_limit_exceeded": "The agent reached the maximum recursion limit. Please type 'continue' to resume execution.",

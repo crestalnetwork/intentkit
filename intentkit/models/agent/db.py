@@ -108,6 +108,13 @@ class AgentUserInputColumns:
         comment="Dict of skills and their corresponding configurations",
     )
 
+    search_internet: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, comment="Enable LLM native internet search"
+    )
+    super_mode: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, comment="Enable super mode with higher recursion limit"
+    )
+
     # Additional fields from AgentUserInput
     short_term_memory_strategy: Mapped[str | None] = mapped_column(
         String,

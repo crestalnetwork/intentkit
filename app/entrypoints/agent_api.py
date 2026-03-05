@@ -209,20 +209,6 @@ class ChatMessageRequest(BaseModel):
             description="Whether to stream the response",
         ),
     ]
-    search_mode: Annotated[
-        bool | None,
-        Field(
-            None,
-            description="Optional flag to enable search mode",
-        ),
-    ]
-    super_mode: Annotated[
-        bool | None,
-        Field(
-            None,
-            description="Optional flag to enable super mode",
-        ),
-    ]
     attachments: Annotated[
         list[ChatMessageAttachment] | None,
         Field(
@@ -239,8 +225,6 @@ class ChatMessageRequest(BaseModel):
                 "user_id": "user-123",
                 "app_id": "app-789",
                 "message": "Hello, how can you help me today?",
-                "search_mode": True,
-                "super_mode": False,
                 "attachments": [
                     {
                         "type": "link",
@@ -847,8 +831,6 @@ async def send_message(
         credit_cost=None,
         cold_start_cost=0.0,
         app_id=request.app_id,
-        search_mode=request.search_mode,
-        super_mode=request.super_mode,
     )
     # Don't save the message here - let the handler save it
     # await user_message.save_in_session(db)
@@ -1001,8 +983,6 @@ async def retry_message(
         credit_cost=None,
         cold_start_cost=0.0,
         app_id=last_message.app_id,
-        search_mode=last_message.search_mode,
-        super_mode=last_message.super_mode,
     )
 
     # Execute handler (non-streaming mode only)
@@ -1168,8 +1148,6 @@ async def create_chat_completion(
         credit_cost=None,
         cold_start_cost=0.0,
         app_id=None,
-        search_mode=None,
-        super_mode=None,
     )
 
     # Execute agent

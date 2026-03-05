@@ -165,7 +165,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
             }.values()
         )
 
-        if context.search or context.agent.has_search():
+        if context.agent.search_internet:
             model_info = await self.llm_model.model_info()
             if model_info.supports_search:
                 if model_info.provider == LLMProvider.OPENAI:

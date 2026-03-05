@@ -8,7 +8,6 @@ from typing import Annotated, Any, ClassVar, NotRequired, TypedDict, final, over
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import (
-    Boolean,
     DateTime,
     Float,
     Index,
@@ -148,20 +147,6 @@ class ChatMessageRequest(BaseModel):
             max_length=65535,
         ),
     ]
-    search_mode: Annotated[
-        bool | None,
-        Field(
-            None,
-            description="Optional flag to enable search mode",
-        ),
-    ]
-    super_mode: Annotated[
-        bool | None,
-        Field(
-            None,
-            description="Optional flag to enable super mode",
-        ),
-    ]
     attachments: Annotated[
         list[ChatMessageAttachment] | None,
         Field(
@@ -186,8 +171,6 @@ class ChatMessageRequest(BaseModel):
                 "app_id": "app-789",
                 "user_id": "user-456",
                 "message": "Hello, what can you do?",
-                "search_mode": False,
-                "super_mode": False,
                 "stream": False,
             }
         },
@@ -234,8 +217,6 @@ class ChatMessageTable(Base):
     )
     cold_start_cost: Mapped[float] = mapped_column(Float, default=0)
     app_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    search_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    super_mode: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     error_type: Mapped[SystemMessageType | None] = mapped_column(
         String,
         nullable=True,
@@ -319,14 +300,6 @@ class ChatMessageCreate(BaseModel):
     app_id: Annotated[
         str | None,
         Field(None, description="Optional application identifier"),
-    ] = None
-    search_mode: Annotated[
-        bool | None,
-        Field(None, description="Optional flag to enable search mode"),
-    ] = None
-    super_mode: Annotated[
-        bool | None,
-        Field(None, description="Optional flag to enable super mode"),
     ] = None
     error_type: Annotated[
         SystemMessageType | None,

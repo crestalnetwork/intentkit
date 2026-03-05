@@ -7,7 +7,7 @@ from typing import Annotated, Any, ClassVar
 
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -119,6 +119,12 @@ class TemplateTable(Base):
         JSONB(),
         nullable=True,
         comment="Dict of skills and their corresponding configurations",
+    )
+    search_internet: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, comment="Enable LLM native internet search"
+    )
+    super_mode: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, comment="Enable super mode with higher recursion limit"
     )
 
     # auto timestamp

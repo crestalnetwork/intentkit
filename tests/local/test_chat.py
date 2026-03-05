@@ -71,8 +71,6 @@ async def test_send_message_schedules_background_summary_task(monkeypatch):
     request = chat_module.LocalChatMessageRequest(
         message="hello",
         stream=False,
-        search_mode=None,
-        super_mode=None,
         attachments=None,
     )
     _ = await chat_module.send_message(request=request, aid="agent-1", chat_id="chat-1")

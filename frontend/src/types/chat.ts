@@ -39,8 +39,6 @@ export interface ChatMessageRequest {
   app_id?: string;
   user_id: string;
   message: string;
-  search_mode?: boolean;
-  super_mode?: boolean;
   attachments?: ChatMessageAttachment[];
 }
 

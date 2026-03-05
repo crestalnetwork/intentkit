@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import textwrap
 import warnings
 from datetime import datetime
@@ -130,34 +129,6 @@ class Agent(AgentCreate, AgentPublicInfo):
             return model.supports_image_input
         except Exception:
             return False
-
-    def has_search(self) -> bool:
-        texts = [
-            self.prompt,
-            self.prompt_append,
-            self.extra_prompt,
-            self.purpose,
-            self.personality,
-            self.principles,
-        ]
-        for t in texts:
-            if t and (re.search(r"@search\\b", t) or re.search(r"@web\\b", t)):
-                return True
-        return False
-
-    def has_super(self) -> bool:
-        texts = [
-            self.prompt,
-            self.prompt_append,
-            self.extra_prompt,
-            self.purpose,
-            self.personality,
-            self.principles,
-        ]
-        for t in texts:
-            if t and re.search(r"@super\\b", t):
-                return True
-        return False
 
     def to_yaml(self) -> str:
         """

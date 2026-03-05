@@ -36,7 +36,6 @@ class AgentContext(BaseModel):
     app_id: str | None = None
     entrypoint: AuthorType
     is_private: bool
-    search: bool = False
     thinking: bool = False
     payer: str | None = None
 

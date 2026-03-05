@@ -193,8 +193,6 @@ async def test_stream_agent_flow(mock_agent):
             mock_saved_msg.author_type = AuthorType.WEB
             mock_saved_msg.attachments = []
             mock_saved_msg.app_id = None
-            mock_saved_msg.search_mode = False
-            mock_saved_msg.super_mode = False
             mock_save.return_value = mock_saved_msg
 
             # Mock ChatMessageCreate.save_in_session for output message
