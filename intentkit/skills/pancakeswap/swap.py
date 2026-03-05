@@ -10,14 +10,17 @@ from web3 import Web3
 
 from intentkit.skills.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.skills.pancakeswap.constants import (
-    ERC20_ABI,
     FEE_TIERS,
     NETWORK_TO_CHAIN_ID,
     QUOTER_V2_ABI,
     QUOTER_V2_ADDRESSES,
     SMART_ROUTER_ABI,
     SMART_ROUTER_ADDRESSES,
-    WRAPPED_NATIVE_ADDRESSES,
+)
+from intentkit.skills.pancakeswap.utils import (
+    ensure_allowance,
+    get_decimals,
+    resolve_token,
 )
 
 NAME = "pancakeswap_swap"
@@ -83,12 +86,12 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
 
             # Resolve tokens
             is_native_in = token_in.lower() == "native"
-            addr_in = _resolve_token(token_in, chain_id)
-            addr_out = _resolve_token(token_out, chain_id)
+            addr_in = resolve_token(token_in, chain_id)
+            addr_out = resolve_token(token_out, chain_id)
 
             # Get decimals
-            decimals_in = await _get_decimals(w3, addr_in, chain_id)
-            decimals_out = await _get_decimals(w3, addr_out, chain_id)
+            decimals_in = await get_decimals(w3, addr_in, chain_id)
+            decimals_out = await get_decimals(w3, addr_out, chain_id)
 
             # Convert amount
             amount_raw = int(Decimal(amount) * Decimal(10**decimals_in))
@@ -135,7 +138,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
 
             # Approve ERC20 if not native
             if not is_native_in:
-                await self._ensure_allowance(
+                await ensure_allowance(
                     w3, wallet, checksum_in, checksum_router, amount_raw
                 )
 
@@ -188,56 +191,3 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
             raise
         except Exception as e:
             raise ToolException(f"Swap failed: {e!s}")
-
-    async def _ensure_allowance(
-        self,
-        w3: Any,
-        wallet: Any,
-        token_address: str,
-        spender: str,
-        amount: int,
-    ) -> None:
-        """Check and set ERC20 allowance if needed."""
-        contract = w3.eth.contract(
-            address=token_address,
-            abi=ERC20_ABI,
-        )
-        current = await contract.functions.allowance(
-            Web3.to_checksum_address(wallet.address),
-            spender,
-        ).call()
-
-        if current >= amount:
-            return
-
-        approve_data = contract.encode_abi("approve", [spender, amount])
-        tx_hash = await wallet.send_transaction(
-            to=token_address,
-            data=approve_data,
-        )
-        await wallet.wait_for_receipt(tx_hash)
-
-
-def _resolve_token(token: str, chain_id: int) -> str:
-    """Resolve 'native' keyword to wrapped native address."""
-    if token.lower() == "native":
-        addr = WRAPPED_NATIVE_ADDRESSES.get(chain_id)
-        if not addr:
-            raise ToolException(f"No wrapped native token for chain {chain_id}")
-        return addr
-    return token
-
-
-async def _get_decimals(w3: Any, token_address: str, chain_id: int) -> int:
-    """Get ERC20 token decimals."""
-    wrapped = WRAPPED_NATIVE_ADDRESSES.get(chain_id, "").lower()
-    if token_address.lower() == wrapped:
-        return 18
-    try:
-        contract = w3.eth.contract(
-            address=Web3.to_checksum_address(token_address),
-            abi=ERC20_ABI,
-        )
-        return await contract.functions.decimals().call()
-    except Exception:
-        return 18

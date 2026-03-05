@@ -2,8 +2,11 @@ import logging
 from typing import Any, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
+from intentkit.skills.pancakeswap.add_liquidity import PancakeSwapAddLiquidity
 from intentkit.skills.pancakeswap.base import PancakeSwapBaseTool
+from intentkit.skills.pancakeswap.get_positions import PancakeSwapGetPositions
 from intentkit.skills.pancakeswap.quote import PancakeSwapQuote
+from intentkit.skills.pancakeswap.remove_liquidity import PancakeSwapRemoveLiquidity
 from intentkit.skills.pancakeswap.swap import PancakeSwapSwap
 
 logger = logging.getLogger(__name__)
@@ -14,6 +17,9 @@ _cache: dict[str, PancakeSwapBaseTool] = {}
 class SkillStates(TypedDict):
     quote: SkillState
     swap: SkillState
+    get_positions: SkillState
+    add_liquidity: SkillState
+    remove_liquidity: SkillState
 
 
 class Config(SkillConfig):
@@ -50,6 +56,12 @@ def _get_skill(name: str) -> PancakeSwapBaseTool | None:
             _cache[name] = PancakeSwapQuote()
         elif name == "swap":
             _cache[name] = PancakeSwapSwap()
+        elif name == "get_positions":
+            _cache[name] = PancakeSwapGetPositions()
+        elif name == "add_liquidity":
+            _cache[name] = PancakeSwapAddLiquidity()
+        elif name == "remove_liquidity":
+            _cache[name] = PancakeSwapRemoveLiquidity()
         else:
             logger.warning(f"Unknown pancakeswap skill: {name}")
             return None

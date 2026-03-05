@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "PancakeSwap",
-  "description": "Swap tokens on PancakeSwap V3 DEX",
+  "description": "Swap tokens and manage V3 liquidity positions on PancakeSwap DEX",
   "x-icon": "https://ai.service.crestal.dev/skills/pancakeswap/pancakeswap.png",
   "x-tags": [
     "DeFi"
@@ -48,11 +48,62 @@
           ],
           "default": "disabled",
           "description": "Execute token swaps on PancakeSwap V3 (requires wallet)"
+        },
+        "get_positions": {
+          "type": "string",
+          "title": "View Positions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "View PancakeSwap V3 liquidity positions and farming status"
+        },
+        "add_liquidity": {
+          "type": "string",
+          "title": "Add Liquidity",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Add liquidity to PancakeSwap V3 pools with auto-staking (requires wallet)"
+        },
+        "remove_liquidity": {
+          "type": "string",
+          "title": "Remove Liquidity",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Remove liquidity from PancakeSwap V3 positions with auto-unstaking (requires wallet)"
         }
       },
       "required": [
         "quote",
-        "swap"
+        "swap",
+        "get_positions",
+        "add_liquidity",
+        "remove_liquidity"
       ],
       "description": "States for each PancakeSwap skill"
     }

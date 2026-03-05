@@ -10,13 +10,12 @@ from web3 import Web3
 
 from intentkit.skills.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.skills.pancakeswap.constants import (
-    ERC20_ABI,
     FEE_TIERS,
     NETWORK_TO_CHAIN_ID,
     QUOTER_V2_ABI,
     QUOTER_V2_ADDRESSES,
-    WRAPPED_NATIVE_ADDRESSES,
 )
+from intentkit.skills.pancakeswap.utils import get_decimals, resolve_token
 
 NAME = "pancakeswap_quote"
 
@@ -72,12 +71,12 @@ class PancakeSwapQuote(PancakeSwapBaseTool):
             w3 = self.web3_client()
 
             # Resolve native token to wrapped address
-            addr_in = _resolve_token(token_in, chain_id)
-            addr_out = _resolve_token(token_out, chain_id)
+            addr_in = resolve_token(token_in, chain_id)
+            addr_out = resolve_token(token_out, chain_id)
 
             # Get token decimals
-            decimals_in = await _get_decimals(w3, addr_in, chain_id)
-            decimals_out = await _get_decimals(w3, addr_out, chain_id)
+            decimals_in = await get_decimals(w3, addr_in, chain_id)
+            decimals_out = await get_decimals(w3, addr_out, chain_id)
 
             # Convert human-readable amount to raw
             amount_raw = int(Decimal(amount) * Decimal(10**decimals_in))
@@ -134,28 +133,3 @@ class PancakeSwapQuote(PancakeSwapBaseTool):
             raise
         except Exception as e:
             raise ToolException(f"Quote failed: {e!s}")
-
-
-def _resolve_token(token: str, chain_id: int) -> str:
-    """Resolve 'native' keyword to wrapped native address."""
-    if token.lower() == "native":
-        addr = WRAPPED_NATIVE_ADDRESSES.get(chain_id)
-        if not addr:
-            raise ToolException(f"No wrapped native token for chain {chain_id}")
-        return addr
-    return token
-
-
-async def _get_decimals(w3: Any, token_address: str, chain_id: int) -> int:
-    """Get ERC20 token decimals. Returns 18 for wrapped native tokens."""
-    wrapped = WRAPPED_NATIVE_ADDRESSES.get(chain_id, "").lower()
-    if token_address.lower() == wrapped:
-        return 18
-    try:
-        contract = w3.eth.contract(
-            address=Web3.to_checksum_address(token_address),
-            abi=ERC20_ABI,
-        )
-        return await contract.functions.decimals().call()
-    except Exception:
-        return 18  # fallback
