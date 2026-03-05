@@ -1,13 +1,9 @@
 ## New Features
 
-- **Agent Middleware Support**: Agents now support LangChain middleware including Todo List for task planning, automatic LLM Tool Selector when agents have more than 10 skills, Context Editing for efficient context management, and built-in Tool Retry and Model Retry for improved reliability.
-- **New Agent Settings**: Added Internet Search, Super Mode, and Todo List toggles to the agent configuration UI with proper labels and descriptions.
+- **PancakeSwap V3 Liquidity Management**: Added three new skills for managing liquidity positions on PancakeSwap V3:
+  - **View Positions**: See all your V3 liquidity positions including pool details, tick ranges, uncollected fees, and farming status with pending CAKE rewards.
+  - **Add Liquidity**: Create full-range liquidity positions with automatic staking into MasterChef V3 farms when eligible for CAKE rewards.
+  - **Remove Liquidity**: Remove liquidity partially or fully with automatic unstaking, fee collection, CAKE reward harvesting, and NFT cleanup.
+- **Linea Network Support**: PancakeSwap skills now support Linea mainnet in addition to BSC, Ethereum, Base, and Arbitrum.
 
-## Improvements
-
-- Refactored web search and super mode internals for cleaner architecture.
-- Upgraded frontend to Node.js 24 and added a dedicated development Dockerfile for better hot reload support in Docker Compose.
-- Fixed frontend rendering issues with checkbox fields.
-- Updated dependencies.
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.19...v0.11.20
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.20...v0.11.21
