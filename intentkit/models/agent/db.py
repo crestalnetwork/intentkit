@@ -114,6 +114,11 @@ class AgentUserInputColumns:
     super_mode: Mapped[bool | None] = mapped_column(
         Boolean, nullable=True, comment="Enable super mode with higher recursion limit"
     )
+    enable_todo: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="Enable todo list middleware for task planning and tracking",
+    )
 
     # Additional fields from AgentUserInput
     short_term_memory_strategy: Mapped[str | None] = mapped_column(

@@ -168,10 +168,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-        - NEXT_PUBLIC_AWS_S3_CDN_URL=http://localhost:9000/static
+      dockerfile: Dockerfile.dev
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -200,7 +197,6 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
-    command: npm run dev
 
   telegram:
     build:

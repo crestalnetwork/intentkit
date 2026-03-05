@@ -167,19 +167,36 @@ class AgentCore(BaseModel):
         ),
     ] = None
     search_internet: Annotated[
-        bool | None,
+        bool,
         PydanticField(
-            default=None,
+            default=True,
             description="Enable LLM native internet search for this agent",
         ),
-    ] = None
+    ] = True
     super_mode: Annotated[
-        bool | None,
+        bool,
         PydanticField(
-            default=None,
+            default=False,
             description="Enable super mode with higher recursion limit for this agent",
         ),
-    ] = None
+    ] = False
+    enable_todo: Annotated[
+        bool,
+        PydanticField(
+            default=False,
+            description="Enable todo list middleware for task planning and tracking in complex multi-step tasks",
+        ),
+    ] = False
+
+    @field_validator("search_internet", mode="before")
+    @classmethod
+    def _set_search_internet_default(cls, v: bool | None) -> bool:
+        return True if v is None else v
+
+    @field_validator("super_mode", "enable_todo", mode="before")
+    @classmethod
+    def _set_bool_false_default(cls, v: bool | None) -> bool:
+        return False if v is None else v
 
     def hash(self) -> str:
         """

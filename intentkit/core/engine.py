@@ -29,6 +29,14 @@ import httpx
 import sqlalchemy
 from epyxid import XID
 from langchain.agents import create_agent as create_langchain_agent
+from langchain.agents.middleware import (
+    ClearToolUsesEdit,
+    ContextEditingMiddleware,
+    LLMToolSelectorMiddleware,
+    ModelRetryMiddleware,
+    TodoListMiddleware,
+    ToolRetryMiddleware,
+)
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -73,6 +81,7 @@ from intentkit.models.chat import (
 )
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModelInfo, create_llm_model
+from intentkit.models.llm_picker import pick_summarize_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData, Skill
 from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
@@ -222,13 +231,35 @@ async def build_agent(
         ToolBindingMiddleware(llm_model, tools, private_tools),
         DynamicPromptMiddleware(agent, agent_data),
         StepTrackingMiddleware(),
+        ToolRetryMiddleware(),
+        ModelRetryMiddleware(),
     ]
+
+    if agent.enable_todo:
+        middleware.append(TodoListMiddleware())
+
+    # Auto-enable LLM tool selector when there are many tools
+    if len(private_tools) > 10:
+        selector_model_name = pick_summarize_model()
+        selector_llm = await create_llm_model(model_name=selector_model_name)
+        selector_model = await selector_llm.create_instance()
+        middleware.append(LLMToolSelectorMiddleware(model=selector_model))
+
+    # Context editing clears old tool results at 40% context to free space.
+    # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware
+    # uses before_model, so summarization always runs first regardless of list position.
+    # The lower threshold (40%) ensures context editing handles moderate growth,
+    # while summarization (60-80%) handles extreme cases.
+    context_editing_trigger = int(llm_model.info.context_length * 0.4)
+    middleware.append(
+        ContextEditingMiddleware(
+            edits=[ClearToolUsesEdit(trigger=context_editing_trigger)]
+        )
+    )
 
     if agent.short_term_memory_strategy == "trim":
         middleware.append(TrimMessagesMiddleware(max_summary_tokens=2048))
     elif agent.short_term_memory_strategy == "summarize":
-        from intentkit.models.llm_picker import pick_summarize_model
-
         summarize_model_name = pick_summarize_model()
         summarize_llm = await create_llm_model(model_name=summarize_model_name)
         summarize_model = await summarize_llm.create_instance()

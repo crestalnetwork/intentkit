@@ -244,6 +244,29 @@
         }
       }
     },
+    "search_internet": {
+      "title": "Internet Search",
+      "type": "boolean",
+      "description": "Enable LLM native internet search for this agent",
+      "default": true,
+      "x-group": "llm"
+    },
+    "super_mode": {
+      "title": "Super Mode",
+      "type": "boolean",
+      "description": "Enable super mode with higher recursion limit for this agent",
+      "default": false,
+      "x-group": "llm",
+      "x-advanced": true
+    },
+    "enable_todo": {
+      "title": "Todo List",
+      "type": "boolean",
+      "description": "Enable todo list for task planning and tracking in complex multi-step tasks",
+      "default": false,
+      "x-group": "llm",
+      "x-advanced": true
+    },
     "skills": {
       "title": "Skills",
       "type": "object",

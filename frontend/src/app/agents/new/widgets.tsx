@@ -129,6 +129,8 @@ export const CheckboxWidget = (props: WidgetProps) => {
         value,
         disabled,
         readonly,
+        label,
+        schema,
         onBlur,
         onFocus,
         onChange,
@@ -136,18 +138,28 @@ export const CheckboxWidget = (props: WidgetProps) => {
 
     return (
         <div className="mb-4">
-            <input
-                type="checkbox"
-                id={id}
-                checked={typeof value === "undefined" ? false : value}
-                required={props.required}
-                disabled={disabled || readonly}
-                autoFocus={props.autofocus}
-                onChange={(e) => onChange(e.target.checked)}
-                onBlur={onBlur && ((e) => onBlur(id, e.target.checked))}
-                onFocus={onFocus && ((e) => onFocus(id, e.target.checked))}
-                className="h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            {label && (
+                <label htmlFor={id} className="block text-base font-bold mb-1">
+                    {label}
+                </label>
+            )}
+            <div className="flex items-start gap-2">
+                <input
+                    type="checkbox"
+                    id={id}
+                    checked={typeof value === "undefined" ? false : value}
+                    required={props.required}
+                    disabled={disabled || readonly}
+                    autoFocus={props.autofocus}
+                    onChange={(e) => onChange(e.target.checked)}
+                    onBlur={onBlur && ((e) => onBlur(id, e.target.checked))}
+                    onFocus={onFocus && ((e) => onFocus(id, e.target.checked))}
+                    className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                {schema.description && (
+                    <p className="text-sm text-muted-foreground">{schema.description}</p>
+                )}
+            </div>
         </div>
     );
 };
