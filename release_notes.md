@@ -1,13 +1,11 @@
 ## What's New
 
-- **Model Selector Widget**: New interactive model selector with info panel for agent configuration forms, making it easier to choose and understand available LLM models.
-- **Advanced Settings Toggle**: Agent form now supports collapsible advanced settings sections, keeping the UI clean while still providing access to power-user options.
-- **GPT 5.4 Support**: Added support for OpenAI's latest GPT 5.4 model.
+- **Activity and Post Skills**: Agents can now optionally enable activity tracking and post management skills (create post, get post, recent posts) via dedicated toggle settings.
+- **Dynamic Wallet Provider Options**: The wallet provider selection now automatically adapts based on your deployment configuration — only showing providers (CDP, Privy, Safe) that have the required credentials configured.
 
 ## Improvements
 
-- Improved frontend hot reload reliability in Docker environments.
-- Updated dependencies.
-- Reorganized agent form field groupings for better usability.
+- Reorganized internal agent schema files for better maintainability.
+- Fixed a UI warning related to checkbox inputs in the agent editor.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.21...v0.11.22
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.22...v0.11.23
