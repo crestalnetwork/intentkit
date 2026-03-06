@@ -252,16 +252,14 @@
       "type": "boolean",
       "description": "Enable super mode with higher recursion limit for this agent",
       "default": false,
-      "x-group": "llm",
-      "x-advanced": true
+      "x-group": "llm"
     },
     "enable_todo": {
       "title": "Todo List",
       "type": "boolean",
       "description": "Enable todo list for task planning and tracking in complex multi-step tasks",
       "default": false,
-      "x-group": "llm",
-      "x-advanced": true
+      "x-group": "llm"
     },
     "skills": {
       "title": "Skills",
@@ -349,7 +347,8 @@
       "enum": ["cdp", "readonly", "none"],
       "x-enum-title": ["Coinbase Server Wallet V2", "Readonly Wallet", "None"],
       "default": "none",
-      "x-group": "onchain"
+      "x-group": "onchain",
+      "x-advanced": true
     },
     "network_id": {
       "title": "Default Network",
@@ -365,7 +364,8 @@
         "bnb-mainnet",
         "base-sepolia"
       ],
-      "x-group": "onchain"
+      "x-group": "onchain",
+      "x-advanced": true
     }
   },
   "if": {
@@ -382,7 +382,8 @@
         "type": "string",
         "description": "Set the wallet address as agent wallet, then it can only be analyzed by the agent.",
         "maxLength": 100,
-        "x-group": "onchain"
+        "x-group": "onchain",
+        "x-advanced": true
       }
     },
     "required": ["readonly_wallet_address"]

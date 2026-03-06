@@ -10,11 +10,17 @@ const nextConfig: NextConfig = {
     unoptimized: false,
   },
 
-  // Enable polling-based file watching for Turbopack in Docker containers.
+  // Enable polling-based file watching in Docker containers.
   // Native filesystem events don't propagate across the Docker boundary,
-  // so Turbopack needs to poll for changes instead.
+  // so webpack/watchpack needs to poll for changes instead.
+  // WATCHPACK_POLLING env var can be "true" (5007ms default) or a number (ms).
   ...(process.env.WATCHPACK_POLLING
-    ? { watchOptions: { pollIntervalMs: 1000 } }
+    ? {
+        watchOptions: {
+          pollIntervalMs:
+            parseInt(process.env.WATCHPACK_POLLING, 10) || 1000,
+        },
+      }
     : {}),
 
   // Proxy API requests to FastAPI backend during development
