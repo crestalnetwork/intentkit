@@ -1,9 +1,13 @@
-## New Features
+## What's New
 
-- **PancakeSwap V3 Liquidity Management**: Added three new skills for managing liquidity positions on PancakeSwap V3:
-  - **View Positions**: See all your V3 liquidity positions including pool details, tick ranges, uncollected fees, and farming status with pending CAKE rewards.
-  - **Add Liquidity**: Create full-range liquidity positions with automatic staking into MasterChef V3 farms when eligible for CAKE rewards.
-  - **Remove Liquidity**: Remove liquidity partially or fully with automatic unstaking, fee collection, CAKE reward harvesting, and NFT cleanup.
-- **Linea Network Support**: PancakeSwap skills now support Linea mainnet in addition to BSC, Ethereum, Base, and Arbitrum.
+- **Model Selector Widget**: New interactive model selector with info panel for agent configuration forms, making it easier to choose and understand available LLM models.
+- **Advanced Settings Toggle**: Agent form now supports collapsible advanced settings sections, keeping the UI clean while still providing access to power-user options.
+- **GPT 5.4 Support**: Added support for OpenAI's latest GPT 5.4 model.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.20...v0.11.21
+## Improvements
+
+- Improved frontend hot reload reliability in Docker environments.
+- Updated dependencies.
+- Reorganized agent form field groupings for better usability.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.21...v0.11.22
