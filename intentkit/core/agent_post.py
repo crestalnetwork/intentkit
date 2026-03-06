@@ -4,7 +4,12 @@ from sqlalchemy import select
 
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
-from intentkit.models.agent_post import AgentPost, AgentPostCreate, AgentPostTable
+from intentkit.models.agent_post import (
+    AgentPost,
+    AgentPostBrief,
+    AgentPostCreate,
+    AgentPostTable,
+)
 
 
 async def create_agent_post(post_create: AgentPostCreate) -> AgentPost:
@@ -73,3 +78,24 @@ async def get_agent_post(post_id: str) -> AgentPost | None:
     )
 
     return post
+
+
+async def get_agent_posts(agent_id: str, limit: int = 10) -> list[AgentPostBrief]:
+    """Get recent posts for an agent, returning brief versions without full markdown.
+
+    Args:
+        agent_id: The agent's ID.
+        limit: Maximum number of posts to return.
+
+    Returns:
+        A list of AgentPostBrief objects.
+    """
+    async with get_session() as session:
+        result = await session.execute(
+            select(AgentPostTable)
+            .where(AgentPostTable.agent_id == agent_id)
+            .order_by(AgentPostTable.created_at.desc())
+            .limit(limit)
+        )
+        rows = result.scalars().all()
+        return [AgentPostBrief.from_table(row) for row in rows]
