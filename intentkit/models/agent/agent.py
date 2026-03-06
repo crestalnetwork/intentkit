@@ -472,6 +472,36 @@ class Agent(AgentCreate, AgentPublicInfo):
             if skills_property:
                 skills_property["properties"] = skills_properties
 
+            # Dynamically filter wallet_provider enum based on config
+            wallet_property = schema.get("properties", {}).get("wallet_provider", {})
+            if wallet_property:
+                from intentkit.config.config import config
+
+                wallet_enum = ["none", "native"]
+                wallet_titles = ["None", "Native Wallet"]
+
+                if (
+                    config.cdp_api_key_id
+                    and config.cdp_api_key_secret
+                    and config.cdp_wallet_secret
+                ):
+                    wallet_enum.append("cdp")
+                    wallet_titles.append("Coinbase Server Wallet V2")
+
+                if config.privy_app_id and config.privy_app_secret:
+                    wallet_enum.append("privy")
+                    wallet_titles.append("Privy Wallet")
+
+                    if config.master_wallet_private_key:
+                        wallet_enum.append("safe")
+                        wallet_titles.append("Safe Wallet")
+
+                wallet_enum.append("readonly")
+                wallet_titles.append("Readonly Wallet")
+
+                wallet_property["enum"] = wallet_enum
+                wallet_property["x-enum-title"] = wallet_titles
+
             # Log the changes for debugging
             logger.debug(
                 "Schema processed with merged LLM/skill defaults; filtered owner API skills: %s",
