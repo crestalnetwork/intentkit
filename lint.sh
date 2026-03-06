@@ -32,7 +32,7 @@ validate_schema() {
 }
 
 # Validate the main agent schema
-if ! validate_schema "intentkit/models/agent_schema.json"; then
+if ! validate_schema "intentkit/models/agent/schema.json"; then
     exit 1
 fi
 

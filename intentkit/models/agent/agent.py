@@ -331,8 +331,8 @@ class Agent(AgentCreate, AgentPublicInfo):
             Dict containing the complete JSON schema for the Agent model
         """
         # Get the schema file path relative to this file
-        current_dir = Path(__file__).parent.parent
-        agent_schema_path = current_dir / "agent_schema.json"
+        current_dir = Path(__file__).parent
+        agent_schema_path = current_dir / "schema.json"
 
         base_uri = f"file://{agent_schema_path}"
         with open(agent_schema_path) as f:
