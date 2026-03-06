@@ -48,6 +48,10 @@ function generateUiSchema(schema: Record<string, unknown> | undefined) {
                 uiProperty["ui:readonly"] = true;
             }
 
+            if (property["x-component"] === "category-select") {
+                uiProperty["ui:widget"] = "ModelSelectWidget";
+            }
+
             if (typeof property["x-placeholder"] === "string") {
                 uiProperty["ui:placeholder"] = property["x-placeholder"];
             }

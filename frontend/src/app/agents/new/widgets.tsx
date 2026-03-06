@@ -1,6 +1,7 @@
 import React from "react";
 import { WidgetProps, BaseInputTemplateProps } from "@rjsf/utils";
 import { Input } from "@/components/ui/input";
+import { ModelSelectWidget } from "./ModelSelectWidget";
 // Checking file list earlier, Label was not in components/ui. I will use a simple label implementation or standard label tag.
 
 export const BaseInputTemplate = (props: BaseInputTemplateProps) => {
@@ -169,4 +170,5 @@ export const widgets = {
     TextareaWidget,
     SelectWidget,
     CheckboxWidget,
+    ModelSelectWidget,
 };

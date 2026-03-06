@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Agent",
   "description": "Agent model",
   "type": "object",
@@ -76,11 +76,7 @@
       "title": "AI Model",
       "type": "string",
       "description": "Select the LLM for your agent. Note that each LLM has its specific advantages, behaviour and cost.",
-      "enum": [],
       "x-component": "category-select",
-      "x-enum-title": [],
-      "x-enum-category": [],
-      "x-support-skill": [],
       "x-group": "llm"
     },
     "purpose": {

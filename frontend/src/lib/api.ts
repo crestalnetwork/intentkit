@@ -161,6 +161,44 @@ export const agentApi = {
 };
 
 /**
+ * LLM Model Info type definition
+ */
+export interface LLMModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  provider_name: string;
+  enabled: boolean;
+  input_price: string;
+  output_price: string;
+  price_level: number | null;
+  context_length: number;
+  output_length: number;
+  intelligence: number;
+  speed: number;
+  supports_image_input: boolean;
+  supports_search: boolean;
+  supports_skill_calls: boolean;
+}
+
+/**
+ * Metadata API functions
+ */
+export const metadataApi = {
+  /**
+   * Get all available LLM models
+   * GET /metadata/llms
+   */
+  async getLLMs(): Promise<LLMModelInfo[]> {
+    const response = await fetch(`${API_BASE}/metadata/llms`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch LLM models: ${response.statusText}`);
+    }
+    return response.json();
+  },
+};
+
+/**
  * Chat API functions for local single-user mode
  * Based on app/local/chat.py endpoints:
  * - GET /agents/{aid}/chats - List chat threads

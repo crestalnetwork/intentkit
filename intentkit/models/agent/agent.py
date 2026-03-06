@@ -21,7 +21,7 @@ from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent.public_info import AgentPublicInfo
 from intentkit.models.agent.user_input import AgentCreate, AgentUpdate
 from intentkit.models.credit import CreditAccount
-from intentkit.models.llm import LLMModelInfo, LLMProvider
+from intentkit.models.llm import LLMModelInfo
 from intentkit.models.skill import Skill
 
 logger = logging.getLogger(__name__)
@@ -346,29 +346,13 @@ class Agent(AgentCreate, AgentPublicInfo):
             # Process model property using defaults merged with database overrides
             if model_property:
                 new_enum = []
-                new_enum_title = []
-                new_enum_category = []
-                new_enum_support_skill = []
 
                 for model_info in await LLMModelInfo.get_all(db):
                     if not model_info.enabled:
                         continue
-
-                    provider = (
-                        LLMProvider(model_info.provider)
-                        if model_info.provider
-                        else model_info.provider
-                    )
-
                     new_enum.append(model_info.id)
-                    new_enum_title.append(model_info.name)
-                    new_enum_category.append(provider.display_name())
-                    new_enum_support_skill.append(model_info.supports_skill_calls)
 
                 model_property["enum"] = new_enum
-                model_property["x-enum-title"] = new_enum_title
-                model_property["x-enum-category"] = new_enum_category
-                model_property["x-support-skill"] = new_enum_support_skill
 
                 if new_enum:
                     from intentkit.models.llm_picker import pick_default_model
