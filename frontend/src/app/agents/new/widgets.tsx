@@ -148,7 +148,7 @@ export const CheckboxWidget = (props: WidgetProps) => {
                 <input
                     type="checkbox"
                     id={id}
-                    checked={typeof value === "undefined" ? false : value}
+                    checked={!!value}
                     required={props.required}
                     disabled={disabled || readonly}
                     autoFocus={props.autofocus}
