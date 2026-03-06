@@ -261,6 +261,20 @@
       "default": false,
       "x-group": "llm"
     },
+    "enable_activity": {
+      "title": "Activity Publishing",
+      "type": "boolean",
+      "description": "Enable activity skills (create activity, recent activities)",
+      "default": true,
+      "x-group": "llm"
+    },
+    "enable_post": {
+      "title": "Post Publishing",
+      "type": "boolean",
+      "description": "Enable post skills (create post, get post, recent posts)",
+      "default": true,
+      "x-group": "llm"
+    },
     "skills": {
       "title": "Skills",
       "type": "object",

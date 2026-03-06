@@ -204,7 +204,16 @@ async def build_agent(
     # add system skills to private tools
     from intentkit.core.system_skills import get_system_skills
 
-    private_tools.extend(get_system_skills())
+    enable_activity = (
+        agent.enable_activity if agent.enable_activity is not None else True
+    )
+    enable_post = agent.enable_post if agent.enable_post is not None else True
+    private_tools.extend(
+        get_system_skills(
+            enable_activity=enable_activity,
+            enable_post=enable_post,
+        )
+    )
 
     # filter the duplicate tools
     tools = list(

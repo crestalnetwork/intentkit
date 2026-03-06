@@ -119,6 +119,16 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Enable todo list middleware for task planning and tracking",
     )
+    enable_activity: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="Enable activity skills (create activity, recent activities)",
+    )
+    enable_post: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="Enable post skills (create post, get post, recent posts)",
+    )
 
     # Additional fields from AgentUserInput
     short_term_memory_strategy: Mapped[str | None] = mapped_column(

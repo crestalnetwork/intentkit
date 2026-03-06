@@ -187,6 +187,20 @@ class AgentCore(BaseModel):
             description="Enable todo list middleware for task planning and tracking in complex multi-step tasks",
         ),
     ] = False
+    enable_activity: Annotated[
+        bool | None,
+        PydanticField(
+            default=None,
+            description="Enable activity skills (create activity, recent activities)",
+        ),
+    ] = None
+    enable_post: Annotated[
+        bool | None,
+        PydanticField(
+            default=None,
+            description="Enable post skills (create post, get post, recent posts)",
+        ),
+    ] = None
 
     @field_validator("search_internet", mode="before")
     @classmethod

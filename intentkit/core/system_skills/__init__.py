@@ -22,14 +22,31 @@ __all__ = [
     "RecentPostsSkill",
 ]
 
+# Cached singleton instances
+_call_agent = CallAgentSkill()
+_create_activity = CreateActivitySkill()
+_recent_activities = RecentActivitiesSkill()
+_create_post = CreatePostSkill()
+_get_post = GetPostSkill()
+_recent_posts = RecentPostsSkill()
 
-def get_system_skills():
-    """Get all system skills instances."""
-    return [
-        CallAgentSkill(),
-        CreateActivitySkill(),
-        CreatePostSkill(),
-        GetPostSkill(),
-        RecentActivitiesSkill(),
-        RecentPostsSkill(),
-    ]
+
+def get_system_skills(
+    enable_activity: bool = True,
+    enable_post: bool = True,
+) -> list[SystemSkill]:
+    """Get system skills instances filtered by flags.
+
+    Args:
+        enable_activity: Whether to include activity skills. Defaults to True.
+        enable_post: Whether to include post skills. Defaults to True.
+    """
+    skills: list[SystemSkill] = [_call_agent]
+    if enable_activity:
+        skills.append(_create_activity)
+        skills.append(_recent_activities)
+    if enable_post:
+        skills.append(_create_post)
+        skills.append(_get_post)
+        skills.append(_recent_posts)
+    return skills
