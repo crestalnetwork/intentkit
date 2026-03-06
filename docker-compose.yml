@@ -186,8 +186,6 @@ services:
       - NODE_ENV=development
       - NODE_OPTIONS=--max-old-space-size=2048
       - WATCHPACK_POLLING=true
-      - WATCHPACK_POLLING_INTERVAL=1000
-      - CHOKIDAR_USEPOLLING=1
     ports:
       - "3000:3000"
     healthcheck:
