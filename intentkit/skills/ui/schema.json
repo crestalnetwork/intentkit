@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "UI Components",
+  "description": "Display rich UI components to users such as interactive cards and multiple-choice options. These skills enable agents to present structured, visually appealing content instead of plain text.",
+  "x-icon": "https://ai.service.crestal.dev/skills/ui/ui.svg",
+  "x-tags": [
+    "Communication",
+    "Infrastructure"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "ui_show_card": {
+          "type": "string",
+          "title": "Show Card",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Display a rich card with title, description, optional image, and an action button linking to a URL.",
+          "default": "disabled"
+        },
+        "ui_ask_user": {
+          "type": "string",
+          "title": "Ask User",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Present the user with 2-3 clickable options to choose from. Each option has a title and description.",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each UI skill (disabled, public, or private)"
+    }
+  },
+  "required": [
+    "enabled",
+    "states"
+  ],
+  "additionalProperties": true
+}

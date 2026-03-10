@@ -35,6 +35,8 @@ class ChatMessageAttachmentType(str, Enum):
     IMAGE = "image"
     FILE = "file"
     XMTP = "xmtp"
+    CARD = "card"
+    CHOICE = "choice"
 
 
 class AuthorType(str, Enum):
@@ -69,6 +71,14 @@ class ChatMessageAttachment(TypedDict):
             ...,
             description="Type of the attachment (link, image, or file)",
             examples=["link"],
+        ),
+    ]
+    lead_text: Annotated[
+        str | None,
+        Field(
+            ...,
+            description="Lead text of the attachment",
+            examples=["Here is the image:"],
         ),
     ]
     url: Annotated[

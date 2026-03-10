@@ -262,7 +262,12 @@ async def build_agent(
     context_editing_trigger = int(llm_model.info.context_length * 0.4)
     middleware.append(
         ContextEditingMiddleware(
-            edits=[ClearToolUsesEdit(trigger=context_editing_trigger)]
+            edits=[
+                ClearToolUsesEdit(
+                    trigger=context_editing_trigger,
+                    exclude_tools=["ui_show_card", "ui_ask_user"],
+                )
+            ]
         )
     )
 

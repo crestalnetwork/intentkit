@@ -17,8 +17,10 @@ export type AuthorType =
   | "internal";
 
 export interface ChatMessageAttachment {
-  type: "link" | "image" | "file";
-  url: string;
+  type: "link" | "image" | "file" | "xmtp" | "card" | "choice";
+  lead_text?: string | null;
+  url?: string | null;
+  json?: Record<string, unknown> | null;
   mime_type?: string;
   name?: string;
 }
@@ -89,4 +91,5 @@ export interface UIMessage {
   timestamp: Date;
   isStreaming?: boolean;
   skillCalls?: ChatMessageSkillCall[];
+  attachments?: ChatMessageAttachment[];
 }

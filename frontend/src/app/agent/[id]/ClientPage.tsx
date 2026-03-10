@@ -71,7 +71,99 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
     content: msg.message,
     timestamp: new Date(msg.created_at),
     skillCalls: msg.skill_calls,
+    attachments: msg.attachments,
   };
+}
+
+// Check if message has non-xmtp attachments (UI attachments)
+function hasUIAttachments(msg: UIMessage): boolean {
+  return (
+    !!msg.attachments &&
+    msg.attachments.some((a) => a.type === "card" || a.type === "choice")
+  );
+}
+
+// Option key to label mapping
+const optionLabels: Record<string, string> = { a: "A.", b: "B.", c: "C." };
+
+// Card attachment component
+function CardAttachment({
+  att,
+}: {
+  att: import("@/types/chat").ChatMessageAttachment;
+}) {
+  const json = att.json as Record<string, string> | undefined;
+  const isClickable = !!att.url;
+  const card = (
+    <div
+      className={cn(
+        "border rounded-lg max-w-sm bg-white dark:bg-zinc-900 transition-shadow",
+        isClickable && "hover:shadow-md cursor-pointer",
+      )}
+    >
+      {json?.image_url && (
+        <img
+          src={json.image_url}
+          alt={json?.title || "Card image"}
+          className="w-full h-40 object-cover rounded-t-lg"
+        />
+      )}
+      <div className="p-3">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="font-medium text-sm">{json?.title}</h4>
+          {json?.label && (
+            <span className="shrink-0 text-xs text-primary bg-primary/10 rounded px-2 py-0.5">
+              {json.label}
+            </span>
+          )}
+        </div>
+        {json?.description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {json.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+  if (isClickable) {
+    return (
+      <a href={att.url!} target="_blank" rel="noopener noreferrer">
+        {card}
+      </a>
+    );
+  }
+  return card;
+}
+
+// Choice attachment component
+function ChoiceAttachment({
+  att,
+  onSendMessage,
+}: {
+  att: import("@/types/chat").ChatMessageAttachment;
+  onSendMessage: (message: string) => void;
+}) {
+  const options = att.json as Record<
+    string,
+    { title: string; content: string }
+  > | null;
+  if (!options) return null;
+  return (
+    <div className="space-y-2">
+      {Object.entries(options).map(([key, opt]) => (
+        <button
+          key={key}
+          className="w-full text-left border rounded-lg p-3 bg-white dark:bg-zinc-900 hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => onSendMessage(opt.title)}
+        >
+          <div className="font-medium text-sm">
+            {optionLabels[key] || `${key.toUpperCase()}.`} {opt.title}
+          </div>
+          <div className="text-xs text-muted-foreground">{opt.content}</div>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function AgentChatPage() {
@@ -344,6 +436,21 @@ export default function AgentChatPage() {
       refetchThreads,
       router,
     ],
+  );
+
+  // Send a text message programmatically (used by choice buttons)
+  const sendTextMessage = useCallback(
+    (text: string) => {
+      setInputValue(text);
+      // Use setTimeout to ensure state is updated before triggering send
+      setTimeout(() => {
+        const form = document.querySelector(
+          "form",
+        ) as HTMLFormElement | null;
+        form?.requestSubmit();
+      }, 0);
+    },
+    [],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -635,11 +742,42 @@ export default function AgentChatPage() {
                         : "bg-muted text-foreground",
                     )}
                   >
-                    {/* Skill Call Badges */}
-                    {msg.skillCalls && msg.skillCalls.length > 0 && (
-                      <div className="mb-2">
-                        <SkillCallBadgeList skillCalls={msg.skillCalls} />
+                    {/* UI Attachments or Skill Call Badges */}
+                    {hasUIAttachments(msg) ? (
+                      <div className="space-y-2 mb-2">
+                        {msg.attachments!
+                          .filter(
+                            (a) =>
+                              a.type === "card" || a.type === "choice",
+                          )
+                          .map((att, i) => (
+                            <div key={i}>
+                              {att.lead_text && (
+                                <p className="text-sm mt-2 mb-3">
+                                  {att.lead_text}
+                                </p>
+                              )}
+                              {att.type === "card" && (
+                                <CardAttachment att={att} />
+                              )}
+                              {att.type === "choice" && (
+                                <ChoiceAttachment
+                                  att={att}
+                                  onSendMessage={sendTextMessage}
+                                />
+                              )}
+                            </div>
+                          ))}
                       </div>
+                    ) : (
+                      msg.skillCalls &&
+                      msg.skillCalls.length > 0 && (
+                        <div className="mb-2">
+                          <SkillCallBadgeList
+                            skillCalls={msg.skillCalls}
+                          />
+                        </div>
+                      )
                     )}
 
                     {/* Message Content */}

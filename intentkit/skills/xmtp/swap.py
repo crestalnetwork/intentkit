@@ -194,6 +194,7 @@ class XmtpSwap(XmtpBaseTool):
         # Attachment for chat
         attachment: ChatMessageAttachment = {
             "type": ChatMessageAttachmentType.XMTP,
+            "lead_text": None,
             "url": None,
             "json": cast(dict[str, object], wallet_send_calls),
         }
