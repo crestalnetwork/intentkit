@@ -3,7 +3,6 @@ volumes:
   rustfs_data:
   redis_data:
 
-
 services:
   db:
     image: postgres:18.1-trixie
@@ -15,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -33,7 +32,7 @@ services:
       - rustfs_data:/data
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -44,25 +43,19 @@ services:
       - redis_data:/data
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   api:
-    build:
-      context: .
-      args:
-        - RELEASE=${RELEASE:-latest}
-    volumes:
-      - ./.env:/app/.env
-      - ./intentkit:/app/intentkit
-      - ./app:/app/app
+    image: crestal/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file: .env
     environment:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
@@ -81,22 +74,21 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health').raise_for_status()" ]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health').raise_for_status()",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
 
   autonomous:
-    build:
-      context: .
-      args:
-        - RELEASE=${RELEASE:-latest}
-    volumes:
-      - ./.env:/app/.env
-      - ./intentkit:/app/intentkit
-      - ./app:/app/app
+    image: crestal/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +96,7 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    env_file: .env
     environment:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
@@ -121,7 +114,7 @@ services:
       - AWS_S3_REGION_NAME=us-east-1
       - INTERNAL_BASE_URL=http://api:8000
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "autonomous" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "autonomous"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -129,19 +122,13 @@ services:
     command: python -m app.autonomous
 
   scheduler:
-    build:
-      context: .
-      args:
-        - RELEASE=${RELEASE:-latest}
-    volumes:
-      - ./.env:/app/.env
-      - ./intentkit:/app/intentkit
-      - ./app:/app/app
+    image: crestal/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file: .env
     environment:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
@@ -158,7 +145,7 @@ services:
       - AWS_S3_BUCKET=static
       - AWS_S3_REGION_NAME=us-east-1
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "scheduler" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "scheduler"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -166,30 +153,17 @@ services:
     command: python -m app.scheduler
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
-      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
-      - ./frontend/next.config.ts:/app/next.config.ts
-      - ./frontend/tsconfig.json:/app/tsconfig.json
-      - ./frontend/components.json:/app/components.json
+    image: crestal/intentkit-frontend:latest
     depends_on:
       api:
         condition: service_healthy
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-      - NEXT_PUBLIC_AWS_S3_CDN_URL=http://localhost:9000/static
-      - NODE_ENV=development
-      - NODE_OPTIONS=--max-old-space-size=2048
-      - WATCHPACK_POLLING=1000
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_AWS_S3_CDN_URL=${NEXT_PUBLIC_AWS_S3_CDN_URL:-http://localhost:9000/static}
     ports:
       - "3000:3000"
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -197,10 +171,7 @@ services:
     restart: unless-stopped
 
   telegram:
-    build:
-      context: ./integrations/telegram
-      args:
-        - RELEASE=${RELEASE:-latest}
+    image: crestal/intentkit-telegram:latest
     depends_on:
       db:
         condition: service_healthy
@@ -208,6 +179,7 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    env_file: .env
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -218,7 +190,7 @@ services:
       - INTERNAL_BASE_URL=http://api:8000
       - TG_NEW_AGENT_POLL_INTERVAL=10
     healthcheck:
-      test: [ "CMD", "find", "/tmp/healthy", "-mmin", "-2" ]
+      test: ["CMD", "find", "/tmp/healthy", "-mmin", "-2"]
       interval: 30s
       timeout: 5s
       retries: 3
