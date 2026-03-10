@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import httpx
 from langchain_core.tools import ArgsSchema
@@ -39,6 +40,7 @@ class TavilyExtract(TavilyBaseTool):
 
     name: str = "tavily_extract"
     description: str = "Extract full text content from a web page URL."
+    price: Decimal = Decimal("20")
     args_schema: ArgsSchema | None = TavilyExtractInput
 
     async def _arun(

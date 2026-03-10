@@ -1,5 +1,6 @@
 import datetime
 import logging
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -25,6 +26,7 @@ class TwitterSearchTweets(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
+    price: Decimal = Decimal("60")
     args_schema: ArgsSchema | None = TwitterSearchTweetsInput
 
     async def _arun(self, query: str, **kwargs):

@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel
@@ -25,6 +26,7 @@ class TwitterGetMentions(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
+    price: Decimal = Decimal("60")
     args_schema: ArgsSchema | None = TwitterGetMentionsInput
 
     async def _arun(self, **kwargs) -> list[Tweet]:

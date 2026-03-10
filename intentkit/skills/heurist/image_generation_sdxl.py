@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import httpx
 from epyxid import XID
@@ -42,6 +43,7 @@ class ImageGenerationSDXL(HeuristBaseTool):
         "Generate high-quality images using Heurist SDXL model. "
         "Provide a text prompt and optionally specify width/height."
     )
+    price: Decimal = Decimal("50")
     args_schema: ArgsSchema | None = ImageGenerationSDXLInput
 
     async def _arun(

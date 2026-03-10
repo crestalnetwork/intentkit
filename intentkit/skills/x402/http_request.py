@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Any, cast, override
 from urllib.parse import urlparse
 
@@ -46,6 +47,7 @@ class X402HttpRequest(X402BaseSkill):
 
     name: str = "x402_http_request"
     description: str = "Send a paid HTTP request using the x402 protocol. Returns response status and body."
+    price: Decimal = Decimal("1")
     args_schema: ArgsSchema | None = X402HttpRequestInput
 
     @override

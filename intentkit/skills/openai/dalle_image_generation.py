@@ -1,6 +1,7 @@
 """DALL-E image generation skill for OpenAI."""
 
 import logging
+from decimal import Decimal
 
 import openai
 from epyxid import XID
@@ -31,6 +32,7 @@ class DALLEImageGeneration(OpenAIBaseTool):
 
     name: str = "dalle_image_generation"
     description: str = "Generate images from text prompts using DALL-E 3."
+    price: Decimal = Decimal("200")
     args_schema: ArgsSchema | None = DALLEImageGenerationInput
 
     async def _arun(

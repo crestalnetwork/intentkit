@@ -27,7 +27,6 @@ from intentkit.models.credit.event import (
 )
 from intentkit.models.credit.price import (
     DEFAULT_SKILL_CALL_PRICE,
-    DEFAULT_SKILL_CALL_SELF_KEY_PRICE,
     CreditPrice,
     CreditPriceLog,
     CreditPriceLogTable,
@@ -69,7 +68,6 @@ __all__ = [
     "DEFAULT_PLATFORM_ACCOUNT_VOICE",
     "DEFAULT_PLATFORM_ACCOUNT_WITHDRAW",
     "DEFAULT_SKILL_CALL_PRICE",
-    "DEFAULT_SKILL_CALL_SELF_KEY_PRICE",
     "Direction",
     "DiscountType",
     "EventType",

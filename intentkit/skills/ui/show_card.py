@@ -11,9 +11,13 @@ class ShowCardInput(BaseModel):
     """Input for UI show card skill."""
 
     title: str = Field(description="Card title")
-    url: str | None = Field(default=None, description="Link target when the card is clicked")
+    url: str | None = Field(
+        default=None, description="Link target when the card is clicked"
+    )
     description: str | None = Field(default=None, description="Card body text")
-    label: str | None = Field(default=None, description="Action label displayed on the card")
+    label: str | None = Field(
+        default=None, description="Action label displayed on the card"
+    )
     image_url: str | None = Field(default=None, description="Optional card image URL")
     lead_text: str | None = Field(
         default=None, description="Text displayed before the card"

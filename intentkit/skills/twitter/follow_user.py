@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
@@ -22,6 +23,7 @@ class TwitterFollowUser(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
+    price: Decimal = Decimal("60")
     args_schema: ArgsSchema | None = TwitterFollowUserInput
 
     async def _arun(self, user_id: str, **kwargs) -> bool:

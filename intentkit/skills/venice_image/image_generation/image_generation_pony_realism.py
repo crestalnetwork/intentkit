@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
@@ -14,6 +16,7 @@ class ImageGenerationPonyRealism(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_pony_realism"
+    price: Decimal = Decimal("50")
     description: str = (
         "Generate images using the Pony Realism model (via Venice AI).\n"
         "Creates high-detail, realistic images, good for anime/character designs. Benefits from Danbooru tags (e.g., 'score_9', 'female'/'male').\n"

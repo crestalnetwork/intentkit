@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -21,6 +22,7 @@ class GetAccountDetails(CookieFunBaseTool):
 
     name: str = "cookiefun_get_account_details"
     description: str = "Get detailed Twitter account info including followers, metrics, and engagement data."
+    price: Decimal = Decimal("70")
     args_schema: ArgsSchema | None = GetAccountDetailsInput
 
     async def _arun(

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from decimal import Decimal
 
 import httpx
 from langchain_core.documents import Document
@@ -85,6 +86,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
         "Crawl a website to extract content from multiple pages. "
         "Optionally indexes content for querying via firecrawl_query_indexed_content."
     )
+    price: Decimal = Decimal("100")
     args_schema: ArgsSchema | None = FirecrawlCrawlInput
 
     async def _arun(

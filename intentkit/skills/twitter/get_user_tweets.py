@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -31,6 +32,7 @@ class TwitterGetUserTweets(TwitterBaseTool):
 
     name: str = NAME
     description: str = PROMPT
+    price: Decimal = Decimal("60")
     args_schema: ArgsSchema | None = TwitterGetUserTweetsInput
 
     async def _arun(self, **kwargs):

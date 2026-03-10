@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
@@ -14,6 +16,7 @@ class ImageGenerationFluxDev(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_flux_dev"
+    price: Decimal = Decimal("50")
     description: str = (
         "Generate images using Venice AI's Flux Dev model (by Black Forest Labs).\n"
         "This 12B parameter model is good for research and innovative art workflows.\n"

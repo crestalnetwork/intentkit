@@ -219,36 +219,22 @@ async def test_expense_message_enabled():
 @pytest.mark.asyncio
 async def test_skill_cost_soft_off():
     """Test skill_cost with payment disabled."""
-    skill_name = "test_skill"
     user_id = "user_1"
     agent = MagicMock(spec=Agent)
     agent.id = "agent_1"
     agent.owner = "owner_1"
     agent.fee_percentage = Decimal("10.0")
-    agent.skills = {}  # Fix: explicitly set skills to empty dict
+    agent.skills = {}
 
     with (
         patch.object(config, "payment_enabled", False),
         patch(
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
-        patch(
-            "intentkit.models.skill.Skill.get", new_callable=AsyncMock
-        ) as mock_skill_get,
     ):
-        # We need to mock Skill.get to return a mock skill with a price
-        mock_skill = MagicMock()
-        mock_skill.price = Decimal("1.0000")
-        mock_skill.author = "dev_1"
-        mock_skill.category = "test_cat"
-        mock_skill_get.return_value = mock_skill
-
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
-        mock_payment_settings.return_value.fee_dev_percentage = Decimal(
-            "10.0"
-        )  # Added default
 
-        cost_info = await skill_cost(skill_name, user_id, agent)
+        cost_info = await skill_cost(Decimal("1.0000"), user_id, agent)
 
         assert cost_info.base_original_amount == Decimal("1.0000")
         assert cost_info.base_discount_amount == Decimal("1.0000")

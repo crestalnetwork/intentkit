@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import httpx
 from langchain_core.documents import Document
@@ -78,6 +79,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
         "Scrape a web page and replace any existing indexed content for that URL. "
         "Handles JS-rendered content, PDFs, and dynamic sites."
     )
+    price: Decimal = Decimal("100")
     args_schema: ArgsSchema | None = FirecrawlScrapeInput
 
     async def _arun(

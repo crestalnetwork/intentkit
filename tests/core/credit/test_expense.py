@@ -10,57 +10,52 @@ from intentkit.core.credit import (
     skill_cost,
 )
 from intentkit.models.agent import Agent
-from intentkit.models.credit import CreditAccountTable, CreditType, OwnerType
+from intentkit.models.credit import CreditAccountTable, CreditType
 
 
 @pytest.mark.asyncio
-async def test_skill_cost_self_key_pricing():
-    agent = MagicMock(spec=Agent)
-    agent.id = "agent-1"
-    agent.owner = "user-1"
-    agent.fee_percentage = Decimal("0")
-    agent.skills = {"tooling": {"api_key_provider": "agent_owner"}}
-
-    mock_skill = MagicMock()
-    mock_skill.price = Decimal("1.0000")
-    mock_skill.price_self_key = Decimal("0.5000")
-    mock_skill.category = "tooling"
-    mock_skill.author = None
-
-    with (
-        patch(
-            "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
-        ) as mock_get,
-        patch("intentkit.config.config.config.payment_enabled", True),
-        patch(
-            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
-        ) as mock_payment,
-    ):
-        mock_get.return_value = mock_skill
-        mock_payment.return_value.fee_platform_percentage = Decimal("0")
-        mock_payment.return_value.fee_dev_percentage = Decimal("0")
-
-        cost = await skill_cost("skill", "user-2", agent)
-
-    assert cost.base_skill_amount == Decimal("0.5000")
-    assert cost.total_amount == Decimal("0.5000")
-    assert cost.fee_dev_user_type == OwnerType.PLATFORM
-
-
-@pytest.mark.asyncio
-async def test_skill_cost_missing_skill():
+async def test_skill_cost_basic_pricing():
     agent = MagicMock(spec=Agent)
     agent.id = "agent-1"
     agent.owner = "user-1"
     agent.fee_percentage = Decimal("0")
     agent.skills = {}
 
-    with patch(
-        "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
-    ) as mock_get:
-        mock_get.return_value = None
-        with pytest.raises(ValueError, match="price of missing"):
-            await skill_cost("missing", "user-1", agent)
+    with (
+        patch("intentkit.config.config.config.payment_enabled", True),
+        patch(
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
+        ) as mock_payment,
+    ):
+        mock_payment.return_value.fee_platform_percentage = Decimal("0")
+
+        cost = await skill_cost(Decimal("1.0000"), "user-2", agent)
+
+    assert cost.base_skill_amount == Decimal("1.0000")
+    assert cost.total_amount == Decimal("1.0000")
+
+
+@pytest.mark.asyncio
+async def test_skill_cost_with_platform_fee():
+    agent = MagicMock(spec=Agent)
+    agent.id = "agent-1"
+    agent.owner = "user-1"
+    agent.fee_percentage = Decimal("0")
+    agent.skills = {}
+
+    with (
+        patch("intentkit.config.config.config.payment_enabled", True),
+        patch(
+            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
+        ) as mock_payment,
+    ):
+        mock_payment.return_value.fee_platform_percentage = Decimal("100")
+
+        cost = await skill_cost(Decimal("1.0000"), "user-2", agent)
+
+    assert cost.base_skill_amount == Decimal("1.0000")
+    assert cost.fee_platform_amount == Decimal("1.0000")
+    assert cost.total_amount == Decimal("2.0000")
 
 
 @pytest.mark.asyncio
@@ -77,10 +72,7 @@ async def test_expense_skill_creates_transactions():
     skill_cost_info.base_discount_amount = Decimal("0")
     skill_cost_info.base_skill_amount = Decimal("4.0000")
     skill_cost_info.fee_platform_amount = Decimal("0.5000")
-    skill_cost_info.fee_dev_amount = Decimal("0.3000")
-    skill_cost_info.fee_agent_amount = Decimal("0.2000")
-    skill_cost_info.fee_dev_user = "dev-1"
-    skill_cost_info.fee_dev_user_type = OwnerType.USER
+    skill_cost_info.fee_agent_amount = Decimal("0.5000")
 
     mock_user_account = MagicMock(spec=CreditAccountTable)
     mock_user_account.id = "acc-user"
@@ -139,6 +131,7 @@ async def test_expense_skill_creates_transactions():
             "start-1",
             "skill-1",
             "skill-name",
+            Decimal("4.0000"),
             agent,
         )
 
@@ -149,7 +142,8 @@ async def test_expense_skill_creates_transactions():
 
     added_objects = [call.args[0] for call in mock_session.add.call_args_list]
     transactions = [obj for obj in added_objects if hasattr(obj, "tx_type")]
-    assert len(transactions) >= 4
+    # Should have: user debit, skill credit, platform credit, agent credit (no dev tx)
+    assert len(transactions) >= 3
 
 
 @pytest.mark.asyncio
@@ -226,36 +220,3 @@ async def test_expense_summarize_with_payment_enabled_creates_transactions():
     added_objects = [call.args[0] for call in mock_session.add.call_args_list]
     transactions = [obj for obj in added_objects if hasattr(obj, "tx_type")]
     assert len(transactions) > 0
-
-
-@pytest.mark.asyncio
-async def test_skill_cost_uses_author_fee_recipient():
-    agent = MagicMock(spec=Agent)
-    agent.id = "agent-1"
-    agent.owner = "user-1"
-    agent.fee_percentage = Decimal("0")
-    agent.skills = {}
-
-    mock_skill = MagicMock()
-    mock_skill.price = Decimal("1.0000")
-    mock_skill.price_self_key = Decimal("0.5000")
-    mock_skill.category = "tooling"
-    mock_skill.author = "dev-user"
-
-    with (
-        patch(
-            "intentkit.core.credit.expense.Skill.get", new_callable=AsyncMock
-        ) as mock_get,
-        patch("intentkit.config.config.config.payment_enabled", True),
-        patch(
-            "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
-        ) as mock_payment,
-    ):
-        mock_get.return_value = mock_skill
-        mock_payment.return_value.fee_platform_percentage = Decimal("0")
-        mock_payment.return_value.fee_dev_percentage = Decimal("5.0")
-
-        cost = await skill_cost("skill", "user-2", agent)
-
-    assert cost.fee_dev_user == "dev-user"
-    assert cost.fee_dev_user_type == OwnerType.USER

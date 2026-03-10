@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal
 
 import httpx
@@ -46,6 +47,7 @@ class AlloraGetPrice(AlloraBaseTool):
     description: str = (
         "Get ETH or BTC price prediction from Allora (5-minute or 8-hour)."
     )
+    price: Decimal = Decimal("230")
     args_schema: ArgsSchema | None = AlloraGetPriceInput
 
     def _run(self, question: str) -> AlloraGetPriceOutput:

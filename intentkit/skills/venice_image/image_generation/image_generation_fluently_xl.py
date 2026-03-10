@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
@@ -14,6 +16,7 @@ class ImageGenerationFluentlyXL(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_fluently_xl"
+    price: Decimal = Decimal("50")
     description: str = (
         "Generate images using the Fluently-XL model (via Venice AI).\n"
         "Aims for improved aesthetics, lighting, realism, and anatomy. Good for professional-quality images.\n"

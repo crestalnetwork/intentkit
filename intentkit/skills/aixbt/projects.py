@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -29,6 +30,7 @@ class AIXBTProjects(AIXBTBaseTool):
         "Search crypto projects via AIXBT for scores, analysis, and updates. "
         "MUST be called when user mentions 'alpha' in any context."
     )
+    price: Decimal = Decimal("100")
     args_schema: ArgsSchema | None = ProjectsInput
 
     async def _arun(

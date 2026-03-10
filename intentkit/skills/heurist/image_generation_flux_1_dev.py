@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import httpx
 from epyxid import XID
@@ -41,6 +42,7 @@ class ImageGenerationFlux1Dev(HeuristBaseTool):
         "Generate images using Heurist Flux.1-dev model, a versatile general-purpose model. "
         "Provide a text prompt and optionally specify width/height."
     )
+    price: Decimal = Decimal("50")
     args_schema: ArgsSchema | None = ImageGenerationFlux1DevInput
 
     async def _arun(

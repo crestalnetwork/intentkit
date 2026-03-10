@@ -1,3 +1,4 @@
+from decimal import Decimal
 from enum import IntEnum
 from typing import Any
 
@@ -54,6 +55,7 @@ class GetAccountFeed(CookieFunBaseTool):
     description: str = (
         "Get tweets for a Twitter account with filtering and sorting options."
     )
+    price: Decimal = Decimal("70")
     args_schema: ArgsSchema | None = GetAccountFeedInput
 
     async def _arun(

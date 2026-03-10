@@ -1,5 +1,6 @@
 """Smart stats skill for Elfa AI API."""
 
+from decimal import Decimal
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
@@ -42,6 +43,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
 
     name: str = "elfa_get_smart_stats"
     description: str = "Get social media metrics for a username: smart followers, engagement, and reach."
+    price: Decimal = Decimal("15")
     args_schema: ArgsSchema | None = ElfaGetSmartStatsInput
 
     async def _arun(self, username: str, **kwargs) -> ElfaGetSmartStatsOutput:

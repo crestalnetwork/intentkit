@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -22,6 +23,7 @@ class GetSectors(CookieFunBaseTool):
     description: str = (
         "Returns a list of all available sectors in the CookieFun system."
     )
+    price: Decimal = Decimal("70")
     args_schema: ArgsSchema | None = GetSectorsInput
 
     async def _arun(self, **kwargs) -> list[dict[str, Any]]:

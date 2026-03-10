@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_db
 from intentkit.models.llm import LLMModelInfo, LLMProvider
-from intentkit.models.skill import Skill
 
 # Create a readonly router for metadata endpoints
 metadata_router = APIRouter(tags=["Metadata"])
@@ -15,26 +14,6 @@ class LLMModelInfoWithProviderName(LLMModelInfo):
     """LLM model information with provider display name."""
 
     provider_name: str
-
-
-@metadata_router.get(
-    "/metadata/skills",
-    response_model=list[Skill],
-    summary="Get all skills",
-    description="Returns a list of all available skills in the system",
-)
-async def get_skills(db: AsyncSession = Depends(get_db)):
-    """
-    Get all skills available in the system.
-
-    **Returns:**
-    * `list[Skill]` - List of all skills
-    """
-    try:
-        return await Skill.get_all(db)
-    except Exception as e:
-        logging.error(f"Error getting skills: {e}")
-        raise
 
 
 @metadata_router.get(

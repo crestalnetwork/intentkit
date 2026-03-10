@@ -3,6 +3,7 @@
 import logging
 from abc import ABCMeta
 from collections.abc import Callable
+from decimal import Decimal
 from typing import (
     Any,
     Literal,
@@ -69,6 +70,9 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
 
     category: str
     """Get the category of the skill."""
+
+    price: Decimal = Decimal("1")
+    """Price for the skill. Override in subclasses for non-default pricing."""
 
     async def user_rate_limit(self, limit: int, seconds: int, key: str) -> None:
         """Check if a user has exceeded the rate limit for this skill.
@@ -280,3 +284,72 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
             data=data,
         )
         await skill_data.save()
+
+
+# Global skill price registry
+_SKILL_PRICES: dict[str, Decimal] = {}
+_SKILL_CONFIG_NAMES: dict[tuple[str, str], str] = {}
+_registry_built = False
+
+
+def _collect_subclasses(cls: type) -> list[type]:
+    """Recursively collect all subclasses."""
+    result = []
+    for sub in cls.__subclasses__():
+        result.append(sub)
+        result.extend(_collect_subclasses(sub))
+    return result
+
+
+def build_skill_prices() -> None:
+    """Scan all skill modules and collect {name: price} from IntentKitSkill subclasses."""
+    global _registry_built
+    if _registry_built:
+        return
+
+    import importlib
+    import pkgutil
+    from pathlib import Path
+
+    skills_dir = Path(__file__).parent
+    # Import all skill sub-packages to trigger class registration
+    for module_info in pkgutil.walk_packages(
+        [str(skills_dir)], prefix="intentkit.skills."
+    ):
+        try:
+            importlib.import_module(module_info.name)
+        except Exception:
+            pass
+
+    # Collect prices from all subclasses
+    for cls in _collect_subclasses(IntentKitSkill):
+        # Skip abstract classes without a name
+        name = getattr(cls, "name", None)
+        if not name or not isinstance(name, str):
+            continue
+        price = getattr(cls, "price", Decimal("1"))
+        _SKILL_PRICES[name] = (
+            price if isinstance(price, Decimal) else Decimal(str(price))
+        )
+
+        # Collect config name mapping: (category, config_name) -> skill_name
+        category = getattr(cls, "category", None)
+        if category and isinstance(category, str):
+            # Config name is typically the skill name itself
+            _SKILL_CONFIG_NAMES[(category, name)] = name
+
+    _registry_built = True
+
+
+def get_skill_price(name: str) -> Decimal:
+    """Get price for a skill by name. Returns Decimal("1") if not found."""
+    if not _registry_built:
+        build_skill_prices()
+    return _SKILL_PRICES.get(name, Decimal("1"))
+
+
+def get_skill_name_by_config(category: str, config_name: str) -> str | None:
+    """Get skill name by category and config_name."""
+    if not _registry_built:
+        build_skill_prices()
+    return _SKILL_CONFIG_NAMES.get((category, config_name))

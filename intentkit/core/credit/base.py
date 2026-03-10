@@ -11,7 +11,6 @@ from intentkit.models.credit import (
     CreditAccount,
     CreditEvent,
     CreditEventTable,
-    OwnerType,
 )
 from intentkit.utils.error import IntentKitAPIError
 
@@ -28,9 +27,6 @@ class SkillCost(BaseModel):
     base_original_amount: Decimal
     base_skill_amount: Decimal
     fee_platform_amount: Decimal
-    fee_dev_user: str
-    fee_dev_user_type: OwnerType
-    fee_dev_amount: Decimal
     fee_agent_amount: Decimal
 
 

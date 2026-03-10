@@ -12,7 +12,6 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.credit import (
-    DEFAULT_PLATFORM_ACCOUNT_DEV,
     DEFAULT_PLATFORM_ACCOUNT_FEE,
     DEFAULT_PLATFORM_ACCOUNT_MEMORY,
     DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
@@ -29,7 +28,6 @@ from intentkit.models.credit import (
     TransactionType,
     UpstreamType,
 )
-from intentkit.models.skill import Skill
 
 from .base import FOURPLACES, SkillCost
 
@@ -344,7 +342,7 @@ async def expense_message(
 
 
 async def skill_cost(
-    skill_name: str,
+    price: Decimal,
     user_id: str,
     agent: Agent,
 ) -> SkillCost:
@@ -352,38 +350,17 @@ async def skill_cost(
     Calculate the cost for a skill call including all fees.
 
     Args:
-        skill_name: Name of the skill
+        price: Base price for the skill
         user_id: ID of the user making the skill call
         agent: Agent using the skill
 
     Returns:
         SkillCost: Object containing all cost components
     """
+    base_skill_amount = price.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
-    skill = await Skill.get(skill_name)
-    if not skill:
-        raise ValueError(f"The price of {skill_name} not set yet")
-    base_skill_amount = skill.price.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-    if agent.skills:
-        agent_skill_config = agent.skills.get(skill.category)
-        if (
-            agent_skill_config
-            and agent_skill_config.get("api_key_provider") == "agent_owner"
-        ):
-            base_skill_amount = skill.price_self_key.quantize(
-                FOURPLACES, rounding=ROUND_HALF_UP
-            )
     # Get payment settings
     payment_settings = await AppSetting.payment()
-
-    # Calculate fee
-    if skill.author:
-        fee_dev_user = skill.author
-        fee_dev_user_type = OwnerType.USER
-    else:
-        fee_dev_user = DEFAULT_PLATFORM_ACCOUNT_DEV
-        fee_dev_user_type = OwnerType.PLATFORM
-    fee_dev_percentage = payment_settings.fee_dev_percentage
 
     if base_skill_amount < Decimal("0"):
         raise ValueError("Base skill amount must be non-negative")
@@ -402,19 +379,14 @@ async def skill_cost(
     fee_platform_amount = (
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-    fee_dev_amount = (base_amount * fee_dev_percentage / Decimal("100")).quantize(
-        FOURPLACES, rounding=ROUND_HALF_UP
-    )
     fee_agent_amount = Decimal("0")
     if agent.fee_percentage and user_id != agent.owner:
         fee_agent_amount = (
-            (base_amount + fee_platform_amount + fee_dev_amount)
-            * agent.fee_percentage
-            / Decimal("100")
+            (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-    total_amount = (
-        base_amount + fee_platform_amount + fee_dev_amount + fee_agent_amount
-    ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    total_amount = (base_amount + fee_platform_amount + fee_agent_amount).quantize(
+        FOURPLACES, rounding=ROUND_HALF_UP
+    )
 
     # Return the SkillCost object with all calculated values
     return SkillCost(
@@ -424,9 +396,6 @@ async def skill_cost(
         base_original_amount=base_original_amount,
         base_skill_amount=base_skill_amount,
         fee_platform_amount=fee_platform_amount,
-        fee_dev_user=fee_dev_user,
-        fee_dev_user_type=fee_dev_user_type,
-        fee_dev_amount=fee_dev_amount,
         fee_agent_amount=fee_agent_amount,
     )
 
@@ -438,10 +407,11 @@ async def expense_skill(
     start_message_id: str,
     skill_call_id: str,
     skill_name: str,
+    price: Decimal,
     agent: Agent,
 ) -> CreditEvent:
     """
-    Deduct credits from a user account for message expenses.
+    Deduct credits from a user account for skill call expenses.
     Don't forget to commit the session after calling this function.
 
     Args:
@@ -451,6 +421,7 @@ async def expense_skill(
         start_message_id: ID of the starting message in a conversation
         skill_call_id: ID of the skill call
         skill_name: Name of the skill being used
+        price: Base price for the skill
         agent: Agent using the skill
 
     Returns:
@@ -464,7 +435,7 @@ async def expense_skill(
     logger.info(f"[{agent.id}] skill payment {skill_name}")
 
     # Calculate skill cost using the skill_cost function
-    skill_cost_info = await skill_cost(skill_name, user_id, agent)
+    skill_cost_info = await skill_cost(price, user_id, agent)
 
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
@@ -565,60 +536,20 @@ async def expense_skill(
             - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
-    # Calculate fee_dev amounts by credit type
-    fee_dev_free_amount = Decimal("0")
-    fee_dev_reward_amount = Decimal("0")
-    fee_dev_permanent_amount = Decimal("0")
-
-    if skill_cost_info.fee_dev_amount > Decimal(
-        "0"
-    ) and skill_cost_info.total_amount > Decimal("0"):
-        # Calculate proportions based on the formula
-        if free_amount > Decimal("0"):
-            fee_dev_free_amount = (
-                free_amount
-                * skill_cost_info.fee_dev_amount
-                / skill_cost_info.total_amount
-            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-
-        if reward_amount > Decimal("0"):
-            fee_dev_reward_amount = (
-                reward_amount
-                * skill_cost_info.fee_dev_amount
-                / skill_cost_info.total_amount
-            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-
-        # Calculate permanent amount as the remainder to ensure the sum equals fee_dev_amount
-        fee_dev_permanent_amount = (
-            skill_cost_info.fee_dev_amount - fee_dev_free_amount - fee_dev_reward_amount
-        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
-
     # Calculate base amounts by credit type using subtraction method
-    base_free_amount = (
-        free_amount
-        - fee_platform_free_amount
-        - fee_agent_free_amount
-        - fee_dev_free_amount
-    )
+    base_free_amount = free_amount - fee_platform_free_amount - fee_agent_free_amount
 
     base_reward_amount = (
-        reward_amount
-        - fee_platform_reward_amount
-        - fee_agent_reward_amount
-        - fee_dev_reward_amount
+        reward_amount - fee_platform_reward_amount - fee_agent_reward_amount
     )
 
     base_permanent_amount = (
-        permanent_amount
-        - fee_platform_permanent_amount
-        - fee_agent_permanent_amount
-        - fee_dev_permanent_amount
+        permanent_amount - fee_platform_permanent_amount - fee_agent_permanent_amount
     )
 
     # 4. Update fee account - add credits
     skill_account: CreditAccount | None = None
     platform_account: CreditAccount | None = None
-    dev_account: CreditAccount | None = None
     agent_account: CreditAccount | None = None
 
     if skill_cost_info.total_amount > 0:
@@ -644,18 +575,6 @@ async def expense_skill(
             },
             event_id=event_id,
         )
-        if skill_cost_info.fee_dev_amount > 0:
-            dev_account = await CreditAccount.income_in_session(
-                session=session,
-                owner_type=skill_cost_info.fee_dev_user_type,
-                owner_id=skill_cost_info.fee_dev_user,
-                amount_details={
-                    CreditType.FREE: fee_dev_free_amount,
-                    CreditType.REWARD: fee_dev_reward_amount,
-                    CreditType.PERMANENT: fee_dev_permanent_amount,
-                },
-                event_id=event_id,
-            )
         if skill_cost_info.fee_agent_amount > 0:
             agent_account = await CreditAccount.income_in_session(
                 session=session,
@@ -710,11 +629,11 @@ async def expense_skill(
         fee_agent_free_amount=fee_agent_free_amount,
         fee_agent_reward_amount=fee_agent_reward_amount,
         fee_agent_permanent_amount=fee_agent_permanent_amount,
-        fee_dev_amount=skill_cost_info.fee_dev_amount,
-        fee_dev_account=dev_account.id if dev_account else None,
-        fee_dev_free_amount=fee_dev_free_amount,
-        fee_dev_reward_amount=fee_dev_reward_amount,
-        fee_dev_permanent_amount=fee_dev_permanent_amount,
+        fee_dev_amount=Decimal("0"),
+        fee_dev_account=None,
+        fee_dev_free_amount=Decimal("0"),
+        fee_dev_reward_amount=Decimal("0"),
+        fee_dev_permanent_amount=Decimal("0"),
         free_amount=free_amount,
         reward_amount=reward_amount,
         permanent_amount=permanent_amount,
@@ -772,23 +691,7 @@ async def expense_skill(
         )
         session.add(platform_tx)
 
-        # 4.4 Dev user transaction (credit)
-        if skill_cost_info.fee_dev_amount > 0 and dev_account:
-            dev_tx = CreditTransactionTable(
-                id=str(XID()),
-                account_id=dev_account.id,
-                event_id=event_id,
-                tx_type=TransactionType.RECEIVE_FEE_DEV,
-                credit_debit=CreditDebit.CREDIT,
-                change_amount=skill_cost_info.fee_dev_amount,
-                credit_type=CreditType.REWARD,
-                free_amount=fee_dev_free_amount,
-                reward_amount=fee_dev_reward_amount,
-                permanent_amount=fee_dev_permanent_amount,
-            )
-            session.add(dev_tx)
-
-        # 4.5 Agent fee account transaction (credit)
+        # 4.4 Agent fee account transaction (credit)
         if skill_cost_info.fee_agent_amount > 0 and agent_account:
             agent_tx = CreditTransactionTable(
                 id=str(XID()),

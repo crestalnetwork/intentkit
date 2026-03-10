@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
@@ -14,6 +16,7 @@ class ImageGenerationVeniceSD35(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_venice_sd35"
+    price: Decimal = Decimal("50")
     description: str = (
         "Generate images using Stability AI's Stable Diffusion 3.5 Large model (via Venice AI).\n"
         "Ideal for artworks, design processes, and educational use. Not for factual representations.\n"

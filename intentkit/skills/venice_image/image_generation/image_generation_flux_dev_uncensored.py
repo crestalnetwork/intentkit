@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from intentkit.skills.venice_image.image_generation.image_generation_base import (
     VeniceImageGenerationBaseTool,
 )
@@ -14,6 +16,7 @@ class ImageGenerationFluxDevUncensored(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_flux_dev_uncensored"
+    price: Decimal = Decimal("50")
     description: str = (
         "Generate images using Venice AI's Flux Dev Uncensored model.\n"
         "This is an uncensored version of flux-dev, suitable for unrestricted content including NSFW.\n"

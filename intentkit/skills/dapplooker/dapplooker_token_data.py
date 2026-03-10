@@ -1,5 +1,6 @@
 import json
 import logging
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -46,6 +47,7 @@ class DappLookerTokenData(DappLookerBaseTool):
         "Fetch AI agent token market data from DappLooker. "
         "Query by ticker or contract address. Provide token_tickers or token_addresses."
     )
+    price: Decimal = Decimal("10")
     args_schema: ArgsSchema | None = DappLookerTokenDataInput
 
     async def _arun(

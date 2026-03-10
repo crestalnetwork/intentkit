@@ -2,6 +2,7 @@
 
 import base64
 import logging
+from decimal import Decimal
 from io import BytesIO
 from typing import Literal
 
@@ -40,6 +41,7 @@ class GPTImageToImage(OpenAIBaseTool):
     description: str = (
         "Edit an existing image based on a text prompt using GPT-Image-1."
     )
+    price: Decimal = Decimal("400")
     args_schema: ArgsSchema | None = GPTImageToImageInput
 
     async def _arun(

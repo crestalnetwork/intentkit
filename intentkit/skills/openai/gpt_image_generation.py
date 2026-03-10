@@ -2,6 +2,7 @@
 
 import base64
 import logging
+from decimal import Decimal
 from typing import Literal
 
 import openai
@@ -39,6 +40,7 @@ class GPTImageGeneration(OpenAIBaseTool):
 
     name: str = "gpt_image_generation"
     description: str = "Generate images from text prompts using GPT-Image-1."
+    price: Decimal = Decimal("400")
     args_schema: ArgsSchema | None = GPTImageGenerationInput
 
     async def _arun(

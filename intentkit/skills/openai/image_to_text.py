@@ -1,5 +1,6 @@
 import io
 import logging
+from decimal import Decimal
 
 import aiohttp
 import openai
@@ -32,6 +33,7 @@ class ImageToText(OpenAIBaseTool):
 
     name: str = "image_to_text"
     description: str = "Describe an image in detail given its URL. Returns a text description with dimensions."
+    price: Decimal = Decimal("200")
     args_schema: ArgsSchema | None = ImageToTextInput
 
     async def _arun(self, image: str, **kwargs) -> ImageToTextOutput:

@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Any, override
 from urllib.parse import urljoin, urlparse
 
@@ -66,6 +67,7 @@ class WebsiteIndexer(WebScraperBaseTool):
 
     name: str = "web_scraper_website_indexer"
     description: str = "Index a website by discovering sitemaps, extracting URLs, and indexing content."
+    price: Decimal = Decimal("200")
     args_schema: ArgsSchema | None = WebsiteIndexerInput
 
     def _normalize_url(self, url: str) -> str:

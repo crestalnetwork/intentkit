@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -67,6 +68,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
         "Scrape web URLs and index content into a vector store. "
         "Query later with query_indexed_content tool."
     )
+    price: Decimal = Decimal("100")
     args_schema: ArgsSchema | None = ScrapeAndIndexInput
 
     async def _arun(

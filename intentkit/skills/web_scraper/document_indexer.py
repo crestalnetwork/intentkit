@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -64,6 +65,7 @@ class DocumentIndexer(WebScraperBaseTool):
     description: str = (
         "Index document content into the vector database for later querying."
     )
+    price: Decimal = Decimal("200")
     args_schema: ArgsSchema | None = DocumentIndexerInput
 
     async def _arun(

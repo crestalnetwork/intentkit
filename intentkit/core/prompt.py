@@ -8,8 +8,8 @@ from intentkit.config.config import config
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType
-from intentkit.models.skill import Skill
 from intentkit.models.user import User
+from intentkit.skills.base import get_skill_name_by_config
 
 # ============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -256,20 +256,20 @@ def agent_prompt(agent: Agent, agent_data: AgentData, context: AgentContext) -> 
 async def explain_prompt(message: str) -> str:
     pattern = r"@skill:([^:]+):([^\s]+)\b"
 
-    async def replace_skill_pattern(match: re.Match[str]) -> str:
+    def replace_skill_pattern(match: re.Match[str]) -> str:
         category = match.group(1)
         config_name = match.group(2)
 
-        skill = await Skill.get_by_config_name(category, config_name)
-        if skill:
-            return f"(call skill {skill.name})"
+        skill_name = get_skill_name_by_config(category, config_name)
+        if skill_name:
+            return f"(call skill {skill_name})"
         else:
             return match.group(0)
 
     matches = list(re.finditer(pattern, message))
     result = message
     for match in reversed(matches):
-        replacement = await replace_skill_pattern(match)
+        replacement = replace_skill_pattern(match)
         result = result[: match.start()] + replacement + result[match.end() :]
 
     return result

@@ -2,6 +2,7 @@
 
 import base64
 import logging
+from decimal import Decimal
 
 import openai
 from epyxid import XID
@@ -34,6 +35,7 @@ class GPTAvatarGenerator(OpenAIBaseTool):
     description: str = (
         "Generate avatar-ready profile images using OpenAI's GPT-Image-1-Mini model."
     )
+    price: Decimal = Decimal("50")
     args_schema: ArgsSchema | None = GPTAvatarGeneratorInput
 
     async def _arun(self, prompt: str, **kwargs) -> str:

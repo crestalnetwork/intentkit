@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import httpx
 from langchain_core.tools import ArgsSchema
@@ -46,6 +47,7 @@ class TavilySearch(TavilyBaseTool):
 
     name: str = "tavily_search"
     description: str = "Search the web for current information on a topic."
+    price: Decimal = Decimal("20")
     args_schema: ArgsSchema | None = TavilySearchInput
 
     async def _arun(

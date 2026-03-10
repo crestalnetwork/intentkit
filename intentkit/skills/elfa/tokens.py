@@ -1,5 +1,6 @@
 """Trending tokens skill for Elfa AI API."""
 
+from decimal import Decimal
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
@@ -55,6 +56,7 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
     description: str = (
         "Get trending tokens ranked by smart mentions count. Updated every 5 minutes."
     )
+    price: Decimal = Decimal("15")
     args_schema: ArgsSchema | None = ElfaGetTrendingTokensInput
 
     async def _arun(

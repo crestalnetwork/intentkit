@@ -28,7 +28,7 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModel, LLMProvider
-from intentkit.models.skill import Skill
+from intentkit.skills.base import get_skill_price
 
 logger = logging.getLogger(__name__)
 
@@ -221,10 +221,8 @@ class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
         account = await CreditAccount.get_or_create(OwnerType.USER, payer)
         if isinstance(msg, AIMessage) and msg.tool_calls:
             for tool_call in msg.tool_calls:
-                skill_meta = await Skill.get(tool_call["name"])
-                if not skill_meta:
-                    continue
-                skill_cost_info = await skill_cost(skill_meta.name, payer, agent)
+                price = get_skill_price(tool_call["name"])
+                skill_cost_info = await skill_cost(price, payer, agent)
                 total_paid = skill_cost_info.total_amount
                 if not account.has_sufficient_credits(total_paid):
                     error_message = (

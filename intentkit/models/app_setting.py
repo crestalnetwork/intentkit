@@ -79,7 +79,6 @@ class PaymentSettings(BaseModel):
             "example": {
                 "credit_per_usdc": 1000,
                 "fee_platform_percentage": 100,
-                "fee_dev_percentage": 20,
                 "free_quota": 480,
                 "refill_amount": 20,
                 "agent_whitelist_enabled": False,
@@ -96,10 +95,6 @@ class PaymentSettings(BaseModel):
         Decimal,
         Field(description="Platform fee percentage", ge=0, le=100),
     ] = Decimal("100")
-    fee_dev_percentage: Annotated[
-        Decimal,
-        Field(description="Developer fee percentage", ge=0, le=100),
-    ] = Decimal("20")
     free_quota: Annotated[
         Decimal,
         Field(
@@ -126,7 +121,6 @@ class PaymentSettings(BaseModel):
     @field_validator(
         "credit_per_usdc",
         "fee_platform_percentage",
-        "fee_dev_percentage",
         "free_quota",
         "refill_amount",
     )

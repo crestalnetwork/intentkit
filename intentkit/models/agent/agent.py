@@ -22,7 +22,6 @@ from intentkit.models.agent.public_info import AgentPublicInfo
 from intentkit.models.agent.user_input import AgentCreate, AgentUpdate
 from intentkit.models.credit import CreditAccount
 from intentkit.models.llm import LLMModelInfo
-from intentkit.models.skill import Skill
 
 logger = logging.getLogger(__name__)
 
@@ -368,52 +367,21 @@ class Agent(AgentCreate, AgentPublicInfo):
                         else:
                             model_property["default"] = new_enum[0]
 
-            # Process skills property using data from Skill.get_all instead of agent_schema.json
+            # Process skills property by scanning schema.json files directly
             skills_property = schema.get("properties", {}).get("skills", {})
 
-            # Build skill_states_map from database
-            skill_states_map: dict[str, dict[str, Skill]] = {}
-            for skill_model in await Skill.get_all(db):
-                if not skill_model.config_name:
-                    continue
-                category_states = skill_states_map.setdefault(skill_model.category, {})
-                if skill_model.enabled:
-                    category_states[skill_model.config_name] = skill_model
-                else:
-                    _ = category_states.pop(skill_model.config_name, None)
-
-            enabled_categories = {
-                category for category, states in skill_states_map.items() if states
-            }
-
-            # Calculate price levels and skills data
-            category_avg_price_levels = {}
-            skills_data = {}
-            for category, states in skill_states_map.items():
-                if not states:
-                    continue
-                price_levels = [
-                    state.price_level
-                    for state in states.values()
-                    if state.price_level is not None
-                ]
-                if price_levels:
-                    category_avg_price_levels[category] = int(
-                        sum(price_levels) / len(price_levels)
-                    )
-                skills_data[category] = {
-                    config_name: state.price_level
-                    for config_name, state in states.items()
-                }
-
-            # Dynamically generate skills_properties from Skill.get_all data
             skills_properties = {}
-            current_dir = Path(__file__).parent.parent.parent
+            skills_dir = Path(__file__).parent.parent.parent / "skills"
 
-            for category in enabled_categories:
-                # Skip if filtered for auto-generation
-                skill_schema_path = current_dir / "skills" / category / "schema.json"
-                if skill_schema_path.exists():
+            # Iterate over all skill category directories with schema.json
+            if skills_dir.exists():
+                for category_dir in sorted(skills_dir.iterdir()):
+                    if not category_dir.is_dir():
+                        continue
+                    skill_schema_path = category_dir / "schema.json"
+                    if not skill_schema_path.exists():
+                        continue
+                    category = category_dir.name
                     try:
                         with open(skill_schema_path) as f:
                             skill_schema = json.load(f)
@@ -427,7 +395,6 @@ class Agent(AgentCreate, AgentPublicInfo):
                             )
                             continue
 
-                        # Create skill property with embedded schema instead of reference
                         # Load and embed the full skill schema directly
                         base_uri = f"file://{skill_schema_path}"
                         with open(skill_schema_path) as f:
@@ -437,31 +404,8 @@ class Agent(AgentCreate, AgentPublicInfo):
 
                         skills_properties[category] = {
                             "title": skill_schema.get("title", category.title()),
-                            **embedded_skill_schema,  # Embed the full schema instead of using $ref
+                            **embedded_skill_schema,
                         }
-
-                        # Add price level information
-                        if category in category_avg_price_levels:
-                            skills_properties[category]["x-avg-price-level"] = (
-                                category_avg_price_levels[category]
-                            )
-
-                        if category in skills_data:
-                            # Add price level to states in the embedded schema
-                            skill_states = (
-                                skills_properties[category]
-                                .get("properties", {})
-                                .get("states", {})
-                                .get("properties", {})
-                            )
-                            for state_name, state_config in skill_states.items():
-                                if (
-                                    state_name in skills_data[category]
-                                    and skills_data[category][state_name] is not None
-                                ):
-                                    state_config["x-price-level"] = skills_data[
-                                        category
-                                    ][state_name]
                     except (FileNotFoundError, json.JSONDecodeError) as e:
                         logger.warning(
                             f"Could not load schema for skill category '{category}': {e}"

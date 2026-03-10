@@ -16,7 +16,6 @@ from intentkit.models.credit import (
     TransactionType,
     UpstreamType,
 )
-from intentkit.models.skill import Skill
 
 from .adjustment import adjustment
 from .base import (
@@ -60,7 +59,6 @@ __all__ = [
     "Direction",
     "EventType",
     "OwnerType",
-    "Skill",
     "SkillCost",
     "TransactionType",
     "UpstreamType",

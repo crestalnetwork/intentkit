@@ -26,11 +26,9 @@ class DiscountType(str, Enum):
     """Type of discount."""
 
     STANDARD = "standard"
-    SELF_KEY = "self_key"
 
 
 DEFAULT_SKILL_CALL_PRICE = Decimal("10.0000")
-DEFAULT_SKILL_CALL_SELF_KEY_PRICE = Decimal("5.0000")
 
 
 class CreditPriceTable(Base):

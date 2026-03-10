@@ -1,5 +1,6 @@
 """Mention-related skills for Elfa AI API."""
 
+from decimal import Decimal
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
@@ -45,6 +46,7 @@ class ElfaGetTopMentions(ElfaBaseTool):
 
     name: str = "elfa_get_top_mentions"
     description: str = "Get top mentions for a ticker ranked by view count. Updated hourly with engagement metrics."
+    price: Decimal = Decimal("15")
     args_schema: ArgsSchema | None = ElfaGetTopMentionsInput
 
     async def _arun(
@@ -134,6 +136,7 @@ class ElfaSearchMentions(ElfaBaseTool):
 
     name: str = "elfa_search_mentions"
     description: str = "Search tweets by keywords or account name with engagement and sentiment data. Updated every 5 minutes."
+    price: Decimal = Decimal("15")
     args_schema: ArgsSchema | None = ElfaSearchMentionsInput
 
     async def _arun(
