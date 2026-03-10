@@ -1,11 +1,11 @@
-## What's New
+## New Features
 
-- **Activity and Post Skills**: Agents can now optionally enable activity tracking and post management skills (create post, get post, recent posts) via dedicated toggle settings.
-- **Dynamic Wallet Provider Options**: The wallet provider selection now automatically adapts based on your deployment configuration — only showing providers (CDP, Privy, Safe) that have the required credentials configured.
+- **UI Skills**: Added a new UI skill group with `show_card` and `ask_user` skills, enabling agents to display rich card components and interactive prompts to users.
 
 ## Improvements
 
-- Reorganized internal agent schema files for better maintainability.
-- Fixed a UI warning related to checkbox inputs in the agent editor.
+- **Simplified Skill Pricing**: Streamlined the skill pricing system by moving prices directly onto skill definitions, removing the need for a separate CSV-based configuration. This makes skill pricing more maintainable and transparent.
+- **Removed Developer Fee System**: Removed the developer fee / author revenue sharing mechanism from the credit system, simplifying cost calculations for skill calls.
+- Updated project dependencies.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.22...v0.11.23
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.23...v0.11.24
