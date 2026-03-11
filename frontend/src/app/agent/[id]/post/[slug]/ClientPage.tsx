@@ -5,9 +5,10 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 // import ReactMarkdown from "react-markdown";
 
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Calendar, User, Tag } from "lucide-react";
+import { ArrowLeft, Calendar, User, Tag, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { postApi, agentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,16 @@ export default function AgentPostPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyMarkdown = async () => {
+    if (!post?.markdown) return;
+    const text = `# ${post.title}\n\n${post.markdown}`;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleBack = () => {
     router.push(`/agent/${agentId}/posts`);
@@ -79,7 +90,21 @@ export default function AgentPostPage() {
 
       <article>
         <header className="mb-8 space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">{post.title}</h1>
+          <div className="flex items-start gap-4">
+            <h1 className="text-4xl font-bold tracking-tight min-w-0">{post.title}</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyMarkdown}
+              className="shrink-0 mt-1"
+            >
+              {copied ? (
+                <><Check className="mr-2 h-4 w-4" />Copied</>
+              ) : (
+                <><Copy className="mr-2 h-4 w-4" />Copy as Markdown</>
+              )}
+            </Button>
+          </div>
 
           <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -109,10 +134,13 @@ export default function AgentPostPage() {
                 </div>
             )}
           </div>
+
         </header>
 
-        <div className="prose prose-stone dark:prose-invert max-w-none">
-          <MarkdownRenderer>{post.markdown || ""}</MarkdownRenderer>
+        <div>
+          <div className="prose prose-stone dark:prose-invert max-w-none">
+            <MarkdownRenderer>{post.markdown || ""}</MarkdownRenderer>
+          </div>
         </div>
       </article>
     </div>

@@ -1,6 +1,6 @@
 """Skill for creating agent posts."""
 
-from typing import override
+from typing import Literal, cast, override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -11,6 +11,7 @@ from intentkit.core.agent_post import create_agent_post
 from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.agent_activity import AgentActivityCreate
 from intentkit.models.agent_post import AgentPostCreate
+from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
 
 
 class CreatePostInput(BaseModel):
@@ -48,6 +49,7 @@ class CreatePostSkill(SystemSkill):
         "Create a post with title, markdown body, and optional cover image."
     )
     args_schema: ArgsSchema | None = CreatePostInput
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
     @override
     async def _arun(
@@ -58,7 +60,7 @@ class CreatePostSkill(SystemSkill):
         excerpt: str,
         tags: list[str],
         cover: str | None = None,
-    ) -> str:
+    ) -> tuple[str, list[ChatMessageAttachment]]:
         """Create a new agent post.
 
         Args:
@@ -70,7 +72,7 @@ class CreatePostSkill(SystemSkill):
             cover: Optional URL of the cover image.
 
         Returns:
-            A message indicating success with the post ID.
+            A tuple of (message, attachments) with a card linking to the post.
         """
 
         try:
@@ -109,7 +111,34 @@ class CreatePostSkill(SystemSkill):
             )
             _ = await create_agent_activity(activity_create)
 
-            return f"Post created successfully with ID: {post.id}"
+            # Build card attachment
+            from intentkit.config.config import config
+
+            post_url = f"{config.app_base_url}/post/{post.id}"
+
+            attachment: ChatMessageAttachment = {
+                "type": ChatMessageAttachmentType.CARD,
+                "lead_text": None,
+                "url": post_url,
+                "json": cast(
+                    dict[str, object],
+                    {
+                        "title": title,
+                        "description": excerpt,
+                        "label": "Read Post",
+                        "image_url": cover,
+                    },
+                ),
+            }
+
+            content = (
+                f"Post created successfully (ID: {post.id}). "
+                f"A card with a link to the post has already been sent to the user. "
+                f"Do NOT call ui_show_card again for this post, "
+                f"and do NOT summarize the post content to the user."
+            )
+
+            return content, [attachment]
         except ToolException:
             raise
         except Exception as e:

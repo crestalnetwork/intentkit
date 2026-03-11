@@ -126,8 +126,16 @@ function CardAttachment({
     </div>
   );
   if (isClickable) {
+    const url = att.url!;
+    const isExternal =
+      url.startsWith("http://") || url.startsWith("https://")
+        ? new URL(url).origin !== window.location.origin
+        : false;
     return (
-      <a href={att.url!} target="_blank" rel="noopener noreferrer">
+      <a
+        href={url}
+        {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
         {card}
       </a>
     );

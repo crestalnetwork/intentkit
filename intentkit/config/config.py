@@ -110,6 +110,8 @@ class Config:
         # Payment
         self.payment_enabled: bool = self.load("PAYMENT_ENABLED", "false") == "true"
         self.hourly_budget: Decimal | None = self.load_decimal("HOURLY_BUDGET")
+        # App (frontend) base URL
+        self.app_base_url: str = self.load("APP_BASE_URL", "http://localhost:3000")
         # Open API for agent
         self.open_api_base_url: str = self.load(
             "OPEN_API_BASE_URL", "http://localhost:8000"
