@@ -12,7 +12,7 @@ from fastapi.responses import PlainTextResponse
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.agent import get_agent
 from intentkit.core.engine import thread_stats
-from intentkit.core.prompt import agent_prompt
+from intentkit.core.prompt import build_agent_prompt
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType
 
@@ -67,7 +67,7 @@ async def debug_agent_prompt(
         is_private=False,
     )
 
-    init_prompt = agent_prompt(agent, agent_data, context)
+    init_prompt = build_agent_prompt(agent, agent_data, context)
     append_prompt = agent.prompt_append or "None"
 
     full_prompt = (

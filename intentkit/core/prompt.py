@@ -247,12 +247,6 @@ def build_agent_prompt(
     return base_prompt
 
 
-# Legacy function name for backward compatibility
-def agent_prompt(agent: Agent, agent_data: AgentData, context: AgentContext) -> str:
-    """Legacy function name. Use build_agent_prompt instead."""
-    return build_agent_prompt(agent, agent_data, context)
-
-
 async def explain_prompt(message: str) -> str:
     pattern = r"@skill:([^:]+):([^\s]+)\b"
 
