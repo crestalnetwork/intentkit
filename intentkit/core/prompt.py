@@ -36,6 +36,49 @@ def _build_system_header(agent: Agent) -> str:
     return prompt
 
 
+def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
+    """Build system skills guide section if running in private context."""
+    if not context.is_private:
+        return ""
+
+    enable_activity = (
+        agent.enable_activity if agent.enable_activity is not None else True
+    )
+    enable_post = agent.enable_post if agent.enable_post is not None else True
+
+    lines = [
+        "## System Skills Guide\n\n",
+        "You have access to several system skills for internal operations:\n",
+        "- call_agent: Call another agent to delegate tasks or request information.\n",
+    ]
+
+    if enable_post:
+        lines.append(
+            "- create_post: Publish long-form content or articles.\n"
+            "- get_post: Get the full content of a post by its ID.\n"
+            "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
+        )
+    if enable_activity:
+        lines.append(
+            "- create_activity: Create a new activity on your timeline to record your actions.\n"
+            "- recent_activities: Retrieve your recent activities to maintain context.\n"
+        )
+
+    cautions = []
+    if enable_post:
+        cautions.append("create_post")
+    if enable_activity:
+        cautions.append("create_activity")
+    if cautions:
+        lines.append(
+            f"\nIMPORTANT: Do not use {' or '.join(cautions)} unless the user explicitly asks you to do so.\n\n"
+        )
+    else:
+        lines.append("\n")
+
+    return "".join(lines)
+
+
 def _build_agent_identity_section(agent: Agent) -> str:
     """Build agent identity information section."""
     identity_parts = []
@@ -49,7 +92,6 @@ def _build_agent_identity_section(agent: Agent) -> str:
 
 
 def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
-    """Build social accounts information section."""
     """Build social accounts information section."""
 
     social_parts = []
@@ -79,20 +121,22 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
             social_parts.append("Your twitter account is not verified.")
 
     # Telegram info
-    if agent_data.telegram_id:
-        social_parts.append(f"Your telegram bot id is {agent_data.telegram_id}.")
-    if agent_data.telegram_username:
-        social_parts.append(
-            f"Your telegram bot username is {agent_data.telegram_username}."
-        )
-    if agent_data.telegram_name:
-        social_parts.append(f"Your telegram bot name is {agent_data.telegram_name}.")
+    if agent.telegram_entrypoint_enabled:
+        if agent_data.telegram_id:
+            social_parts.append(f"Your telegram bot id is {agent_data.telegram_id}.")
+        if agent_data.telegram_username:
+            social_parts.append(
+                f"Your telegram bot username is {agent_data.telegram_username}."
+            )
+        if agent_data.telegram_name:
+            social_parts.append(
+                f"Your telegram bot name is {agent_data.telegram_name}."
+            )
 
     return "\n".join(social_parts) + ("\n" if social_parts else "")
 
 
 def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
-    """Build wallet information section."""
     """Build wallet information section."""
 
     wallet_parts = []
@@ -109,24 +153,23 @@ def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
             f"You are now in {network_id} network."
         )
 
-    # Add CDP skills prompt if CDP skills are enabled
-    if agent.skills and "cdp" in agent.skills:
-        cdp_config = agent.skills["cdp"]
-        if cdp_config and cdp_config.get("enabled") is True:
-            # Check if any CDP skills are in public or private state (not disabled)
-            states = cdp_config.get("states", {})
-            has_enabled_cdp_skills = any(
-                state in ["public", "private"] for state in states.values()
-            )
-            if has_enabled_cdp_skills:
-                wallet_parts.append(
-                    "If a skill input parameter requires a token address but you only have the user-provided token symbol, "
-                    "and the address cannot be found in the nearby context, you must use the `token_search` skill to query "
-                    f"the address of that symbol on the current chain ({network_id}) and confirm this address with the user."
-                    "If the `token_search` skill is not found, remind the user to enable it."
-                )
-
     return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
+
+
+def _build_agent_characteristics_section(agent: Agent) -> str:
+    """Build agent characteristics section (purpose, personality, principles, etc.)."""
+    sections = []
+
+    if agent.purpose:
+        sections.append(f"## Purpose\n\n{agent.purpose}")
+    if agent.personality:
+        sections.append(f"## Personality\n\n{agent.personality}")
+    if agent.principles:
+        sections.append(f"## Principles\n\n{agent.principles}")
+    if agent.prompt:
+        sections.append(f"## Initial Rules\n\n{agent.prompt}")
+
+    return "\n\n".join(sections) + ("\n\n" if sections else "")
 
 
 async def _build_user_info_section(context: AgentContext) -> str:
@@ -164,22 +207,6 @@ async def _build_user_info_section(context: AgentContext) -> str:
     return ""
 
 
-def _build_agent_characteristics_section(agent: Agent) -> str:
-    """Build agent characteristics section (purpose, personality, principles, etc.)."""
-    sections = []
-
-    if agent.purpose:
-        sections.append(f"## Purpose\n\n{agent.purpose}")
-    if agent.personality:
-        sections.append(f"## Personality\n\n{agent.personality}")
-    if agent.principles:
-        sections.append(f"## Principles\n\n{agent.principles}")
-    if agent.prompt:
-        sections.append(f"## Initial Rules\n\n{agent.prompt}")
-
-    return "\n\n".join(sections) + ("\n\n" if sections else "")
-
-
 def build_agent_prompt(
     agent: Agent, agent_data: AgentData, context: AgentContext
 ) -> str:
@@ -206,10 +233,10 @@ def build_agent_prompt(
         _build_system_header(agent),
         _build_system_skills_section(agent, context),
         _build_agent_identity_section(agent),
+        _build_agent_characteristics_section(agent),
         _build_social_accounts_section(agent, agent_data),
         _build_wallet_section(agent, agent_data),
         "\n",  # Add spacing before characteristics
-        _build_agent_characteristics_section(agent),
     ]
 
     base_prompt = "".join(section for section in prompt_sections if section)
@@ -317,49 +344,6 @@ def build_internal_info_prompt(context: AgentContext) -> str:
     if context.user_id:
         internal_info += f"user_id: {context.user_id}\n\n"
     return internal_info
-
-
-def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
-    """Build system skills guide section if running in private context."""
-    if not context.is_private:
-        return ""
-
-    enable_activity = (
-        agent.enable_activity if agent.enable_activity is not None else True
-    )
-    enable_post = agent.enable_post if agent.enable_post is not None else True
-
-    lines = [
-        "## System Skills Guide\n\n",
-        "You have access to several system skills for internal operations:\n",
-        "- call_agent: Call another agent to delegate tasks or request information.\n",
-    ]
-
-    if enable_post:
-        lines.append(
-            "- create_post: Publish long-form content or articles.\n"
-            "- get_post: Get the full content of a post by its ID.\n"
-            "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
-        )
-    if enable_activity:
-        lines.append(
-            "- create_activity: Create a new activity on your timeline to record your actions.\n"
-            "- recent_activities: Retrieve your recent activities to maintain context.\n"
-        )
-
-    cautions = []
-    if enable_post:
-        cautions.append("create_post")
-    if enable_activity:
-        cautions.append("create_activity")
-    if cautions:
-        lines.append(
-            f"\nIMPORTANT: Do not use {' or '.join(cautions)} unless the user explicitly asks you to do so.\n\n"
-        )
-    else:
-        lines.append("\n")
-
-    return "".join(lines)
 
 
 # ============================================================================
