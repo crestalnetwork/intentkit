@@ -18,34 +18,21 @@ INTENTKIT_PROMPT = """You are an AI agent created with IntentKit.
 Your tools are called 'skills'.
 """
 
-ENSO_SKILLS_GUIDE = """## ENSO Skills Guide
-
-You are integrated with the Enso API. You can use enso_get_tokens to retrieve token information,
-including APY, Protocol Slug, Symbol, Address, Decimals, and underlying tokens. When interacting with token amounts,
-ensure to multiply input amounts by the token's decimal places and divide output amounts by the token's decimals.
-Utilize enso_route_shortcut to find the best swap or deposit route. Set broadcast_request to True only when the
-user explicitly requests a transaction broadcast. Insufficient funds or insufficient spending approval can cause
-Route Shortcut broadcasts to fail. To avoid this, use the enso_broadcast_wallet_approve tool that requires explicit
-user confirmation before broadcasting any approval transactions for security reasons.
-
-"""
-
 # ============================================================================
 # CORE PROMPT BUILDING FUNCTIONS
 # ============================================================================
 
 
-def _build_system_header(agent: Agent, context: AgentContext) -> str:
+def _build_system_header(agent: Agent) -> str:
     """Build the system prompt header."""
     prompt = "# SYSTEM PROMPT\n\n"
-    prompt += f"Your agent id is {agent.id}. "
+    prompt += f"Your agent id is {agent.id}. "  # better for cache by agent
     if config.intentkit_prompt:
         prompt += config.intentkit_prompt + "\n\n"
     else:
         prompt += INTENTKIT_PROMPT + "\n\n"
     if config.system_prompt:
         prompt += config.system_prompt + "\n\n"
-    prompt += _build_system_skills_section(context)
     return prompt
 
 
@@ -193,17 +180,6 @@ def _build_agent_characteristics_section(agent: Agent) -> str:
     return "\n\n".join(sections) + ("\n\n" if sections else "")
 
 
-def _build_skills_guides_section(agent: Agent) -> str:
-    """Build skills-specific guides section."""
-    guides = []
-
-    # ENSO skills guide
-    if agent.skills and "enso" in agent.skills and agent.skills["enso"].get("enabled"):
-        guides.append(ENSO_SKILLS_GUIDE)
-
-    return "".join(guides)
-
-
 def build_agent_prompt(
     agent: Agent, agent_data: AgentData, context: AgentContext
 ) -> str:
@@ -227,13 +203,13 @@ def build_agent_prompt(
         str: The complete system prompt
     """
     prompt_sections = [
-        _build_system_header(agent, context),
+        _build_system_header(agent),
+        _build_system_skills_section(agent, context),
         _build_agent_identity_section(agent),
         _build_social_accounts_section(agent, agent_data),
         _build_wallet_section(agent, agent_data),
         "\n",  # Add spacing before characteristics
         _build_agent_characteristics_section(agent),
-        _build_skills_guides_section(agent),
     ]
 
     base_prompt = "".join(section for section in prompt_sections if section)
@@ -243,16 +219,6 @@ def build_agent_prompt(
         base_prompt += f"## Task Details\n\n{agent.extra_prompt}\n\n"
 
     return base_prompt
-
-
-# ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
-
-
-def escape_prompt(prompt: str) -> str:
-    """Escape curly braces in the prompt for template processing."""
-    return prompt.replace("{", "{{").replace("}", "}}")
 
 
 # ============================================================================
@@ -353,20 +319,47 @@ def build_internal_info_prompt(context: AgentContext) -> str:
     return internal_info
 
 
-def _build_system_skills_section(context: AgentContext) -> str:
+def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
     """Build system skills guide section if running in private context."""
     if not context.is_private:
         return ""
 
-    return (
-        "## System Skills Guide\n\n"
-        "You have access to several system skills for internal operations:\n"
-        "- call_agent: Call another agent to delegate tasks or request information.\n"
-        "- create_post: Publish long-form content or articles.\n"
-        "- create_activity: Create a new activity on your timeline to record your actions.\n"
-        "- recent_activities: Retrieve your recent activities to maintain context.\n\n"
-        "IMPORTANT: Do not use create_post or create_activity unless the user explicitly asks you to do so.\n\n"
+    enable_activity = (
+        agent.enable_activity if agent.enable_activity is not None else True
     )
+    enable_post = agent.enable_post if agent.enable_post is not None else True
+
+    lines = [
+        "## System Skills Guide\n\n",
+        "You have access to several system skills for internal operations:\n",
+        "- call_agent: Call another agent to delegate tasks or request information.\n",
+    ]
+
+    if enable_post:
+        lines.append(
+            "- create_post: Publish long-form content or articles.\n"
+            "- get_post: Get the full content of a post by its ID.\n"
+            "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
+        )
+    if enable_activity:
+        lines.append(
+            "- create_activity: Create a new activity on your timeline to record your actions.\n"
+            "- recent_activities: Retrieve your recent activities to maintain context.\n"
+        )
+
+    cautions = []
+    if enable_post:
+        cautions.append("create_post")
+    if enable_activity:
+        cautions.append("create_activity")
+    if cautions:
+        lines.append(
+            f"\nIMPORTANT: Do not use {' or '.join(cautions)} unless the user explicitly asks you to do so.\n\n"
+        )
+    else:
+        lines.append("\n")
+
+    return "".join(lines)
 
 
 # ============================================================================
@@ -380,7 +373,7 @@ async def build_system_prompt(
     """Construct the final system prompt for an agent run."""
 
     base_prompt = build_agent_prompt(agent, agent_data, context)
-    final_system_prompt = escape_prompt(base_prompt)
+    final_system_prompt = base_prompt
 
     entrypoint_prompt = await build_entrypoint_prompt(agent, context)
     if entrypoint_prompt:
