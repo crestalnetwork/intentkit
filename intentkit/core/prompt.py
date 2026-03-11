@@ -1,4 +1,3 @@
-import re
 from datetime import datetime, timezone
 
 from eth_utils.address import is_address
@@ -9,7 +8,6 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType
 from intentkit.models.user import User
-from intentkit.skills.base import get_skill_name_by_config
 
 # ============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -247,28 +245,6 @@ def build_agent_prompt(
     return base_prompt
 
 
-async def explain_prompt(message: str) -> str:
-    pattern = r"@skill:([^:]+):([^\s]+)\b"
-
-    def replace_skill_pattern(match: re.Match[str]) -> str:
-        category = match.group(1)
-        config_name = match.group(2)
-
-        skill_name = get_skill_name_by_config(category, config_name)
-        if skill_name:
-            return f"(call skill {skill_name})"
-        else:
-            return match.group(0)
-
-    matches = list(re.finditer(pattern, message))
-    result = message
-    for match in reversed(matches):
-        replacement = replace_skill_pattern(match)
-        result = result[: match.start()] + replacement + result[match.end() :]
-
-    return result
-
-
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
@@ -404,13 +380,12 @@ async def build_system_prompt(
     """Construct the final system prompt for an agent run."""
 
     base_prompt = build_agent_prompt(agent, agent_data, context)
-    final_system_prompt = await explain_prompt(escape_prompt(base_prompt))
+    final_system_prompt = escape_prompt(base_prompt)
 
     entrypoint_prompt = await build_entrypoint_prompt(agent, context)
     if entrypoint_prompt:
-        processed_entrypoint = await explain_prompt(entrypoint_prompt)
         final_system_prompt = (
-            f"{final_system_prompt}## Entrypoint rules{processed_entrypoint}\n\n"
+            f"{final_system_prompt}## Entrypoint rules{entrypoint_prompt}\n\n"
         )
 
     # Skip user info section for autonomous tasks
@@ -423,9 +398,8 @@ async def build_system_prompt(
     final_system_prompt = f"{final_system_prompt}{internal_info}"
 
     if agent.prompt_append:
-        processed_append = await explain_prompt(agent.prompt_append)
         final_system_prompt = (
-            f"{final_system_prompt}## Additional Instructions\n\n{processed_append}"
+            f"{final_system_prompt}## Additional Instructions\n\n{agent.prompt_append}"
         )
 
     return final_system_prompt

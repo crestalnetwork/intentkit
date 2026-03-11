@@ -67,7 +67,6 @@ from intentkit.core.middleware import (
     ToolBindingMiddleware,
     TrimMessagesMiddleware,
 )
-from intentkit.core.prompt import explain_prompt
 
 # from intentkit.core.system_skills import get_system_skills (moved to build_agent)
 from intentkit.models.agent import Agent, AgentTable
@@ -580,8 +579,7 @@ async def stream_agent_raw(
             and att["url"] is not None
         ]
 
-    # Process input message to handle @skill patterns
-    input_message = await explain_prompt(user_message.message)
+    input_message = user_message.message
 
     # super mode — determined by agent config
     recursion_limit = config.recursion_limit

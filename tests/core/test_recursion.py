@@ -62,9 +62,6 @@ async def test_recursion_error_handling(mock_agent):
         patch(
             "intentkit.models.chat.ChatMessageCreate.save", new_callable=AsyncMock
         ) as mock_save,
-        patch(
-            "intentkit.core.engine.explain_prompt", new_callable=AsyncMock
-        ) as mock_explain,
         patch("intentkit.models.llm.LLMModelInfo.get", new_callable=AsyncMock),
         patch("intentkit.config.db.engine", new=MagicMock()),
         patch("intentkit.config.db.AsyncSession", new=MagicMock()),
@@ -77,7 +74,6 @@ async def test_recursion_error_handling(mock_agent):
         mock_config.payment_enabled = False
         mock_get_agent.return_value = mock_agent
         mock_executor_func.return_value = (mock_executor_instance, 0.1)
-        mock_explain.return_value = "Hello"
 
         # Mock save for input message
         mock_saved_msg = MagicMock()

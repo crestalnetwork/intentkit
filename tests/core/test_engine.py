@@ -162,9 +162,6 @@ async def test_stream_agent_flow(mock_agent):
         patch(
             "intentkit.models.chat.ChatMessageCreate.save", new_callable=AsyncMock
         ) as mock_save,
-        patch(
-            "intentkit.core.engine.explain_prompt", new_callable=AsyncMock
-        ) as mock_explain,
         patch("intentkit.models.llm.LLMModelInfo.get", new_callable=AsyncMock),
         patch("intentkit.config.db.engine", new=MagicMock()),
         patch("intentkit.config.db.AsyncSession", new=MagicMock()) as mock_session_cls,
@@ -173,7 +170,6 @@ async def test_stream_agent_flow(mock_agent):
     ):
         mock_get_agent.return_value = mock_agent
         mock_executor_func.return_value = (mock_executor_instance, 0.1)
-        mock_explain.return_value = "Hello"  # Just return input
 
         # Configure AsyncSession mock
         mock_session = AsyncMock()

@@ -288,7 +288,6 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
 
 # Global skill price registry
 _SKILL_PRICES: dict[str, Decimal] = {}
-_SKILL_CONFIG_NAMES: dict[tuple[str, str], str] = {}
 _registry_built = False
 
 
@@ -332,12 +331,6 @@ def build_skill_prices() -> None:
             price if isinstance(price, Decimal) else Decimal(str(price))
         )
 
-        # Collect config name mapping: (category, config_name) -> skill_name
-        category = getattr(cls, "category", None)
-        if category and isinstance(category, str):
-            # Config name is typically the skill name itself
-            _SKILL_CONFIG_NAMES[(category, name)] = name
-
     _registry_built = True
 
 
@@ -346,10 +339,3 @@ def get_skill_price(name: str) -> Decimal:
     if not _registry_built:
         build_skill_prices()
     return _SKILL_PRICES.get(name, Decimal("1"))
-
-
-def get_skill_name_by_config(category: str, config_name: str) -> str | None:
-    """Get skill name by category and config_name."""
-    if not _registry_built:
-        build_skill_prices()
-    return _SKILL_CONFIG_NAMES.get((category, config_name))
