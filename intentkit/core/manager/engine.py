@@ -11,7 +11,7 @@ from typing import Any
 from langgraph.graph.state import CompiledStateGraph
 
 from intentkit.abstracts.graph import AgentContext, AgentState
-from intentkit.core.engine import build_agent, stream_agent_raw
+from intentkit.core.engine import build_executor, stream_agent_raw
 from intentkit.core.manager.skills import (
     add_autonomous_task_skill,
     delete_autonomous_task_skill,
@@ -208,7 +208,7 @@ async def _get_manager_executor(
                 regenerate_agent_api_key_skill,
                 get_available_llms_skill,
             ]
-            executor = await build_agent(
+            executor = await build_executor(
                 manager_agent,
                 AgentData.model_construct(id=manager_agent.id),
                 custom_skills,

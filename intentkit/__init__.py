@@ -9,11 +9,10 @@ __email__ = "ruihua@crestal.network"
 
 # Core components
 # Abstract base classes
-from .core.engine import build_agent, create_agent, stream_agent, stream_agent_raw
+from .core.engine import build_executor, stream_agent, stream_agent_raw
 
 __all__ = [
-    "create_agent",
     "stream_agent",
-    "build_agent",
+    "build_executor",
     "stream_agent_raw",
 ]

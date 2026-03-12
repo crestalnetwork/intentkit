@@ -68,7 +68,7 @@ from intentkit.core.middleware import (
     TrimMessagesMiddleware,
 )
 
-# from intentkit.core.system_skills import get_system_skills (moved to build_agent)
+# from intentkit.core.system_skills import get_system_skills (moved to build_executor)
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
@@ -128,18 +128,18 @@ def _extract_cached_input_tokens(msg: Any) -> int:
     return details.get("cache_read", 0)
 
 
-async def build_agent(
+async def build_executor(
     agent: Agent,
     agent_data: AgentData,
     custom_skills: Sequence[BaseTool] = (),
 ) -> CompiledStateGraph[Any, Any, Any, Any]:
-    """Build an AI agent with specified configuration and tools.
+    """Build an AI agent executor with specified configuration and tools.
 
     This function:
     1. Initializes LLM with specified model
     2. Loads and configures requested tools
     3. Sets up PostgreSQL-based memory
-    4. Creates and returns the agent
+    4. Creates and returns the compiled executor
 
     Args:
         agent (Agent): Agent configuration object
@@ -309,55 +309,25 @@ async def build_agent(
     return executor
 
 
-async def create_agent(
-    agent: Agent,
-) -> CompiledStateGraph[Any, Any, Any, Any]:
-    """Create an AI agent with specified configuration and tools.
-
-    This function maintains backward compatibility by calling build_agent internally.
-
-    Args:
-        agent (Agent): Agent configuration object
-        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
-
-    Returns:
-        CompiledStateGraph: Initialized LangChain agent
-    """
-    agent_data = await AgentData.get(agent.id)
-    return await build_agent(agent, agent_data)
-
-
-async def initialize_agent(aid: str):
-    """Initialize an AI agent with specified configuration and tools.
+async def build_and_cache_executor(
+    aid: str, agent: Agent, agent_data: AgentData
+) -> None:
+    """Build an agent executor and cache it with timestamp tracking.
 
     This function:
-    1. Loads agent configuration from database
-    2. Uses create_agent to build the agent
-    3. Caches the agent
+    1. Builds the executor from agent config and data
+    2. Caches the executor
+    3. Tracks the latest update timestamp from both agent and agent_data
 
     Args:
-        aid (str): Agent ID to initialize
-        is_private (bool, optional): Flag indicating whether the agent is private. Defaults to False.
-
-    Returns:
-        Agent: Initialized LangChain agent
-
-    Raises:
-        HTTPException: If agent not found (404) or database error (500)
+        aid: Agent ID
+        agent: Agent configuration object
+        agent_data: Agent data object (wallet, API keys, credentials)
     """
-    # get the agent from the database
-    agent = await get_agent(aid)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-
-    # Create the agent using the new create_agent function
-    executor = await create_agent(agent)
-
-    # Cache the agent executor
+    executor = await build_executor(agent, agent_data)
     _agents[aid] = executor
-    _agents_updated[aid] = agent.deployed_at if agent.deployed_at else agent.updated_at
+    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
+    _agents_updated[aid] = max(agent_ts, agent_data.updated_at)
 
 
 async def agent_executor(
@@ -369,7 +339,9 @@ async def agent_executor(
         raise IntentKitAPIError(
             status_code=404, key="AgentNotFound", message="Agent not found"
         )
-    updated_at = agent.deployed_at if agent.deployed_at else agent.updated_at
+    agent_data = await AgentData.get(agent_id)
+    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
+    updated_at = max(agent_ts, agent_data.updated_at)
     # Check if agent needs reinitialization due to updates
     needs_reinit = False
     if agent_id in _agents:
@@ -380,7 +352,7 @@ async def agent_executor(
     # cold start or needs reinitialization
     cold_start_cost = 0.0
     if (agent_id not in _agents) or needs_reinit:
-        await initialize_agent(agent_id)
+        await build_and_cache_executor(agent_id, agent, agent_data)
         cold_start_cost = time.perf_counter() - start
     return _agents[agent_id], cold_start_cost
 

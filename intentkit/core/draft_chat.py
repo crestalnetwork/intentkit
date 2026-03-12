@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.db import get_session
-from intentkit.core.engine import build_agent, stream_agent_raw
+from intentkit.core.engine import build_executor, stream_agent_raw
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
@@ -98,7 +98,7 @@ async def _get_draft_executor(
     if not cached_executor or cached_updated != draft.updated_at:
         start = time.perf_counter()
         agent_data = AgentData(id=agent.id, created_at=now, updated_at=now)
-        cached_executor = await build_agent(agent, agent_data)
+        cached_executor = await build_executor(agent, agent_data)
         cold_start_cost = time.perf_counter() - start
         _draft_executors[agent.id] = cached_executor
         _draft_updated_at[agent.id] = draft.updated_at

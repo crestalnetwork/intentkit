@@ -8,7 +8,7 @@ import pytest
 from epyxid import XID
 from langchain_core.tools import tool
 
-from intentkit.core.engine import build_agent, stream_agent_raw
+from intentkit.core.engine import build_executor, stream_agent_raw
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
@@ -155,7 +155,9 @@ async def test_local_agent_tool_call():
             patch("intentkit.core.engine.clear_thread_memory"),
         ):
             # 2. Build Agent with custom tool
-            executor = await build_agent(agent, agent_data, custom_skills=[calculator])
+            executor = await build_executor(
+                agent, agent_data, custom_skills=[calculator]
+            )
 
             assert executor is not None
 
@@ -328,8 +330,8 @@ async def test_local_agent_system_tool_call():
             patch("intentkit.core.engine.clear_thread_memory"),
         ):
             # 2. Build Agent with system tool
-            # Note: build_agent accepts custom_skills, we can pass the initialized tool instance
-            executor = await build_agent(agent, agent_data)
+            # Note: build_executor accepts custom_skills, we can pass the initialized tool instance
+            executor = await build_executor(agent, agent_data)
 
             assert executor is not None
 

@@ -8,7 +8,7 @@ from intentkit.core.engine import (
     _agents,
     _agents_updated,
     agent_executor,
-    build_agent,
+    build_executor,
     stream_agent,
 )
 from intentkit.models.agent import Agent, AgentData
@@ -46,8 +46,8 @@ def mock_agent_data():
 
 
 @pytest.mark.asyncio
-async def test_build_agent(mock_agent, mock_agent_data):
-    """Test building an agent."""
+async def test_build_executor(mock_agent, mock_agent_data):
+    """Test building an agent executor."""
     with (
         patch(
             "intentkit.core.engine.create_llm_model", new_callable=AsyncMock
@@ -61,7 +61,7 @@ async def test_build_agent(mock_agent, mock_agent_data):
         mock_model.create_instance.return_value = mock_llm_instance
         mock_create_model.return_value = mock_model
 
-        executor = await build_agent(mock_agent, mock_agent_data)
+        executor = await build_executor(mock_agent, mock_agent_data)
 
         mock_create_model.assert_called_with(
             model_name=mock_agent.model,
@@ -85,22 +85,36 @@ async def test_agent_executor_caching(mock_agent):
             "intentkit.core.engine.get_agent", new_callable=AsyncMock
         ) as mock_get_agent,
         patch(
-            "intentkit.core.engine.create_agent", new_callable=AsyncMock
-        ) as mock_create_agent,
+            "intentkit.core.engine.build_and_cache_executor", new_callable=AsyncMock
+        ) as mock_build_and_cache,
+        patch(
+            "intentkit.core.engine.AgentData.get", new_callable=AsyncMock
+        ) as mock_agent_data_get,
     ):
         mock_get_agent.return_value = mock_agent
         mock_executor = MagicMock()
-        mock_create_agent.return_value = mock_executor
+        mock_agent_data = MagicMock()
+        mock_agent_data.updated_at = mock_agent.updated_at
+        mock_agent_data_get.return_value = mock_agent_data
+
+        async def side_effect(aid, agent, agent_data):
+            _agents[aid] = mock_executor
+            _agents_updated[aid] = max(
+                agent.deployed_at if agent.deployed_at else agent.updated_at,
+                agent_data.updated_at,
+            )
+
+        mock_build_and_cache.side_effect = side_effect
 
         # First call - should initialize
         executor1, cost1 = await agent_executor(mock_agent.id)
         assert executor1 == mock_executor
-        assert mock_create_agent.call_count == 1
+        assert mock_build_and_cache.call_count == 1
 
         # Second call - should use cache
         executor2, cost2 = await agent_executor(mock_agent.id)
         assert executor2 == mock_executor
-        assert mock_create_agent.call_count == 1  # Still 1
+        assert mock_build_and_cache.call_count == 1  # Still 1
 
         # Update agent deployed_at to force re-init
         mock_agent.deployed_at = datetime.now()
@@ -114,7 +128,14 @@ async def test_agent_executor_caching(mock_agent):
 
         # Third call - should re-initialize
         executor3, cost3 = await agent_executor(mock_agent.id)
-        assert mock_create_agent.call_count == 2
+        assert mock_build_and_cache.call_count == 2
+
+        # Fourth call - update only agent_data.updated_at to force re-init
+        time.sleep(0.001)
+        mock_agent_data.updated_at = datetime.now()
+
+        executor4, cost4 = await agent_executor(mock_agent.id)
+        assert mock_build_and_cache.call_count == 3
 
 
 @pytest.mark.asyncio
