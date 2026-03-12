@@ -1,7 +1,11 @@
-# v0.11.27
+# Release v0.12.0
 
-## Bug Fixes
+## New Features
 
-- Fixed an issue where frontend features (chat, tasks, activities, posts, archive) would fail when navigating via agent slug URLs. After the recent slug URL rewrite feature, some API calls were incorrectly using the slug instead of the agent ID.
+- **Long-Term Memory**: Agents can now maintain persistent long-term memory across conversations. When enabled, agents can store and recall important information using an LLM-powered memory management system that intelligently merges and consolidates memories.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.26...v0.11.27
+## Improvements
+
+- Minor code formatting fixes in tests.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.27...v0.12.0
