@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { buildChatThreadPath, getAutonomousChatId } from "@/lib/autonomousChat";
 import { agentApi, autonomousApi, chatApi } from "@/lib/api";
+import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import {
   cacheAgentAvatar,
   cn,
@@ -156,6 +157,8 @@ export default function TaskLogsPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  useAgentSlugRewrite(agentId, agent?.slug);
 
   const {
     data: tasks = [],

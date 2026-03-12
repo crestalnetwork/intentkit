@@ -65,6 +65,16 @@
       "x-group": "basic",
       "x-placeholder": "Enter agent name"
     },
+    "slug": {
+      "title": "Slug",
+      "type": "string",
+      "description": "URL-friendly identifier. Must start with a letter. Lowercase letters, numbers, and hyphens only. Cannot be changed once set.",
+      "minLength": 3,
+      "maxLength": 20,
+      "pattern": "^[a-z]([a-z0-9-]*[a-z0-9])?$",
+      "x-group": "basic",
+      "x-placeholder": "e.g. my-agent"
+    },
     "picture": {
       "title": "Picture",
       "type": "string",

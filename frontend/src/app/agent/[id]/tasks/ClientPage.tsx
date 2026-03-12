@@ -43,6 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { agentApi, chatApi, autonomousApi, AutonomousTask } from "@/lib/api";
+import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { TaskDialog } from "./TaskDialog";
 import { buildChatThreadPath, buildTaskLogsPath } from "@/lib/autonomousChat";
 import { TaskBadgeActions } from "./TaskBadgeActions";
@@ -57,6 +58,8 @@ export default function AgentTasksPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  useAgentSlugRewrite(agentId, agent?.slug);
 
   // Fetch autonomous tasks
   const {
@@ -230,7 +233,7 @@ export default function AgentTasksPage() {
           </Link>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/agents/${agentId}/edit`}>
+              <Link href={`/agent/${agentId}/edit`}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </Link>

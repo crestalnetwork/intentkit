@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { postApi, agentApi } from "@/lib/api";
+import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -34,6 +35,8 @@ export default function AgentPostPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  useAgentSlugRewrite(agentId, agent?.slug);
 
   const [copied, setCopied] = useState(false);
 

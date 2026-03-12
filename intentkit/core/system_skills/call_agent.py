@@ -18,7 +18,7 @@ CALL_AGENT_TIMEOUT = 180  # 3 minutes
 class CallAgentInput(BaseModel):
     """Input schema for calling another agent."""
 
-    agent_id: str = Field(..., description="Target agent ID")
+    agent_id: str = Field(..., description="Target agent ID or slug")
     message: str = Field(..., description="Message to send")
 
 
@@ -54,16 +54,23 @@ class CallAgentSkill(SystemSkill):
         # Import here to avoid circular dependency
         # When initializing an agent, it may import this skill,
         # and this skill imports engine, which imports skills
+        from intentkit.core.agent import get_agent_by_id_or_slug
         from intentkit.core.engine import execute_agent
 
         try:
+            # Resolve agent_id (could be a slug)
+            resolved_agent = await get_agent_by_id_or_slug(agent_id)
+            if not resolved_agent:
+                raise ToolException(f"Agent '{agent_id}' not found")
+            actual_agent_id = resolved_agent.id
+
             context = self.get_context()
 
             # Create a chat message for the called agent
             # Inherit context from the current skill execution
             chat_message = ChatMessageCreate(
                 id=str(XID()),
-                agent_id=agent_id,
+                agent_id=actual_agent_id,
                 chat_id=f"call-{context.agent_id}-{context.chat_id}",
                 user_id=context.user_id,
                 author_id=context.agent_id,

@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentCreate, AgentUpdate
@@ -14,6 +15,20 @@ from .queries import get_agent
 from .wallet import process_agent_wallet
 
 logger = logging.getLogger(__name__)
+
+
+async def _validate_slug_unique(
+    slug: str, exclude_agent_id: str | None, db: AsyncSession
+) -> None:
+    """Check that a slug is not already in use by another agent."""
+    query = select(AgentTable.id).where(AgentTable.slug == slug)
+    if exclude_agent_id:
+        query = query.where(AgentTable.id != exclude_agent_id)
+    existing = await db.scalar(query)
+    if existing:
+        raise IntentKitAPIError(
+            400, "SlugAlreadyExists", f"Slug '{slug}' is already in use"
+        )
 
 
 async def override_agent(
@@ -52,6 +67,14 @@ async def override_agent(
     if "autonomous" in agent.model_dump(exclude_unset=True):
         agent.validate_autonomous_schedule()
 
+    # Slug immutability check
+    if (
+        existing_agent.slug
+        and agent.slug is not None
+        and agent.slug != existing_agent.slug
+    ):
+        raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
+
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
         if not db_agent:
@@ -60,6 +83,11 @@ async def override_agent(
                 key="AgentNotFound",
                 message="Agent not found",
             )
+
+        # Slug uniqueness check
+        if agent.slug:
+            await _validate_slug_unique(agent.slug, agent_id, db)
+
         # update
         update_data = agent.model_dump()
         if "autonomous" in update_data:
@@ -121,6 +149,15 @@ async def patch_agent(
     if "autonomous" in agent.model_dump(exclude_unset=True):
         agent.validate_autonomous_schedule()
 
+    # Slug immutability check
+    update_fields = agent.model_dump(exclude_unset=True)
+    if (
+        existing_agent.slug
+        and "slug" in update_fields
+        and update_fields["slug"] != existing_agent.slug
+    ):
+        raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
+
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
         if not db_agent:
@@ -129,8 +166,14 @@ async def patch_agent(
                 key="AgentNotFound",
                 message="Agent not found",
             )
+
+        # Slug uniqueness check
+        slug_value = update_fields.get("slug")
+        if slug_value:
+            await _validate_slug_unique(slug_value, agent_id, db)
+
         # update
-        update_data = agent.model_dump(exclude_unset=True)
+        update_data = update_fields
         if "autonomous" in update_data:
             update_data["autonomous"] = agent.normalize_autonomous_statuses(
                 update_data["autonomous"]
@@ -191,6 +234,10 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
 
     async with get_session() as db:
         try:
+            # Slug uniqueness check
+            if agent.slug:
+                await _validate_slug_unique(agent.slug, None, db)
+
             create_data = agent.model_dump()
             if "autonomous" in create_data:
                 create_data["autonomous"] = agent.normalize_autonomous_statuses(

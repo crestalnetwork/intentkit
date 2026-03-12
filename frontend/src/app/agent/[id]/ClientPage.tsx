@@ -45,6 +45,7 @@ import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { toast } from "@/hooks/use-toast";
+import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { isUserAuthoredMessage } from "@/types/chat";
 import type { UIMessage, ChatThread, ChatMessage } from "@/types/chat";
 import { buildChatThreadPath } from "@/lib/autonomousChat";
@@ -190,6 +191,8 @@ export default function AgentChatPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  useAgentSlugRewrite(agentId, agent?.slug);
 
   // Thread state
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -567,7 +570,7 @@ export default function AgentChatPage() {
           </Link>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/agents/${agentId}/edit`}>
+              <Link href={`/agent/${agentId}/edit`}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </Link>

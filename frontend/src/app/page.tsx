@@ -34,7 +34,7 @@ export default function HomePage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link href="/agents/new">
+          <Link href="/agent/new">
             <Button size="sm">
               <Plus className="mr-2 h-4 w-4" />
               New Agent

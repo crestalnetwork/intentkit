@@ -39,7 +39,7 @@ export function AgentCard({ agent }: AgentCardProps) {
   };
 
   return (
-    <Link href={`/agent/${agent.id}`} className="block h-full group">
+    <Link href={`/agent/${agent.slug || agent.id}`} className="block h-full group">
       <Card className="flex flex-col h-full transition-colors hover:bg-muted/50 hover:border-primary/50">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">

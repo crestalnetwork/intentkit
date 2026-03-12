@@ -25,6 +25,7 @@ from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
     create_agent,
     deploy_agent,
+    get_agent_by_id_or_slug,
     override_agent,
     patch_agent,
 )
@@ -260,12 +261,12 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     operation_id="get_agent",
 )
 async def get_agent(
-    agent_id: str = Path(..., description="ID of the agent to retrieve"),
+    agent_id: str = Path(..., description="ID or slug of the agent to retrieve"),
 ) -> Response:
-    """Get a single agent by ID.
+    """Get a single agent by ID or slug.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to retrieve
+    * `agent_id` - ID or slug of the agent to retrieve
 
     **Returns:**
     * `AgentResponse` - Agent configuration with additional processed data
@@ -274,14 +275,14 @@ async def get_agent(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await get_agent_by_id(agent_id)
+    agent = await get_agent_by_id_or_slug(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
         )
 
     # Get agent data
-    agent_data = await AgentData.get(agent_id)
+    agent_data = await AgentData.get(agent.id)
 
     agent_response = await AgentResponse.from_agent(agent, agent_data)
 
@@ -299,12 +300,12 @@ async def get_agent(
     operation_id="get_agent_editable",
 )
 async def get_agent_editable(
-    agent_id: str = Path(..., description="ID of the agent to retrieve"),
+    agent_id: str = Path(..., description="ID or slug of the agent to retrieve"),
 ) -> Response:
-    """Get a single agent by ID with full editable fields.
+    """Get a single agent by ID or slug with full editable fields.
 
     **Path Parameters:**
-    * `agent_id` - ID of the agent to retrieve
+    * `agent_id` - ID or slug of the agent to retrieve
 
     **Returns:**
     * `AgentUpdate` - Full agent configuration for editing
@@ -313,7 +314,7 @@ async def get_agent_editable(
     * `IntentKitAPIError`:
         - 404: Agent not found
     """
-    agent = await get_agent_by_id(agent_id)
+    agent = await get_agent_by_id_or_slug(agent_id)
     if not agent:
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"

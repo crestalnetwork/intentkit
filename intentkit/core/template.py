@@ -30,9 +30,11 @@ async def create_template_from_agent(agent: Agent) -> Template:
     Returns:
         Template: The created template with all AgentCore fields copied from the agent
     """
-    # Extract AgentCore fields from the agent
+    # Extract AgentCore fields from the agent (exclude slug, not applicable to templates)
     core_data = {}
     for field_name in AgentCore.model_fields:
+        if field_name == "slug":
+            continue
         value = getattr(agent, field_name, None)
         core_data[field_name] = value
 
@@ -98,6 +100,10 @@ async def render_agent(agent: Agent) -> Agent:
 
     # Overlay template's AgentCore fields onto the agent
     for field_name in AgentCore.model_fields:
+        # slug is agent-specific, not inherited from templates
+        if field_name == "slug":
+            continue
+
         template_value = getattr(template, field_name, None)
 
         # Special handling for name and picture: only overwrite if agent doesn't have them

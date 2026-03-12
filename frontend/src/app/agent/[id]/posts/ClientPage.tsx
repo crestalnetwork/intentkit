@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { agentApi, chatApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { buildChatThreadPath } from "@/lib/autonomousChat";
 
 export default function AgentPostsPage() {
@@ -28,6 +29,8 @@ export default function AgentPostsPage() {
     queryFn: () => agentApi.getById(agentId),
     enabled: !!agentId,
   });
+
+  useAgentSlugRewrite(agentId, agent?.slug);
 
   // Fetch thread list for sidebar
   const {
@@ -129,7 +132,7 @@ export default function AgentPostsPage() {
           </Link>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/agents/${agentId}/edit`}>
+              <Link href={`/agent/${agentId}/edit`}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </Link>

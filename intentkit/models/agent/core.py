@@ -39,6 +39,16 @@ class AgentCore(BaseModel):
             max_length=50,
         ),
     ] = None
+    slug: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="URL-friendly slug for the agent. Once set, cannot be changed.",
+            min_length=2,
+            max_length=60,
+            pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$",
+        ),
+    ] = None
     picture: Annotated[
         str | None,
         PydanticField(
@@ -226,6 +236,8 @@ class AgentCore(BaseModel):
         hash_data = {}
 
         for field_name in AgentCore.model_fields:
+            if field_name == "slug":
+                continue
             value = getattr(self, field_name)
             if value is not None:
                 hash_data[field_name] = value

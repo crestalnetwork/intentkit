@@ -187,9 +187,11 @@ class AgentTable(Base, AgentUserInputColumns):
         comment="Unique identifier for the agent. Must be URL-safe, containing only lowercase letters, numbers, and hyphens",
     )
     slug: Mapped[str | None] = mapped_column(
-        String,
+        String(60),
         nullable=True,
-        comment="Slug of the agent, used for URL generation",
+        unique=True,
+        index=True,
+        comment="URL-friendly slug for the agent, immutable once set",
     )
     owner: Mapped[str | None] = mapped_column(
         String,

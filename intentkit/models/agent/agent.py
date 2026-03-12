@@ -31,15 +31,6 @@ class Agent(AgentCreate, AgentPublicInfo):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
 
-    slug: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Slug of the agent, used for URL generation",
-            max_length=100,
-            min_length=2,
-        ),
-    ] = None
     version: Annotated[
         str | None,
         PydanticField(
