@@ -285,6 +285,13 @@
       "default": true,
       "x-group": "llm"
     },
+    "enable_long_term_memory": {
+      "title": "Long-Term Memory",
+      "type": "boolean",
+      "description": "Enable long-term memory that persists across conversations",
+      "default": false,
+      "x-group": "llm"
+    },
     "skills": {
       "title": "Skills",
       "type": "object",

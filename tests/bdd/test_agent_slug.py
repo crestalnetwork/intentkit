@@ -10,7 +10,6 @@ import pytest
 
 from intentkit.core.agent import (
     create_agent,
-    get_agent,
     get_agent_by_id_or_slug,
     override_agent,
     patch_agent,
@@ -155,9 +154,7 @@ async def test_patch_agent_slug_same_value_ok():
     )
     await create_agent(agent_data)
 
-    update = AgentUpdate(
-        name="Same Slug Agent", model="gpt-4o-mini", slug="keep-slug"
-    )
+    update = AgentUpdate(name="Same Slug Agent", model="gpt-4o-mini", slug="keep-slug")
     patched, _ = await patch_agent("slug-same-test", update)
     assert patched.slug == "keep-slug"
 

@@ -63,6 +63,10 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
             "- create_activity: Create a new activity on your timeline to record your actions.\n"
             "- recent_activities: Retrieve your recent activities to maintain context.\n"
         )
+    if agent.enable_long_term_memory:
+        lines.append(
+            "- update_memory: Add or update your long-term memory with new information.\n"
+        )
 
     cautions = []
     if enable_post:
@@ -373,6 +377,14 @@ async def build_system_prompt(
 
     internal_info = build_internal_info_prompt(context)
     final_system_prompt = f"{final_system_prompt}{internal_info}"
+
+    if agent.enable_long_term_memory:
+        memory_section = "## Memory\n\n"
+        memory_section += "If you want to add or update your memory, call the update_memory skill.\n\n"
+        memory_section += "Here is your current memory:\n\n"
+        if agent_data.long_term_memory:
+            memory_section += agent_data.long_term_memory + "\n\n"
+        final_system_prompt = f"{final_system_prompt}{memory_section}"
 
     if agent.prompt_append:
         final_system_prompt = (

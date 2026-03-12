@@ -211,6 +211,13 @@ class AgentCore(BaseModel):
             description="Enable post skills (create post, get post, recent posts)",
         ),
     ] = None
+    enable_long_term_memory: Annotated[
+        bool | None,
+        PydanticField(
+            default=None,
+            description="Enable long-term memory for the agent",
+        ),
+    ] = None
 
     @field_validator("search_internet", mode="before")
     @classmethod

@@ -127,7 +127,9 @@ class TemplateTable(Base):
         Boolean, nullable=True, comment="Enable super mode with higher recursion limit"
     )
     enable_todo: Mapped[bool | None] = mapped_column(
-        Boolean, nullable=True, comment="Enable todo list middleware for task planning and tracking"
+        Boolean,
+        nullable=True,
+        comment="Enable todo list middleware for task planning and tracking",
     )
     enable_activity: Mapped[bool | None] = mapped_column(
         Boolean,
@@ -138,6 +140,11 @@ class TemplateTable(Base):
         Boolean,
         nullable=True,
         comment="Enable post skills (create post, get post, recent posts)",
+    )
+    enable_long_term_memory: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="Enable long-term memory for the agent",
     )
 
     # auto timestamp

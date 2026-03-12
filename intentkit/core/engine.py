@@ -212,6 +212,7 @@ async def build_executor(
         get_system_skills(
             enable_activity=enable_activity,
             enable_post=enable_post,
+            enable_long_term_memory=agent.enable_long_term_memory or False,
         )
     )
 

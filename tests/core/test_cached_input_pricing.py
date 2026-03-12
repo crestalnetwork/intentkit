@@ -9,7 +9,6 @@ import intentkit.models.llm as llm_module
 from intentkit.core.engine import _extract_cached_input_tokens
 from intentkit.models.llm import LLMModelInfo, LLMProvider, _load_default_llm_models
 
-
 # ---------------------------------------------------------------------------
 # _extract_cached_input_tokens
 # ---------------------------------------------------------------------------
@@ -74,9 +73,9 @@ def _make_model_info(**overrides) -> LLMModelInfo:
         name="Test Model",
         provider=LLMProvider.OPENAI,
         enabled=True,
-        input_price=Decimal("3"),            # $3 per 1M tokens
-        cached_input_price=Decimal("0.3"),   # $0.3 per 1M tokens
-        output_price=Decimal("15"),          # $15 per 1M tokens
+        input_price=Decimal("3"),  # $3 per 1M tokens
+        cached_input_price=Decimal("0.3"),  # $0.3 per 1M tokens
+        output_price=Decimal("15"),  # $15 per 1M tokens
         context_length=100000,
         output_length=4096,
         intelligence=5,

@@ -90,6 +90,9 @@ class AgentDataTable(Base):
     discord_name: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Discord display name"
     )
+    long_term_memory: Mapped[str | None] = mapped_column(
+        String, nullable=True, comment="Long-term memory content"
+    )
     error_message: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Last error message"
     )
@@ -256,6 +259,13 @@ class AgentData(BaseModel):
         PydanticField(
             default=None,
             description="Discord display name",
+        ),
+    ] = None
+    long_term_memory: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Long-term memory content",
         ),
     ] = None
     error_message: Annotated[

@@ -129,6 +129,11 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Enable post skills (create post, get post, recent posts)",
     )
+    enable_long_term_memory: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="Enable long-term memory for the agent",
+    )
 
     # Additional fields from AgentUserInput
     short_term_memory_strategy: Mapped[str | None] = mapped_column(
