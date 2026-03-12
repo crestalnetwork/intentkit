@@ -38,3 +38,5 @@ grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,TRUE,TRUE,high,TRUE,TRUE,TRUE,TRUE,,180,x-ai/grok-4.1-fast
 grok-code-fast-1,Grok Code Fast 1,xai,TRUE,0.2,0.02,1.5,3,256000,4096,4,4,FALSE,TRUE,TRUE,high,TRUE,TRUE,FALSE,FALSE,,180,
 grok-code-fast-1,Grok Code Fast 1,openrouter,TRUE,0.2,0.02,1.5,3,256000,4096,4,4,FALSE,TRUE,TRUE,high,TRUE,TRUE,TRUE,TRUE,,180,x-ai/grok-code-fast-1
+openrouter/hunter-alpha,Hunter Alpha,openrouter,TRUE,0,,0,1,1048576,65536,4,2,FALSE,TRUE,FALSE,high,TRUE,TRUE,TRUE,TRUE,,300,
+openrouter/healer-alpha,Healer Alpha,openrouter,TRUE,0,,0,1,262144,65536,4,2,TRUE,TRUE,FALSE,high,TRUE,TRUE,TRUE,TRUE,,300,
