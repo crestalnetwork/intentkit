@@ -194,6 +194,9 @@ export default function AgentChatPage() {
 
   useAgentSlugRewrite(agentId, agent?.slug);
 
+  // The real agent ID for API calls (agentId from params may be a slug after URL rewrite)
+  const resolvedId = agent?.id;
+
   // Thread state
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [isNewThread, setIsNewThread] = useState(false);
@@ -217,9 +220,9 @@ export default function AgentChatPage() {
     isLoading: isLoadingThreads,
     refetch: refetchThreads,
   } = useQuery({
-    queryKey: ["chats", agentId],
-    queryFn: () => chatApi.listChats(agentId),
-    enabled: !!agentId,
+    queryKey: ["chats", resolvedId],
+    queryFn: () => chatApi.listChats(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   // Initialize: select the most recent thread or start new if older than 3 days
@@ -300,14 +303,14 @@ export default function AgentChatPage() {
     // that was just added to state when we switch from isNewThread to an actual thread
     if (isSending) return;
 
-    if (!currentThreadId || !agentId || isNewThread) {
+    if (!currentThreadId || !resolvedId || isNewThread) {
       setMessages([]);
       return;
     }
 
     const loadMessages = async () => {
       try {
-        const response = await chatApi.listMessages(agentId, currentThreadId);
+        const response = await chatApi.listMessages(resolvedId, currentThreadId);
         // API returns messages in DESC order, reverse for chronological display
         const uiMessages = response.data.reverse().map(apiMessageToUIMessage);
         setMessages(uiMessages);
@@ -318,7 +321,7 @@ export default function AgentChatPage() {
     };
 
     loadMessages();
-  }, [currentThreadId, agentId, isNewThread, isSending]);
+  }, [currentThreadId, resolvedId, isNewThread, isSending]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -342,17 +345,17 @@ export default function AgentChatPage() {
 
   const handleUpdateTitle = useCallback(
     async (threadId: string, title: string) => {
-      if (!agentId) return;
-      await chatApi.updateChatSummary(agentId, threadId, title);
+      if (!resolvedId) return;
+      await chatApi.updateChatSummary(resolvedId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
     async (threadId: string) => {
-      if (!agentId) return;
-      await chatApi.deleteChat(agentId, threadId);
+      if (!resolvedId) return;
+      await chatApi.deleteChat(resolvedId, threadId);
       await refetchThreads();
 
       // If we deleted the current thread, switch to another or start new
@@ -371,14 +374,14 @@ export default function AgentChatPage() {
         }
       }
     },
-    [agentId, refetchThreads, currentThreadId, threads, router],
+    [resolvedId, agentId, refetchThreads, currentThreadId, threads, router],
   );
 
   // Send message with streaming
   const handleSendMessage = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!inputValue.trim() || isSending || !agentId) return;
+      if (!inputValue.trim() || isSending || !resolvedId) return;
 
       const userMessage: UIMessage = {
         id: `user-${Date.now()}`,
@@ -398,7 +401,7 @@ export default function AgentChatPage() {
         // If this is a new thread, create it first
         if (isNewThread || !threadId) {
           const newThread = await chatApi.createChat(
-            agentId,
+            resolvedId,
             undefined,
             userMessage.content,
           );
@@ -411,7 +414,7 @@ export default function AgentChatPage() {
 
         // Stream the response
         for await (const msg of chatApi.sendMessageStream(
-          agentId,
+          resolvedId,
           threadId,
           userMessage.content,
         )) {
@@ -441,6 +444,7 @@ export default function AgentChatPage() {
     [
       inputValue,
       isSending,
+      resolvedId,
       agentId,
       currentThreadId,
       isNewThread,
@@ -616,7 +620,7 @@ export default function AgentChatPage() {
                       e.preventDefault();
                       setIsArchiving(true);
                       try {
-                        await agentApi.archive(agentId);
+                        await agentApi.archive(resolvedId!);
                         await queryClient.invalidateQueries({
                           queryKey: ["agents"],
                         });

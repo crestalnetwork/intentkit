@@ -32,15 +32,18 @@ export default function AgentPostsPage() {
 
   useAgentSlugRewrite(agentId, agent?.slug);
 
+  // The real agent ID for API calls (agentId from params may be a slug after URL rewrite)
+  const resolvedId = agent?.id;
+
   // Fetch thread list for sidebar
   const {
     data: threads = [],
     isLoading: isLoadingThreads,
     refetch: refetchThreads,
   } = useQuery({
-    queryKey: ["chats", agentId],
-    queryFn: () => chatApi.listChats(agentId),
-    enabled: !!agentId,
+    queryKey: ["chats", resolvedId],
+    queryFn: () => chatApi.listChats(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   // Thread actions (minimal - just for sidebar to work)
@@ -57,18 +60,20 @@ export default function AgentPostsPage() {
 
   const handleUpdateTitle = useCallback(
     async (threadId: string, title: string) => {
-      await chatApi.updateChatSummary(agentId, threadId, title);
+      if (!resolvedId) return;
+      await chatApi.updateChatSummary(resolvedId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
     async (threadId: string) => {
-      await chatApi.deleteChat(agentId, threadId);
+      if (!resolvedId) return;
+      await chatApi.deleteChat(resolvedId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const displayName = agent?.name || agent?.id || agentId;
@@ -164,7 +169,7 @@ export default function AgentPostsPage() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <PostList agentId={agentId} />
+          <PostList agentId={resolvedId} />
         </div>
       </div>
     </div>

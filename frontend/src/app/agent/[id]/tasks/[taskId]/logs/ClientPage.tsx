@@ -160,13 +160,16 @@ export default function TaskLogsPage() {
 
   useAgentSlugRewrite(agentId, agent?.slug);
 
+  // The real agent ID for API calls (agentId from params may be a slug after URL rewrite)
+  const resolvedId = agent?.id;
+
   const {
     data: tasks = [],
     isLoading: isLoadingTasks,
   } = useQuery({
-    queryKey: ["tasks", agentId],
-    queryFn: () => autonomousApi.listTasks(agentId),
-    enabled: !!agentId,
+    queryKey: ["tasks", resolvedId],
+    queryFn: () => autonomousApi.listTasks(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   const {
@@ -174,9 +177,9 @@ export default function TaskLogsPage() {
     isLoading: isLoadingThreads,
     refetch: refetchThreads,
   } = useQuery({
-    queryKey: ["chats", agentId],
-    queryFn: () => chatApi.listChats(agentId),
-    enabled: !!agentId,
+    queryKey: ["chats", resolvedId],
+    queryFn: () => chatApi.listChats(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   useEffect(() => {
@@ -197,18 +200,20 @@ export default function TaskLogsPage() {
 
   const handleUpdateTitle = useCallback(
     async (threadId: string, title: string) => {
-      await chatApi.updateChatSummary(agentId, threadId, title);
+      if (!resolvedId) return;
+      await chatApi.updateChatSummary(resolvedId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
     async (threadId: string) => {
-      await chatApi.deleteChat(agentId, threadId);
+      if (!resolvedId) return;
+      await chatApi.deleteChat(resolvedId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   useEffect(() => {
@@ -217,11 +222,11 @@ export default function TaskLogsPage() {
   }, [agentId, taskId, hasInitialized]);
 
   useEffect(() => {
-    if (!agentId || !hasInitialized || isSending) return;
+    if (!resolvedId || !hasInitialized || isSending) return;
 
     const loadMessages = async () => {
       try {
-        const response = await chatApi.listMessages(agentId, chatId);
+        const response = await chatApi.listMessages(resolvedId, chatId);
         const uiMessages = response.data.reverse().map(apiMessageToUIMessage);
         setMessages(uiMessages);
       } catch (err) {
@@ -232,7 +237,7 @@ export default function TaskLogsPage() {
     };
 
     loadMessages();
-  }, [agentId, chatId, hasInitialized, isSending]);
+  }, [resolvedId, chatId, hasInitialized, isSending]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -243,7 +248,7 @@ export default function TaskLogsPage() {
   const handleSendMessage = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!inputValue.trim() || isSending || !agentId) return;
+      if (!inputValue.trim() || isSending || !resolvedId) return;
 
       const userMessage: UIMessage = {
         id: `user-${Date.now()}`,
@@ -259,7 +264,7 @@ export default function TaskLogsPage() {
 
       try {
         for await (const msg of chatApi.sendMessageStream(
-          agentId,
+          resolvedId,
           chatId,
           userMessage.content,
         )) {
@@ -282,7 +287,7 @@ export default function TaskLogsPage() {
       }
     },
     [
-      agentId,
+      resolvedId,
       chatId,
       inputValue,
       isSending,

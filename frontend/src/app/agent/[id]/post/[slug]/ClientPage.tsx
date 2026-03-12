@@ -20,16 +20,6 @@ export default function AgentPostPage() {
   const agentId = params.id as string;
   const slug = params.slug as string;
 
-  const {
-    data: post,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["post", agentId, slug],
-    queryFn: () => postApi.getBySlug(agentId, slug),
-    enabled: !!agentId && !!slug,
-  });
-
   const { data: agent } = useQuery({
     queryKey: ["agent", agentId],
     queryFn: () => agentApi.getById(agentId),
@@ -37,6 +27,19 @@ export default function AgentPostPage() {
   });
 
   useAgentSlugRewrite(agentId, agent?.slug);
+
+  // The real agent ID for API calls (agentId from params may be a slug after URL rewrite)
+  const resolvedId = agent?.id;
+
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["post", resolvedId, slug],
+    queryFn: () => postApi.getBySlug(resolvedId!, slug),
+    enabled: !!resolvedId && !!slug,
+  });
 
   const [copied, setCopied] = useState(false);
 

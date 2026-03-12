@@ -61,15 +61,18 @@ export default function AgentTasksPage() {
 
   useAgentSlugRewrite(agentId, agent?.slug);
 
+  // The real agent ID for API calls (agentId from params may be a slug after URL rewrite)
+  const resolvedId = agent?.id;
+
   // Fetch autonomous tasks
   const {
     data: tasks = [],
     isLoading: isLoadingTasks,
     refetch: refetchTasks,
   } = useQuery({
-    queryKey: ["tasks", agentId],
-    queryFn: () => autonomousApi.listTasks(agentId),
-    enabled: !!agentId,
+    queryKey: ["tasks", resolvedId],
+    queryFn: () => autonomousApi.listTasks(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   const [actionTask, setActionTask] = useState<{
@@ -91,15 +94,16 @@ export default function AgentTasksPage() {
   };
 
   const handleSaveTask = async (taskData: Partial<AutonomousTask>) => {
+    if (!resolvedId) return;
     try {
       if (editingTask) {
-        await autonomousApi.updateTask(agentId, editingTask.id, taskData);
+        await autonomousApi.updateTask(resolvedId, editingTask.id, taskData);
       } else {
         // Ensure prompt and cron are present for creation
         if (!taskData.prompt || !taskData.cron) {
           throw new Error("Prompt and Cron are required");
         }
-        await autonomousApi.createTask(agentId, {
+        await autonomousApi.createTask(resolvedId, {
           prompt: taskData.prompt,
           cron: taskData.cron,
           name: taskData.name,
@@ -116,14 +120,14 @@ export default function AgentTasksPage() {
   };
 
   const handleConfirmAction = async () => {
-    if (!actionTask) return;
+    if (!actionTask || !resolvedId) return;
     try {
       if (actionTask.type === "toggle") {
-        await autonomousApi.updateTask(agentId, actionTask.task.id, {
+        await autonomousApi.updateTask(resolvedId, actionTask.task.id, {
           enabled: !actionTask.task.enabled,
         });
       } else if (actionTask.type === "delete") {
-        await autonomousApi.deleteTask(agentId, actionTask.task.id);
+        await autonomousApi.deleteTask(resolvedId, actionTask.task.id);
       }
       refetchTasks();
     } catch (error) {
@@ -139,9 +143,9 @@ export default function AgentTasksPage() {
     isLoading: isLoadingThreads,
     refetch: refetchThreads,
   } = useQuery({
-    queryKey: ["chats", agentId],
-    queryFn: () => chatApi.listChats(agentId),
-    enabled: !!agentId,
+    queryKey: ["chats", resolvedId],
+    queryFn: () => chatApi.listChats(resolvedId!),
+    enabled: !!resolvedId,
   });
 
   // Thread actions
@@ -158,18 +162,20 @@ export default function AgentTasksPage() {
 
   const handleUpdateTitle = useCallback(
     async (threadId: string, title: string) => {
-      await chatApi.updateChatSummary(agentId, threadId, title);
+      if (!resolvedId) return;
+      await chatApi.updateChatSummary(resolvedId, threadId, title);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const handleDeleteThread = useCallback(
     async (threadId: string) => {
-      await chatApi.deleteChat(agentId, threadId);
+      if (!resolvedId) return;
+      await chatApi.deleteChat(resolvedId, threadId);
       await refetchThreads();
     },
-    [agentId, refetchThreads],
+    [resolvedId, refetchThreads],
   );
 
   const displayName = agent?.name || agent?.id || agentId;
