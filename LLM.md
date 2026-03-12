@@ -4,6 +4,8 @@
 
 - `intentkit/` — pip package
   - `core/` — agent system (LangGraph)
+    - `manager/` — single agent manager
+    - `system_skills/` — built-in system skills
   - `models/` — Pydantic + SQLAlchemy dual models
   - `config/` — system config (DB, LLM keys, skill provider keys)
   - `skills/` — skill system (LangChain BaseTool)

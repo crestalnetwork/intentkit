@@ -82,7 +82,11 @@ async def test_create_post_success(mock_db_session):
             title=title, markdown=markdown, slug=slug, excerpt=excerpt, tags=tags
         )
 
-    assert "Post created successfully" in result
+    # _arun returns (content, attachments) tuple
+    content, attachments = result
+    assert "Post created successfully" in content
+    assert isinstance(attachments, list)
+    assert len(attachments) == 1
 
     # Verify post creation
     assert mock_db_session.add.call_count == 2
