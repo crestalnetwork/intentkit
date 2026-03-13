@@ -1,11 +1,16 @@
-# Release v0.12.0
+## What's New
 
-## New Features
-
-- **Long-Term Memory**: Agents can now maintain persistent long-term memory across conversations. When enabled, agents can store and recall important information using an LLM-powered memory management system that intelligently merges and consolidates memories.
+- **Sub-Agents**: Agents can now delegate tasks to other agents with controlled access and configurable timeout
+- **Skill Category Icons**: Skill categories now display icons in the frontend for better visual identification
 
 ## Improvements
 
-- Minor code formatting fixes in tests.
+- Skill categories that depend on platform API keys are now properly gated by key availability
+- Improved stability for agent delegation calls
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.11.27...v0.12.0
+## Bug Fixes
+
+- Fixed issues in the agent management UI
+- Fixed various sub-agent related bugs
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.0...v0.12.1-dev1
