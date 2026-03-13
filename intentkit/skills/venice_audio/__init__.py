@@ -1,6 +1,7 @@
 import logging
 from typing import Literal, TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.venice_audio.base import VeniceAudioBaseTool
 from intentkit.skills.venice_audio.venice_audio import VeniceAudioTool
@@ -100,4 +101,4 @@ def get_venice_audio_skill(
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.venice_api_key)

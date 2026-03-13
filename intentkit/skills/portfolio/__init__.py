@@ -3,6 +3,7 @@
 import logging
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.portfolio.base import PortfolioBaseTool
 from intentkit.skills.portfolio.token_balances import TokenBalances
@@ -129,4 +130,4 @@ def get_portfolio_skill(
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.moralis_api_key)

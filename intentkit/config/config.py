@@ -195,6 +195,7 @@ class Config:
         # Skills - Platform Hosted Keys
         self.acolyt_api_key: str | None = self.load("ACOLYT_API_KEY")
         self.allora_api_key: str | None = self.load("ALLORA_API_KEY")
+        self.carv_api_key: str | None = self.load("CARV_API_KEY")
         self.elfa_api_key: str | None = self.load("ELFA_API_KEY")
         self.heurist_api_key: str | None = self.load("HEURIST_API_KEY")
         self.enso_api_token: str | None = self.load("ENSO_API_TOKEN")
