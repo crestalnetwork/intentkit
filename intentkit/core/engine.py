@@ -213,6 +213,7 @@ async def build_executor(
             enable_activity=enable_activity,
             enable_post=enable_post,
             enable_long_term_memory=agent.enable_long_term_memory or False,
+            enable_sub_agents=bool(agent.sub_agents),
         )
     )
 

@@ -49,7 +49,6 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
     lines = [
         "## System Skills Guide\n\n",
         "You have access to several system skills for internal operations:\n",
-        "- call_agent: Call another agent to delegate tasks or request information.\n",
     ]
 
     if enable_post:
@@ -79,6 +78,31 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
         )
     else:
         lines.append("\n")
+
+    return "".join(lines)
+
+
+async def _build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
+    """Build sub-agents section listing available sub-agents and their purposes."""
+    if not agent.sub_agents or not context.is_private:
+        return ""
+
+    from intentkit.core.agent.queries import get_agent_by_id_or_slug
+
+    lines = [
+        "## Sub-Agents\n\n",
+        "You **only** can use the `call_agent` skill to call the following sub-agents:\n\n",
+    ]
+
+    for agent_ref in agent.sub_agents:
+        target = await get_agent_by_id_or_slug(agent_ref)
+        if target and target.purpose:
+            lines.append(f"- {agent_ref}: {target.purpose}\n")
+
+    lines.append("\n")
+
+    if agent.sub_agent_prompt:
+        lines.append(agent.sub_agent_prompt + "\n\n")
 
     return "".join(lines)
 
@@ -362,6 +386,10 @@ async def build_system_prompt(
 
     base_prompt = build_agent_prompt(agent, agent_data, context)
     final_system_prompt = base_prompt
+
+    sub_agents_section = await _build_sub_agents_section(agent, context)
+    if sub_agents_section:
+        final_system_prompt = f"{final_system_prompt}{sub_agents_section}"
 
     entrypoint_prompt = await build_entrypoint_prompt(agent, context)
     if entrypoint_prompt:

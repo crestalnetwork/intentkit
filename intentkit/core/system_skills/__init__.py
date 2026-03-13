@@ -38,6 +38,7 @@ def get_system_skills(
     enable_activity: bool = True,
     enable_post: bool = True,
     enable_long_term_memory: bool = False,
+    enable_sub_agents: bool = False,
 ) -> list[SystemSkill]:
     """Get system skills instances filtered by flags.
 
@@ -45,8 +46,11 @@ def get_system_skills(
         enable_activity: Whether to include activity skills. Defaults to True.
         enable_post: Whether to include post skills. Defaults to True.
         enable_long_term_memory: Whether to include memory skill. Defaults to False.
+        enable_sub_agents: Whether to include call_agent skill. Defaults to False.
     """
-    skills: list[SystemSkill] = [_call_agent]
+    skills: list[SystemSkill] = []
+    if enable_sub_agents:
+        skills.append(_call_agent)
     if enable_activity:
         skills.append(_create_activity)
         skills.append(_recent_activities)

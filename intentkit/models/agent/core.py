@@ -218,6 +218,21 @@ class AgentCore(BaseModel):
             description="Enable long-term memory for the agent",
         ),
     ] = None
+    sub_agents: Annotated[
+        list[str] | None,
+        PydanticField(
+            default=None,
+            description="List of sub-agent IDs or slugs that this agent can call",
+        ),
+    ] = None
+    sub_agent_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Additional instructions for how to use sub-agents",
+            max_length=20000,
+        ),
+    ] = None
 
     @field_validator("search_internet", mode="before")
     @classmethod

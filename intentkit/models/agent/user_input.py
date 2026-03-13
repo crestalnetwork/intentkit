@@ -161,6 +161,7 @@ class AgentUpdate(AgentUserInput):
         "prompt",
         "prompt_append",
         "extra_prompt",
+        "sub_agent_prompt",
     )
     @classmethod
     def validate_no_level1_level2_headings(cls, v: str | None) -> str | None:

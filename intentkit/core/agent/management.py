@@ -11,7 +11,7 @@ from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
 
 from .notifications import send_agent_notification
-from .queries import get_agent
+from .queries import get_agent, get_agent_by_id_or_slug
 from .wallet import process_agent_wallet
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,24 @@ async def _validate_slug_unique(
         raise IntentKitAPIError(
             400, "SlugAlreadyExists", f"Slug '{slug}' is already in use"
         )
+
+
+async def _validate_sub_agents(sub_agents: list[str]) -> None:
+    """Validate that all sub-agents exist and have a purpose defined."""
+    for agent_ref in sub_agents:
+        target = await get_agent_by_id_or_slug(agent_ref)
+        if not target:
+            raise IntentKitAPIError(
+                400,
+                "InvalidSubAgent",
+                f"Sub-agent '{agent_ref}' not found",
+            )
+        if not target.purpose:
+            raise IntentKitAPIError(
+                400,
+                "InvalidSubAgent",
+                f"Sub-agent '{agent_ref}' must have a purpose defined",
+            )
 
 
 async def override_agent(
@@ -66,6 +84,10 @@ async def override_agent(
     # Validate autonomous schedule settings if present
     if "autonomous" in agent.model_dump(exclude_unset=True):
         agent.validate_autonomous_schedule()
+
+    # Validate sub-agents if present
+    if agent.sub_agents:
+        await _validate_sub_agents(agent.sub_agents)
 
     # Slug immutability check
     if (
@@ -149,8 +171,12 @@ async def patch_agent(
     if "autonomous" in agent.model_dump(exclude_unset=True):
         agent.validate_autonomous_schedule()
 
-    # Slug immutability check
+    # Validate sub-agents if present in update
     update_fields = agent.model_dump(exclude_unset=True)
+    if "sub_agents" in update_fields and update_fields["sub_agents"]:
+        await _validate_sub_agents(update_fields["sub_agents"])
+
+    # Slug immutability check
     if (
         existing_agent.slug
         and "slug" in update_fields
@@ -231,6 +257,10 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     # Validate autonomous schedule settings if present
     if agent.autonomous:
         agent.validate_autonomous_schedule()
+
+    # Validate sub-agents if present
+    if agent.sub_agents:
+        await _validate_sub_agents(agent.sub_agents)
 
     async with get_session() as db:
         try:
