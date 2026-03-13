@@ -59,7 +59,7 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
         )
     if enable_activity:
         lines.append(
-            "- create_activity: Create a new activity on your timeline to record your actions.\n"
+            "- create_activity: Publish an activity to your public timeline. ONLY use when user explicitly requests it.\n"
             "- recent_activities: Retrieve your recent activities to maintain context.\n"
         )
     if agent.enable_long_term_memory:
@@ -74,7 +74,9 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
         cautions.append("create_activity")
     if cautions:
         lines.append(
-            f"\nIMPORTANT: Do not use {' or '.join(cautions)} unless the user explicitly asks you to do so.\n\n"
+            f"\nCRITICAL RULE: NEVER use {' or '.join(cautions)} unless the user EXPLICITLY asks you to create/publish. "
+            f"Do NOT use them proactively, even to log, summarize, or report what you did. "
+            f"Violation of this rule is a serious error.\n\n"
         )
     else:
         lines.append("\n")
@@ -319,7 +321,7 @@ def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> str:
     task_info += (
         ". In autonomous task, you cannot ask the user for clarification or input. "
         "You must make all decisions on your own. "
-        "If an error prevents the task from proceeding, use create_activity to report the issue to the user"
+        "If an error prevents the task from proceeding, you may use create_activity to report the error only"
     )
 
     return f"{task_info}. "

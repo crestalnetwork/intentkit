@@ -29,7 +29,11 @@ class CreateActivitySkill(SystemSkill):
     """
 
     name: str = "create_activity"
-    description: str = "Create an activity with text, optional images, video, or a related post reference."
+    description: str = (
+        "Publish an activity to your public timeline. "
+        "IMPORTANT: Only use this skill when the user EXPLICITLY asks you to create, publish, or post an activity. "
+        "Do NOT call this on your own initiative, even to log or summarize what you did."
+    )
     args_schema: ArgsSchema | None = CreateActivityInput
 
     @override
