@@ -12,7 +12,7 @@ from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
 # Default timeout for calling another agent (in seconds)
-CALL_AGENT_TIMEOUT = 180  # 3 minutes
+CALL_AGENT_TIMEOUT = 300  # 3 minutes
 
 
 class CallAgentInput(BaseModel):
