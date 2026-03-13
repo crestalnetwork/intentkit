@@ -7,6 +7,7 @@ This guide provides detailed information for Git operations and release manageme
 ### Pre-commit Steps
 
 1. Run `ruff format && ruff check --fix` before commit.
+2. Make sure all tests pass before commit.
 
 ### Commit Message Format
 
@@ -27,13 +28,13 @@ When you generate git commit message, always start with one of `feat/fix/chore/d
 ### Version Number Rules
 
 Follow Semantic Versioning:
-- **Pre-release**: `vA.B.C-devD`
-- **Release**: `vA.B.C`
+- Pre-release: `vA.B.C-devD`
+- Release: `vA.B.C`
 
 #### Version Calculation
 
-- **Release**: +1 to patch version `C`
-- **Pre-release**: +1 to `D` of `-devD`, but if `vA.B.C` already released, next pre-release should restart from next patch version `vA.B.(C+1)-dev1`
+- Release: Increment the patch version `C` by 1, or increment the minor version `B` by 1 and reset `C` to 0, based on the change size.
+- Pre-release: +1 to `D` of `-devD`, but if `vA.B.C` already released, next pre-release should restart from next patch version `vA.B.(C+1)-dev1`
 
 **Examples**:
 - Next pre-release of `v0.1.2-dev3` → `v0.1.2-dev4`
