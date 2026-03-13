@@ -76,6 +76,11 @@ function generateUiSchema(schema: Record<string, unknown> | undefined) {
                 uiProperty["ui:widget"] = "textarea";
             }
 
+            // Use StringArrayWidget for string array fields
+            if (property.type === "array" && (property.items as Record<string, unknown>)?.type === "string") {
+                uiProperty["ui:widget"] = "StringArrayWidget";
+            }
+
             if (Object.keys(uiProperty).length > 0) {
                 uiSchema[key] = uiProperty;
             }

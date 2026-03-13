@@ -60,6 +60,11 @@ function generateUiSchema(schema: Record<string, unknown> | undefined) {
                 uiProperty["ui:widget"] = "textarea";
             }
 
+            // Use StringArrayWidget for string array fields
+            if (property.type === "array" && (property.items as Record<string, unknown>)?.type === "string") {
+                uiProperty["ui:widget"] = "StringArrayWidget";
+            }
+
             if (Object.keys(uiProperty).length > 0) {
                 uiSchema[key] = uiProperty;
             }
@@ -89,6 +94,9 @@ export default function EditAgentPage() {
         queryFn: () => agentApi.getEditableById(agentId),
         enabled: !!agentId,
     });
+
+    // Resolve the actual agent ID (URL param may be a slug)
+    const resolvedId = (agent as Record<string, unknown> | undefined)?.id as string | undefined;
 
     // Filter agent data to only include fields defined in the schema
     const filterBySchema = (
@@ -216,7 +224,7 @@ export default function EditAgentPage() {
         setError(null);
         try {
             const cleanedData = cleanSkillsData(formData, schema);
-            await agentApi.patch(agentId, cleanedData);
+            await agentApi.patch(resolvedId || agentId, cleanedData);
             toast({
                 title: "Agent updated",
                 description: "Your agent has been updated successfully.",
