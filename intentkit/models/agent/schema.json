@@ -292,6 +292,27 @@
       "default": false,
       "x-group": "llm"
     },
+    "sub_agents": {
+      "title": "Sub-Agents",
+      "type": "array",
+      "description": "List of sub-agent IDs or slugs that this agent can call using the call_agent skill. Only listed agents can be called.",
+      "items": {
+        "type": "string"
+      },
+      "x-group": "skills"
+    },
+    "sub_agent_prompt": {
+      "title": "Sub-Agent Instructions",
+      "type": "string",
+      "description": "Additional instructions for how the agent should use its sub-agents",
+      "maxLength": 20000,
+      "pattern": "^(([^#].*)|#[^# ].*|#{3,}[ ].*|$)(\n(([^#].*)|#[^# ].*|#{3,}[ ].*|$))*$",
+      "errorMessage": {
+        "pattern": "Level 1 and 2 headings (# and ##) are not allowed. Please use level 3+ headings (###, ####, etc.) instead."
+      },
+      "x-str-type": "prompt",
+      "x-group": "skills"
+    },
     "skills": {
       "title": "Skills",
       "type": "object",

@@ -66,6 +66,19 @@ class CallAgentSkill(SystemSkill):
 
             context = self.get_context()
 
+            # Enforce sub-agents whitelist
+            allowed = context.agent.sub_agents
+            if allowed is not None:
+                slug = resolved_agent.slug
+                if (
+                    agent_id not in allowed
+                    and actual_agent_id not in allowed
+                    and (not slug or slug not in allowed)
+                ):
+                    raise ToolException(
+                        f"Agent '{agent_id}' is not in the allowed sub-agents list"
+                    )
+
             # Create a chat message for the called agent
             # Inherit context from the current skill execution
             chat_message = ChatMessageCreate(
