@@ -181,3 +181,6 @@ scripts/*.yaml
 # docker volumes
 pg_data
 rustfs_data
+
+# worktrees
+.worktrees/
