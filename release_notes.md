@@ -13,4 +13,4 @@
 - Fixed issues in the agent management UI
 - Fixed various sub-agent related bugs
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.0...v0.12.1-dev1
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.0...v0.12.1
