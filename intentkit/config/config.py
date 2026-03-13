@@ -116,6 +116,11 @@ class Config:
         self.open_api_base_url: str = self.load(
             "OPEN_API_BASE_URL", "http://localhost:8000"
         )
+        # CORS
+        cors_origins_raw = self.load("CORS_ALLOW_ORIGINS", "*")
+        self.cors_allow_origins: list[str] = [
+            o.strip() for o in cors_origins_raw.split(",") if o.strip()
+        ]
         # CDP SDK Configuration
         self.cdp_api_key_id: str | None = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret: str | None = self.load("CDP_API_KEY_SECRET")

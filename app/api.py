@@ -114,7 +114,7 @@ _ = agent_app.exception_handler(Exception)(intentkit_other_error_handler)
 # Add CORS middleware to the Agent API sub-application
 _ = agent_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=config.cors_allow_origins,  # Allows configured origins
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
@@ -187,7 +187,7 @@ _ = app.exception_handler(Exception)(intentkit_other_error_handler)
 # Add CORS middleware
 _ = app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=config.cors_allow_origins,  # Allows configured origins
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
