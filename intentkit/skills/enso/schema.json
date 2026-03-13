@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Enso Finance",
   "description": "Integration with Enso Finance API providing DeFi trading and portfolio management capabilities across multiple blockchain networks",
-  "x-icon": "https://ai.service.crestal.dev/skills/enso/enso.jpg",
+  "x-icon": "/skills/enso/enso.jpg",
   "x-tags": [
     "Analytics",
     "DeFi"

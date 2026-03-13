@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Portfolio Analysis",
   "description": "Access blockchain wallet data and analytics through Moralis APIs for portfolio tracking, token balances, and investment performance",
-  "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
+  "x-icon": "/skills/portfolio/moralis.png",
   "x-tags": [
     "Analytics",
     "Crypto",

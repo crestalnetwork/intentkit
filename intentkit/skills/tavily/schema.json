@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Tavily Search and Extract",
   "description": "Web search and content extraction capabilities using Tavily",
-  "x-icon": "https://ai.service.crestal.dev/skills/tavily/tavily.jpg",
+  "x-icon": "/skills/tavily/tavily.jpg",
   "x-tags": [
     "Knowledge Base",
     "Search"

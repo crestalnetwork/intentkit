@@ -54,7 +54,7 @@ def _simplify_skill_schema(skill_schema: dict[str, Any]) -> dict[str, Any]:
     simplified: dict[str, Any] = {}
 
     # Keep basic metadata
-    for key in ["title", "description", "type"]:
+    for key in ["title", "description", "type", "x-icon"]:
         if key in skill_schema:
             simplified[key] = skill_schema[key]
 

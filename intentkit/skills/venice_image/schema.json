@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Venice Image",
   "description": "Skills for generating images using the Venice AI API.",
-  "x-icon": "https://ai.service.crestal.dev/skills/venice_image/venice_image.jpg",
+  "x-icon": "/skills/venice_image/venice_image.jpg",
   "x-tags": [
     "AI",
     "Image"

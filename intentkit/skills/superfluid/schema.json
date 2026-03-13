@@ -3,8 +3,10 @@
   "type": "object",
   "title": "Superfluid",
   "description": "Superfluid streaming payment actions for continuous real-time token transfers",
-  "x-icon": "https://ai.service.crestal.dev/skills/superfluid/superfluid.svg",
-  "x-tags": ["DeFi"],
+  "x-icon": "/skills/superfluid/superfluid.svg",
+  "x-tags": [
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,7 +20,11 @@
         "superfluid_create_flow": {
           "type": "string",
           "title": "Create Flow",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -30,7 +36,11 @@
         "superfluid_update_flow": {
           "type": "string",
           "title": "Update Flow",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -42,7 +52,11 @@
         "superfluid_delete_flow": {
           "type": "string",
           "title": "Delete Flow",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -55,6 +69,9 @@
       "description": "States for each Superfluid skill (disabled, public, or private)"
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
 }

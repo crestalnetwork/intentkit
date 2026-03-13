@@ -3,7 +3,7 @@
   "type": "object",
   "title": "PancakeSwap",
   "description": "Swap tokens and manage V3 liquidity positions on PancakeSwap DEX",
-  "x-icon": "https://ai.service.crestal.dev/skills/pancakeswap/pancakeswap.png",
+  "x-icon": "/skills/pancakeswap/pancakeswap.png",
   "x-tags": [
     "DeFi"
   ],

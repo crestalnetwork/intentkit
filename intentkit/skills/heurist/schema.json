@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Heurist AI",
   "description": "Skills for interacting with Heurist AI services, including image generation and other AI capabilities",
-  "x-icon": "https://ai.service.crestal.dev/skills/heurist/heurist.png",
+  "x-icon": "/skills/heurist/heurist.png",
   "x-tags": [
     "AI",
     "Image"

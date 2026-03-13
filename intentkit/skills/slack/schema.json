@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Slack",
   "description": "Integration with Slack API enabling workspace communication including channel management, message retrieval, and posting capabilities for team collaboration",
-  "x-icon": "https://ai.service.crestal.dev/skills/slack/slack.jpg",
+  "x-icon": "/skills/slack/slack.jpg",
   "x-tags": [
     "Communication"
   ],

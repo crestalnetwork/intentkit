@@ -3,8 +3,11 @@
   "type": "object",
   "title": "WETH",
   "description": "Wrap and unwrap ETH to/from WETH (Wrapped ETH)",
-  "x-icon": "https://ai.service.crestal.dev/skills/weth/weth.svg",
-  "x-tags": ["Crypto", "DeFi"],
+  "x-icon": "/skills/weth/weth.svg",
+  "x-tags": [
+    "Crypto",
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,7 +21,11 @@
         "weth_wrap_eth": {
           "type": "string",
           "title": "Wrap ETH",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -30,7 +37,11 @@
         "weth_unwrap_eth": {
           "type": "string",
           "title": "Unwrap WETH",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -43,6 +54,9 @@
       "description": "States for each WETH skill (disabled, public, or private)"
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
 }

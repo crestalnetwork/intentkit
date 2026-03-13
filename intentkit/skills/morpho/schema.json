@@ -3,8 +3,10 @@
   "type": "object",
   "title": "Morpho",
   "description": "Morpho lending protocol actions for depositing and withdrawing assets from vaults",
-  "x-icon": "https://ai.service.crestal.dev/skills/morpho/morpho.svg",
-  "x-tags": ["DeFi"],
+  "x-icon": "/skills/morpho/morpho.svg",
+  "x-tags": [
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,7 +20,11 @@
         "morpho_deposit": {
           "type": "string",
           "title": "Deposit",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -30,7 +36,11 @@
         "morpho_withdraw": {
           "type": "string",
           "title": "Withdraw",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -43,6 +53,9 @@
       "description": "States for each Morpho skill (disabled, public, or private)"
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
 }

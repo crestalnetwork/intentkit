@@ -3,7 +3,7 @@
   "type": "object",
   "title": "AIXBT API",
   "description": "Cryptocurrency project data and analytics through the AIXBT API",
-  "x-icon": "https://ai.service.crestal.dev/skills/aixbt/aixbt.jpg",
+  "x-icon": "/skills/aixbt/aixbt.jpg",
   "x-tags": [
     "Analytics",
     "Crypto",

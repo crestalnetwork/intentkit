@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Jupiter Solana Integration",
   "description": "Swap and Price Check on Solana via Jupiter Aggregator",
-  "x-icon": "https://jup.ag/svg/jupiter-logo.svg",
+  "x-icon": "/skills/jupiter/jupiter.png",
   "x-tags": [
     "Crypto",
     "DeFi"

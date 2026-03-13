@@ -3,7 +3,7 @@
   "type": "object",
   "title": "LiFi Token Transfer",
   "description": "Cross-chain token transfer and swap capabilities using the LiFi protocol",
-  "x-icon": "https://ai.service.crestal.dev/skills/lifi/lifi.png",
+  "x-icon": "/skills/lifi/lifi.png",
   "x-tags": [
     "DeFi"
   ],

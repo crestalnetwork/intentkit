@@ -3,8 +3,11 @@
   "type": "object",
   "title": "Wallet Operations",
   "description": "Basic wallet operations including balance checking, wallet details, and native token transfers. Works with any EVM-compatible wallet.",
-  "x-icon": "https://ai.service.crestal.dev/skills/cdp/cdp.png",
-  "x-tags": ["Crypto", "DeFi"],
+  "x-icon": "/skills/cdp/cdp.png",
+  "x-tags": [
+    "Crypto",
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,7 +21,11 @@
         "cdp_get_balance": {
           "type": "string",
           "title": "Get Balance",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -30,7 +37,11 @@
         "cdp_get_wallet_details": {
           "type": "string",
           "title": "Get Wallet Details",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -42,7 +53,11 @@
         "cdp_native_transfer": {
           "type": "string",
           "title": "Native Transfer",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -55,6 +70,9 @@
       "description": "States for each wallet skill (disabled, public, or private)"
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
 }

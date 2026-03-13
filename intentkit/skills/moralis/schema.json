@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Moralis",
-  "x-icon": "https://ai.service.crestal.dev/skills/moralis/moralis.png",
+  "x-icon": "/skills/moralis/moralis.png",
   "description": "Comprehensive blockchain data access via Moralis API providing wallet portfolio information, NFT data, and transaction details across multiple EVM chains and Solana networks",
   "properties": {
     "enabled": {

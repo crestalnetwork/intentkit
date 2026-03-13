@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Firecrawl Web Scraping and Crawling",
   "description": "AI-powered web scraping and crawling capabilities using Firecrawl",
-  "x-icon": "https://ai.service.crestal.dev/skills/firecrawl/firecrawl.png",
+  "x-icon": "/skills/firecrawl/firecrawl.png",
   "x-tags": [
     "Knowledge Base"
   ],

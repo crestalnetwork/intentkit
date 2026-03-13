@@ -3,7 +3,7 @@
   "title": "Token Skills",
   "description": "Token analysis skills powered by Moralis API",
   "type": "object",
-  "x-icon": "https://ai.service.crestal.dev/skills/portfolio/moralis.png",
+  "x-icon": "/skills/portfolio/moralis.png",
   "x-tags": [
     "Analytics",
     "Crypto"

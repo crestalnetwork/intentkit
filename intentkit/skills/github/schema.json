@@ -3,7 +3,7 @@
   "type": "object",
   "title": "GitHub",
   "description": "Search capabilities for GitHub repositories, users, and code",
-  "x-icon": "https://ai.service.crestal.dev/skills/github/github.jpg",
+  "x-icon": "/skills/github/github.jpg",
   "x-tags": [
     "Developer Tools",
     "Search"

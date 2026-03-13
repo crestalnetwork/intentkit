@@ -3,7 +3,7 @@
   "type": "object",
   "title": "UnrealSpeech",
   "description": "Convert text to natural-sounding speech with various voices and customization options",
-  "x-icon": "https://ai.service.crestal.dev/skills/unrealspeech/unrealspeech.jpg",
+  "x-icon": "/skills/unrealspeech/unrealspeech.jpg",
   "x-tags": [
     "Audio"
   ],

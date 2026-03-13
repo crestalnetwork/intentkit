@@ -3,7 +3,7 @@
   "title": "CARV",
   "description": "Configuration for the CARV skill.",
   "type": "object",
-  "x-icon": "https://ai.service.crestal.dev/skills/carv/carv.webp",
+  "x-icon": "/skills/carv/carv.webp",
   "x-tags": [
     "Analytics",
     "Crypto"

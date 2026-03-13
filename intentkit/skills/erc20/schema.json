@@ -3,8 +3,11 @@
   "type": "object",
   "title": "ERC20",
   "description": "ERC20 token balance, transfer, and lookup actions",
-  "x-icon": "https://ai.service.crestal.dev/skills/erc20/erc20.svg",
-  "x-tags": ["Crypto", "DeFi"],
+  "x-icon": "/skills/erc20/erc20.svg",
+  "x-tags": [
+    "Crypto",
+    "DeFi"
+  ],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -18,7 +21,11 @@
         "erc20_get_balance": {
           "type": "string",
           "title": "Get ERC20 Balance",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -30,7 +37,11 @@
         "erc20_transfer": {
           "type": "string",
           "title": "Transfer ERC20",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -42,7 +53,11 @@
         "erc20_get_token_address": {
           "type": "string",
           "title": "Get Token Address",
-          "enum": ["disabled", "public", "private"],
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
           "x-enum-title": [
             "Disabled",
             "Agent Owner + All Users",
@@ -55,6 +70,9 @@
       "description": "States for each ERC20 skill (disabled, public, or private)"
     }
   },
-  "required": ["states", "enabled"],
+  "required": [
+    "states",
+    "enabled"
+  ],
   "additionalProperties": true
 }

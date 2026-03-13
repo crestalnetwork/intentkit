@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "DeFiLlama",
-  "x-icon": "https://ai.service.crestal.dev/skills/defillama/defillama.jpeg",
+  "x-icon": "/skills/defillama/defillama.jpeg",
   "description": "Integration with DeFi Llama API providing comprehensive decentralized finance data including token prices, protocol TVL, DEX volumes, and stablecoin metrics",
   "properties": {
     "enabled": {

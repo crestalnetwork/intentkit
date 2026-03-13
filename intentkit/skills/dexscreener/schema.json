@@ -3,7 +3,7 @@
   "title": "Dexscreener",
   "description": "Integration with DexScreener API, enabling crypto token pair information",
   "type": "object",
-  "x-icon": "https://ai.service.crestal.dev/skills/dexscreener/dexscreener.png",
+  "x-icon": "/skills/dexscreener/dexscreener.png",
   "x-tags": [
     "Analytics",
     "DeFi"

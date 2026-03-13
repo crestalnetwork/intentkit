@@ -3,7 +3,7 @@
   "type": "object",
   "title": "OpenAI",
   "description": "Skills for interacting with OpenAI services, including image generation, image-to-text conversion, and other AI capabilities",
-  "x-icon": "https://ai.service.crestal.dev/skills/openai/openai.png",
+  "x-icon": "/skills/openai/openai.png",
   "x-tags": [
     "AI",
     "Image"

@@ -2,10 +2,12 @@
 import React from "react";
 import { FieldProps } from "@rjsf/utils";
 import { SkillCategoryCard } from "./SkillCategoryCard";
+import { config } from "@/lib/config";
 
 interface SkillCategorySchema {
     title?: string;
     description?: string;
+    "x-icon"?: string;
     properties?: {
         enabled?: {
             default?: boolean;
@@ -132,11 +134,20 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
                     };
                 });
 
+                // Build icon URL: relative paths get API base prefix, absolute URLs pass through
+                const rawIcon = categorySchema["x-icon"];
+                const iconUrl = rawIcon
+                    ? rawIcon.startsWith("/")
+                        ? `${config.apiBaseUrl}${rawIcon}`
+                        : rawIcon
+                    : undefined;
+
                 return (
                     <SkillCategoryCard
                         key={categoryKey}
                         title={categorySchema.title || categoryKey}
                         description={categorySchema.description}
+                        iconUrl={iconUrl}
                         enabled={enabled}
                         onEnabledChange={(e) => handleCategoryEnabledChange(categoryKey, e)}
                         skillStates={skillStates}

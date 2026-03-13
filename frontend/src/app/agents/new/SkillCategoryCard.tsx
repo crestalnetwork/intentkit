@@ -18,6 +18,7 @@ interface SkillStateConfig {
 interface SkillCategoryCardProps {
     title: string;
     description?: string;
+    iconUrl?: string;
     enabled: boolean;
     onEnabledChange: (enabled: boolean) => void;
     skillStates: SkillStateConfig[];
@@ -27,6 +28,7 @@ interface SkillCategoryCardProps {
 export function SkillCategoryCard({
     title,
     description,
+    iconUrl,
     enabled,
     onEnabledChange,
     skillStates,
@@ -63,6 +65,13 @@ export function SkillCategoryCard({
                             <ChevronRight className="h-4 w-4" />
                         )}
                     </button>
+                    {iconUrl && (
+                        <img
+                            src={iconUrl}
+                            alt={title}
+                            className="h-6 w-6 rounded object-contain"
+                        />
+                    )}
                     <div>
                         <h3 className="font-semibold text-sm">{title}</h3>
                         {description && (

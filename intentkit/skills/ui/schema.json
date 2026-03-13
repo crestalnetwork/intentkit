@@ -3,7 +3,7 @@
   "type": "object",
   "title": "UI Components",
   "description": "Display rich UI components to users such as interactive cards and multiple-choice options. These skills enable agents to present structured, visually appealing content instead of plain text.",
-  "x-icon": "https://ai.service.crestal.dev/skills/ui/ui.svg",
+  "x-icon": "/skills/ui/ui.svg",
   "x-tags": [
     "Communication",
     "Infrastructure"

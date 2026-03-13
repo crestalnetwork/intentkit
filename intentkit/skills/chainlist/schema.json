@@ -3,7 +3,7 @@
   "type": "object",
   "title": "Chainlist Skills",
   "description": "Access blockchain RPC endpoints and network information from chainlist.org. Enable this skill to look up EVM-compatible networks by name, symbol, or chain ID and get their RPC endpoints, native currencies, and explorer links.",
-  "x-icon": "https://ai.service.crestal.dev/skills/chainlist/chainlist.png",
+  "x-icon": "/skills/chainlist/chainlist.png",
   "x-tags": [
     "Crypto",
     "Infrastructure"
