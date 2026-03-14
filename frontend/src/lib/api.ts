@@ -439,6 +439,7 @@ export interface ActivityItem {
     image?: string;
     favicon?: string;
   };
+  post_id?: string;
   description?: string; // Deprecated: distinct from text
   details?: Record<string, unknown>; // Deprecated
   created_at: string;

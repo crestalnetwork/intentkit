@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { LinkCard } from "@/components/features/LinkCard";
+import { PostCard } from "@/components/features/PostCard";
 
 function getActivityIcon(type: string) {
     switch (type) {
@@ -136,6 +137,11 @@ export function Timeline({ agentId, agentPicture }: TimelineProps) {
                             {/* Link Card */}
                             {activity.link && (
                                 <LinkCard link={activity.link} meta={activity.link_meta} />
+                            )}
+
+                            {/* Post Card */}
+                            {activity.post_id && (
+                                <PostCard postId={activity.post_id} agentId={activity.agent_id || agentId || ""} />
                             )}
 
                             {activity.details && Object.keys(activity.details).length > 0 && (
