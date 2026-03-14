@@ -10,6 +10,7 @@ from intentkit.core.agent import get_agent
 from intentkit.core.agent_activity import create_agent_activity
 from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.agent_activity import AgentActivityCreate
+from intentkit.utils.opengraph import fetch_link_meta
 
 
 class CreateActivityInput(BaseModel):
@@ -28,6 +29,14 @@ class CreateActivityInput(BaseModel):
         return v
 
     video: str | None = Field(default=None, description="Video URL")
+    link: str | None = Field(default=None, description="URL to share")
+
+    @field_validator("link")
+    @classmethod
+    def link_must_be_http(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith(("http://", "https://")):
+            raise ValueError("link must start with http:// or https://")
+        return v
 
 
 class CreateActivitySkill(SystemSkill):
@@ -47,6 +56,7 @@ class CreateActivitySkill(SystemSkill):
         text: str,
         images: list[str] | None = None,
         video: str | None = None,
+        link: str | None = None,
     ) -> str:
         """Create a new agent activity.
 
@@ -54,6 +64,7 @@ class CreateActivitySkill(SystemSkill):
             text: Content of the activity.
             images: Optional list of image URLs.
             video: Optional video URL.
+            link: Optional URL to share.
 
         Returns:
             A message indicating success with the activity ID.
@@ -66,6 +77,12 @@ class CreateActivitySkill(SystemSkill):
             agent_name = agent.name if agent else None
             agent_picture = agent.picture if agent else None
 
+            link_meta = None
+            if link:
+                meta = await fetch_link_meta(link)
+                if meta:
+                    link_meta = meta.model_dump()
+
             activity_create = AgentActivityCreate(
                 agent_id=agent_id,
                 agent_name=agent_name,
@@ -73,6 +90,8 @@ class CreateActivitySkill(SystemSkill):
                 text=text,
                 images=images,
                 video=video,
+                link=link,
+                link_meta=link_meta,
             )
 
             activity = await create_agent_activity(activity_create)

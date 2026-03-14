@@ -5,7 +5,7 @@ from epyxid import XID
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import DateTime, String, func
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -24,6 +24,11 @@ class AgentActivityBase(BaseModel):
         list[str] | None, PydanticField(description="List of image URLs")
     ] = None
     video: Annotated[str | None, PydanticField(description="Video URL")] = None
+    link: Annotated[str | None, PydanticField(description="Link URL")] = None
+    link_meta: Annotated[
+        dict[str, str | None] | None,
+        PydanticField(description="Link metadata"),
+    ] = None
     post_id: Annotated[str | None, PydanticField(description="Related post ID")] = None
 
 
@@ -62,6 +67,10 @@ class AgentActivityTable(Base):
     )
     video: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Video URL"
+    )
+    link: Mapped[str | None] = mapped_column(String, nullable=True, comment="Link URL")
+    link_meta: Mapped[dict[str, str | None] | None] = mapped_column(
+        JSONB, nullable=True, comment="Link metadata"
     )
     post_id: Mapped[str | None] = mapped_column(
         String, nullable=True, index=True, comment="Related post ID"

@@ -432,6 +432,13 @@ export interface ActivityItem {
   text: string;
   images?: string[];
   video?: string;
+  link?: string;
+  link_meta?: {
+    title?: string;
+    description?: string;
+    image?: string;
+    favicon?: string;
+  };
   description?: string; // Deprecated: distinct from text
   details?: Record<string, unknown>; // Deprecated
   created_at: string;

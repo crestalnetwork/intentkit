@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import { LinkCard } from "@/components/features/LinkCard";
 
 function getActivityIcon(type: string) {
     switch (type) {
@@ -130,6 +131,11 @@ export function Timeline({ agentId, agentPicture }: TimelineProps) {
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
+                            )}
+
+                            {/* Link Card */}
+                            {activity.link && (
+                                <LinkCard link={activity.link} meta={activity.link_meta} />
                             )}
 
                             {activity.details && Object.keys(activity.details).length > 0 && (
