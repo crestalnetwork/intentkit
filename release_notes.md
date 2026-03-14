@@ -1,16 +1,18 @@
-## What's New
+## New Features
 
-- **Sub-Agents**: Agents can now delegate tasks to other agents with controlled access and configurable timeout
-- **Skill Category Icons**: Skill categories now display icons in the frontend for better visual identification
+- **Read Webpage Skill**: Agents can now read and extract content from any webpage using Cloudflare Browser Rendering. The content is automatically cleaned and formatted for better readability. Enabled when the agent's internet search toggle is on and Cloudflare credentials are configured.
+- **Activity Timeline Cards**: The activity timeline now displays rich post cards and link cards with Open Graph metadata previews.
 
 ## Improvements
 
-- Skill categories that depend on platform API keys are now properly gated by key availability
-- Improved stability for agent delegation calls
+- Enhanced input validation for the activity publishing skill
+- Improved activity skill prompts for better agent behavior
+- Better example agent configuration
 
-## Bug Fixes
+## Bug Fixes & Maintenance
 
-- Fixed issues in the agent management UI
-- Fixed various sub-agent related bugs
+- Fixed minor issues in the release workflow
+- Removed unused debug components
+- Updated dependencies
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.0...v0.12.1
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.1...v0.12.2
