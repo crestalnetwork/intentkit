@@ -227,13 +227,26 @@ async def create_example_agent() -> None:
             example_agent = AgentTable(
                 id="example",
                 name="Example",
+                slug="example",
                 owner="system",
                 team_id="system",
+                purpose="IntentKit example agent",
+                search_internet=True,
+                enable_activity=True,
+                enable_post=True,
+                enable_long_term_memory=True,
                 skills={
                     "common": {
                         "states": {"common_current_time": "public"},
                         "enabled": True,
-                    }
+                    },
+                    "ui": {
+                        "states": {
+                            "ui_ask_user": "public",
+                            "ui_show_card": "public",
+                        },
+                        "enabled": True,
+                    },
                 },
             )
 
