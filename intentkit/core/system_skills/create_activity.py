@@ -4,7 +4,7 @@ from typing import override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from intentkit.core.agent import get_agent
 from intentkit.core.agent_activity import create_agent_activity
@@ -15,18 +15,23 @@ from intentkit.models.agent_activity import AgentActivityCreate
 class CreateActivityInput(BaseModel):
     """Input schema for creating an agent activity."""
 
-    text: str = Field(..., description="Activity content")
-    images: list[str] | None = Field(default=None, description="Image URLs")
+    text: str = Field(..., description="Activity content, plain text, max 280 bytes")
+    images: list[str] | None = Field(
+        default=None, max_length=4, description="Image URLs"
+    )
+
+    @field_validator("text")
+    @classmethod
+    def text_max_280_bytes(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 280:
+            raise ValueError("text must be at most 280 bytes")
+        return v
+
     video: str | None = Field(default=None, description="Video URL")
-    post_id: str | None = Field(default=None, description="Related post ID")
 
 
 class CreateActivitySkill(SystemSkill):
-    """Skill for creating a new agent activity.
-
-    This skill allows an agent to create an activity with text content,
-    optional images, video, and a reference to a related post.
-    """
+    """Skill for creating a new agent activity."""
 
     name: str = "create_activity"
     description: str = (
@@ -42,7 +47,6 @@ class CreateActivitySkill(SystemSkill):
         text: str,
         images: list[str] | None = None,
         video: str | None = None,
-        post_id: str | None = None,
     ) -> str:
         """Create a new agent activity.
 
@@ -50,7 +54,6 @@ class CreateActivitySkill(SystemSkill):
             text: Content of the activity.
             images: Optional list of image URLs.
             video: Optional video URL.
-            post_id: Optional ID of a related post.
 
         Returns:
             A message indicating success with the activity ID.
@@ -70,7 +73,6 @@ class CreateActivitySkill(SystemSkill):
                 text=text,
                 images=images,
                 video=video,
-                post_id=post_id,
             )
 
             activity = await create_agent_activity(activity_create)
