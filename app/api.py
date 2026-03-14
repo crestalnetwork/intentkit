@@ -39,7 +39,6 @@ from app.local import (
     autonomous_router,
     chat_router,
     content_router,
-    debug_router,
     health_router,
     metadata_router,
     schema_router,
@@ -200,7 +199,6 @@ _ = app.include_router(agent_router)
 _ = app.include_router(autonomous_router)
 _ = app.include_router(chat_router)
 _ = app.include_router(content_router)
-_ = app.include_router(debug_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(schema_router)
 _ = app.include_router(core_router)
