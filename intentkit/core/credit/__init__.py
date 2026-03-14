@@ -26,6 +26,7 @@ from .base import (
 from .expense import (
     expense_message,
     expense_skill,
+    expense_skill_internal_llm,
     expense_summarize,
     skill_cost,
 )
@@ -66,6 +67,7 @@ __all__ = [
     "adjustment",
     "expense_message",
     "expense_skill",
+    "expense_skill_internal_llm",
     "expense_summarize",
     "fetch_credit_event_by_id",
     "fetch_credit_event_by_upstream_tx_id",

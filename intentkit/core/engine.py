@@ -214,6 +214,7 @@ async def build_executor(
             enable_post=enable_post,
             enable_long_term_memory=agent.enable_long_term_memory or False,
             enable_sub_agents=bool(agent.sub_agents),
+            search_internet=agent.search_internet,
         )
     )
 
@@ -607,6 +608,7 @@ async def stream_agent_raw(
         entrypoint=user_message.author_type,
         is_private=is_private,
         payer=payer if payment_enabled else None,
+        start_message_id=user_message.id,
     )
 
     # run

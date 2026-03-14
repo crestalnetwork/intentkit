@@ -71,3 +71,32 @@ def pick_default_model() -> str:
             return model_id
 
     raise RuntimeError("No default model available: missing all required API keys")
+
+
+def pick_long_context_model() -> str:
+    """
+    Pick the cheapest available model with context length >= 1,000,000 tokens.
+    Falls back to any available model if no long-context model is configured.
+    """
+    # Priority order based on cost (cheapest first), one per provider:
+    order: list[tuple[str, LLMProvider]] = [
+        ("gemini-3.1-flash-lite-preview", LLMProvider.GOOGLE),
+        ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
+        ("qwen/qwen3.5-flash-02-23", LLMProvider.OPENROUTER),
+        ("gpt-5-nano", LLMProvider.OPENAI),
+        ("deepseek-chat", LLMProvider.DEEPSEEK),
+    ]
+
+    for model_id, provider in order:
+        if provider == LLMProvider.OPENAI and config.openai_api_key:
+            return model_id
+        if provider == LLMProvider.GOOGLE and config.google_api_key:
+            return model_id
+        if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
+            return model_id
+        if provider == LLMProvider.XAI and config.xai_api_key:
+            return model_id
+        if provider == LLMProvider.DEEPSEEK and config.deepseek_api_key:
+            return model_id
+
+    raise RuntimeError("No long-context model available: missing all required API keys")

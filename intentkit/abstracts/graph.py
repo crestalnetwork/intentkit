@@ -38,6 +38,7 @@ class AgentContext(BaseModel):
     is_private: bool
     thinking: bool = False
     payer: str | None = None
+    start_message_id: str = ""
 
     @property
     def agent(self) -> Agent:

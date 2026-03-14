@@ -28,6 +28,7 @@ from intentkit.models.credit import (
     TransactionType,
     UpstreamType,
 )
+from intentkit.models.llm import LLMModelInfo
 
 from .base import FOURPLACES, SkillCost
 
@@ -1030,3 +1031,56 @@ async def expense_summarize(
 
     # 6. Return credit event model
     return CreditEvent.model_validate(event)
+
+
+async def expense_skill_internal_llm(
+    user_id: str,
+    agent: Agent,
+    skill_name: str,
+    skill_call_id: str,
+    start_message_id: str,
+    model_id: str,
+    input_tokens: int,
+    output_tokens: int,
+    cached_input_tokens: int = 0,
+) -> None:
+    """
+    Bill for an LLM call made internally within a skill execution.
+
+    This is a convenience function for skills that need to call an LLM
+    (e.g. for content cleaning) and bill the user for the token cost.
+    It calculates the cost from token usage and creates a SKILL_CALL credit event.
+
+    Args:
+        user_id: ID of the user to charge
+        agent: Agent instance
+        skill_name: Name of the skill making the LLM call
+        skill_call_id: ID of the tool call (from LangChain runtime)
+        start_message_id: ID of the starting user message
+        model_id: ID of the LLM model used
+        input_tokens: Number of input tokens used
+        output_tokens: Number of output tokens used
+        cached_input_tokens: Number of cached input tokens used
+    """
+    from intentkit.config.db import get_session
+
+    model_info = await LLMModelInfo.get(model_id)
+    llm_cost = await model_info.calculate_cost(
+        input_tokens, output_tokens, cached_input_tokens
+    )
+
+    if llm_cost <= Decimal("0"):
+        return
+
+    async with get_session() as session:
+        await expense_skill(
+            session,
+            user_id,
+            "",  # no message_id available from within skill
+            start_message_id,
+            skill_call_id,
+            skill_name,
+            llm_cost,
+            agent,
+        )
+        await session.commit()
