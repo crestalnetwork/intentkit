@@ -3,7 +3,6 @@ volumes:
   rustfs_data:
   redis_data:
 
-
 services:
   db:
     image: postgres:18.1-trixie
@@ -13,9 +12,11 @@ services:
       POSTGRES_DB: intentkit
     volumes:
       - postgres_data:/var/lib/postgresql
+    ports:
+      - "15432:5432"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -33,7 +34,7 @@ services:
       - rustfs_data:/data
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -44,7 +45,7 @@ services:
       - redis_data:/data
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -81,7 +82,13 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health').raise_for_status()" ]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health').raise_for_status()",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -121,7 +128,7 @@ services:
       - AWS_S3_REGION_NAME=us-east-1
       - INTERNAL_BASE_URL=http://api:8000
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "autonomous" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "autonomous"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -158,7 +165,7 @@ services:
       - AWS_S3_BUCKET=static
       - AWS_S3_REGION_NAME=us-east-1
     healthcheck:
-      test: [ "CMD", "python", "scripts/check_heartbeat.py", "scheduler" ]
+      test: ["CMD", "python", "scripts/check_heartbeat.py", "scheduler"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -189,7 +196,7 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -218,7 +225,7 @@ services:
       - INTERNAL_BASE_URL=http://api:8000
       - TG_NEW_AGENT_POLL_INTERVAL=10
     healthcheck:
-      test: [ "CMD", "find", "/tmp/healthy", "-mmin", "-2" ]
+      test: ["CMD", "find", "/tmp/healthy", "-mmin", "-2"]
       interval: 30s
       timeout: 5s
       retries: 3
