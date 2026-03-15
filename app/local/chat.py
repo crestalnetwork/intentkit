@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import get_agent
 from intentkit.core.engine import execute_agent, stream_agent
+from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
@@ -591,10 +592,19 @@ async def send_message(
     if request.stream:
 
         async def stream_gen():
-            async for chunk in stream_agent(user_message):
-                yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
-            if should_schedule_summary:
-                _schedule_chat_summary_title_update(aid, chat_id)
+            current_task = asyncio.current_task()
+            if current_task:
+                register_task(aid, chat_id, current_task)
+            try:
+                async for chunk in stream_agent(user_message):
+                    yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+                if should_schedule_summary:
+                    _schedule_chat_summary_title_update(aid, chat_id)
+            except asyncio.CancelledError:
+                logger.info(f"Stream cancelled for agent {aid}, chat {chat_id}")
+                return
+            finally:
+                unregister_task(aid, chat_id)
 
         return StreamingResponse(
             stream_gen(),
@@ -607,6 +617,22 @@ async def send_message(
             _schedule_chat_summary_title_update(aid, chat_id)
         # Return messages list directly for compatibility with stream mode
         return response_messages
+
+
+@chat_router.post(
+    "/agents/{aid}/chats/{chat_id}/cancel",
+    operation_id="cancel_generation",
+    summary="Cancel an in-progress generation",
+    description="Cancel an in-progress streaming response for a specific chat thread.",
+    tags=["Message"],
+)
+async def cancel_generation(
+    aid: str = Path(..., description="Agent ID"),
+    chat_id: str = Path(..., description="Chat ID"),
+):
+    """Cancel an in-progress generation."""
+    cancelled = cancel_task(aid, chat_id)
+    return {"cancelled": cancelled}
 
 
 @chat_router.post(

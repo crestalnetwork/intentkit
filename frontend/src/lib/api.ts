@@ -351,6 +351,7 @@ export const chatApi = {
     agentId: string,
     chatId: string,
     message: string,
+    signal?: AbortSignal,
   ): AsyncGenerator<ChatMessage, void, unknown> {
     const response = await fetch(
       `${API_BASE}/agents/${agentId}/chats/${chatId}/messages`,
@@ -360,6 +361,7 @@ export const chatApi = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ message, stream: true }),
+        signal,
       },
     );
 
@@ -408,6 +410,23 @@ export const chatApi = {
     } finally {
       reader.releaseLock();
     }
+  },
+
+  /**
+   * Cancel an in-progress generation
+   * POST /agents/{aid}/chats/{chat_id}/cancel
+   */
+  async cancelGeneration(
+    agentId: string,
+    chatId: string,
+  ): Promise<{ cancelled: boolean }> {
+    const response = await fetch(
+      `${API_BASE}/agents/${agentId}/chats/${chatId}/cancel`,
+      {
+        method: "POST",
+      },
+    );
+    return response.json();
   },
 };
 

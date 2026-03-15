@@ -55,6 +55,7 @@ export interface ChatMessage {
   message: string;
   skill_calls?: ChatMessageSkillCall[];
   thinking?: string | null;
+  error_type?: string | null;
   time_cost?: number;
   cold_start_cost?: number;
   attachments?: ChatMessageAttachment[];
@@ -87,10 +88,11 @@ export interface ChatMessagesResponse {
 // UI-specific types
 export interface UIMessage {
   id: string;
-  role: "user" | "agent";
+  role: "user" | "agent" | "system";
   content: string;
   timestamp: Date;
   thinking?: string | null;
+  errorType?: string | null;
   isStreaming?: boolean;
   skillCalls?: ChatMessageSkillCall[];
   attachments?: ChatMessageAttachment[];

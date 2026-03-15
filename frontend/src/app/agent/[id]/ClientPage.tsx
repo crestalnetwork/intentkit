@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
+  Square,
   Bot,
   User,
   ArrowLeft,
@@ -66,12 +67,14 @@ function isThreadOlderThanThreeDays(thread: ChatThread): boolean {
 
 // Convert API ChatMessage to UI message
 function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
-  const isUserMessage = isUserAuthoredMessage(msg.author_type);
+  const isSystem = msg.author_type === "system";
+  const isUserMessage = !isSystem && isUserAuthoredMessage(msg.author_type);
   return {
     id: msg.id,
-    role: isUserMessage ? "user" : "agent",
+    role: isSystem ? "system" : isUserMessage ? "user" : "agent",
     content: msg.message,
     thinking: msg.thinking,
+    errorType: msg.error_type,
     timestamp: new Date(msg.created_at),
     skillCalls: msg.skill_calls,
     attachments: msg.attachments,
@@ -209,6 +212,8 @@ export default function AgentChatPage() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const wasCancelledRef = useRef(false);
 
   // Archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -305,6 +310,12 @@ export default function AgentChatPage() {
     // that was just added to state when we switch from isNewThread to an actual thread
     if (isSending) return;
 
+    // Skip reload after cancellation to preserve the local "Generation stopped" message
+    if (wasCancelledRef.current) {
+      wasCancelledRef.current = false;
+      return;
+    }
+
     if (!currentThreadId || !resolvedId || isNewThread) {
       setMessages([]);
       return;
@@ -397,6 +408,9 @@ export default function AgentChatPage() {
       setIsSending(true);
       setError(null);
 
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       try {
         let threadId = currentThreadId;
 
@@ -419,6 +433,7 @@ export default function AgentChatPage() {
           resolvedId,
           threadId,
           userMessage.content,
+          abortController.signal,
         )) {
           const uiMsg = apiMessageToUIMessage(msg);
           setMessages((prev) => {
@@ -434,12 +449,27 @@ export default function AgentChatPage() {
         // Refetch threads to update the summary/timestamp
         await refetchThreads();
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to send message";
-        setError(errorMessage);
-        // Remove the user message on error
-        setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+        if (err instanceof DOMException && err.name === "AbortError") {
+          // User cancelled — keep all received messages and add system message
+          wasCancelledRef.current = true;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `system-${Date.now()}`,
+              role: "system",
+              content: "User cancelled the conversation",
+              timestamp: new Date(),
+            },
+          ]);
+        } else {
+          const errorMessage =
+            err instanceof Error ? err.message : "Failed to send message";
+          setError(errorMessage);
+          // Remove the user message on error
+          setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+        }
       } finally {
+        abortControllerRef.current = null;
         setIsSending(false);
       }
     },
@@ -454,6 +484,18 @@ export default function AgentChatPage() {
       router,
     ],
   );
+
+  // Stop an in-progress generation
+  const handleStopGeneration = useCallback(async () => {
+    abortControllerRef.current?.abort();
+    if (resolvedId && currentThreadId) {
+      try {
+        await chatApi.cancelGeneration(resolvedId, currentThreadId);
+      } catch {
+        // Best-effort cancellation
+      }
+    }
+  }, [resolvedId, currentThreadId]);
 
   // Send a text message programmatically (used by choice buttons)
   const sendTextMessage = useCallback(
@@ -729,7 +771,24 @@ export default function AgentChatPage() {
                 </p>
               </div>
             ) : (
-              messages.map((msg) => (
+              messages.map((msg) =>
+                msg.role === "system" ? (
+                  <div
+                    key={msg.id}
+                    className="flex justify-center w-full"
+                  >
+                    <span
+                      className={cn(
+                        "text-xs px-3 py-1 rounded-full",
+                        msg.errorType
+                          ? "text-destructive bg-destructive/10"
+                          : "text-muted-foreground bg-muted",
+                      )}
+                    >
+                      {msg.content}
+                    </span>
+                  </div>
+                ) : (
                 <div
                   key={msg.id}
                   className={cn(
@@ -815,7 +874,7 @@ export default function AgentChatPage() {
                     )}
                   </div>
                 </div>
-              ))
+                ))
             )}
             {isSending && (
               <div className="flex w-full gap-2 max-w-[85%]">
@@ -848,22 +907,27 @@ export default function AgentChatPage() {
                 className="flex-1"
                 autoFocus
               />
-              <Button
-                type="submit"
-                disabled={isSending || !inputValue.trim()}
-                title={
-                  isSending ? "Please wait for the response" : "Send message"
-                }
-              >
-                <Send className="h-4 w-4" />
-                <span className="sr-only">Send</span>
-              </Button>
+              {isSending ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleStopGeneration}
+                  title="Stop generation"
+                >
+                  <Square className="h-4 w-4" />
+                  <span className="sr-only">Stop</span>
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={!inputValue.trim()}
+                  title="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                  <span className="sr-only">Send</span>
+                </Button>
+              )}
             </form>
-            {isSending && (
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Processing your message...
-              </p>
-            )}
           </div>
         </Card>
       </div>

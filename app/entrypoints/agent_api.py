@@ -6,6 +6,7 @@ This module provides the unified Agent API including:
 - OpenAI-compatible Chat Completion API
 """
 
+import asyncio
 import logging
 import textwrap
 import time
@@ -29,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from intentkit.config.db import get_db
 from intentkit.core.agent import get_agent
 from intentkit.core.engine import execute_agent, stream_agent
+from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.models.agent import AgentResponse
 from intentkit.models.agent_data import AgentData
 from intentkit.models.app_setting import SystemMessageType
@@ -838,8 +840,17 @@ async def send_message(
     if request.stream:
 
         async def stream_gen():
-            async for chunk in stream_agent(user_message):
-                yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+            current_task = asyncio.current_task()
+            if current_task:
+                register_task(agent_id, chat_id, current_task)
+            try:
+                async for chunk in stream_agent(user_message):
+                    yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+            except asyncio.CancelledError:
+                logger.info(f"Stream cancelled for agent {agent_id}, chat {chat_id}")
+                return
+            finally:
+                unregister_task(agent_id, chat_id)
 
         return StreamingResponse(
             stream_gen(),
@@ -850,6 +861,22 @@ async def send_message(
         response_messages = await execute_agent(user_message)
         # Return messages list directly for compatibility with stream mode
         return response_messages
+
+
+@agent_api_router.post(
+    "/chats/{chat_id}/cancel",
+    operation_id="cancel_agent_generation",
+    summary="Cancel an in-progress generation",
+    description="Cancel an in-progress streaming response for a specific chat thread.",
+    tags=["Message"],
+)
+async def cancel_generation(
+    chat_id: str = Path(..., description="Chat ID"),
+    agent_token: AgentToken = Depends(verify_agent_token),
+):
+    """Cancel an in-progress generation."""
+    cancelled = cancel_task(agent_token.agent_id, chat_id)
+    return {"cancelled": cancelled}
 
 
 @agent_api_router.post(

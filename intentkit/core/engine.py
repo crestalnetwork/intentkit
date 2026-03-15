@@ -662,6 +662,7 @@ async def stream_agent_raw(
     yielded_any = False
     raw_chunks = []
     cached_tool_step = None
+    in_tools_phase = False
     try:
         async for chunk in executor.astream(
             {"messages": messages},
@@ -727,6 +728,7 @@ async def stream_agent_raw(
                 msg = chunk["model"]["messages"][0]
                 has_tools = hasattr(msg, "tool_calls") and bool(msg.tool_calls)
                 if has_tools:
+                    in_tools_phase = True
                     cached_tool_step = msg
                 content = (
                     _extract_text_content(msg.content)
@@ -797,6 +799,7 @@ async def stream_agent_raw(
                         yielded_any = True
                         yield chat_message
             elif "tools" in chunk and "messages" in chunk["tools"]:
+                in_tools_phase = False
                 if not cached_tool_step:
                     logger.error(
                         "unexpected tools message: " + str(chunk["tools"]),
@@ -973,6 +976,30 @@ async def stream_agent_raw(
                         error_message = await error_message_create.save()
                         yield error_message
                         return
+    except asyncio.CancelledError:
+        logger.info(
+            f"Agent execution cancelled for {user_message.agent_id}",
+            extra={"thread_id": thread_id},
+        )
+        if in_tools_phase:
+            # Cancelled during tool execution — checkpoint has tool_calls without results.
+            # Clear to prevent re-execution of tools on next message.
+            await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+        # Save cancellation message directly (stream is already dead, can't yield)
+        cancel_message_create = ChatMessageCreate(
+            id=str(XID()),
+            agent_id=user_message.agent_id,
+            chat_id=user_message.chat_id,
+            user_id=user_message.user_id,
+            author_id=user_message.agent_id,
+            author_type=AuthorType.SYSTEM,
+            thread_type=user_message.author_type,
+            reply_to=user_message.id,
+            message="User cancelled the conversation",
+            time_cost=time.perf_counter() - start,
+        )
+        await cancel_message_create.save()
+        return
     except (httpx.TimeoutException, httpcore.ReadTimeout, asyncio.TimeoutError):
         logger.error(
             f"Agent request timed out for {user_message.agent_id}",
