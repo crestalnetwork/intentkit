@@ -4,6 +4,10 @@ These skills wrap core functionality and are available to all agents
 without additional configuration.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from intentkit.core.system_skills.base import SystemSkill
 from intentkit.core.system_skills.call_agent import CallAgentSkill
 from intentkit.core.system_skills.create_activity import CreateActivitySkill
@@ -13,6 +17,9 @@ from intentkit.core.system_skills.read_webpage import ReadWebpageSkill
 from intentkit.core.system_skills.recent_activities import RecentActivitiesSkill
 from intentkit.core.system_skills.recent_posts import RecentPostsSkill
 from intentkit.core.system_skills.update_memory import UpdateMemorySkill
+
+if TYPE_CHECKING:
+    from intentkit.models.agent import Agent
 
 __all__ = [
     "SystemSkill",
@@ -37,35 +44,37 @@ _read_webpage = ReadWebpageSkill()
 _update_memory = UpdateMemorySkill()
 
 
-def get_system_skills(
-    enable_activity: bool = True,
-    enable_post: bool = True,
-    enable_long_term_memory: bool = False,
-    enable_sub_agents: bool = False,
-    search_internet: bool = True,
-) -> list[SystemSkill]:
-    """Get system skills instances filtered by flags.
+def get_system_skills(agent: Agent) -> list[SystemSkill]:
+    """Get system skills instances based on agent configuration.
 
     Args:
-        enable_activity: Whether to include activity skills. Defaults to True.
-        enable_post: Whether to include post skills. Defaults to True.
-        enable_long_term_memory: Whether to include memory skill. Defaults to False.
-        enable_sub_agents: Whether to include call_agent skill. Defaults to False.
-        search_internet: Whether to include read_webpage skill. Defaults to True.
+        agent: Agent configuration object. The following fields are used:
+            - enable_activity: Whether to include activity skills (default True).
+            - enable_post: Whether to include post skills (default True).
+            - enable_long_term_memory: Whether to include memory skill.
+            - sub_agents: Whether to include call_agent skill.
+            - search_internet: Whether to include read_webpage skill.
     """
     skills: list[SystemSkill] = []
-    if enable_sub_agents:
+    if agent.sub_agents:
         skills.append(_call_agent)
+
+    enable_activity = (
+        agent.enable_activity if agent.enable_activity is not None else True
+    )
     if enable_activity:
         skills.append(_create_activity)
         skills.append(_recent_activities)
+
+    enable_post = agent.enable_post if agent.enable_post is not None else True
     if enable_post:
         skills.append(_create_post)
         skills.append(_get_post)
         skills.append(_recent_posts)
-    if enable_long_term_memory:
+
+    if agent.enable_long_term_memory:
         skills.append(_update_memory)
-    if search_internet:
+    if agent.search_internet:
         from intentkit.config.config import config
 
         if config.cloudflare_account_id and config.cloudflare_api_token:

@@ -175,7 +175,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
                 elif model_info.provider == LLMProvider.OPENROUTER:
                     llm_params["plugins"] = [{"id": "web"}]
                 elif model_info.provider == LLMProvider.GOOGLE:
-                    tools.append({"google_search": {}})
+                    tools.extend([{"google_search": {}}, {"url_context": {}}])
             else:
                 logger.debug(
                     "Search requested but model does not support native search"

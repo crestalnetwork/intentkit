@@ -215,28 +215,42 @@ class TestBuildSystemPromptMemory:
 
 
 class TestGetSystemSkills:
+    def _make_agent(self, **overrides):
+        agent = MagicMock()
+        agent.enable_activity = overrides.get("enable_activity", True)
+        agent.enable_post = overrides.get("enable_post", True)
+        agent.enable_long_term_memory = overrides.get("enable_long_term_memory", False)
+        agent.sub_agents = overrides.get("sub_agents", None)
+        agent.search_internet = overrides.get("search_internet", True)
+        return agent
+
     def test_includes_update_memory_when_enabled(self):
-        skills = get_system_skills(enable_long_term_memory=True)
+        agent = self._make_agent(enable_long_term_memory=True)
+        skills = get_system_skills(agent)
         skill_names = [s.name for s in skills]
         assert "update_memory" in skill_names
 
     def test_excludes_update_memory_by_default(self):
-        skills = get_system_skills()
+        agent = self._make_agent()
+        skills = get_system_skills(agent)
         skill_names = [s.name for s in skills]
         assert "update_memory" not in skill_names
 
     def test_excludes_update_memory_when_disabled(self):
-        skills = get_system_skills(enable_long_term_memory=False)
+        agent = self._make_agent(enable_long_term_memory=False)
+        skills = get_system_skills(agent)
         skill_names = [s.name for s in skills]
         assert "update_memory" not in skill_names
 
     def test_includes_call_agent_when_sub_agents_enabled(self):
-        skills = get_system_skills(enable_sub_agents=True)
+        agent = self._make_agent(sub_agents=["helper-bot"])
+        skills = get_system_skills(agent)
         skill_names = [s.name for s in skills]
         assert "call_agent" in skill_names
 
     def test_excludes_call_agent_by_default(self):
-        skills = get_system_skills()
+        agent = self._make_agent()
+        skills = get_system_skills(agent)
         skill_names = [s.name for s in skills]
         assert "call_agent" not in skill_names
 

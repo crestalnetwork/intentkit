@@ -79,7 +79,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.llm import LLMModelInfo, create_llm_model
+from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
 from intentkit.models.llm_picker import pick_summarize_model
 from intentkit.models.skill import AgentSkillData, ChatSkillData
 from intentkit.models.user import User
@@ -204,19 +204,12 @@ async def build_executor(
     # add system skills to private tools
     from intentkit.core.system_skills import get_system_skills
 
-    enable_activity = (
-        agent.enable_activity if agent.enable_activity is not None else True
-    )
-    enable_post = agent.enable_post if agent.enable_post is not None else True
-    private_tools.extend(
-        get_system_skills(
-            enable_activity=enable_activity,
-            enable_post=enable_post,
-            enable_long_term_memory=agent.enable_long_term_memory or False,
-            enable_sub_agents=bool(agent.sub_agents),
-            search_internet=agent.search_internet,
-        )
-    )
+    system_skills = get_system_skills(agent)
+    # Skip read_webpage for providers that have native search capabilities
+    model_provider = llm_model.info.provider
+    if model_provider in (LLMProvider.GOOGLE, LLMProvider.OPENAI):
+        system_skills = [s for s in system_skills if s.name != "read_webpage"]
+    private_tools.extend(system_skills)
 
     # filter the duplicate tools
     tools = list(
