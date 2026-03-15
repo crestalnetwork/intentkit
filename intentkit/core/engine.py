@@ -95,6 +95,60 @@ _agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
 _agents_updated: dict[str, datetime] = {}
 
 
+def _extract_thinking_content(msg: Any) -> str | None:
+    """Extract reasoning/thinking content from a LangChain AIMessage.
+
+    Handles multiple provider formats:
+    - additional_kwargs["reasoning_content"] (OpenRouter, DeepSeek, xAI) — string
+    - additional_kwargs["reasoning"]["summary"] (OpenAI Responses API v0 compat) — dict
+    - content list: type="reasoning" with reasoning/summary/text (langchain-core, OpenAI)
+    - content list: type="thinking" with thinking field (Anthropic, Google Gemini)
+    """
+    texts: list[str] = []
+
+    # 1. Check additional_kwargs (OpenRouter, DeepSeek, xAI, OpenAI v0)
+    kwargs = getattr(msg, "additional_kwargs", None) or {}
+    if isinstance(kwargs, dict):
+        # OpenRouter / DeepSeek / xAI: reasoning_content is a string
+        rc = kwargs.get("reasoning_content")
+        if isinstance(rc, str) and rc:
+            texts.append(rc)
+        # OpenAI Responses API v0 compat: reasoning is a dict with summary list
+        reasoning = kwargs.get("reasoning")
+        if isinstance(reasoning, dict):
+            for s in reasoning.get("summary", []):
+                if isinstance(s, dict) and s.get("text"):
+                    texts.append(s["text"])
+
+    # 2. Check content blocks
+    content = getattr(msg, "content", None)
+    if isinstance(content, list):
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type")
+            if item_type == "reasoning":
+                # langchain-core standard: text in "reasoning" field
+                r = item.get("reasoning")
+                if isinstance(r, str) and r:
+                    texts.append(r)
+                # OpenAI Responses API: summary list
+                elif isinstance(item.get("summary"), list):
+                    for s in item["summary"]:
+                        if isinstance(s, dict) and s.get("text"):
+                            texts.append(s["text"])
+                # Fallback: direct text field
+                elif item.get("text"):
+                    texts.append(item["text"])
+            elif item_type == "thinking":
+                # Anthropic / Google Gemini: text in "thinking" field
+                t = item.get("thinking")
+                if isinstance(t, str) and t:
+                    texts.append(t)
+
+    return "\n\n".join(texts) if texts else None
+
+
 def _extract_text_content(content: object) -> str:
     if isinstance(content, list):
         texts: list[str] = []
@@ -679,6 +733,7 @@ async def stream_agent_raw(
                     if hasattr(msg, "content")
                     else ""
                 )
+                thinking = _extract_thinking_content(msg)
                 if content and not has_tools:
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),
@@ -691,6 +746,7 @@ async def stream_agent_raw(
                         thread_type=user_message.author_type,
                         reply_to=user_message.id,
                         message=content,
+                        thinking=thinking,
                         input_tokens=(
                             msg.usage_metadata.get("input_tokens", 0)
                             if hasattr(msg, "usage_metadata") and msg.usage_metadata
@@ -877,8 +933,10 @@ async def stream_agent_raw(
                             if isinstance(message, BaseMessage)
                         ]
                         content = ""
+                        thinking = None
                         if ai_messages:
                             content = _extract_text_content(ai_messages[-1].content)
+                            thinking = _extract_thinking_content(ai_messages[-1])
                         post_model_message_create = ChatMessageCreate(
                             id=str(XID()),
                             agent_id=user_message.agent_id,
@@ -890,6 +948,7 @@ async def stream_agent_raw(
                             thread_type=user_message.author_type,
                             reply_to=user_message.id,
                             message=content,
+                            thinking=thinking,
                             input_tokens=0,
                             output_tokens=0,
                             time_cost=this_time - last,

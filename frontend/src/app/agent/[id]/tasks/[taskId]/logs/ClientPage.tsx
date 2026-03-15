@@ -7,6 +7,7 @@ import { ArrowLeft, Bot, User } from "lucide-react";
 import Link from "next/link";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
+import { ThinkingBlock } from "@/components/features/ThinkingBlock";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -33,6 +34,7 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
     id: msg.id,
     role: isUserMessage ? "user" : "agent",
     content: msg.message,
+    thinking: msg.thinking,
     timestamp: new Date(msg.created_at),
     skillCalls: msg.skill_calls,
     attachments: msg.attachments,
@@ -484,6 +486,7 @@ export default function TaskLogsPage() {
                         </div>
                       )
                     )}
+                    {msg.thinking && <ThinkingBlock thinking={msg.thinking} />}
                     {msg.role === "agent" ? (
                       <MarkdownRenderer
                         className={markdownProseClass}

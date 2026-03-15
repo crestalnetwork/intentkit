@@ -226,6 +226,7 @@ class ChatMessageTable(Base):
         nullable=True,
     )
     cold_start_cost: Mapped[float] = mapped_column(Float, default=0)
+    thinking: Mapped[str | None] = mapped_column(String, nullable=True)
     app_id: Mapped[str | None] = mapped_column(String, nullable=True)
     error_type: Mapped[SystemMessageType | None] = mapped_column(
         String,
@@ -307,6 +308,10 @@ class ChatMessageCreate(BaseModel):
         float,
         Field(0.0, description="Cost for the cold start of the message in seconds"),
     ] = 0.0
+    thinking: Annotated[
+        str | None,
+        Field(None, description="LLM thinking/reasoning content"),
+    ] = None
     app_id: Annotated[
         str | None,
         Field(None, description="Optional application identifier"),

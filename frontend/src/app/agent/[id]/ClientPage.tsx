@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { agentApi, chatApi } from "@/lib/api";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
+import { ThinkingBlock } from "@/components/features/ThinkingBlock";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { toast } from "@/hooks/use-toast";
 import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
@@ -70,6 +71,7 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
     id: msg.id,
     role: isUserMessage ? "user" : "agent",
     content: msg.message,
+    thinking: msg.thinking,
     timestamp: new Date(msg.created_at),
     skillCalls: msg.skill_calls,
     attachments: msg.attachments,
@@ -794,6 +796,9 @@ export default function AgentChatPage() {
                         </div>
                       )
                     )}
+
+                    {/* Thinking Block */}
+                    {msg.thinking && <ThinkingBlock thinking={msg.thinking} />}
 
                     {/* Message Content */}
                     {msg.role === "agent" ? (

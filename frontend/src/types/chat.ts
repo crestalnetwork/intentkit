@@ -54,6 +54,7 @@ export interface ChatMessage {
   thread_type: AuthorType;
   message: string;
   skill_calls?: ChatMessageSkillCall[];
+  thinking?: string | null;
   time_cost?: number;
   cold_start_cost?: number;
   attachments?: ChatMessageAttachment[];
@@ -89,6 +90,7 @@ export interface UIMessage {
   role: "user" | "agent";
   content: string;
   timestamp: Date;
+  thinking?: string | null;
   isStreaming?: boolean;
   skillCalls?: ChatMessageSkillCall[];
   attachments?: ChatMessageAttachment[];
