@@ -736,6 +736,23 @@ async def stream_agent_raw(
                     else ""
                 )
                 thinking = _extract_thinking_content(msg)
+                # Yield standalone thinking message for tool-call chunks
+                if has_tools and thinking:
+                    thinking_message_create = ChatMessageCreate(
+                        id=str(XID()),
+                        agent_id=user_message.agent_id,
+                        chat_id=user_message.chat_id,
+                        user_id=user_message.user_id,
+                        author_id=user_message.agent_id,
+                        author_type=AuthorType.THINKING,
+                        model=agent.model,
+                        thread_type=user_message.author_type,
+                        reply_to=user_message.id,
+                        message=thinking,
+                    )
+                    thinking_message = await thinking_message_create.save()
+                    yielded_any = True
+                    yield thinking_message
                 if content and not has_tools:
                     chat_message_create = ChatMessageCreate(
                         id=str(XID()),

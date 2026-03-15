@@ -5,6 +5,7 @@
 export type AuthorType =
   | "agent"
   | "skill"
+  | "thinking"
   | "system"
   | "trigger"
   | "twitter"
@@ -89,6 +90,7 @@ export interface ChatMessagesResponse {
 export interface UIMessage {
   id: string;
   role: "user" | "agent" | "system";
+  authorType?: AuthorType;
   content: string;
   timestamp: Date;
   thinking?: string | null;

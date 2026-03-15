@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
@@ -72,6 +72,7 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
   return {
     id: msg.id,
     role: isSystem ? "system" : isUserMessage ? "user" : "agent",
+    authorType: msg.author_type,
     content: msg.message,
     thinking: msg.thinking,
     errorType: msg.error_type,
@@ -788,39 +789,16 @@ export default function AgentChatPage() {
                       {msg.content}
                     </span>
                   </div>
-                ) : (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex w-full gap-2 max-w-[85%]",
-                    msg.role === "user" ? "ml-auto flex-row-reverse" : "",
-                  )}
-                >
-                  {msg.role === "agent" ? (
-                    <Avatar className="h-8 w-8 border">
-                      {cachedAvatar ? (
-                        <AvatarImage src={cachedAvatar} alt={displayName} />
-                      ) : null}
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted">
-                      <User className="h-4 w-4" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "rounded-lg px-4 py-2 text-sm",
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground",
-                    )}
-                  >
-                    {/* UI Attachments or Skill Call Badges */}
+                ) : msg.authorType === "thinking" ? (
+                  // Thinking message: no avatar, no background, aligned with agent text
+                  <div key={msg.id} className="flex w-full max-w-[85%] pl-10">
+                    <ThinkingBlock thinking={msg.content} />
+                  </div>
+                ) : msg.authorType === "skill" ? (
+                  // Skill message: no avatar, no background, aligned with agent text
+                  <div key={msg.id} className="flex w-full max-w-[85%] pl-10">
                     {hasUIAttachments(msg) ? (
-                      <div className="space-y-2 mb-2">
+                      <div className="space-y-2">
                         {msg.attachments!
                           .filter(
                             (a) =>
@@ -846,34 +824,92 @@ export default function AgentChatPage() {
                           ))}
                       </div>
                     ) : (
-                      msg.skillCalls &&
-                      msg.skillCalls.length > 0 && (
-                        <div className="mb-2">
-                          <SkillCallBadgeList
-                            skillCalls={msg.skillCalls}
-                          />
-                        </div>
+                      msg.skillCalls && msg.skillCalls.length > 0 && (
+                        <SkillCallBadgeList skillCalls={msg.skillCalls} />
                       )
                     )}
-
-                    {/* Thinking Block */}
-                    {msg.thinking && <ThinkingBlock thinking={msg.thinking} />}
-
-                    {/* Message Content */}
+                  </div>
+                ) : (
+                <React.Fragment key={msg.id}>
+                  {/* Embedded thinking rendered before the message bubble */}
+                  {msg.thinking && msg.role === "agent" && (
+                    <div className="flex w-full max-w-[85%] pl-10">
+                      <ThinkingBlock thinking={msg.thinking} />
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      "flex w-full gap-2 max-w-[85%]",
+                      msg.role === "user" ? "ml-auto flex-row-reverse" : "",
+                    )}
+                  >
                     {msg.role === "agent" ? (
-                      <MarkdownRenderer
-                        className={markdownProseClass}
-                        enableBreaks
-                      >
-                        {msg.content}
-                      </MarkdownRenderer>
+                      <Avatar className="h-8 w-8 border">
+                        {cachedAvatar ? (
+                          <AvatarImage src={cachedAvatar} alt={displayName} />
+                        ) : null}
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          <Bot className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
                     ) : (
-                      <div className="whitespace-pre-wrap break-words">
-                        {msg.content}
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted">
+                        <User className="h-4 w-4" />
                       </div>
                     )}
+                    <div
+                      className={cn(
+                        "rounded-lg px-4 py-2 text-sm",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground",
+                      )}
+                    >
+                      {/* UI Attachments */}
+                      {hasUIAttachments(msg) && (
+                        <div className="space-y-2 mb-2">
+                          {msg.attachments!
+                            .filter(
+                              (a) =>
+                                a.type === "card" || a.type === "choice",
+                            )
+                            .map((att, i) => (
+                              <div key={i}>
+                                {att.lead_text && (
+                                  <p className="text-sm mt-2 mb-3">
+                                    {att.lead_text}
+                                  </p>
+                                )}
+                                {att.type === "card" && (
+                                  <CardAttachment att={att} />
+                                )}
+                                {att.type === "choice" && (
+                                  <ChoiceAttachment
+                                    att={att}
+                                    onSendMessage={sendTextMessage}
+                                  />
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+
+                      {/* Message Content */}
+                      {msg.role === "agent" ? (
+                        <MarkdownRenderer
+                          className={markdownProseClass}
+                          enableBreaks
+                        >
+                          {msg.content}
+                        </MarkdownRenderer>
+                      ) : (
+                        <div className="whitespace-pre-wrap break-words">
+                          {msg.content}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </React.Fragment>
                 ))
             )}
             {isSending && (

@@ -45,6 +45,7 @@ class AuthorType(str, Enum):
     # output messages
     AGENT = "agent"
     SKILL = "skill"
+    THINKING = "thinking"
     SYSTEM = "system"
 
     # input messages
@@ -436,6 +437,10 @@ class ChatMessage(ChatMessageCreate):
             resp += (
                 f"\n------------------- agent cost: {self.time_cost:.3f} seconds\n\n"
             )
+        elif self.author_type == AuthorType.THINKING:
+            resp += f"[ Thinking: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"
+            resp += f" {self.message}\n"
+            resp += "\n------------------- thinking\n\n"
         elif self.author_type == AuthorType.SYSTEM:
             resp += (
                 f"[ System: ] ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC)\n\n"

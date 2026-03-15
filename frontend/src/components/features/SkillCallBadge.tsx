@@ -134,7 +134,7 @@ export function SkillCallBadgeList({
   if (!skillCalls || skillCalls.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5 mt-2">
+    <div className="flex flex-wrap gap-1.5">
       {skillCalls.map((skillCall, index) => (
         <SkillCallBadge
           key={skillCall.id || `skill-${index}`}
