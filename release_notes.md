@@ -1,18 +1,15 @@
 ## New Features
 
-- **Read Webpage Skill**: Agents can now read and extract content from any webpage using Cloudflare Browser Rendering. The content is automatically cleaned and formatted for better readability. Enabled when the agent's internet search toggle is on and Cloudflare credentials are configured.
-- **Activity Timeline Cards**: The activity timeline now displays rich post cards and link cards with Open Graph metadata previews.
+- **LLM Thinking/Reasoning Display**: Agent responses now show the model's thinking process. Thinking content appears as a collapsible block in the chat, giving users insight into how the agent reasons before acting.
+- **Stop Generation Button**: Users can now cancel in-progress streaming responses.
 
 ## Improvements
 
-- Enhanced input validation for the activity publishing skill
-- Improved activity skill prompts for better agent behavior
-- Better example agent configuration
+- Redesigned chat message layout: thinking and tool call indicators now appear without avatar or background, keeping the conversation view cleaner and more focused on the agent's actual responses.
+- Optimized system skill loading for providers with native search capabilities.
 
-## Bug Fixes & Maintenance
+## Bug Fixes
 
-- Fixed minor issues in the release workflow
-- Removed unused debug components
-- Updated dependencies
+- Fixed issues with thinking content not displaying for tool call responses.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.1...v0.12.2
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.12.2...v0.12.3
