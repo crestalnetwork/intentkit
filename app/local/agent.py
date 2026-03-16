@@ -14,9 +14,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from yaml import safe_load
 
@@ -33,7 +32,6 @@ from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
 from intentkit.core.avatar import generate_avatar
-from intentkit.core.engine import clean_agent_memory
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
@@ -326,89 +324,6 @@ async def get_agent_editable(
         media_type="application/json",
     )
 
-
-class MemCleanRequest(BaseModel):
-    """Request model for agent memory cleanup endpoint.
-
-    Attributes:
-        agent_id (str): Agent ID to clean
-        chat_id (str): Chat ID to clean
-        clean_skills_memory (bool): To clean the skills data.
-        clean_agent_memory (bool): To clean the agent memory.
-    """
-
-    agent_id: str
-    clean_agent_memory: bool
-    clean_skills_memory: bool
-    chat_id: str | None = Field("")
-
-
-@agent_router.post(
-    "/agent/clean-memory",
-    tags=["Agent"],
-    status_code=204,
-    operation_id="clean_agent_memory",
-)
-async def clean_memory(
-    request: MemCleanRequest = Body(
-        MemCleanRequest, description="Agent memory cleanup request"
-    ),
-):
-    """Clear an agent memory.
-
-    **Request Body:**
-    * `request` - The execution request containing agent ID, message, and thread ID
-
-    **Returns:**
-    * `str` - Formatted response lines from agent memory cleanup
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 400: If input parameters are invalid (empty agent_id, thread_id, or message text)
-        - 404: If agent not found
-        - 500: For other server-side errors
-    """
-    # Validate input parameters
-    if not request.agent_id or not request.agent_id.strip():
-        raise IntentKitAPIError(
-            status_code=400, key="BadRequest", message="Agent ID cannot be empty"
-        )
-
-    try:
-        agent = await get_agent_by_id(request.agent_id)
-        if not agent:
-            raise IntentKitAPIError(
-                status_code=404,
-                key="NotFound",
-                message=f"Agent with id {request.agent_id} not found",
-            )
-
-        _ = await clean_agent_memory(
-            request.agent_id,
-            request.chat_id or "",
-            clean_agent=request.clean_agent_memory,
-            clean_skill=request.clean_skills_memory,
-        )
-    except NoResultFound:
-        raise IntentKitAPIError(
-            status_code=404,
-            key="NotFound",
-            message=f"Agent {request.agent_id} not found",
-        )
-    except SQLAlchemyError as e:
-        raise IntentKitAPIError(
-            status_code=500,
-            key="InternalServerError",
-            message=f"Database error: {str(e)}",
-        )
-    except ValueError as e:
-        raise IntentKitAPIError(status_code=400, key="BadRequest", message=str(e))
-    except Exception as e:
-        raise IntentKitAPIError(
-            status_code=500,
-            key="InternalServerError",
-            message=f"Server error: {str(e)}",
-        )
 
 
 @agent_router.get(
