@@ -13,64 +13,40 @@ The module uses a global cache to store initialized agents for better performanc
 # pyright: reportImportCycles=false
 
 import asyncio
-import importlib
 import logging
 import re
 import textwrap
 import time
 import traceback
-from collections.abc import Sequence
-from datetime import datetime
 from decimal import Decimal
 from typing import Any, cast
 
 import httpcore
 import httpx
-import sqlalchemy
 from epyxid import XID
-from langchain.agents import create_agent as create_langchain_agent
-from langchain.agents.middleware import (
-    ClearToolUsesEdit,
-    ContextEditingMiddleware,
-    LLMToolSelectorMiddleware,
-    ModelRetryMiddleware,
-    TodoListMiddleware,
-    ToolRetryMiddleware,
-)
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import BaseTool
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
-from sqlalchemy import func, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
 from intentkit.config.config import config
-from intentkit.config.db import (
-    get_checkpointer,
-    get_session,
-)
+from intentkit.config.db import get_session
 from intentkit.core.agent import get_agent
 from intentkit.core.budget import check_hourly_budget_exceeded
 from intentkit.core.chat import clear_thread_memory
 from intentkit.core.credit import expense_message, expense_skill
-from intentkit.core.middleware import (
-    CreditCheckMiddleware,
-    DynamicPromptMiddleware,
-    StepTrackingMiddleware,
-    SummarizationMiddleware,
-    ToolBindingMiddleware,
-    TrimMessagesMiddleware,
+from intentkit.core.executor import (  # noqa: F401
+    agent_executor,
+    build_and_cache_executor,
+    build_executor,
 )
-
-# from intentkit.core.system_skills import get_system_skills (moved to build_executor)
-from intentkit.models.agent import Agent, AgentTable
-from intentkit.models.agent_data import AgentData, AgentQuota
+from intentkit.models.agent import Agent
+from intentkit.models.agent_data import AgentQuota
 from intentkit.models.app_setting import AppSetting, SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
@@ -79,20 +55,12 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.llm import LLMModelInfo, LLMProvider, create_llm_model
-from intentkit.models.llm_picker import pick_summarize_model
-from intentkit.models.skill import AgentSkillData, ChatSkillData
+from intentkit.models.llm import LLMModelInfo
 from intentkit.models.user import User
 from intentkit.skills.base import get_skill_price
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
-
-# Global variable to cache all agent executors
-_agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
-
-# Global dictionaries to cache agent update times
-_agents_updated: dict[str, datetime] = {}
 
 
 def _extract_thinking_content(msg: Any) -> str | None:
@@ -180,231 +148,6 @@ def _extract_cached_input_tokens(msg: Any) -> int:
     if not details:
         return 0
     return details.get("cache_read", 0)
-
-
-async def build_executor(
-    agent: Agent,
-    agent_data: AgentData,
-    custom_skills: Sequence[BaseTool] = (),
-) -> CompiledStateGraph[Any, Any, Any, Any]:
-    """Build an AI agent executor with specified configuration and tools.
-
-    This function:
-    1. Initializes LLM with specified model
-    2. Loads and configures requested tools
-    3. Sets up PostgreSQL-based memory
-    4. Creates and returns the compiled executor
-
-    Args:
-        agent (Agent): Agent configuration object
-        agent_data (AgentData): Agent data object
-        custom_skills (list[BaseTool], optional): Designed for advanced user who directly
-            call this function to inject custom skills into the agent tool node.
-
-    Returns:
-        CompiledStateGraph: Initialized LangChain agent
-    """
-
-    # Create the LLM model instance
-    llm_model = await create_llm_model(
-        model_name=agent.model,
-        temperature=agent.temperature if agent.temperature is not None else 0.7,
-        frequency_penalty=(
-            agent.frequency_penalty if agent.frequency_penalty is not None else 0.0
-        ),
-        presence_penalty=(
-            agent.presence_penalty if agent.presence_penalty is not None else 0.0
-        ),
-    )
-
-    # ==== Store buffered conversation history in memory.
-    try:
-        checkpointer = get_checkpointer()
-    except RuntimeError:
-        checkpointer = InMemorySaver()
-
-    # ==== Load skills
-    tools: list[BaseTool | dict[str, Any]] = []
-    private_tools: list[BaseTool | dict[str, Any]] = []
-
-    if agent.skills:
-        for k, v in agent.skills.items():
-            if not v.get("enabled", False):
-                continue
-            try:
-                skill_module = importlib.import_module(f"intentkit.skills.{k}")
-                if hasattr(skill_module, "get_skills"):
-                    # all
-                    skill_tools = await skill_module.get_skills(
-                        v, False, agent_id=agent.id, agent=agent
-                    )
-                    if skill_tools and len(skill_tools) > 0:
-                        tools.extend(skill_tools)
-                    # private
-                    skill_private_tools = await skill_module.get_skills(
-                        v, True, agent_id=agent.id, agent=agent
-                    )
-                    if skill_private_tools and len(skill_private_tools) > 0:
-                        private_tools.extend(skill_private_tools)
-                else:
-                    logger.error(f"Skill {k} does not have get_skills function")
-            except ImportError as e:
-                logger.error(f"Could not import skill module: {k} ({e})")
-
-    # add custom skills to private tools
-    if custom_skills and len(custom_skills) > 0:
-        private_tools.extend(custom_skills)
-
-    # add system skills to private tools
-    from intentkit.core.system_skills import get_system_skills
-
-    system_skills = get_system_skills(agent)
-    # Skip read_webpage for providers that have native search capabilities
-    model_provider = llm_model.info.provider
-    if model_provider in (LLMProvider.GOOGLE, LLMProvider.OPENAI):
-        system_skills = [s for s in system_skills if s.name != "read_webpage"]
-    private_tools.extend(system_skills)
-
-    # filter the duplicate tools
-    tools = list(
-        {
-            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
-            for tool in tools
-        }.values()
-    )
-    private_tools = list(
-        {
-            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
-            for tool in private_tools
-        }.values()
-    )
-
-    for tool in private_tools:
-        logger.info(
-            f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
-        )
-
-    base_model = await llm_model.create_instance()
-
-    middleware: list[Any] = [
-        ToolBindingMiddleware(llm_model, tools, private_tools),
-        DynamicPromptMiddleware(agent, agent_data),
-        StepTrackingMiddleware(),
-        ToolRetryMiddleware(),
-        ModelRetryMiddleware(),
-    ]
-
-    if agent.enable_todo:
-        middleware.append(TodoListMiddleware())
-
-    # Auto-enable LLM tool selector when there are many tools
-    if len(private_tools) > 10:
-        selector_model_name = pick_summarize_model()
-        selector_llm = await create_llm_model(model_name=selector_model_name)
-        selector_model = await selector_llm.create_instance()
-        middleware.append(LLMToolSelectorMiddleware(model=selector_model))
-
-    # Context editing clears old tool results at 40% context to free space.
-    # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware
-    # uses before_model, so summarization always runs first regardless of list position.
-    # The lower threshold (40%) ensures context editing handles moderate growth,
-    # while summarization (60-80%) handles extreme cases.
-    context_editing_trigger = int(llm_model.info.context_length * 0.4)
-    middleware.append(
-        ContextEditingMiddleware(
-            edits=[
-                ClearToolUsesEdit(
-                    trigger=context_editing_trigger,
-                    exclude_tools=["ui_show_card", "ui_ask_user"],
-                )
-            ]
-        )
-    )
-
-    if agent.short_term_memory_strategy == "trim":
-        middleware.append(TrimMessagesMiddleware(max_summary_tokens=2048))
-    elif agent.short_term_memory_strategy == "summarize":
-        summarize_model_name = pick_summarize_model()
-        summarize_llm = await create_llm_model(model_name=summarize_model_name)
-        summarize_model = await summarize_llm.create_instance()
-        middleware.append(
-            SummarizationMiddleware(
-                model=summarize_model,
-                trigger=[
-                    ("fraction", 0.8),
-                    ("tokens", int(llm_model.info.context_length * 0.8)),
-                ]
-                if agent.super_mode
-                else [
-                    ("fraction", 0.6),
-                    ("tokens", int(llm_model.info.context_length * 0.6)),
-                ],
-            )
-        )
-
-    if config.payment_enabled:
-        middleware.append(CreditCheckMiddleware())
-
-    executor = create_langchain_agent(
-        model=base_model,
-        tools=private_tools,
-        middleware=middleware,
-        state_schema=AgentState,
-        context_schema=AgentContext,
-        checkpointer=checkpointer,
-        debug=config.debug_checkpoint,
-        name=agent.id,
-    )
-
-    return executor
-
-
-async def build_and_cache_executor(
-    aid: str, agent: Agent, agent_data: AgentData
-) -> None:
-    """Build an agent executor and cache it with timestamp tracking.
-
-    This function:
-    1. Builds the executor from agent config and data
-    2. Caches the executor
-    3. Tracks the latest update timestamp from both agent and agent_data
-
-    Args:
-        aid: Agent ID
-        agent: Agent configuration object
-        agent_data: Agent data object (wallet, API keys, credentials)
-    """
-    executor = await build_executor(agent, agent_data)
-    _agents[aid] = executor
-    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
-    _agents_updated[aid] = max(agent_ts, agent_data.updated_at)
-
-
-async def agent_executor(
-    agent_id: str,
-) -> tuple[CompiledStateGraph[Any, Any, Any, Any], float]:
-    start = time.perf_counter()
-    agent = await get_agent(agent_id)
-    if not agent:
-        raise IntentKitAPIError(
-            status_code=404, key="AgentNotFound", message="Agent not found"
-        )
-    agent_data = await AgentData.get(agent_id)
-    agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
-    updated_at = max(agent_ts, agent_data.updated_at)
-    # Check if agent needs reinitialization due to updates
-    needs_reinit = False
-    if agent_id in _agents:
-        if agent_id not in _agents_updated or updated_at != _agents_updated[agent_id]:
-            needs_reinit = True
-            logger.info(f"Reinitializing agent {agent_id} due to updates")
-
-    # cold start or needs reinitialization
-    cold_start_cost = 0.0
-    if (agent_id not in _agents) or needs_reinit:
-        await build_and_cache_executor(agent_id, agent, agent_data)
-        cold_start_cost = time.perf_counter() - start
-    return _agents[agent_id], cold_start_cost
 
 
 async def stream_agent(message: ChatMessageCreate):
@@ -1188,90 +931,6 @@ async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:
     async for chat_message in stream_agent(message):
         resp.append(chat_message)
     return resp
-
-
-async def clean_agent_memory(
-    agent_id: str,
-    chat_id: str = "",
-    clean_agent: bool = False,
-    clean_skill: bool = False,
-) -> str:
-    """
-    Clean an agent's memory with the given prompt and return response.
-
-    This function:
-    1. Cleans the agents skills data.
-    2. Cleans the thread skills data.
-    3. Cleans the graph checkpoint data.
-    4. Cleans the graph checkpoint_writes data.
-    5. Cleans the graph checkpoint_blobs data.
-
-    Args:
-        agent_id (str): Agent ID
-        chat_id (str): Thread ID for the agent memory cleanup
-        clean_agent (bool): Whether to clean agent's memory data
-        clean_skill (bool): Whether to clean skills memory data
-
-    Returns:
-        str: Successful response message.
-    """
-    # get the agent from the database
-    try:
-        if not clean_skill and not clean_agent:
-            raise IntentKitAPIError(
-                status_code=400,
-                key="InvalidCleanupParameters",
-                message="at least one of skills data or agent memory should be true",
-            )
-
-        if clean_skill:
-            await AgentSkillData.clean_data(agent_id)
-            await ChatSkillData.clean_data(agent_id, chat_id)
-
-        async with get_session() as db:
-            if clean_agent:
-                chat_id = chat_id.strip()
-                q_suffix = "%"
-                if chat_id and chat_id != "":
-                    q_suffix = chat_id
-
-                deletion_param = {"value": agent_id + "-" + q_suffix}
-                _ = await db.execute(
-                    sqlalchemy.text(
-                        "DELETE FROM checkpoints WHERE thread_id like :value",
-                    ),
-                    deletion_param,
-                )
-                _ = await db.execute(
-                    sqlalchemy.text(
-                        "DELETE FROM checkpoint_writes WHERE thread_id like :value",
-                    ),
-                    deletion_param,
-                )
-                _ = await db.execute(
-                    sqlalchemy.text(
-                        "DELETE FROM checkpoint_blobs WHERE thread_id like :value",
-                    ),
-                    deletion_param,
-                )
-
-            # update the updated_at field so that the agent instance will all reload
-            _ = await db.execute(
-                update(AgentTable)
-                .where(AgentTable.id == agent_id)
-                .values(updated_at=func.now())
-            )
-            await db.commit()
-
-        logger.info(f"Agent [{agent_id}] data cleaned up successfully.")
-        return "Agent data cleaned up successfully."
-    except SQLAlchemyError as e:
-        # Handle other SQLAlchemy-related errors
-        logger.error(e)
-        raise IntentKitAPIError(status_code=500, key="DatabaseError", message=str(e))
-    except Exception as e:
-        logger.error("failed to cleanup the agent memory: " + str(e))
-        raise e
 
 
 async def thread_stats(agent_id: str, chat_id: str) -> list[BaseMessage]:

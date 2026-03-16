@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.messages import AIMessage
 
-from intentkit.core.engine import (
+from intentkit.core.engine import stream_agent
+from intentkit.core.executor import (
     _agents,
     _agents_updated,
     agent_executor,
     build_executor,
-    stream_agent,
 )
 from intentkit.models.agent import Agent, AgentData
 from intentkit.models.chat import AuthorType, ChatMessage
@@ -50,10 +50,10 @@ async def test_build_executor(mock_agent, mock_agent_data):
     """Test building an agent executor."""
     with (
         patch(
-            "intentkit.core.engine.create_llm_model", new_callable=AsyncMock
+            "intentkit.core.executor.create_llm_model", new_callable=AsyncMock
         ) as mock_create_model,
-        patch("intentkit.core.engine.create_langchain_agent") as mock_create_lc_agent,
-        patch("intentkit.core.engine.get_checkpointer"),
+        patch("langchain.agents.create_agent") as mock_create_lc_agent,
+        patch("intentkit.core.executor.get_checkpointer"),
         patch("intentkit.core.system_skills.get_system_skills", return_value=[]),
     ):
         mock_llm_instance = AsyncMock()
@@ -82,13 +82,13 @@ async def test_agent_executor_caching(mock_agent):
 
     with (
         patch(
-            "intentkit.core.engine.get_agent", new_callable=AsyncMock
+            "intentkit.core.executor.get_agent", new_callable=AsyncMock
         ) as mock_get_agent,
         patch(
-            "intentkit.core.engine.build_and_cache_executor", new_callable=AsyncMock
+            "intentkit.core.executor.build_and_cache_executor", new_callable=AsyncMock
         ) as mock_build_and_cache,
         patch(
-            "intentkit.core.engine.AgentData.get", new_callable=AsyncMock
+            "intentkit.core.executor.AgentData.get", new_callable=AsyncMock
         ) as mock_agent_data_get,
     ):
         mock_get_agent.return_value = mock_agent

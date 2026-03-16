@@ -11,7 +11,8 @@ from typing import Any
 from langgraph.graph.state import CompiledStateGraph
 
 from intentkit.abstracts.graph import AgentContext, AgentState
-from intentkit.core.engine import build_executor, stream_agent_raw
+from intentkit.core.engine import stream_agent_raw
+from intentkit.core.executor import build_executor
 from intentkit.core.manager.skills import (
     add_autonomous_task_skill,
     delete_autonomous_task_skill,

@@ -12,7 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.db import get_session
-from intentkit.core.engine import build_executor, stream_agent_raw
+from intentkit.core.engine import stream_agent_raw
+from intentkit.core.executor import build_executor
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import ChatMessage, ChatMessageCreate

@@ -8,7 +8,8 @@ import pytest
 from epyxid import XID
 from langchain_core.tools import tool
 
-from intentkit.core.engine import build_executor, stream_agent_raw
+from intentkit.core.engine import stream_agent_raw
+from intentkit.core.executor import build_executor
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
@@ -40,7 +41,7 @@ def mock_db_models():
         patch("intentkit.models.agent_data.AgentData.get") as mock_agent_data_get,
         patch("intentkit.models.llm.LLMModelInfo.get") as mock_llm_get,
         patch("intentkit.models.llm.create_llm_model") as mock_create_llm,
-        patch("intentkit.core.engine.get_checkpointer") as mock_checkpointer,
+        patch("intentkit.core.executor.get_checkpointer") as mock_checkpointer,
         patch("intentkit.core.engine.get_session") as mock_session,
         patch("intentkit.core.engine.expense_message") as mock_expense,
         patch("intentkit.core.engine.expense_skill") as mock_expense_skill,
@@ -144,7 +145,7 @@ async def test_local_agent_tool_call():
             ),
             patch("intentkit.models.agent.Agent.get", return_value=agent),
             patch("intentkit.models.agent_data.AgentData.get", return_value=agent_data),
-            patch("intentkit.core.engine.get_checkpointer", side_effect=RuntimeError),
+            patch("intentkit.core.executor.get_checkpointer", side_effect=RuntimeError),
             patch("intentkit.core.engine.get_session"),
             patch("intentkit.core.engine.config.payment_enabled", False),
             patch("intentkit.models.user.User.get", return_value=None),
@@ -319,7 +320,7 @@ async def test_local_agent_system_tool_call():
             ),
             patch("intentkit.models.agent.Agent.get", return_value=agent),
             patch("intentkit.models.agent_data.AgentData.get", return_value=agent_data),
-            patch("intentkit.core.engine.get_checkpointer", side_effect=RuntimeError),
+            patch("intentkit.core.executor.get_checkpointer", side_effect=RuntimeError),
             patch("intentkit.core.engine.get_session"),
             patch("intentkit.core.engine.config.payment_enabled", False),
             patch("intentkit.models.user.User.get", return_value=None),
