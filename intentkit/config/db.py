@@ -142,6 +142,9 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     session = AsyncSession(engine)
     try:
         yield session
+    except Exception:
+        await session.rollback()
+        raise
     finally:
         await session.close()
 

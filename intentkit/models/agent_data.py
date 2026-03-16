@@ -7,7 +7,16 @@ from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
-from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func, select
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Numeric,
+    String,
+    func,
+    select,
+    update,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -705,19 +714,23 @@ class AgentQuota(BaseModel):
     async def add_message(self) -> None:
         """Add a message to the agent's message count."""
         async with get_session() as db:
+            # Use server-side SQL expressions to avoid read-modify-write race conditions
+            stmt = (
+                update(AgentQuotaTable)
+                .where(AgentQuotaTable.id == self.id)
+                .values(
+                    message_count_total=AgentQuotaTable.message_count_total + 1,
+                    message_count_monthly=AgentQuotaTable.message_count_monthly + 1,
+                    message_count_daily=AgentQuotaTable.message_count_daily + 1,
+                    last_message_time=func.now(),
+                )
+            )
+            await db.execute(stmt)
+            await db.commit()
+
+            # Refresh from DB to get the updated values
             quota_record = await db.get(AgentQuotaTable, self.id)
-
             if quota_record:
-                # Update record
-                quota_record.message_count_total += 1
-                quota_record.message_count_monthly += 1
-                quota_record.message_count_daily += 1
-                quota_record.last_message_time = datetime.now(UTC)
-                db.add(quota_record)
-                await db.commit()
-
-                # Update this instance
-                await db.refresh(quota_record)
                 self.message_count_total = quota_record.message_count_total
                 self.message_count_monthly = quota_record.message_count_monthly
                 self.message_count_daily = quota_record.message_count_daily
@@ -727,17 +740,22 @@ class AgentQuota(BaseModel):
     async def add_autonomous(self) -> None:
         """Add an autonomous operation to the agent's autonomous count."""
         async with get_session() as db:
+            # Use server-side SQL expressions to avoid read-modify-write race conditions
+            stmt = (
+                update(AgentQuotaTable)
+                .where(AgentQuotaTable.id == self.id)
+                .values(
+                    autonomous_count_total=AgentQuotaTable.autonomous_count_total + 1,
+                    autonomous_count_monthly=AgentQuotaTable.autonomous_count_monthly
+                    + 1,
+                    last_autonomous_time=func.now(),
+                )
+            )
+            await db.execute(stmt)
+            await db.commit()
+
             quota_record = await db.get(AgentQuotaTable, self.id)
             if quota_record:
-                # Update record
-                quota_record.autonomous_count_total += 1
-                quota_record.autonomous_count_monthly += 1
-                quota_record.last_autonomous_time = datetime.now(UTC)
-                db.add(quota_record)
-                await db.commit()
-
-                # Update this instance
-                await db.refresh(quota_record)
                 self.autonomous_count_total = quota_record.autonomous_count_total
                 self.autonomous_count_monthly = quota_record.autonomous_count_monthly
                 self.last_autonomous_time = quota_record.last_autonomous_time
@@ -750,18 +768,21 @@ class AgentQuota(BaseModel):
             HTTPException: If there are database errors
         """
         async with get_session() as db:
+            # Use server-side SQL expressions to avoid read-modify-write race conditions
+            stmt = (
+                update(AgentQuotaTable)
+                .where(AgentQuotaTable.id == self.id)
+                .values(
+                    twitter_count_total=AgentQuotaTable.twitter_count_total + 1,
+                    twitter_count_daily=AgentQuotaTable.twitter_count_daily + 1,
+                    last_twitter_time=func.now(),
+                )
+            )
+            await db.execute(stmt)
+            await db.commit()
+
             quota_record = await db.get(AgentQuotaTable, self.id)
-
             if quota_record:
-                # Update record
-                quota_record.twitter_count_total += 1
-                quota_record.twitter_count_daily += 1
-                quota_record.last_twitter_time = datetime.now(UTC)
-                db.add(quota_record)
-                await db.commit()
-
-                # Update this instance
-                await db.refresh(quota_record)
                 self.twitter_count_total = quota_record.twitter_count_total
                 self.twitter_count_daily = quota_record.twitter_count_daily
                 self.last_twitter_time = quota_record.last_twitter_time

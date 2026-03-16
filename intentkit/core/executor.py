@@ -71,7 +71,6 @@ async def build_executor(
     )
 
     from intentkit.core.middleware import (
-        CreditCheckMiddleware,
         DynamicPromptMiddleware,
         StepTrackingMiddleware,
         SummarizationMiddleware,
@@ -216,8 +215,8 @@ async def build_executor(
             )
         )
 
-    if config.payment_enabled:
-        middleware.append(CreditCheckMiddleware())
+    # Credit check is done at conversation start, not per-tool-call.
+    # As long as balance is positive, the user gets one conversation opportunity.
 
     executor = create_langchain_agent(
         model=base_model,

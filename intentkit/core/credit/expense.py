@@ -180,8 +180,10 @@ async def expense_message(
             fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
-    # Calculate base amounts by credit type using subtraction method
+    # Calculate base amounts by credit type using subtraction method.
     # This ensures that: permanent_amount = base_permanent_amount + fee_platform_permanent_amount + fee_agent_permanent_amount
+    # Note: Independent rounding of fee components may cause base amounts to become slightly
+    # negative. This is acceptable and does not corrupt financial records.
     base_free_amount = free_amount - fee_platform_free_amount - fee_agent_free_amount
     base_reward_amount = (
         reward_amount - fee_platform_reward_amount - fee_agent_reward_amount
@@ -1018,7 +1020,7 @@ async def expense_summarize(
                 tx_type=TransactionType.RECEIVE_FEE_AGENT,
                 credit_debit=CreditDebit.CREDIT,
                 change_amount=fee_agent_amount,
-                credit_type=CreditType.REWARD,
+                credit_type=credit_type,
                 free_amount=fee_agent_free_amount,
                 reward_amount=fee_agent_reward_amount,
                 permanent_amount=fee_agent_permanent_amount,

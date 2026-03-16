@@ -18,7 +18,6 @@ import re
 import textwrap
 import time
 import traceback
-from decimal import Decimal
 from typing import Any, cast
 
 import httpcore
@@ -31,11 +30,11 @@ from langchain_core.messages import (
     RemoveMessage,
 )
 from langchain_core.runnables import RunnableConfig
-from langgraph.errors import GraphRecursionError
+from langgraph.errors import GraphRecursionError, InvalidUpdateError
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.exc import SQLAlchemyError
 
-from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
+from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.core.agent import get_agent
@@ -245,62 +244,15 @@ async def _validate_payment(
                 user_message,
                 time.perf_counter() - start,
             )
-    # avg cost
-    avg_count = 1
-    if quota and quota.avg_action_cost > 0:
-        avg_count = quota.avg_action_cost
-    if not user_account.has_sufficient_credits(Decimal(avg_count)):
+    # As long as balance is positive, allow one conversation opportunity.
+    # Credit can go negative during the conversation — that is acceptable.
+    if user_account.balance <= 0:
         return await _create_system_error_response(
             SystemMessageType.INSUFFICIENT_BALANCE,
             user_message,
             time.perf_counter() - start,
         )
     return None
-
-
-async def _handle_credit_check_chunk(
-    chunk: dict[str, Any],
-    user_message: ChatMessage,
-    agent: Agent,
-    this_time: float,
-    last: float,
-) -> tuple[list[ChatMessage], float]:
-    """Handle a ``credit_check`` custom event chunk.
-
-    Returns a list of messages to yield (possibly empty) and the updated
-    ``last`` timestamp.  When the returned list is non-empty, the caller
-    should yield all messages and then **return** from the generator (the
-    credit-check event is terminal).
-    """
-    credit_payload = chunk.get("credit_check", {})
-    content = credit_payload.get("message")
-    if not content:
-        return [], last
-
-    credit_message_create = ChatMessageCreate(
-        id=str(XID()),
-        agent_id=user_message.agent_id,
-        chat_id=user_message.chat_id,
-        user_id=user_message.user_id,
-        author_id=user_message.agent_id,
-        author_type=AuthorType.AGENT,
-        model=agent.model,
-        thread_type=user_message.author_type,
-        reply_to=user_message.id,
-        message=content,
-        input_tokens=0,
-        output_tokens=0,
-        time_cost=this_time - last,
-    )
-    last = this_time
-    credit_message = await credit_message_create.save()
-
-    error_message = await _create_system_error_response(
-        SystemMessageType.INSUFFICIENT_BALANCE,
-        user_message,
-        0,
-    )
-    return [credit_message, error_message], last
 
 
 async def _handle_model_chunk(
@@ -533,61 +485,37 @@ async def _handle_tools_chunk(
         return [skill_message], last
 
 
-async def _handle_other_chunk(
-    chunk: dict[str, Any],
-    user_message: ChatMessage,
-    agent: Agent,
-    this_time: float,
-    last: float,
-) -> tuple[list[ChatMessage], float, bool]:
-    """Handle the else-branch chunk looking for ``CreditCheckMiddleware.after_model``.
+def _is_unrecoverable_checkpoint_error(exc: Exception) -> bool:
+    """Check if an exception indicates unrecoverable checkpoint corruption.
 
-    Returns ``(messages_to_yield, updated_last, is_terminal)``.  When
-    ``is_terminal`` is ``True``, the caller should yield all messages and
-    then **return** from the generator.
+    Only these cases warrant clearing thread memory. Transient errors
+    (LLM API failures, network issues, etc.) should preserve conversation history.
     """
-    for node_name, node_update in chunk.items():
-        if (
-            node_name.endswith("CreditCheckMiddleware.after_model")
-            and isinstance(node_update, dict)
-            and node_update.get("error") == AgentError.INSUFFICIENT_CREDITS
-        ):
-            ai_messages = [
-                message
-                for message in node_update.get("messages", [])
-                if isinstance(message, BaseMessage)
-            ]
-            content = ""
-            thinking = None
-            if ai_messages:
-                content = _extract_text_content(ai_messages[-1].content)
-                thinking = _extract_thinking_content(ai_messages[-1])
-            post_model_message_create = ChatMessageCreate(
-                id=str(XID()),
-                agent_id=user_message.agent_id,
-                chat_id=user_message.chat_id,
-                user_id=user_message.user_id,
-                author_id=user_message.agent_id,
-                author_type=AuthorType.AGENT,
-                model=agent.model,
-                thread_type=user_message.author_type,
-                reply_to=user_message.id,
-                message=content,
-                thinking=thinking,
-                input_tokens=0,
-                output_tokens=0,
-                time_cost=this_time - last,
-            )
-            last = this_time
-            post_model_message = await post_model_message_create.save()
+    import json
+    import pickle
+    import struct
 
-            error_message = await _create_system_error_response(
-                SystemMessageType.INSUFFICIENT_BALANCE,
-                user_message,
-                0,
-            )
-            return [post_model_message, error_message], last, True
-    return [], last, False
+    # Checkpoint state machine corruption
+    if isinstance(exc, InvalidUpdateError):
+        return True
+
+    # Deserialization failure in checkpoint data (pickle, JSON, msgpack paths)
+    unrecoverable_types: tuple[type[Exception], ...] = (
+        pickle.UnpicklingError,
+        struct.error,
+        json.JSONDecodeError,
+    )
+    try:
+        import ormsgpack
+
+        unrecoverable_types = (*unrecoverable_types, ormsgpack.MsgpackDecodeError)
+    except ImportError:
+        pass
+
+    if isinstance(exc, unrecoverable_types):
+        return True
+
+    return False
 
 
 async def stream_agent_raw(
@@ -763,16 +691,6 @@ async def stream_agent_raw(
                 _, payload = chunk
                 chunk = payload
 
-            if isinstance(chunk, dict) and "credit_check" in chunk:
-                credit_msgs, last = await _handle_credit_check_chunk(
-                    chunk, user_message, agent, this_time, last
-                )
-                if credit_msgs:
-                    yielded_any = True
-                    for m in credit_msgs:
-                        yield m
-                    return
-
             if not isinstance(chunk, dict):
                 continue
 
@@ -814,14 +732,7 @@ async def stream_agent_raw(
                     yielded_any = True
                     yield m
             else:
-                other_msgs, last, is_terminal = await _handle_other_chunk(
-                    chunk, user_message, agent, this_time, last
-                )
-                for m in other_msgs:
-                    yielded_any = True
-                    yield m
-                if is_terminal:
-                    return
+                pass
     except asyncio.CancelledError:
         logger.info(
             f"Agent execution cancelled for {user_message.agent_id}",
@@ -913,7 +824,15 @@ async def stream_agent_raw(
             user_message,
             time.perf_counter() - start,
         )
-        _ = await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+        # Only clear thread memory for known unrecoverable checkpoint corruption,
+        # not for transient errors (LLM API failures, network issues, etc.)
+        # that should preserve the conversation history.
+        if _is_unrecoverable_checkpoint_error(e):
+            logger.warning(
+                f"Clearing thread memory due to unrecoverable error for {user_message.agent_id}",
+                extra={"thread_id": thread_id},
+            )
+            _ = await clear_thread_memory(user_message.agent_id, user_message.chat_id)
         return
 
     # If the stream completed normally but yielded zero messages,

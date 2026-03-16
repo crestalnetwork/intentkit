@@ -89,6 +89,8 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Readonly wallet address of the agent",
     )
+    # Note: Float is used here for historical reasons. Consider migrating to
+    # Numeric(22, 4) for better precision if a schema migration is planned.
     weekly_spending_limit: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
@@ -321,6 +323,8 @@ class AgentTable(Base, AgentUserInputColumns):
         nullable=True,
         comment="Timestamp when the agent public info was last updated",
     )
+    # Note: Float is used here for historical reasons. Consider migrating to
+    # Numeric(22, 4) for better precision if a schema migration is planned.
     x402_price: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,

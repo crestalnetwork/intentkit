@@ -43,6 +43,8 @@ async def accumulate_hourly_base_llm_amount(
 
     # Use incrbyfloat for better precision with small amounts
     # Redis incrbyfloat returns float
+    # Note: incrbyfloat + expire are non-atomic; a crash between them could leave
+    # a key with no TTL. This is acceptable — the key will be overwritten next hour.
     ttl_seconds = _seconds_until_next_hour()
     total_float = await redis.incrbyfloat(key, float(amount))
     await redis.expire(key, ttl_seconds)

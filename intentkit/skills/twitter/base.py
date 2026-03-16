@@ -1,10 +1,7 @@
-from datetime import UTC, datetime, timedelta
-
 from langchain_core.tools.base import ToolException
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
-from intentkit.utils.error import RateLimitExceeded
 
 
 class TwitterBaseTool(IntentKitSkill):
@@ -56,6 +53,8 @@ class TwitterBaseTool(IntentKitSkill):
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.
 
+        Delegates to global_rate_limit with Redis atomic INCR for concurrency safety.
+
         Args:
             max_requests: Maximum number of requests allowed within the rate limit window.
             interval: Time interval in minutes for the rate limit window.
@@ -63,28 +62,7 @@ class TwitterBaseTool(IntentKitSkill):
         Raises:
             RateLimitExceeded: If the rate limit has been exceeded.
         """
-        rate_limit = await self.get_agent_skill_data("rate_limit")
-
-        current_time = datetime.now(tz=UTC)
-
-        if (
-            rate_limit
-            and rate_limit.get("reset_time")
-            and rate_limit["count"] is not None
-            and datetime.fromisoformat(rate_limit["reset_time"]) > current_time
-        ):
-            if rate_limit["count"] >= max_requests:
-                raise RateLimitExceeded("Rate limit exceeded")
-
-            rate_limit["count"] += 1
-            await self.save_agent_skill_data("rate_limit", rate_limit)
-
-            return
-
-        # If no rate limit exists or it has expired, create a new one
-        new_rate_limit = {
-            "count": 1,
-            "reset_time": (current_time + timedelta(minutes=interval)).isoformat(),
-        }
-        await self.save_agent_skill_data("rate_limit", new_rate_limit)
-        return
+        context = self.get_context()
+        agent_id = context.agent_id
+        key = f"twitter_rate_limit:{agent_id}:{self.name}"
+        await self.global_rate_limit(max_requests, interval * 60, key)

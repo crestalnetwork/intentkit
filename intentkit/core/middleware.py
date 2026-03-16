@@ -16,19 +16,15 @@ from langchain_core.messages.utils import count_tokens_approximately, trim_messa
 from langchain_core.tools import BaseTool
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
-from langgraph.types import StreamWriter
 
 if TYPE_CHECKING:
     from langchain.agents.middleware.types import ModelRequest, ModelResponse
 
-from intentkit.abstracts.graph import AgentContext, AgentError, AgentState
-from intentkit.core.credit import skill_cost
+from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.prompt import build_system_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModel, LLMProvider
-from intentkit.skills.base import get_skill_price
 
 logger = logging.getLogger(__name__)
 
@@ -190,66 +186,6 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return await handler(updated_request)
 
 
-class CreditCheckMiddleware(AgentMiddleware[AgentState, AgentContext]):
-    """Middleware that validates tool affordability before execution."""
-
-    func_accepts_config: bool
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.func_accepts_config = True
-
-    @override
-    async def aafter_model(
-        self,
-        state: AgentState,
-        runtime: Runtime[AgentContext],
-        *,
-        writer: StreamWriter | None = None,
-    ) -> dict[str, Any]:
-        context = runtime.context
-        messages = state.get("messages")
-        if not messages or len(messages) == 0:
-            raise ValueError("Missing required field `messages` in the input.")
-
-        payer = context.payer
-        if not payer:
-            return {}
-
-        msg = messages[-1]
-        agent = context.agent
-        account = await CreditAccount.get_or_create(OwnerType.USER, payer)
-        if isinstance(msg, AIMessage) and msg.tool_calls:
-            for tool_call in msg.tool_calls:
-                price = get_skill_price(tool_call["name"])
-                skill_cost_info = await skill_cost(price, payer, agent)
-                total_paid = skill_cost_info.total_amount
-                if not account.has_sufficient_credits(total_paid):
-                    error_message = (
-                        "Insufficient credits. Please top up your account. "
-                        f"You need {total_paid} credits, but you only have {account.balance} credits."
-                    )
-                    msg_id = msg.id if msg.id else ""
-                    state_update: dict[str, Any] = {
-                        "error": AgentError.INSUFFICIENT_CREDITS,
-                        "messages": [
-                            RemoveMessage(id=msg_id),
-                            AIMessage(content=error_message),
-                        ],
-                    }
-                    if writer:
-                        writer(
-                            {
-                                "credit_check": {
-                                    "error": AgentError.INSUFFICIENT_CREDITS,
-                                    "message": error_message,
-                                }
-                            }
-                        )
-                    return state_update
-        return {}
-
-
 class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that tracks the number of steps in the agent execution."""
 
@@ -265,7 +201,6 @@ class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):
 
 
 __all__ = [
-    "CreditCheckMiddleware",
     "DynamicPromptMiddleware",
     "StepTrackingMiddleware",
     "SummarizationMiddleware",
