@@ -23,8 +23,8 @@ class ScrapeAndIndexInput(BaseModel):
 
     urls: list[str] = Field(
         description="URLs to scrape (http/https).",
-        min_items=1,
-        max_items=25,
+        min_length=1,
+        max_length=25,
     )
     chunk_size: int = Field(
         description="Text chunk size for indexing.",

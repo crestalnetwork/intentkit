@@ -146,6 +146,16 @@ class TemplateTable(Base):
         nullable=True,
         comment="Enable long-term memory for the agent",
     )
+    sub_agents: Mapped[list[str] | None] = mapped_column(
+        JSONB(),
+        nullable=True,
+        comment="List of sub-agent IDs or slugs that this agent can call",
+    )
+    sub_agent_prompt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Additional instructions for how to use sub-agents",
+    )
 
     # auto timestamp
     created_at: Mapped[datetime] = mapped_column(

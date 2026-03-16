@@ -24,6 +24,16 @@ class AgentUserInput(AgentCore):
         },
     )
 
+    slug: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="URL-friendly slug for the agent. Once set, cannot be changed.",
+            min_length=2,
+            max_length=60,
+            pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$",
+        ),
+    ] = None
     # only when wallet privder is readonly
     readonly_wallet_address: Annotated[
         str | None,

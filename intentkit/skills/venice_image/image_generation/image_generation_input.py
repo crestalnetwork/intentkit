@@ -107,7 +107,11 @@ class Inpaint(BaseModel):
         description="Image target to inpaint",
     )
     strength: int = Field(
-        ..., ge=0, le=100, description="Strength of the inpainting (0-100).", example=50
+        ...,
+        ge=0,
+        le=100,
+        description="Strength of the inpainting (0-100).",
+        json_schema_extra={"example": 50},
     )
     mask: InpaintMask = Field(..., description="Mask settings for inpainting.")
 

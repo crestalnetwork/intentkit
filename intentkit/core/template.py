@@ -30,11 +30,9 @@ async def create_template_from_agent(agent: Agent) -> Template:
     Returns:
         Template: The created template with all AgentCore fields copied from the agent
     """
-    # Extract AgentCore fields from the agent (exclude slug, not applicable to templates)
+    # Extract AgentCore fields from the agent
     core_data = {}
     for field_name in AgentCore.model_fields:
-        if field_name == "slug":
-            continue
         value = getattr(agent, field_name, None)
         core_data[field_name] = value
 
@@ -70,7 +68,7 @@ async def render_agent(agent: Agent) -> Agent:
         If the agent has no template_id or the template is not found,
         the original agent is returned unchanged.
     """
-    # Get template_id from the agent
+    # Get template_id and fetch template in a single session
     # Since Agent model may not have template_id mapped, we query from DB
     async with get_session() as db:
         result = await db.execute(
@@ -81,11 +79,9 @@ async def render_agent(agent: Agent) -> Agent:
             return agent
         template_id = row[0]
 
-    if not template_id:
-        return agent
+        if not template_id:
+            return agent
 
-    # Fetch the template
-    async with get_session() as db:
         template_row = await db.scalar(
             select(TemplateTable).where(TemplateTable.id == template_id)
         )
@@ -100,10 +96,6 @@ async def render_agent(agent: Agent) -> Agent:
 
     # Overlay template's AgentCore fields onto the agent
     for field_name in AgentCore.model_fields:
-        # slug is agent-specific, not inherited from templates
-        if field_name == "slug":
-            continue
-
         template_value = getattr(template, field_name, None)
 
         # Special handling for name and picture: only overwrite if agent doesn't have them
