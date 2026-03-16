@@ -468,6 +468,32 @@ class LLMModelInfo(BaseModel):
 # Default models loaded from CSV
 AVAILABLE_MODELS = _load_default_llm_models()
 
+# USD cost per single web search call, by provider.
+# OpenRouter bundles search cost in token billing — no separate charge.
+_SEARCH_PRICE_BY_PROVIDER: dict[LLMProvider, Decimal] = {
+    LLMProvider.OPENAI: Decimal("0.01"),
+    LLMProvider.GOOGLE: Decimal("0.014"),
+    LLMProvider.XAI: Decimal("0.005"),
+}
+
+
+def get_search_price(provider: LLMProvider) -> Decimal | None:
+    """Return the per-call web search price for a provider, or None if not applicable."""
+    return _SEARCH_PRICE_BY_PROVIDER.get(provider)
+
+
+async def calculate_search_cost(provider: LLMProvider, search_count: int) -> Decimal:
+    """Calculate credit cost for web search calls based on provider pricing."""
+    price = get_search_price(provider)
+    if not price or search_count <= 0:
+        return Decimal("0")
+    global _credit_per_usdc
+    if not _credit_per_usdc:
+        _credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
+    return (_credit_per_usdc * Decimal(search_count) * price).quantize(
+        FOURPLACES, rounding=ROUND_HALF_UP
+    )
+
 
 class LLMModel(BaseModel):
     """Base model for LLM configuration."""

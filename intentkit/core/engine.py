@@ -54,7 +54,7 @@ from intentkit.models.chat import (
     ChatMessageSkillCall,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
-from intentkit.models.llm import LLMModelInfo
+from intentkit.models.llm import LLMModelInfo, LLMProvider, calculate_search_cost
 from intentkit.models.user import User
 from intentkit.skills.base import get_skill_price
 from intentkit.utils.error import IntentKitAPIError
@@ -150,6 +150,51 @@ def _extract_cached_input_tokens(msg: Any) -> int:
     if not details:
         return 0
     return details.get("cache_read", 0)
+
+
+def _count_web_searches(msg: Any, provider: LLMProvider) -> int:
+    """Count web search calls in the model response by provider."""
+    additional = getattr(msg, "additional_kwargs", None) or {}
+    response_meta = getattr(msg, "response_metadata", None) or {}
+
+    if provider == LLMProvider.OPENAI:
+        return sum(
+            1
+            for t in additional.get("tool_outputs", [])
+            if t.get("type") == "web_search_call"
+        )
+
+    if provider == LLMProvider.GOOGLE:
+        grounding = (
+            additional.get("grounding_metadata")
+            or additional.get("groundingMetadata")
+            or response_meta.get("grounding_metadata")
+            or response_meta.get("groundingMetadata")
+        )
+        if grounding:
+            logger.debug("Google grounding_metadata: %s", grounding)
+            queries = grounding.get("web_search_queries")
+            if queries is None:
+                queries = grounding.get("webSearchQueries")
+            return len(queries) if queries else 0
+        return 0
+
+    if provider == LLMProvider.XAI:
+        tool_usage = response_meta.get("server_side_tool_usage") or additional.get(
+            "server_side_tool_usage"
+        )
+        if tool_usage and isinstance(tool_usage, dict):
+            logger.debug("xAI server_side_tool_usage: %s", tool_usage)
+            # Known keys: web_search, x_search
+            count = 0
+            for key, val in tool_usage.items():
+                if "search" in key.lower():
+                    count += int(val) if isinstance(val, (int, float)) else 0
+            return count
+        return 0
+
+    # OpenRouter and others: cost bundled in token billing, no separate charge
+    return 0
 
 
 async def stream_agent(message: ChatMessageCreate):
@@ -331,15 +376,14 @@ async def _handle_model_chunk(
                 chat_message_create.cached_input_tokens,
             )
 
-            if hasattr(msg, "additional_kwargs") and msg.additional_kwargs:
-                tool_outputs = msg.additional_kwargs.get("tool_outputs", [])
-                for tool_output in tool_outputs:
-                    if tool_output.get("type") == "web_search_call":
-                        logger.info(
-                            f"[{user_message.agent_id}] Found web_search_call in additional_kwargs"
-                        )
-                        amount += 35
-                        break
+            search_count = _count_web_searches(msg, model.provider)
+            if search_count > 0:
+                search_cost = await calculate_search_cost(model.provider, search_count)
+                logger.info(
+                    f"[{user_message.agent_id}] Web search: {search_count} calls, "
+                    f"provider={model.provider.value}, cost={search_cost}"
+                )
+                amount += search_cost
             credit_event = await expense_message(
                 session,
                 payer or "",
