@@ -84,6 +84,10 @@ class RateLimitedAlertHandler(logging.Handler):
     Uses a background thread to avoid blocking the main application.
     """
 
+    # NOTE on thread safety: _dropped_count is only read/written from emit(),
+    # which is called synchronously by the logging framework. The background
+    # _worker thread only reads from _queue and never touches _dropped_count.
+    # Python's GIL ensures int read/write atomicity, so no lock is needed here.
     send_func: Callable[[str], None]
     max_messages: int
     time_window: int
@@ -109,41 +113,35 @@ class RateLimitedAlertHandler(logging.Handler):
         # Count of dropped messages (tracked locally for efficiency)
         self._dropped_count = 0
 
-        # Background send queue
-        self._queue = Queue()
+        # Background send queue (bounded to prevent OOM if worker blocks)
+        self._queue = Queue(maxsize=1000)
         self._worker = Thread(target=self._process_queue, daemon=True)
         self._worker.start()
 
     def _is_rate_limited(self) -> bool:
-        """Check if rate limit is exceeded using Redis sliding window."""
+        """Check if rate limit is exceeded using Redis sliding window.
+
+        Uses a single pipeline for atomic check-and-add to prevent TOCTOU races.
+        """
         redis = get_alert_redis()
 
         now = time.time()
         window_start = now - self.time_window
 
-        # Use Redis pipeline for atomic operations
+        # Single pipeline: cleanup, count, optimistically add, set expiry
         pipe = redis.pipeline()
-
-        # Remove old entries outside the window
         _ = pipe.zremrangebyscore(self._rate_limit_key, 0, window_start)
-
-        # Count current entries in window
         _ = pipe.zcard(self._rate_limit_key)
-
-        # Execute pipeline
+        _ = pipe.zadd(self._rate_limit_key, {str(now): now})
+        _ = pipe.expire(self._rate_limit_key, self.time_window + 10)
         results = pipe.execute()
         current_count = results[1]
 
-        # Check if limit exceeded
         if current_count >= self.max_messages:
+            # Over limit — remove the entry we just added
+            _ = redis.zrem(self._rate_limit_key, str(now))
             self._dropped_count += 1
             return True
-
-        # Add current timestamp to sorted set
-        _ = redis.zadd(self._rate_limit_key, {str(now): now})
-
-        # Set expiry on the key to auto-cleanup
-        _ = redis.expire(self._rate_limit_key, self.time_window + 10)
 
         return False
 

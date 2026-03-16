@@ -80,6 +80,10 @@ async def fetch_link_meta(url: str) -> LinkMeta | None:
         ) as client:
             resp = await client.get(url)
             resp.raise_for_status()
+            # Guard against oversized HTML responses
+            content_length = resp.headers.get("content-length")
+            if content_length and int(content_length) > 20 * 1024 * 1024:
+                return None
 
         parser = _OGParser()
         parser.feed(resp.text)

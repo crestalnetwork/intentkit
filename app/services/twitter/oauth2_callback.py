@@ -1,5 +1,6 @@
 """Twitter OAuth2 callback handler."""
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Any, cast
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -104,11 +105,13 @@ async def twitter_oauth_callback(
 
         agent_data = await AgentData.get(agent_id)
 
-        # Exchange code for tokens
+        # Exchange code for tokens (sync HTTP call, run in thread to avoid blocking)
         authorization_response = (
             f"{config.twitter_oauth2_redirect_uri}?state={state}&code={code}"
         )
-        token = oauth2_user_handler.get_token(authorization_response)
+        token = await asyncio.to_thread(
+            oauth2_user_handler.get_token, authorization_response
+        )
 
         # Store tokens in database
         agent_data.twitter_access_token = token["access_token"]
@@ -117,12 +120,12 @@ async def twitter_oauth_callback(
             token["expires_at"], tz=UTC
         )
 
-        # Get user info
-        # Get user info
+        # Get user info (sync HTTP call, run in thread to avoid blocking)
         client = tweepy.Client(
             bearer_token=token["access_token"], return_type=cast(Any, dict)
         )
-        me: dict[str, Any] | Any = client.get_me(
+        me: dict[str, Any] | Any = await asyncio.to_thread(
+            client.get_me,
             user_auth=False,
             user_fields="id,username,name,verified",
         )

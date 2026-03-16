@@ -8,11 +8,12 @@ This module handles:
 
 # pyright: reportImportCycles=false
 
+import asyncio
 import importlib
 import logging
 import time
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from langchain_core.tools import BaseTool
@@ -36,6 +37,15 @@ _agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
 
 # Global dictionaries to cache agent update times
 _agents_updated: dict[str, datetime] = {}
+
+# Track when each executor was last accessed, for TTL eviction
+_agents_accessed_at: dict[str, datetime] = {}
+
+# Lock to prevent concurrent builds for the same agent
+_build_locks: dict[str, asyncio.Lock] = {}
+_global_lock = asyncio.Lock()
+
+_EXECUTOR_CACHE_TTL = timedelta(hours=1)
 
 
 async def build_executor(
@@ -232,6 +242,27 @@ async def build_executor(
     return executor
 
 
+async def _get_build_lock(agent_id: str) -> asyncio.Lock:
+    """Get or create a per-agent build lock."""
+    async with _global_lock:
+        if agent_id not in _build_locks:
+            _build_locks[agent_id] = asyncio.Lock()
+        return _build_locks[agent_id]
+
+
+def _cleanup_cache() -> None:
+    """Evict expired executor cache entries based on last access time."""
+    now = datetime.now(timezone.utc)
+    expired_before = now - _EXECUTOR_CACHE_TTL
+    for aid in list(_agents_accessed_at):
+        if _agents_accessed_at[aid] < expired_before:
+            _agents.pop(aid, None)
+            _agents_updated.pop(aid, None)
+            _agents_accessed_at.pop(aid, None)
+            _build_locks.pop(aid, None)
+            logger.debug("Evicted expired executor cache for %s", aid)
+
+
 async def build_and_cache_executor(
     aid: str, agent: Agent, agent_data: AgentData
 ) -> None:
@@ -251,12 +282,17 @@ async def build_and_cache_executor(
     _agents[aid] = executor
     agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
     _agents_updated[aid] = max(agent_ts, agent_data.updated_at)
+    _agents_accessed_at[aid] = datetime.now(timezone.utc)
 
 
 async def agent_executor(
     agent_id: str,
 ) -> tuple[CompiledStateGraph[Any, Any, Any, Any], float]:
     start = time.perf_counter()
+
+    # Opportunistic TTL cleanup (same pattern as manager cache)
+    _cleanup_cache()
+
     agent = await get_agent(agent_id)
     if not agent:
         raise IntentKitAPIError(
@@ -275,6 +311,17 @@ async def agent_executor(
     # cold start or needs reinitialization
     cold_start_cost = 0.0
     if (agent_id not in _agents) or needs_reinit:
-        await build_and_cache_executor(agent_id, agent, agent_data)
-        cold_start_cost = time.perf_counter() - start
+        lock = await _get_build_lock(agent_id)
+        async with lock:
+            # Re-check with fresh state after acquiring lock
+            still_missing = agent_id not in _agents
+            still_stale = agent_id in _agents and (
+                agent_id not in _agents_updated
+                or updated_at != _agents_updated[agent_id]
+            )
+            if still_missing or still_stale:
+                await build_and_cache_executor(agent_id, agent, agent_data)
+                cold_start_cost = time.perf_counter() - start
+
+    _agents_accessed_at[agent_id] = datetime.now(timezone.utc)
     return _agents[agent_id], cold_start_cost

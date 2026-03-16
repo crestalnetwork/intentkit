@@ -28,6 +28,13 @@ async def check_connection(conn):
         raise
 
 
+# NOTE: Two separate connection pools are intentionally used here.
+# langgraph-checkpoint-postgres requires psycopg (psycopg3) via AsyncConnectionPool,
+# while SQLAlchemy uses asyncpg as its async driver. These are different PostgreSQL
+# client libraries with incompatible connection pool implementations, so they cannot
+# be consolidated into a single pool. This is a known architectural constraint.
+
+
 async def init_db(
     host: str | None,
     username: str | None,

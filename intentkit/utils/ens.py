@@ -82,7 +82,7 @@ def _requires_poa_middleware(network: str) -> bool:
 
 
 def _build_ens_client(rpc_url: str, network: str) -> ENS:
-    web3_client = Web3(Web3.HTTPProvider(rpc_url))
+    web3_client = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 30}))
     if _requires_poa_middleware(network):
         web3_client.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 

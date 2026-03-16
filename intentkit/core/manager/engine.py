@@ -232,6 +232,14 @@ def _cache_key(agent_id: str, user_id: str) -> str:
 
 
 def _cleanup_cache(now: datetime) -> None:
+    """Evict expired manager cache entries.
+
+    NOTE: This cleanup runs opportunistically on each request rather than via a
+    separate scheduler. This is intentional — a dedicated periodic task would be
+    too heavyweight for this use case. If no new manager requests come in, expired
+    entries simply stay in memory until the next request triggers cleanup, which
+    is an acceptable trade-off. The same pattern is used for the executor cache.
+    """
     expired_before = now - _MANAGER_CACHE_TTL
     for cache_key, cached_time in list(_manager_cached_at.items()):
         if cached_time < expired_before:

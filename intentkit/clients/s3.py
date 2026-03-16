@@ -107,40 +107,61 @@ async def store_image(url: str, key: str) -> str:
         logger.info("S3 not initialized. Returning original URL.")
         return url
 
+    max_content_length = 20 * 1024 * 1024  # 20 MB
+
     try:
-        # Download the image from the URL asynchronously
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.get(url, follow_redirects=True)
-            response.raise_for_status()
+        # Download the image from the URL asynchronously using streaming
+        # to avoid buffering oversized responses into memory.
+        async with httpx.AsyncClient(timeout=30) as http_client:
+            async with http_client.stream(
+                "GET", url, follow_redirects=True
+            ) as response:
+                response.raise_for_status()
+                content_length = response.headers.get("content-length")
+                if content_length and int(content_length) > max_content_length:
+                    raise ValueError(
+                        f"Response too large: {content_length} bytes (limit: {max_content_length})"
+                    )
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > max_content_length:
+                        raise ValueError(
+                            f"Response too large: >{max_content_length} bytes"
+                        )
+                    chunks.append(chunk)
+            content = b"".join(chunks)
+            resp_content_type = response.headers.get("Content-Type", "")
 
-            # Prepare the S3 key with prefix
-            prefixed_key = f"{_prefix}{key}"
+        # Prepare the S3 key with prefix
+        prefixed_key = f"{_prefix}{key}"
 
-            # Use BytesIO to create a file-like object that implements read
-            file_obj = BytesIO(response.content)
+        # Use BytesIO to create a file-like object that implements read
+        file_obj = BytesIO(content)
 
-            # Determine the correct content type
-            content_type = response.headers.get("Content-Type", "")
-            if content_type == "binary/octet-stream" or not content_type:
-                # Try to detect the image type from the content
-                kind = filetype.guess(response.content)
-                if kind and kind.mime.startswith("image/"):
-                    content_type = kind.mime
-                else:
-                    # Default to JPEG if detection fails
-                    content_type = "image/jpeg"
+        # Determine the correct content type
+        content_type = resp_content_type
+        if content_type == "binary/octet-stream" or not content_type:
+            # Try to detect the image type from the content
+            kind = filetype.guess(content)
+            if kind and kind.mime.startswith("image/"):
+                content_type = kind.mime
+            else:
+                # Default to JPEG if detection fails
+                content_type = "image/jpeg"
 
-            # Upload to S3
-            client.upload_fileobj(
-                file_obj,
-                _bucket,
-                prefixed_key,
-                ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
-            )
+        # Upload to S3
+        client.upload_fileobj(
+            file_obj,
+            _bucket,
+            prefixed_key,
+            ExtraArgs={"ContentType": content_type, "ContentDisposition": "inline"},
+        )
 
-            # Return the relative path
-            logger.info(f"Image uploaded successfully to {prefixed_key}")
-            return prefixed_key
+        # Return the relative path
+        logger.info(f"Image uploaded successfully to {prefixed_key}")
+        return prefixed_key
 
     except httpx.HTTPError:
         raise

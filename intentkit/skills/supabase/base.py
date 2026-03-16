@@ -1,13 +1,45 @@
+import time
+
 from langchain_core.tools import ToolException
+from supabase import Client, create_client
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.skills.base import IntentKitSkill
+
+# Cache Supabase clients per (url, key) pair with TTL
+_supabase_clients: dict[str, Client] = {}
+_supabase_clients_accessed_at: dict[str, float] = {}
+_SUPABASE_CLIENT_CACHE_TTL = 3600  # 1 hour
+
+
+def _cleanup_supabase_cache() -> None:
+    """Evict expired Supabase client cache entries."""
+    now = time.monotonic()
+    for cache_key in list(_supabase_clients_accessed_at):
+        if now - _supabase_clients_accessed_at[cache_key] > _SUPABASE_CLIENT_CACHE_TTL:
+            _supabase_clients.pop(cache_key, None)
+            _supabase_clients_accessed_at.pop(cache_key, None)
+
+
+def get_cached_supabase_client(url: str, key: str) -> Client:
+    """Get or create a cached Supabase client."""
+    _cleanup_supabase_cache()
+    cache_key = f"{url}:{key}"
+    if cache_key not in _supabase_clients:
+        _supabase_clients[cache_key] = create_client(url, key)
+    _supabase_clients_accessed_at[cache_key] = time.monotonic()
+    return _supabase_clients[cache_key]
 
 
 class SupabaseBaseTool(IntentKitSkill):
     """Base class for Supabase tools."""
 
     category: str = "supabase"
+
+    def get_supabase_client(self, context: AgentContext) -> Client:
+        """Get a cached Supabase client for the current context."""
+        url, key = self.get_supabase_config(context)
+        return get_cached_supabase_client(url, key)
 
     def get_supabase_config(self, context: AgentContext) -> tuple[str, str]:
         """Get Supabase URL and key from config.

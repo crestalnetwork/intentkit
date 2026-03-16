@@ -1,6 +1,7 @@
 import logging
 import os
 import tempfile
+import time
 from datetime import UTC, datetime, timedelta
 from typing import Any, NotRequired, TypedDict, cast, override
 from urllib.parse import urlencode
@@ -19,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 _clients_linked: dict[str, "TwitterClient"] = {}
 _clients_self_key: dict[str, "TwitterClient"] = {}
+_clients_accessed_at: dict[str, float] = {}
+_CLIENT_CACHE_TTL = 3600  # 1 hour
 
 _VERIFIER_KEY = "intentkit:twitter:code_verifier"
 _CHALLENGE_KEY = "intentkit:twitter:code_challenge"
@@ -375,12 +378,35 @@ class TwitterClient(TwitterABC):
 
         media_ids = []
         # Download the image
-        async with httpx.AsyncClient() as session:
-            response = await session.get(image_url)
-            if response.status_code == 200:
+        max_content_length = 20 * 1024 * 1024  # 20 MB
+        async with httpx.AsyncClient(timeout=30) as session:
+            # Use streaming to avoid buffering oversized responses into memory
+            async with session.stream("GET", image_url) as response:
+                if response.status_code != 200:
+                    raise ValueError(
+                        f"Failed to download image from URL: {image_url}. Status code: {response.status_code}"
+                    )
+                content_length = response.headers.get("content-length")
+                if content_length and int(content_length) > max_content_length:
+                    raise ValueError(
+                        f"Image too large: {content_length} bytes (limit: {max_content_length})"
+                    )
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > max_content_length:
+                        raise ValueError(
+                            f"Image too large: >{max_content_length} bytes"
+                        )
+                    chunks.append(chunk)
+                image_content = b"".join(chunks)
+                resp_content_type = response.headers.get("content-type", "image/jpeg")
+
+            if image_content:
                 # Create a temporary file to store the image
                 with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    _ = tmp_file.write(response.content)
+                    _ = tmp_file.write(image_content)
                     tmp_file_path = tmp_file.name
 
                 # tweepy is outdated, we need to use httpx call new API
@@ -393,24 +419,23 @@ class TwitterClient(TwitterABC):
                     # Upload to Twitter's media/upload endpoint using multipart/form-data
                     upload_url = "https://api.twitter.com/2/media/upload"
 
-                    # Get the content type from the response headers or default to image/jpeg
-                    content_type = response.headers.get("content-type", "image/jpeg")
-
-                    # Create a multipart form with the image file and required parameters
-                    files = {
-                        "media": (
-                            "image",
-                            open(tmp_file_path, "rb"),
-                            content_type,
-                        )
-                    }
+                    content_type = resp_content_type
 
                     # Add required parameters according to new API
                     data = {"media_category": "tweet_image", "media_type": content_type}
 
-                    upload_response = await session.post(
-                        upload_url, headers=headers, files=files, data=data
-                    )
+                    # Use context manager to ensure file handle is properly closed
+                    with open(tmp_file_path, "rb") as f:
+                        files = {
+                            "media": (
+                                "image",
+                                f,
+                                content_type,
+                            )
+                        }
+                        upload_response = await session.post(
+                            upload_url, headers=headers, files=files, data=data
+                        )
 
                     if upload_response.status_code == 200:
                         media_data = upload_response.json()
@@ -430,7 +455,7 @@ class TwitterClient(TwitterABC):
                         os.unlink(tmp_file_path)
             else:
                 raise ValueError(
-                    f"Failed to download image from URL: {image_url}. Status code: {response.status_code}"
+                    f"Failed to download image from URL: {image_url}. Empty content."
                 )
 
         return media_ids
@@ -440,13 +465,26 @@ def _is_self_key(config: dict[str, Any]) -> bool:
     return config.get("api_key_provider") == "agent_owner"
 
 
+def _cleanup_client_cache() -> None:
+    """Evict expired Twitter client cache entries."""
+    now = time.monotonic()
+    for aid in list(_clients_accessed_at):
+        if now - _clients_accessed_at[aid] > _CLIENT_CACHE_TTL:
+            _clients_linked.pop(aid, None)
+            _clients_self_key.pop(aid, None)
+            _clients_accessed_at.pop(aid, None)
+
+
 def get_twitter_client(agent_id: str, config: dict[str, Any]) -> "TwitterClient":
+    _cleanup_client_cache()
     if _is_self_key(config):
         if agent_id not in _clients_self_key:
             _clients_self_key[agent_id] = TwitterClient(agent_id, config)
+        _clients_accessed_at[agent_id] = time.monotonic()
         return _clients_self_key[agent_id]
     if agent_id not in _clients_linked:
         _clients_linked[agent_id] = TwitterClient(agent_id, config)
+    _clients_accessed_at[agent_id] = time.monotonic()
     return _clients_linked[agent_id]
 
 

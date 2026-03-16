@@ -11,7 +11,9 @@ from slack_sdk.errors import SlackApiError
 
 logger = logging.getLogger(__name__)
 
-# Global variables for Slack configuration
+# Global variables for Slack configuration.
+# NOTE on thread safety: These are only written once during init_slack() at startup
+# and read-only afterward. Python's GIL ensures safe reads, so no lock is needed.
 _slack_token: str | None = None
 _slack_channel: str | None = None
 _slack_client: WebClient | None = None

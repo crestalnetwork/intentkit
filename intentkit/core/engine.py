@@ -61,6 +61,9 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+# Cap raw_chunks to prevent unbounded memory growth in super_mode
+_MAX_RAW_CHUNKS = 200
+
 
 def _extract_thinking_content(msg: Any) -> str | None:
     """Extract reasoning/thinking content from a LangChain AIMessage.
@@ -673,7 +676,7 @@ async def stream_agent_raw(
 
     # run
     yielded_any = False
-    raw_chunks = []
+    raw_chunks: list[Any] = []
     cached_tool_step = None
     in_tools_phase = False
     try:
@@ -685,7 +688,8 @@ async def stream_agent_raw(
         ):
             this_time = time.perf_counter()
             logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
-            raw_chunks.append(chunk)
+            if len(raw_chunks) < _MAX_RAW_CHUNKS:
+                raw_chunks.append(chunk)
 
             if isinstance(chunk, tuple) and len(chunk) == 2:
                 _, payload = chunk

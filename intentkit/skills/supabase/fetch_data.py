@@ -3,7 +3,6 @@ from typing import Any
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
-from supabase import Client, create_client
 
 from intentkit.skills.supabase.base import SupabaseBaseTool
 
@@ -56,10 +55,7 @@ class SupabaseFetchData(SupabaseBaseTool):
     ):
         try:
             context = self.get_context()
-            supabase_url, supabase_key = self.get_supabase_config(context)
-
-            # Create Supabase client
-            supabase: Client = create_client(supabase_url, supabase_key)
+            supabase = self.get_supabase_client(context)
 
             # Start building the query
             query = supabase.table(table).select(columns)

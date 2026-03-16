@@ -9,7 +9,9 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Global variables for Telegram configuration
+# Global variables for Telegram configuration.
+# NOTE on thread safety: These are only written once during init_telegram() at startup
+# and read-only afterward. Python's GIL ensures safe reads, so no lock is needed.
 _telegram_bot_token: str | None = None
 _telegram_chat_id: str | None = None
 _telegram_client: httpx.Client | None = None
