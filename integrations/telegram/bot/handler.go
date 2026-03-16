@@ -16,7 +16,7 @@ func (m *Manager) handleMessage(bot *telego.Bot, message telego.Message, agentID
         return
     }
 	    
-		slog.Info("Received message", "agent_id", agentID, "chat_id", message.Chat.ID, "text", message.Text)
+		slog.Info("Received message", "agent_id", agentID, "chat_id", message.Chat.ID)
 
         // Show typing action
         _ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))

@@ -115,9 +115,7 @@ class BotPool:
             set_cache_bot(bot_item)
             set_cache_agent(agent_item)
 
-            logger.info(
-                f"bot for agent {agent.id} with token {bot_item.token} initialized..."
-            )
+            logger.info(f"bot for agent {agent.id} initialized...")
 
         except ValueError as e:
             logger.warning(
@@ -155,7 +153,7 @@ class BotPool:
             for _, v in get_all_agent_bots().items():
                 if v.bot_token == new_token:
                     raise Exception(
-                        f"there is an existing bot for agent {agent.id} with token {v.bot_token}."
+                        f"there is an existing bot for agent {agent.id} with a duplicate token."
                     )
 
             new_bot_item = BotPoolItem(agent)
@@ -193,9 +191,7 @@ class BotPool:
             set_cache_bot(new_bot_item)
             set_cache_agent(new_agent_item)
 
-            logger.info(
-                f"bot for agent {agent.id} with token {old_agent_item.bot_token} changed to {new_bot_item.token}..."
-            )
+            logger.info(f"bot for agent {agent.id} token changed...")
             new_bot_success = True
         except ValueError as e:
             logger.warning(
@@ -233,7 +229,7 @@ class BotPool:
             delete_cache_bot(token)
             delete_cache_agent(agent_id)
 
-            logger.info(f"Bot with token {token} for agent {agent_id} stopped...")
+            logger.info(f"Bot for agent {agent_id} stopped...")
         except Exception as e:
             logger.error(f"failed to stop the bot for agent {agent_id}: {e}")
         finally:
@@ -274,9 +270,7 @@ class BotPool:
             # if old_bot_item.kind != agent.telegram_config.get("kind"):
             #     await self.stop_bot(agent.id, token)
             #     await self.init_new_bot(agent)
-            logger.info(
-                f"configurations of the bot with token {token} for agent {agent.id} updated..."
-            )
+            logger.info(f"configurations of the bot for agent {agent.id} updated...")
 
         except ValueError as e:
             logger.warning(

@@ -5,7 +5,7 @@ import httpx
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.skills.http.base import HttpBaseTool
+from intentkit.skills.http.base import HttpBaseTool, truncate_response, validate_url
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ class HttpGet(HttpBaseTool):
             str: The response content as text, or error message if request fails.
         """
         try:
+            validate_url(url)
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     url=url,
@@ -79,7 +80,7 @@ class HttpGet(HttpBaseTool):
                 response.raise_for_status()
 
                 # Return response content
-                return f"Status: {response.status_code}\nContent: {response.text}"
+                return f"Status: {response.status_code}\nContent: {truncate_response(response.text)}"
 
         except httpx.TimeoutException as exc:
             raise ToolException(
@@ -87,7 +88,7 @@ class HttpGet(HttpBaseTool):
             ) from exc
         except httpx.HTTPStatusError as exc:
             raise ToolException(
-                f"HTTP {exc.response.status_code} - {exc.response.text}"
+                f"HTTP {exc.response.status_code} - {truncate_response(exc.response.text)}"
             ) from exc
         except httpx.RequestError as exc:
             raise ToolException(f"Failed to connect to {url} - {str(exc)}") from exc

@@ -18,18 +18,25 @@ from app.services.twitter.oauth2 import oauth2_user_handler
 twitter_callback_router = APIRouter(prefix="/callback/auth", tags=["Callback"])
 
 
-def is_valid_url(url: str) -> bool:
-    """Check if a URL is valid.
+def is_valid_redirect_url(url: str) -> bool:
+    """Check if a redirect URL is valid and belongs to the configured APP_BASE_URL.
+
+    Only allows redirects to URLs under the configured APP_BASE_URL to prevent
+    open redirect attacks.
 
     Args:
         url: URL to validate
 
     Returns:
-        bool: True if URL is valid, False otherwise
+        bool: True if URL is valid and under APP_BASE_URL, False otherwise
     """
     try:
         result = urlparse(url)
-        return all([result.scheme, result.netloc])
+        if not all([result.scheme, result.netloc]):
+            return False
+        base = urlparse(config.app_base_url)
+        # Redirect URI must share the same scheme and host as APP_BASE_URL
+        return result.scheme == base.scheme and result.netloc == base.netloc
     except (ValueError, AttributeError, TypeError):
         return False
 
@@ -133,7 +140,7 @@ async def twitter_oauth_callback(
         await agent_data.save()
 
         # Handle response based on redirect_uri
-        if redirect_uri and is_valid_url(redirect_uri):
+        if redirect_uri and is_valid_redirect_url(redirect_uri):
             params = {"twitter_auth": "success", "username": username}
             redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(params)}"
             return RedirectResponse(url=redirect_url)
@@ -147,7 +154,7 @@ async def twitter_oauth_callback(
             )
     except IntentKitAPIError as http_exc:
         # Handle error response
-        if redirect_uri and is_valid_url(redirect_uri):
+        if redirect_uri and is_valid_redirect_url(redirect_uri):
             params = {"twitter_auth": "failed", "error": str(http_exc.message)}
             redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(params)}"
             return RedirectResponse(url=redirect_url)
@@ -155,7 +162,7 @@ async def twitter_oauth_callback(
         raise http_exc
     except Exception as e:
         # Handle error response for unexpected errors
-        if redirect_uri and is_valid_url(redirect_uri):
+        if redirect_uri and is_valid_redirect_url(redirect_uri):
             params = {"twitter_auth": "failed", "error": str(e)}
             redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(params)}"
             return RedirectResponse(url=redirect_url)

@@ -55,7 +55,9 @@ class SupabaseBaseTool(IntentKitSkill):
 
         config = context.agent.skill_config(self.category)
 
-        # In public mode, check if table is in allowed list
+        # In public mode, check if table is in allowed list.
+        # NOTE: Empty/unset allowlist intentionally means allow-all — the agent
+        # owner opts in by leaving it blank, so no default-deny is needed here.
         public_write_tables = config.get("public_write_tables", "")
         if not public_write_tables:
             return

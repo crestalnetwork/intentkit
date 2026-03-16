@@ -111,11 +111,13 @@ _ = agent_app.exception_handler(StarletteHTTPException)(http_exception_handler)
 _ = agent_app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware to the Agent API sub-application
+# NOTE: Permissive CORS is intentional — the agent API is designed to be
+# called from any origin (third-party frontends, embedded widgets, etc.).
 _ = agent_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Add routers to the Agent API sub-application
@@ -184,17 +186,21 @@ _ = app.exception_handler(StarletteHTTPException)(http_exception_handler)
 _ = app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware
+# NOTE: Permissive CORS is intentional — same reason as agent_app above.
 _ = app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 # Mount the Agent API sub-application
 _ = app.mount("/v1", agent_app)
 
+# NOTE: Local/core routes are intentionally unauthenticated.
+# They are designed for local development and debugging only.
+# In production, these should not be exposed to the public internet.
 _ = app.include_router(agent_router)
 _ = app.include_router(autonomous_router)
 _ = app.include_router(chat_router)

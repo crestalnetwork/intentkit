@@ -55,7 +55,6 @@ class EnsoGetNetworks(EnsoBaseTool):
 
         context = self.get_context()
         api_token = self.get_api_token(context)
-        logger.debug(f"api_token: {api_token}")
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {api_token}",

@@ -679,12 +679,22 @@ async def get_chat(
 async def update_chat(
     request: ChatUpdateRequest,
     chat_id: str = Path(..., description="Chat ID"),
+    user_id: str | None = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
     agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Update a chat thread."""
     agent_id = agent_token.agent_id
+    agent = await get_agent(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
+        )
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != agent_id:
+    if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
         raise IntentKitAPIError(
             status_code=404, key="ChatNotFound", message="Chat not found"
         )
@@ -705,12 +715,22 @@ async def update_chat(
 )
 async def delete_chat(
     chat_id: str = Path(..., description="Chat ID"),
+    user_id: str | None = Query(
+        None,
+        description="User ID (optional). When provided (whether API key uses pk or sk), only public skills will be accessible.",
+    ),
     agent_token: AgentToken = Depends(verify_agent_token),
 ):
     """Delete a chat thread."""
     agent_id = agent_token.agent_id
+    agent = await get_agent(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="AgentNotFound", message=f"Agent {agent_id} not found"
+        )
+    real_user_id = get_real_user_id(agent_token, user_id, agent.owner)
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != agent_id:
+    if not chat or chat.agent_id != agent_id or chat.user_id != real_user_id:
         raise IntentKitAPIError(
             status_code=404, key="ChatNotFound", message="Chat not found"
         )

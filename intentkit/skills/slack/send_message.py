@@ -47,9 +47,8 @@ class SlackSendMessage(SlackBaseTool):
         Raises:
             Exception: If an error occurs sending the message
         """
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        client = self.get_client(skill_config.get("slack_bot_token"))
+        token = self.get_api_key()
+        client = self.get_client(token)
 
         try:
             # Prepare message parameters
