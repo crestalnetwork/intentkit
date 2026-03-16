@@ -25,8 +25,10 @@ import httpcore
 import httpx
 from epyxid import XID
 from langchain_core.messages import (
+    AIMessage,
     BaseMessage,
     HumanMessage,
+    RemoveMessage,
 )
 from langchain_core.runnables import RunnableConfig
 from langgraph.errors import GraphRecursionError
@@ -829,8 +831,30 @@ async def stream_agent_raw(
         )
         if in_tools_phase:
             # Cancelled during tool execution — checkpoint has tool_calls without results.
-            # Clear to prevent re-execution of tools on next message.
-            await clear_thread_memory(user_message.agent_id, user_message.chat_id)
+            # Remove the last AIMessage (with tool_calls) to prevent re-execution on next message.
+            try:
+                snap = await executor.aget_state(stream_config)
+                msgs = snap.values.get("messages") if snap.values else None
+                if msgs and isinstance(msgs[-1], AIMessage) and msgs[-1].tool_calls:
+                    await executor.aupdate_state(
+                        stream_config,
+                        {"messages": [RemoveMessage(id=msgs[-1].id)]},
+                    )
+                    logger.info(
+                        f"Removed dangling tool_call message for {user_message.agent_id}",
+                        extra={"thread_id": thread_id},
+                    )
+                else:
+                    logger.info(
+                        f"No dangling tool_call found for {user_message.agent_id}, skipping cleanup",
+                        extra={"thread_id": thread_id},
+                    )
+            except Exception:
+                logger.warning(
+                    f"Failed to remove dangling tool_call message, clearing thread for {user_message.agent_id}",
+                    extra={"thread_id": thread_id},
+                    exc_info=True,
+                )
         # Save cancellation message directly (stream is already dead, can't yield)
         cancel_message_create = ChatMessageCreate(
             id=str(XID()),
