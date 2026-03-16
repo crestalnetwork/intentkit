@@ -14,6 +14,9 @@ from intentkit.models.chat import AuthorType, ChatMessageCreate
 # Default timeout for calling another agent (in seconds)
 CALL_AGENT_TIMEOUT = 300  # 3 minutes
 
+# Maximum recursion depth for nested call_agent invocations
+MAX_CALL_DEPTH = 5
+
 
 class CallAgentInput(BaseModel):
     """Input schema for calling another agent."""
@@ -58,13 +61,20 @@ class CallAgentSkill(SystemSkill):
         from intentkit.core.engine import execute_agent
 
         try:
+            context = self.get_context()
+
+            # Check recursion depth before proceeding
+            if context.call_depth >= MAX_CALL_DEPTH:
+                raise ToolException(
+                    f"Maximum call_agent recursion depth ({MAX_CALL_DEPTH}) exceeded. "
+                    "Cannot call another agent from this depth."
+                )
+
             # Resolve agent_id (could be a slug)
             resolved_agent = await get_agent_by_id_or_slug(agent_id)
             if not resolved_agent:
                 raise ToolException(f"Agent '{agent_id}' not found")
             actual_agent_id = resolved_agent.id
-
-            context = self.get_context()
 
             # Enforce sub-agents whitelist
             allowed = context.agent.sub_agents
@@ -90,6 +100,7 @@ class CallAgentSkill(SystemSkill):
                 author_type=AuthorType.INTERNAL,
                 thread_type=context.entrypoint,
                 message=message,
+                call_depth=context.call_depth + 1,
             )
 
             # Execute the called agent with a timeout

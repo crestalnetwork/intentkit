@@ -1,10 +1,13 @@
 """OpenGraph metadata fetcher utility."""
 
+import logging
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class LinkMeta(BaseModel):
@@ -109,4 +112,5 @@ async def fetch_link_meta(url: str) -> LinkMeta | None:
             favicon=favicon,
         )
     except Exception:
+        logger.warning("Failed to fetch OpenGraph metadata for %s", url, exc_info=True)
         return None

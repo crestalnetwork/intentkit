@@ -14,7 +14,7 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
@@ -29,6 +29,9 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+# Process-lifetime cache for the credit-per-USDC rate fetched from AppSetting.
+# This value is loaded on first use and never refreshed until the process restarts,
+# which is acceptable because rate changes are infrequent and a restart picks them up.
 _credit_per_usdc = None
 FOURPLACES = Decimal("0.0001")
 
@@ -277,7 +280,6 @@ class LLMModelInfo(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     id: str
@@ -331,6 +333,11 @@ class LLMModelInfo(BaseModel):
             default_factory=lambda: datetime.now(UTC),
         ),
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @staticmethod
     async def get(model_id: str) -> "LLMModelInfo":

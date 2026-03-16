@@ -672,6 +672,7 @@ async def stream_agent_raw(
         is_private=is_private,
         payer=payer if payment_enabled else None,
         start_message_id=user_message.id,
+        call_depth=message.call_depth,
     )
 
     # run

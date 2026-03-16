@@ -77,7 +77,7 @@ def test_pick_default_model_falls_to_deepseek():
         assert pick_default_model() == "deepseek-chat"
 
 
-def test_pick_default_model_raises_when_none():
+def test_pick_default_model_fallback_when_none():
     with patch("intentkit.models.llm_picker.config") as mock_config:
         mock_config.google_api_key = None
         mock_config.openai_api_key = None
@@ -85,5 +85,5 @@ def test_pick_default_model_raises_when_none():
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
 
-        with pytest.raises(RuntimeError):
-            _ = pick_default_model()
+        result = pick_default_model()
+        assert result == "gpt-5-mini"

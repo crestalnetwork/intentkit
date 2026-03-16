@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from intentkit.clients.s3_setup import ensure_bucket_exists_and_public
 from intentkit.config.config import config
 from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
@@ -31,7 +32,6 @@ from intentkit.utils.error import (
     intentkit_other_error_handler,
     request_validation_exception_handler,
 )
-from intentkit.utils.s3_setup import ensure_bucket_exists_and_public
 
 from app.entrypoints.agent_api import agent_api_router
 from app.local import (

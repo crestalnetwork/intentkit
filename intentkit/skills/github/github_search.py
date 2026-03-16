@@ -98,7 +98,7 @@ class GitHubSearch(GitHubBaseTool):
                     logger.warning(
                         f"github_search.py: Rate limit reached. Remaining: {rate_limit}, Reset: {reset_time}"
                     )
-                    return (
+                    raise ToolException(
                         "GitHub API rate limit reached. Please try again in a few minutes. "
                         "The rate limit resets every hour for unauthenticated requests."
                     )
@@ -167,9 +167,15 @@ class GitHubSearch(GitHubBaseTool):
 
         except httpx.TimeoutException:
             logger.error("github_search.py: Request timed out")
-            return "The request to GitHub timed out. Please try again later."
+            raise ToolException(
+                "The request to GitHub timed out. Please try again later."
+            )
+        except ToolException:
+            raise
         except Exception as e:
             logger.error(
                 f"github_search.py: Error searching GitHub: {e}", exc_info=True
             )
-            return "An error occurred while searching GitHub. Please try again later."
+            raise ToolException(
+                "An error occurred while searching GitHub. Please try again later."
+            )

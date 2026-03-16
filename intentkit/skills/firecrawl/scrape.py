@@ -282,29 +282,23 @@ class FirecrawlScrape(FirecrawlBaseTool):
                             if existing_vector_store:
                                 # Get all existing documents and filter out those from the same URL
                                 try:
-                                    # Try to access documents directly if available
-                                    if hasattr(
-                                        existing_vector_store, "docstore"
-                                    ) and hasattr(
-                                        existing_vector_store.docstore, "_dict"
-                                    ):
-                                        # Access FAISS documents directly
-                                        all_docs = list(
-                                            existing_vector_store.docstore._dict.values()
-                                        )
-                                    else:
-                                        # Fallback: use a reasonable k value for similarity search
-                                        # Use a dummy query to retrieve documents
-                                        all_docs = existing_vector_store.similarity_search(
-                                            "dummy",  # Use a dummy query instead of empty string
-                                            k=1000,  # Use reasonable upper bound
-                                        )
-
-                                    # Filter out documents from the same URL
+                                    # Retrieve all documents via public API:
+                                    # index_to_docstore_id maps FAISS index
+                                    # positions to docstore IDs, and
+                                    # docstore.search() looks up by ID.
+                                    # Single pass: look up each doc by ID,
+                                    # keep only valid Documents not from this URL.
                                     preserved_docs = [
                                         doc
-                                        for doc in all_docs
-                                        if doc.metadata.get("source") != url
+                                        for doc_id in existing_vector_store.index_to_docstore_id.values()
+                                        if isinstance(
+                                            doc
+                                            := existing_vector_store.docstore.search(
+                                                doc_id
+                                            ),
+                                            Document,
+                                        )
+                                        and doc.metadata.get("source") != url
                                     ]
 
                                     logger.info(
@@ -419,9 +413,11 @@ class FirecrawlScrape(FirecrawlBaseTool):
 
         except httpx.TimeoutException:
             logger.error(f"firecrawl_scrape: Timeout scraping URL: {url}")
-            return (
+            raise ToolException(
                 f"Timeout error: The request to scrape {url} took too long to complete."
             )
+        except ToolException:
+            raise
         except Exception as e:
             logger.error(f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True)
-            return f"An error occurred while scraping the URL: {str(e)}"
+            raise ToolException(f"An error occurred while scraping the URL: {str(e)}")

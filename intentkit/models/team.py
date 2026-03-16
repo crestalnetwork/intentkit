@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import DateTime, ForeignKey, Index, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -142,7 +142,6 @@ class Team(TeamCreate):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     created_at: Annotated[
@@ -151,6 +150,11 @@ class Team(TeamCreate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this team was last updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @classmethod
     async def get(cls, team_id: str) -> "Team | None":

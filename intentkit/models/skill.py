@@ -5,7 +5,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Annotated, Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import (
     DateTime,
     Integer,
@@ -123,7 +123,6 @@ class AgentSkillData(AgentSkillDataCreate):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     size: Annotated[int, Field(description="Size of the data in bytes")]
@@ -133,6 +132,11 @@ class AgentSkillData(AgentSkillDataCreate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this data was updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @classmethod
     async def total_size(cls, agent_id: str) -> int:
@@ -281,7 +285,6 @@ class ChatSkillData(ChatSkillDataCreate):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     created_at: Annotated[
@@ -290,6 +293,11 @@ class ChatSkillData(ChatSkillDataCreate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this data was updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @classmethod
     async def get(cls, chat_id: str, skill: str, key: str) -> dict[str, Any] | None:

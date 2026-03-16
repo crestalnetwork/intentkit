@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
 from intentkit.models.agent import AgentCore
+from intentkit.models.llm_picker import pick_default_model
 
 
 class TemplateTable(Base):
@@ -70,7 +71,7 @@ class TemplateTable(Base):
     model: Mapped[str] = mapped_column(
         String,
         nullable=False,
-        default="gpt-5-mini",
+        default=pick_default_model,
         comment="LLM of the template",
     )
     prompt: Mapped[str | None] = mapped_column(

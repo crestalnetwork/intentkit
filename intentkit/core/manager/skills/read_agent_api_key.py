@@ -21,7 +21,6 @@ class ReadAgentApiKeyOutput(BaseModel):
     api_key_public: str = Field(description="The public API key for the agent (pk-)")
     is_new: bool = Field(description="Whether new API keys were generated")
     open_api_base_url: str = Field(description="The base URL for the API")
-    api_endpoint: str = Field(description="The full API endpoint URL")
 
 
 class ReadAgentApiKey(ManagerSkill):
@@ -33,9 +32,8 @@ class ReadAgentApiKey(ManagerSkill):
         "Returns both private (sk-) and public (pk-) API keys.  "
         "Private API key can access all skills (public and owner-only).  "
         "Public API key can only access public skills.  "
-        "Make sure to tell the user the base URL and endpoint.  "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
-        "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
+        "Make sure to tell the user the base URL.  "
+        "Always use markdown code block to wrap the API keys and base URL.  "
         "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
     args_schema: ArgsSchema | None = ReadAgentApiKeyInput
@@ -52,7 +50,6 @@ class ReadAgentApiKey(ManagerSkill):
 
         # Get API base URL from system config
         open_api_base_url = config.open_api_base_url
-        api_endpoint = f"{open_api_base_url}/v1/chat/completions"
 
         # Check if API keys exist
         if agent_data.api_key and agent_data.api_key_public:
@@ -61,7 +58,6 @@ class ReadAgentApiKey(ManagerSkill):
                 api_key_public=agent_data.api_key_public,
                 is_new=False,
                 open_api_base_url=open_api_base_url,
-                api_endpoint=api_endpoint,
             )
 
         # Generate new API keys if any are missing
@@ -85,7 +81,6 @@ class ReadAgentApiKey(ManagerSkill):
             api_key_public=new_public_api_key,
             is_new=bool(update_data),
             open_api_base_url=open_api_base_url,
-            api_endpoint=api_endpoint,
         )
 
 

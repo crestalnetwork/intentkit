@@ -4,7 +4,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Annotated, Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from sqlalchemy import DateTime, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -139,9 +139,6 @@ class AppSetting(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat(timespec="milliseconds"),
-        },
     )
 
     key: Annotated[str, Field(description="Setting key")]
@@ -152,6 +149,11 @@ class AppSetting(BaseModel):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this setting was last updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @staticmethod
     async def payment() -> PaymentSettings:

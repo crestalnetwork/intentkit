@@ -39,6 +39,7 @@ class AgentContext(BaseModel):
     thinking: bool = False
     payer: str | None = None
     start_message_id: str = ""
+    call_depth: int = 0
 
     @property
     def agent(self) -> Agent:

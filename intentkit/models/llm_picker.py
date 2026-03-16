@@ -70,7 +70,9 @@ def pick_default_model() -> str:
         if provider == LLMProvider.DEEPSEEK and config.deepseek_api_key:
             return model_id
 
-    raise RuntimeError("No default model available: missing all required API keys")
+    # Fallback to a reasonable default rather than crashing, since this is
+    # also used as a SQLAlchemy column default for TemplateTable.
+    return "gpt-5-mini"
 
 
 def pick_long_context_model() -> str:

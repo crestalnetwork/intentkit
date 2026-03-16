@@ -1,5 +1,9 @@
 """Utility exports for IntentKit."""
 
-from intentkit.utils.ens import resolve_ens_to_address
 
-__all__ = ["resolve_ens_to_address"]
+def __getattr__(name: str):
+    if name == "resolve_ens_to_address":
+        from intentkit.clients.web3_ens import resolve_ens_to_address
+
+        return resolve_ens_to_address
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

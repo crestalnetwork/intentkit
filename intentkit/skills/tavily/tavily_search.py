@@ -135,6 +135,10 @@ class TavilySearch(TavilyBaseTool):
 
                 return formatted_results.strip()
 
+        except ToolException:
+            raise
         except Exception as e:
             logger.error(f"tavily.py: Error searching web: {e}", exc_info=True)
-            return "An error occurred while searching the web. Please try again later."
+            raise ToolException(
+                "An error occurred while searching the web. Please try again later."
+            )

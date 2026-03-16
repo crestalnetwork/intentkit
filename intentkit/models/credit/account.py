@@ -4,7 +4,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from sqlalchemy import (
     DateTime,
     Index,
@@ -159,9 +159,6 @@ class CreditAccount(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat(timespec="milliseconds"),
-        },
     )
 
     id: Annotated[
@@ -275,6 +272,13 @@ class CreditAccount(BaseModel):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this account was last updated")
     ]
+
+    @field_serializer("income_at", "expense_at", "created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime | None) -> str | None:
+        if v is None:
+            return None
+        return v.isoformat(timespec="milliseconds")
 
     @field_validator(
         "free_quota",

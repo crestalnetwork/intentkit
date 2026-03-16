@@ -120,12 +120,6 @@ Example error response:
 }
 ```
 
-## OpenAI Compatible API
-
-IntentKit also provides an OpenAI-compatible API endpoint that allows you to use your agent with any OpenAI-compatible client or SDK. This is particularly useful for integrating with existing applications that already use the OpenAI API format.
-
-For detailed, see the [OpenAI Compatible API Documentation](openai_compatible.md).
-
 ## API Reference
 
 For complete API documentation with interactive examples, visit:

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar, NotRequired, TypedDict, final, override
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import (
     DateTime,
     Float,
@@ -321,6 +321,14 @@ class ChatMessageCreate(BaseModel):
         SystemMessageType | None,
         Field(None, description="Optional error type, used when author_type is system"),
     ] = None
+    call_depth: Annotated[
+        int,
+        Field(
+            0,
+            description="Current call_agent recursion depth (not persisted to DB)",
+            exclude=True,
+        ),
+    ] = 0
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
@@ -386,15 +394,17 @@ class ChatMessage(ChatMessageCreate):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat(timespec="milliseconds"),
-        },
         from_attributes=True,
     )
 
     created_at: Annotated[
         datetime, Field(description="Timestamp when this message was created")
     ]
+
+    @field_serializer("created_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @override
     def __str__(self):
@@ -534,7 +544,6 @@ class ChatCreate(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     id: Annotated[
@@ -572,7 +581,6 @@ class Chat(ChatCreate):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     created_at: Annotated[
@@ -581,6 +589,11 @@ class Chat(ChatCreate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this chat was updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     rounds: int
     summary: str

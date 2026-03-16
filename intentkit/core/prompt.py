@@ -349,16 +349,23 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> str | 
     entrypoint_prompt = None
 
     # Handle social media entrypoints
+    # Append both system-level and agent-level prompts when both are set,
+    # rather than letting the agent-level prompt silently overwrite the system one.
+    def _append(existing: str | None, addition: str) -> str:
+        return (existing or "") + "\n\n" + addition
+
     if entrypoint == AuthorType.TELEGRAM.value:
         if config.tg_system_prompt:
-            entrypoint_prompt = "\n\n" + config.tg_system_prompt
+            entrypoint_prompt = _append(entrypoint_prompt, config.tg_system_prompt)
         if agent.telegram_entrypoint_prompt:
-            entrypoint_prompt = "\n\n" + agent.telegram_entrypoint_prompt
+            entrypoint_prompt = _append(
+                entrypoint_prompt, agent.telegram_entrypoint_prompt
+            )
     elif entrypoint == AuthorType.XMTP.value:
         if config.xmtp_system_prompt:
-            entrypoint_prompt = "\n\n" + config.xmtp_system_prompt
+            entrypoint_prompt = _append(entrypoint_prompt, config.xmtp_system_prompt)
         if agent.xmtp_entrypoint_prompt:
-            entrypoint_prompt = "\n\n" + agent.xmtp_entrypoint_prompt
+            entrypoint_prompt = _append(entrypoint_prompt, agent.xmtp_entrypoint_prompt)
     elif entrypoint == AuthorType.TRIGGER.value:
         entrypoint_prompt = "\n\n" + _build_autonomous_task_prompt(agent, context)
 

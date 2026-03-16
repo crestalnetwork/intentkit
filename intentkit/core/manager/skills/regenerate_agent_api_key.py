@@ -23,7 +23,6 @@ class RegenerateAgentApiKeyOutput(BaseModel):
     )
     previous_key_existed: bool = Field(description="Whether previous API keys existed")
     open_api_base_url: str = Field(description="The base URL for the API")
-    api_endpoint: str = Field(description="The full API endpoint URL")
 
 
 class RegenerateAgentApiKey(ManagerSkill):
@@ -35,9 +34,8 @@ class RegenerateAgentApiKey(ManagerSkill):
         "Generates both private (sk-) and public (pk-) API keys.  "
         "Private API key can access all skills (public and owner-only).  "
         "Public API key can only access public skills.  "
-        "Make sure to tell the user the base URL and endpoint.  "
-        "Tell user in OpenAI sdk or Desktop client like Cherry Studio, input the base URL and API key.  "
-        "Always use markdown code block to wrap the API keys, base URL, and endpoint.  "
+        "Make sure to tell the user the base URL.  "
+        "Always use markdown code block to wrap the API keys and base URL.  "
         "Tell user to check more doc in https://github.com/crestalnetwork/intentkit/blob/main/docs/agent_api.md "
     )
     args_schema: ArgsSchema | None = RegenerateAgentApiKeyInput
@@ -54,7 +52,6 @@ class RegenerateAgentApiKey(ManagerSkill):
 
         # Get API base URL from system config
         open_api_base_url = config.open_api_base_url
-        api_endpoint = f"{open_api_base_url}/v1/chat/completions"
 
         # Check if previous API keys existed
         previous_key_existed = bool(agent_data.api_key or agent_data.api_key_public)
@@ -73,7 +70,6 @@ class RegenerateAgentApiKey(ManagerSkill):
             api_key_public=new_public_api_key,
             previous_key_existed=previous_key_existed,
             open_api_base_url=open_api_base_url,
-            api_endpoint=api_endpoint,
         )
 
 

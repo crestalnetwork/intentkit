@@ -318,7 +318,9 @@ def build_skill_prices() -> None:
         try:
             importlib.import_module(module_info.name)
         except Exception:
-            pass
+            logging.getLogger(__name__).warning(
+                "Failed to import skill module %s", module_info.name, exc_info=True
+            )
 
     # Collect prices from all subclasses
     for cls in _collect_subclasses(IntentKitSkill):

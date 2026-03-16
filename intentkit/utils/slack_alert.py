@@ -30,11 +30,23 @@ def init_slack(token: str, channel: str) -> None:
     Raises:
         ValueError: If token or channel is empty
     """
+    if not token or not channel:
+        raise ValueError("token and channel are required")
 
     global _slack_token, _slack_channel, _slack_client
     _slack_token = token
     _slack_channel = channel
     _slack_client = WebClient(token=token)
+
+
+def cleanup_slack() -> None:
+    """
+    Cleanup Slack client resources and reset configuration.
+    """
+    global _slack_token, _slack_channel, _slack_client
+    _slack_client = None
+    _slack_token = None
+    _slack_channel = None
 
 
 def send_slack_message(

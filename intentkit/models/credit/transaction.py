@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from sqlalchemy import (
     DateTime,
     Index,
@@ -117,7 +117,6 @@ class CreditTransaction(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     id: Annotated[
@@ -169,3 +168,8 @@ class CreditTransaction(BaseModel):
     created_at: Annotated[
         datetime, Field(description="Timestamp when this transaction was created")
     ]
+
+    @field_serializer("created_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")

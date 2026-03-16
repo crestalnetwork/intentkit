@@ -3,10 +3,10 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy import select
 
+from intentkit.clients.web3_ens import resolve_ens_to_address
 from intentkit.config.db import get_session
 from intentkit.core.agent.constants import ENS_NAME_PATTERN
 from intentkit.models.agent import Agent, AgentTable
-from intentkit.utils.ens import resolve_ens_to_address
 
 
 async def get_agent(agent_id: str) -> Agent | None:
@@ -26,8 +26,9 @@ async def get_agent(agent_id: str) -> Agent | None:
         if item is None:
             return None
         agent = Agent.model_validate(item)
+        has_template = bool(item.template_id)
 
-    if item.template_id:
+    if has_template:
         template_module = importlib.import_module("intentkit.core.template")
         render_agent = template_module.render_agent
         agent = await render_agent(agent)
@@ -89,8 +90,9 @@ async def get_agent_by_id_or_slug(agent_id: str) -> Agent | None:
             return None
 
         agent = Agent.model_validate(item)
+        has_template = bool(item.template_id)
 
-    if item.template_id:
+    if has_template:
         template_module = importlib.import_module("intentkit.core.template")
         render_agent = template_module.render_agent
         agent = await render_agent(agent)

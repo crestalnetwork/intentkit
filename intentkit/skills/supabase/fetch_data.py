@@ -62,33 +62,7 @@ class SupabaseFetchData(SupabaseBaseTool):
 
             # Apply filters if provided
             if filters:
-                for column, value in filters.items():
-                    if isinstance(value, dict):
-                        # Handle complex filters like {'gte': 18}
-                        for operator, filter_value in value.items():
-                            if operator == "eq":
-                                query = query.eq(column, filter_value)
-                            elif operator == "neq":
-                                query = query.neq(column, filter_value)
-                            elif operator == "gt":
-                                query = query.gt(column, filter_value)
-                            elif operator == "gte":
-                                query = query.gte(column, filter_value)
-                            elif operator == "lt":
-                                query = query.lt(column, filter_value)
-                            elif operator == "lte":
-                                query = query.lte(column, filter_value)
-                            elif operator == "like":
-                                query = query.like(column, filter_value)
-                            elif operator == "ilike":
-                                query = query.ilike(column, filter_value)
-                            elif operator == "in":
-                                query = query.in_(column, filter_value)
-                            else:
-                                logger.warning(f"Unknown filter operator: {operator}")
-                    else:
-                        # Simple equality filter
-                        query = query.eq(column, value)
+                query = self.apply_filters(query, filters)
 
             # Apply ordering if provided
             if order_by:

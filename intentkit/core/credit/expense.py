@@ -34,6 +34,54 @@ from .base import FOURPLACES, SkillCost
 
 logger = logging.getLogger(__name__)
 
+# =============================================================================
+# PAYMENT FLOW OVERVIEW
+# =============================================================================
+#
+# The three main expense functions below (expense_message, expense_skill,
+# expense_summarize) share ~80% identical structure. This is INTENTIONAL.
+#
+# Why the duplication exists and why it should NOT be refactored:
+#
+# 1. CLARITY OVER ABSTRACTION: Payment/billing code is among the most
+#    audited and debugged code in any system. Each function represents a
+#    distinct billing event type (message, skill call, memory/summarize)
+#    with its own event type, upstream transaction IDs, destination
+#    accounts, and transaction types. Abstracting the shared logic into
+#    a helper would obscure the full payment flow when reading any single
+#    function, making auditing and debugging harder.
+#
+# 2. INDEPENDENT EVOLUTION: Each expense type may diverge over time
+#    (e.g. skill expenses already have a separate skill_cost() pre-check,
+#    message expenses track hourly budget). Keeping them separate means
+#    changes to one billing path never accidentally affect another.
+#
+# 3. FINANCIAL SAFETY: In payment code, an easy-to-follow linear flow
+#    is worth more than DRY. Every function tells the complete story from
+#    validation to final transaction records without jumping to helpers.
+#
+# SHARED PAYMENT FLOW (common to all three functions):
+#   Step 0: Idempotency check — reject duplicate upstream transaction IDs
+#   Step 1: Validate & quantize the base amount (LLM cost or skill price)
+#   Step 2: Compute fees — discount, platform fee %, agent fee %
+#   Step 3: Deduct total from user's credit account (or get/create if $0)
+#   Step 4: Track free credit usage against agent's daily quota
+#   Step 5: Split the deducted amount by credit type (free/reward/permanent)
+#   Step 6: Proportionally allocate platform & agent fees across credit types
+#   Step 7: Derive base amounts per credit type via subtraction
+#   Step 8: Credit the destination accounts (message/skill/memory + platform fee + agent fee)
+#   Step 9: Create the CreditEvent record with full breakdown
+#   Step 10: Create CreditTransaction records (one debit + N credits)
+#
+# DIFFERENCES between the three functions:
+#   - expense_message: EventType.MESSAGE, destination = PLATFORM_ACCOUNT_MESSAGE,
+#     tracks hourly LLM budget via accumulate_hourly_base_llm_amount
+#   - expense_skill: EventType.SKILL_CALL, destination = PLATFORM_ACCOUNT_SKILL,
+#     uses skill_cost() for pre-calculation, upstream_tx_id includes skill_call_id
+#   - expense_summarize: EventType.MEMORY, destination = PLATFORM_ACCOUNT_MEMORY,
+#     similar to message but billed to the memory account
+# =============================================================================
+
 
 async def expense_message(
     session: AsyncSession,
@@ -57,20 +105,23 @@ async def expense_message(
     Returns:
         Updated user credit account
     """
+    # --- SHARED STEP 0: Idempotency check (see module-level comment) ---
     # Check for idempotency - prevent duplicate transactions
     await CreditEvent.check_upstream_tx_id_exists(
         session, UpstreamType.EXECUTOR, message_id
     )
 
+    # --- SHARED STEP 1: Validate & quantize base amount ---
     # Ensure base_llm_amount has 4 decimal places
     base_llm_amount = base_llm_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
     if base_llm_amount < Decimal("0"):
         raise ValueError("Base LLM amount must be non-negative")
 
-    # Track hourly budget usage after validation
+    # MESSAGE-SPECIFIC: Track hourly budget usage after validation
     _ = await accumulate_hourly_base_llm_amount(f"base_llm:{user_id}", base_llm_amount)
 
+    # --- SHARED STEP 2: Compute fees (discount, platform %, agent %) ---
     # Get payment settings
     payment_settings = await AppSetting.payment()
 
@@ -78,6 +129,7 @@ async def expense_message(
     base_original_amount = base_llm_amount
 
     # Determine base_discount_amount based on payment_enabled flag
+    # When payment is disabled, discount = full amount, so effective charge is $0.
 
     if config.payment_enabled:
         base_discount_amount = Decimal("0")
@@ -97,6 +149,7 @@ async def expense_message(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 
+    # --- SHARED STEP 3: Deduct from user account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
@@ -117,6 +170,7 @@ async def expense_message(
             owner_id=user_id,
         )
 
+    # --- SHARED STEP 4: Track free credit usage against agent quota ---
     # If using free credits, add to agent's free_income_daily
     free_credits_used = details.get(CreditType.FREE)
     if total_amount > 0 and free_credits_used:
@@ -124,6 +178,7 @@ async def expense_message(
             session=session, id=agent.id, amount=free_credits_used
         )
 
+    # --- SHARED STEP 5: Split deducted amount by credit type ---
     # 3. Calculate detailed amounts for fees based on user payment details
     # Set the appropriate credit amount field based on credit type
     free_amount = details.get(CreditType.FREE, Decimal("0"))
@@ -136,6 +191,7 @@ async def expense_message(
     else:
         credit_type = CreditType.FREE
 
+    # --- SHARED STEP 6: Proportionally allocate fees across credit types ---
     # Calculate fee_platform amounts by credit type
     fee_platform_free_amount = Decimal("0")
     fee_platform_reward_amount = Decimal("0")
@@ -180,6 +236,7 @@ async def expense_message(
             fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # --- SHARED STEP 7: Derive base amounts per credit type via subtraction ---
     # Calculate base amounts by credit type using subtraction method.
     # This ensures that: permanent_amount = base_permanent_amount + fee_platform_permanent_amount + fee_agent_permanent_amount
     # Note: Independent rounding of fee components may cause base amounts to become slightly
@@ -192,6 +249,7 @@ async def expense_message(
         permanent_amount - fee_platform_permanent_amount - fee_agent_permanent_amount
     )
 
+    # --- SHARED STEP 8: Credit destination accounts ---
     # 4. Update fee account - add credits with detailed amounts
     agent_account: CreditAccount | None = None
     if total_amount > 0:
@@ -230,10 +288,12 @@ async def expense_message(
                 event_id=event_id,
             )
 
+    # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
     # Get agent wallet address
     agent_data = await AgentData.get(agent.id)
     agent_wallet_address = agent_data.evm_wallet_address if agent_data else None
 
+    # MESSAGE-SPECIFIC: event_type=MESSAGE, records base_llm_amount
     event = CreditEventTable(
         id=event_id,
         account_id=user_account.id,
@@ -276,6 +336,7 @@ async def expense_message(
     session.add(event)
     await session.flush()
 
+    # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if total_amount > 0:
         # 4.1 User account transaction (debit)
@@ -293,7 +354,7 @@ async def expense_message(
         )
         session.add(user_tx)
 
-        # 4.2 Message account transaction (credit)
+        # 4.2 MESSAGE-SPECIFIC: credit to PLATFORM_ACCOUNT_MESSAGE
         message_tx = CreditTransactionTable(
             id=str(XID()),
             account_id=DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
@@ -430,6 +491,8 @@ async def expense_skill(
     Returns:
         CreditEvent: The created credit event
     """
+    # --- SHARED STEP 0: Idempotency check ---
+    # SKILL-SPECIFIC: upstream_tx_id combines message_id + skill_call_id
     # Check for idempotency - prevent duplicate transactions
     upstream_tx_id = f"{message_id}_{skill_call_id}"
     await CreditEvent.check_upstream_tx_id_exists(
@@ -437,9 +500,12 @@ async def expense_skill(
     )
     logger.info(f"[{agent.id}] skill payment {skill_name}")
 
+    # --- SHARED STEPS 1-2: Validate amount & compute fees ---
+    # SKILL-SPECIFIC: Uses skill_cost() helper for pre-calculation
     # Calculate skill cost using the skill_cost function
     skill_cost_info = await skill_cost(price, user_id, agent)
 
+    # --- SHARED STEP 3: Deduct from user account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
@@ -461,12 +527,14 @@ async def expense_skill(
             owner_id=user_id,
         )
 
+    # --- SHARED STEP 4: Track free credit usage against agent quota ---
     # If using free credits, add to agent's free_income_daily
     if skill_cost_info.total_amount > 0 and CreditType.FREE in details:
         await AgentQuota.add_free_income_in_session(
             session=session, id=agent.id, amount=details[CreditType.FREE]
         )
 
+    # --- SHARED STEP 5: Split deducted amount by credit type ---
     # 3. Calculate detailed amounts for fees
     # Set the appropriate credit amount field based on credit type
     free_amount = details.get(CreditType.FREE, Decimal("0"))
@@ -479,6 +547,7 @@ async def expense_skill(
     else:
         credit_type = CreditType.FREE
 
+    # --- SHARED STEP 6: Proportionally allocate fees across credit types ---
     # Calculate fee_platform amounts by credit type
     fee_platform_free_amount = Decimal("0")
     fee_platform_reward_amount = Decimal("0")
@@ -539,6 +608,7 @@ async def expense_skill(
             - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # --- SHARED STEP 7: Derive base amounts per credit type via subtraction ---
     # Calculate base amounts by credit type using subtraction method
     base_free_amount = free_amount - fee_platform_free_amount - fee_agent_free_amount
 
@@ -550,6 +620,8 @@ async def expense_skill(
         permanent_amount - fee_platform_permanent_amount - fee_agent_permanent_amount
     )
 
+    # --- SHARED STEP 8: Credit destination accounts ---
+    # SKILL-SPECIFIC: base amount goes to PLATFORM_ACCOUNT_SKILL
     # 4. Update fee account - add credits
     skill_account: CreditAccount | None = None
     platform_account: CreditAccount | None = None
@@ -591,7 +663,8 @@ async def expense_skill(
                 event_id=event_id,
             )
 
-    # 5. Create credit event record
+    # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
+    # SKILL-SPECIFIC: event_type=SKILL_CALL, records base_skill_amount and skill metadata
 
     # Get agent wallet address
     agent_data = await AgentData.get(agent.id)
@@ -645,6 +718,7 @@ async def expense_skill(
     session.add(event)
     await session.flush()
 
+    # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if skill_cost_info.total_amount > 0:
         # 4.1 User account transaction (debit)
@@ -739,17 +813,20 @@ async def expense_summarize(
     Returns:
         Updated user credit account
     """
+    # --- SHARED STEP 0: Idempotency check ---
     # Check for idempotency - prevent duplicate transactions
     await CreditEvent.check_upstream_tx_id_exists(
         session, UpstreamType.EXECUTOR, message_id
     )
 
+    # --- SHARED STEP 1: Validate & quantize base amount ---
     # Ensure base_llm_amount has 4 decimal places
     base_llm_amount = base_llm_amount.quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
     if base_llm_amount < Decimal("0"):
         raise ValueError("Base LLM amount must be non-negative")
 
+    # --- SHARED STEP 2: Compute fees (discount, platform %, agent %) ---
     # Get payment settings
     payment_settings = await AppSetting.payment()
 
@@ -776,6 +853,7 @@ async def expense_summarize(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 
+    # --- SHARED STEP 3: Deduct from user account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
@@ -797,6 +875,7 @@ async def expense_summarize(
             owner_id=user_id,
         )
 
+    # --- SHARED STEP 4: Track free credit usage against agent quota ---
     # If using free credits, add to agent's free_income_daily
     free_credits_used = details.get(CreditType.FREE)
     if total_amount > 0 and free_credits_used:
@@ -806,6 +885,7 @@ async def expense_summarize(
             session=session, id=agent.id, amount=free_credits_used
         )
 
+    # --- SHARED STEP 5: Split deducted amount by credit type ---
     # 3. Calculate fee amounts by credit type before income_in_session calls
     # Set the appropriate credit amount field based on credit type
     free_amount = details.get(CreditType.FREE, Decimal("0"))
@@ -819,6 +899,7 @@ async def expense_summarize(
     else:
         credit_type = CreditType.FREE
 
+    # --- SHARED STEP 6: Proportionally allocate fees across credit types ---
     # Calculate fee_platform amounts by credit type
     fee_platform_free_amount = Decimal("0")
     fee_platform_reward_amount = Decimal("0")
@@ -863,6 +944,7 @@ async def expense_summarize(
             fee_agent_amount - fee_agent_free_amount - fee_agent_reward_amount
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
 
+    # --- SHARED STEP 7: Derive base amounts per credit type via subtraction ---
     # Calculate base amounts by credit type using subtraction method
     base_free_amount = free_amount - fee_platform_free_amount - fee_agent_free_amount
 
@@ -874,6 +956,8 @@ async def expense_summarize(
         permanent_amount - fee_platform_permanent_amount - fee_agent_permanent_amount
     )
 
+    # --- SHARED STEP 8: Credit destination accounts ---
+    # SUMMARIZE-SPECIFIC: base amount goes to PLATFORM_ACCOUNT_MEMORY
     # 4. Update fee account - add credits
     memory_account: CreditAccount | None = None
     platform_fee_account: CreditAccount | None = None
@@ -915,7 +999,8 @@ async def expense_summarize(
                 event_id=event_id,
             )
 
-    # 5. Create credit event record
+    # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
+    # SUMMARIZE-SPECIFIC: event_type=MEMORY, records base_llm_amount
 
     # Get agent wallet address
     agent_data = await AgentData.get(agent.id)
@@ -962,6 +1047,7 @@ async def expense_summarize(
     )
     session.add(event)
 
+    # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if total_amount > 0:
         # 4.1 User account transaction (debit)
@@ -979,7 +1065,7 @@ async def expense_summarize(
         )
         session.add(user_tx)
 
-        # 4.2 Memory account transaction (credit)
+        # 4.2 SUMMARIZE-SPECIFIC: credit to PLATFORM_ACCOUNT_MEMORY
         assert memory_account is not None
         memory_tx = CreditTransactionTable(
             id=str(XID()),

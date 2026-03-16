@@ -4,14 +4,14 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from sqlalchemy import ARRAY, DateTime, Index, Numeric, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
 from intentkit.models.credit.base import CreditType
+from intentkit.utils.error import IntentKitAPIError
 
 
 class RewardType(str, Enum):
@@ -289,9 +289,6 @@ class CreditEvent(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat(timespec="milliseconds"),
-        },
     )
 
     id: Annotated[
@@ -473,6 +470,11 @@ class CreditEvent(BaseModel):
         datetime, Field(description="Timestamp when this event was created")
     ]
 
+    @field_serializer("created_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
+
     @field_validator(
         "total_amount",
         "balance_after",
@@ -525,7 +527,7 @@ class CreditEvent(BaseModel):
             upstream_tx_id: ID of the upstream transaction
 
         Raises:
-            HTTPException: If a transaction with the same upstream_tx_id already exists
+            IntentKitAPIError: If a transaction with the same upstream_tx_id already exists
         """
         stmt = select(CreditEventTable).where(
             CreditEventTable.upstream_type == upstream_type,
@@ -533,7 +535,8 @@ class CreditEvent(BaseModel):
         )
         result = await session.scalar(stmt)
         if result:
-            raise HTTPException(
+            raise IntentKitAPIError(
                 status_code=400,
-                detail=f"Transaction with upstream_tx_id '{upstream_tx_id}' already exists. Do not resubmit.",
+                key="DuplicateTransaction",
+                message=f"Transaction with upstream_tx_id '{upstream_tx_id}' already exists. Do not resubmit.",
             )

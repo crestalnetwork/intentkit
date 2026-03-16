@@ -89,6 +89,10 @@ def cleanup_alert() -> None:
         from intentkit.utils.telegram_alert import cleanup_telegram
 
         cleanup_telegram()
+    elif _alert_type == AlertType.SLACK:
+        from intentkit.utils.slack_alert import cleanup_slack
+
+        cleanup_slack()
 
     _alert_type = AlertType.NONE
     _initialized = False

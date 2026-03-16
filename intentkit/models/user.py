@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, Any, ClassVar, TypeVar, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,9 +128,6 @@ class UserUpdate(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         from_attributes=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat(timespec="milliseconds"),
-        },
     )
 
     nft_count: Annotated[
@@ -294,6 +291,11 @@ class User(UserUpdate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this user was last updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
     @classmethod
     async def get(cls, user_id: str) -> "User | None":

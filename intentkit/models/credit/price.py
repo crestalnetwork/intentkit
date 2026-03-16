@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from sqlalchemy import (
     DateTime,
     Numeric,
@@ -79,7 +79,6 @@ class CreditPrice(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     id: Annotated[
@@ -117,6 +116,11 @@ class CreditPrice(BaseModel):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this price was last updated")
     ]
+
+    @field_serializer("created_at", "updated_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
 
 
 class CreditPriceLogTable(Base):
@@ -164,7 +168,6 @@ class CreditPriceLog(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(
         use_enum_values=True,
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat(timespec="milliseconds")},
     )
 
     id: Annotated[
@@ -195,3 +198,8 @@ class CreditPriceLog(BaseModel):
     modified_at: Annotated[
         datetime, Field(description="Timestamp when the modification was made")
     ]
+
+    @field_serializer("modified_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")

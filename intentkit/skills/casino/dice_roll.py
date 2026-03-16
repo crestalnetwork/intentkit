@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 
 try:
     import httpx
@@ -51,7 +52,7 @@ class CasinoDiceRoll(CasinoBaseTool):
 
     async def _arun(self, dice_count: int = 1, **kwargs) -> dict[str, Any]:
         try:
-            context = self.get_context()
+            self.get_context()
 
             # Apply rate limit using built-in user_rate_limit method
             rate_config = RATE_LIMITS["dice_roll"]
@@ -93,8 +94,12 @@ class CasinoDiceRoll(CasinoBaseTool):
                     }
                 else:
                     logger.error(f"QRandom API error: {response.status_code}")
-                    return {"success": False, "error": "Failed to roll dice"}
+                    raise ToolException(
+                        f"QRandom API error: {response.status_code}. Failed to roll dice."
+                    )
 
+        except ToolException:
+            raise
         except Exception as e:
             logger.error(f"Error rolling dice: {str(e)}")
-            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e
+            raise ToolException(str(e)) from e

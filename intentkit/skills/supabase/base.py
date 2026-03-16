@@ -1,10 +1,14 @@
+import logging
 import time
+from typing import Any
 
 from langchain_core.tools import ToolException
 from supabase import Client, create_client
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.skills.base import IntentKitSkill
+
+logger = logging.getLogger(__name__)
 
 # Cache Supabase clients per (url, key) pair with TTL
 _supabase_clients: dict[str, Client] = {}
@@ -102,3 +106,47 @@ class SupabaseBaseTool(IntentKitSkill):
                 f"Table '{table}' is not allowed for public write operations. "
                 f"Allowed tables: {', '.join(allowed_tables)}"
             )
+
+    @staticmethod
+    def apply_filters(query: Any, filters: dict[str, Any]) -> Any:
+        """Apply filter conditions to a Supabase query.
+
+        Supports both simple equality filters (e.g. ``{'column': 'value'}``)
+        and operator-based filters (e.g. ``{'age': {'gte': 18}}``).
+
+        Supported operators: eq, neq, gt, gte, lt, lte, like, ilike, in.
+
+        Args:
+            query: A Supabase query builder object.
+            filters: A dict mapping column names to filter values or
+                operator dicts.
+
+        Returns:
+            The query with all filters applied.
+        """
+        for column, value in filters.items():
+            if isinstance(value, dict):
+                for operator, filter_value in value.items():
+                    if operator == "eq":
+                        query = query.eq(column, filter_value)
+                    elif operator == "neq":
+                        query = query.neq(column, filter_value)
+                    elif operator == "gt":
+                        query = query.gt(column, filter_value)
+                    elif operator == "gte":
+                        query = query.gte(column, filter_value)
+                    elif operator == "lt":
+                        query = query.lt(column, filter_value)
+                    elif operator == "lte":
+                        query = query.lte(column, filter_value)
+                    elif operator == "like":
+                        query = query.like(column, filter_value)
+                    elif operator == "ilike":
+                        query = query.ilike(column, filter_value)
+                    elif operator == "in":
+                        query = query.in_(column, filter_value)
+                    else:
+                        logger.warning(f"Unknown filter operator: {operator}")
+            else:
+                query = query.eq(column, value)
+        return query
