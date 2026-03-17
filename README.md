@@ -45,7 +45,7 @@ Read the [Deployment Guide](docs/content/en/deployment) to get started with your
 Besides self-deploying IntentKit, you can also use the project in the following ways:
 
 - **As a Python Library:** Import and extend IntentKit, or use it to add agent cluster capabilities to your existing projects.
-- **Via API:** Regardless of the deployment method, each individual agent can expose its own API, allowing you to interact with them from external applications. See the [Agent API Documentation](docs/content/en/docs/others/agent_api.md).
+- **Via API:** Regardless of the deployment method, you can interact with agents from external applications via the built-in API endpoints.
 
 ## Contributing
 

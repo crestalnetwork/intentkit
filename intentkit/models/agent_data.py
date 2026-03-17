@@ -14,7 +14,6 @@ from sqlalchemy import (
     Numeric,
     String,
     func,
-    select,
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -104,12 +103,6 @@ class AgentDataTable(Base):
     )
     error_message: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Last error message"
-    )
-    api_key: Mapped[str | None] = mapped_column(
-        String, nullable=True, unique=True, comment="API key for the agent"
-    )
-    api_key_public: Mapped[str | None] = mapped_column(
-        String, nullable=True, unique=True, comment="Public API key for the agent"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -284,20 +277,6 @@ class AgentData(BaseModel):
             description="Last error message",
         ),
     ] = None
-    api_key: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="API key for the agent",
-        ),
-    ] = None
-    api_key_public: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Public API key for the agent",
-        ),
-    ] = None
     created_at: Annotated[
         datetime,
         PydanticField(
@@ -331,41 +310,6 @@ class AgentData(BaseModel):
             if item:
                 return cls.model_validate(item)
             return cls.model_construct(id=agent_id)
-
-    @classmethod
-    async def get_by_api_key(cls, api_key: str) -> AgentData | None:
-        """Get agent data by API key.
-
-        Args:
-            api_key: API key (sk- for private, pk- for public)
-
-        Returns:
-            AgentData if found, None otherwise
-
-        Raises:
-            HTTPException: If there are database errors
-        """
-        async with get_session() as db:
-            if api_key.startswith("sk-"):
-                # Search in api_key field for private keys
-                result = await db.execute(
-                    select(AgentDataTable).where(AgentDataTable.api_key == api_key)
-                )
-            elif api_key.startswith("pk-"):
-                # Search in api_key_public field for public keys
-                result = await db.execute(
-                    select(AgentDataTable).where(
-                        AgentDataTable.api_key_public == api_key
-                    )
-                )
-            else:
-                # Invalid key format
-                return None
-
-            item = result.scalar_one_or_none()
-            if item:
-                return cls.model_validate(item)
-            return None
 
     async def save(self) -> None:
         """Save or update agent data.
@@ -693,8 +637,6 @@ class AgentQuota(BaseModel):
                 session.add(quota_record)
             else:
                 # Use update statement with func to directly add the amount
-                from sqlalchemy import update
-
                 stmt = update(AgentQuotaTable).where(AgentQuotaTable.id == id)
                 stmt = stmt.values(
                     free_income_daily=func.coalesce(
@@ -793,8 +735,6 @@ class AgentQuota(BaseModel):
         """Reset daily quotas for all agents at UTC 00:00.
         Resets message_count_daily and twitter_count_daily to 0.
         """
-        from sqlalchemy import update
-
         async with get_session() as session:
             stmt = update(AgentQuotaTable).values(
                 message_count_daily=0,
@@ -809,8 +749,6 @@ class AgentQuota(BaseModel):
         """Reset monthly quotas for all agents at the start of each month.
         Resets message_count_monthly and autonomous_count_monthly to 0.
         """
-        from sqlalchemy import update
-
         async with get_session() as session:
             stmt = update(AgentQuotaTable).values(
                 message_count_monthly=0, autonomous_count_monthly=0

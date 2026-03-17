@@ -21,8 +21,6 @@ from intentkit.core.manager.skills import (
     get_agent_latest_public_info_skill,
     get_available_llms_skill,
     list_autonomous_tasks_skill,
-    read_agent_api_key_skill,
-    regenerate_agent_api_key_skill,
     update_agent_draft_skill,
     update_public_info_skill,
 )
@@ -155,8 +153,6 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
             #         "delete_autonomous_task": "private",
             #         "edit_autonomous_task": "private",
             #         "list_autonomous_tasks": "private",
-            #         "read_agent_api_key": "private",
-            #         "regenerate_agent_api_key": "private",
             #         "get_available_llms": "private",
             #     },
             # },
@@ -205,8 +201,6 @@ async def _get_manager_executor(
                 delete_autonomous_task_skill,
                 edit_autonomous_task_skill,
                 list_autonomous_tasks_skill,
-                read_agent_api_key_skill,
-                regenerate_agent_api_key_skill,
                 get_available_llms_skill,
             ]
             executor = await build_executor(

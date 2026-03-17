@@ -33,7 +33,6 @@ from intentkit.utils.error import (
     request_validation_exception_handler,
 )
 
-from app.entrypoints.agent_api import agent_api_router
 from app.local import (
     agent_router,
     autonomous_router,
@@ -58,70 +57,6 @@ if config.sentry_dsn:
         release=config.release,
         server_name="intent-api",
     )
-
-
-# Read agent API documentation from file
-def _load_agent_api_docs() -> str:
-    """Load agent API documentation from docs/agent_api.md file."""
-    try:
-        import os
-
-        docs_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "docs", "agent_api.md"
-        )
-        with open(docs_path, encoding="utf-8") as f:
-            doc_str = f.read()
-            if config.open_api_base_url:
-                doc_str = doc_str.replace(
-                    "http://localhost:8000",
-                    config.open_api_base_url,
-                )
-            return doc_str
-    except Exception:
-        return "Agent API"
-
-
-# Create Agent API sub-application
-agent_app = FastAPI(
-    title="IntentKit Agent API",
-    description=_load_agent_api_docs(),
-    version=config.release,
-    servers=[
-        {
-            "url": f"{config.open_api_base_url}/v1",
-            "description": "IntentKit Agent API Server",
-        }
-    ],
-    contact={
-        "name": "IntentKit Team",
-        "url": "https://github.com/crestalnetwork/intentkit",
-    },
-    license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT",
-    },
-)
-
-# Add exception handlers to the Agent API sub-application
-_ = agent_app.exception_handler(IntentKitAPIError)(intentkit_api_error_handler)
-_ = agent_app.exception_handler(RequestValidationError)(
-    request_validation_exception_handler
-)
-_ = agent_app.exception_handler(StarletteHTTPException)(http_exception_handler)
-_ = agent_app.exception_handler(Exception)(intentkit_other_error_handler)
-
-# Add CORS middleware to the Agent API sub-application
-# NOTE: Permissive CORS is intentional — the agent API is designed to be
-# called from any origin (third-party frontends, embedded widgets, etc.).
-_ = agent_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Add routers to the Agent API sub-application
-_ = agent_app.include_router(agent_api_router)
 
 
 @asynccontextmanager
@@ -186,7 +121,8 @@ _ = app.exception_handler(StarletteHTTPException)(http_exception_handler)
 _ = app.exception_handler(Exception)(intentkit_other_error_handler)
 
 # Add CORS middleware
-# NOTE: Permissive CORS is intentional — same reason as agent_app above.
+# NOTE: Permissive CORS is intentional — the API is designed to be
+# called from any origin (third-party frontends, embedded widgets, etc.).
 _ = app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -194,9 +130,6 @@ _ = app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Mount the Agent API sub-application
-_ = app.mount("/v1", agent_app)
 
 # NOTE: Local/core routes are intentionally unauthenticated.
 # They are designed for local development and debugging only.
