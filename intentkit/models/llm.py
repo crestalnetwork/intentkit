@@ -516,8 +516,10 @@ class LLMModel(BaseModel):
         return model_info
 
     # This will be implemented by subclasses to return the appropriate LLM instance
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = None) -> BaseChatModel:
         """Create and return the LLM instance based on the configuration."""
+        if params is None:
+            params = {}
         _ = params
         raise NotImplementedError("Subclasses must implement create_instance")
 
@@ -540,8 +542,10 @@ class OpenAILLM(LLMModel):
     """OpenAI LLM configuration."""
 
     @override
-    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+    async def create_instance(self, params: dict[str, Any] = None) -> BaseChatModel:
         """Create and return a ChatOpenAI instance."""
+        if params is None:
+            params = {}
         from langchain_openai import ChatOpenAI
 
         info = await self.model_info()
