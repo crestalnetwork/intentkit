@@ -148,6 +148,10 @@ class ChatMessageRequest(BaseModel):
             min_length=1,
         ),
     ]
+    team_id: Annotated[
+        str | None,
+        Field(None, description="Team ID for team-level access control"),
+    ] = None
     message: Annotated[
         str,
         Field(
@@ -320,6 +324,14 @@ class ChatMessageCreate(BaseModel):
     error_type: Annotated[
         SystemMessageType | None,
         Field(None, description="Optional error type, used when author_type is system"),
+    ] = None
+    team_id: Annotated[
+        str | None,
+        Field(
+            None,
+            description="Team ID for team-level access control (not persisted to DB)",
+            exclude=True,
+        ),
     ] = None
     call_depth: Annotated[
         int,

@@ -33,6 +33,7 @@ class AgentContext(BaseModel):
     get_agent: Callable[[], Agent]
     chat_id: str
     user_id: str | None = None
+    team_id: str | None = None
     app_id: str | None = None
     entrypoint: AuthorType
     is_private: bool

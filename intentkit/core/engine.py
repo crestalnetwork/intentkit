@@ -644,6 +644,10 @@ async def stream_agent_raw(
     is_private = False
     if user_message.user_id == agent.owner:
         is_private = True
+    # Team-level access: if both team_ids exist and match, treat as private
+    # Use original message (not user_message) because team_id is excluded from DB persistence
+    if message.team_id and agent.team_id and message.team_id == agent.team_id:
+        is_private = True
     # Hack for local mode: treat "system" user as private.
     # This is safe because in authenticated environments,
     # user_id cannot be "system".
@@ -714,6 +718,7 @@ async def stream_agent_raw(
         get_agent=get_agent_for_context,
         chat_id=user_message.chat_id,
         user_id=user_message.user_id,
+        team_id=message.team_id,
         app_id=user_message.app_id,
         entrypoint=user_message.author_type,
         is_private=is_private,

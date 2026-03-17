@@ -209,6 +209,7 @@ async def test_stream_agent_flow(mock_agent):
             mock_saved_msg.message = "Hello"
             mock_saved_msg.author_type = AuthorType.WEB
             mock_saved_msg.attachments = []
+            mock_saved_msg.team_id = None
             mock_saved_msg.app_id = None
             mock_save.return_value = mock_saved_msg
 
