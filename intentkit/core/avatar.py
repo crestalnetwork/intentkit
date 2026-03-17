@@ -185,30 +185,49 @@ def _build_agent_profile(agent_id: str, agent: Any) -> str:
     return "\n\n".join(sections)
 
 
-async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
-    """Use a cheap LLM to turn agent profile into an image generation prompt."""
+async def generate_image_prompt_from_profile(profile: str, system_prompt: str) -> str:
+    """Use a cheap LLM to turn a profile description into an image generation prompt.
+
+    Args:
+        profile: Text describing the subject (agent profile, team name, etc.)
+        system_prompt: System prompt guiding the LLM to produce an image prompt.
+
+    Returns:
+        The generated image prompt string.
+
+    Raises:
+        Exception: If the LLM call fails.
+    """
+    from langchain_core.messages import HumanMessage, SystemMessage
+
     from intentkit.models.llm import create_llm_model
     from intentkit.models.llm_picker import pick_summarize_model
 
+    model_name = pick_summarize_model()
+    llm = await create_llm_model(model_name, temperature=0.9)
+    model = await llm.create_instance()
+
+    response = await model.ainvoke(
+        [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=profile),
+        ]
+    )
+    image_prompt = response.content
+    if not isinstance(image_prompt, str):
+        image_prompt = str(image_prompt)
+
+    return image_prompt
+
+
+async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
+    """Use a cheap LLM to turn agent profile into an image generation prompt."""
     profile = _build_agent_profile(agent_id, agent)
 
     try:
-        from langchain_core.messages import HumanMessage, SystemMessage
-
-        model_name = pick_summarize_model()
-        llm = await create_llm_model(model_name, temperature=0.9)
-        model = await llm.create_instance()
-
-        response = await model.ainvoke(
-            [
-                SystemMessage(content=_AVATAR_SYSTEM_PROMPT),
-                HumanMessage(content=f"Agent Profile:\n{profile}"),
-            ]
+        image_prompt = await generate_image_prompt_from_profile(
+            f"Agent Profile:\n{profile}", _AVATAR_SYSTEM_PROMPT
         )
-        image_prompt = response.content
-        if not isinstance(image_prompt, str):
-            image_prompt = str(image_prompt)
-
         logger.info(
             "Generated avatar prompt for agent %s: %s", agent_id, image_prompt[:200]
         )
@@ -216,7 +235,6 @@ async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
 
     except Exception as e:
         logger.error("Failed to generate avatar prompt via LLM: %s", e)
-        # Fallback to a simple prompt derived from name
         name = getattr(agent, "name", None) or agent_id
         return (
             f"A modern, minimalist, professional AI avatar for an agent called '{name}'. "
