@@ -37,7 +37,7 @@ def is_agent_failed(agent_id: str) -> bool:
 def add_failed_agent(agent_id: str):
     """Add agent to failed cache."""
     _failed_agents.add(agent_id)
-    logger.warning(f"Agent {agent_id} added to failed cache")
+    logger.warning("Agent %s added to failed cache", agent_id)
 
 
 class BotPool:
@@ -67,13 +67,13 @@ class BotPool:
             _bots[bot_item.token] = bot_item
             _agent_bots[agent.id] = agent_item
 
-            logger.info(f"Discord bot for agent {agent.id} initialized")
+            logger.info("Discord bot for agent %s initialized", agent.id)
 
         except discord.LoginFailure as e:
-            logger.error(f"Invalid Discord token for agent {agent.id}: {e}")
+            logger.error("Invalid Discord token for agent %s: %s", agent.id, e)
             add_failed_agent(agent.id)
         except Exception as e:
-            logger.error(f"Failed to init Discord bot for agent {agent.id}: {e}")
+            logger.error("Failed to init Discord bot for agent %s: %s", agent.id, e)
 
     async def _run_bot(self, bot_item: BotPoolItem):
         """Run the Discord bot (blocking call)."""
@@ -82,7 +82,7 @@ class BotPool:
                 raise ValueError("Token is empty")
             await bot_item.bot.start(bot_item.token)
         except Exception as e:
-            logger.error(f"Bot {bot_item.agent_id} crashed: {e}")
+            logger.error("Bot %s crashed: %s", bot_item.agent_id, e)
 
     def _setup_handlers(self, bot_item: BotPoolItem):
         """Setup Discord event handlers."""
@@ -125,10 +125,10 @@ class BotPool:
             if agent_id in _agent_bots:
                 del _agent_bots[agent_id]
 
-            logger.info(f"Discord bot for agent {agent_id} stopped")
+            logger.info("Discord bot for agent %s stopped", agent_id)
 
         except Exception as e:
-            logger.error(f"Failed to stop bot for agent {agent_id}: {e}")
+            logger.error("Failed to stop bot for agent %s: %s", agent_id, e)
 
     async def modify_config(self, agent: Agent):
         """Update bot configuration."""
@@ -141,6 +141,6 @@ class BotPool:
             if bot_item:
                 bot_item.update_conf(agent.discord_config or {})
                 agent_item.updated_at = agent.deployed_at or agent.updated_at
-                logger.info(f"Config updated for agent {agent.id}")
+                logger.info("Config updated for agent %s", agent.id)
         except Exception as e:
-            logger.error(f"Failed to update config for agent {agent.id}: {e}")
+            logger.error("Failed to update config for agent %s: %s", agent.id, e)

@@ -106,7 +106,7 @@ class MasterWalletNonceManager:
             to_checksum_address(self.address), "pending"
         )
         await redis.set(self._nonce_key, str(blockchain_nonce), ex=NONCE_KEY_TTL)
-        logger.info(f"Reset master wallet nonce to {blockchain_nonce}")
+        logger.info("Reset master wallet nonce to %s", blockchain_nonce)
 
 
 # Module-level nonce manager instance (lazy init)

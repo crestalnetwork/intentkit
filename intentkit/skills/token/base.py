@@ -93,7 +93,7 @@ class TokenBaseTool(IntentKitSkill):
                 ) as response:
                     if response.status >= 400:
                         error_text = await response.text()
-                        logger.error(f"API error {response.status}: {error_text}")
+                        logger.error("API error %s: %s", response.status, error_text)
                         return {
                             "error": f"API error: {response.status}",
                             "details": error_text,
@@ -101,8 +101,8 @@ class TokenBaseTool(IntentKitSkill):
 
                     return await response.json()
         except aiohttp.ClientError as e:
-            logger.error(f"HTTP error making request: {str(e)}")
+            logger.error("HTTP error making request: %s", e)
             return {"error": f"HTTP error: {str(e)}"}
         except Exception as e:
-            logger.error(f"Unexpected error making request: {str(e)}")
+            logger.error("Unexpected error making request: %s", e)
             return {"error": f"Unexpected error: {str(e)}"}

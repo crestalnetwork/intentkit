@@ -45,7 +45,7 @@ if __name__ == "__main__":
             await send_heartbeat(redis_client, "scheduler")
             logger.info("Sent scheduler heartbeat successfully")
         except Exception as e:
-            logger.error(f"Error sending scheduler heartbeat: {e}")
+            logger.error("Error sending scheduler heartbeat: %s", e)
 
     async def main():
         # Create a shutdown event for graceful termination
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 redis_client = get_redis()
                 await clean_heartbeat(redis_client, "scheduler")
             except Exception as e:
-                logger.error(f"Error cleaning up heartbeat: {e}")
+                logger.error("Error cleaning up heartbeat: %s", e)
 
             cleanup_alert()
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
             _ = await shutdown_event.wait()
             logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
-            logger.error(f"Error in scheduler process: {e}")
+            logger.error("Error in scheduler process: %s", e)
         finally:
             # Run the cleanup code and shutdown the scheduler
             await cleanup_resources()

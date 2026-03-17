@@ -46,7 +46,7 @@ class ImageToText(OpenAIBaseTool):
             ImageToTextOutput: Object containing the text description and image dimensions.
         """
         context = self.get_context()
-        logger.debug(f"context: {context}")
+        logger.debug("context: %s", context)
 
         # Get the OpenAI client from configuration or agent settings
         api_key = self.get_api_key()
@@ -107,5 +107,5 @@ class ImageToText(OpenAIBaseTool):
             )
 
         except Exception as e:
-            logger.error(f"Error converting image to text: {e}")
+            logger.error("Error converting image to text: %s", e)
             raise ToolException(f"Error converting image to text: {str(e)}")

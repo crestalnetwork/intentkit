@@ -34,7 +34,7 @@ class NftCheck(NationBaseTool):
         """
 
         context = self.get_context()
-        logger.debug(f"nft_check.py: Running NFT check with context {context}")
+        logger.debug("nft_check.py: Running NFT check with context %s", context)
 
         # Use the provided nation_wallet_address or fetch it from the context
         if not nation_wallet_address:
@@ -101,5 +101,5 @@ class NftCheck(NationBaseTool):
             logger.error("nft_check.py: Request timed out")
             return "The request to the NFT API timed out. Please try again later."
         except Exception as e:
-            logger.error(f"nft_check.py: Error fetching NFT data: {e}", exc_info=True)
+            logger.error("nft_check.py: Error fetching NFT data: %s", e, exc_info=True)
             return "An error occurred while fetching NFT data. Please try again later."

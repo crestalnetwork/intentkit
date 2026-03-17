@@ -98,7 +98,7 @@ def get_wallet_skill(
     }
 
     if name not in skill_classes:
-        logger.warning(f"Unknown Wallet Portfolio skill: {name}")
+        logger.warning("Unknown Wallet Portfolio skill: %s", name)
         return None
 
     return skill_classes[name](

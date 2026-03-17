@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import signal
-import sys
 from typing import Any
 
 from sqlalchemy import select
@@ -50,11 +49,13 @@ class AgentScheduler:
                         token = clean_token_str(str(agent.telegram_config["token"]))
                         if bot_by_token(token):
                             logger.warning(
-                                f"there is an existing bot with {token}, skipping agent {agent.id}..."
+                                "there is an existing bot with %s, skipping agent %s...",
+                                token,
+                                agent.id,
                             )
                             continue
 
-                        logger.info(f"New agent with id {agent.id} found...")
+                        logger.info("New agent with id %s found...", agent.id)
                         await self.bot_pool.init_new_bot(agent)
                         await asyncio.sleep(1)
                         bot = bot_by_token(token)
@@ -95,7 +96,7 @@ class AgentScheduler:
             try:
                 await self.sync()
             except Exception as e:
-                logger.error(f"failed to sync agents: {e}")
+                logger.error("failed to sync agents: %s", e)
 
             await asyncio.sleep(interval)
 
@@ -114,10 +115,12 @@ async def run_telegram_server() -> None:
     )
 
     # Signal handler for graceful shutdown
+    shutdown_event = asyncio.Event()
+
     def signal_handler(_signum: Any, _frame: Any):
         logger.info("Received termination signal. Shutting down gracefully...")
         cleanup_alert()
-        sys.exit(0)
+        shutdown_event.set()
 
     # Register signal handlers
     _ = signal.signal(signal.SIGINT, signal_handler)
@@ -139,10 +142,6 @@ async def run_telegram_server() -> None:
         asyncio.get_running_loop(), config.tg_server_host, int(config.tg_server_port)
     )
 
-    # Keep the server running
-    try:
-        while True:
-            await asyncio.sleep(3600)  # Sleep for an hour
-    except asyncio.CancelledError:
-        logging.info("Server shutdown initiated")
-        cleanup_alert()
+    # Keep the server running until shutdown signal
+    await shutdown_event.wait()
+    logging.info("Server shutdown initiated")

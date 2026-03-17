@@ -98,7 +98,7 @@ def get_elfa_skill(
         return _cache[name]
 
     else:
-        logger.warning(f"Unknown Elfa skill: {name}")
+        logger.warning("Unknown Elfa skill: %s", name)
         return None
 
 

@@ -142,5 +142,5 @@ class CreatePostSkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"create_post failed: {e}", exc_info=True)
+            self.logger.error("create_post failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to create post: {e}") from e

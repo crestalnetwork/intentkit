@@ -83,7 +83,7 @@ def get_xmtp_skill(
             _cache[name] = XmtpGetSwapPrice()
         return _cache[name]
     else:
-        logger.warning(f"Unknown XMTP skill: {name}")
+        logger.warning("Unknown XMTP skill: %s", name)
         return None
 
 

@@ -61,7 +61,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         )
 
         if error is not None or result is None:
-            logger.error(f"Error returned from CARV API: {error}")
+            logger.error("Error returned from CARV API: %s", error)
             return {
                 "error": True,
                 "error_type": "APIError",
@@ -73,7 +73,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         if "price" not in result or result["price"] == 0:
             fallback_ticker = re.sub(r"\s+", "-", token_name.strip().lower())
             logger.info(
-                f"Fallback triggered. Trying with fallback ticker: {fallback_ticker}"
+                "Fallback triggered. Trying with fallback ticker: %s", fallback_ticker
             )
 
             fallback_params = {"ticker": fallback_ticker}
@@ -85,7 +85,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
             )
 
             if error is not None or result is None or result.get("price") == 0:
-                logger.error(f"Fallback error returned from CARV API: {error}")
+                logger.error("Fallback error returned from CARV API: %s", error)
                 return {
                     "error": True,
                     "error_type": "APIError",

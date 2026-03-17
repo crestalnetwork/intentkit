@@ -126,7 +126,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        logger.debug(f"firecrawl_crawl: Running crawl with context {context}")
+        logger.debug("firecrawl_crawl: Running crawl with context %s", context)
 
         if skill_config.get("api_key_provider") == "agent_owner":
             if skill_config.get("rate_limit_number") and skill_config.get(
@@ -389,10 +389,10 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                 return f"Crawl timeout: The crawl of {url} is taking longer than expected. Please try again later or reduce the crawl limit."
 
         except httpx.TimeoutException:
-            logger.error(f"firecrawl_crawl: Timeout crawling URL: {url}")
+            logger.error("firecrawl_crawl: Timeout crawling URL: %s", url)
             return (
                 f"Timeout error: The request to crawl {url} took too long to complete."
             )
         except Exception as e:
-            logger.error(f"firecrawl_crawl: Error crawling URL: {e}", exc_info=True)
+            logger.error("firecrawl_crawl: Error crawling URL: %s", e, exc_info=True)
             return f"An error occurred while crawling the URL: {str(e)}"

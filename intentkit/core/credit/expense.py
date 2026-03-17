@@ -498,7 +498,7 @@ async def expense_skill(
     await CreditEvent.check_upstream_tx_id_exists(
         session, UpstreamType.EXECUTOR, upstream_tx_id
     )
-    logger.info(f"[{agent.id}] skill payment {skill_name}")
+    logger.info("[%s] skill payment %s", agent.id, skill_name)
 
     # --- SHARED STEPS 1-2: Validate amount & compute fees ---
     # SKILL-SPECIFIC: Uses skill_cost() helper for pre-calculation

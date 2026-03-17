@@ -62,7 +62,7 @@ class SupabaseInvokeFunction(SupabaseBaseTool):
             }
 
         except Exception as e:
-            logger.error(f"Error invoking Supabase Edge Function: {str(e)}")
+            logger.error("Error invoking Supabase Edge Function: %s", e)
             raise ToolException(
                 f"Failed to invoke Edge Function '{function_name}': {str(e)}"
             )

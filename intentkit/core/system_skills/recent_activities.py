@@ -54,5 +54,5 @@ class RecentActivitiesSkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"recent_activities failed: {e}", exc_info=True)
+            self.logger.error("recent_activities failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to retrieve recent activities: {e}") from e

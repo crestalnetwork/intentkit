@@ -673,8 +673,8 @@ class CreditAccount(BaseModel):
             free_quota=free_quota,
             refill_amount=refill_amount,
             free_credits=free_quota,
-            reward_credits=0.0,
-            credits=0.0,
+            reward_credits=Decimal("0"),
+            credits=Decimal("0"),
             income_at=datetime.now(UTC),
             expense_at=None,
             last_event_id=event_id if owner_type == OwnerType.USER else None,
@@ -682,12 +682,12 @@ class CreditAccount(BaseModel):
             # For USER accounts, initial free_quota counts as income
             total_income=free_quota,
             total_free_income=free_quota,
-            total_reward_income=0.0,
-            total_permanent_income=0.0,
-            total_expense=0.0,
-            total_free_expense=0.0,
-            total_reward_expense=0.0,
-            total_permanent_expense=0.0,
+            total_reward_income=Decimal("0"),
+            total_permanent_income=Decimal("0"),
+            total_expense=Decimal("0"),
+            total_free_expense=Decimal("0"),
+            total_reward_expense=Decimal("0"),
+            total_permanent_expense=Decimal("0"),
         )
         # Platform virtual accounts have fixed IDs, same as owner_id
         if owner_type == OwnerType.PLATFORM:

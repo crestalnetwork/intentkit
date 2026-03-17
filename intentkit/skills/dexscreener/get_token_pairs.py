@@ -109,10 +109,13 @@ class GetTokenPairs(DexScreenerBaseTool):
             try:
                 pairs_list.sort(key=get_liquidity_value, reverse=True)
             except Exception as sort_err:
-                logger.warning(f"Failed to sort pairs by liquidity: {sort_err}")
+                logger.warning("Failed to sort pairs by liquidity: %s", sort_err)
 
             logger.info(
-                f"Found {len(pairs_list)} pairs for token {token_address} on {chain_id}"
+                "Found %s pairs for token %s on %s",
+                len(pairs_list),
+                token_address,
+                chain_id,
             )
 
             return format_success_response(
@@ -137,10 +140,11 @@ class GetTokenPairs(DexScreenerBaseTool):
             "unexpected_error",
         ]:
             logger.error(
-                f"DexScreener get_token_pairs tool encountered an error: {error_details}"
+                "DexScreener get_token_pairs tool encountered an error: %s",
+                error_details,
             )
         else:  # api_error
-            logger.warning(f"DexScreener API returned an error: {error_details}")
+            logger.warning("DexScreener API returned an error: %s", error_details)
 
         # Truncate potentially large fields before returning to user/LLM
         truncated_details = truncate_large_fields(error_details)

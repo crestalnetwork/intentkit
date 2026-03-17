@@ -103,7 +103,7 @@ def get_openai_skill(
             _cache[name] = GPTImageToImage()
         return _cache[name]
     else:
-        logger.warning(f"Unknown OpenAI skill: {name}")
+        logger.warning("Unknown OpenAI skill: %s", name)
         return None
 
 

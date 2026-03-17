@@ -81,7 +81,7 @@ async def create_user_server_wallet(
             chain_provider_config = config.chain_provider.get_chain_config(network_id)
             effective_rpc_url = chain_provider_config.rpc_url
         except Exception as e:
-            logger.warning(f"Failed to get RPC URL from chain provider: {e}")
+            logger.warning("Failed to get RPC URL from chain provider: %s", e)
 
     if not effective_rpc_url:
         effective_rpc_url = chain_config.rpc_url

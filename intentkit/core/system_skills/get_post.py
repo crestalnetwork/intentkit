@@ -50,5 +50,5 @@ class GetPostSkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"get_post failed: {e}", exc_info=True)
+            self.logger.error("get_post failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to retrieve post: {e}") from e

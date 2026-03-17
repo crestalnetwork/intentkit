@@ -68,5 +68,5 @@ class TwitterGetUserByUsername(TwitterBaseTool):
             return user_data
 
         except Exception as e:
-            logger.error(f"Error getting user by username: {str(e)}")
+            logger.error("Error getting user by username: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

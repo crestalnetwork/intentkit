@@ -101,7 +101,7 @@ class SearchToken(DexScreenerBaseTool):
             if error_details:
                 return await self._handle_error_response(error_details)
             if not data:
-                logger.error(f"No data or error details returned for query '{query}'")
+                logger.error("No data or error details returned for query '%s'", query)
                 return create_error_response(
                     error_type="empty_success",
                     message="API call returned empty success response.",
@@ -140,7 +140,7 @@ class SearchToken(DexScreenerBaseTool):
             # If sorting failed, pairs_list will be returned unchanged by the utility function
 
             final_count = min(len(pairs_list), MAX_SEARCH_RESULTS)
-            logger.info(f"Returning {final_count} pairs for query '{query}'")
+            logger.info("Returning %s pairs for query '%s'", final_count, query)
             return format_success_response(
                 {
                     **SEARCH_DISCLAIMER,
@@ -157,9 +157,9 @@ class SearchToken(DexScreenerBaseTool):
             "parsing_error",
             "unexpected_error",
         ]:
-            logger.error(f"DexScreener tool encountered an error: {error_details}")
+            logger.error("DexScreener tool encountered an error: %s", error_details)
         else:  # api_error
-            logger.warning(f"DexScreener API returned an error: {error_details}")
+            logger.warning("DexScreener API returned an error: %s", error_details)
 
         # Truncate potentially large fields before returning to user/LLM
         truncated_details = truncate_large_fields(error_details)

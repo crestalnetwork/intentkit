@@ -84,13 +84,14 @@ class TextToSpeech(UnrealSpeechBaseTool):
         # Validate bitrate
         valid_bitrates = ["64k", "96k", "128k", "192k", "256k", "320k"]
         if bitrate not in valid_bitrates:
-            logger.warning(f"Invalid bitrate '{bitrate}'. Using default '192k'.")
+            logger.warning("Invalid bitrate '%s'. Using default '192k'.", bitrate)
             bitrate = "192k"
 
         # Validate speed
         if not -1.0 <= speed <= 1.0:
             logger.warning(
-                f"Speed value {speed} is outside valid range (-1.0 to 1.0). Clamping to valid range."
+                "Speed value %s is outside valid range (-1.0 to 1.0). Clamping to valid range.",
+                speed,
             )
             speed = max(-1.0, min(1.0, speed))
 
@@ -123,7 +124,7 @@ class TextToSpeech(UnrealSpeechBaseTool):
 
                 # Check response status
                 if response.status_code != 200:
-                    logger.error(f"UnrealSpeech API error: {response.text}")
+                    logger.error("UnrealSpeech API error: %s", response.text)
                     return {
                         "success": False,
                         "error": f"API error: {response.status_code} - {response.text}",
@@ -151,5 +152,5 @@ class TextToSpeech(UnrealSpeechBaseTool):
                 }
 
         except Exception as e:
-            logger.error(f"Failed to generate speech: {e}", exc_info=True)
+            logger.error("Failed to generate speech: %s", e, exc_info=True)
             return {"success": False, "error": f"Failed to generate speech: {str(e)}"}

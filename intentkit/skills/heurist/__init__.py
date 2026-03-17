@@ -121,7 +121,7 @@ def get_heurist_skill(
             _cache[name] = ImageGenerationSDXL()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Heurist skill: {name}")
+        logger.warning("Unknown Heurist skill: %s", name)
         return None
 
 

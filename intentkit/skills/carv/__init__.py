@@ -74,7 +74,7 @@ async def get_skills(
             if skill_instance:
                 available_skills.append(skill_instance)
             else:
-                logger.warning(f"Could not instantiate known skill: {skill_name}")
+                logger.warning("Could not instantiate known skill: %s", skill_name)
 
     return available_skills
 
@@ -107,12 +107,12 @@ def get_carv_skill(
             return instance
         except Exception as e:
             logger.error(
-                f"Failed to instantiate Carv skill '{name}': {e}", exc_info=True
+                "Failed to instantiate Carv skill '%s': %s", name, e, exc_info=True
             )
             return None  # Failed to instantiate
     else:
         # This handles cases where a name might be in config but not in our map
-        logger.warning(f"Attempted to get unknown Carv skill: {name}")
+        logger.warning("Attempted to get unknown Carv skill: %s", name)
         return None
 
 

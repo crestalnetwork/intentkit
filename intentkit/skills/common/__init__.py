@@ -71,7 +71,7 @@ def get_common_skill(
             _cache[name] = CurrentTime()
         return _cache[name]
     else:
-        logger.warning(f"Unknown common skill: {name}")
+        logger.warning("Unknown common skill: %s", name)
         return None
 
 

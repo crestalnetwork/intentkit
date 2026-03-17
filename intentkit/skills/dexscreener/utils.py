@@ -169,7 +169,7 @@ def get_sort_function(
     elif sort_by == SortBy.VOLUME:
         return lambda pair: get_volume_value(pair, volume_timeframe)
     else:
-        logger.warning(f"Invalid sort_by value '{sort_by}', defaulting to liquidity.")
+        logger.warning("Invalid sort_by value '%s', defaulting to liquidity.", sort_by)
         return get_liquidity_value
 
 
@@ -195,7 +195,7 @@ def sort_pairs_by_criteria(
         sort_func = get_sort_function(sort_by, volume_timeframe)
         return sorted(pairs, key=sort_func, reverse=reverse)
     except Exception as e:
-        logger.error(f"Failed to sort pairs: {e}", exc_info=True)
+        logger.error("Failed to sort pairs: %s", e, exc_info=True)
         return pairs  # Return original list if sorting fails
 
 

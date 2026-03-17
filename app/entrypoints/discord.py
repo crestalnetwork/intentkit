@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import signal
-import sys
 from typing import Any
 
 from sqlalchemy import select
@@ -43,12 +42,13 @@ class AgentScheduler:
                     # Skip failed agents
                     if is_agent_failed(agent.id):
                         logger.debug(
-                            f"Skipping agent {agent.id} - in failed cache due to unauthorized error"
+                            "Skipping agent %s - in failed cache due to unauthorized error",
+                            agent.id,
                         )
                         continue
 
                     if agent.discord_config and agent.discord_config.get("token"):
-                        logger.info(f"New Discord agent {agent.id} found")
+                        logger.info("New Discord agent %s found", agent.id)
                         await self.bot_pool.init_new_bot(agent)
                         await asyncio.sleep(1)
                 else:
@@ -76,7 +76,7 @@ class AgentScheduler:
             try:
                 await self.sync()
             except Exception as e:
-                logger.error(f"Failed to sync agents: {e}")
+                logger.error("Failed to sync agents: %s", e)
 
             await asyncio.sleep(interval)
 
@@ -96,10 +96,12 @@ async def run_discord_server() -> None:
     )
 
     # Signal handler for graceful shutdown
+    shutdown_event = asyncio.Event()
+
     def signal_handler(_signum: Any, _frame: Any):
         logger.info("Received termination signal. Shutting down gracefully...")
         cleanup_alert()
-        sys.exit(0)
+        shutdown_event.set()
 
     # Register signal handlers
     _ = signal.signal(signal.SIGINT, signal_handler)
@@ -115,10 +117,6 @@ async def run_discord_server() -> None:
         scheduler.start(int(config.discord_new_agent_poll_interval))
     )
 
-    # Keep the server running
-    try:
-        while True:
-            await asyncio.sleep(3600)  # Sleep for an hour
-    except asyncio.CancelledError:
-        logger.info("Discord server shutdown initiated")
-        cleanup_alert()
+    # Keep the server running until shutdown signal
+    await shutdown_event.wait()
+    logger.info("Discord server shutdown initiated")

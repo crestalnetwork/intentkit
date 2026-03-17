@@ -63,7 +63,7 @@ def _get_skill(name: str) -> PancakeSwapBaseTool | None:
         elif name == "remove_liquidity":
             _cache[name] = PancakeSwapRemoveLiquidity()
         else:
-            logger.warning(f"Unknown pancakeswap skill: {name}")
+            logger.warning("Unknown pancakeswap skill: %s", name)
             return None
     return _cache[name]
 

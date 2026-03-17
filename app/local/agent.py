@@ -85,7 +85,7 @@ async def create_agent_endpoint(
             if generated_avatar:
                 new_agent.picture = generated_avatar
         except Exception as e:
-            logger.error(f"Failed to auto-generate avatar: {e}")
+            logger.error("Failed to auto-generate avatar: %s", e)
     latest_agent, agent_data = await create_agent(new_agent)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
@@ -135,7 +135,7 @@ async def override_agent_endpoint(
             if generated_avatar:
                 agent.picture = generated_avatar
         except Exception as e:
-            logger.error(f"Failed to auto-generate avatar: {e}")
+            logger.error("Failed to auto-generate avatar: %s", e)
 
     latest_agent, agent_data = await override_agent(agent_id, agent)
 
@@ -193,7 +193,7 @@ async def patch_agent_endpoint(
                 if generated_avatar:
                     agent.picture = generated_avatar
             except Exception as e:
-                logger.error(f"Failed to auto-generate avatar: {e}")
+                logger.error("Failed to auto-generate avatar: %s", e)
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 

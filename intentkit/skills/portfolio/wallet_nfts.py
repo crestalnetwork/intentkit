@@ -96,7 +96,7 @@ class WalletNFTs(PortfolioBaseTool):
             Dict containing wallet NFTs data
         """
         context = self.get_context()
-        logger.debug(f"wallet_nfts.py: Fetching wallet NFTs with context {context}")
+        logger.debug("wallet_nfts.py: Fetching wallet NFTs with context %s", context)
 
         # Get the API key from the agent's configuration
         api_key = self.get_api_key()

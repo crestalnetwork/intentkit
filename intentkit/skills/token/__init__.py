@@ -94,7 +94,7 @@ def get_token_skill(
     elif name == "token_analytics":
         skill = TokenAnalytics()
     else:
-        logger.warning(f"Unknown Token skill: {name}")
+        logger.warning("Unknown Token skill: %s", name)
         return None
 
     if skill:

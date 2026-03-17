@@ -48,7 +48,7 @@ async def add_column_if_not_exists(
 
         # Execute ALTER TABLE
         await conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_def}"))
-        logger.info(f"Added column {column.name} to table {table_name}")
+        logger.info("Added column %s to table %s", column.name, table_name)
 
 
 async def update_table_schema(conn, dialect, model_cls) -> None:
@@ -101,7 +101,7 @@ async def safe_migrate(engine) -> None:
             # Migrate checkpoints tables
             await migrate_checkpoints_table(conn)
         except Exception as e:
-            logger.error(f"Error updating database schema: {str(e)}")
+            logger.error("Error updating database schema: %s", e)
             raise
 
     logger.info("Database schema updated successfully")
@@ -157,7 +157,9 @@ async def migrate_checkpoints_table(conn) -> None:
 
         # Step 3: Handle duplicates BEFORE dropping columns (so we can use checkpoint_id, version, etc.)
         if current_cols != expected_cols:
-            logger.info(f"Migrating {table} PK from {current_cols} to {expected_cols}")
+            logger.info(
+                "Migrating %s PK from %s to %s", table, current_cols, expected_cols
+            )
 
             if table == "checkpoints" and expected_cols == {
                 "thread_id",

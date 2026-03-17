@@ -119,9 +119,9 @@ class CasinoDeckDraw(CasinoBaseTool):
                     else:
                         return {"success": False, "error": "Failed to draw cards"}
                 else:
-                    logger.error(f"Deck API error: {response.status_code}")
+                    logger.error("Deck API error: %s", response.status_code)
                     return {"success": False, "error": "Failed to draw cards"}
 
         except Exception as e:
-            logger.error(f"Error drawing cards: {str(e)}")
+            logger.error("Error drawing cards: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

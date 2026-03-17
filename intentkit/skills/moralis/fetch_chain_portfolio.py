@@ -168,7 +168,7 @@ class FetchChainPortfolio(WalletBaseTool):
             return ChainPortfolioOutput(**portfolio)
 
         except Exception as e:
-            logger.error(f"Error fetching chain portfolio: {str(e)}")
+            logger.error("Error fetching chain portfolio: %s", e)
             return ChainPortfolioOutput(
                 address=address,
                 chain_id=chain_id,

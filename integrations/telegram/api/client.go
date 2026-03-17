@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -14,7 +15,7 @@ type Client struct {
 
 func NewClient(baseURL string) *Client {
 	return &Client{
-		client: resty.New(),
+		client: resty.New().SetTimeout(30 * time.Second),
 		baseURL: baseURL,
 	}
 }

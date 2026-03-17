@@ -183,7 +183,7 @@ class TokenExecute(LiFiBaseTool):
                     from_address,
                 )
                 if approval_result:
-                    self.logger.info(f"Token approval completed: {approval_result}")
+                    self.logger.info("Token approval completed: %s", approval_result)
 
                 # Step 3: Execute transaction
                 tx_hash = await self._execute_transfer_transaction(
@@ -391,7 +391,7 @@ class TokenExecute(LiFiBaseTool):
         quote_data: dict[str, Any],
     ) -> str:
         """Finalize transfer and return formatted result."""
-        self.logger.info(f"Transaction sent: {tx_hash}")
+        self.logger.info("Transaction sent: %s", tx_hash)
 
         # Get chain ID for explorer URL
         from_chain_id = convert_chain_to_id(from_chain)
@@ -523,7 +523,7 @@ class TokenExecute(LiFiBaseTool):
                     return None  # No approval needed
 
             except Exception as e:
-                self.logger.warning(f"Could not check current allowance: {str(e)}")
+                self.logger.warning("Could not check current allowance: %s", e)
                 # Continue with approval anyway
 
             # Set approval for the required amount
@@ -553,5 +553,5 @@ class TokenExecute(LiFiBaseTool):
             return approval_tx_hash
 
         except Exception as e:
-            self.logger.error(f"Token approval failed: {str(e)}")
+            self.logger.error("Token approval failed: %s", e)
             raise ToolException(f"Failed to approve token transfer: {str(e)}")

@@ -73,7 +73,7 @@ def get_dapplooker_skill(
             _cache[name] = DappLookerTokenData()
         return _cache[name]
     else:
-        logger.warning(f"Unknown DappLooker skill: {name}")
+        logger.warning("Unknown DappLooker skill: %s", name)
         return None
 
 

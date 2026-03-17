@@ -39,7 +39,7 @@ class TwitterGetMentions(TwitterBaseTool):
             )
             client = await twitter.get_client()
 
-            logger.debug(f"Use Key: {twitter.use_key}")
+            logger.debug("Use Key: %s", twitter.use_key)
 
             # Check rate limit only when not using OAuth
             if not twitter.use_key:
@@ -103,5 +103,5 @@ class TwitterGetMentions(TwitterBaseTool):
             return mentions
 
         except Exception as e:
-            logger.error(f"[agent:{context.agent_id}]: {e}")
+            logger.error("[agent:%s]: %s", context.agent_id, e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

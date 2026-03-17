@@ -80,7 +80,7 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
         # Convert boolean params to strings
         processed_params = self._prepare_params(params) if params else None
 
-        logger.debug(f"portfolio/base.py: Making request to {url}")
+        logger.debug("portfolio/base.py: Making request to %s", url)
 
         async with aiohttp.ClientSession() as session:
             async with session.request(

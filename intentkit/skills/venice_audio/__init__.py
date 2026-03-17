@@ -72,7 +72,7 @@ async def get_skills(
                 available_skills.append(skill_instance)
             else:
                 # This case should ideally not happen if the map is correct
-                logger.warning(f"Could not instantiate known skill: {skill_name}")
+                logger.warning("Could not instantiate known skill: %s", skill_name)
 
     return available_skills
 

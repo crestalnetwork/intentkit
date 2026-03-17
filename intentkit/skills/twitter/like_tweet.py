@@ -47,9 +47,9 @@ class TwitterLikeTweet(TwitterBaseTool):
             if "data" in response and "liked" in response["data"]:
                 return response
             else:
-                logger.error(f"Error liking tweet: {str(response)}")
+                logger.error("Error liking tweet: %s", response)
                 raise ToolException("Failed to like tweet.")
 
         except Exception as e:
-            logger.error(f"Error liking tweet: {str(e)}")
+            logger.error("Error liking tweet: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

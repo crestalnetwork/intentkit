@@ -53,7 +53,7 @@ class FetchNewsTool(CarvBaseTool):
             )
 
             if error is not None or result is None:
-                logger.error(f"Error returned from CARV API (News): {error}")
+                logger.error("Error returned from CARV API (News): %s", error)
                 return {
                     "error": True,
                     "error_type": "APIError",

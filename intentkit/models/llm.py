@@ -573,7 +573,7 @@ class OpenAILLM(LLMModel):
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
-        logger.debug(f"Creating ChatOpenAI instance with kwargs: {kwargs}")
+        logger.debug("Creating ChatOpenAI instance with kwargs: %s", kwargs)
 
         return ChatOpenAI(**kwargs)
 

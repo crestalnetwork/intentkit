@@ -29,5 +29,5 @@ def cancel_task(agent_id: str, chat_id: str) -> bool:
     if task is None or task.done():
         return False
     task.cancel()
-    logger.info(f"Cancelled task for agent {agent_id}, chat {chat_id}")
+    logger.info("Cancelled task for agent %s, chat %s", agent_id, chat_id)
     return True

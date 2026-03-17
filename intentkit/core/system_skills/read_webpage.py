@@ -94,7 +94,7 @@ class ReadWebpageSkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            logger.error(f"read_webpage failed: {e}", exc_info=True)
+            logger.error("read_webpage failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to read webpage: {e}") from e
 
     async def _fetch_markdown(self, account_id: str, api_token: str, url: str) -> str:
@@ -177,7 +177,7 @@ class ReadWebpageSkill(SystemSkill):
                     cached_input_tokens=cached_input_tokens,
                 )
         except Exception as e:
-            logger.warning(f"Failed to bill for LLM cleaning: {e}")
+            logger.warning("Failed to bill for LLM cleaning: %s", e)
 
         result = response.content
         return str(result) if result else content

@@ -40,7 +40,7 @@ async def cleanup_checkpoints(days: int = 90, dry_run: bool = False) -> int:
         result = await session.execute(count_query, {"cutoff": cutoff_date})
         thread_count = int(result.scalar() or 0)
 
-    logger.info(f"Found {thread_count} threads to delete.")
+    logger.info("Found %s threads to delete.", thread_count)
 
     if thread_count == 0:
         return 0

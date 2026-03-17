@@ -64,7 +64,9 @@ class GetPairInfo(DexScreenerBaseTool):
                 return await self._handle_error_response(error_details)
 
             if not data:
-                logger.error(f"No data returned for pair {pair_address} on {chain_id}")
+                logger.error(
+                    "No data returned for pair %s on %s", pair_address, chain_id
+                )
                 return create_error_response(
                     error_type="empty_success",
                     message="API call returned empty success response.",
@@ -89,7 +91,9 @@ class GetPairInfo(DexScreenerBaseTool):
                 # Validate the response using our existing PairModel
                 pair_data = PairModel.model_validate(data)
                 logger.info(
-                    f"Successfully retrieved pair info for {pair_address} on {chain_id}"
+                    "Successfully retrieved pair info for %s on %s",
+                    pair_address,
+                    chain_id,
                 )
 
                 return format_success_response(
@@ -102,7 +106,10 @@ class GetPairInfo(DexScreenerBaseTool):
 
             except Exception as validation_error:
                 logger.error(
-                    f"Failed to validate pair response for {pair_address} on {chain_id}: {validation_error}",
+                    "Failed to validate pair response for %s on %s: %s",
+                    pair_address,
+                    chain_id,
+                    validation_error,
                     exc_info=True,
                 )
                 # Return raw data if validation fails
@@ -128,10 +135,10 @@ class GetPairInfo(DexScreenerBaseTool):
             "unexpected_error",
         ]:
             logger.error(
-                f"DexScreener get_pair_info tool encountered an error: {error_details}"
+                "DexScreener get_pair_info tool encountered an error: %s", error_details
             )
         else:  # api_error
-            logger.warning(f"DexScreener API returned an error: {error_details}")
+            logger.warning("DexScreener API returned an error: %s", error_details)
 
         # Truncate potentially large fields before returning to user/LLM
         truncated_details = truncate_large_fields(error_details)

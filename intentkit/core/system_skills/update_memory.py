@@ -50,5 +50,5 @@ class UpdateMemorySkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"update_memory failed: {e}", exc_info=True)
+            self.logger.error("update_memory failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to update memory: {e}") from e

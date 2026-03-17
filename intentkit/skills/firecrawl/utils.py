@@ -103,7 +103,7 @@ class FirecrawlVectorStoreManager:
 
                 return encoded_files
         except Exception as e:
-            logger.error(f"Error encoding vector store: {e}")
+            logger.error("Error encoding vector store: %s", e)
             raise
 
     def decode_vector_store(
@@ -129,7 +129,7 @@ class FirecrawlVectorStoreManager:
                     allow_dangerous_deserialization=True,
                 )
         except Exception as e:
-            logger.error(f"Error decoding vector store: {e}")
+            logger.error("Error decoding vector store: %s", e)
             raise
 
     async def load_vector_store(self, agent_id: str) -> FAISS | None:
@@ -147,7 +147,7 @@ class FirecrawlVectorStoreManager:
             return self.decode_vector_store(stored_data["faiss_files"], embeddings)
 
         except Exception as e:
-            logger.error(f"Error loading vector store for agent {agent_id}: {e}")
+            logger.error("Error loading vector store for agent %s: %s", agent_id, e)
             return None
 
     async def save_vector_store(
@@ -178,7 +178,7 @@ class FirecrawlVectorStoreManager:
             await skill_data.save()
 
         except Exception as e:
-            logger.error(f"Error saving vector store for agent {agent_id}: {e}")
+            logger.error("Error saving vector store for agent %s: %s", agent_id, e)
             raise
 
 
@@ -211,7 +211,7 @@ class FirecrawlMetadataManager:
             )
             await skill_data.save()
         except Exception as e:
-            logger.error(f"Error updating metadata for agent {agent_id}: {e}")
+            logger.error("Error updating metadata for agent %s: %s", agent_id, e)
             raise
 
 
@@ -268,12 +268,12 @@ async def index_documents(
         )
 
         logger.info(
-            f"Successfully indexed {len(split_docs)} chunks for agent {agent_id}"
+            "Successfully indexed %s chunks for agent %s", len(split_docs), agent_id
         )
         return len(split_docs), was_merged
 
     except Exception as e:
-        logger.error(f"Error indexing documents for agent {agent_id}: {e}")
+        logger.error("Error indexing documents for agent %s: %s", agent_id, e)
         raise
 
 
@@ -301,15 +301,15 @@ async def query_indexed_content(
         vector_store = await vector_manager.load_vector_store(agent_id)
 
         if not vector_store:
-            logger.warning(f"No vector store found for agent {agent_id}")
+            logger.warning("No vector store found for agent %s", agent_id)
             return []
 
         # Perform similarity search
         docs = vector_store.similarity_search(query, k=max_results)
 
-        logger.info(f"Found {len(docs)} documents for query: {query}")
+        logger.info("Found %s documents for query: %s", len(docs), query)
         return docs
 
     except Exception as e:
-        logger.error(f"Error querying indexed content for agent {agent_id}: {e}")
+        logger.error("Error querying indexed content for agent %s: %s", agent_id, e)
         raise

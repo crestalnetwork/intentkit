@@ -50,7 +50,7 @@ jobstores = {
         run_times_key="intentkit:autonomous:run_times",
     )
 }
-logger.info(f"autonomous scheduler use redis store: {config.redis_host}")
+logger.info("autonomous scheduler use redis store: %s", config.redis_host)
 scheduler = AsyncIOScheduler(jobstores=jobstores)
 
 # Head job ID, it schedules the other jobs
@@ -143,7 +143,7 @@ async def _update_autonomous_status_safe(
     try:
         await _update_autonomous_status(job_id, status)
     except Exception as e:
-        logger.error(f"Failed to update autonomous status for job {job_id}: {e}")
+        logger.error("Failed to update autonomous status for job %s: %s", job_id, e)
 
 
 def _handle_autonomous_event(
@@ -178,7 +178,7 @@ async def send_autonomous_heartbeat():
         await send_heartbeat(redis_client, "autonomous")
         logger.info("Sent autonomous heartbeat successfully")
     except Exception as e:
-        logger.error(f"Error sending autonomous heartbeat: {e}")
+        logger.error("Error sending autonomous heartbeat: %s", e)
 
 
 async def schedule_agent_autonomous_tasks():
@@ -272,12 +272,12 @@ async def schedule_agent_autonomous_tasks():
                 )
 
     # Delete jobs not in the list
-    logger.debug(f"Current jobs: {planned_jobs}")
+    logger.debug("Current jobs: %s", planned_jobs)
     jobs = scheduler.get_jobs()
     for job in jobs:
         if job.id not in planned_jobs:
             scheduler.remove_job(job.id)
-            logger.info(f"Removed job {job.id}")
+            logger.info("Removed job %s", job.id)
 
 
 if __name__ == "__main__":
@@ -342,7 +342,7 @@ if __name__ == "__main__":
                 redis_client = get_redis()
                 await clean_heartbeat(redis_client, "autonomous")
             except Exception as e:
-                logger.error(f"Error cleaning up heartbeat: {e}")
+                logger.error("Error cleaning up heartbeat: %s", e)
 
             cleanup_alert()
 
@@ -357,7 +357,7 @@ if __name__ == "__main__":
             _ = await shutdown_event.wait()
             logger.info("Received shutdown signal. Shutting down gracefully...")
         except Exception as e:
-            logger.error(f"Error in autonomous process: {e}")
+            logger.error("Error in autonomous process: %s", e)
         finally:
             # Run the cleanup code and shutdown the scheduler
             await cleanup_resources()

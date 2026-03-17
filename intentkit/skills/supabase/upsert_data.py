@@ -63,5 +63,5 @@ class SupabaseUpsertData(SupabaseBaseTool):
             }
 
         except Exception as e:
-            logger.error(f"Error upserting data in Supabase: {str(e)}")
+            logger.error("Error upserting data in Supabase: %s", e)
             raise ToolException(f"Failed to upsert data in table '{table}': {str(e)}")

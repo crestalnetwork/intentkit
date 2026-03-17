@@ -117,7 +117,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
                 )
 
         except Exception as e:
-            logger.error(f"Error fetching Solana portfolio: {str(e)}")
+            logger.error("Error fetching Solana portfolio: %s", e)
             return SolanaPortfolioOutput(
                 address=address, sol_balance=0, sol_balance_lamports=0, error=str(e)
             )

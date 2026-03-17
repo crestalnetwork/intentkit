@@ -92,7 +92,7 @@ def get_web_scraper_skill(
             _cache[name] = DocumentIndexer()
         return _cache[name]
     else:
-        logger.warning(f"Unknown web scraper skill: {name}")
+        logger.warning("Unknown web scraper skill: %s", name)
         return None
 
 

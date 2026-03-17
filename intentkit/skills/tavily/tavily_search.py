@@ -6,7 +6,6 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.config.config import config
 from intentkit.skills.tavily.base import TavilyBaseTool
 
 logger = logging.getLogger(__name__)
@@ -71,7 +70,7 @@ class TavilySearch(TavilyBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        logger.debug(f"tavily.py: Running web search with context {context}")
+        logger.debug("tavily.py: Running web search with context %s", context)
 
         if skill_config.get("api_key_provider") == "agent_owner":
             if skill_config.get("rate_limit_number") and skill_config.get(
@@ -83,14 +82,7 @@ class TavilySearch(TavilyBaseTool):
                 )
 
         # Get the API key from the agent's configuration
-        if skill_config.get("api_key_provider") == "agent_owner":
-            api_key = skill_config.get("api_key")
-        else:
-            api_key = config.tavily_api_key
-        if not api_key:
-            raise ToolException(
-                "Error: No Tavily API key provided in the configuration."
-            )
+        api_key = self.get_api_key()
         # Limit max_results to a reasonable range
         max_results = max(1, min(max_results, 10))
 
@@ -138,7 +130,7 @@ class TavilySearch(TavilyBaseTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.error(f"tavily.py: Error searching web: {e}", exc_info=True)
+            logger.error("tavily.py: Error searching web: %s", e, exc_info=True)
             raise ToolException(
                 "An error occurred while searching the web. Please try again later."
             )

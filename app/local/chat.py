@@ -601,7 +601,7 @@ async def send_message(
                 if should_schedule_summary:
                     _schedule_chat_summary_title_update(aid, chat_id)
             except asyncio.CancelledError:
-                logger.info(f"Stream cancelled for agent {aid}, chat {chat_id}")
+                logger.info("Stream cancelled for agent %s, chat %s", aid, chat_id)
                 return
             finally:
                 unregister_task(aid, chat_id)

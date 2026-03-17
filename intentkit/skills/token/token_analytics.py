@@ -73,7 +73,7 @@ class TokenAnalytics(TokenBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(f"Error fetching token analytics: {e}")
+            logger.error("Error fetching token analytics: %s", e)
             return {
                 "error": f"An error occurred while fetching token analytics: {str(e)}. Please try again later."
             }

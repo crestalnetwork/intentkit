@@ -105,16 +105,19 @@ class ScrapeAndIndex(WebScraperBaseTool):
             )
 
             logger.info(
-                f"[{agent_id}] Scraping completed: {total_chunks} chunks indexed, merged: {was_merged}"
+                "[%s] Scraping completed: %s chunks indexed, merged: %s",
+                agent_id,
+                total_chunks,
+                was_merged,
             )
 
             if not valid_urls:
-                logger.error(f"[{agent_id}] No valid URLs provided")
+                logger.error("[%s] No valid URLs provided", agent_id)
                 raise ToolException(
                     "Error: No valid URLs provided. URLs must start with http:// or https://"
                 )
             if total_chunks == 0:
-                logger.error(f"[{agent_id}] No content extracted from URLs")
+                logger.error("[%s] No content extracted from URLs", agent_id)
                 raise ToolException(
                     "Error: No content could be extracted from the provided URLs."
                 )
@@ -129,7 +132,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
             )
             await metadata_manager.update_metadata(agent_id, new_metadata)
 
-            logger.info(f"[{agent_id}] Metadata updated successfully")
+            logger.info("[%s] Metadata updated successfully", agent_id)
 
             # Format response
             response = ResponseFormatter.format_indexing_response(
@@ -145,7 +148,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
             )
 
             logger.info(
-                f"[{agent_id}] Scrape and index operation completed successfully"
+                "[%s] Scrape and index operation completed successfully", agent_id
             )
             return response
 
@@ -160,7 +163,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
             except Exception:
                 pass
 
-            logger.error(f"[{agent_id}] Error in ScrapeAndIndex: {e}", exc_info=True)
+            logger.error("[%s] Error in ScrapeAndIndex: %s", agent_id, e, exc_info=True)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e
 
 
@@ -197,42 +200,44 @@ class QueryIndexedContent(WebScraperBaseTool):
 
             agent_id = context.agent_id
 
-            logger.info(f"[{agent_id}] Starting query operation: '{query}'")
+            logger.info("[%s] Starting query operation: '%s'", agent_id, query)
 
             # Retrieve vector store
             vector_store_key = f"vector_store_{agent_id}"
 
-            logger.info(f"[{agent_id}] Looking for vector store: {vector_store_key}")
+            logger.info("[%s] Looking for vector store: %s", agent_id, vector_store_key)
 
             embedding_api_key = self.get_openai_api_key()
             vector_manager = VectorStoreManager(embedding_api_key)
             stored_data = await vector_manager.get_existing_vector_store(agent_id)
 
             if not stored_data:
-                logger.warning(f"[{agent_id}] No vector store found")
+                logger.warning("[%s] No vector store found", agent_id)
                 return "No indexed content found. Please use the scrape_and_index tool first to scrape and index some web content before querying."
 
             if not stored_data or "faiss_files" not in stored_data:
-                logger.warning(f"[{agent_id}] Invalid stored data structure")
+                logger.warning("[%s] Invalid stored data structure", agent_id)
                 return "No indexed content found. Please use the scrape_and_index tool first to scrape and index some web content before querying."
 
             # Create embeddings and decode vector store
-            logger.info(f"[{agent_id}] Decoding vector store")
+            logger.info("[%s] Decoding vector store", agent_id)
             embeddings = vector_manager.create_embeddings()
             vector_store = vector_manager.decode_vector_store(
                 stored_data["faiss_files"], embeddings
             )
 
             logger.info(
-                f"[{agent_id}] Vector store loaded, index count: {vector_store.index.ntotal}"
+                "[%s] Vector store loaded, index count: %s",
+                agent_id,
+                vector_store.index.ntotal,
             )
 
             # Perform similarity search
             docs = vector_store.similarity_search(query, k=max_results)
-            logger.info(f"[{agent_id}] Found {len(docs)} similar documents")
+            logger.info("[%s] Found %s similar documents", agent_id, len(docs))
 
             if not docs:
-                logger.info(f"[{agent_id}] No relevant documents found for query")
+                logger.info("[%s] No relevant documents found for query", agent_id)
                 return f"No relevant information found for your query: '{query}'. The indexed content may not contain information related to your search."
 
             # Format results

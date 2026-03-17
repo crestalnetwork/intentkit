@@ -660,17 +660,21 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
 
         if check_failed_count > 0:
             logger.warning(
-                f"{check_name}: {check_failed_count} of {len(check_results)} checks failed"
+                "%s: %s of %s checks failed",
+                check_name,
+                check_failed_count,
+                len(check_results),
             )
             all_passed = False
         else:
-            logger.info(f"{check_name}: All {len(check_results)} checks passed")
+            logger.info("%s: All %s checks passed", check_name, len(check_results))
 
     if all_passed:
         logger.info("All quick account checks passed successfully")
     else:
         logger.warning(
-            f"Quick account checking summary: {failed_count} checks failed - see logs for details"
+            "Quick account checking summary: %s checks failed - see logs for details",
+            failed_count,
         )
 
     # Create a summary message with color based on status
@@ -740,17 +744,21 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
 
         if check_failed_count > 0:
             logger.warning(
-                f"{check_name}: {check_failed_count} of {len(check_results)} checks failed"
+                "%s: %s of %s checks failed",
+                check_name,
+                check_failed_count,
+                len(check_results),
             )
             all_passed = False
         else:
-            logger.info(f"{check_name}: All {len(check_results)} checks passed")
+            logger.info("%s: All %s checks passed", check_name, len(check_results))
 
     if all_passed:
         logger.info("All slow account checks passed successfully")
     else:
         logger.warning(
-            f"Slow account checking summary: {failed_count} checks failed - see logs for details"
+            "Slow account checking summary: %s checks failed - see logs for details",
+            failed_count,
         )
 
     # Send summary to Slack

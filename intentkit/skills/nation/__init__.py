@@ -50,7 +50,7 @@ def get_nation_skill(
             _cache[name] = NftCheck()
         return _cache[name]
     else:
-        logger.error(f"Unknown Nation skill: {name}")
+        logger.error("Unknown Nation skill: %s", name)
         return None
 
 

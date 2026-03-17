@@ -12,7 +12,7 @@ async def has_whitelist_access(agent_id: str, chat_id: int) -> bool:
     """
     agent_item = agent_by_id(agent_id)
     if not agent_item:
-        logger.warning(f"Agent {agent_id} not found in cache during whitelist check")
+        logger.warning("Agent %s not found in cache during whitelist check", agent_id)
         return False
 
     config = agent_item.agent.telegram_config or {}

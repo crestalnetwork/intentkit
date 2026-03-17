@@ -138,7 +138,7 @@ async def process_agent_wallet(
                 chain_config = config.chain_provider.get_chain_config(network_id)
                 rpc_url = chain_config.rpc_url
             except Exception as e:
-                logger.warning(f"Failed to get RPC URL from chain provider: {e}")
+                logger.warning("Failed to get RPC URL from chain provider: %s", e)
 
         existing_privy_wallet_id: str | None = None
         existing_privy_wallet_address: str | None = None
@@ -149,11 +149,13 @@ async def process_agent_wallet(
                 existing_privy_wallet_address = partial_data.get("privy_wallet_address")
                 if existing_privy_wallet_id and existing_privy_wallet_address:
                     logger.info(
-                        f"Found partial Privy wallet data for agent {agent.id}, "
-                        + f"attempting recovery with wallet {existing_privy_wallet_id}"
+                        "Found partial Privy wallet data for agent %s, "
+                        "attempting recovery with wallet %s",
+                        agent.id,
+                        existing_privy_wallet_id,
                     )
             except (json.JSONDecodeError, KeyError) as e:
-                logger.warning(f"Failed to parse existing privy_wallet_data: {e}")
+                logger.warning("Failed to parse existing privy_wallet_data: %s", e)
 
         if not existing_privy_wallet_id:
             from intentkit.wallets.privy import PrivyClient
@@ -289,7 +291,7 @@ def _resolve_safe_rpc_url(network_id: str, privy_wallet_data: dict[str, Any]) ->
             chain_config = config.chain_provider.get_chain_config(network_id)
             rpc_url = chain_config.rpc_url
         except Exception as e:
-            logger.warning(f"Failed to get RPC URL from chain provider: {e}")
+            logger.warning("Failed to get RPC URL from chain provider: %s", e)
 
     if not rpc_url:
         from intentkit.wallets.privy import CHAIN_CONFIGS

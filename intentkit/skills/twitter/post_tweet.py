@@ -86,9 +86,9 @@ class TwitterPostTweet(TwitterBaseTool):
                 )
                 return result
             else:
-                logger.error(f"Error posting tweet: {str(response)}")
+                logger.error("Error posting tweet: %s", response)
                 raise ToolException("Failed to post tweet.")
 
         except Exception as e:
-            logger.error(f"Error posting tweet: {str(e)}")
+            logger.error("Error posting tweet: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

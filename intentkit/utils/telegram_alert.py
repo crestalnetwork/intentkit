@@ -95,10 +95,10 @@ def send_telegram_message(
     try:
         response = _telegram_client.post(url, json=payload)
         _ = response.raise_for_status()
-        logger.info(f"Message sent successfully to Telegram chat {target_chat_id}")
+        logger.info("Message sent successfully to Telegram chat %s", target_chat_id)
     except httpx.HTTPStatusError as e:
-        logger.error(f"Failed to send Telegram message: {str(e)}")
+        logger.error("Failed to send Telegram message: %s", e)
         raise
     except Exception as e:
-        logger.error(f"Failed to send Telegram message: {str(e)}")
+        logger.error("Failed to send Telegram message: %s", e)
         raise

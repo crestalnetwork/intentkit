@@ -86,7 +86,9 @@ async def render_agent(agent: Agent) -> Agent:
             select(TemplateTable).where(TemplateTable.id == template_id)
         )
         if template_row is None:
-            logger.warning(f"Template '{template_id}' not found for agent '{agent.id}'")
+            logger.warning(
+                "Template '%s' not found for agent '%s'", template_id, agent.id
+            )
             return agent
 
         template = Template.model_validate(template_row)

@@ -48,7 +48,7 @@ class TwitterFollowUser(TwitterBaseTool):
             if "data" in response and response["data"].get("following"):
                 return response
             else:
-                logger.error(f"Error following user: {str(response)}")
+                logger.error("Error following user: %s", response)
                 raise ToolException("Failed to follow user")
 
         except Exception as e:

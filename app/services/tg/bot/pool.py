@@ -81,7 +81,7 @@ class BotPool:
                 )
                 setup_application(self.app, dp, bot=self.god_bot)
             except Exception as e:
-                logger.error(f"failed to init god bot: {e}")
+                logger.error("failed to init god bot: %s", e)
 
     def init_all_dispatchers(self):
         logger.info("Initialize all dispatchers...")
@@ -99,7 +99,7 @@ class BotPool:
                 path=BOTS_PATH.format(kind=kind.value, bot_token="{bot_token}"),
             )
             setup_application(self.app, b.get_dispatcher())
-            logger.info(f"{kind} router initialized...")
+            logger.info("%s router initialized...", kind)
 
     async def init_new_bot(self, agent: Agent):
         bot_item = None
@@ -115,17 +115,19 @@ class BotPool:
             set_cache_bot(bot_item)
             set_cache_agent(agent_item)
 
-            logger.info(f"bot for agent {agent.id} initialized...")
+            logger.info("bot for agent %s initialized...", agent.id)
 
         except ValueError as e:
             logger.warning(
-                f"bot for agent {agent.id} did not started because of invalid data. err: {e}"
+                "bot for agent %s did not started because of invalid data. err: %s",
+                agent.id,
+                e,
             )
         except TelegramUnauthorizedError as e:
-            logger.info(f"failed to init new bot for agent {agent.id}: {e}")
+            logger.info("failed to init new bot for agent %s: %s", agent.id, e)
             add_failed_agent(agent.id)
         except Exception as e:
-            logger.info(f"failed to init new bot for agent {agent.id}: {e}")
+            logger.info("failed to init new bot for agent %s: %s", agent.id, e)
         finally:
             if bot_item and bot_item.bot:
                 await bot_item.bot.session.close()
@@ -191,14 +193,14 @@ class BotPool:
             set_cache_bot(new_bot_item)
             set_cache_agent(new_agent_item)
 
-            logger.info(f"bot for agent {agent.id} token changed...")
+            logger.info("bot for agent %s token changed...", agent.id)
             new_bot_success = True
         except ValueError as e:
             logger.warning(
                 f"bot for agent {agent.id} token did not changed because of invalid data. err: {e}"
             )
         except Exception as e:
-            logger.error(f"failed to change bot token for agent {agent.id}: {str(e)}")
+            logger.error("failed to change bot token for agent %s: %s", agent.id, e)
         finally:
             if old_bot_stopped and old_bot:
                 await old_bot.session.close()
@@ -229,9 +231,9 @@ class BotPool:
             delete_cache_bot(token)
             delete_cache_agent(agent_id)
 
-            logger.info(f"Bot for agent {agent_id} stopped...")
+            logger.info("Bot for agent %s stopped...", agent_id)
         except Exception as e:
-            logger.error(f"failed to stop the bot for agent {agent_id}: {e}")
+            logger.error("failed to stop the bot for agent %s: %s", agent_id, e)
         finally:
             if bot:
                 await bot.session.close()
@@ -270,7 +272,7 @@ class BotPool:
             # if old_bot_item.kind != agent.telegram_config.get("kind"):
             #     await self.stop_bot(agent.id, token)
             #     await self.init_new_bot(agent)
-            logger.info(f"configurations of the bot for agent {agent.id} updated...")
+            logger.info("configurations of the bot for agent %s updated...", agent.id)
 
         except ValueError as e:
             logger.warning(

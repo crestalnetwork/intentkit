@@ -61,7 +61,7 @@ async def update_memory(agent_id: str, new_content: str) -> str:
         if not isinstance(result, str):
             result = str(result)
     except Exception as e:
-        logger.error(f"LLM memory merge failed for agent {agent_id}: {e}")
+        logger.error("LLM memory merge failed for agent %s: %s", agent_id, e)
         # Fallback: just append
         result = (
             f"{existing_memory}\n\n{new_content}".strip()

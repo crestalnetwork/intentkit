@@ -133,7 +133,7 @@ class ERC20Transfers(TokenBaseTool):
                 method="GET", endpoint=endpoint, api_key=api_key, params=params
             )
         except Exception as e:
-            logger.error(f"Error fetching ERC20 transfers: {e}")
+            logger.error("Error fetching ERC20 transfers: %s", e)
             return {
                 "error": f"An error occurred while fetching ERC20 transfers: {str(e)}. Please try again later."
             }

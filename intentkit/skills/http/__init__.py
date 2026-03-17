@@ -85,7 +85,7 @@ def get_http_skill(
             _cache[name] = HttpPut()
         return _cache[name]
     else:
-        logger.warning(f"Unknown HTTP skill: {name}")
+        logger.warning("Unknown HTTP skill: %s", name)
         return None
 
 

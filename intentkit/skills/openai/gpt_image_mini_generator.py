@@ -69,7 +69,7 @@ class GPTImageMiniGenerator(OpenAIBaseTool):
                     and usage.input_tokens_details
                 ):
                     details = usage.input_tokens_details
-                    logger.info(f"Input tokens details: {details}")
+                    logger.info("Input tokens details: %s", details)
 
             image_bytes = base64.b64decode(base64_image)
 

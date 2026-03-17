@@ -119,7 +119,7 @@ def get_twitter_skill(
             _cache[name] = TwitterGetUserTweets()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Twitter skill: {name}")
+        logger.warning("Unknown Twitter skill: %s", name)
         return None
 
 

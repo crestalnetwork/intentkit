@@ -73,7 +73,7 @@ def get_allora_skill(
             _cache[name] = AlloraGetPrice()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Allora skill: {name}")
+        logger.warning("Unknown Allora skill: %s", name)
         return None
 
 

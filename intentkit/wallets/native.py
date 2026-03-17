@@ -112,7 +112,7 @@ class NativeWalletProvider:
                 try:
                     tx_params["gas"] = Wei(await self._w3.eth.estimate_gas(tx_params))
                 except Exception as e:
-                    logger.warning(f"Gas estimation failed, using default: {e}")
+                    logger.warning("Gas estimation failed, using default: %s", e)
                     tx_params["gas"] = Wei(100000)
 
             try:
@@ -121,7 +121,7 @@ class NativeWalletProvider:
                 tx_params["maxFeePerGas"] = Wei(int(base_fee * 2))
                 tx_params["maxPriorityFeePerGas"] = Wei(int(base_fee * 0.1))
             except Exception as e:
-                logger.warning(f"Failed to get fee history, using legacy gas: {e}")
+                logger.warning("Failed to get fee history, using legacy gas: %s", e)
                 tx_params["gasPrice"] = Wei(await self._w3.eth.gas_price)
 
             signed_tx = self._account.sign_transaction(tx_params)
@@ -133,7 +133,7 @@ class NativeWalletProvider:
             )
 
         except Exception as e:
-            logger.error(f"Transaction execution failed: {e}")
+            logger.error("Transaction execution failed: %s", e)
             return TransactionResult(success=False, error=str(e))
 
     async def transfer_erc20(
@@ -199,7 +199,7 @@ class NativeWalletProvider:
             )
 
         except Exception as e:
-            logger.error(f"ERC20 transfer failed: {e}")
+            logger.error("ERC20 transfer failed: %s", e)
             return TransactionResult(success=False, error=str(e))
 
     async def get_erc20_balance(

@@ -116,7 +116,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        logger.debug(f"firecrawl_scrape: Running scrape with context {context}")
+        logger.debug("firecrawl_scrape: Running scrape with context %s", context)
 
         if skill_config.get("api_key_provider") == "agent_owner":
             if skill_config.get("rate_limit_number") and skill_config.get(
@@ -412,12 +412,12 @@ class FirecrawlScrape(FirecrawlBaseTool):
                 return formatted_result.strip()
 
         except httpx.TimeoutException:
-            logger.error(f"firecrawl_scrape: Timeout scraping URL: {url}")
+            logger.error("firecrawl_scrape: Timeout scraping URL: %s", url)
             raise ToolException(
                 f"Timeout error: The request to scrape {url} took too long to complete."
             )
         except ToolException:
             raise
         except Exception as e:
-            logger.error(f"firecrawl_scrape: Error scraping URL: {e}", exc_info=True)
+            logger.error("firecrawl_scrape: Error scraping URL: %s", e, exc_info=True)
             raise ToolException(f"An error occurred while scraping the URL: {str(e)}")

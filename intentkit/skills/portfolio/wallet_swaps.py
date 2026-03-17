@@ -100,7 +100,7 @@ class WalletSwaps(PortfolioBaseTool):
             Dict containing wallet swaps data
         """
         context = self.get_context()
-        logger.debug(f"wallet_swaps.py: Fetching wallet swaps with context {context}")
+        logger.debug("wallet_swaps.py: Fetching wallet swaps with context %s", context)
 
         # Get the API key from the agent's configuration
         api_key = self.get_api_key()

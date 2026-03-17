@@ -21,6 +21,7 @@ type Manager struct {
 	apiClient   *api.Client
 	bots        map[string]*telego.Bot
 	cancelFuncs map[string]context.CancelFunc
+	tokenHashes map[string]string
 	mu          sync.RWMutex
 	stopCh      chan struct{}
 }
@@ -32,6 +33,7 @@ func NewManager(db *gorm.DB, cfg *config.Config, apiClient *api.Client) *Manager
 		apiClient:   apiClient,
 		bots:        make(map[string]*telego.Bot),
 		cancelFuncs: make(map[string]context.CancelFunc),
+		tokenHashes: make(map[string]string),
 		stopCh:      make(chan struct{}),
 	}
 }
@@ -94,6 +96,7 @@ func (m *Manager) syncBots() {
 			cancel()
 			delete(m.bots, id)
 			delete(m.cancelFuncs, id)
+			delete(m.tokenHashes, id)
 			slog.Info("Stopped and removed bot for agent", "agent_id", id)
 		}
 	}
@@ -103,20 +106,31 @@ func (m *Manager) syncBots() {
 }
 
 func (m *Manager) ensureBotRunning(agent *store.Agent) {
-	m.mu.RLock()
-	_, exists := m.bots[agent.ID]
-	m.mu.RUnlock()
-
-	if exists {
-		// potential updates check could go here, for now assuming if it's running it's fine
-		// untill config changes which we might need to track
-		return
-	}
-
 	token := getTokenFromConfig(agent.TelegramConfig)
 	if token == "" {
 		slog.Warn("Agent has enabled telegram but no valid token", "agent_id", agent.ID)
 		return
+	}
+
+	m.mu.RLock()
+	_, exists := m.bots[agent.ID]
+	oldToken := m.tokenHashes[agent.ID]
+	m.mu.RUnlock()
+
+	if exists && oldToken == token {
+		return
+	}
+
+	if exists && oldToken != token {
+		slog.Info("Bot token changed, restarting bot", "agent_id", agent.ID)
+		m.mu.Lock()
+		if cancel, ok := m.cancelFuncs[agent.ID]; ok {
+			cancel()
+		}
+		delete(m.bots, agent.ID)
+		delete(m.cancelFuncs, agent.ID)
+		delete(m.tokenHashes, agent.ID)
+		m.mu.Unlock()
 	}
 
 	bot, err := telego.NewBot(token, telego.WithDefaultDebugLogger())
@@ -150,6 +164,7 @@ func (m *Manager) ensureBotRunning(agent *store.Agent) {
 	m.mu.Lock()
 	m.bots[agent.ID] = bot
 	m.cancelFuncs[agent.ID] = cancel
+	m.tokenHashes[agent.ID] = token
 	m.mu.Unlock()
 
 	slog.Info("Started bot for agent", "agent_id", agent.ID)

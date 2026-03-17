@@ -65,5 +65,5 @@ class SupabaseUpdateData(SupabaseBaseTool):
             }
 
         except Exception as e:
-            logger.error(f"Error updating data in Supabase: {str(e)}")
+            logger.error("Error updating data in Supabase: %s", e)
             raise ToolException(f"Failed to update data in table '{table}': {str(e)}")

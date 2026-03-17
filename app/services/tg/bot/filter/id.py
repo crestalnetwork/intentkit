@@ -27,5 +27,5 @@ class WhitelistedChatIDsFilter(BaseFilter):
             return True
 
         except Exception as e:
-            logger.error(f"failed to filter whitelisted chat ids: {str(e)}")
+            logger.error("failed to filter whitelisted chat ids: %s", e)
             return False

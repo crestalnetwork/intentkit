@@ -153,6 +153,6 @@ async def reward(
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
-        logger.error(f"Failed to send notification for reward: {str(e)}")
+        logger.error("Failed to send notification for reward: %s", e)
 
     return user_account

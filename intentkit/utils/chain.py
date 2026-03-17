@@ -5,6 +5,8 @@ from typing import final, override
 
 import httpx
 
+from intentkit.utils.error import IntentKitLookUpError
+
 logger = logging.getLogger(__name__)
 
 
@@ -120,7 +122,7 @@ class NetworkId(IntEnum):
 
     # Other EVM Chains
     AvalancheMainnet = 43114
-    BinanceMainnet = 56  # BNB Smart Chain (BSC)
+    BnbMainnet = 56  # BNB Smart Chain (BSC), formerly BinanceMainnet
     PolygonMainnet = 137
     GnosisMainnet = 100  # xDai Chain
     CeloMainnet = 42220
@@ -131,9 +133,6 @@ class NetworkId(IntEnum):
     # Base
     BaseMainnet = 8453
     BaseSepolia = 84532
-
-    # BNB
-    BnbMainnet = 56
 
     # Other Chains
     SonicMainnet = 146
@@ -165,7 +164,6 @@ id_to_network: dict[NetworkId, SupportedNetwork] = {
     NetworkId.ArbitrumMainnet: SupportedNetwork.ArbitrumMainnet,
     NetworkId.BaseMainnet: SupportedNetwork.BaseMainnet,
     NetworkId.BaseSepolia: SupportedNetwork.BaseSepolia,
-    NetworkId.BinanceMainnet: SupportedNetwork.BnbMainnet,
     NetworkId.BnbMainnet: SupportedNetwork.BnbMainnet,
     NetworkId.EthereumMainnet: SupportedNetwork.EthereumMainnet,
     # NetworkId.EthereumSepolia: SupportedNetwork.EthereumSepolia, # Sepolia is not explicitly in SupportedNetwork but BaseSepolia is? Wait, BaseSepolia is separate.
@@ -339,7 +337,7 @@ class ChainProvider(ABC):
         try:
             supported_network = resolve_supported_network(network_id)
         except ValueError as exc:
-            raise Exception(f"unsupported network_id: {network_id}") from exc
+            raise ValueError(f"unsupported network_id: {network_id}") from exc
 
         return self._get_chain_config_by_supported_network(supported_network)
 
@@ -348,7 +346,9 @@ class ChainProvider(ABC):
     ) -> ChainConfig:
         chain_config = self.chain_configs.get(supported_network)
         if not chain_config:
-            raise Exception(f"chain config for network {supported_network} not found")
+            raise IntentKitLookUpError(
+                f"chain config for network {supported_network} not found"
+            )
         return chain_config
 
     def get_chain_config_by_id(self, network_id: NetworkId) -> ChainConfig:
@@ -371,7 +371,7 @@ class ChainProvider(ABC):
         """
         network = id_to_network.get(network_id)
         if not network:
-            raise Exception(f"network with id {network_id} not found")
+            raise IntentKitLookUpError(f"network with id {network_id} not found")
         return self._get_chain_config_by_supported_network(network)
 
     @abstractmethod

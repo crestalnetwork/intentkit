@@ -17,5 +17,5 @@ class NoBotFilter(BaseFilter):
             return not message.from_user.is_bot
 
         except Exception as e:
-            logger.error(f"failed to filter no bots: {str(e)}")
+            logger.error("failed to filter no bots: %s", e)
             return False

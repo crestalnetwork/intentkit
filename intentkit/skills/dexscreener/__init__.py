@@ -60,8 +60,8 @@ async def get_skills(
         elif state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
 
-    logger.debug(f"Available Skills {available_skills}")
-    logger.debug(f"Hardcoded Skills {_SKILL_NAME_TO_CLASS_MAP}")
+    logger.debug("Available Skills %s", available_skills)
+    logger.debug("Hardcoded Skills %s", _SKILL_NAME_TO_CLASS_MAP)
 
     # Get each skill using the cached getter
     result = []
@@ -90,7 +90,7 @@ def get_dexscreener_skills(
 
     skill_class = _SKILL_NAME_TO_CLASS_MAP.get(name)
     if not skill_class:
-        logger.warning(f"Unknown Dexscreener skill: {name}")
+        logger.warning("Unknown Dexscreener skill: %s", name)
         return None
 
     _cache[name] = skill_class()

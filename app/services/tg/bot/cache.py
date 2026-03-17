@@ -50,7 +50,7 @@ def is_agent_failed(agent_id: str) -> bool:
 def add_failed_agent(agent_id: str):
     """Add an agent to the failed cache."""
     _failed_agents.add(agent_id)
-    logger.warning(f"Agent {agent_id} added to failed cache due to unauthorized error")
+    logger.warning("Agent %s added to failed cache due to unauthorized error", agent_id)
 
 
 def clear_failed_agents():

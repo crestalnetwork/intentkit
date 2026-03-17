@@ -101,7 +101,7 @@ class WebsiteIndexer(WebScraperBaseTool):
                 if response.status_code == 200:
                     return response.text
             except Exception as e:
-                logger.warning(f"Could not fetch robots.txt from {robots_url}: {e}")
+                logger.warning("Could not fetch robots.txt from %s: %s", robots_url, e)
         return ""
 
     def _extract_sitemaps_from_robots(
@@ -144,7 +144,7 @@ class WebsiteIndexer(WebScraperBaseTool):
                     return response.text
             except Exception as e:
                 logger.warning(
-                    f"Primary headers failed for sitemap from {sitemap_url}: {e}"
+                    "Primary headers failed for sitemap from %s: %s", sitemap_url, e
                 )
 
         # Try with fallback headers
@@ -154,7 +154,7 @@ class WebsiteIndexer(WebScraperBaseTool):
                 if response.status_code == 200:
                     return response.text
             except Exception as e:
-                logger.warning(f"Could not fetch sitemap from {sitemap_url}: {e}")
+                logger.warning("Could not fetch sitemap from %s: %s", sitemap_url, e)
         return ""
 
     async def _get_all_sitemap_content(self, base_url: str) -> tuple[str, list[str]]:
@@ -171,7 +171,7 @@ class WebsiteIndexer(WebScraperBaseTool):
         if not sitemap_urls:
             sitemap_urls = self._get_common_sitemap_patterns(base_url)
 
-        logger.info(f"Checking {len(sitemap_urls)} potential sitemap URLs...")
+        logger.info("Checking %s potential sitemap URLs...", len(sitemap_urls))
 
         # Process each sitemap URL
         sitemaps_to_process = sitemap_urls[:]
@@ -272,7 +272,7 @@ Extract the URLs now:"""
             return (response.choices[0].message.content or "").strip()
 
         except Exception as e:
-            logger.error(f"Error calling OpenAI API: {e}")
+            logger.error("Error calling OpenAI API: %s", e)
             raise
 
     @override
@@ -307,14 +307,14 @@ Extract the URLs now:"""
 
             agent_id = context.agent_id
 
-            logger.info(f"[{agent_id}] Discovering sitemaps for {base_url}...")
+            logger.info("[%s] Discovering sitemaps for %s...", agent_id, base_url)
 
             # Get all sitemap content
             sitemap_xml, found_sitemaps = await self._get_all_sitemap_content(base_url)
 
             if not sitemap_xml:
                 logger.error(
-                    f"[{agent_id}] No accessible sitemaps found for {base_url}"
+                    "[%s] No accessible sitemaps found for %s", agent_id, base_url
                 )
                 raise ToolException(
                     f"Error: No accessible sitemaps found for {base_url}. The website might not have sitemaps or they might be inaccessible."
@@ -410,7 +410,7 @@ Extract the URLs now:"""
             )
             await metadata_manager.update_metadata(agent_id, new_metadata)
 
-            logger.info(f"[{agent_id}] Website indexing completed successfully")
+            logger.info("[%s] Website indexing completed successfully", agent_id)
 
             # Format the indexing result
             result = ResponseFormatter.format_indexing_response(
@@ -452,5 +452,5 @@ Extract the URLs now:"""
             except Exception:
                 pass
 
-            logger.error(f"[{agent_id}] Error in WebsiteIndexer: {e}", exc_info=True)
+            logger.error("[%s] Error in WebsiteIndexer: %s", agent_id, e, exc_info=True)
             raise type(e)(f"[agent:{agent_id}]: {e}") from e

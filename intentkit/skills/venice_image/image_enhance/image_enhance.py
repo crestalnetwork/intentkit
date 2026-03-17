@@ -67,7 +67,7 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
         except ToolException as e:
             raise e
         except Exception as e:
-            logger.error(f"Error in {self.name}: {str(e)}")
+            logger.error("Error in %s: %s", self.name, e)
             raise ToolException(
                 str(
                     {

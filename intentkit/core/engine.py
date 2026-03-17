@@ -380,8 +380,11 @@ async def _handle_model_chunk(
             if search_count > 0:
                 search_cost = await calculate_search_cost(model.provider, search_count)
                 logger.info(
-                    f"[{user_message.agent_id}] Web search: {search_count} calls, "
-                    f"provider={model.provider.value}, cost={search_cost}"
+                    "[%s] Web search: %s calls, provider=%s, cost=%s",
+                    user_message.agent_id,
+                    search_count,
+                    model.provider.value,
+                    search_cost,
                 )
                 amount += search_cost
             credit_event = await expense_message(
@@ -392,7 +395,7 @@ async def _handle_model_chunk(
                 amount,
                 agent,
             )
-            logger.info(f"[{user_message.agent_id}] expense message: {amount}")
+            logger.info("[%s] expense message: %s", user_message.agent_id, amount)
             chat_message_create.credit_event_id = credit_event.id
             chat_message_create.credit_cost = credit_event.total_amount
             chat_message = await chat_message_create.save_in_session(session)
@@ -524,7 +527,7 @@ async def _handle_tools_chunk(
             )
             skill_call["credit_event_id"] = payment_event.id
             skill_call["credit_cost"] = payment_event.total_amount
-            logger.info(f"[{user_message.agent_id}] skill payment: {skill_call}")
+            logger.info("[%s] skill payment: %s", user_message.agent_id, skill_call)
         # 3. Single insert with all credit info populated
         skill_message_create.skill_calls = skill_calls
         skill_message = await skill_message_create.save_in_session(session)
@@ -703,12 +706,12 @@ async def stream_agent_raw(
         "recursion_limit": recursion_limit,
     }
 
-    def get_agent() -> Agent:
+    def get_agent_for_context() -> Agent:
         return agent
 
     context = AgentContext(
         agent_id=user_message.agent_id,
-        get_agent=get_agent,
+        get_agent=get_agent_for_context,
         chat_id=user_message.chat_id,
         user_id=user_message.user_id,
         app_id=user_message.app_id,
@@ -732,7 +735,7 @@ async def stream_agent_raw(
             stream_mode=["updates", "custom"],
         ):
             this_time = time.perf_counter()
-            logger.debug(f"stream chunk: {chunk}", extra={"thread_id": thread_id})
+            logger.debug("stream chunk: %s", chunk, extra={"thread_id": thread_id})
             if len(raw_chunks) < _MAX_RAW_CHUNKS:
                 raw_chunks.append(chunk)
 

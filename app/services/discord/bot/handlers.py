@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 async def on_ready_handler(bot_item: BotPoolItem):
     """Handle bot ready event."""
-    logger.info(f"Discord bot {bot_item.bot.user} is ready")
+    logger.info("Discord bot %s is ready", bot_item.bot.user)
 
     # Update agent data with bot info
     try:
@@ -40,7 +40,7 @@ async def on_ready_handler(bot_item: BotPoolItem):
         agent_data.discord_name = bot_item.bot.user.display_name
         await agent_data.save()
     except Exception as e:
-        logger.error(f"Failed to update agent data: {e}")
+        logger.error("Failed to update agent data: %s", e)
 
 
 async def on_message_handler(message: discord.Message, bot_item: BotPoolItem):
@@ -125,7 +125,7 @@ async def on_message_handler(message: discord.Message, bot_item: BotPoolItem):
                     _ = await message.channel.send(chunk)
 
         except Exception as e:
-            logger.error(f"Error processing Discord message: {e}")
+            logger.error("Error processing Discord message: %s", e)
             _ = await message.channel.send("Sorry, I encountered an error.")
 
 

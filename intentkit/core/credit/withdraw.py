@@ -188,6 +188,6 @@ async def withdraw(
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
-        logger.error(f"Failed to send notification for withdraw: {str(e)}")
+        logger.error("Failed to send notification for withdraw: %s", e)
 
     return updated_agent_account

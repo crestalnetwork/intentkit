@@ -97,7 +97,7 @@ def get_supabase_skill(
             _cache[name] = SupabaseInvokeFunction()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Supabase skill: {name}")
+        logger.warning("Unknown Supabase skill: %s", name)
         return None
 
 

@@ -33,7 +33,7 @@ def ensure_bucket_exists_and_public() -> None:
         # 1. Check if bucket exists
         try:
             client.head_bucket(Bucket=bucket_name)
-            logger.info(f"Bucket '{bucket_name}' already exists.")
+            logger.info("Bucket '%s' already exists.", bucket_name)
             # If bucket exists, we assume it's already configured correctly.
             # We do NOT attempt to set the policy to avoid overwriting existing configurations
             # or triggering errors on providers that don't support it (like Supabase S3).
@@ -42,9 +42,9 @@ def ensure_bucket_exists_and_public() -> None:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code == "404":
                 # Bucket does not exist, create it
-                logger.info(f"Bucket '{bucket_name}' not found. Creating it...")
+                logger.info("Bucket '%s' not found. Creating it...", bucket_name)
                 client.create_bucket(Bucket=bucket_name)
-                logger.info(f"Bucket '{bucket_name}' created successfully.")
+                logger.info("Bucket '%s' created successfully.", bucket_name)
 
                 # 2. Set public read policy ONLY if we created the bucket
                 # This policy allows public read access to all objects in the bucket
@@ -64,17 +64,19 @@ def ensure_bucket_exists_and_public() -> None:
                 # Convert policy to JSON string
                 policy_json = json.dumps(policy)
 
-                logger.info(f"Setting public read policy for bucket '{bucket_name}'...")
+                logger.info(
+                    "Setting public read policy for bucket '%s'...", bucket_name
+                )
                 try:
                     client.put_bucket_policy(Bucket=bucket_name, Policy=policy_json)
-                    logger.info(f"Public read policy set for bucket '{bucket_name}'.")
+                    logger.info("Public read policy set for bucket '%s'.", bucket_name)
                 except ClientError as pe:
                     # Log but don't fail if policy setting fails
-                    logger.warning(f"Failed to set bucket policy: {pe}")
+                    logger.warning("Failed to set bucket policy: %s", pe)
 
             else:
                 # Other error, re-raise
-                logger.error(f"Failed to check bucket existence: {e}")
+                logger.error("Failed to check bucket existence: %s", e)
                 raise
 
     except Exception:

@@ -296,7 +296,7 @@ class SafeClient:
             if response.status_code == 404:
                 return None
             elif response.status_code != 200:
-                logger.error(f"Safe get info failed: {response.text}")
+                logger.error("Safe get info failed: %s", response.text)
                 return None
 
             return response.json()
@@ -483,7 +483,7 @@ class SafeWalletProvider(WalletProvider):
                 return TransactionResult(success=True, tx_hash=tx_hash)
 
         except Exception as e:
-            logger.error(f"Batch transaction execution failed: {e}")
+            logger.error("Batch transaction execution failed: %s", e)
             return TransactionResult(success=False, error=str(e))
 
     async def execute_transaction(
@@ -531,7 +531,7 @@ class SafeWalletProvider(WalletProvider):
             return TransactionResult(success=True, tx_hash=tx_hash)
 
         except Exception as e:
-            logger.error(f"Transaction execution failed: {e}")
+            logger.error("Transaction execution failed: %s", e)
             return TransactionResult(success=False, error=str(e))
 
     async def transfer_erc20(
@@ -679,7 +679,7 @@ class SafeWalletProvider(WalletProvider):
             return TransactionResult(success=True, tx_hash=tx_hash)
 
         except Exception as e:
-            logger.error(f"Allowance transfer failed: {e}")
+            logger.error("Allowance transfer failed: %s", e)
             return TransactionResult(success=False, error=str(e))
 
     async def get_balance(self, chain_id: int | None = None) -> int:
@@ -1038,11 +1038,11 @@ async def deploy_safe_with_allowance(
     # Check if already deployed
     is_deployed = await safe_client.is_deployed(predicted_address, rpc_url)
     if is_deployed:
-        logger.info(f"Safe already deployed at {predicted_address}")
+        logger.info("Safe already deployed at %s", predicted_address)
         result["already_deployed"] = True
     else:
         # Deploy the Safe
-        logger.info(f"Deploying Safe to {predicted_address}")
+        logger.info("Deploying Safe to %s", predicted_address)
         deploy_tx_hash, actual_address = await _deploy_safe(
             owner_address=owner_address,
             salt_nonce=salt_nonce,
@@ -1062,7 +1062,7 @@ async def deploy_safe_with_allowance(
                 f"but actually deployed to {actual_address}. "
                 "This indicates a bug in the CREATE2 address calculation.",
             )
-        logger.info(f"Safe address validated: {predicted_address}")
+        logger.info("Safe address validated: %s", predicted_address)
 
         # Wait for Safe to be visible across RPC nodes before proceeding
         # This prevents race conditions where subsequent operations fail because
@@ -1205,15 +1205,15 @@ async def _deploy_safe(
                     cast(TxParams, cast(object, tx))
                 )
                 tx["gas"] = int(estimated_gas * 1.2)  # Add 20% buffer
-                logger.debug(f"Estimated gas for Safe deployment: {estimated_gas}")
+                logger.debug("Estimated gas for Safe deployment: %s", estimated_gas)
             except Exception as e:
-                logger.warning(f"Gas estimation failed, using default 500000: {e}")
+                logger.warning("Gas estimation failed, using default 500000: %s", e)
 
             # Sign and send
             signed_tx = master_account.sign_transaction(tx)
             tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
-            logger.info(f"Safe deployment tx sent: {tx_hash.hex()}")
+            logger.info("Safe deployment tx sent: %s", tx_hash.hex())
 
             # Wait for confirmation inside the lock to prevent nonce race conditions
             # Other processes must wait until we confirm the transaction is mined
@@ -1227,7 +1227,7 @@ async def _deploy_safe(
             # Reset nonce on error (might be nonce-related)
             error_msg = str(e).lower()
             if "nonce" in error_msg:
-                logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+                logger.warning("Nonce error detected, resetting from blockchain: %s", e)
                 await nonce_manager.reset_from_blockchain(w3)
             raise
         finally:
@@ -1347,17 +1347,22 @@ async def _wait_for_safe_deployed(
                 if len(result) > 2:  # Has contract code
                     if attempt > 0:
                         logger.info(
-                            f"Safe {safe_address} visible after {attempt + 1} attempts"
+                            "Safe %s visible after %s attempts",
+                            safe_address,
+                            attempt + 1,
                         )
                     return True
 
         if attempt < max_retries - 1:
             logger.debug(
-                f"Safe {safe_address} not yet visible, retry {attempt + 1}/{max_retries}"
+                "Safe %s not yet visible, retry %s/%s",
+                safe_address,
+                attempt + 1,
+                max_retries,
             )
             await asyncio.sleep(retry_delay)
 
-    logger.warning(f"Safe {safe_address} not visible after {max_retries} attempts")
+    logger.warning("Safe %s not visible after %s attempts", safe_address, max_retries)
     return False
 
 
@@ -1549,12 +1554,14 @@ async def _send_transaction_with_master_wallet(
                 # Add 20% buffer, but don't exceed block gas limit blindly
                 tx["gas"] = int(estimated_gas * 1.2)
             except Exception as e:
-                logger.warning(f"Gas estimation failed, using default {gas_limit}: {e}")
+                logger.warning(
+                    "Gas estimation failed, using default %s: %s", gas_limit, e
+                )
 
             signed_tx = master_account.sign_transaction(tx)
             tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
-            logger.info(f"Transaction sent via master wallet: {tx_hash.hex()}")
+            logger.info("Transaction sent via master wallet: %s", tx_hash.hex())
 
             # Wait for confirmation inside the lock to prevent nonce race conditions
             # Other processes must wait until we confirm the transaction is mined
@@ -1568,7 +1575,7 @@ async def _send_transaction_with_master_wallet(
             # Reset nonce on error (might be nonce-related)
             error_msg = str(e).lower()
             if "nonce" in error_msg:
-                logger.warning(f"Nonce error detected, resetting from blockchain: {e}")
+                logger.warning("Nonce error detected, resetting from blockchain: %s", e)
                 await nonce_manager.reset_from_blockchain(w3)
             raise
         finally:

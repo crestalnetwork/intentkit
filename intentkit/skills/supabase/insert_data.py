@@ -60,5 +60,5 @@ class SupabaseInsertData(SupabaseBaseTool):
             }
 
         except Exception as e:
-            logger.error(f"Error inserting data into Supabase: {str(e)}")
+            logger.error("Error inserting data into Supabase: %s", e)
             raise ToolException(f"Failed to insert data into table '{table}': {str(e)}")

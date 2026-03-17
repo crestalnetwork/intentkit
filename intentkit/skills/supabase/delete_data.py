@@ -66,5 +66,5 @@ class SupabaseDeleteData(SupabaseBaseTool):
             }
 
         except Exception as e:
-            logger.error(f"Error deleting data from Supabase: {str(e)}")
+            logger.error("Error deleting data from Supabase: %s", e)
             raise ToolException(f"Failed to delete data from table '{table}': {str(e)}")

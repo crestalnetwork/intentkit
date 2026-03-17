@@ -89,11 +89,11 @@ class DocumentIndexer(WebScraperBaseTool):
 
         agent_id = context.agent_id
 
-        logger.info(f"[{agent_id}] Starting document indexing for title: '{title}'")
+        logger.info("[%s] Starting document indexing for title: '%s'", agent_id, title)
 
         # Validate content
         if not DocumentProcessor.validate_content(text_content):
-            logger.error(f"[{agent_id}] Content validation failed - too short")
+            logger.error("[%s] Content validation failed - too short", agent_id)
             raise ToolException(
                 "Error: Text content is too short. Please provide at least 10 characters of content."
             )
@@ -107,7 +107,9 @@ class DocumentIndexer(WebScraperBaseTool):
         )
 
         logger.info(
-            f"[{agent_id}] Document created, length: {len(document.page_content)} chars"
+            "[%s] Document created, length: %s chars",
+            agent_id,
+            len(document.page_content),
         )
 
         embedding_api_key = self.get_openai_api_key()
@@ -128,7 +130,7 @@ class DocumentIndexer(WebScraperBaseTool):
         )
         await metadata_manager.update_metadata(agent_id, new_metadata)
 
-        logger.info(f"[{agent_id}] Document indexing completed successfully")
+        logger.info("[%s] Document indexing completed successfully", agent_id)
 
         # Format response
         response = ResponseFormatter.format_indexing_response(
@@ -141,5 +143,5 @@ class DocumentIndexer(WebScraperBaseTool):
             current_size_bytes=current_size,
         )
 
-        logger.info(f"[{agent_id}] Document indexing completed successfully")
+        logger.info("[%s] Document indexing completed successfully", agent_id)
         return response

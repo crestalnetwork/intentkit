@@ -93,9 +93,9 @@ class TwitterReplyTweet(TwitterBaseTool):
                 result = f"{image_warning}Reply tweet posted successfully. Response: {response}"
                 return result
             else:
-                logger.error(f"Error replying to tweet: {str(response)}")
+                logger.error("Error replying to tweet: %s", response)
                 raise ToolException("Failed to post reply tweet.")
 
         except Exception as e:
-            logger.error(f"Error replying to tweet: {str(e)}")
+            logger.error("Error replying to tweet: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

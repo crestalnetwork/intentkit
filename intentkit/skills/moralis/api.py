@@ -53,10 +53,10 @@ async def fetch_moralis_data(
             response.raise_for_status()
             return response.json()
         except httpx.RequestError as e:
-            logger.error(f"API request error: {e}")
+            logger.error("API request error: %s", e)
             return {"error": str(e)}
         except httpx.HTTPStatusError as e:
-            logger.error(f"API error: {e.response.status_code} {e.response.text}")
+            logger.error("API error: %s %s", e.response.status_code, e.response.text)
             return {"error": f"HTTP error {e.response.status_code}"}
 
 
@@ -198,7 +198,7 @@ async def fetch_solana_api(
             response.raise_for_status()
             return response.json()
         except httpx.RequestError as e:
-            logger.error(f"Solana API request error: {e}")
+            logger.error("Solana API request error: %s", e)
             return {"error": str(e)}
         except httpx.HTTPStatusError as e:
             logger.error(

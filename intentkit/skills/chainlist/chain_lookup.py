@@ -196,10 +196,10 @@ class ChainLookup(ChainlistBaseTool):
             }
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error fetching chain data: {e}")
+            logger.error("HTTP error fetching chain data: %s", e)
             return {
                 "error": f"Error fetching chain data: HTTP status code {e.response.status_code}"
             }
         except Exception as e:
-            logger.error(f"Error fetching chain data: {str(e)}")
+            logger.error("Error fetching chain data: %s", e)
             return {"error": f"An error occurred while fetching chain data: {str(e)}"}

@@ -53,7 +53,9 @@ class TwitterSearchTweets(TwitterBaseTool):
             if since_id and last.get("timestamp"):
                 try:
                     saved_time = datetime.datetime.fromisoformat(last["timestamp"])
-                    if (datetime.datetime.now() - saved_time).days > 6:
+                    if (
+                        datetime.datetime.now(tz=datetime.timezone.utc) - saved_time
+                    ).days > 6:
                         since_id = None
                 except (ValueError, TypeError):
                     since_id = None
@@ -92,11 +94,13 @@ class TwitterSearchTweets(TwitterBaseTool):
             # Update the since_id in store for the next request
             if tweets.get("meta") and tweets.get("meta").get("newest_id"):
                 last["since_id"] = tweets["meta"]["newest_id"]
-                last["timestamp"] = datetime.datetime.now().isoformat()
+                last["timestamp"] = datetime.datetime.now(
+                    tz=datetime.timezone.utc
+                ).isoformat()
                 await self.save_agent_skill_data(query, last)
 
             return tweets
 
         except Exception as e:
-            logger.error(f"Error searching tweets: {str(e)}")
+            logger.error("Error searching tweets: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

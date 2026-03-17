@@ -58,9 +58,9 @@ class TwitterRetweet(TwitterBaseTool):
             ):
                 return response
             else:
-                logger.error(f"Error retweeting: {str(response)}")
+                logger.error("Error retweeting: %s", response)
                 raise ToolException("Failed to retweet.")
 
         except Exception as e:
-            logger.error(f"Error retweeting: {str(e)}")
+            logger.error("Error retweeting: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

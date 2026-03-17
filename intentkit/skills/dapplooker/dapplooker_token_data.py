@@ -121,7 +121,7 @@ class DappLookerTokenData(DappLookerBaseTool):
         if token_addresses:
             params["token_addresses"] = token_addresses
 
-        logger.debug(f"dapplooker_token_data.py: Request params: {params}")
+        logger.debug("dapplooker_token_data.py: Request params: %s", params)
 
         # Call DappLooker API
         try:

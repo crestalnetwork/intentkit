@@ -12,7 +12,7 @@ from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.chat import AuthorType, ChatMessageCreate
 
 # Default timeout for calling another agent (in seconds)
-CALL_AGENT_TIMEOUT = 300  # 3 minutes
+CALL_AGENT_TIMEOUT = 600  # 10 minutes
 
 # Maximum recursion depth for nested call_agent invocations
 MAX_CALL_DEPTH = 5
@@ -136,8 +136,9 @@ class CallAgentSkill(SystemSkill):
 
         except TimeoutError as e:
             self.logger.error(
-                f"call_agent timed out after {CALL_AGENT_TIMEOUT}s "
-                f"waiting for agent '{agent_id}'"
+                "call_agent timed out after %ss waiting for agent '%s'",
+                CALL_AGENT_TIMEOUT,
+                agent_id,
             )
             raise ToolException(
                 f"Agent '{agent_id}' did not respond within "
@@ -146,5 +147,5 @@ class CallAgentSkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"call_agent failed: {e}", exc_info=True)
+            self.logger.error("call_agent failed: %s", e, exc_info=True)
             raise ToolException(f"Call agent failed with error: {e}") from e

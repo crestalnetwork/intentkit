@@ -80,5 +80,5 @@ class SupabaseFetchData(SupabaseBaseTool):
             return {"success": True, "data": response.data, "count": len(response.data)}
 
         except Exception as e:
-            logger.error(f"Error fetching data from Supabase: {str(e)}")
+            logger.error("Error fetching data from Supabase: %s", e)
             raise ToolException(f"Failed to fetch data from table '{table}': {str(e)}")

@@ -169,7 +169,7 @@ async def refill_all_free_credits():
                 await refill_free_credits_for_account(session, account)
                 refilled_count += 1
             except Exception as e:
-                logger.error(f"Error refilling account {account.id}: {str(e)}")
+                logger.error("Error refilling account %s: %s", account.id, e)
             # Continue with other accounts even if one fails
             continue
-    logger.info(f"Refilled {refilled_count} accounts")
+    logger.info("Refilled %s accounts", refilled_count)

@@ -56,7 +56,7 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
             )
             await db.commit()
 
-        logger.info(f"Successfully cleared thread memory for thread_id: {thread_id}")
+        logger.info("Successfully cleared thread memory for thread_id: %s", thread_id)
         return True
 
     except Exception as e:

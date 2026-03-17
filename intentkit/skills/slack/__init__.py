@@ -82,7 +82,7 @@ def get_slack_skill(
             _cache[name] = SlackSendMessage()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Slack skill: {name}")
+        logger.warning("Unknown Slack skill: %s", name)
         return None
 
 

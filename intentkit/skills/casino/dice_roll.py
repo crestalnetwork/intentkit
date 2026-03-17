@@ -93,7 +93,7 @@ class CasinoDiceRoll(CasinoBaseTool):
                         f"(Total: {total})",
                     }
                 else:
-                    logger.error(f"QRandom API error: {response.status_code}")
+                    logger.error("QRandom API error: %s", response.status_code)
                     raise ToolException(
                         f"QRandom API error: {response.status_code}. Failed to roll dice."
                     )
@@ -101,5 +101,5 @@ class CasinoDiceRoll(CasinoBaseTool):
         except ToolException:
             raise
         except Exception as e:
-            logger.error(f"Error rolling dice: {str(e)}")
+            logger.error("Error rolling dice: %s", e)
             raise ToolException(str(e)) from e

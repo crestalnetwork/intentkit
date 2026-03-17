@@ -77,7 +77,7 @@ def get_ui_skill(
             _cache[name] = UIAskUser()
         return _cache[name]
     else:
-        logger.warning(f"Unknown UI skill: {name}")
+        logger.warning("Unknown UI skill: %s", name)
         return None
 
 

@@ -49,7 +49,9 @@ class DexScreenerBaseTool(IntentKitSkill):
         headers = {"Accept": "application/json"}
         method = "GET"
 
-        logger.debug(f"Calling DexScreener API: {method} {url} with params: {params}")
+        logger.debug(
+            "Calling DexScreener API: %s %s with params: %s", method, url, params
+        )
         response = None  # Define response outside try block for access in except
 
         try:

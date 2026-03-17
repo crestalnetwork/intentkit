@@ -68,7 +68,7 @@ class GitHubSearch(GitHubBaseTool):
             str: Formatted search results based on the search type.
         """
         context = self.get_context()
-        logger.debug(f"github_search.py: Running GitHub search with context {context}")
+        logger.debug("github_search.py: Running GitHub search with context %s", context)
 
         # Limit max_results to a reasonable range
         max_results = max(1, min(max_results, 30))
@@ -80,7 +80,7 @@ class GitHubSearch(GitHubBaseTool):
         # Build the search URL based on search type
         base_url = "https://api.github.com/search"
         search_url = f"{base_url}/{search_type.value}"
-        logger.debug(f"github_search.py: Searching GitHub at {search_url}")
+        logger.debug("github_search.py: Searching GitHub at %s", search_url)
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:

@@ -100,5 +100,5 @@ class CreateActivitySkill(SystemSkill):
         except ToolException:
             raise
         except Exception as e:
-            self.logger.error(f"create_activity failed: {e}", exc_info=True)
+            self.logger.error("create_activity failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to create activity: {e}") from e

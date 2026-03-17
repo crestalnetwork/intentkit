@@ -38,7 +38,7 @@ def _is_skill_category_available(category: str) -> bool:
         # If no available function, assume it's available
         return True
     except Exception as e:
-        logger.warning(f"Could not import skill category '{category}': {e}")
+        logger.warning("Could not import skill category '%s': %s", category, e)
         return False
 
 

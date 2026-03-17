@@ -60,10 +60,10 @@ def get_s3_client() -> S3Client | None:
             )
         else:
             _client = cast(S3Client, boto3.client("s3"))
-            logger.info(f"S3 initialized with bucket: {_bucket}, prefix: {_prefix}")
+            logger.info("S3 initialized with bucket: %s, prefix: %s", _bucket, _prefix)
         return _client
     except Exception as e:
-        logger.error(f"Failed to initialize S3 client: {e}")
+        logger.error("Failed to initialize S3 client: %s", e)
         return None
 
 
@@ -160,7 +160,7 @@ async def store_image(url: str, key: str) -> str:
         )
 
         # Return the relative path
-        logger.info(f"Image uploaded successfully to {prefixed_key}")
+        logger.info("Image uploaded successfully to %s", prefixed_key)
         return prefixed_key
 
     except httpx.HTTPError:
@@ -223,7 +223,7 @@ async def store_image_bytes(
         )
 
         # Return the relative path
-        logger.info(f"image is uploaded to {prefixed_key}")
+        logger.info("image is uploaded to %s", prefixed_key)
         return prefixed_key
 
     except ClientError:
@@ -357,7 +357,7 @@ async def store_file_bytes(
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-        logger.info(f"Uploading {file_type} to S3 with content type {content_type}")
+        logger.info("Uploading %s to S3 with content type %s", file_type, content_type)
 
         # Upload to S3
         client.upload_fileobj(
@@ -368,7 +368,7 @@ async def store_file_bytes(
         )
 
         # Return the relative path
-        logger.info(f"{file_type} uploaded successfully to {prefixed_key}")
+        logger.info("%s uploaded successfully to %s", file_type, prefixed_key)
         return prefixed_key
 
     except ClientError:

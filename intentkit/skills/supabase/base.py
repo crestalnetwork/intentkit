@@ -146,7 +146,7 @@ class SupabaseBaseTool(IntentKitSkill):
                     elif operator == "in":
                         query = query.in_(column, filter_value)
                     else:
-                        logger.warning(f"Unknown filter operator: {operator}")
+                        logger.warning("Unknown filter operator: %s", operator)
             else:
                 query = query.eq(column, value)
         return query

@@ -36,23 +36,25 @@ async def get_skills(
     available_skills: list[str] = []
 
     # Log configuration
-    logger.info(f"[LiFi_Skills] Initializing with config: {config}")
-    logger.info(f"[LiFi_Skills] Is private session: {is_private}")
+    logger.info("[LiFi_Skills] Initializing with config: %s", config)
+    logger.info("[LiFi_Skills] Is private session: %s", is_private)
 
     # Include skills based on their state
     for skill_name, state in config["states"].items():
         if state == "disabled":
-            logger.info(f"[LiFi_Skills] Skipping disabled skill: {skill_name}")
+            logger.info("[LiFi_Skills] Skipping disabled skill: %s", skill_name)
             continue
         elif state == "public" or (state == "private" and is_private):
             available_skills.append(skill_name)
-            logger.info(f"[LiFi_Skills] Including skill: {skill_name} (state: {state})")
+            logger.info(
+                "[LiFi_Skills] Including skill: %s (state: %s)", skill_name, state
+            )
         else:
             logger.info(
                 f"[LiFi_Skills] Skipping private skill in public session: {skill_name}"
             )
 
-    logger.info(f"[LiFi_Skills] Available skills: {available_skills}")
+    logger.info("[LiFi_Skills] Available skills: %s", available_skills)
 
     # Get each skill using the cached getter
     skills: list[LiFiBaseTool] = []
@@ -60,12 +62,12 @@ async def get_skills(
         try:
             skill = get_lifi_skill(name, config)
             skills.append(skill)
-            logger.info(f"[LiFi_Skills] Successfully loaded skill: {name}")
+            logger.info("[LiFi_Skills] Successfully loaded skill: %s", name)
         except Exception as e:
-            logger.error(f"[LiFi_Skills] Failed to load skill {name}: {str(e)}")
+            logger.error("[LiFi_Skills] Failed to load skill %s: %s", name, e)
             # Continue loading other skills even if one fails
 
-    logger.info(f"[LiFi_Skills] Total skills loaded: {len(skills)}")
+    logger.info("[LiFi_Skills] Total skills loaded: %s", len(skills))
     return skills
 
 
@@ -102,7 +104,7 @@ def get_lifi_skill(
                 f"[LiFi_Skills] Initializing token_quote skill with slippage: {default_slippage}"
             )
             if allowed_chains:
-                logger.info(f"[LiFi_Skills] Allowed chains: {allowed_chains}")
+                logger.info("[LiFi_Skills] Allowed chains: %s", allowed_chains)
 
             _cache[cache_key] = TokenQuote(
                 default_slippage=default_slippage,
@@ -117,7 +119,7 @@ def get_lifi_skill(
                 f"[LiFi_Skills] Configuration - slippage: {default_slippage}, max_time: {max_execution_time}"
             )
             if allowed_chains:
-                logger.info(f"[LiFi_Skills] Allowed chains: {allowed_chains}")
+                logger.info("[LiFi_Skills] Allowed chains: %s", allowed_chains)
 
             # Log a warning about CDP wallet requirements
             logger.warning(
@@ -132,7 +134,7 @@ def get_lifi_skill(
         return _cache[cache_key]
 
     else:
-        logger.error(f"[LiFi_Skills] Unknown LiFi skill requested: {name}")
+        logger.error("[LiFi_Skills] Unknown LiFi skill requested: %s", name)
         raise ValueError(f"Unknown LiFi skill: {name}")
 
 

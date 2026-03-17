@@ -60,7 +60,7 @@ class AIXBTProjects(AIXBTBaseTool):
         # Get context from the config
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        logger.debug(f"aixbt_projects.py: Running search with context {context}")
+        logger.debug("aixbt_projects.py: Running search with context %s", context)
 
         # Check for rate limiting if configured
         if skill_config.get("rate_limit_number") and skill_config.get(
@@ -102,5 +102,5 @@ class AIXBTProjects(AIXBTBaseTool):
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
-            logger.error(f"Error getting projects: {str(e)}")
+            logger.error("Error getting projects: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

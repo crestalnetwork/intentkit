@@ -91,7 +91,7 @@ class GetTokensInfo(DexScreenerBaseTool):
                 return await self._handle_error_response(error_details)
 
             if not data:
-                logger.error(f"No data returned for tokens on {chain_id}")
+                logger.error("No data returned for tokens on %s", chain_id)
                 return create_error_response(
                     error_type="empty_success",
                     message="API call returned empty success response.",
@@ -148,12 +148,15 @@ class GetTokensInfo(DexScreenerBaseTool):
                     pairs.sort(key=get_liquidity_value, reverse=True)
                 except Exception as sort_err:
                     logger.warning(
-                        f"Failed to sort pairs for token {token_addr}: {sort_err}"
+                        "Failed to sort pairs for token %s: %s", token_addr, sort_err
                     )
 
             logger.info(
-                f"Found {len(pairs_list)} total pairs across {len(tokens_data)} tokens "
-                f"for {len(token_addresses)} requested addresses on {chain_id}"
+                "Found %s total pairs across %s tokens for %s requested addresses on %s",
+                len(pairs_list),
+                len(tokens_data),
+                len(token_addresses),
+                chain_id,
             )
 
             return format_success_response(
@@ -183,10 +186,11 @@ class GetTokensInfo(DexScreenerBaseTool):
             "unexpected_error",
         ]:
             logger.error(
-                f"DexScreener get_tokens_info tool encountered an error: {error_details}"
+                "DexScreener get_tokens_info tool encountered an error: %s",
+                error_details,
             )
         else:  # api_error
-            logger.warning(f"DexScreener API returned an error: {error_details}")
+            logger.warning("DexScreener API returned an error: %s", error_details)
 
         # Truncate potentially large fields before returning to user/LLM
         truncated_details = truncate_large_fields(error_details)

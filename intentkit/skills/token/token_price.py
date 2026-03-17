@@ -116,11 +116,11 @@ class TokenPrice(TokenBaseTool):
             )
 
             if "error" in response:
-                logger.error(f"API returned error: {response.get('error')}")
+                logger.error("API returned error: %s", response.get("error"))
 
             return response
         except Exception as e:
-            logger.error(f"Error fetching token price: {e}")
+            logger.error("Error fetching token price: %s", e)
             return {
                 "error": f"An error occurred while fetching token price: {str(e)}. Please try again later."
             }

@@ -109,7 +109,7 @@ def get_cryptocompare_skill(
             _cache[name] = CryptoCompareFetchTopVolume()
         return _cache[name]
     else:
-        logger.warning(f"Unknown CryptoCompare skill: {name}")
+        logger.warning("Unknown CryptoCompare skill: %s", name)
         return None
 
 

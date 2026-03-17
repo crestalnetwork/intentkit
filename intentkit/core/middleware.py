@@ -77,7 +77,7 @@ class TrimMessagesMiddleware(AgentMiddleware[AgentState, AgentContext]):
         try:
             _validate_chat_history(messages)
         except ValueError as e:
-            logger.error(f"Invalid chat history: {e}")
+            logger.error("Invalid chat history: %s", e)
             logger.info(state)
             return {"messages": [RemoveMessage(REMOVE_ALL_MESSAGES)]}
 
@@ -90,9 +90,11 @@ class TrimMessagesMiddleware(AgentMiddleware[AgentState, AgentContext]):
             end_on=("human", "tool"),
         )
         if len(trimmed_messages) < len(messages):
-            logger.info(f"Trimmed messages: {len(messages)} -> {len(trimmed_messages)}")
+            logger.info(
+                "Trimmed messages: %s -> %s", len(messages), len(trimmed_messages)
+            )
             if len(trimmed_messages) <= 3:
-                logger.info(f"Too few messages after trim: {len(trimmed_messages)}")
+                logger.info("Too few messages after trim: %s", len(trimmed_messages))
                 return {}
             return {
                 "messages": [RemoveMessage(REMOVE_ALL_MESSAGES)] + trimmed_messages,
@@ -151,14 +153,9 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         context: AgentContext = request.runtime.context
 
         llm_params: dict[str, Any] = {}
-        tools: list[BaseTool | dict[str, Any]] = (
+        # Tools are already deduplicated at build time in executor.py
+        tools: list[BaseTool | dict[str, Any]] = list(
             self.private_tools if context.is_private else self.public_tools
-        )
-        tools = list(
-            {
-                tool.name if isinstance(tool, BaseTool) else str(tool): tool
-                for tool in tools
-            }.values()
         )
 
         if context.agent.search_internet:
@@ -196,7 +193,7 @@ class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         del runtime
         step_count = state.get("step_count", 0)
         step_count += 1
-        logger.debug(f"Step tracking: {step_count}")
+        logger.debug("Step tracking: %s", step_count)
         return {"step_count": step_count}
 
 

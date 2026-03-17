@@ -69,7 +69,7 @@ class OnchainQueryTool(CarvBaseTool):
             )
 
             if error is not None or result is None:
-                logger.error(f"Error returned from CARV API: {error}")
+                logger.error("Error returned from CARV API: %s", error)
                 return {
                     "error": True,
                     "error_type": "APIError",
@@ -81,7 +81,7 @@ class OnchainQueryTool(CarvBaseTool):
             return {"success": True, **result}
 
         except Exception as e:
-            logger.error(f"An unexpected error occurred: {e}", exc_info=True)
+            logger.error("An unexpected error occurred: %s", e, exc_info=True)
             return {
                 "error": True,
                 "error_type": type(e).__name__,
@@ -123,7 +123,7 @@ def _normalize_unit(response_data: dict[str, Any], chain: str) -> None:
         divisor = Decimal("1e8")
         ticker = "BTC"
     else:
-        logger.warning(f"Unsupported chain '{chain}' for unit normalization.")
+        logger.warning("Unsupported chain '%s' for unit normalization.", chain)
         return
 
     for row in rows:
@@ -145,4 +145,4 @@ def _normalize_unit(response_data: dict[str, Any], chain: str) -> None:
                 )
                 items[value_index] = f"{formatted_value} {ticker}"
             except Exception as e:
-                logger.warning(f"Unable to normalize value '{original_value}': {e}")
+                logger.warning("Unable to normalize value '%s': %s", original_value, e)

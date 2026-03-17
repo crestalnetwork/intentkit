@@ -41,5 +41,5 @@ async def get_llms(db: AsyncSession = Depends(get_db)):  # pyright: ignore[repor
             )
         return result_models
     except Exception as e:
-        logging.error(f"Error getting LLM models: {e}")
+        logging.error("Error getting LLM models: %s", e)
         raise

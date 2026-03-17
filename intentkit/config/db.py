@@ -140,8 +140,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     Example:
         ```python
         async with get_session() as session:
-            # use session here
-            session.query(...)
+            result = await session.execute(select(MyModel).where(...))
+            items = result.scalars().all()
         # session is automatically closed
         ```
     """

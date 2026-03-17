@@ -269,7 +269,7 @@ def get_defillama_skill(
         return _cache[name]
 
     else:
-        logger.warning(f"Unknown DeFi Llama skill: {name}")
+        logger.warning("Unknown DeFi Llama skill: %s", name)
         return None
 
 

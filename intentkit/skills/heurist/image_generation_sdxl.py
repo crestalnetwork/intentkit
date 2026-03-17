@@ -119,7 +119,7 @@ class ImageGenerationSDXL(HeuristBaseTool):
                     headers=headers,
                     timeout=120,
                 )
-                logger.debug(f"Heurist API response: {response.text}")
+                logger.debug("Heurist API response: %s", response.text)
                 response.raise_for_status()
 
             # Store the image URL
@@ -146,5 +146,5 @@ class ImageGenerationSDXL(HeuristBaseTool):
             raise ToolException(full_error)
 
         except Exception as e:
-            logger.error(f"Error generating image with Heurist: {e}")
+            logger.error("Error generating image with Heurist: %s", e)
             raise ToolException(f"Error generating image with Heurist: {str(e)}")

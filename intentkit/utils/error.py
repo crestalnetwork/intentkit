@@ -52,9 +52,9 @@ async def intentkit_api_error_handler(
     request: Request, exc: IntentKitAPIError
 ) -> Response:
     if exc.status_code >= 500:
-        logger.error(f"Internal Server Error for request {request.url}: {str(exc)}")
+        logger.error("Internal Server Error for request %s: %s", request.url, exc)
     else:
-        logger.info(f"Bad Request for request {request.url}: {str(exc)}")
+        logger.info("Bad Request for request %s: %s", request.url, exc)
     return JSONResponse(
         {"error": exc.key, "msg": exc.message},
         status_code=exc.status_code,
@@ -62,7 +62,7 @@ async def intentkit_api_error_handler(
 
 
 async def intentkit_other_error_handler(request: Request, exc: Exception) -> Response:
-    logger.error(f"Internal Server Error for request {request.url}: {str(exc)}")
+    logger.error("Internal Server Error for request %s: %s", request.url, exc)
     return JSONResponse(
         {"error": "ServerError", "msg": "Internal Server Error"},
         status_code=500,
@@ -74,13 +74,13 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
     if not is_body_allowed_for_status_code(exc.status_code):
         return Response(status_code=exc.status_code, headers=headers)
     if exc.status_code >= 500:
-        logger.error(f"Internal Server Error for request {request.url}: {str(exc)}")
+        logger.error("Internal Server Error for request %s: %s", request.url, exc)
         return JSONResponse(
             {"error": "ServerError", "msg": "Internal Server Error"},
             status_code=exc.status_code,
             headers=headers,
         )
-    logger.info(f"Bad Request for request {request.url}: {str(exc)}")
+    logger.info("Bad Request for request %s: %s", request.url, exc)
     return JSONResponse(
         {"error": "BadRequest", "msg": str(exc.detail)},
         status_code=exc.status_code,

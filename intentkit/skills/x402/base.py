@@ -644,4 +644,4 @@ class X402BaseSkill(IntentKitOnChainSkill):
 
         except Exception as e:
             # Don't fail the skill execution if order recording fails
-            logger.error(f"Failed to record x402 order: {e}", exc_info=True)
+            logger.error("Failed to record x402 order: %s", e, exc_info=True)

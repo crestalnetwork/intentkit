@@ -19,7 +19,7 @@ class ChatTypeFilter(BaseFilter):
             else:
                 return message.chat.type in self.chat_type
         except Exception as e:
-            logger.error(f"failed to filter chat types: {str(e)}")
+            logger.error("failed to filter chat types: %s", e)
             return False
 
 

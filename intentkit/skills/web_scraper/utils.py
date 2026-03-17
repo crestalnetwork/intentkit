@@ -143,7 +143,7 @@ class VectorStoreManager:
 
         if existing_data and "faiss_files" in existing_data:
             try:
-                logger.info(f"[{agent_id}] Merging content with existing vector store")
+                logger.info("[%s] Merging content with existing vector store", agent_id)
 
                 # Create new vector store from new documents
                 new_vector_store = FAISS.from_documents(new_documents, embeddings)
@@ -159,12 +159,12 @@ class VectorStoreManager:
 
             except Exception as e:
                 logger.warning(
-                    f"[{agent_id}] Merge failed, creating new vector store: {e}"
+                    "[%s] Merge failed, creating new vector store: %s", agent_id, e
                 )
-            logger.info(f"[{agent_id}] Creating new vector store")
+            logger.info("[%s] Creating new vector store", agent_id)
 
         # Create new vector store
-        logger.info(f"[{agent_id}] Creating new vector store")
+        logger.info("[%s] Creating new vector store", agent_id)
         vector_store = FAISS.from_documents(new_documents, embeddings)
         return vector_store, False
 
@@ -178,7 +178,7 @@ class VectorStoreManager:
         """Save vector store to agent skill data."""
         vector_store_key, _ = self.get_storage_keys(agent_id)
 
-        logger.info(f"[{agent_id}] Saving vector store")
+        logger.info("[%s] Saving vector store", agent_id)
 
         # Encode vector store
         encoded_files = self.encode_vector_store(vector_store)
@@ -200,10 +200,10 @@ class VectorStoreManager:
             )
             await skill_data.save()
 
-            logger.info(f"[{agent_id}] Successfully saved vector store")
+            logger.info("[%s] Successfully saved vector store", agent_id)
 
         except Exception as e:
-            logger.error(f"[{agent_id}] Failed to save vector store: {e}")
+            logger.error("[%s] Failed to save vector store: %s", agent_id, e)
             raise
 
     async def load_vector_store(self, agent_id: str) -> FAISS | None:
@@ -217,7 +217,7 @@ class VectorStoreManager:
             embeddings = self.create_embeddings()
             return self.decode_vector_store(stored_data["faiss_files"], embeddings)
         except Exception as e:
-            logger.error(f"Error loading vector store for agent {agent_id}: {e}")
+            logger.error("Error loading vector store for agent %s: %s", agent_id, e)
             return None
 
     async def get_content_size(self, agent_id: str) -> int:
@@ -517,9 +517,9 @@ async def scrape_and_index_urls(
             if parsed.scheme in ["http", "https"] and parsed.netloc:
                 valid_urls.append(url)
             else:
-                logger.warning(f"Invalid URL format: {url}")
+                logger.warning("Invalid URL format: %s", url)
         except Exception as e:
-            logger.warning(f"Error parsing URL {url}: {e}")
+            logger.warning("Error parsing URL %s: %s", url, e)
 
     if not valid_urls:
         return 0, False, []
@@ -528,12 +528,16 @@ async def scrape_and_index_urls(
     current_size = await vector_manager.get_content_size(agent_id)
 
     logger.info(
-        f"[{agent_id}] Current storage size: {VectorStoreManager.format_size(current_size)}"
+        "[%s] Current storage size: %s",
+        agent_id,
+        VectorStoreManager.format_size(current_size),
     )
 
     if current_size >= MAX_CONTENT_SIZE_BYTES:
         logger.warning(
-            f"[{agent_id}] Storage limit already reached: {VectorStoreManager.format_size(current_size)}"
+            "[%s] Storage limit already reached: %s",
+            agent_id,
+            VectorStoreManager.format_size(current_size),
         )
         return 0, False, []
 
@@ -546,11 +550,15 @@ async def scrape_and_index_urls(
     for i, url in enumerate(valid_urls):
         if current_size >= MAX_CONTENT_SIZE_BYTES:
             size_limit_reached = True
-            logger.warning(f"[{agent_id}] Size limit reached after processing {i} URLs")
+            logger.warning(
+                "[%s] Size limit reached after processing %s URLs", agent_id, i
+            )
             break
 
         try:
-            logger.info(f"[{agent_id}] Processing URL {i + 1}/{len(valid_urls)}: {url}")
+            logger.info(
+                "[%s] Processing URL %s/%s: %s", agent_id, i + 1, len(valid_urls), url
+            )
 
             # Load single URL with enhanced headers
             loader = WebBaseLoader(
@@ -572,21 +580,27 @@ async def scrape_and_index_urls(
             except Exception as primary_error:
                 # If primary headers fail, try fallback headers
                 logger.warning(
-                    f"[{agent_id}] Primary headers failed for {url}, trying fallback: {primary_error}"
+                    "[%s] Primary headers failed for %s, trying fallback: %s",
+                    agent_id,
+                    url,
+                    primary_error,
                 )
 
                 loader.requests_kwargs["headers"] = FALLBACK_HEADERS
                 try:
                     documents = await asyncio.to_thread(loader.load)
-                    logger.info(f"[{agent_id}] Fallback headers succeeded for {url}")
+                    logger.info("[%s] Fallback headers succeeded for %s", agent_id, url)
                 except Exception as fallback_error:
                     logger.error(
-                        f"[{agent_id}] Both header sets failed for {url}: {fallback_error}"
+                        "[%s] Both header sets failed for %s: %s",
+                        agent_id,
+                        url,
+                        fallback_error,
                     )
                     raise fallback_error
 
             if not documents:
-                logger.warning(f"[{agent_id}] No content extracted from {url}")
+                logger.warning("[%s] No content extracted from %s", agent_id, url)
                 continue
 
             # Check content size before processing
@@ -596,7 +610,7 @@ async def scrape_and_index_urls(
 
             if current_size + content_size > MAX_CONTENT_SIZE_BYTES:
                 logger.warning(
-                    f"[{agent_id}] Adding {url} would exceed size limit. Skipping."
+                    "[%s] Adding %s would exceed size limit. Skipping.", agent_id, url
                 )
                 size_limit_reached = True
                 break
@@ -613,7 +627,11 @@ async def scrape_and_index_urls(
                 current_size += content_size
 
                 logger.info(
-                    f"[{agent_id}] Processed {url}: {chunks} chunks, current size: {VectorStoreManager.format_size(current_size)}"
+                    "[%s] Processed %s: %s chunks, current size: %s",
+                    agent_id,
+                    url,
+                    chunks,
+                    VectorStoreManager.format_size(current_size),
                 )
 
             # Add delay for rate limiting
@@ -621,17 +639,20 @@ async def scrape_and_index_urls(
                 await asyncio.sleep(1.0 / requests_per_second)
 
         except Exception as e:
-            logger.error(f"[{agent_id}] Error processing {url}: {e}")
+            logger.error("[%s] Error processing %s: %s", agent_id, url, e)
             continue
 
     # Log final results
     if size_limit_reached:
         logger.warning(
-            f"[{agent_id}] Size limit reached. Processed {len(processed_urls)}/{len(valid_urls)} URLs"
+            "[%s] Size limit reached. Processed %s/%s URLs",
+            agent_id,
+            len(processed_urls),
+            len(valid_urls),
         )
     else:
         logger.info(
-            f"[{agent_id}] Successfully processed all {len(processed_urls)} URLs"
+            "[%s] Successfully processed all %s URLs", agent_id, len(processed_urls)
         )
 
     return total_chunks, was_merged, processed_urls
@@ -679,7 +700,7 @@ def handle_skill_errors(operation_name: str):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                logger.error(f"Error in {operation_name}: {e}")
+                logger.error("Error in %s: %s", operation_name, e)
                 raise ToolException(f"Error {operation_name}: {str(e)}")
 
         return wrapper

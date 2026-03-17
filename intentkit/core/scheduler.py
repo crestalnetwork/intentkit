@@ -91,7 +91,6 @@ def create_scheduler(
     )
 
     # Run quick account consistency checks every 2 hours at the top of the hour
-    # Run quick account consistency checks every 2 hours at the top of the hour
     from intentkit.core.account_checking import run_quick_checks, run_slow_checks
 
     async def run_quick_account_checks():
@@ -106,7 +105,7 @@ def create_scheduler(
             _ = await run_quick_checks()
             logger.info("Completed quick account consistency checks")
         except Exception as e:
-            logger.error(f"Error running quick account consistency checks: {e}")
+            logger.error("Error running quick account consistency checks: %s", e)
 
     async def run_slow_account_checks():
         """Run slow account consistency checks and send results to Slack."""
@@ -118,7 +117,7 @@ def create_scheduler(
             _ = await run_slow_checks()
             logger.info("Completed slow account consistency checks")
         except Exception as e:
-            logger.error(f"Error running slow account consistency checks: {e}")
+            logger.error("Error running slow account consistency checks: %s", e)
 
     _ = scheduler.add_job(
         run_quick_account_checks,
@@ -141,7 +140,6 @@ def create_scheduler(
         replace_existing=True,
     )
 
-    # Cleanup old checkpoints daily at UTC 2:20
     # Cleanup old checkpoints daily at UTC 2:20
 
     _ = scheduler.add_job(

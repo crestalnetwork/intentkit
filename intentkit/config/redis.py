@@ -40,7 +40,7 @@ async def init_redis(
         return _redis_client
 
     try:
-        logger.info(f"Initializing Redis client at {host}:{port}")
+        logger.info("Initializing Redis client at %s:%s", host, port)
         _redis_client = Redis(
             host=host,
             port=port,
@@ -55,7 +55,7 @@ async def init_redis(
         logger.info("Redis client initialized successfully")
         return _redis_client
     except Exception as e:
-        logger.error(f"Failed to initialize Redis client: {e}")
+        logger.error("Failed to initialize Redis client: %s", e)
         raise
 
 
@@ -87,7 +87,7 @@ async def send_heartbeat(redis_client: Redis, name: str) -> None:
         key = f"intentkit:heartbeat:{name}"
         await redis_client.set(key, 1, ex=DEFAULT_HEARTBEAT_TTL)
     except Exception as e:
-        logger.error(f"Failed to send heartbeat for {name}: {e}")
+        logger.error("Failed to send heartbeat for %s: %s", name, e)
 
 
 async def check_heartbeat(redis_client: Redis, name: str) -> bool:
@@ -111,7 +111,11 @@ async def check_heartbeat(redis_client: Redis, name: str) -> bool:
             return bool(exists)
         except Exception as e:
             logger.error(
-                f"Error checking heartbeat for {name} (attempt {attempt + 1}/{retries}): {e}"
+                "Error checking heartbeat for %s (attempt %s/%s): %s",
+                name,
+                attempt + 1,
+                retries,
+                e,
             )
             if attempt < retries - 1:  # Don't sleep on the last attempt
                 await asyncio.sleep(5)  # Wait 5 seconds before retrying
@@ -129,6 +133,6 @@ async def clean_heartbeat(redis_client: Redis, name: str) -> None:
     try:
         key = f"intentkit:heartbeat:{name}"
         await redis_client.delete(key)
-        logger.info(f"Removed heartbeat for {name}")
+        logger.info("Removed heartbeat for %s", name)
     except Exception as e:
-        logger.error(f"Failed to remove heartbeat for {name}: {e}")
+        logger.error("Failed to remove heartbeat for %s: %s", name, e)

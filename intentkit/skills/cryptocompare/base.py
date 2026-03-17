@@ -92,7 +92,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
@@ -119,7 +119,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
@@ -147,7 +147,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
@@ -177,7 +177,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
@@ -205,7 +205,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 
@@ -236,7 +236,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         async with httpx.AsyncClient() as client:
             response = await client.get(url, params=params, headers=headers)
         if response.status_code != 200:
-            logger.error(f"API returned status code {response.status_code}")
+            logger.error("API returned status code %s", response.status_code)
             return {"error": f"API returned status code {response.status_code}"}
         return response.json()
 

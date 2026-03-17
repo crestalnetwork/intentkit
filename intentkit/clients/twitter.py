@@ -25,6 +25,7 @@ _CLIENT_CACHE_TTL = 3600  # 1 hour
 
 _VERIFIER_KEY = "intentkit:twitter:code_verifier"
 _CHALLENGE_KEY = "intentkit:twitter:code_challenge"
+_OAUTH2_PKCE_TTL = 300  # 5 minutes
 
 
 class TwitterMedia(BaseModel):
@@ -164,16 +165,16 @@ class TwitterClient(TwitterABC):
                 return self._client
             # Otherwise try to get OAuth2 tokens from agent data
             if not agent_data.twitter_access_token:
-                raise Exception(f"[{self.agent_id}] Twitter access token not found")
+                raise ValueError(f"[{self.agent_id}] Twitter access token not found")
             if not agent_data.twitter_access_token_expires_at:
-                raise Exception(
+                raise ValueError(
                     f"[{self.agent_id}] Twitter access token expiration not found"
                 )
             if (
                 agent_data.twitter_access_token_expires_at
                 and agent_data.twitter_access_token_expires_at <= datetime.now(tz=UTC)
             ):
-                raise Exception(f"[{self.agent_id}] Twitter access token has expired")
+                raise ValueError(f"[{self.agent_id}] Twitter access token has expired")
             self._client = AsyncClient(
                 bearer_token=agent_data.twitter_access_token,
                 return_type=cast(Any, dict),
@@ -192,7 +193,7 @@ class TwitterClient(TwitterABC):
                     and agent_data.twitter_access_token_expires_at
                     <= datetime.now(tz=UTC)
                 ):
-                    raise Exception(
+                    raise ValueError(
                         f"[{self.agent_id}] Twitter access token has expired"
                     )
                 self._client = AsyncClient(
@@ -489,7 +490,7 @@ def get_twitter_client(agent_id: str, config: dict[str, Any]) -> "TwitterClient"
 
 
 async def unlink_twitter(agent_id: str) -> AgentData:
-    logger.info(f"Unlinking Twitter for agent {agent_id}")
+    logger.info("Unlinking Twitter for agent %s", agent_id)
     return await AgentData.patch(
         agent_id,
         {
@@ -547,8 +548,8 @@ class OAuth2UserHandler(OAuth2Session):
                 )
                 assert self.code_verifier is not None
                 assert self.code_challenge is not None
-                await kv.set(_VERIFIER_KEY, self.code_verifier)
-                await kv.set(_CHALLENGE_KEY, self.code_challenge)
+                await kv.set(_VERIFIER_KEY, self.code_verifier, ex=_OAUTH2_PKCE_TTL)
+                await kv.set(_CHALLENGE_KEY, self.code_challenge, ex=_OAUTH2_PKCE_TTL)
         state_params = {"agent_id": agent_id, "redirect_uri": redirect_uri}
         authorization_url, _ = self.authorization_url(
             "https://x.com/i/oauth2/authorize",

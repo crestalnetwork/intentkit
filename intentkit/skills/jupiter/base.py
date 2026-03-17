@@ -63,7 +63,7 @@ class JupiterBaseTool(IntentKitSkill):
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPError as e:
-                self.logger.error(f"Jupiter API error: {e}")
+                self.logger.error("Jupiter API error: %s", e)
                 raise ToolException(f"Jupiter API request failed: {e}")
 
     def _resolve_token_mint(self, symbol_or_mint: str) -> str:

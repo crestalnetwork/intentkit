@@ -16,7 +16,7 @@ class ContentTypeFilter(BaseFilter):
         try:
             return message.content_type in self.content_types
         except Exception as e:
-            logger.error(f"failed to filter content types: {str(e)}")
+            logger.error("failed to filter content types: %s", e)
             return False
 
 

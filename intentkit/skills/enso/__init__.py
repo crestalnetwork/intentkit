@@ -91,7 +91,7 @@ def get_enso_skill(
     if name == "get_best_yield":
         return EnsoGetBestYield()
     else:
-        logger.warning(f"Unknown Enso skill: {name}")
+        logger.warning("Unknown Enso skill: %s", name)
         return None
 
 

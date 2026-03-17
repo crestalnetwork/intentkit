@@ -66,7 +66,7 @@ async def _generate_image_openrouter(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning(f"OpenRouter image generation failed: {e}")
+        logger.warning("OpenRouter image generation failed: %s", e)
     return None
 
 
@@ -92,7 +92,7 @@ async def _generate_image_google(prompt: str) -> bytes | None:
                     ):
                         return part.inline_data.data
     except Exception as e:
-        logger.warning(f"Google image generation failed: {e}")
+        logger.warning("Google image generation failed: %s", e)
     return None
 
 
@@ -113,7 +113,7 @@ async def _generate_image_openai(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning(f"OpenAI image generation failed: {e}")
+        logger.warning("OpenAI image generation failed: %s", e)
     return None
 
 
@@ -135,7 +135,7 @@ async def _generate_image_xai(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning(f"xAI image generation failed: {e}")
+        logger.warning("xAI image generation failed: %s", e)
     return None
 
 
@@ -160,11 +160,11 @@ async def select_model_and_generate(prompt: str) -> bytes | None:
     for api_key, provider_name, generate_fn in providers:
         if not api_key:
             continue
-        logger.info(f"Generating avatar using {provider_name}")
+        logger.info("Generating avatar using %s", provider_name)
         image_bytes = await generate_fn(prompt)
         if image_bytes:
             return image_bytes
-        logger.warning(f"{provider_name} returned no image, trying next provider")
+        logger.warning("%s returned no image, trying next provider", provider_name)
 
     logger.error("All image generation providers failed or none configured")
     return None
@@ -210,12 +210,12 @@ async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
             image_prompt = str(image_prompt)
 
         logger.info(
-            f"Generated avatar prompt for agent {agent_id}: {image_prompt[:200]}"
+            "Generated avatar prompt for agent %s: %s", agent_id, image_prompt[:200]
         )
         return image_prompt
 
     except Exception as e:
-        logger.error(f"Failed to generate avatar prompt via LLM: {e}")
+        logger.error("Failed to generate avatar prompt via LLM: %s", e)
         # Fallback to a simple prompt derived from name
         name = getattr(agent, "name", None) or agent_id
         return (
@@ -258,5 +258,5 @@ async def generate_avatar(agent_id: str, agent: Any) -> str | None:
 
         return relative_path
     except Exception as e:
-        logger.error(f"Failed to upload avatar to S3: {e}")
+        logger.error("Failed to upload avatar to S3: %s", e)
         return None

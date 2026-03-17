@@ -58,7 +58,9 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
 
             agent_id = context.agent_id
 
-            logger.info(f"[{agent_id}] Starting Firecrawl query operation: '{query}'")
+            logger.info(
+                "[%s] Starting Firecrawl query operation: '%s'", agent_id, query
+            )
 
             # Import query utilities from firecrawl utils
             from intentkit.skills.firecrawl.utils import (
@@ -74,7 +76,7 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
             )
 
             if not docs:
-                logger.info(f"[{agent_id}] No relevant documents found for query")
+                logger.info("[%s] No relevant documents found for query", agent_id)
                 return f"No relevant information found for your query: '{query}'. The indexed content may not contain information related to your search."
 
             # Format results

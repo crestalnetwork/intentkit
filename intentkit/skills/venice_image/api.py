@@ -74,11 +74,11 @@ async def make_venice_api_request(
 
     except httpx.RequestError as e:
         error_msg = f"Connection error: {e}"
-        logger.error(f"[{category}/{tool_name}] {error_msg}")
+        logger.error("[%s/%s] %s", category, tool_name, error_msg)
         return {}, {"success": False, "error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error: {e}"
-        logger.error(f"[{category}/{tool_name}] {error_msg}", exc_info=True)
+        logger.error("[%s/%s] %s", category, tool_name, error_msg, exc_info=True)
         return {}, {"success": False, "error": error_msg}
 
 
@@ -104,7 +104,7 @@ async def _handle_response(
 
             key = f"{category}/{tool_name}/{image_hash}.{file_extension}"
 
-            logger.info(f"[{category}/{tool_name}] Storing image with key: {key}")
+            logger.info("[%s/%s] Storing image with key: %s", category, tool_name, key)
 
             stored_path = await store_image_bytes(
                 upscaled_image_bytes, key, content_type=content_type
@@ -114,25 +114,27 @@ async def _handle_response(
 
         except Exception as e:
             error_msg = f"Error processing image response: {e}"
-            logger.error(f"[{category}/{tool_name}] {error_msg}", exc_info=True)
+            logger.error("[%s/%s] %s", category, tool_name, error_msg, exc_info=True)
             return {}, {"success": False, "error": error_msg}
 
     elif response.status_code == 200:
         try:
-            logger.info(f"[{category}/{tool_name}] Received successful JSON response.")
+            logger.info(
+                "[%s/%s] Received successful JSON response.", category, tool_name
+            )
             return response.json(), None
         except Exception as json_err:
             error_msg = f"Failed to parse JSON response: {json_err} - {response.text}"
-            logger.error(f"[{category}/{tool_name}] {error_msg}")
+            logger.error("[%s/%s] %s", category, tool_name, error_msg)
             return {}, {"success": False, "error": error_msg}
 
     else:
         try:
             error_data = response.json()
             error_msg = f"API returned error: {error_data.get('message', error_data.get('detail', response.text))}"
-            logger.error(f"[{category}/{tool_name}] {error_msg}")
+            logger.error("[%s/%s] %s", category, tool_name, error_msg)
             return {}, {"success": False, "error": error_msg}
         except Exception:
             error_msg = f"API returned status code {response.status_code} with text: {response.text}"
-            logger.error(f"[{category}/{tool_name}] {error_msg}")
+            logger.error("[%s/%s] %s", category, tool_name, error_msg)
             return {}, {"success": False, "error": error_msg}

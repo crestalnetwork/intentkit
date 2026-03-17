@@ -260,7 +260,7 @@ async def create_example_agent() -> None:
             await session.commit()
             logger.info("Created example agent with ID 'example'")
     except Exception as e:
-        logger.error(f"Failed to create example agent: {str(e)}")
+        logger.error("Failed to create example agent: %s", e)
         # Don't re-raise the exception to avoid blocking server startup
 
 
@@ -289,4 +289,4 @@ async def ensure_system_user_and_team() -> None:
 
             await session.commit()
     except Exception as e:
-        logger.error(f"Failed to create system user/team: {str(e)}")
+        logger.error("Failed to create system user/team: %s", e)

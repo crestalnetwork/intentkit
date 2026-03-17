@@ -140,7 +140,7 @@ def get_venice_image_skill(
 
     skill_class = _SKILL_NAME_TO_CLASS_MAP.get(name)
     if not skill_class:
-        logger.warning(f"Unknown Venice skill: {name}")
+        logger.warning("Unknown Venice skill: %s", name)
         return None
 
     # Cache and return the newly created instance

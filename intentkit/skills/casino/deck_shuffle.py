@@ -106,9 +106,9 @@ class CasinoDeckShuffle(CasinoBaseTool):
                         + (" (including jokers)" if jokers_enabled else ""),
                     }
                 else:
-                    logger.error(f"Deck API error: {response.status_code}")
+                    logger.error("Deck API error: %s", response.status_code)
                     return {"success": False, "error": "Failed to create deck"}
 
         except Exception as e:
-            logger.error(f"Error shuffling deck: {str(e)}")
+            logger.error("Error shuffling deck: %s", e)
             raise type(e)(f"[agent:{context.agent_id}]: {e}") from e

@@ -79,7 +79,7 @@ def get_tavily_skill(
             _cache[name] = TavilyExtract()
         return _cache[name]
     else:
-        logger.warning(f"Unknown Tavily skill: {name}")
+        logger.warning("Unknown Tavily skill: %s", name)
         return None
 
 

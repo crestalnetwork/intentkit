@@ -541,7 +541,7 @@ async def send_message(
                 async for chunk in stream_agent(user_message):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
             except asyncio.CancelledError:
-                logger.info(f"Stream cancelled for agent {agent_id}, chat {chat_id}")
+                logger.info("Stream cancelled for agent %s, chat %s", agent_id, chat_id)
                 return
             finally:
                 unregister_task(agent_id, chat_id)

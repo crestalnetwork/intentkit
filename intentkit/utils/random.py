@@ -1,4 +1,4 @@
-import random
+import secrets
 import string
 
 
@@ -13,4 +13,4 @@ def generate_tx_confirm_string(length: int) -> str:
       A random string of the specified length.
     """
     letters_and_digits = string.ascii_letters + string.digits
-    return "tx-" + "".join(random.choice(letters_and_digits) for _ in range(length))
+    return "tx-" + "".join(secrets.choice(letters_and_digits) for _ in range(length))

@@ -103,7 +103,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
         except Exception as e:
-            logger.error(f"Error fetching wallet portfolio: {str(e)}")
+            logger.error("Error fetching wallet portfolio: %s", e)
             return PortfolioOutput(
                 address=address, total_net_worth=0, chains={}, tokens=[], error=str(e)
             )

@@ -48,7 +48,7 @@ class WalletStats(PortfolioBaseTool):
             Dict containing wallet stats data
         """
         context = self.get_context()
-        logger.debug(f"wallet_stats.py: Fetching wallet stats with context {context}")
+        logger.debug("wallet_stats.py: Fetching wallet stats with context %s", context)
 
         # Get the API key from the agent's configuration
         api_key = self.get_api_key()

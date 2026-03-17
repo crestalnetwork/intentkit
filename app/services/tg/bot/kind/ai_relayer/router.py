@@ -219,7 +219,7 @@ async def gp_process_message(message: Message) -> None:
     if should_reply:
         cached_bot_item = bot_by_token(message.bot.token)
         if cached_bot_item is None:
-            logger.warning(f"bot with token {message.bot.token} not found in cache.")
+            logger.warning("bot with token %s not found in cache.", message.bot.token)
             return
 
         try:
@@ -229,7 +229,7 @@ async def gp_process_message(message: Message) -> None:
             is_owner = (
                 owner == message.from_user.username if message.from_user else False
             )
-            logger.info(f"message from: {message.from_user}")
+            logger.info("message from: %s", message.from_user)
         except ValueError:
             is_owner = False
             logger.error(
@@ -315,7 +315,7 @@ async def gp_process_message(message: Message) -> None:
             try:
                 _ = await message.react([])
             except Exception as e:
-                logger.warning(f"Failed to remove reaction: {str(e)}")
+                logger.warning("Failed to remove reaction: %s", e)
     else:
         # This message doesn't trigger a reply, cache it for context
         cached_bot_item = bot_by_token(message.bot.token)
@@ -375,7 +375,7 @@ async def process_message(message: Message) -> None:
         # Access _owner safely to avoid protected member warning
         owner = getattr(cached_bot_item, "_owner", None)
         is_owner = owner == message.from_user.username if message.from_user else False
-        logger.info(f"message from: {message.from_user}")
+        logger.info("message from: %s", message.from_user)
     except ValueError:
         is_owner = False
         logger.error(
@@ -430,4 +430,4 @@ async def process_message(message: Message) -> None:
         try:
             _ = await message.react([])
         except Exception as e:
-            logger.warning(f"Failed to remove reaction: {str(e)}")
+            logger.warning("Failed to remove reaction: %s", e)

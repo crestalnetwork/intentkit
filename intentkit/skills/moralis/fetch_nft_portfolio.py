@@ -128,7 +128,7 @@ class FetchNftPortfolio(WalletBaseTool):
             return NftPortfolioOutput(**result)
 
         except Exception as e:
-            logger.error(f"Error fetching NFT portfolio: {str(e)}")
+            logger.error("Error fetching NFT portfolio: %s", e)
             return NftPortfolioOutput(
                 address=address, nfts=[], total_count=0, chains=[], error=str(e)
             )
@@ -185,7 +185,7 @@ class FetchNftPortfolio(WalletBaseTool):
                         external_url=metadata_dict.get("external_url"),
                     )
                 except Exception as e:
-                    logger.warning(f"Error parsing NFT metadata: {str(e)}")
+                    logger.warning("Error parsing NFT metadata: %s", e)
                     # If metadata parsing fails, continue without it
                     pass
 
@@ -251,7 +251,7 @@ class FetchNftPortfolio(WalletBaseTool):
                         external_url=metadata_dict.get("external_url"),
                     )
                 except Exception as e:
-                    logger.warning(f"Error parsing Solana NFT metadata: {str(e)}")
+                    logger.warning("Error parsing Solana NFT metadata: %s", e)
                     pass
 
             nft_item = NftItem(

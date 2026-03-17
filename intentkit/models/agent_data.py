@@ -704,7 +704,7 @@ class AgentQuota(BaseModel):
                 )
                 _ = await session.execute(stmt)
         except Exception as e:
-            logger.error(f"Error adding free income: {str(e)}")
+            logger.error("Error adding free income: %s", e)
             raise IntentKitAPIError(
                 status_code=500,
                 key="DatabaseError",

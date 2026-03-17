@@ -130,9 +130,9 @@ async def build_executor(
                     if skill_private_tools and len(skill_private_tools) > 0:
                         private_tools.extend(skill_private_tools)
                 else:
-                    logger.error(f"Skill {k} does not have get_skills function")
+                    logger.error("Skill %s does not have get_skills function", k)
             except ImportError as e:
-                logger.error(f"Could not import skill module: {k} ({e})")
+                logger.error("Could not import skill module: %s (%s)", k, e)
 
     # add custom skills to private tools
     if custom_skills and len(custom_skills) > 0:
@@ -164,7 +164,9 @@ async def build_executor(
 
     for tool in private_tools:
         logger.info(
-            f"[{agent.id}] loaded tool: {tool.name if isinstance(tool, BaseTool) else tool}"
+            "[%s] loaded tool: %s",
+            agent.id,
+            tool.name if isinstance(tool, BaseTool) else tool,
         )
 
     base_model = await llm_model.create_instance()
@@ -306,7 +308,7 @@ async def agent_executor(
     if agent_id in _agents:
         if agent_id not in _agents_updated or updated_at != _agents_updated[agent_id]:
             needs_reinit = True
-            logger.info(f"Reinitializing agent {agent_id} due to updates")
+            logger.info("Reinitializing agent %s due to updates", agent_id)
 
     # cold start or needs reinitialization
     cold_start_cost = 0.0

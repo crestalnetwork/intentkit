@@ -150,7 +150,7 @@ class Agent(AgentCreate, AgentPublicInfo):
         agent_update_fields = set(AgentUpdate.model_fields.keys())
 
         for field_name, field in type(self).model_fields.items():
-            logger.debug(f"Processing field {field_name} with type {field.metadata}")
+            logger.debug("Processing field %s with type %s", field_name, field.metadata)
             # Skip fields that are not in AgentUpdate model
             if field_name not in agent_update_fields:
                 continue

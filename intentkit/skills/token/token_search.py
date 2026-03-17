@@ -106,7 +106,7 @@ class TokenSearch(TokenBaseTool):
 
             return result
         except Exception as e:
-            logger.error(f"Error searching for tokens: {e}")
+            logger.error("Error searching for tokens: %s", e)
             return {
                 "error": f"An error occurred while searching for tokens: {str(e)}. Please try again later.",
                 "notice": (

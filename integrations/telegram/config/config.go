@@ -35,6 +35,8 @@ func Load() (*Config, error) {
 }
 
 func (c *Config) DatabaseDSN() string {
+	// sslmode=disable is intentional: the Go integration connects to the database
+	// within a private network where TLS is not required.
 	dsn := fmt.Sprintf("host=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
 		c.DBHost, c.DBName, c.DBPort)
 	if c.DBUsername != "" {
