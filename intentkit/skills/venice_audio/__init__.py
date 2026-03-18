@@ -24,10 +24,8 @@ class Config(SkillConfig):
     enabled: bool
     voice_model: Literal["af_heart", "bm_lewis", "custom"]
     states: SkillStates  # type: ignore
-    api_key_provider: Literal["agent_owner"] | None
 
     # conditionally required
-    api_key: str | None
     voice_model_custom: list[str] | None
 
     # optional

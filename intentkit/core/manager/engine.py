@@ -96,10 +96,6 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
         If multiple skills are available for a single function, choose the one you deem most reliable.
         In a category, there are often many skills. Please select only the ones that are definitely useful.
 
-        If a skill category's `api_key_provider` has only `agent_owner` as an option,
-        then that skill will definitely require user input for the API key.
-        You can suggest in your communication that the user manually configure it later,
-        and avoid automatically generating drafts that use this skill.
         A typical skill configuration would look like this:
         ```
         "skills": {"category1": {"states": {"skill1": "public"}, "enabled": true}}
@@ -157,7 +153,6 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
             # },
             "openai": {
                 "enabled": True,
-                "api_key_provider": "platform",
                 "states": {
                     "gpt_avatar_generator": "private",
                 },

@@ -37,29 +37,9 @@ class EnsoBaseTool(IntentKitOnChainSkill):
         return []
 
     def get_api_token(self, context: AgentContext) -> str:
-        """
-        Get the Enso API token.
-
-        Args:
-            context: The skill context containing agent information.
-
-        Returns:
-            The API token string.
-
-        Raises:
-            ToolException: If no valid API token is configured.
-        """
-        skill_config = context.agent.skill_config(self.category)
-        api_key_provider = skill_config.get("api_key_provider")
-        if api_key_provider == "platform":
-            return config.enso_api_token
-        # for backward compatibility, may only have api_token in skill_config
-        elif skill_config.get("api_token"):
-            return skill_config.get("api_token")
-        else:
-            raise ToolException(
-                f"Invalid API key provider: {api_key_provider}, or no api_token in config"
-            )
+        if not config.enso_api_token:
+            raise ToolException("Enso API token is not configured")
+        return config.enso_api_token
 
     def resolve_chain_id(
         self, context: AgentContext, chain_id: int | None = None

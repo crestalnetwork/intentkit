@@ -1,7 +1,7 @@
 """Allora skill module."""
 
 import logging
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.allora.base import AlloraBaseTool
@@ -22,7 +22,6 @@ class Config(SkillConfig):
     """Configuration for Allora skills."""
 
     states: SkillStates
-    api_key: NotRequired[str]
 
 
 async def get_skills(

@@ -84,17 +84,12 @@
       },
       "description": "States for each Slack skill (disabled, public, or private)"
     },
-    "api_key_provider": {
+    "slack_bot_token": {
       "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key for AIXBT API service",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
+      "title": "Slack Bot Token",
+      "x-link": "[Get your API key](https://api.slack.com/)",
+      "x-sensitive": true,
+      "description": "Slack bot token for API access"
     }
   },
   "required": [
@@ -103,33 +98,15 @@
   ],
   "if": {
     "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
+      "enabled": {
+        "const": true
       }
     }
   },
   "then": {
-    "properties": {
-      "slack_bot_token": {
-        "type": "string",
-        "title": "Slack Bot Token",
-        "x-link": "[Get your API key](https://api.slack.com/)",
-        "x-sensitive": true,
-        "description": "Slack bot token for API access"
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "slack_bot_token"
-      ]
-    }
+    "required": [
+      "slack_bot_token"
+    ]
   },
   "additionalProperties": true
 }

@@ -1,6 +1,5 @@
 from langchain_core.tools.base import ToolException
 
-from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 
@@ -10,43 +9,19 @@ class TwitterBaseTool(IntentKitSkill):
     def get_api_key(self):
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        api_key_provider = skill_config.get("api_key_provider")
-        if api_key_provider == "platform":
-            # Return platform keys (these need to be added to config.py)
-            platform_keys = {
-                "consumer_key": getattr(config, "twitter_consumer_key", None),
-                "consumer_secret": getattr(config, "twitter_consumer_secret", None),
-                "access_token": getattr(config, "twitter_access_token", None),
-                "access_token_secret": getattr(
-                    config, "twitter_access_token_secret", None
-                ),
-            }
-            missing = [key for key, value in platform_keys.items() if not value]
-            if missing:
-                raise ToolException(
-                    "Twitter platform API keys are not configured: "
-                    + ", ".join(missing)
-                )
-            return platform_keys
-        # for backward compatibility or agent_owner provider
-        elif api_key_provider == "agent_owner":
-            required_keys = [
-                "consumer_key",
-                "consumer_secret",
-                "access_token",
-                "access_token_secret",
-            ]
-            api_keys = {}
-            for key in required_keys:
-                if skill_config.get(key):
-                    api_keys[key] = skill_config.get(key)
-                else:
-                    raise ToolException(
-                        f"Missing required {key} in agent_owner configuration"
-                    )
-            return api_keys
-        else:
-            raise ToolException(f"Invalid API key provider: {api_key_provider}")
+        required_keys = [
+            "consumer_key",
+            "consumer_secret",
+            "access_token",
+            "access_token_secret",
+        ]
+        api_keys = {}
+        for key in required_keys:
+            if skill_config.get(key):
+                api_keys[key] = skill_config.get(key)
+            else:
+                raise ToolException(f"Missing required {key} in configuration")
+        return api_keys
 
     category: str = "twitter"
 

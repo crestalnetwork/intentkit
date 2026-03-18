@@ -5,8 +5,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import RateLimitExceeded
 
@@ -24,6 +26,11 @@ class CryptoCompareBaseTool(IntentKitSkill):
     """
 
     category: str = "cryptocompare"
+
+    def get_api_key(self) -> str:
+        if not config.cryptocompare_api_key:
+            raise ToolException("CryptoCompare API key is not configured")
+        return config.cryptocompare_api_key
 
     async def check_rate_limit(self, max_requests: int = 1, interval: int = 15) -> None:
         """Check if the rate limit has been exceeded.

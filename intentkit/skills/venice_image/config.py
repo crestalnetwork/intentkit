@@ -4,10 +4,6 @@ from pydantic import BaseModel, Field
 class VeniceImageConfig(BaseModel):
     """Skill Config for Venice Image."""
 
-    api_key_provider: str = Field(
-        default="agent_owner",
-        description="API key provider: agent_owner or platform.",
-    )
     safe_mode: bool = Field(
         default=True,
         description="Blur adult content if enabled.",

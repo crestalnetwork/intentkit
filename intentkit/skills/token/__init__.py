@@ -30,7 +30,6 @@ class Config(SkillConfig):
     """Configuration for Token blockchain analysis skills."""
 
     states: SkillStates
-    api_key: str
 
 
 async def get_skills(

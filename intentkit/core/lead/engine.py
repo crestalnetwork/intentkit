@@ -83,9 +83,6 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
         "Please use skills sparingly, ideally keeping the number below 20. "
         "If multiple skills are available for a single function, choose the most reliable one. "
         "In a category, there are often many skills. Please select only the ones that are definitely useful.\n\n"
-        "If a skill category's `api_key_provider` has only `agent_owner` as an option, "
-        "then that skill will require user input for the API key. "
-        "Suggest the user manually configure it later.\n"
         "A typical skill configuration looks like:\n"
         '```\n"skills": {"category1": {"states": {"skill1": "public"}, "enabled": true}}\n```\n'
         "The `enabled` flag is at the category level, and `states` refers to specific skills. "

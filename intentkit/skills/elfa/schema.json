@@ -85,54 +85,11 @@
         }
       },
       "description": "States for each Elfa skill (disabled, public, or private)"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key",
-      "enum": [
-        "platform",
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Nation Hosted",
-        "Owner Provided"
-      ],
-      "default": "platform"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "Elfa API Key",
-        "x-sensitive": true,
-        "description": "Elfa API key for authentication"
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true
 }

@@ -1,5 +1,6 @@
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.aixbt.base import AIXBTBaseTool
 from intentkit.skills.aixbt.projects import AIXBTProjects
 from intentkit.skills.base import SkillConfig, SkillState
@@ -17,8 +18,6 @@ class Config(SkillConfig):
 
     states: SkillStates
     enabled: bool = False
-    api_key_provider: str = "agent_owner"
-    api_key: str = ""
     rate_limit_number: int = 1000
     rate_limit_minutes: int = 60
 
@@ -60,4 +59,4 @@ def get_aixbt_skill(
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.aixbt_api_key)

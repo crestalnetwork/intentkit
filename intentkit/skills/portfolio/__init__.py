@@ -44,8 +44,6 @@ class Config(SkillConfig):
     """Configuration for Portfolio blockchain analysis skills."""
 
     states: SkillStates
-    api_key: str
-    api_key_provider: str
 
 
 async def get_skills(

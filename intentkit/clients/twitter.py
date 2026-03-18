@@ -463,7 +463,15 @@ class TwitterClient(TwitterABC):
 
 
 def _is_self_key(config: dict[str, Any]) -> bool:
-    return config.get("api_key_provider") == "agent_owner"
+    return all(
+        config.get(k)
+        for k in (
+            "consumer_key",
+            "consumer_secret",
+            "access_token",
+            "access_token_secret",
+        )
+    )
 
 
 def _cleanup_client_cache() -> None:

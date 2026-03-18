@@ -32,7 +32,6 @@ from intentkit.utils.error import RateLimitExceeded
 
 SkillState = Literal["disabled", "public", "private"]
 SkillOwnerState = Literal["disabled", "private"]
-APIKeyProviderValue = Literal["platform", "agent_owner"]
 
 
 class NoArgsSchema(BaseModel):
@@ -44,7 +43,6 @@ class SkillConfig(TypedDict):
 
     enabled: bool
     states: Any
-    api_key_provider: NotRequired[APIKeyProviderValue]
     __extra__: NotRequired[dict[str, Any]]
 
 

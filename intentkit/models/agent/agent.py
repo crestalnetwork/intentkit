@@ -287,35 +287,15 @@ class Agent(AgentCreate, AgentPublicInfo):
     def skill_config(self, category: str) -> dict[str, Any]:
         return self.skills.get(category, {}) if self.skills else {}
 
-    @staticmethod
-    def _is_agent_owner_only_skill(skill_schema: dict[str, Any]) -> bool:
-        """Check if a skill requires agent owner API keys only based on its resolved schema."""
-        if (
-            skill_schema
-            and "properties" in skill_schema
-            and "api_key_provider" in skill_schema["properties"]
-        ):
-            api_key_provider = skill_schema["properties"]["api_key_provider"]
-            if "enum" in api_key_provider and api_key_provider["enum"] == [
-                "agent_owner"
-            ]:
-                return True
-        return False
-
     @classmethod
     async def get_json_schema(
         cls,
         db: AsyncSession,
-        filter_owner_api_skills: bool = False,
     ) -> dict[str, Any]:
         """Get the JSON schema for Agent model with all $ref references resolved.
 
-        This is the shared function that handles admin configuration filtering
-        for both the API endpoint and agent generation.
-
         Args:
-            db: Database session (optional, will create if not provided)
-            filter_owner_api_skills: Whether to filter out skills that require agent owner API keys
+            db: Database session
 
         Returns:
             Dict containing the complete JSON schema for the Agent model
@@ -377,15 +357,6 @@ class Agent(AgentCreate, AgentPublicInfo):
                         with open(skill_schema_path) as f:
                             skill_schema = json.load(f)
 
-                        # Check if this skill should be filtered for owner API requirements
-                        if filter_owner_api_skills and cls._is_agent_owner_only_skill(
-                            skill_schema
-                        ):
-                            logger.info(
-                                f"Filtered out skill '{category}' from auto-generation: requires agent owner API key"
-                            )
-                            continue
-
                         # Load and embed the full skill schema directly
                         base_uri = f"file://{skill_schema_path}"
                         with open(skill_schema_path) as f:
@@ -438,9 +409,6 @@ class Agent(AgentCreate, AgentPublicInfo):
                 wallet_property["x-enum-title"] = wallet_titles
 
             # Log the changes for debugging
-            logger.debug(
-                "Schema processed with merged LLM/skill defaults; filtered owner API skills: %s",
-                filter_owner_api_skills,
-            )
+            logger.debug("Schema processed with merged LLM/skill defaults")
 
             return schema

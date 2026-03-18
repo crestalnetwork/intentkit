@@ -19,17 +19,9 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
     """Base class for portfolio analysis skills."""
 
     def get_api_key(self):
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        if skill_config.get("api_key_provider") == "agent_owner":
-            api_key = skill_config.get("api_key")
-        else:
-            api_key = config.moralis_api_key
-
-        if not api_key:
-            raise ToolException("Moralis API key is not configured.")
-
-        return api_key
+        if not config.moralis_api_key:
+            raise ToolException("Moralis API key is not configured")
+        return config.moralis_api_key
 
     category: str = "portfolio"
 

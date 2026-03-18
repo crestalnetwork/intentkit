@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -28,10 +28,6 @@ class SkillStates(TypedDict):
 class Config(SkillConfig):
     enabled: bool
     states: SkillStates  # type: ignore
-    api_key_provider: Literal["agent_owner", "platform"] | None
-
-    # conditionally required
-    api_key: str | None
 
     # optional
     rate_limit_number: int | None

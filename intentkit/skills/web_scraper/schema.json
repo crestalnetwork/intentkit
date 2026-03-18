@@ -117,18 +117,6 @@
       "default": 30,
       "minimum": 5,
       "maximum": 120
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key for embeddings",
-      "enum": [
-        "platform"
-      ],
-      "x-enum-title": [
-        "Platform Hosted"
-      ],
-      "default": "platform"
     }
   },
   "required": [

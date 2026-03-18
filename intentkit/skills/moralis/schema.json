@@ -106,56 +106,12 @@
           "default": true
         }
       }
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key",
-      "enum": [
-        "platform",
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Nation Hosted",
-        "Owner Provided"
-      ],
-      "default": "platform"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "API Key",
-        "x-link": "[Get your API key](https://developers.moralis.com/)",
-        "x-sensitive": true,
-        "description": "Moralis API key for blockchain data access"
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true,
   "x-tags": [
     "Analytics",

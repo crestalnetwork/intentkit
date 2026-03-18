@@ -2,10 +2,7 @@ import logging
 from typing import NotRequired, TypedDict
 
 from intentkit.config.config import config as system_config
-from intentkit.skills.base import (
-    SkillConfig,
-    SkillState,
-)
+from intentkit.skills.base import SkillConfig, SkillState
 
 # Import the base tool and all specific model skill classes
 from intentkit.skills.venice_image.base import VeniceImageBaseTool
@@ -61,8 +58,6 @@ class Config(SkillConfig):
 
     enabled: bool  # Keep standard enabled flag
     states: SkillStates
-    api_key_provider: str = "agent_owner"
-    api_key: NotRequired[str | None]  # Explicitly Optional
     safe_mode: NotRequired[bool]  # Defaults handled in base or usage
     hide_watermark: NotRequired[bool]  # Defaults handled in base or usage
     negative_prompt: NotRequired[str]  # Defaults handled in base or usage

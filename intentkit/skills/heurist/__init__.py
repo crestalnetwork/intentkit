@@ -44,7 +44,6 @@ class Config(SkillConfig):
     """Configuration for Heurist AI skills."""
 
     states: SkillStates
-    api_key: NotRequired[str]
     rate_limit_number: NotRequired[int]
     rate_limit_minutes: NotRequired[int]
 

@@ -206,62 +206,20 @@
       "description": "Default negative prompt to use if none is provided in the skill call.",
       "default": "(worst quality: 1.4), bad quality, nsfw"
     },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key for AIXBT API service",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window."
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting."
     }
   },
   "required": [
     "states",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "Venice API Key",
-        "x-link": "[Get your API key](https://venice.ai/)",
-        "x-sensitive": true,
-        "description": "Optional API key for Venice AI services. If not provided, the system key will be used."
-      },
-      "rate_limit_number": {
-        "type": "integer",
-        "title": "Rate Limit Number",
-        "description": "Number of requests allowed per time window. Only applies if using an agent-specific API key."
-      },
-      "rate_limit_minutes": {
-        "type": "integer",
-        "title": "Rate Limit Minutes",
-        "description": "Time window in minutes for rate limiting. Only applies if using an agent-specific API key."
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true
 }

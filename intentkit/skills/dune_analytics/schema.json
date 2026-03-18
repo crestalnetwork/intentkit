@@ -47,54 +47,12 @@
           "default": "disabled"
         }
       }
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key for Dune service",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "Dune API Key",
-        "description": "API key for Dune Analytics (X-Dune-API-Key).",
-        "x-link": "[Get your API key](https://docs.dune.com/api-reference/overview/authentication)",
-        "x-sensitive": true
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true,
   "x-tags": [
     "Analytics",

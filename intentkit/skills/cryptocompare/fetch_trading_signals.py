@@ -56,15 +56,12 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
         """
         try:
             context = self.get_context()
-            skill_config = context.agent.skill_config(self.category)
 
             # Check rate limit
             await self.check_rate_limit(max_requests=5, interval=60)
 
-            # Get API key from context
-            api_key = skill_config.get("api_key")
-            if not api_key:
-                raise ToolException("CryptoCompare API key not found in configuration")
+            # Get API key from platform config
+            api_key = self.get_api_key()
 
             # Fetch trading signals data directly
             signals_data = await self.fetch_trading_signals(api_key, from_symbol)

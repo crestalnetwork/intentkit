@@ -160,20 +160,6 @@
         "UDSC",
         "USDT"
       ]
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key",
-      "enum": [
-        "platform",
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Nation Hosted",
-        "Owner Provided"
-      ],
-      "default": "platform"
     }
   },
   "required": [
@@ -181,33 +167,5 @@
     "main_tokens",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_token": {
-        "type": "string",
-        "title": "API Token",
-        "description": "Enso API token for authentication"
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_token"
-      ]
-    }
-  },
   "additionalProperties": true
 }

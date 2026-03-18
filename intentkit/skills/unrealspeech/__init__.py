@@ -1,5 +1,6 @@
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
 from intentkit.skills.unrealspeech.text_to_speech import TextToSpeech
@@ -16,7 +17,6 @@ class Config(SkillConfig):
     """Configuration for UnrealSpeech skills."""
 
     states: SkillStates
-    api_key: str = ""  # Optional API key
 
 
 async def get_skills(
@@ -52,4 +52,4 @@ def get_unrealspeech_skill(
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.unrealspeech_api_key)

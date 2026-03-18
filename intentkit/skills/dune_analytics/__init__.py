@@ -6,6 +6,7 @@ Loads and initializes skills for fetching data from Dune Analytics API.
 import logging
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.dune_analytics.base import DuneBaseTool
 
@@ -26,7 +27,6 @@ class Config(SkillConfig):
     """Configuration schema for Dune Analytics skills."""
 
     states: SkillStates
-    api_key: str
 
 
 async def get_skills(
@@ -103,4 +103,4 @@ def get_dune_skill(name: str) -> DuneBaseTool | None:
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.dune_api_key)

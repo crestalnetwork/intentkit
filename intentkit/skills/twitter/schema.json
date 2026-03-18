@@ -181,19 +181,34 @@
       },
       "description": "States for each X skill"
     },
-    "api_key_provider": {
+    "consumer_key": {
       "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "platform",
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Nation Hosted",
-        "Owner Provided"
-      ],
-      "default": "platform"
+      "title": "X API consumer key",
+      "description": "X API consumer key",
+      "x-link": "[Get your API key](https://developer.x.com/)",
+      "x-sensitive": true,
+      "maxLength": 100
+    },
+    "consumer_secret": {
+      "type": "string",
+      "title": "X API consumer secret",
+      "description": "X API consumer secret",
+      "x-sensitive": true,
+      "maxLength": 100
+    },
+    "access_token": {
+      "type": "string",
+      "title": "X API access token",
+      "description": "X API access token",
+      "x-sensitive": true,
+      "maxLength": 100
+    },
+    "access_token_secret": {
+      "type": "string",
+      "title": "X API access token secret",
+      "description": "X API access token secret",
+      "x-sensitive": true,
+      "maxLength": 100
     }
   },
   "required": [
@@ -202,58 +217,18 @@
   ],
   "if": {
     "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
+      "enabled": {
+        "const": true
       }
     }
   },
   "then": {
-    "properties": {
-      "consumer_key": {
-        "type": "string",
-        "title": "X API consumer key",
-        "description": "X API consumer key",
-        "x-link": "[Get your API key](https://developer.x.com/)",
-        "x-sensitive": true,
-        "maxLength": 100
-      },
-      "consumer_secret": {
-        "type": "string",
-        "title": "X API consumer secret",
-        "description": "X API consumer secret",
-        "x-sensitive": true,
-        "maxLength": 100
-      },
-      "access_token": {
-        "type": "string",
-        "title": "X API access token",
-        "description": "X API access token",
-        "x-sensitive": true,
-        "maxLength": 100
-      },
-      "access_token_secret": {
-        "type": "string",
-        "title": "X API access token secret",
-        "description": "X API access token secret",
-        "x-sensitive": true,
-        "maxLength": 100
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "consumer_key",
-        "consumer_secret",
-        "access_token",
-        "access_token_secret"
-      ]
-    }
+    "required": [
+      "consumer_key",
+      "consumer_secret",
+      "access_token",
+      "access_token_secret"
+    ]
   },
   "additionalProperties": true
 }

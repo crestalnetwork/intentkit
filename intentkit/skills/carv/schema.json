@@ -69,66 +69,20 @@
         }
       }
     },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key",
-      "enum": [
-        "agent_owner",
-        "platform"
-      ],
-      "x-enum-title": [
-        "Owner Provided",
-        "Nation Hosted"
-      ],
-      "default": "platform"
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window."
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting."
     }
   },
   "required": [
     "enabled",
     "states"
   ],
-  "if": {
-    "allOf": [
-      {
-        "properties": {
-          "enabled": {
-            "const": true
-          }
-        }
-      },
-      {
-        "properties": {
-          "api_key_provider": {
-            "const": "agent_owner"
-          }
-        }
-      }
-    ]
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "CARV API Key",
-        "x-link": "[Get your API key](https://docs.carv.io/d.a.t.a.-ai-framework/api-documentation#authentication)",
-        "x-sensitive": true,
-        "description": "API Key for authenticating with the CARV API."
-      },
-      "rate_limit_number": {
-        "type": "integer",
-        "title": "Rate Limit Number",
-        "description": "Number of requests allowed per time window."
-      },
-      "rate_limit_minutes": {
-        "type": "integer",
-        "title": "Rate Limit Minutes",
-        "description": "Time window in minutes for rate limiting."
-      }
-    },
-    "required": [
-      "api_key"
-    ]
-  },
   "additionalProperties": true
 }

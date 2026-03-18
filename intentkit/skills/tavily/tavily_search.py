@@ -72,14 +72,13 @@ class TavilySearch(TavilyBaseTool):
         skill_config = context.agent.skill_config(self.category)
         logger.debug("tavily.py: Running web search with context %s", context)
 
-        if skill_config.get("api_key_provider") == "agent_owner":
-            if skill_config.get("rate_limit_number") and skill_config.get(
-                "rate_limit_minutes"
-            ):
-                await self.user_rate_limit_by_category(
-                    skill_config["rate_limit_number"],
-                    skill_config["rate_limit_minutes"] * 60,
-                )
+        if skill_config.get("rate_limit_number") and skill_config.get(
+            "rate_limit_minutes"
+        ):
+            await self.user_rate_limit_by_category(
+                skill_config["rate_limit_number"],
+                skill_config["rate_limit_minutes"] * 60,
+            )
 
         # Get the API key from the agent's configuration
         api_key = self.get_api_key()

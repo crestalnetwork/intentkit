@@ -13,18 +13,8 @@ class OpenAIBaseTool(IntentKitSkill):
     """
 
     def get_api_key(self):
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        api_key_provider = skill_config.get("api_key_provider")
-        if api_key_provider == "platform":
-            if not config.openai_api_key:
-                raise ToolException("OpenAI API key is not configured")
-            return config.openai_api_key
-        # for backward compatibility, may only have api_key in skill_config
-        if skill_config.get("api_key"):
-            return skill_config.get("api_key")
-        raise ToolException(
-            f"Invalid API key provider: {api_key_provider}, or no api_key in config"
-        )
+        if not config.openai_api_key:
+            raise ToolException("OpenAI API key is not configured")
+        return config.openai_api_key
 
     category: str = "openai"

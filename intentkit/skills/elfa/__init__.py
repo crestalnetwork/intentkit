@@ -1,7 +1,7 @@
 """Elfa skills."""
 
 import logging
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -30,7 +30,6 @@ class Config(SkillConfig):
     """Configuration for Elfa skills."""
 
     states: SkillStates
-    api_key: NotRequired[str]
 
 
 async def get_skills(

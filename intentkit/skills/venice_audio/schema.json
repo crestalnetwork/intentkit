@@ -55,17 +55,15 @@
         }
       }
     },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Provider of the API key",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
+    "rate_limit_number": {
+      "type": "integer",
+      "title": "Rate Limit Number",
+      "description": "Number of requests allowed per time window."
+    },
+    "rate_limit_minutes": {
+      "type": "integer",
+      "title": "Rate Limit Minutes",
+      "description": "Time window in minutes for rate limiting."
     }
   },
   "required": [
@@ -99,50 +97,6 @@
         },
         "required": [
           "voice_model_custom"
-        ]
-      }
-    },
-    {
-      "if": {
-        "allOf": [
-          {
-            "properties": {
-              "enabled": {
-                "const": true
-              }
-            }
-          },
-          {
-            "properties": {
-              "api_key_provider": {
-                "const": "agent_owner"
-              }
-            }
-          }
-        ]
-      },
-      "then": {
-        "properties": {
-          "api_key": {
-            "type": "string",
-            "title": "Venice API Key",
-            "x-link": "[Get your API key](https://venice.ai/)",
-            "x-sensitive": true,
-            "description": "API Key for authenticating with the Venice AI API."
-          },
-          "rate_limit_number": {
-            "type": "integer",
-            "title": "Rate Limit Number",
-            "description": "Number of requests allowed per time window."
-          },
-          "rate_limit_minutes": {
-            "type": "integer",
-            "title": "Rate Limit Minutes",
-            "description": "Time window in minutes for rate limiting."
-          }
-        },
-        "required": [
-          "api_key"
         ]
       }
     }

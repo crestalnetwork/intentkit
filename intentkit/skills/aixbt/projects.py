@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Any
 
 import httpx
-from langchain_core.tools import ArgsSchema, ToolException
+from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
 from intentkit.skills.aixbt.base import AIXBTBaseTool
@@ -71,13 +71,8 @@ class AIXBTProjects(AIXBTBaseTool):
                 skill_config["rate_limit_minutes"] * 60,
             )
 
-        # Get the API key from the agent's configuration
-        api_key = skill_config.get("api_key")
-
-        if not api_key:
-            raise ToolException(
-                "AIXBT API key is not available. Please provide it in the agent configuration."
-            )
+        # Get the API key from platform config
+        api_key = self.get_api_key()
 
         base_url = "https://api.aixbt.tech/v1/projects"
 

@@ -11,19 +11,10 @@ class SlackBaseTool(IntentKitSkill):
     def get_api_key(self):
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        api_key_provider = skill_config.get("api_key_provider")
-        if api_key_provider == "agent_owner":
-            slack_bot_token = skill_config.get("slack_bot_token")
-            if slack_bot_token:
-                return slack_bot_token
-            else:
-                raise ToolException(
-                    "No slack_bot_token found in agent_owner configuration"
-                )
-        else:
-            raise ToolException(
-                f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for Slack."
-            )
+        slack_bot_token = skill_config.get("slack_bot_token")
+        if not slack_bot_token:
+            raise ToolException("Missing required slack_bot_token in configuration")
+        return slack_bot_token
 
     category: str = "slack"
 

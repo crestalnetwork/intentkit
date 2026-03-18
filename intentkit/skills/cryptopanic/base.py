@@ -5,6 +5,7 @@ Defines the base class and shared utilities for CryptoPanic skills.
 
 from langchain_core.tools.base import ToolException
 
+from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
 base_url = "https://cryptopanic.com/api/v1/posts/"
@@ -20,16 +21,6 @@ class CryptopanicBaseTool(IntentKitSkill):
     category: str = "cryptopanic"
 
     def get_api_key(self):
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        api_key_provider = skill_config.get("api_key_provider")
-        if api_key_provider == "agent_owner":
-            api_key = skill_config.get("api_key")
-            if api_key:
-                return api_key
-            else:
-                raise ToolException("No api_key found in agent_owner configuration")
-        else:
-            raise ToolException(
-                f"Invalid API key provider: {api_key_provider}. Only 'agent_owner' is supported for CryptoPanic."
-            )
+        if not config.cryptopanic_api_key:
+            raise ToolException("CryptoPanic API key is not configured")
+        return config.cryptopanic_api_key

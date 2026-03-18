@@ -218,6 +218,11 @@ class Config:
         self.tavily_api_key: str | None = self.load("TAVILY_API_KEY")
         self.cookiefun_api_key: str | None = self.load("COOKIEFUN_API_KEY")
         self.firecrawl_api_key: str | None = self.load("FIRECRAWL_API_KEY")
+        self.cryptopanic_api_key: str | None = self.load("CRYPTOPANIC_API_KEY")
+        self.unrealspeech_api_key: str | None = self.load("UNREALSPEECH_API_KEY")
+        self.dune_api_key: str | None = self.load("DUNE_API_KEY")
+        self.aixbt_api_key: str | None = self.load("AIXBT_API_KEY")
+        self.cryptocompare_api_key: str | None = self.load("CRYPTOCOMPARE_API_KEY")
         # Cloudflare Browser Rendering
         self.cloudflare_account_id: str | None = self.load("CLOUDFLARE_ACCOUNT_ID")
         self.cloudflare_api_token: str | None = self.load("CLOUDFLARE_API_TOKEN")

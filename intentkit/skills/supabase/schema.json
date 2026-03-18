@@ -116,18 +116,6 @@
       },
       "description": "States for each Supabase skill"
     },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Who provides the API key",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
-    },
     "supabase_url": {
       "type": "string",
       "title": "Supabase URL",

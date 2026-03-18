@@ -24,7 +24,6 @@ class Config(SkillConfig):
     """Configuration for Tavily search skills."""
 
     states: SkillStates
-    api_key: str
 
 
 async def get_skills(

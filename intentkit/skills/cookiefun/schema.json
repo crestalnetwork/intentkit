@@ -101,53 +101,11 @@
         }
       },
       "description": "Configure access levels for each CookieFun skill - disabled, available to all users, or restricted to agent owner only"
-    },
-    "api_key_provider": {
-      "type": "string",
-      "title": "API Key Provider",
-      "description": "Choose whether to use a platform-provided API key or provide your own CookieFun API key",
-      "enum": [
-        "agent_owner"
-      ],
-      "x-enum-title": [
-        "Owner Provided"
-      ],
-      "default": "agent_owner"
     }
   },
   "required": [
     "states",
     "enabled"
   ],
-  "if": {
-    "properties": {
-      "api_key_provider": {
-        "const": "agent_owner"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "api_key": {
-        "type": "string",
-        "title": "CookieFun API Key",
-        "description": "Your personal CookieFun API key, required when using Owner Provided option (sign up at cookie.fun)",
-        "x-sensitive": true,
-        "x-link": "[Get your API key](https://cookie.fun/)"
-      }
-    },
-    "if": {
-      "properties": {
-        "enabled": {
-          "const": true
-        }
-      }
-    },
-    "then": {
-      "required": [
-        "api_key"
-      ]
-    }
-  },
   "additionalProperties": true
 }

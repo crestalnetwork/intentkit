@@ -3,6 +3,7 @@
 import logging
 from typing import TypedDict
 
+from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.cryptocompare.base import CryptoCompareBaseTool
 from intentkit.skills.cryptocompare.fetch_news import CryptoCompareFetchNews
@@ -37,7 +38,6 @@ class Config(SkillConfig):
     """Configuration for CryptoCompare skills."""
 
     states: SkillStates
-    api_key: str
 
 
 async def get_skills(
@@ -115,4 +115,4 @@ def get_cryptocompare_skill(
 
 def available() -> bool:
     """Check if this skill category is available based on system config."""
-    return True
+    return bool(system_config.cryptocompare_api_key)

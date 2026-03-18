@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 import aiohttp
+from langchain_core.tools.base import ToolException
 
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
@@ -22,15 +23,8 @@ class TokenBaseTool(IntentKitSkill):
     category: str = "token"
 
     def get_api_key(self) -> str:
-        """Get API key from agent config or system config.
-
-        Returns:
-            The API key to use for API requests
-        """
-        context = self.get_context()
-        skill_config = context.agent.skill_config(self.category)
-        if skill_config.get("api_key_provider") == "agent_owner":
-            return skill_config.get("api_key")
+        if not config.moralis_api_key:
+            raise ToolException("Moralis API key is not configured")
         return config.moralis_api_key
 
     def _prepare_params(self, params: dict[str, Any]) -> dict[str, Any]:

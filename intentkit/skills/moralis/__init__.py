@@ -1,7 +1,7 @@
 """Wallet Portfolio Skills for IntentKit."""
 
 import logging
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -26,9 +26,8 @@ class SkillStates(TypedDict):
 class Config(SkillConfig):
     """Configuration for Wallet Portfolio skills."""
 
-    api_key: str
     states: SkillStates
-    supported_chains: NotRequired[dict[str, bool]] = {"evm": True, "solana": True}
+    supported_chains: dict[str, bool]
 
 
 async def get_skills(
@@ -61,16 +60,11 @@ async def get_skills(
                 continue
 
             available_skills.append(skill_name)
-    # api key
-    if config.get("api_key_provider") == "agent_owner":
-        api_key = config.get("api_key")
-    else:
-        api_key = system_config.moralis_api_key
 
     # Get each skill using the getter
     result = []
     for name in available_skills:
-        skill = get_wallet_skill(name, api_key)
+        skill = get_wallet_skill(name)
         if skill:
             result.append(skill)
     return result
@@ -78,14 +72,11 @@ async def get_skills(
 
 def get_wallet_skill(
     name: str,
-    api_key: str,
 ) -> WalletBaseTool:
     """Get a specific Wallet Portfolio skill by name.
 
     Args:
         name: Name of the skill to get
-        api_key: API key for Moralis
-        store: Skill store for persistence
 
     Returns:
         The requested skill
@@ -101,9 +92,7 @@ def get_wallet_skill(
         logger.warning("Unknown Wallet Portfolio skill: %s", name)
         return None
 
-    return skill_classes[name](
-        api_key=api_key,
-    )
+    return skill_classes[name]()
 
 
 def available() -> bool:
