@@ -17,6 +17,9 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 
@@ -48,6 +51,9 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 
@@ -70,6 +76,9 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 
@@ -89,6 +98,9 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 
@@ -112,6 +124,9 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 
@@ -138,6 +153,9 @@ def test_model_id_index_suffix_matching():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = _load_default_llm_models()
 

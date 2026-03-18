@@ -139,6 +139,57 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             key = f"{provider.value}:{row_id}"
             defaults[key] = model
 
+    # Load OpenAI Compatible models from config (not CSV)
+    if (
+        config.openai_compatible_api_key
+        and config.openai_compatible_base_url
+        and config.openai_compatible_model
+    ):
+        timestamp = datetime.now(UTC)
+        provider = LLMProvider.OPENAI_COMPATIBLE
+        base_attrs: dict[str, Any] = {
+            "provider": provider,
+            "enabled": True,
+            "input_price": Decimal("0"),
+            "output_price": Decimal("0"),
+            "context_length": 200000,
+            "output_length": 64000,
+            "supports_image_input": False,
+            "supports_skill_calls": True,
+            "supports_structured_output": False,
+            "supports_search": False,
+            "supports_temperature": True,
+            "supports_frequency_penalty": True,
+            "supports_presence_penalty": True,
+            "api_base": config.openai_compatible_base_url,
+            "timeout": 300,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+        }
+
+        model_id = config.openai_compatible_model
+        model = LLMModelInfo(
+            id=model_id,
+            name=model_id,
+            intelligence=3,
+            speed=3,
+            reasoning_effort="high",
+            **base_attrs,
+        )
+        defaults[f"{provider.value}:{model_id}"] = model
+
+        if config.openai_compatible_model_lite:
+            lite_id = config.openai_compatible_model_lite
+            lite_model = LLMModelInfo(
+                id=lite_id,
+                name=lite_id,
+                intelligence=2,
+                speed=4,
+                reasoning_effort=None,
+                **base_attrs,
+            )
+            defaults[f"{provider.value}:{lite_id}"] = lite_model
+
     return defaults
 
 
@@ -152,6 +203,7 @@ class LLMProvider(str, Enum):
     REIGENT = "reigent"
     VENICE = "venice"
     OLLAMA = "ollama"
+    OPENAI_COMPATIBLE = "openai_compatible"
 
     @property
     def is_configured(self) -> bool:
@@ -166,6 +218,11 @@ class LLMProvider(str, Enum):
             self.REIGENT: bool(config.reigent_api_key),
             self.VENICE: bool(config.venice_api_key),
             self.OLLAMA: True,  # Ollama usually doesn't need a key
+            self.OPENAI_COMPATIBLE: bool(
+                config.openai_compatible_api_key
+                and config.openai_compatible_base_url
+                and config.openai_compatible_model
+            ),
         }
         return config_map.get(self, False)
 
@@ -181,6 +238,7 @@ class LLMProvider(str, Enum):
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
             self.OLLAMA: "Ollama",
+            self.OPENAI_COMPATIBLE: config.openai_compatible_provider,
         }
         return display_names.get(self, self.value)
 
@@ -849,6 +907,42 @@ class OllamaLLM(LLMModel):
         return ChatOllama(**kwargs)
 
 
+class OpenAICompatibleLLM(LLMModel):
+    """OpenAI Compatible LLM configuration."""
+
+    @override
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatOpenAI instance for OpenAI-compatible provider."""
+        from langchain_openai import ChatOpenAI
+
+        info = await self.model_info()
+
+        kwargs: dict[str, Any] = {
+            "model_name": info.id,
+            "openai_api_base": info.api_base,
+            "timeout": info.timeout,
+            "max_retries": 3,
+        }
+
+        kwargs["openai_api_key"] = config.openai_compatible_api_key
+
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        if info.supports_frequency_penalty:
+            kwargs["frequency_penalty"] = self.frequency_penalty
+
+        if info.supports_presence_penalty:
+            kwargs["presence_penalty"] = self.presence_penalty
+
+        if info.reasoning_effort and info.reasoning_effort != "none":
+            kwargs["extra_body"] = {"thinking": {"type": "enabled"}}
+
+        kwargs.update(params)
+
+        return ChatOpenAI(**kwargs)
+
+
 # Factory function to create the appropriate LLM model based on the model name
 async def create_llm_model(
     model_name: str,
@@ -877,6 +971,7 @@ async def create_llm_model(
         LLMProvider.OPENROUTER: OpenRouterLLM,
         LLMProvider.OLLAMA: OllamaLLM,
         LLMProvider.OPENAI: OpenAILLM,
+        LLMProvider.OPENAI_COMPATIBLE: OpenAICompatibleLLM,
     }
 
     model_class = provider_map.get(info.provider, OpenAILLM)

@@ -152,6 +152,20 @@ class Config:
         self.reigent_api_key: str | None = self.load("REIGENT_API_KEY")
         self.venice_api_key: str | None = self.load("VENICE_API_KEY")
         self.openrouter_api_key: str | None = self.load("OPENROUTER_API_KEY")
+        # OpenAI Compatible provider
+        self.openai_compatible_api_key: str | None = self.load(
+            "OPENAI_COMPATIBLE_API_KEY"
+        )
+        self.openai_compatible_provider: str = self.load(
+            "OPENAI_COMPATIBLE_PROVIDER", "OpenAI Compatible"
+        )
+        self.openai_compatible_base_url: str | None = self.load(
+            "OPENAI_COMPATIBLE_BASE_URL"
+        )
+        self.openai_compatible_model: str | None = self.load("OPENAI_COMPATIBLE_MODEL")
+        self.openai_compatible_model_lite: str | None = self.load(
+            "OPENAI_COMPATIBLE_MODEL_LITE"
+        )
         # LLM Config
         self.system_prompt: str | None = self.load("SYSTEM_PROMPT")
         self.intentkit_prompt: str | None = self.load("INTENTKIT_PROMPT")
