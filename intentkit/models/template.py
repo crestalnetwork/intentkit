@@ -99,12 +99,6 @@ class TemplateTable(Base):
         default=0.0,
         comment="The presence penalty (-2.0~2.0)",
     )
-    short_term_memory_strategy: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        default="trim",
-        comment="Strategy for managing short-term memory when context limit is reached",
-    )
     wallet_provider: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

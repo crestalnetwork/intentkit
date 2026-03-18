@@ -85,7 +85,6 @@ async def build_executor(
         StepTrackingMiddleware,
         SummarizationMiddleware,
         ToolBindingMiddleware,
-        TrimMessagesMiddleware,
     )
 
     # Create the LLM model instance
@@ -206,26 +205,23 @@ async def build_executor(
         )
     )
 
-    if agent.short_term_memory_strategy == "trim":
-        middleware.append(TrimMessagesMiddleware(max_summary_tokens=2048))
-    elif agent.short_term_memory_strategy == "summarize":
-        summarize_model_name = pick_summarize_model()
-        summarize_llm = await create_llm_model(model_name=summarize_model_name)
-        summarize_model = await summarize_llm.create_instance()
-        middleware.append(
-            SummarizationMiddleware(
-                model=summarize_model,
-                trigger=[
-                    ("fraction", 0.8),
-                    ("tokens", int(llm_model.info.context_length * 0.8)),
-                ]
-                if agent.super_mode
-                else [
-                    ("fraction", 0.6),
-                    ("tokens", int(llm_model.info.context_length * 0.6)),
-                ],
-            )
+    summarize_model_name = pick_summarize_model()
+    summarize_llm = await create_llm_model(model_name=summarize_model_name)
+    summarize_model = await summarize_llm.create_instance()
+    middleware.append(
+        SummarizationMiddleware(
+            model=summarize_model,
+            trigger=[
+                ("fraction", 0.8),
+                ("tokens", int(llm_model.info.context_length * 0.8)),
+            ]
+            if agent.super_mode
+            else [
+                ("fraction", 0.6),
+                ("tokens", int(llm_model.info.context_length * 0.6)),
+            ],
         )
+    )
 
     # Credit check is done at conversation start, not per-tool-call.
     # As long as balance is positive, the user gets one conversation opportunity.

@@ -141,7 +141,6 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
         "model": "grok-code-fast-1",
         "prompt": prompt,
         "prompt_append": None,
-        "short_term_memory_strategy": "trim",
         "temperature": 0.2,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,

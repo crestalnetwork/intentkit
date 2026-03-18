@@ -128,13 +128,6 @@ class AgentCore(BaseModel):
             le=2.0,
         ),
     ] = 0.0
-    short_term_memory_strategy: Annotated[
-        Literal["trim", "summarize"] | None,
-        PydanticField(
-            default="trim",
-            description="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
-        ),
-    ] = "trim"
     wallet_provider: Annotated[
         Literal["cdp", "native", "readonly", "safe", "privy", "none"] | None,
         PydanticField(

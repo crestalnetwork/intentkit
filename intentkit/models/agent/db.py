@@ -148,12 +148,6 @@ class AgentUserInputColumns:
     )
 
     # Additional fields from AgentUserInput
-    short_term_memory_strategy: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        default="trim",
-        comment="Strategy for managing short-term memory when context limit is reached. 'trim' removes oldest messages, 'summarize' creates summaries.",
-    )
     autonomous: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB(),
         nullable=True,

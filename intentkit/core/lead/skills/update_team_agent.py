@@ -49,9 +49,6 @@ class UpdateTeamAgentInput(BaseModel):
     sub_agent_prompt: str | None = Field(
         default=None, description="Instructions for sub-agents"
     )
-    short_term_memory_strategy: str | None = Field(
-        default=None, description="'trim' or 'summarize'"
-    )
     visibility: int | None = Field(
         default=None, description="Visibility: PRIVATE(0), TEAM(10), PUBLIC(20)"
     )
@@ -115,7 +112,6 @@ class UpdateTeamAgent(LeadSkill):
         enable_long_term_memory: bool | None = None,
         sub_agents: list[str] | None = None,
         sub_agent_prompt: str | None = None,
-        short_term_memory_strategy: str | None = None,
         visibility: int | None = None,
         telegram_entrypoint_enabled: bool | None = None,
         telegram_entrypoint_prompt: str | None = None,
@@ -149,7 +145,6 @@ class UpdateTeamAgent(LeadSkill):
             "enable_long_term_memory": enable_long_term_memory,
             "sub_agents": sub_agents,
             "sub_agent_prompt": sub_agent_prompt,
-            "short_term_memory_strategy": short_term_memory_strategy,
             "visibility": visibility,
             "telegram_entrypoint_enabled": telegram_entrypoint_enabled,
             "telegram_entrypoint_prompt": telegram_entrypoint_prompt,

@@ -49,9 +49,6 @@ class CreateTeamAgentInput(BaseModel):
     sub_agent_prompt: str | None = Field(
         default=None, description="Instructions for sub-agents"
     )
-    short_term_memory_strategy: str | None = Field(
-        default=None, description="'trim' or 'summarize'"
-    )
 
 
 class CreateTeamAgentOutput(BaseModel):
@@ -93,7 +90,6 @@ class CreateTeamAgent(LeadSkill):
         enable_long_term_memory: bool | None = None,
         sub_agents: list[str] | None = None,
         sub_agent_prompt: str | None = None,
-        short_term_memory_strategy: str | None = None,
         **kwargs: Any,
     ) -> CreateTeamAgentOutput:
         context = self.get_context()
@@ -133,9 +129,6 @@ class CreateTeamAgent(LeadSkill):
             agent_data["sub_agents"] = sub_agents
         if sub_agent_prompt is not None:
             agent_data["sub_agent_prompt"] = sub_agent_prompt
-        if short_term_memory_strategy is not None:
-            agent_data["short_term_memory_strategy"] = short_term_memory_strategy
-
         # Auto-set team fields
         agent_data["team_id"] = context.agent_id  # team_id is stored as agent_id
         agent_data["owner"] = context.user_id

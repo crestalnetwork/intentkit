@@ -118,7 +118,6 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
         "- `discord_entrypoint_enabled`: Enable discord bot\n"
         "- `discord_config`: Discord integration config\n"
         "- `xmtp_entrypoint_prompt`: Extra prompt for XMTP\n"
-        "- `short_term_memory_strategy`: 'trim' (remove oldest) or 'summarize' (create summaries)\n"
     )
 
     agent_data = {
@@ -138,7 +137,6 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
         "model": "grok-code-fast-1",
         "prompt": prompt,
         "prompt_append": None,
-        "short_term_memory_strategy": "trim",
         "temperature": 0.2,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
