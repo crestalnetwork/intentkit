@@ -56,31 +56,13 @@ def _parse_optional_decimal(value: str | None) -> Decimal | None:
     return Decimal(value) if value else None
 
 
-def _candidate_score(model: "LLMModelInfo") -> int:
-    """Score model candidates for the same logical model ID."""
-    if not model.provider.is_configured:
-        return 0
-    if model.provider == LLMProvider.OPENROUTER:
-        return 1
-    return 2
-
-
-def _select_preferred_model(
-    candidates: list["LLMModelInfo"],
-) -> "LLMModelInfo | None":
-    """Pick one configured candidate, preferring native providers over OpenRouter."""
-    best_model: LLMModelInfo | None = None
-    best_score = -1
-    for candidate in candidates:
-        score = _candidate_score(candidate)
-        if score > best_score:
-            best_model = candidate
-            best_score = score
-    return best_model if best_score > 0 else None
-
-
 def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
-    """Load default LLM models from a CSV file."""
+    """Load default LLM models from a CSV file.
+
+    Models are keyed by ``{provider}:{id}`` so that the same model ID from
+    different providers (e.g. ``deepseek-chat`` via DeepSeek *and* OpenRouter)
+    is preserved as separate entries.
+    """
 
     path = Path(__file__).with_name("llm.csv")
     if not path.exists():
@@ -88,7 +70,6 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
         return {}
 
     defaults: dict[str, LLMModelInfo] = {}
-    model_candidates: dict[str, list[LLMModelInfo]] = {}
     with path.open(newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -108,8 +89,6 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     "id": row_id,
                     "name": row.get("name") or row_id,
                     "provider": provider,
-                    "provider_model_id": row.get("provider_model_id", "").strip()
-                    or None,
                     "enabled": _parse_bool(row.get("enabled")),
                     "input_price": Decimal(row.get("input_price", "0")),
                     "cached_input_price": _parse_optional_decimal(
@@ -149,17 +128,16 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                 model = LLMModelInfo(**attrs)
                 if not model.enabled:
                     continue
+                if not model.provider.is_configured:
+                    continue
             except Exception as exc:
                 logger.error(
                     "Failed to load default LLM model %s: %s", row.get("id"), exc
                 )
                 continue
-            model_candidates.setdefault(model.id, []).append(model)
-
-    for model_id, candidates in model_candidates.items():
-        selected = _select_preferred_model(candidates)
-        if selected:
-            defaults[model_id] = selected
+            # Key by provider:id so the same model from different providers is kept
+            key = f"{provider.value}:{row_id}"
+            defaults[key] = model
 
     return defaults
 
@@ -285,7 +263,6 @@ class LLMModelInfo(BaseModel):
     id: str
     name: str
     provider: LLMProvider
-    provider_model_id: str | None = None
     enabled: bool = Field(default=True)
     input_price: Decimal  # Price per 1M input tokens in USD
     cached_input_price: Decimal | None = None  # Price per 1M cached input tokens in USD
@@ -387,7 +364,8 @@ class LLMModelInfo(BaseModel):
 
                 return model_info
 
-        # If not found in database, check AVAILABLE_MODELS
+        # If not found in database, check AVAILABLE_MODELS.
+        # Try exact key first (supports both "provider:id" and legacy "id" keys).
         if model_id in AVAILABLE_MODELS:
             model_info = AVAILABLE_MODELS[model_id]
 
@@ -395,6 +373,27 @@ class LLMModelInfo(BaseModel):
             await redis.set(cache_key, model_info.model_dump_json(), ex=cache_ttl)
 
             return model_info
+
+        # Backward-compatible fallback: match by bare model id.
+        # If multiple providers have the same model id, prefer native over OpenRouter.
+        matching_keys = _MODEL_ID_INDEX.get(model_id, [])
+        fallback: LLMModelInfo | None = None
+        for key in matching_keys:
+            candidate = AVAILABLE_MODELS[key]
+            if fallback is None or (
+                fallback.provider == LLMProvider.OPENROUTER
+                and candidate.provider != LLMProvider.OPENROUTER
+            ):
+                fallback = candidate
+        if fallback is not None:
+            logger.debug(
+                "Model %s resolved via index to %s:%s",
+                model_id,
+                fallback.provider.value,
+                fallback.id,
+            )
+            await redis.set(cache_key, fallback.model_dump_json(), ex=cache_ttl)
+            return fallback
 
         # Not found anywhere
         raise IntentKitAPIError(
@@ -419,7 +418,8 @@ class LLMModelInfo(BaseModel):
         result = await session.execute(select(LLMModelInfoTable))
         for row in result.scalars():
             model_info = cls.model_validate(row)
-            models[model_info.id] = model_info
+            key = f"{model_info.provider.value}:{model_info.id}"
+            models[key] = model_info
 
         return list(models.values())
 
@@ -467,6 +467,16 @@ class LLMModelInfo(BaseModel):
 
 # Default models loaded from CSV
 AVAILABLE_MODELS = _load_default_llm_models()
+
+# Reverse index: model id → list of composite keys in AVAILABLE_MODELS.
+# Indexed by both full id (e.g. "openai/gpt-5-mini") and base name after "/"
+# (e.g. "gpt-5-mini") for backward compatibility with legacy agent configs.
+_MODEL_ID_INDEX: dict[str, list[str]] = {}
+for _key, _model in AVAILABLE_MODELS.items():
+    _MODEL_ID_INDEX.setdefault(_model.id, []).append(_key)
+    if "/" in _model.id:
+        _base = _model.id.rsplit("/", 1)[1]
+        _MODEL_ID_INDEX.setdefault(_base, []).append(_key)
 
 # USD cost per single web search call, by provider.
 # OpenRouter bundles search cost in token billing — no separate charge.
@@ -547,7 +557,7 @@ class OpenAILLM(LLMModel):
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
-            "model_name": self.model_name,
+            "model_name": info.id,
             "openai_api_key": config.openai_api_key,
             "timeout": info.timeout,
             "max_retries": 3,
@@ -590,7 +600,7 @@ class DeepseekLLM(LLMModel):
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
-            "model": self.model_name,
+            "model": info.id,
             "api_key": config.deepseek_api_key,
             "timeout": info.timeout,
             "max_retries": 3,
@@ -626,7 +636,7 @@ class XAILLM(LLMModel):
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
-            "model_name": self.model_name,
+            "model_name": info.id,
             "openai_api_key": config.xai_api_key,
             "openai_api_base": "https://api.x.ai/v1",
             "timeout": info.timeout,
@@ -751,7 +761,7 @@ class OpenRouterLLM(LLMModel):
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
-            "model": info.provider_model_id or self.model_name,
+            "model": info.id,
             "api_key": config.openrouter_api_key,
             "timeout": info.timeout * 1000,
             "max_retries": 3,
@@ -788,7 +798,7 @@ class GoogleLLM(LLMModel):
         use_vertexai = config.google_genai_use_vertexai is True
 
         kwargs: dict[str, Any] = {
-            "model": self.model_name,
+            "model": info.id,
             "api_key": config.google_api_key,
             "timeout": info.timeout,
             "max_retries": 3,
@@ -820,7 +830,7 @@ class OllamaLLM(LLMModel):
         info = await self.model_info()
 
         kwargs: dict[str, Any] = {
-            "model": self.model_name,
+            "model": info.id,
             "base_url": info.api_base or "http://localhost:11434",
             "temperature": self.temperature,
             # Ollama specific parameters
