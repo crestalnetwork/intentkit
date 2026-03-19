@@ -63,6 +63,7 @@ class UserTable(Base):
     __table_args__: Any = (
         Index("ix_users_x_username", "x_username"),
         Index("ix_users_telegram_username", "telegram_username"),
+        Index("ix_users_telegram_id", "telegram_id"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -87,6 +88,10 @@ class UserTable(Base):
         nullable=True,
     )
     telegram_username: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    telegram_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
@@ -142,6 +147,9 @@ class UserUpdate(BaseModel):
     ]
     telegram_username: Annotated[
         str | None, Field(None, description="User's Telegram username")
+    ]
+    telegram_id: Annotated[
+        str | None, Field(None, description="User's Telegram numeric ID")
     ]
     extra: Annotated[
         dict[str, object] | None, Field(None, description="Additional user information")
@@ -352,6 +360,32 @@ class User(UserUpdate):
             result = await session.execute(
                 select(user_table_class).where(
                     user_table_class.telegram_username == telegram_username
+                )
+            )
+            user = result.scalars().first()
+            if user is None:
+                return None
+            return cast(Any, user_model_class.model_validate(user))
+
+    @classmethod
+    async def get_by_telegram_id(cls, telegram_id: str) -> "User | None":
+        """Get a user by Telegram numeric ID.
+
+        Args:
+            telegram_id: Telegram user ID (numeric string)
+
+        Returns:
+            User model or None if not found
+        """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(
+                    user_table_class.telegram_id == telegram_id
                 )
             )
             user = result.scalars().first()

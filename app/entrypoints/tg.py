@@ -10,9 +10,17 @@ from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
+from intentkit.models.team_channel import TeamChannel, TeamChannelData, TeamChannelTable
 from intentkit.utils.alert import cleanup_alert
 
-from app.services.tg.bot.cache import is_agent_failed
+from app.services.tg.bot.cache import (
+    bot_by_token,
+    get_all_team_channel_bots,
+    is_agent_failed,
+    is_team_channel_failed,
+    team_channel_bot_by_team,
+    team_channel_bot_by_token,
+)
 from app.services.tg.bot.pool import BotPool
 from app.services.tg.utils.cleanup import clean_token_str
 
@@ -88,6 +96,91 @@ class AgentScheduler:
                 logger.error(
                     f"failed to process agent {agent.id}, skipping this to the next agent: {e}"
                 )
+
+        # --- Sync team channels ---
+        await self._sync_team_channels()
+
+    async def _sync_team_channels(self) -> None:
+        """Sync team channel bots (Telegram).
+
+        Handles: new channels, disabled/removed channels, and token changes.
+        """
+        async with get_session() as db:
+            result = await db.scalars(
+                select(TeamChannelTable).where(
+                    TeamChannelTable.channel_type == "telegram",
+                    TeamChannelTable.enabled.is_(True),
+                )
+            )
+            team_channels = result.all()
+
+        # Build set of active team_ids and their expected tokens
+        active_teams: dict[str, str] = {}  # team_id -> token
+        for item in team_channels:
+            channel = TeamChannel.model_validate(item)
+            if channel.config and channel.config.get("token"):
+                active_teams[channel.team_id] = clean_token_str(
+                    str(channel.config["token"])
+                )
+
+        # Stop bots for disabled/removed channels or changed tokens
+        for token, cached_bot in list(get_all_team_channel_bots().items()):
+            expected_token = active_teams.get(cached_bot.team_id)
+            if expected_token is None or expected_token != token:
+                logger.info(
+                    "Stopping team channel bot for team %s (removed/disabled/token changed)",
+                    cached_bot.team_id,
+                )
+                await self.bot_pool.stop_team_channel_bot(cached_bot.team_id, token)
+
+        # Start bots for new/updated channels
+        for item in team_channels:
+            channel = TeamChannel.model_validate(item)
+            channel_key = f"team:{channel.team_id}"
+            try:
+                if team_channel_bot_by_team(channel.team_id):
+                    continue
+
+                if is_team_channel_failed(channel_key):
+                    logger.debug(
+                        "Skipping team channel %s - in failed cache", channel_key
+                    )
+                    continue
+
+                if not channel.config or not channel.config.get("token"):
+                    continue
+
+                token = clean_token_str(str(channel.config["token"]))
+
+                if bot_by_token(token) or team_channel_bot_by_token(token):
+                    logger.warning(
+                        "Token already in use, skipping team channel %s", channel_key
+                    )
+                    continue
+
+                logger.info("New team channel %s found...", channel_key)
+                await self.bot_pool.init_team_channel_bot(channel)
+                await asyncio.sleep(1)
+
+                bot_item = team_channel_bot_by_token(token)
+                if not bot_item:
+                    continue
+                bot_info = await bot_item.bot.get_me()
+                bot_name = bot_info.first_name
+                if bot_info.last_name:
+                    bot_name = f"{bot_info.first_name} {bot_info.last_name}"
+                data = TeamChannelData(
+                    team_id=channel.team_id,
+                    channel_type=channel.channel_type,
+                    data={
+                        "bot_id": str(bot_info.id),
+                        "bot_username": bot_info.username,
+                        "bot_name": bot_name,
+                    },
+                )
+                await data.save()
+            except Exception as e:
+                logger.error("Failed to process team channel %s: %s", channel_key, e)
 
     async def start(self, interval: int):
         logger.info("New agent addition tracking started...")

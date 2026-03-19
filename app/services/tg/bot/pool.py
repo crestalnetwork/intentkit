@@ -15,6 +15,7 @@ from aiohttp import web
 from aiohttp.web import Request
 
 from intentkit.models.agent import Agent
+from intentkit.models.team_channel import TeamChannel
 
 from app.services.tg.bot.cache import (
     add_failed_agent,
@@ -53,12 +54,14 @@ class BotPool:
 
     def __init__(self, base_url: str):
         from app.services.tg.bot.kind.ai_relayer.router import general_router
+        from app.services.tg.bot.kind.team_channel.router import team_channel_router
 
         self.app = web.Application()
         _ = self.app.router.add_get("/health", health_handler)
         self.base_url = f"{base_url}{BOTS_PATH}"
         self.routers = {
             Kind.AiRelayer: RouterObj(general_router),
+            Kind.TeamChannel: RouterObj(team_channel_router),
         }
         self.god_bot = None
 
@@ -234,6 +237,73 @@ class BotPool:
             logger.info("Bot for agent %s stopped...", agent_id)
         except Exception as e:
             logger.error("failed to stop the bot for agent %s: %s", agent_id, e)
+        finally:
+            if bot:
+                await bot.session.close()
+
+    async def init_team_channel_bot(self, channel: TeamChannel):
+        """Initialize a bot for a team channel."""
+        from app.services.tg.bot.cache import (
+            add_failed_team_channel,
+            set_cache_team_channel_bot,
+        )
+        from app.services.tg.bot.types.team_channel import TeamChannelBotItem
+
+        bot_item = None
+        try:
+            bot_item = TeamChannelBotItem(channel)
+
+            _ = await bot_item.bot.delete_webhook(drop_pending_updates=True)
+            _ = await bot_item.bot.set_webhook(
+                self.base_url.format(kind="team_channel", bot_token=bot_item.token)
+            )
+
+            set_cache_team_channel_bot(bot_item)
+
+            logger.info("Team channel bot for team %s initialized...", channel.team_id)
+
+        except TelegramUnauthorizedError as e:
+            logger.info(
+                "Failed to init team channel bot for team %s: %s",
+                channel.team_id,
+                e,
+            )
+            add_failed_team_channel(f"team:{channel.team_id}")
+        except Exception as e:
+            logger.info(
+                "Failed to init team channel bot for team %s: %s",
+                channel.team_id,
+                e,
+            )
+        finally:
+            if bot_item and bot_item.bot:
+                await bot_item.bot.session.close()
+
+    async def stop_team_channel_bot(self, team_id: str, token: str):
+        """Stop a team channel bot and remove from cache."""
+        from app.services.tg.bot.cache import (
+            delete_cache_team_channel_bot,
+            team_channel_bot_by_token,
+        )
+
+        bot = None
+        try:
+            cached = team_channel_bot_by_token(token)
+            if cached and cached.bot:
+                bot = cached.bot
+            else:
+                bot = Bot(
+                    token=token,
+                    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                )
+
+            await bot.session.close()
+            _ = await bot.delete_webhook(drop_pending_updates=True)
+
+            delete_cache_team_channel_bot(token)
+            logger.info("Team channel bot for team %s stopped...", team_id)
+        except Exception as e:
+            logger.error("Failed to stop team channel bot for team %s: %s", team_id, e)
         finally:
             if bot:
                 await bot.session.close()

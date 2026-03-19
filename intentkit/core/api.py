@@ -12,12 +12,17 @@ Use the public API endpoints in app/api.py for external access.
 
 from typing import Annotated
 
+from epyxid import XID
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
-from pydantic import AfterValidator
+from pydantic import AfterValidator, BaseModel
 
 from intentkit.core.engine import execute_agent, stream_agent
-from intentkit.models.chat import ChatMessage, ChatMessageCreate
+from intentkit.core.lead.engine import stream_lead
+from intentkit.core.lead.service import verify_team_membership
+from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
+from intentkit.models.user import User
+from intentkit.utils.error import IntentKitAPIError
 
 # ⚠️ INTERNAL API ONLY - DO NOT EXPOSE TO PUBLIC INTERNET ⚠️
 core_router = APIRouter(
@@ -112,3 +117,48 @@ async def stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
+
+
+class TeamLeadExecuteRequest(BaseModel):
+    """Request body for team lead execution from Telegram."""
+
+    team_id: str
+    telegram_id: str
+    chat_id: str
+    message: str
+
+
+# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
+@core_router.post("/lead/execute", response_model=list[ChatMessage])
+async def execute_team_lead(
+    request: TeamLeadExecuteRequest = Body(...),
+) -> list[ChatMessage]:
+    """Execute the team lead agent for a Telegram team channel message.
+
+    Resolves telegram_id → IntentKit user, verifies team membership,
+    and routes through stream_lead().
+    """
+    user = await User.get_by_telegram_id(request.telegram_id)
+    if not user:
+        raise IntentKitAPIError(
+            403, "Forbidden", "Telegram user not bound to any IntentKit account"
+        )
+
+    await verify_team_membership(request.team_id, user.id)
+
+    chat_msg = ChatMessageCreate(
+        id=str(XID()),
+        agent_id=request.team_id,
+        chat_id=f"tg_team:{request.team_id}:{request.chat_id}",
+        user_id=user.id,
+        author_id=user.id,
+        author_type=AuthorType.TELEGRAM,
+        thread_type=AuthorType.TELEGRAM,
+        message=request.message,
+    )
+
+    messages: list[ChatMessage] = []
+    async for chat_message in stream_lead(request.team_id, user.id, chat_msg):
+        messages.append(chat_message)
+
+    return messages
