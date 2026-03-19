@@ -113,7 +113,6 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     "supports_presence_penalty": _parse_bool(
                         row.get("supports_presence_penalty")
                     ),
-                    "api_base": row.get("api_base", "").strip() or None,
                     "timeout": int(row.get("timeout") or 180),
                     "created_at": timestamp,
                     "updated_at": timestamp,
@@ -151,7 +150,6 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             "supports_temperature": True,
             "supports_frequency_penalty": True,
             "supports_presence_penalty": True,
-            "api_base": config.openai_compatible_base_url,
             "timeout": 300,
             "created_at": timestamp,
             "updated_at": timestamp,
@@ -275,7 +273,6 @@ class LLMModelInfoTable(Base):
     supports_presence_penalty: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True
     )
-    api_base: Mapped[str | None] = mapped_column(String, nullable=True)
     timeout: Mapped[int] = mapped_column(
         Integer, nullable=False, default=180
     )  # Timeout seconds
@@ -326,7 +323,6 @@ class LLMModelInfo(BaseModel):
     supports_presence_penalty: bool = (
         True  # Whether the model supports presence_penalty parameter
     )
-    api_base: str | None = None  # Custom API base URL if not using provider's default
     timeout: int = 180  # Default timeout in seconds
     created_at: Annotated[
         datetime,
@@ -606,9 +602,6 @@ class OpenAILLM(LLMModel):
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
 
-        if info.api_base:
-            kwargs["openai_api_base"] = info.api_base
-
         if info.reasoning_effort and info.reasoning_effort != "none":
             kwargs["reasoning_effort"] = info.reasoning_effort
 
@@ -647,9 +640,6 @@ class DeepseekLLM(LLMModel):
 
         if info.supports_presence_penalty:
             kwargs["presence_penalty"] = self.presence_penalty
-
-        if info.api_base:
-            kwargs["api_base"] = info.api_base
 
         # Update kwargs with params to allow overriding
         kwargs.update(params)
@@ -863,7 +853,7 @@ class OllamaLLM(LLMModel):
 
         kwargs: dict[str, Any] = {
             "model": info.id,
-            "base_url": info.api_base or "http://localhost:11434",
+            "base_url": "http://localhost:11434",
             "temperature": self.temperature,
             # Ollama specific parameters
             "keep_alive": -1,  # Keep the model loaded indefinitely
@@ -893,7 +883,7 @@ class OpenAICompatibleLLM(LLMModel):
 
         kwargs: dict[str, Any] = {
             "model_name": info.id,
-            "openai_api_base": info.api_base,
+            "openai_api_base": config.openai_compatible_base_url,
             "timeout": info.timeout,
             "max_retries": 3,
         }

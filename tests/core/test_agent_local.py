@@ -100,7 +100,6 @@ async def test_local_agent_tool_call():
         output_length=4096,
         intelligence=3,
         speed=5,
-        api_base="http://localhost:11434",
         timeout=30,
         supports_temperature=True,
         supports_frequency_penalty=True,
@@ -111,9 +110,7 @@ async def test_local_agent_tool_call():
         updated_at=datetime.now(),
     )
 
-    if not _ollama_has_model(
-        local_model_info.api_base or "http://localhost:11434", local_model_id
-    ):
+    if not _ollama_has_model("http://localhost:11434", local_model_id):
         pytest.skip("ollama not available or model not pulled")
 
     # Patch AVAILABLE_MODELS to include our local model
@@ -267,7 +264,6 @@ async def test_local_agent_system_tool_call():
         output_length=4096,
         intelligence=3,
         speed=5,
-        api_base="http://localhost:11434",
         timeout=30,
         supports_temperature=True,
         supports_frequency_penalty=True,
@@ -278,9 +274,7 @@ async def test_local_agent_system_tool_call():
         updated_at=datetime.now(),
     )
 
-    if not _ollama_has_model(
-        local_model_info.api_base or "http://localhost:11434", local_model_id
-    ):
+    if not _ollama_has_model("http://localhost:11434", local_model_id):
         pytest.skip("ollama not available or model not pulled")
 
     # Patch AVAILABLE_MODELS to include our local model
