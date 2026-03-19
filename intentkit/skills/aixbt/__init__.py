@@ -1,9 +1,12 @@
+import logging
 from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.aixbt.base import AIXBTBaseTool
 from intentkit.skills.aixbt.projects import AIXBTProjects
 from intentkit.skills.base import SkillConfig, SkillState
+
+logger = logging.getLogger(__name__)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, AIXBTBaseTool] = {}
@@ -41,12 +44,12 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_aixbt_skill(name) for name in available_skills]
+    return [s for name in available_skills if (s := get_aixbt_skill(name))]
 
 
 def get_aixbt_skill(
     name: str,
-) -> AIXBTBaseTool:
+) -> AIXBTBaseTool | None:
     """Get an AIXBT API skill by name."""
 
     if name == "aixbt_projects":
@@ -54,7 +57,8 @@ def get_aixbt_skill(
             _cache[name] = AIXBTProjects()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown AIXBT skill: {name}")
+        logger.warning("Unknown AIXBT skill: %s", name)
+        return None
 
 
 def available() -> bool:

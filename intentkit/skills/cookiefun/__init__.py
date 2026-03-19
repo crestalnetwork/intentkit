@@ -47,14 +47,14 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    skills = [get_cookiefun_skill(name) for name in available_skills]
+    skills = [s for name in available_skills if (s := get_cookiefun_skill(name))]
     logger.info("Returning %d CookieFun skills", len(skills))
     return skills
 
 
 def get_cookiefun_skill(
     name: str,
-) -> CookieFunBaseTool:
+) -> CookieFunBaseTool | None:
     """Get a CookieFun skill by name."""
 
     if name not in _cache:
@@ -69,8 +69,8 @@ def get_cookiefun_skill(
         elif name == "get_account_feed":
             _cache[name] = GetAccountFeed()
         else:
-            logger.error("Unknown CookieFun skill: %s", name)
-            raise ValueError(f"Unknown CookieFun skill: {name}")
+            logger.warning("Unknown CookieFun skill: %s", name)
+            return None
 
     return _cache[name]
 

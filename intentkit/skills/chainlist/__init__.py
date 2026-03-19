@@ -1,8 +1,11 @@
+import logging
 from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.chainlist.base import ChainlistBaseTool
 from intentkit.skills.chainlist.chain_lookup import ChainLookup
+
+logger = logging.getLogger(__name__)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, ChainlistBaseTool] = {}
@@ -34,19 +37,20 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_chainlist_skill(name) for name in available_skills]
+    return [s for name in available_skills if (s := get_chainlist_skill(name))]
 
 
 def get_chainlist_skill(
     name: str,
-) -> ChainlistBaseTool:
+) -> ChainlistBaseTool | None:
     """Get a chainlist skill by name."""
     if name == "chain_lookup":
         if name not in _cache:
             _cache[name] = ChainLookup()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown chainlist skill: {name}")
+        logger.warning("Unknown chainlist skill: %s", name)
+        return None
 
 
 def available() -> bool:

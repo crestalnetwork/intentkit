@@ -80,7 +80,7 @@ async def get_skills(
 
 def get_portfolio_skill(
     name: str,
-) -> PortfolioBaseTool:
+) -> PortfolioBaseTool | None:
     """Get a portfolio skill by name."""
     if name == "wallet_history":
         if name not in _cache:
@@ -123,7 +123,8 @@ def get_portfolio_skill(
             _cache[name] = WalletNFTs()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown portfolio skill: {name}")
+        logger.warning("Unknown portfolio skill: %s", name)
+        return None
 
 
 def available() -> bool:

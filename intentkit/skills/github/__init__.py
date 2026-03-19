@@ -1,8 +1,11 @@
+import logging
 from typing import TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.github.base import GitHubBaseTool
 from intentkit.skills.github.github_search import GitHubSearch
+
+logger = logging.getLogger(__name__)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, GitHubBaseTool] = {}
@@ -34,19 +37,20 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_github_skill(name) for name in available_skills]
+    return [s for name in available_skills if (s := get_github_skill(name))]
 
 
 def get_github_skill(
     name: str,
-) -> GitHubBaseTool:
+) -> GitHubBaseTool | None:
     """Get a GitHub skill by name."""
     if name == "github_search":
         if name not in _cache:
             _cache[name] = GitHubSearch()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown GitHub skill: {name}")
+        logger.warning("Unknown GitHub skill: %s", name)
+        return None
 
 
 def available() -> bool:

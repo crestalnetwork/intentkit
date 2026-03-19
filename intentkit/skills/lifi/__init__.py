@@ -59,13 +59,10 @@ async def get_skills(
     # Get each skill using the cached getter
     skills: list[LiFiBaseTool] = []
     for name in available_skills:
-        try:
-            skill = get_lifi_skill(name, config)
+        skill = get_lifi_skill(name, config)
+        if skill:
             skills.append(skill)
             logger.info("[LiFi_Skills] Successfully loaded skill: %s", name)
-        except Exception as e:
-            logger.error("[LiFi_Skills] Failed to load skill %s: %s", name, e)
-            # Continue loading other skills even if one fails
 
     logger.info("[LiFi_Skills] Total skills loaded: %s", len(skills))
     return skills
@@ -74,7 +71,7 @@ async def get_skills(
 def get_lifi_skill(
     name: str,
     config: Config,
-) -> LiFiBaseTool:
+) -> LiFiBaseTool | None:
     """Get a LiFi skill by name."""
     # Create a cache key that includes configuration to ensure skills
     # with different configurations are treated as separate instances
@@ -134,8 +131,8 @@ def get_lifi_skill(
         return _cache[cache_key]
 
     else:
-        logger.error("[LiFi_Skills] Unknown LiFi skill requested: %s", name)
-        raise ValueError(f"Unknown LiFi skill: {name}")
+        logger.warning("[LiFi_Skills] Unknown LiFi skill requested: %s", name)
+        return None
 
 
 def available() -> bool:

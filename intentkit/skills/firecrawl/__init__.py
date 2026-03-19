@@ -56,23 +56,13 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_firecrawl_skill(name) for name in available_skills]
+    return [s for name in available_skills if (s := get_firecrawl_skill(name))]
 
 
 def get_firecrawl_skill(
     name: str,
-) -> FirecrawlBaseTool:
-    """Get a Firecrawl skill by name.
-
-    Args:
-        name: The name of the skill to get
-
-    Returns:
-        The requested Firecrawl skill
-
-    Raises:
-        ValueError: If the skill name is unknown
-    """
+) -> FirecrawlBaseTool | None:
+    """Get a Firecrawl skill by name."""
     if name == "firecrawl_scrape":
         if name not in _cache:
             _cache[name] = FirecrawlScrape()
@@ -90,7 +80,8 @@ def get_firecrawl_skill(
             _cache[name] = FirecrawlClearIndexedContent()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown Firecrawl skill: {name}")
+        logger.warning("Unknown Firecrawl skill: %s", name)
+        return None
 
 
 def available() -> bool:

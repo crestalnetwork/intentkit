@@ -61,15 +61,8 @@ async def get_skills(
 
 def get_casino_skill(
     name: str,
-) -> CasinoBaseTool:
-    """Get a Casino skill by name.
-
-    Args:
-        name: The name of the skill to get
-
-    Returns:
-        The requested Casino skill
-    """
+) -> CasinoBaseTool | None:
+    """Get a Casino skill by name."""
     if name == "deck_shuffle":
         if name not in _cache:
             _cache[name] = CasinoDeckShuffle()
@@ -83,7 +76,8 @@ def get_casino_skill(
             _cache[name] = CasinoDiceRoll()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown Casino skill: {name}")
+        logger.warning("Unknown Casino skill: %s", name)
+        return None
 
 
 def available() -> bool:

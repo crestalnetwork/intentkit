@@ -1,9 +1,12 @@
+import logging
 from typing import TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.unrealspeech.base import UnrealSpeechBaseTool
 from intentkit.skills.unrealspeech.text_to_speech import TextToSpeech
+
+logger = logging.getLogger(__name__)
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, UnrealSpeechBaseTool] = {}
@@ -35,19 +38,20 @@ async def get_skills(
             available_skills.append(skill_name)
 
     # Get each skill using the cached getter
-    return [get_unrealspeech_skill(name) for name in available_skills]
+    return [s for name in available_skills if (s := get_unrealspeech_skill(name))]
 
 
 def get_unrealspeech_skill(
     name: str,
-) -> UnrealSpeechBaseTool:
+) -> UnrealSpeechBaseTool | None:
     """Get an UnrealSpeech skill by name."""
     if name == "text_to_speech":
         if name not in _cache:
             _cache[name] = TextToSpeech()
         return _cache[name]
     else:
-        raise ValueError(f"Unknown UnrealSpeech skill: {name}")
+        logger.warning("Unknown UnrealSpeech skill: %s", name)
+        return None
 
 
 def available() -> bool:
