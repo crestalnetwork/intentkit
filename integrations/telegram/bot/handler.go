@@ -27,14 +27,7 @@ func (m *Manager) handleMessage(bot *telego.Bot, message telego.Message, agentID
 		
 		userID := fmt.Sprintf("%d", message.From.ID)
 		if message.From.Username != "" {
-		    // Prefer username if available as per existing logic, or keep ID?
-		    // Existing logic tries to lookup User by TG username. 
-		    // For simplicity here we might just use string ID or username if we want to mimic existing specific logic, 
-		    // but passing raw ID is safer if we don't have User table access/logic here.
-		    // The requirement says "reproduce core logic". 
-		    // app/services/tg/bot/kind/ai_relayer/router.py:get_user_id tries to find user by username.
-		    // We will stick to simple ID for now or username if present to be recognizable.
-		    // However, the safe bet is unique ID. Let's use ID for reliability.
+		    // Prefer username if available, fall back to numeric ID for reliability.
             if message.From.Username != "" {
                 userID = message.From.Username
             }

@@ -1,1 +1,0 @@
-"""Discord service for IntentKit."""
