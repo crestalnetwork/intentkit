@@ -28,6 +28,7 @@ from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.llm import LLMProvider, create_llm_model
 from intentkit.models.llm_picker import pick_summarize_model
+from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -146,6 +147,12 @@ async def build_executor(
     if model_provider in (LLMProvider.GOOGLE, LLMProvider.OPENAI):
         system_skills = [s for s in system_skills if s.name != "read_webpage"]
     private_tools.extend(system_skills)
+
+    # filter out unavailable skills
+    tools = [t for t in tools if not isinstance(t, IntentKitSkill) or t.available()]
+    private_tools = [
+        t for t in private_tools if not isinstance(t, IntentKitSkill) or t.available()
+    ]
 
     # filter the duplicate tools
     tools = list(
