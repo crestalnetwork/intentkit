@@ -42,6 +42,10 @@ author_wallet = "0x178741Fc5BA9B77147398853c28736eEFe5fCff1"
 author_github = "bluntbrain"
 author_wallet = "0x3cdd051eeC909f94965F9c1c657f5b70a172B2C0"
 
+[dune]
+author_github = "hyacinthus"
+author_wallet = "0x445750026A4a1906b61302442E085f9cbAfe206a"
+
 [defillama]
 author_github = "0xkieranwilliams"
 author_wallet = "0x91D43BfDc698b1e510efa0811e2e07F628D02e6b"

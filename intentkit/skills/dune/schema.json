@@ -1,7 +1,7 @@
 {
-  "title": "Dune Analytics",
-  "description": "Dune Analytics skills to fetch data from Dune Analytics API.",
-  "x-icon": "/skills/dune_analytics/dune.png",
+  "title": "Dune",
+  "description": "Dune skills for querying blockchain analytics data via the Dune API.",
+  "x-icon": "/skills/dune/dune.png",
   "type": "object",
   "properties": {
     "enabled": {
@@ -14,9 +14,9 @@
       "title": "Skill States",
       "type": "object",
       "properties": {
-        "fetch_nation_metrics": {
+        "dune_execute_query": {
           "type": "string",
-          "title": "Fetch Crestal Nation Metrics",
+          "title": "Execute Query",
           "enum": [
             "disabled",
             "public",
@@ -27,12 +27,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches Crestal Nation metrics (e.g., total_users, agents/citizens, market_cap) from Dune Analytics API.",
+          "description": "Execute a saved Dune query by ID and return fresh results.",
           "default": "disabled"
         },
-        "fetch_kol_buys": {
+        "dune_get_query_results": {
           "type": "string",
-          "title": "Fetch KOL Memecoin Buys",
+          "title": "Get Query Results",
           "enum": [
             "disabled",
             "public",
@@ -43,7 +43,23 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Fetches a list of KOL memecoin buy transactions on Solana from Dune Analytics API.",
+          "description": "Get cached results for a Dune query without executing it.",
+          "default": "disabled"
+        },
+        "dune_run_sql": {
+          "type": "string",
+          "title": "Run SQL",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Execute a raw DuneSQL query against blockchain data.",
           "default": "disabled"
         }
       }
