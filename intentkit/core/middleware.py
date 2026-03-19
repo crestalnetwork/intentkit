@@ -78,19 +78,14 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
 
         if context.agent.search_internet:
             model_info = await self.llm_model.model_info()
-            if model_info.supports_search:
-                if model_info.provider == LLMProvider.OPENAI:
-                    tools.append({"type": "web_search"})
-                elif model_info.provider == LLMProvider.XAI:
-                    tools.extend([{"type": "web_search"}, {"type": "x_search"}])
-                elif model_info.provider == LLMProvider.OPENROUTER:
-                    llm_params["plugins"] = [{"id": "web"}]
-                elif model_info.provider == LLMProvider.GOOGLE:
-                    tools.extend([{"google_search": {}}, {"url_context": {}}])
-            else:
-                logger.debug(
-                    "Search requested but model does not support native search"
-                )
+            if model_info.provider == LLMProvider.OPENAI:
+                tools.append({"type": "web_search"})
+            elif model_info.provider == LLMProvider.XAI:
+                tools.extend([{"type": "web_search"}, {"type": "x_search"}])
+            elif model_info.provider == LLMProvider.OPENROUTER:
+                llm_params["plugins"] = [{"id": "web"}]
+            elif model_info.provider == LLMProvider.GOOGLE:
+                tools.extend([{"google_search": {}}, {"url_context": {}}])
 
         model = await self.llm_model.create_instance(llm_params)
         updated_request = request.override(

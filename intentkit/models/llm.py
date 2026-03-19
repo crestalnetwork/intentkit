@@ -103,14 +103,7 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     "supports_image_input": _parse_bool(
                         row.get("supports_image_input")
                     ),
-                    "supports_skill_calls": _parse_bool(
-                        row.get("supports_skill_calls")
-                    ),
-                    "supports_structured_output": _parse_bool(
-                        row.get("supports_structured_output")
-                    ),
                     "reasoning_effort": row.get("reasoning_effort", "").strip() or None,
-                    "supports_search": _parse_bool(row.get("supports_search")),
                     "supports_temperature": _parse_bool(
                         row.get("supports_temperature")
                     ),
@@ -155,9 +148,6 @@ def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             "context_length": 200000,
             "output_length": 64000,
             "supports_image_input": False,
-            "supports_skill_calls": True,
-            "supports_structured_output": False,
-            "supports_search": False,
             "supports_temperature": True,
             "supports_frequency_penalty": True,
             "supports_presence_penalty": True,
@@ -275,16 +265,7 @@ class LLMModelInfoTable(Base):
     supports_image_input: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
-    supports_skill_calls: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
-    supports_structured_output: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
     reasoning_effort: Mapped[str | None] = mapped_column(String, nullable=True)
-    supports_search: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
     supports_temperature: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True
     )
@@ -333,15 +314,8 @@ class LLMModelInfo(BaseModel):
     intelligence: int = Field(ge=1, le=5)  # Intelligence rating from 1-5
     speed: int = Field(ge=1, le=5)  # Speed rating from 1-5
     supports_image_input: bool = False  # Whether the model supports image inputs
-    supports_skill_calls: bool = False  # Whether the model supports skill/tool calls
-    supports_structured_output: bool = (
-        False  # Whether the model supports structured output
-    )
     reasoning_effort: str | None = (
         None  # Reasoning effort level: "xhigh", "high", "medium", "low", "minimal", "none", or None
-    )
-    supports_search: bool = (
-        False  # Whether the model supports native search functionality
     )
     supports_temperature: bool = (
         True  # Whether the model supports temperature parameter

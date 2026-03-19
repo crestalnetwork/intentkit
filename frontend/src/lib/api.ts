@@ -177,8 +177,6 @@ export interface LLMModelInfo {
   intelligence: number;
   speed: number;
   supports_image_input: boolean;
-  supports_search: boolean;
-  supports_skill_calls: boolean;
 }
 
 /**

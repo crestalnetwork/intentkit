@@ -66,18 +66,11 @@ function InfoPanel({ model }: { model: LLMModelInfo }) {
         </div>
       </div>
 
-      {(model.supports_image_input || model.supports_search) && (
+      {model.supports_image_input && (
         <div className="flex gap-1.5 flex-wrap">
-          {model.supports_image_input && (
-            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
-              Image
-            </span>
-          )}
-          {model.supports_search && (
-            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
-              Search
-            </span>
-          )}
+          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
+            Image
+          </span>
         </div>
       )}
     </div>
