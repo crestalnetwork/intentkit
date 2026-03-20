@@ -1,7 +1,7 @@
 """Skill for calling another agent."""
 
 import asyncio
-from typing import override
+from typing import Literal, override
 
 from epyxid import XID
 from langchain_core.tools import ArgsSchema
@@ -9,7 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.core.system_skills.base import SystemSkill
-from intentkit.models.chat import AuthorType, ChatMessageCreate
+from intentkit.models.chat import AuthorType, ChatMessageAttachment, ChatMessageCreate
 
 # Default timeout for calling another agent (in seconds)
 CALL_AGENT_TIMEOUT = 600  # 10 minutes
@@ -35,13 +35,14 @@ class CallAgentSkill(SystemSkill):
     name: str = "call_agent"
     description: str = "Delegate a task to another agent by sending it a message and receiving its response."
     args_schema: ArgsSchema | None = CallAgentInput
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
     @override
     async def _arun(
         self,
         agent_id: str,
         message: str,
-    ) -> str:
+    ) -> tuple[str, list[ChatMessageAttachment]]:
         """Call another agent and return its response.
 
         Args:
@@ -112,12 +113,18 @@ class CallAgentSkill(SystemSkill):
                     f"No response received from the called agent '{agent_id}'"
                 )
 
+            # Collect all attachments from the message queue
+            all_attachments: list[ChatMessageAttachment] = []
+            for msg in results:
+                if msg.attachments:
+                    all_attachments.extend(msg.attachments)
+
             # Get the last message from the results
             last_message = results[-1]
 
             # Check if the last message is from the agent
             if last_message.author_type == AuthorType.AGENT:
-                return last_message.message
+                return last_message.message, all_attachments
 
             # If the last message is a system message, include the error details
             if last_message.author_type == AuthorType.SYSTEM:
