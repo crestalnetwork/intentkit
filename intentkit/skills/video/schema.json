@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Video Generation",
+  "description": "Generate videos from text prompts or images using multiple AI providers. Supports Grok, Sora, and Veo models.",
+  "x-tags": [
+    "Media",
+    "AI"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "video_grok": {
+          "type": "string",
+          "title": "Grok Imagine Video",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate videos using xAI Grok Imagine Video. $0.05/sec, max 15s, 720p.",
+          "default": "disabled"
+        },
+        "video_sora": {
+          "type": "string",
+          "title": "Sora 2",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate videos using OpenAI Sora 2. $0.10/sec, max 20s, 720p.",
+          "default": "disabled"
+        },
+        "video_sora_pro": {
+          "type": "string",
+          "title": "Sora 2 Pro",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate high-quality videos using OpenAI Sora 2 Pro. $0.30/sec, max 20s, up to 1080p.",
+          "default": "disabled"
+        },
+        "video_veo": {
+          "type": "string",
+          "title": "Veo 3.1",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate videos with audio using Google Veo 3.1. $0.40/sec, max 8s, 1080p.",
+          "default": "disabled"
+        },
+        "video_veo_fast": {
+          "type": "string",
+          "title": "Veo 3.1 Fast",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate videos with audio using Google Veo 3.1 Fast. $0.15/sec, max 8s, 1080p.",
+          "default": "disabled"
+        }
+      },
+      "description": "States for each video generation skill (disabled, public, or private)"
+    }
+  },
+  "required": ["enabled", "states"],
+  "additionalProperties": true
+}

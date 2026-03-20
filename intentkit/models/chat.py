@@ -33,6 +33,7 @@ class ChatMessageAttachmentType(str, Enum):
 
     LINK = "link"
     IMAGE = "image"
+    VIDEO = "video"
     FILE = "file"
     XMTP = "xmtp"
     CARD = "card"

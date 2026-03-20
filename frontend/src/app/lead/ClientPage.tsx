@@ -20,6 +20,7 @@ import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
 import { ThinkingBlock } from "@/components/features/ThinkingBlock";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ImageAttachment } from "@/components/features/ImageAttachment";
+import { VideoAttachment } from "@/components/features/VideoAttachment";
 import { isUserAuthoredMessage } from "@/types/chat";
 import type {
   UIMessage,
@@ -60,7 +61,7 @@ function hasUIAttachments(msg: UIMessage): boolean {
   return (
     !!msg.attachments &&
     msg.attachments.some(
-      (a) => a.type === "card" || a.type === "choice" || a.type === "image",
+      (a) => a.type === "card" || a.type === "choice" || a.type === "image" || a.type === "video",
     )
   );
 }
@@ -560,6 +561,9 @@ export default function LeadChatPage() {
                               {att.type === "image" && (
                                 <ImageAttachment att={att} />
                               )}
+                              {att.type === "video" && (
+                                <VideoAttachment att={att} />
+                              )}
                             </div>
                           ))}
                     </div>
@@ -621,6 +625,9 @@ export default function LeadChatPage() {
                                   )}
                                   {att.type === "image" && (
                                     <ImageAttachment att={att} />
+                                  )}
+                                  {att.type === "video" && (
+                                    <VideoAttachment att={att} />
                                   )}
                                 </div>
                               ))}

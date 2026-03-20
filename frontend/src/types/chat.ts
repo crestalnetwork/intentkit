@@ -18,7 +18,7 @@ export type AuthorType =
   | "internal";
 
 export interface ChatMessageAttachment {
-  type: "link" | "image" | "file" | "xmtp" | "card" | "choice";
+  type: "link" | "image" | "video" | "file" | "xmtp" | "card" | "choice";
   lead_text?: string | null;
   url?: string | null;
   json?: Record<string, unknown> | null;
