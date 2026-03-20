@@ -32,6 +32,7 @@ from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
 from intentkit.core.avatar import generate_avatar
+from intentkit.core.lead import invalidate_lead_cache
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
@@ -87,6 +88,7 @@ async def create_agent_endpoint(
         except Exception as e:
             logger.error("Failed to auto-generate avatar: %s", e)
     latest_agent, agent_data = await create_agent(new_agent)
+    invalidate_lead_cache(new_agent.team_id or "system")
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -564,6 +566,7 @@ async def archive_agent(
         agent_row.archived_at = datetime.now(UTC)
         await db.commit()
 
+    invalidate_lead_cache(agent.team_id or "system")
     return Response(status_code=204)
 
 
@@ -602,4 +605,5 @@ async def reactivate_agent(
         agent_row.archived_at = None
         await db.commit()
 
+    invalidate_lead_cache(agent.team_id or "system")
     return Response(status_code=204)

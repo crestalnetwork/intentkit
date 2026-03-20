@@ -37,6 +37,17 @@ export function TopNav() {
           Agents
         </Link>
         <Link
+          href="/lead"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname.startsWith("/lead")
+              ? "text-foreground font-bold"
+              : "text-foreground/60"
+          )}
+        >
+          Lead
+        </Link>
+        <Link
           href="/timeline"
           className={cn(
             "transition-colors hover:text-foreground/80",

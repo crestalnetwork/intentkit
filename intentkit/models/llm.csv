@@ -37,5 +37,3 @@ grok-4-1-fast-non-reasoning,Grok 4.1 Fast,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3
 x-ai/grok-4.1-fast,Grok 4.1 Fast,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,none,TRUE,TRUE,TRUE,180
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,FALSE,FALSE,180
 x-ai/grok-4.1-fast-reasoning,Grok 4.1 Fast Reasoning,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,TRUE,TRUE,180
-grok-code-fast-1,Grok Code Fast 1,xai,TRUE,0.2,0.02,1.5,3,256000,4096,4,4,FALSE,high,TRUE,FALSE,FALSE,180
-x-ai/grok-code-fast-1,Grok Code Fast 1,openrouter,TRUE,0.2,0.02,1.5,3,256000,4096,4,4,FALSE,high,TRUE,TRUE,TRUE,180

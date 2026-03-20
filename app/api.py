@@ -43,6 +43,7 @@ from app.local import (
     chat_router,
     content_router,
     health_router,
+    lead_router,
     metadata_router,
     schema_router,
 )
@@ -141,6 +142,7 @@ _ = app.add_middleware(
 _ = app.include_router(agent_router)
 _ = app.include_router(autonomous_router)
 _ = app.include_router(chat_router)
+_ = app.include_router(lead_router)
 _ = app.include_router(content_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(schema_router)

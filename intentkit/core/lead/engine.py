@@ -13,7 +13,7 @@ from langgraph.graph.state import CompiledStateGraph
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.engine import stream_agent_raw
 from intentkit.core.executor import build_executor
-from intentkit.core.lead.service import verify_team_membership
+from intentkit.core.lead.service import get_team_agents, verify_team_membership
 from intentkit.core.lead.skills import (
     create_team_agent_skill,
     get_team_agent_skill,
@@ -29,6 +29,8 @@ from intentkit.core.lead.skills import (
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
+from intentkit.models.team import Team
+from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ async def stream_lead(
 
     await verify_team_membership(team_id, user_id)
 
-    executor, lead_agent, cold_start_cost = await _get_lead_executor(team_id, user_id)
+    executor, lead_agent, cold_start_cost = await _get_lead_executor(team_id)
 
     if not message.agent_id:
         message.agent_id = lead_agent.id
@@ -57,7 +59,7 @@ async def stream_lead(
         yield chat_message
 
 
-def _build_lead_agent(team_id: str, user_id: str) -> Agent:
+async def _build_lead_agent(team_id: str) -> Agent:
     now = datetime.now(timezone.utc)
 
     prompt = (
@@ -96,8 +98,6 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
         "- `prompt`: Base system prompt\n"
         "- `prompt_append`: Additional system prompt (higher priority)\n"
         "- `temperature`: Randomness (0.0~2.0, lower for rigorous tasks)\n"
-        "- `frequency_penalty`: Repetition control (-2.0~2.0)\n"
-        "- `presence_penalty`: Topic deviation control (-2.0~2.0)\n"
         "- `skills`: Skill configurations dict\n"
         "- `slug`: URL-friendly slug (immutable once set)\n"
         "- `sub_agents`: List of sub-agent IDs or slugs\n"
@@ -109,17 +109,21 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
         "- `super_mode`: Enable super mode with higher recursion limit\n"
         "- `search_internet`: Enable LLM native internet search\n"
         "- `visibility`: PRIVATE(0), TEAM(10), PUBLIC(20)\n"
-        "- `telegram_entrypoint_enabled`: Enable telegram bot\n"
-        "- `telegram_entrypoint_prompt`: Extra prompt for telegram\n"
-        "- `telegram_config`: Telegram integration config\n"
-        "- `discord_entrypoint_enabled`: Enable discord bot\n"
-        "- `discord_config`: Discord integration config\n"
-        "- `xmtp_entrypoint_prompt`: Extra prompt for XMTP\n"
     )
 
+    owner = await Team.get_owner(team_id)
+    if not owner:
+        raise IntentKitAPIError(
+            500, "TeamOwnerNotFound", f"Team '{team_id}' has no owner"
+        )
+
+    # Populate sub_agents with all active agents in the team
+    team_agents = await get_team_agents(team_id)
+    sub_agent_ids = [a.id for a in team_agents]
+
     agent_data = {
-        "id": team_id,
-        "owner": user_id,
+        "id": "team-" + team_id,
+        "owner": owner,
         "name": "Team Lead",
         "purpose": "Manage all agents in the team, create new agents, and assist team members.",
         "personality": "Organized, helpful, and proactive about team agent management.",
@@ -131,13 +135,28 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
             "5. When configuring skills, be selective. Don't pick too many, just enough to meet user needs.\n"
             "6. Update skill is override update, you must put the whole fields to input data, not only changed fields."
         ),
-        "model": "grok-code-fast-1",
+        "model": "minimax/minimax-m2.7",
         "prompt": prompt,
         "prompt_append": None,
         "temperature": 0.2,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
-        "skills": {},
+        "search_internet": True,
+        "super_mod": False,
+        "enable_todo": False,
+        "enable_activity": False,
+        "enable_post": False,
+        "enable_long_term_memory": True,
+        "sub_agents": sub_agent_ids or None,
+        "skills": {
+            "ui": {
+                "enabled": True,
+                "states": {
+                    "ui_show_card": "private",
+                    "ui_ask_user": "private",
+                },
+            },
+        },
         "created_at": now,
         "updated_at": now,
     }
@@ -146,22 +165,21 @@ def _build_lead_agent(team_id: str, user_id: str) -> Agent:
 
 
 async def _get_lead_executor(
-    team_id: str, user_id: str
+    team_id: str,
 ) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], Agent, float]:
     now = datetime.now(timezone.utc)
     _cleanup_cache(now)
 
-    cache_key = _cache_key(team_id, user_id)
-    executor = _lead_executors.get(cache_key)
-    lead_agent = _lead_agents.get(cache_key)
+    executor = _lead_executors.get(team_id)
+    lead_agent = _lead_agents.get(team_id)
     cold_start_cost = 0.0
 
     if not executor or not lead_agent:
         start = time.perf_counter()
 
         if not lead_agent:
-            lead_agent = _build_lead_agent(team_id, user_id)
-            _lead_agents[cache_key] = lead_agent
+            lead_agent = await _build_lead_agent(team_id)
+            _lead_agents[team_id] = lead_agent
 
         if not executor:
             custom_skills = [
@@ -181,21 +199,27 @@ async def _get_lead_executor(
                 AgentData.model_construct(id=lead_agent.id),
                 custom_skills,
             )
-            _lead_executors[cache_key] = executor
+            _lead_executors[team_id] = executor
 
         cold_start_cost = time.perf_counter() - start
-        _lead_cached_at[cache_key] = now
-        logger.info(
-            "Initialized lead executor for team %s and user %s", team_id, user_id
-        )
+        _lead_cached_at[team_id] = now
+        logger.info("Initialized lead executor for team %s", team_id)
     else:
-        _lead_cached_at[cache_key] = now
+        _lead_cached_at[team_id] = now
 
     return executor, lead_agent, cold_start_cost
 
 
-def _cache_key(team_id: str, user_id: str) -> str:
-    return f"{team_id}:{user_id}"
+def invalidate_lead_cache(team_id: str) -> None:
+    """Remove cached lead agent and executor for a team.
+
+    Call this when the team's agent list changes (create, archive, reactivate)
+    so the lead agent is rebuilt with an up-to-date sub_agents list.
+    """
+    _ = _lead_cached_at.pop(team_id, None)
+    _ = _lead_executors.pop(team_id, None)
+    _ = _lead_agents.pop(team_id, None)
+    logger.debug("Invalidated lead cache for team %s", team_id)
 
 
 def _cleanup_cache(now: datetime) -> None:

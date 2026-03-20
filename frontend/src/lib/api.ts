@@ -429,6 +429,164 @@ export const chatApi = {
 };
 
 /**
+ * Lead Chat API functions
+ * Based on app/local/lead.py endpoints:
+ * - GET /lead/chats - List lead chat threads
+ * - POST /lead/chats - Create new lead chat thread
+ * - PATCH /lead/chats/{chat_id} - Update chat summary
+ * - DELETE /lead/chats/{chat_id} - Delete chat thread
+ * - GET /lead/chats/{chat_id}/messages - List messages with pagination
+ * - POST /lead/chats/{chat_id}/messages - Send message (supports streaming)
+ * - POST /lead/chats/{chat_id}/cancel - Cancel generation
+ */
+export const leadApi = {
+  async listChats(): Promise<ChatThread[]> {
+    const response = await fetch(`${API_BASE}/lead/chats`);
+    if (!response.ok) {
+      throw new Error(`Failed to list lead chats: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async createChat(
+    chatId?: string,
+    firstMessage?: string,
+  ): Promise<ChatThread> {
+    const payload: { chat_id?: string; first_message?: string } = {};
+    if (chatId) payload.chat_id = chatId;
+    if (firstMessage) payload.first_message = firstMessage;
+    const hasPayload = Object.keys(payload).length > 0;
+
+    const response = await fetch(`${API_BASE}/lead/chats`, {
+      method: "POST",
+      headers: hasPayload ? { "Content-Type": "application/json" } : undefined,
+      body: hasPayload ? JSON.stringify(payload) : undefined,
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+          `Failed to create lead chat: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async updateChatSummary(
+    chatId: string,
+    summary: string,
+  ): Promise<ChatThread> {
+    const response = await fetch(`${API_BASE}/lead/chats/${chatId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ summary }),
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to update lead chat summary: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async deleteChat(chatId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/lead/chats/${chatId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete lead chat: ${response.statusText}`);
+    }
+  },
+
+  async listMessages(
+    chatId: string,
+    cursor?: string,
+    limit: number = 50,
+  ): Promise<ChatMessagesResponse> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) {
+      params.append("cursor", cursor);
+    }
+    const response = await fetch(
+      `${API_BASE}/lead/chats/${chatId}/messages?${params.toString()}`,
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to list lead messages: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async *sendMessageStream(
+    chatId: string,
+    message: string,
+    signal?: AbortSignal,
+  ): AsyncGenerator<ChatMessage, void, unknown> {
+    const response = await fetch(
+      `${API_BASE}/lead/chats/${chatId}/messages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, stream: true }),
+        signal,
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+          `Failed to send lead message: ${response.statusText}`,
+      );
+    }
+
+    if (!response.body) {
+      throw new Error("No response body for streaming");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        let eventType = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ") && eventType === "message") {
+            const data = line.slice(6);
+            try {
+              const message = JSON.parse(data) as ChatMessage;
+              yield message;
+            } catch {
+              console.warn("Failed to parse SSE message:", data);
+            }
+            eventType = "";
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  },
+
+  async cancelGeneration(chatId: string): Promise<{ cancelled: boolean }> {
+    const response = await fetch(`${API_BASE}/lead/chats/${chatId}/cancel`, {
+      method: "POST",
+    });
+    return response.json();
+  },
+};
+
+/**
  * Helper type for streaming state
  */
 export interface StreamingState {

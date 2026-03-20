@@ -45,6 +45,7 @@ interface ChatSidebarProps {
   onUpdateTitle: (threadId: string, title: string) => Promise<void>;
   onDeleteThread: (threadId: string) => Promise<void>;
   isLoading?: boolean;
+  hideNavLinks?: boolean;
 }
 
 type ThreadGroupKey = "today" | "yesterday" | "7days" | "30days" | "more";
@@ -68,6 +69,7 @@ export function ChatSidebar({
   onUpdateTitle,
   onDeleteThread,
   isLoading,
+  hideNavLinks,
 }: ChatSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -184,47 +186,51 @@ export function ChatSidebar({
       </div>
 
       {/* Navigation Links */}
-      <div className="px-3 pb-3 space-y-1">
-        <Link
-          href={`/agent/${agentId}/tasks`}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-            activeTab === "tasks"
-              ? "bg-primary/10 text-primary font-medium"
-              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <ListTodo className="h-4 w-4" />
-          Tasks
-        </Link>
-        <Link
-          href={`/agent/${agentId}/activities`}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-            activeTab === "activities"
-              ? "bg-primary/10 text-primary font-medium"
-              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Activity className="h-4 w-4" />
-          Activities
-        </Link>
-        <Link
-          href={`/agent/${agentId}/posts`}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-            activeTab === "posts"
-              ? "bg-primary/10 text-primary font-medium"
-              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <FileText className="h-4 w-4" />
-          Posts
-        </Link>
-      </div>
+      {!hideNavLinks && (
+        <>
+          <div className="px-3 pb-3 space-y-1">
+            <Link
+              href={`/agent/${agentId}/tasks`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                activeTab === "tasks"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ListTodo className="h-4 w-4" />
+              Tasks
+            </Link>
+            <Link
+              href={`/agent/${agentId}/activities`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                activeTab === "activities"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Activity className="h-4 w-4" />
+              Activities
+            </Link>
+            <Link
+              href={`/agent/${agentId}/posts`}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                activeTab === "posts"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              Posts
+            </Link>
+          </div>
 
-      {/* Separator */}
-      <div className="border-t mx-3 mb-2" />
+          {/* Separator */}
+          <div className="border-t mx-3 mb-2" />
+        </>
+      )}
 
       {/* Thread List */}
       <div className="flex-1 overflow-y-auto">

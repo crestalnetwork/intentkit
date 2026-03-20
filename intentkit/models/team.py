@@ -214,6 +214,20 @@ class Team(TeamCreate):
             return None
 
     @classmethod
+    async def get_owner(cls, team_id: str) -> str | None:
+        """Get the owner user_id of a team.
+
+        Each team has exactly one owner.
+        Returns None if the team has no owner.
+        """
+        async with get_session() as db:
+            stmt = select(TeamMemberTable.user_id).where(
+                TeamMemberTable.team_id == team_id,
+                TeamMemberTable.role == TeamRole.OWNER,
+            )
+            return await db.scalar(stmt)
+
+    @classmethod
     async def get_by_user(cls, user_id: str) -> list["Team"]:
         """Get all teams a user belongs to."""
         async with get_session() as db:
