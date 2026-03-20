@@ -138,7 +138,7 @@ async def build_executor(
     if custom_skills and len(custom_skills) > 0:
         private_tools.extend(custom_skills)
 
-    # add system skills to private tools
+    # add system skills
     from intentkit.core.system_skills import get_system_skills
 
     system_skills = get_system_skills(agent)
@@ -146,6 +146,10 @@ async def build_executor(
     model_provider = llm_model.info.provider
     if model_provider in (LLMProvider.GOOGLE, LLMProvider.OPENAI):
         system_skills = [s for s in system_skills if s.name != "read_webpage"]
+    # current_time is available to all users (public), other system skills are private-only
+    for skill in system_skills:
+        if skill.name == "current_time":
+            tools.append(skill)
     private_tools.extend(system_skills)
 
     # filter out unavailable skills

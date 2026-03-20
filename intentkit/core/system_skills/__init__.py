@@ -12,6 +12,7 @@ from intentkit.core.system_skills.base import SystemSkill
 from intentkit.core.system_skills.call_agent import CallAgentSkill
 from intentkit.core.system_skills.create_activity import CreateActivitySkill
 from intentkit.core.system_skills.create_post import CreatePostSkill
+from intentkit.core.system_skills.current_time import CurrentTimeSkill
 from intentkit.core.system_skills.get_post import GetPostSkill
 from intentkit.core.system_skills.read_webpage import ReadWebpageSkill
 from intentkit.core.system_skills.recent_activities import RecentActivitiesSkill
@@ -26,6 +27,7 @@ __all__ = [
     "CallAgentSkill",
     "CreateActivitySkill",
     "CreatePostSkill",
+    "CurrentTimeSkill",
     "GetPostSkill",
     "ReadWebpageSkill",
     "RecentActivitiesSkill",
@@ -36,6 +38,7 @@ __all__ = [
 # Cached singleton instances
 _call_agent = CallAgentSkill()
 _create_activity = CreateActivitySkill()
+_current_time = CurrentTimeSkill()
 _recent_activities = RecentActivitiesSkill()
 _create_post = CreatePostSkill()
 _get_post = GetPostSkill()
@@ -55,7 +58,7 @@ def get_system_skills(agent: Agent) -> list[SystemSkill]:
             - sub_agents: Whether to include call_agent skill.
             - search_internet: Whether to include read_webpage skill.
     """
-    skills: list[SystemSkill] = []
+    skills: list[SystemSkill] = [_current_time]
     if agent.sub_agents:
         skills.append(_call_agent)
 

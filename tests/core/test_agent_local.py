@@ -288,13 +288,8 @@ async def test_local_agent_system_tool_call():
             temperature=0.0,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            prompt="You are a helpful assistant. Use the common_current_time tool when asked for the time.",
-            skills={
-                "common": {
-                    "enabled": True,
-                    "states": {"current_time": "public"},
-                }
-            },
+            prompt="You are a helpful assistant. Use the current_time tool when asked for the time.",
+            skills={},
         )
 
         agent_data = AgentData.model_construct(
@@ -375,7 +370,7 @@ async def test_local_agent_system_tool_call():
                     print(f"Tool Call: {resp.skill_calls}")
                     # Verify correct tool
                     call = resp.skill_calls[0]
-                    assert call["name"] == "common_current_time"
+                    assert call["name"] == "current_time"
 
                 if resp.author_type == AuthorType.SKILL:
                     # This is the output of the tool
@@ -383,7 +378,7 @@ async def test_local_agent_system_tool_call():
                     # Check skill_calls for response
                     if resp.skill_calls:
                         for call in resp.skill_calls:
-                            if call["name"] == "common_current_time":
+                            if call["name"] == "current_time":
                                 print(f"Tool Output: {call.get('response')}")
                                 assert "Current time:" in str(call.get("response"))
 

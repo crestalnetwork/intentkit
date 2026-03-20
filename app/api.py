@@ -154,7 +154,6 @@ async def create_example_agent() -> None:
     """Create an example agent if no agents exist in the database.
 
     Creates an agent with ID 'example' and basic configuration if the agents table is empty.
-    The agent is configured with the 'common' skill with 'current_time' state set to 'public'.
     """
     try:
         async with get_session() as session:
@@ -179,10 +178,6 @@ async def create_example_agent() -> None:
                 enable_post=True,
                 enable_long_term_memory=True,
                 skills={
-                    "common": {
-                        "states": {"common_current_time": "public"},
-                        "enabled": True,
-                    },
                     "ui": {
                         "states": {
                             "ui_ask_user": "public",

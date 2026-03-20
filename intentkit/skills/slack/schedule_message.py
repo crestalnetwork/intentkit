@@ -30,7 +30,7 @@ class SlackScheduleMessage(SlackBaseTool):
     """Tool for scheduling messages to be sent to a Slack channel or thread."""
 
     name: str = "slack_schedule_message"
-    description: str = "Schedule a Slack message for a specific time. Use common_current_time for current time."
+    description: str = "Schedule a Slack message for a specific time. Use current_time for current time."
     args_schema: ArgsSchema | None = SlackScheduleMessageSchema
 
     async def _arun(

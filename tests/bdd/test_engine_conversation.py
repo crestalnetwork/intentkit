@@ -139,12 +139,12 @@ async def test_simple_conversation() -> None:
 @pytest.mark.bdd
 async def test_skill_call_current_time() -> None:
     """
-    Scenario: Skill Call (common_current_time)
+    Scenario: Skill Call (current_time)
 
-    Given a deployed agent with `model=openrouter/free` and `common` skill enabled
+    Given a deployed agent with `model=openrouter/free`
     When a user sends "What is the current time in UTC?"
     Then the engine returns messages including a skill call message
-    And the skill call message contains `common_current_time` with `success=True`
+    And the skill call message contains `current_time` with `success=True`
     And the skill call response contains a date-like string
     And credit events include both `message` and `skill_call` types
     And the agent final reply contains time information
@@ -158,14 +158,7 @@ async def test_skill_call_current_time() -> None:
         model=MODEL,
         owner="system",
         prompt="You are a helpful assistant. When asked about time, use the current_time tool. Reply concisely.",
-        skills={
-            "common": {
-                "enabled": True,
-                "states": {
-                    "current_time": "public",
-                },
-            },
-        },
+        skills={},
     )
     await create_agent(agent_input)
 
@@ -193,10 +186,10 @@ async def test_skill_call_current_time() -> None:
 
     time_call = None
     for call in skill_msg.skill_calls:
-        if call["name"] == "common_current_time":
+        if call["name"] == "current_time":
             time_call = call
             break
-    assert time_call is not None, "Expected common_current_time skill call"
+    assert time_call is not None, "Expected current_time skill call"
     assert time_call["success"] is True
     # Response should contain a date pattern like "2026-02-10"
     assert re.search(r"\d{4}-\d{2}-\d{2}", time_call.get("response", ""))

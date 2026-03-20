@@ -61,7 +61,6 @@ async def migrate_agent_skills(agent: AgentTable) -> bool:
     skill_mappings = [
         {"skills": "cdp_skills", "config": None, "name": "cdp"},
         {"skills": "twitter_skills", "config": "twitter_config", "name": "twitter"},
-        {"skills": "common_skills", "config": None, "name": "common"},
         {"skills": "enso_skills", "config": "enso_config", "name": "enso"},
         {"skills": "acolyt_skills", "config": "acolyt_config", "name": "acolyt"},
         {"skills": "allora_skills", "config": "allora_config", "name": "allora"},
