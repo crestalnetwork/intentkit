@@ -187,9 +187,7 @@ class LLMProvider(str, Enum):
     DEEPSEEK = "deepseek"
     XAI = "xai"
     OPENROUTER = "openrouter"
-    ETERNAL = "eternal"
-    REIGENT = "reigent"
-    VENICE = "venice"
+    MINIMAX = "minimax"
     OLLAMA = "ollama"
     OPENAI_COMPATIBLE = "openai_compatible"
 
@@ -202,9 +200,7 @@ class LLMProvider(str, Enum):
             self.DEEPSEEK: bool(config.deepseek_api_key),
             self.XAI: bool(config.xai_api_key),
             self.OPENROUTER: bool(config.openrouter_api_key),
-            self.ETERNAL: bool(config.eternal_api_key),
-            self.REIGENT: bool(config.reigent_api_key),
-            self.VENICE: bool(config.venice_api_key),
+            self.MINIMAX: bool(config.minimax_api_key),
             self.OLLAMA: True,  # Ollama usually doesn't need a key
             self.OPENAI_COMPATIBLE: bool(
                 config.openai_compatible_api_key
@@ -222,9 +218,7 @@ class LLMProvider(str, Enum):
             self.DEEPSEEK: "DeepSeek",
             self.XAI: "xAI",
             self.OPENROUTER: "OpenRouter",
-            self.ETERNAL: "Eternal",
-            self.REIGENT: "Reigent",
-            self.VENICE: "Venice",
+            self.MINIMAX: "MiniMax",
             self.OLLAMA: "Ollama",
             self.OPENAI_COMPATIBLE: config.openai_compatible_provider,
         }
@@ -871,6 +865,34 @@ class OllamaLLM(LLMModel):
         return ChatOllama(**kwargs)
 
 
+class MiniMaxLLM(LLMModel):
+    """MiniMax LLM configuration using Anthropic-compatible API."""
+
+    @override
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatAnthropic instance for MiniMax."""
+        from langchain_anthropic import ChatAnthropic
+
+        info = await self.model_info()
+
+        kwargs: dict[str, Any] = {
+            "model": info.id,
+            "api_key": config.minimax_api_key,
+            "base_url": "https://api.minimax.io/anthropic",
+            "timeout": info.timeout,
+            "max_retries": 3,
+        }
+
+        # Add optional parameters based on model support
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        # Update kwargs with params to allow overriding
+        kwargs.update(params)
+
+        return ChatAnthropic(**kwargs)
+
+
 class OpenAICompatibleLLM(LLMModel):
     """OpenAI Compatible LLM configuration."""
 
@@ -935,6 +957,7 @@ async def create_llm_model(
         LLMProvider.OPENROUTER: OpenRouterLLM,
         LLMProvider.OLLAMA: OllamaLLM,
         LLMProvider.OPENAI: OpenAILLM,
+        LLMProvider.MINIMAX: MiniMaxLLM,
         LLMProvider.OPENAI_COMPATIBLE: OpenAICompatibleLLM,
     }
 

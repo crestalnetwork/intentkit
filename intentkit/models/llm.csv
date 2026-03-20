@@ -37,3 +37,4 @@ grok-4-1-fast-non-reasoning,Grok 4.1 Fast,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3
 x-ai/grok-4.1-fast,Grok 4.1 Fast,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,none,TRUE,TRUE,TRUE,180
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,FALSE,FALSE,180
 x-ai/grok-4.1-fast-reasoning,Grok 4.1 Fast Reasoning,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,TRUE,TRUE,180
+MiniMax-M2.7,MiniMax M2.7,minimax,TRUE,0.1,0.01,0.4,1,204800,131072,5,3,FALSE,high,TRUE,TRUE,TRUE,300

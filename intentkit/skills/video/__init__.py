@@ -10,6 +10,7 @@ from intentkit.skills.video.base import VideoBaseTool
 from intentkit.skills.video.gemini import VeoVideo, VeoVideoFast
 from intentkit.skills.video.gpt import SoraVideo, SoraVideoPro
 from intentkit.skills.video.grok import GrokVideo
+from intentkit.skills.video.minimax import HailuoVideo
 
 # Cache skills at the system level, because they are stateless
 _cache: dict[str, VideoBaseTool] = {}
@@ -22,6 +23,7 @@ _SKILL_NAME_TO_CLASS: dict[str, Callable[[], VideoBaseTool]] = {
     "video_sora_pro": SoraVideoPro,
     "video_veo": VeoVideo,
     "video_veo_fast": VeoVideoFast,
+    "video_hailuo": HailuoVideo,
 }
 
 
@@ -31,6 +33,7 @@ class SkillStates(TypedDict):
     video_sora_pro: SkillState
     video_veo: SkillState
     video_veo_fast: SkillState
+    video_hailuo: SkillState
 
 
 class Config(SkillConfig):
@@ -89,4 +92,5 @@ def available() -> bool:
         system_config.openai_api_key
         or system_config.google_api_key
         or system_config.xai_api_key
+        or system_config.minimax_api_key
     )

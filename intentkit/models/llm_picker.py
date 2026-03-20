@@ -2,7 +2,6 @@
 Logic for selecting the best available LLM model for various tasks.
 """
 
-from intentkit.config.config import config
 from intentkit.models.llm import LLMProvider
 
 
@@ -25,15 +24,7 @@ def pick_summarize_model() -> str:
     ]
 
     for model_id, provider in order:
-        if provider == LLMProvider.OPENAI and config.openai_api_key:
-            return model_id
-        if provider == LLMProvider.GOOGLE and config.google_api_key:
-            return model_id
-        if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
-            return model_id
-        if provider == LLMProvider.XAI and config.xai_api_key:
-            return model_id
-        if provider == LLMProvider.DEEPSEEK and config.deepseek_api_key:
+        if provider.is_configured:
             return model_id
 
     raise RuntimeError("No summarize model available: missing all required API keys")
@@ -45,13 +36,14 @@ def pick_default_model() -> str:
     Used as the default_factory for the agent model field.
     """
     # Priority order based on general-purpose capability:
-    # 1. Google Gemini 3 Flash: Best blend of speed and quality
-    # 2. GPT-5 Mini: High quality fallback
-    # 3. MiniMax M2.5: Good general-purpose via OpenRouter
+    # 1. MiniMax M2.7: Best blend of quality and cost
+    # 2. Google Gemini 3 Flash: Best blend of speed and quality
+    # 3. GPT-5 Mini: High quality fallback
     # 4. Grok: Good performance if available
     # 5. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
-        ("minimax/minimax-m2.5", LLMProvider.OPENROUTER),
+        ("MiniMax-M2.7", LLMProvider.MINIMAX),
+        ("minimax/minimax-m2.7", LLMProvider.OPENROUTER),
         ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),
         ("gpt-5-mini", LLMProvider.OPENAI),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
@@ -59,15 +51,7 @@ def pick_default_model() -> str:
     ]
 
     for model_id, provider in order:
-        if provider == LLMProvider.OPENAI and config.openai_api_key:
-            return model_id
-        if provider == LLMProvider.GOOGLE and config.google_api_key:
-            return model_id
-        if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
-            return model_id
-        if provider == LLMProvider.XAI and config.xai_api_key:
-            return model_id
-        if provider == LLMProvider.DEEPSEEK and config.deepseek_api_key:
+        if provider.is_configured:
             return model_id
 
     # Fallback to a reasonable default rather than crashing, since this is
@@ -90,15 +74,7 @@ def pick_long_context_model() -> str:
     ]
 
     for model_id, provider in order:
-        if provider == LLMProvider.OPENAI and config.openai_api_key:
-            return model_id
-        if provider == LLMProvider.GOOGLE and config.google_api_key:
-            return model_id
-        if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
-            return model_id
-        if provider == LLMProvider.XAI and config.xai_api_key:
-            return model_id
-        if provider == LLMProvider.DEEPSEEK and config.deepseek_api_key:
+        if provider.is_configured:
             return model_id
 
     raise RuntimeError("No long-context model available: missing all required API keys")

@@ -10,6 +10,7 @@ from intentkit.skills.image.base import ImageBaseTool
 from intentkit.skills.image.gemini import GeminiImageFlash, GeminiImagePro
 from intentkit.skills.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.skills.image.grok import GrokImage, GrokImagePro
+from intentkit.skills.image.minimax import MiniMaxImage
 from intentkit.skills.image.openrouter import FluxPro, Riverflow
 
 # Cache skills at the system level, because they are stateless
@@ -26,6 +27,7 @@ _SKILL_NAME_TO_CLASS: dict[str, Callable[[], ImageBaseTool]] = {
     "image_grok": GrokImage,
     "image_flux_pro": FluxPro,
     "image_riverflow": Riverflow,
+    "image_minimax": MiniMaxImage,
 }
 
 
@@ -38,6 +40,7 @@ class SkillStates(TypedDict):
     image_grok: SkillState
     image_flux_pro: SkillState
     image_riverflow: SkillState
+    image_minimax: SkillState
 
 
 class Config(SkillConfig):
@@ -97,4 +100,5 @@ def available() -> bool:
         or system_config.google_api_key
         or system_config.xai_api_key
         or system_config.openrouter_api_key
+        or system_config.minimax_api_key
     )

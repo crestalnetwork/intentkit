@@ -80,6 +80,14 @@
           "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
           "description": "Generate images using Riverflow v2 Fast via OpenRouter.",
           "default": "disabled"
+        },
+        "image_minimax": {
+          "type": "string",
+          "title": "MiniMax image-01",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate images using MiniMax image-01. Supports subject reference.",
+          "default": "disabled"
         }
       },
       "description": "States for each image generation skill (disabled, public, or private)"

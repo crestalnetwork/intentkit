@@ -37,6 +37,7 @@ dependencies = [
     "langchain-xai>=0.2.1",
     "langchain-deepseek>=0.1.4",
     "langchain-google-genai>=3.2.0",
+    "langchain-anthropic>=0.3.12",
     "langchain-openrouter>=0.0.2",
     "langgraph>=0.6.1",
     "langgraph-checkpoint>=2.0.18",

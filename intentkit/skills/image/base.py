@@ -175,7 +175,7 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
             # Try native API first, fall back to OpenRouter
             if self._has_native_key():
                 image_bytes = await self._generate_native(prompt, input_images)
-            elif config.openrouter_api_key:
+            elif config.openrouter_api_key and self.openrouter_model:
                 image_bytes = await self._generate_via_openrouter(prompt, input_images)
             else:
                 raise ToolException(

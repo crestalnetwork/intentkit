@@ -56,6 +56,14 @@
           "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
           "description": "Generate videos with audio using Google Veo 3.1 Fast. $0.15/sec, max 8s, 1080p.",
           "default": "disabled"
+        },
+        "video_hailuo": {
+          "type": "string",
+          "title": "Hailuo 2.3",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Generate videos from text or images using MiniMax Hailuo 2.3. Max 10s, up to 1080p.",
+          "default": "disabled"
         }
       },
       "description": "States for each video generation skill (disabled, public, or private)"
