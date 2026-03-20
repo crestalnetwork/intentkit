@@ -12,13 +12,15 @@ def pick_summarize_model() -> str:
     """
     # Priority order based on performance and cost effectiveness:
     # 1. Google Gemini 3 Flash: Best blend of speed and quality for summarization
-    # 2. GPT-5 Mini: High quality fallback
-    # 3. GLM 4.7 Flash: Fast and cheap alternative
-    # 4. Grok: Good performance if available
-    # 5. DeepSeek: Final fallback
+    # 2. MiniMax M2.7 Highspeed: Fast and cheap native API
+    # 3. GPT-5 Mini: High quality fallback
+    # 4. GLM 4.7 Flash: Fast and cheap alternative
+    # 5. Grok: Good performance if available
+    # 6. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
         ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
         ("gemini-3.1-flash-lite-preview", LLMProvider.GOOGLE),
+        ("MiniMax-M2.7-highspeed", LLMProvider.MINIMAX),
         ("gpt-5-mini", LLMProvider.OPENAI),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
@@ -28,6 +30,8 @@ def pick_summarize_model() -> str:
         if provider == LLMProvider.OPENAI and config.openai_api_key:
             return model_id
         if provider == LLMProvider.GOOGLE and config.google_api_key:
+            return model_id
+        if provider == LLMProvider.MINIMAX and config.minimax_api_key:
             return model_id
         if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
             return model_id
@@ -45,15 +49,17 @@ def pick_default_model() -> str:
     Used as the default_factory for the agent model field.
     """
     # Priority order based on general-purpose capability:
-    # 1. Google Gemini 3 Flash: Best blend of speed and quality
-    # 2. GPT-5 Mini: High quality fallback
-    # 3. MiniMax M2.5: Good general-purpose via OpenRouter
-    # 4. Grok: Good performance if available
-    # 5. DeepSeek: Final fallback
+    # 1. MiniMax M2.7: Top intelligence, native API preferred
+    # 2. Google Gemini 3 Flash: Best blend of speed and quality
+    # 3. GPT-5 Mini: High quality fallback
+    # 4. MiniMax M2.7 via OpenRouter: Good general-purpose fallback
+    # 5. Grok: Good performance if available
+    # 6. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
-        ("minimax/minimax-m2.5", LLMProvider.OPENROUTER),
+        ("MiniMax-M2.7", LLMProvider.MINIMAX),
         ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),
         ("gpt-5-mini", LLMProvider.OPENAI),
+        ("minimax/minimax-m2.7", LLMProvider.OPENROUTER),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
     ]
@@ -62,6 +68,8 @@ def pick_default_model() -> str:
         if provider == LLMProvider.OPENAI and config.openai_api_key:
             return model_id
         if provider == LLMProvider.GOOGLE and config.google_api_key:
+            return model_id
+        if provider == LLMProvider.MINIMAX and config.minimax_api_key:
             return model_id
         if provider == LLMProvider.OPENROUTER and config.openrouter_api_key:
             return model_id

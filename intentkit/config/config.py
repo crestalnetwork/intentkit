@@ -151,6 +151,7 @@ class Config:
         self.eternal_api_key: str | None = self.load("ETERNAL_API_KEY")
         self.reigent_api_key: str | None = self.load("REIGENT_API_KEY")
         self.venice_api_key: str | None = self.load("VENICE_API_KEY")
+        self.minimax_api_key: str | None = self.load("MINIMAX_API_KEY")
         self.openrouter_api_key: str | None = self.load("OPENROUTER_API_KEY")
         # OpenAI Compatible provider
         self.openai_compatible_api_key: str | None = self.load(
