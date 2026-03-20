@@ -46,6 +46,7 @@ import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
 import { ThinkingBlock } from "@/components/features/ThinkingBlock";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { toast } from "@/hooks/use-toast";
 import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { isUserAuthoredMessage } from "@/types/chat";
@@ -86,7 +87,9 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
 function hasUIAttachments(msg: UIMessage): boolean {
   return (
     !!msg.attachments &&
-    msg.attachments.some((a) => a.type === "card" || a.type === "choice")
+    msg.attachments.some(
+      (a) => a.type === "card" || a.type === "choice" || a.type === "image",
+    )
   );
 }
 
@@ -797,12 +800,17 @@ export default function AgentChatPage() {
                 ) : msg.authorType === "skill" ? (
                   // Skill message: no avatar, no background, aligned with agent text
                   <div key={msg.id} className="flex w-full max-w-[85%] pl-10">
-                    {hasUIAttachments(msg) ? (
-                      <div className="space-y-2">
-                        {msg.attachments!
+                    <div className="space-y-2">
+                      {msg.skillCalls && msg.skillCalls.length > 0 && (
+                        <SkillCallBadgeList skillCalls={msg.skillCalls} />
+                      )}
+                      {hasUIAttachments(msg) &&
+                        msg.attachments!
                           .filter(
                             (a) =>
-                              a.type === "card" || a.type === "choice",
+                              a.type === "card" ||
+                              a.type === "choice" ||
+                              a.type === "image",
                           )
                           .map((att, i) => (
                             <div key={i}>
@@ -820,14 +828,12 @@ export default function AgentChatPage() {
                                   onSendMessage={sendTextMessage}
                                 />
                               )}
+                              {att.type === "image" && (
+                                <ImageAttachment att={att} />
+                              )}
                             </div>
                           ))}
-                      </div>
-                    ) : (
-                      msg.skillCalls && msg.skillCalls.length > 0 && (
-                        <SkillCallBadgeList skillCalls={msg.skillCalls} />
-                      )
-                    )}
+                    </div>
                   </div>
                 ) : (
                 <React.Fragment key={msg.id}>
@@ -871,7 +877,9 @@ export default function AgentChatPage() {
                           {msg.attachments!
                             .filter(
                               (a) =>
-                                a.type === "card" || a.type === "choice",
+                                a.type === "card" ||
+                                a.type === "choice" ||
+                                a.type === "image",
                             )
                             .map((att, i) => (
                               <div key={i}>
@@ -888,6 +896,9 @@ export default function AgentChatPage() {
                                     att={att}
                                     onSendMessage={sendTextMessage}
                                   />
+                                )}
+                                {att.type === "image" && (
+                                  <ImageAttachment att={att} />
                                 )}
                               </div>
                             ))}

@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { buildChatThreadPath, getAutonomousChatId } from "@/lib/autonomousChat";
 import { agentApi, autonomousApi, chatApi } from "@/lib/api";
@@ -45,7 +46,9 @@ function apiMessageToUIMessage(msg: ChatMessage): UIMessage {
 function hasUIAttachments(msg: UIMessage): boolean {
   return (
     !!msg.attachments &&
-    msg.attachments.some((a) => a.type === "card" || a.type === "choice")
+    msg.attachments.some(
+      (a) => a.type === "card" || a.type === "choice" || a.type === "image",
+    )
   );
 }
 
@@ -449,13 +452,20 @@ export default function TaskLogsPage() {
                         : "bg-muted text-foreground",
                     )}
                   >
-                    {/* UI Attachments or Skill Call Badges */}
-                    {hasUIAttachments(msg) ? (
+                    {/* Skill Call Badges and UI Attachments */}
+                    {msg.skillCalls && msg.skillCalls.length > 0 && (
+                      <div className="mb-2">
+                        <SkillCallBadgeList skillCalls={msg.skillCalls} />
+                      </div>
+                    )}
+                    {hasUIAttachments(msg) && (
                       <div className="space-y-2 mb-2">
                         {msg.attachments!
                           .filter(
                             (a) =>
-                              a.type === "card" || a.type === "choice",
+                              a.type === "card" ||
+                              a.type === "choice" ||
+                              a.type === "image",
                           )
                           .map((att, i) => (
                             <div key={i}>
@@ -473,18 +483,12 @@ export default function TaskLogsPage() {
                                   onSendMessage={sendTextMessage}
                                 />
                               )}
+                              {att.type === "image" && (
+                                <ImageAttachment att={att} />
+                              )}
                             </div>
                           ))}
                       </div>
-                    ) : (
-                      msg.skillCalls &&
-                      msg.skillCalls.length > 0 && (
-                        <div className="mb-2">
-                          <SkillCallBadgeList
-                            skillCalls={msg.skillCalls}
-                          />
-                        </div>
-                      )
                     )}
                     {msg.thinking && <ThinkingBlock thinking={msg.thinking} />}
                     {msg.role === "agent" ? (
