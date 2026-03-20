@@ -17,6 +17,7 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -33,6 +34,7 @@ def test_llm_model_filtering():
             LLMProvider.ETERNAL,
             LLMProvider.REIGENT,
             LLMProvider.VENICE,
+            LLMProvider.MINIMAX,
         }
 
         for model in models.values():
@@ -51,6 +53,7 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -76,6 +79,7 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -98,6 +102,7 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -124,6 +129,7 @@ def test_llm_model_filtering():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -153,6 +159,7 @@ def test_model_id_index_suffix_matching():
         mock_config.eternal_api_key = None
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -171,3 +178,104 @@ def test_model_id_index_suffix_matching():
         assert "gpt-5.4-mini" in index
         matching_keys = index["gpt-5.4-mini"]
         assert any("openrouter:" in k for k in matching_keys)
+
+
+def test_minimax_models_loaded_with_key():
+    """Test that native MiniMax models are loaded when MINIMAX_API_KEY is set."""
+    with patch("intentkit.models.llm.config") as mock_config:
+        mock_config.openai_api_key = None
+        mock_config.google_api_key = None
+        mock_config.deepseek_api_key = None
+        mock_config.xai_api_key = None
+        mock_config.openrouter_api_key = None
+        mock_config.eternal_api_key = None
+        mock_config.reigent_api_key = None
+        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = "mm-test-key"
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
+
+        models = _load_default_llm_models()
+
+        # Native MiniMax models should be present
+        minimax_models = [
+            m for m in models.values() if m.provider == LLMProvider.MINIMAX
+        ]
+        assert len(minimax_models) >= 2, (
+            "At least MiniMax-M2.7 and MiniMax-M2.7-highspeed should be loaded"
+        )
+
+        # Verify specific models exist
+        m27 = models.get("minimax:MiniMax-M2.7")
+        assert m27 is not None
+        assert m27.provider == LLMProvider.MINIMAX
+        assert m27.intelligence == 5
+
+        m27hs = models.get("minimax:MiniMax-M2.7-highspeed")
+        assert m27hs is not None
+        assert m27hs.provider == LLMProvider.MINIMAX
+        assert m27hs.speed == 5
+
+        # OpenRouter MiniMax models should NOT be present (no OpenRouter key)
+        or_minimax = [
+            m
+            for m in models.values()
+            if m.provider == LLMProvider.OPENROUTER and "minimax" in m.id.lower()
+        ]
+        assert len(or_minimax) == 0
+
+
+def test_minimax_filtered_without_key():
+    """Test that native MiniMax models are filtered when no key is set."""
+    with patch("intentkit.models.llm.config") as mock_config:
+        mock_config.openai_api_key = None
+        mock_config.google_api_key = None
+        mock_config.deepseek_api_key = None
+        mock_config.xai_api_key = None
+        mock_config.openrouter_api_key = None
+        mock_config.eternal_api_key = None
+        mock_config.reigent_api_key = None
+        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
+
+        models = _load_default_llm_models()
+
+        minimax_models = [
+            m for m in models.values() if m.provider == LLMProvider.MINIMAX
+        ]
+        assert len(minimax_models) == 0, (
+            "MiniMax models should be filtered out without API key"
+        )
+
+
+def test_minimax_and_openrouter_coexist():
+    """Test that both native MiniMax and OpenRouter MiniMax models coexist."""
+    with patch("intentkit.models.llm.config") as mock_config:
+        mock_config.openai_api_key = None
+        mock_config.google_api_key = None
+        mock_config.deepseek_api_key = None
+        mock_config.xai_api_key = None
+        mock_config.openrouter_api_key = "or-test-key"
+        mock_config.eternal_api_key = None
+        mock_config.reigent_api_key = None
+        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = "mm-test-key"
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
+
+        models = _load_default_llm_models()
+
+        # Native MiniMax model
+        native = models.get("minimax:MiniMax-M2.7")
+        assert native is not None
+        assert native.provider == LLMProvider.MINIMAX
+
+        # OpenRouter MiniMax model
+        openrouter = models.get("openrouter:minimax/minimax-m2.7")
+        assert openrouter is not None
+        assert openrouter.provider == LLMProvider.OPENROUTER

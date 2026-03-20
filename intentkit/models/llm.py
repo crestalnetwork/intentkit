@@ -190,6 +190,7 @@ class LLMProvider(str, Enum):
     ETERNAL = "eternal"
     REIGENT = "reigent"
     VENICE = "venice"
+    MINIMAX = "minimax"
     OLLAMA = "ollama"
     OPENAI_COMPATIBLE = "openai_compatible"
 
@@ -205,6 +206,7 @@ class LLMProvider(str, Enum):
             self.ETERNAL: bool(config.eternal_api_key),
             self.REIGENT: bool(config.reigent_api_key),
             self.VENICE: bool(config.venice_api_key),
+            self.MINIMAX: bool(config.minimax_api_key),
             self.OLLAMA: True,  # Ollama usually doesn't need a key
             self.OPENAI_COMPATIBLE: bool(
                 config.openai_compatible_api_key
@@ -225,6 +227,7 @@ class LLMProvider(str, Enum):
             self.ETERNAL: "Eternal",
             self.REIGENT: "Reigent",
             self.VENICE: "Venice",
+            self.MINIMAX: "MiniMax",
             self.OLLAMA: "Ollama",
             self.OPENAI_COMPATIBLE: config.openai_compatible_provider,
         }
@@ -907,6 +910,38 @@ class OpenAICompatibleLLM(LLMModel):
         return ChatOpenAI(**kwargs)
 
 
+class MiniMaxLLM(LLMModel):
+    """MiniMax LLM configuration using OpenAI-compatible API."""
+
+    @override
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatOpenAI instance configured for MiniMax."""
+        from langchain_openai import ChatOpenAI
+
+        info = await self.model_info()
+
+        kwargs: dict[str, Any] = {
+            "model_name": info.id,
+            "openai_api_key": config.minimax_api_key,
+            "openai_api_base": "https://api.minimax.io/v1",
+            "timeout": info.timeout,
+            "max_retries": 3,
+        }
+
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        if info.supports_frequency_penalty:
+            kwargs["frequency_penalty"] = self.frequency_penalty
+
+        if info.supports_presence_penalty:
+            kwargs["presence_penalty"] = self.presence_penalty
+
+        kwargs.update(params)
+
+        return ChatOpenAI(**kwargs)
+
+
 # Factory function to create the appropriate LLM model based on the model name
 async def create_llm_model(
     model_name: str,
@@ -933,6 +968,7 @@ async def create_llm_model(
         LLMProvider.DEEPSEEK: DeepseekLLM,
         LLMProvider.XAI: XAILLM,
         LLMProvider.OPENROUTER: OpenRouterLLM,
+        LLMProvider.MINIMAX: MiniMaxLLM,
         LLMProvider.OLLAMA: OllamaLLM,
         LLMProvider.OPENAI: OpenAILLM,
         LLMProvider.OPENAI_COMPATIBLE: OpenAICompatibleLLM,

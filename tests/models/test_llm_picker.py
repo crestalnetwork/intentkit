@@ -2,7 +2,10 @@ from unittest.mock import patch
 
 import pytest
 
-from intentkit.models.llm_picker import pick_default_model, pick_summarize_model
+from intentkit.models.llm_picker import (
+    pick_default_model,
+    pick_summarize_model,
+)
 
 # ── pick_summarize_model ─────────────────────────────────────────────
 
@@ -14,8 +17,21 @@ def test_pick_summarize_model_prefers_google_then_openai():
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = None
 
         assert pick_summarize_model() == "gpt-5-mini"
+
+
+def test_pick_summarize_model_minimax_highspeed():
+    with patch("intentkit.models.llm_picker.config") as mock_config:
+        mock_config.google_api_key = None
+        mock_config.openai_api_key = None
+        mock_config.openrouter_api_key = None
+        mock_config.xai_api_key = None
+        mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = "mm-key"
+
+        assert pick_summarize_model() == "MiniMax-M2.7-highspeed"
 
 
 def test_pick_summarize_model_xai_when_available():
@@ -25,6 +41,7 @@ def test_pick_summarize_model_xai_when_available():
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = "xai-key"
         mock_config.deepseek_api_key = "ds-key"
+        mock_config.minimax_api_key = None
 
         assert pick_summarize_model() == "grok-4-1-fast-non-reasoning"
 
@@ -36,6 +53,7 @@ def test_pick_summarize_model_raises_when_none():
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = None
 
         with pytest.raises(RuntimeError):
             _ = pick_summarize_model()
@@ -44,13 +62,26 @@ def test_pick_summarize_model_raises_when_none():
 # ── pick_default_model ───────────────────────────────────────────────
 
 
-def test_pick_default_model_prefers_google():
+def test_pick_default_model_prefers_minimax_native():
     with patch("intentkit.models.llm_picker.config") as mock_config:
         mock_config.google_api_key = "google-key"
         mock_config.openai_api_key = "sk-test"
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = "mm-key"
+
+        assert pick_default_model() == "MiniMax-M2.7"
+
+
+def test_pick_default_model_prefers_google_without_minimax():
+    with patch("intentkit.models.llm_picker.config") as mock_config:
+        mock_config.google_api_key = "google-key"
+        mock_config.openai_api_key = "sk-test"
+        mock_config.openrouter_api_key = None
+        mock_config.xai_api_key = None
+        mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = None
 
         assert pick_default_model() == "google/gemini-3-flash-preview"
 
@@ -62,8 +93,9 @@ def test_pick_default_model_openrouter_uses_minimax():
         mock_config.openrouter_api_key = "or-key"
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = None
 
-        assert pick_default_model() == "minimax/minimax-m2.5"
+        assert pick_default_model() == "minimax/minimax-m2.7"
 
 
 def test_pick_default_model_falls_to_deepseek():
@@ -73,6 +105,7 @@ def test_pick_default_model_falls_to_deepseek():
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = "ds-key"
+        mock_config.minimax_api_key = None
 
         assert pick_default_model() == "deepseek-chat"
 
@@ -84,6 +117,7 @@ def test_pick_default_model_fallback_when_none():
         mock_config.openrouter_api_key = None
         mock_config.xai_api_key = None
         mock_config.deepseek_api_key = None
+        mock_config.minimax_api_key = None
 
         result = pick_default_model()
         assert result == "gpt-5-mini"
