@@ -1,4 +1,5 @@
 import json
+import logging
 
 from sqlalchemy import select
 
@@ -10,6 +11,8 @@ from intentkit.models.agent_post import (
     AgentPostCreate,
     AgentPostTable,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def create_agent_post(post_create: AgentPostCreate) -> AgentPost:
@@ -38,8 +41,16 @@ async def create_agent_post(post_create: AgentPostCreate) -> AgentPost:
         session.add(db_post)
         await session.commit()
         await session.refresh(db_post)
+        post = AgentPost.model_validate(db_post)
 
-        return AgentPost.model_validate(db_post)
+    try:
+        from intentkit.core.team.feed import fan_out_post
+
+        await fan_out_post(post.id, post.agent_id, post.created_at)
+    except Exception:
+        logger.exception("Failed to fan out post %s", post.id)
+
+    return post
 
 
 async def get_agent_post(post_id: str) -> AgentPost | None:

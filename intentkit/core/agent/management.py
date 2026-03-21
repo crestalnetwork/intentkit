@@ -291,6 +291,18 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     agent_data = await process_agent_wallet(latest_agent)
     send_agent_notification(latest_agent, agent_data, "Agent Deployed")
 
+    if latest_agent.team_id:
+        try:
+            from intentkit.core.team.subscription import auto_subscribe_team
+
+            await auto_subscribe_team(latest_agent.team_id, latest_agent.id)
+        except Exception:
+            logger.exception(
+                "Failed to auto-subscribe team %s to agent %s",
+                latest_agent.team_id,
+                latest_agent.id,
+            )
+
     return latest_agent, agent_data
 
 

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from sqlalchemy import desc, select
 
@@ -10,6 +11,8 @@ from intentkit.models.agent_activity import (
     AgentActivityTable,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def create_agent_activity(activity_create: AgentActivityCreate) -> AgentActivity:
     async with get_session() as session:
@@ -17,7 +20,16 @@ async def create_agent_activity(activity_create: AgentActivityCreate) -> AgentAc
         session.add(db_activity)
         await session.commit()
         await session.refresh(db_activity)
-        return AgentActivity.model_validate(db_activity)
+        activity = AgentActivity.model_validate(db_activity)
+
+    try:
+        from intentkit.core.team.feed import fan_out_activity
+
+        await fan_out_activity(activity.id, activity.agent_id, activity.created_at)
+    except Exception:
+        logger.exception("Failed to fan out activity %s", activity.id)
+
+    return activity
 
 
 async def get_agent_activity(activity_id: str) -> AgentActivity | None:
