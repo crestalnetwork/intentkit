@@ -1,7 +1,5 @@
 id,name,provider,enabled,input_price,cached_input_price,output_price,price_level,context_length,output_length,intelligence,speed,supports_image_input,reasoning_effort,supports_temperature,supports_frequency_penalty,supports_presence_penalty,timeout
 openrouter/free,OpenRouter Free,openrouter,TRUE,0,,0,1,200000,20000,2,2,FALSE,high,TRUE,TRUE,TRUE,300
-openrouter/hunter-alpha,Hunter Alpha,openrouter,TRUE,0,,0,1,1048576,65536,4,2,FALSE,high,TRUE,TRUE,TRUE,300
-openrouter/healer-alpha,Healer Alpha,openrouter,TRUE,0,,0,1,262144,65536,4,2,TRUE,high,TRUE,TRUE,TRUE,300
 minimax/minimax-m2.7,MiniMax M2.7,openrouter,TRUE,0.3,0.03,1.2,2,204800,131072,5,3,FALSE,high,TRUE,TRUE,TRUE,300
 minimax/minimax-m2-her,Minimax M2 Her,openrouter,TRUE,0.3,0.03,1.2,2,65536,2048,3,3,FALSE,none,TRUE,TRUE,TRUE,300
 xiaomi/mimo-v2-pro,MiMo V2 Pro,openrouter,TRUE,1,,3,3,1048576,131072,5,2,FALSE,high,TRUE,TRUE,TRUE,300
