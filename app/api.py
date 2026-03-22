@@ -23,15 +23,6 @@ from intentkit.config.redis import init_redis
 from intentkit.core.api import core_router
 from intentkit.models.agent import AgentTable
 from intentkit.models.team import TeamMemberTable, TeamRole, TeamTable
-from intentkit.models.team_channel import (  # noqa: F401 (register with Base.metadata for auto-migration)
-    TeamChannelDataTable,
-    TeamChannelTable,
-)
-from intentkit.models.team_feed import (  # noqa: F401 (register with Base.metadata for auto-migration)
-    TeamActivityFeedTable,
-    TeamPostFeedTable,
-    TeamSubscriptionTable,
-)
 from intentkit.models.user import UserTable
 from intentkit.utils.alert import cleanup_alert
 from intentkit.utils.error import (

@@ -16,16 +16,8 @@ from intentkit.clients.s3_setup import ensure_bucket_exists_and_public
 from intentkit.config.config import config
 from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
+from intentkit.core.api import core_router
 from intentkit.models.team import TeamMemberTable, TeamRole, TeamTable
-from intentkit.models.team_channel import (  # noqa: F401 (register with Base.metadata for auto-migration)
-    TeamChannelDataTable,
-    TeamChannelTable,
-)
-from intentkit.models.team_feed import (  # noqa: F401 (register with Base.metadata for auto-migration)
-    TeamActivityFeedTable,
-    TeamPostFeedTable,
-    TeamSubscriptionTable,
-)
 from intentkit.models.user import UserTable
 from intentkit.utils.alert import cleanup_alert
 from intentkit.utils.error import (
@@ -36,6 +28,7 @@ from intentkit.utils.error import (
     request_validation_exception_handler,
 )
 
+from app.local.metadata import metadata_router
 from app.team import (
     team_agent_router,
     team_autonomous_router,
@@ -108,6 +101,8 @@ _ = app.add_middleware(
     allow_headers=["*"],
 )
 
+_ = app.include_router(core_router)
+_ = app.include_router(metadata_router)
 _ = app.include_router(team_agent_router)
 _ = app.include_router(team_autonomous_router)
 _ = app.include_router(team_chat_router)
