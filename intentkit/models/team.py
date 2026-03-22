@@ -128,6 +128,22 @@ class TeamInviteTable(Base):
     )
 
 
+class TeamMember(BaseModel):
+    """Team member info model."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
+
+    user_id: str
+    team_id: str
+    role: TeamRole
+    joined_at: datetime
+
+    @field_serializer("joined_at")
+    @classmethod
+    def serialize_datetime(cls, v: datetime) -> str:
+        return v.isoformat(timespec="milliseconds")
+
+
 class TeamCreate(BaseModel):
     """Team creation model."""
 

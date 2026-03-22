@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
@@ -13,10 +14,14 @@ from intentkit.models.team import (
     TeamCreate,
     TeamInvite,
     TeamInviteTable,
+    TeamMember,
     TeamMemberTable,
     TeamRole,
     TeamTable,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -312,39 +317,62 @@ async def join_team(code: str, user_id: str) -> Team:
     return team
 
 
+async def _get_member_role(db: "AsyncSession", team_id: str, user_id: str) -> TeamRole:
+    """Get member's role or raise ValueError if not found."""
+    from sqlalchemy import select
+
+    stmt = select(TeamMemberTable.role).where(
+        TeamMemberTable.team_id == team_id,
+        TeamMemberTable.user_id == user_id,
+    )
+    result = await db.execute(stmt)
+    role = result.scalar_one_or_none()
+    if role is None:
+        raise ValueError("Member not found")
+    return TeamRole(role.value if hasattr(role, "value") else str(role))
+
+
+async def _ensure_not_last_owner(db: "AsyncSession", team_id: str) -> None:
+    """Raise ValueError if there is only one owner left."""
+    from sqlalchemy import func, select
+
+    owner_count_stmt = (
+        select(func.count())
+        .select_from(TeamMemberTable)
+        .where(
+            TeamMemberTable.team_id == team_id,
+            TeamMemberTable.role == TeamRole.OWNER,
+        )
+    )
+    owner_count = await db.scalar(owner_count_stmt)
+    if (owner_count or 0) <= 1:
+        raise ValueError("Cannot remove or demote the last owner")
+
+
+async def _invalidate_role_cache(team_id: str, user_id: str) -> None:
+    """Delete cached role entry from Redis."""
+    try:
+        redis = get_redis()
+        await redis.delete(f"{_CACHE_ROLE_PREFIX}{team_id}:{user_id}")
+    except Exception as e:
+        logger.warning(
+            "Failed to invalidate role cache for %s:%s: %s", team_id, user_id, e
+        )
+
+
 async def change_member_role(team_id: str, user_id: str, new_role: TeamRole) -> None:
     """Change a team member's role.
 
     Raises:
-        ValueError: If member not found or trying to remove last owner.
+        ValueError: If member not found or trying to demote last owner.
     """
-    from sqlalchemy import func, select, update
+    from sqlalchemy import update
 
     async with get_session() as db:
-        # Get current role
-        stmt = select(TeamMemberTable.role).where(
-            TeamMemberTable.team_id == team_id,
-            TeamMemberTable.user_id == user_id,
-        )
-        result = await db.execute(stmt)
-        current_role = result.scalar_one_or_none()
+        current_role = await _get_member_role(db, team_id, user_id)
 
-        if current_role is None:
-            raise ValueError("Member not found")
-
-        # Prevent removing last owner
         if current_role == TeamRole.OWNER and new_role != TeamRole.OWNER:
-            owner_count_stmt = (
-                select(func.count())
-                .select_from(TeamMemberTable)
-                .where(
-                    TeamMemberTable.team_id == team_id,
-                    TeamMemberTable.role == TeamRole.OWNER,
-                )
-            )
-            owner_count = await db.scalar(owner_count_stmt)
-            if (owner_count or 0) <= 1:
-                raise ValueError("Cannot demote the last owner")
+            await _ensure_not_last_owner(db, team_id)
 
         update_stmt = (
             update(TeamMemberTable)
@@ -357,14 +385,41 @@ async def change_member_role(team_id: str, user_id: str, new_role: TeamRole) -> 
         await db.execute(update_stmt)
         await db.commit()
 
-    # Invalidate role cache
-    try:
-        redis = get_redis()
-        await redis.delete(f"{_CACHE_ROLE_PREFIX}{team_id}:{user_id}")
-    except Exception as e:
-        logger.warning(
-            "Failed to invalidate role cache for %s:%s: %s", team_id, user_id, e
+    await _invalidate_role_cache(team_id, user_id)
+
+
+async def remove_member(team_id: str, user_id: str) -> None:
+    """Remove a member from a team.
+
+    Raises:
+        ValueError: If member not found or trying to remove the last owner.
+    """
+    from sqlalchemy import delete
+
+    async with get_session() as db:
+        current_role = await _get_member_role(db, team_id, user_id)
+
+        if current_role == TeamRole.OWNER:
+            await _ensure_not_last_owner(db, team_id)
+
+        del_stmt = delete(TeamMemberTable).where(
+            TeamMemberTable.team_id == team_id,
+            TeamMemberTable.user_id == user_id,
         )
+        await db.execute(del_stmt)
+        await db.commit()
+
+    await _invalidate_role_cache(team_id, user_id)
+
+
+async def get_members(team_id: str) -> list["TeamMember"]:
+    """Get all members of a team."""
+    from sqlalchemy import select
+
+    async with get_session() as db:
+        stmt = select(TeamMemberTable).where(TeamMemberTable.team_id == team_id)
+        result = await db.scalars(stmt)
+        return [TeamMember.model_validate(m) for m in result]
 
 
 async def check_permission(team_id: str, user_id: str, required_role: TeamRole) -> bool:

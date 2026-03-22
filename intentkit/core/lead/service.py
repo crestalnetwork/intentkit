@@ -10,7 +10,7 @@ from sqlalchemy import select
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent
 from intentkit.models.agent.db import AgentTable
-from intentkit.models.team import TeamMemberTable, TeamTable
+from intentkit.models.team import TeamMemberTable
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -45,29 +45,21 @@ async def get_team_agents(team_id: str) -> list[Agent]:
 
 async def get_team_with_members(team_id: str) -> dict[str, Any]:
     """Return team info + members list (user_id, role, joined_at)."""
-    async with get_session() as db:
-        team = await db.get(TeamTable, team_id)
-        if not team:
-            raise IntentKitAPIError(404, "TeamNotFound", f"Team '{team_id}' not found")
+    from intentkit.core.team.membership import get_members, get_team
 
-        stmt = select(TeamMemberTable).where(TeamMemberTable.team_id == team_id)
-        members_result = await db.scalars(stmt)
-        members = [
-            {
-                "user_id": m.user_id,
-                "role": m.role.value,
-                "joined_at": m.joined_at.isoformat() if m.joined_at else None,
-            }
-            for m in members_result
-        ]
+    team = await get_team(team_id)
+    if not team:
+        raise IntentKitAPIError(404, "TeamNotFound", f"Team '{team_id}' not found")
 
-        return {
-            "id": team.id,
-            "name": team.name,
-            "avatar": team.avatar,
-            "created_at": team.created_at.isoformat() if team.created_at else None,
-            "members": members,
-        }
+    members = await get_members(team_id)
+
+    return {
+        "id": team.id,
+        "name": team.name,
+        "avatar": team.avatar,
+        "created_at": team.created_at.isoformat() if team.created_at else None,
+        "members": [m.model_dump(mode="json") for m in members],
+    }
 
 
 async def verify_agent_in_team(agent_id: str, team_id: str) -> Agent:

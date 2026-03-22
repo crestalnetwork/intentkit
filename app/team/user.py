@@ -6,16 +6,18 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Body, Depends, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from intentkit.config.config import config
 from intentkit.config.redis import get_redis
 from intentkit.core.team.membership import check_permission
-from intentkit.models.team import TeamRole
+from intentkit.models.team import Team, TeamRole
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
 
 from app.team.auth import get_current_user
+
+_team_list_adapter = TypeAdapter(list[Team])
 
 team_user_router = APIRouter()
 
@@ -123,6 +125,18 @@ async def get_user(
     """Get the current user's profile. Syncs from Supabase on cache miss."""
     json_str, _ = await _get_user_with_cache(user_id)
     return Response(content=json_str, media_type="application/json")
+
+
+@team_user_router.get("/user/teams")
+async def list_user_teams(
+    user_id: str = Depends(get_current_user),
+) -> Response:
+    """List all teams the current user belongs to (for team switcher)."""
+    teams = await Team.get_by_user(user_id)
+    return Response(
+        content=_team_list_adapter.dump_json(teams),
+        media_type="application/json",
+    )
 
 
 @team_user_router.post("/user/switch-team")
