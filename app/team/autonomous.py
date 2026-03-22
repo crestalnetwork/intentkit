@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 @team_autonomous_router.get(
-    "/team/{team_id}/agents/{agent_id}/autonomous",
+    "/teams/{team_id}/agents/{agent_id}/autonomous",
     tags=["Team Autonomous"],
     operation_id="team_list_autonomous",
     summary="List Autonomous Tasks (Team)",
@@ -41,7 +41,7 @@ async def list_autonomous(
 
 
 @team_autonomous_router.post(
-    "/team/{team_id}/agents/{agent_id}/autonomous",
+    "/teams/{team_id}/agents/{agent_id}/autonomous",
     tags=["Team Autonomous"],
     status_code=201,
     operation_id="team_add_autonomous",
@@ -62,7 +62,7 @@ async def add_autonomous(
 
 
 @team_autonomous_router.patch(
-    "/team/{team_id}/agents/{agent_id}/autonomous/{autonomous_id}",
+    "/teams/{team_id}/agents/{agent_id}/autonomous/{autonomous_id}",
     tags=["Team Autonomous"],
     operation_id="team_update_autonomous",
     summary="Update Autonomous Task (Team)",
@@ -83,7 +83,7 @@ async def update_autonomous(
 
 
 @team_autonomous_router.delete(
-    "/team/{team_id}/agents/{agent_id}/autonomous/{autonomous_id}",
+    "/teams/{team_id}/agents/{agent_id}/autonomous/{autonomous_id}",
     tags=["Team Autonomous"],
     status_code=204,
     operation_id="team_delete_autonomous",

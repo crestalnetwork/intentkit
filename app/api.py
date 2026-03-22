@@ -54,12 +54,6 @@ from app.local import (
 )
 from app.services.twitter.oauth2 import twitter_oauth2_router
 from app.services.twitter.oauth2_callback import twitter_callback_router
-from app.team import (
-    team_agent_router,
-    team_autonomous_router,
-    team_chat_router,
-    team_content_router,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -158,10 +152,6 @@ _ = app.include_router(content_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(schema_router)
 _ = app.include_router(core_router)
-_ = app.include_router(team_agent_router)
-_ = app.include_router(team_autonomous_router)
-_ = app.include_router(team_chat_router)
-_ = app.include_router(team_content_router)
 _ = app.include_router(twitter_callback_router, include_in_schema=False)
 _ = app.include_router(twitter_oauth2_router)
 _ = app.include_router(health_router)

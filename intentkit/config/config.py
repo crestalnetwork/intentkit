@@ -120,6 +120,14 @@ class Config:
         self.cdp_api_key_id: str | None = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret: str | None = self.load("CDP_API_KEY_SECRET")
         self.cdp_wallet_secret: str | None = self.load("CDP_WALLET_SECRET")
+        # Supabase Auth
+        self.supabase_jwt_signing_key: str | None = self.load(
+            "SUPABASE_JWT_SIGNING_KEY"
+        )
+        self.supabase_url: str | None = self.load("SUPABASE_URL")
+        self.supabase_service_role_key: str | None = self.load(
+            "SUPABASE_SERVICE_ROLE_KEY"
+        )
         # Privy and Safe
         self.privy_app_id: str | None = self.load("PRIVY_APP_ID")
         self.privy_app_secret: str | None = self.load("PRIVY_APP_SECRET")

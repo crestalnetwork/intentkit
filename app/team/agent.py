@@ -50,7 +50,7 @@ async def _get_team_agent(agent_id: str, team_id: str) -> Agent:
 
 
 @team_agent_router.post(
-    "/team/{team_id}/agents",
+    "/teams/{team_id}/agents",
     tags=["Team Agent"],
     status_code=201,
     operation_id="team_create_agent",
@@ -87,7 +87,7 @@ async def create_agent_endpoint(
 
 
 @team_agent_router.get(
-    "/team/{team_id}/agents",
+    "/teams/{team_id}/agents",
     tags=["Team Agent"],
     operation_id="team_get_agents",
     summary="List Agents (Team)",
@@ -131,7 +131,7 @@ async def get_agents(
 
 
 @team_agent_router.get(
-    "/team/{team_id}/agents/{agent_id}",
+    "/teams/{team_id}/agents/{agent_id}",
     tags=["Team Agent"],
     operation_id="team_get_agent",
     summary="Get Agent (Team)",
@@ -153,7 +153,7 @@ async def get_agent(
 
 
 @team_agent_router.get(
-    "/team/{team_id}/agents/{agent_id}/editable",
+    "/teams/{team_id}/agents/{agent_id}/editable",
     tags=["Team Agent"],
     operation_id="team_get_agent_editable",
     summary="Get Agent Editable (Team)",
@@ -173,7 +173,7 @@ async def get_agent_editable(
 
 
 @team_agent_router.patch(
-    "/team/{team_id}/agents/{agent_id}",
+    "/teams/{team_id}/agents/{agent_id}",
     tags=["Team Agent"],
     operation_id="team_patch_agent",
     summary="Patch Agent (Team)",
@@ -208,7 +208,7 @@ async def patch_agent_endpoint(
 
 
 @team_agent_router.put(
-    "/team/{team_id}/agents/{agent_id}/archive",
+    "/teams/{team_id}/agents/{agent_id}/archive",
     tags=["Team Agent"],
     status_code=204,
     operation_id="team_archive_agent",
@@ -234,7 +234,7 @@ async def archive_agent(
 
 
 @team_agent_router.put(
-    "/team/{team_id}/agents/{agent_id}/reactivate",
+    "/teams/{team_id}/agents/{agent_id}/reactivate",
     tags=["Team Agent"],
     status_code=204,
     operation_id="team_reactivate_agent",
@@ -260,7 +260,7 @@ async def reactivate_agent(
 
 
 @team_agent_router.put(
-    "/team/{team_id}/agents/{agent_id}/twitter/unlink",
+    "/teams/{team_id}/agents/{agent_id}/twitter/unlink",
     tags=["Team OAuth"],
     operation_id="team_unlink_twitter",
     summary="Unlink Twitter (Team)",

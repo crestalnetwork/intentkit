@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 @team_chat_router.get(
-    "/team/{team_id}/agents/{aid}/chats",
+    "/teams/{team_id}/agents/{aid}/chats",
     response_model=list[Chat],
     operation_id="team_list_chats",
     summary="List chat threads (Team)",
@@ -80,7 +80,7 @@ async def list_chats(
 
 
 @team_chat_router.post(
-    "/team/{team_id}/agents/{aid}/chats",
+    "/teams/{team_id}/agents/{aid}/chats",
     response_model=Chat,
     operation_id="team_create_chat",
     summary="Create chat thread (Team)",
@@ -112,7 +112,7 @@ async def create_chat_thread(
 
 
 @team_chat_router.patch(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}",
     response_model=Chat,
     operation_id="team_update_chat",
     summary="Update chat thread (Team)",
@@ -137,7 +137,7 @@ async def update_chat_thread(
 
 
 @team_chat_router.delete(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="team_delete_chat",
     summary="Delete chat thread (Team)",
@@ -166,7 +166,7 @@ async def delete_chat_thread(
 
 
 @team_chat_router.get(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}/messages",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}/messages",
     response_model=ChatMessagesResponse,
     operation_id="team_list_messages",
     summary="List messages (Team)",
@@ -213,7 +213,7 @@ async def list_messages(
 
 
 @team_chat_router.post(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}/messages",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}/messages",
     response_model=list[ChatMessage],
     operation_id="team_send_message",
     summary="Send message (Team)",
@@ -294,7 +294,7 @@ async def send_message(
 
 
 @team_chat_router.post(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}/cancel",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}/cancel",
     operation_id="team_cancel_message",
     summary="Cancel generation (Team)",
     tags=["Team Message"],
@@ -312,7 +312,7 @@ async def cancel_generation(
 
 
 @team_chat_router.post(
-    "/team/{team_id}/agents/{aid}/chats/{chat_id}/messages/retry",
+    "/teams/{team_id}/agents/{aid}/chats/{chat_id}/messages/retry",
     response_model=list[ChatMessage],
     operation_id="team_retry_message",
     summary="Retry message (Team)",
@@ -425,7 +425,7 @@ async def retry_message(
 
 
 @team_chat_router.get(
-    "/team/{team_id}/agents/{aid}/skill/history",
+    "/teams/{team_id}/agents/{aid}/skill/history",
     tags=["Team Message"],
     response_model=list[ChatMessage],
     operation_id="team_skill_history",

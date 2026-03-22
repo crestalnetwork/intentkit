@@ -115,6 +115,14 @@ class UserTable(Base):
         JSONB(),
         nullable=True,
     )
+    current_team_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -167,6 +175,13 @@ class UserUpdate(BaseModel):
     linked_accounts: Annotated[
         dict[str, object] | None,
         Field(None, description="User's linked accounts information"),
+    ]
+    current_team_id: Annotated[
+        str | None, Field(None, description="User's currently active team ID")
+    ]
+    synced_at: Annotated[
+        datetime | None,
+        Field(None, description="Last time user profile was synced from auth provider"),
     ]
 
     async def _update_quota_for_nft_count(
@@ -300,9 +315,11 @@ class User(UserUpdate):
         datetime, Field(description="Timestamp when this user was last updated")
     ]
 
-    @field_serializer("created_at", "updated_at")
+    @field_serializer("created_at", "updated_at", "synced_at")
     @classmethod
-    def serialize_datetime(cls, v: datetime) -> str:
+    def serialize_datetime(cls, v: datetime | None) -> str | None:
+        if v is None:
+            return None
         return v.isoformat(timespec="milliseconds")
 
     @classmethod

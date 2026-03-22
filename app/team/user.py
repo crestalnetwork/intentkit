@@ -1,0 +1,147 @@
+"""User profile endpoints (not team-scoped)."""
+
+import logging
+from datetime import UTC, datetime
+from typing import Any
+
+import httpx
+from fastapi import APIRouter, Body, Depends, Response
+from pydantic import BaseModel
+
+from intentkit.config.config import config
+from intentkit.config.redis import get_redis
+from intentkit.core.team.membership import check_permission
+from intentkit.models.team import TeamRole
+from intentkit.models.user import User, UserUpdate
+from intentkit.utils.error import IntentKitAPIError
+
+from app.team.auth import get_current_user
+
+team_user_router = APIRouter()
+
+logger = logging.getLogger(__name__)
+
+USER_CACHE_PREFIX = "intentkit:user:"
+USER_CACHE_TTL = 3600  # 1 hour
+
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(timeout=10)
+    return _http_client
+
+
+async def invalidate_user_cache(user_id: str) -> None:
+    """Delete user cache entry from Redis."""
+    try:
+        redis = get_redis()
+        await redis.delete(f"{USER_CACHE_PREFIX}{user_id}")
+    except Exception as e:
+        logger.warning("Failed to invalidate user cache for %s: %s", user_id, e)
+
+
+async def _sync_supabase_user(user_id: str) -> User:
+    """Fetch user details from Supabase Admin API and upsert locally."""
+    supabase_url = config.supabase_url
+    service_role_key = config.supabase_service_role_key
+    if not supabase_url or not service_role_key:
+        logger.warning("Supabase URL or service role key not configured, skip sync")
+        existing = await User.get(user_id)
+        if existing:
+            return existing
+        return await UserUpdate.model_validate({}).patch(user_id)
+
+    url = f"{supabase_url}/auth/v1/admin/users/{user_id}"
+    headers = {
+        "apikey": service_role_key,
+        "Authorization": f"Bearer {service_role_key}",
+    }
+
+    try:
+        client = _get_http_client()
+        resp = await client.get(url, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        logger.error("Failed to fetch user %s from Supabase: %s", user_id, e)
+        existing = await User.get(user_id)
+        if existing:
+            return existing
+        return await UserUpdate.model_validate({}).patch(user_id)
+
+    update_fields: dict[str, Any] = {}
+    if data.get("email"):
+        update_fields["email"] = data["email"]
+
+    user_metadata = data.get("user_metadata") or {}
+    if user_metadata.get("full_name"):
+        update_fields.setdefault("extra", {})
+        update_fields["extra"]["full_name"] = user_metadata["full_name"]
+    if user_metadata.get("avatar_url"):
+        update_fields.setdefault("extra", {})
+        update_fields["extra"]["avatar_url"] = user_metadata["avatar_url"]
+
+    update_fields["synced_at"] = datetime.now(UTC)
+
+    return await UserUpdate.model_validate(update_fields).patch(user_id)
+
+
+async def _get_user_with_cache(user_id: str) -> tuple[str, bool]:
+    """Get user JSON with Redis caching. Returns (json_str, from_cache)."""
+    redis = get_redis()
+    cache_key = f"{USER_CACHE_PREFIX}{user_id}"
+
+    try:
+        cached = await redis.get(cache_key)
+        if cached:
+            return (cached, True)
+    except Exception as e:
+        logger.warning("Redis cache read failed for user %s: %s", user_id, e)
+
+    user = await _sync_supabase_user(user_id)
+    json_str = user.model_dump_json()
+
+    try:
+        await redis.set(cache_key, json_str, ex=USER_CACHE_TTL)
+    except Exception as e:
+        logger.warning("Redis cache write failed for user %s: %s", user_id, e)
+
+    return (json_str, False)
+
+
+class SwitchTeamRequest(BaseModel):
+    team_id: str
+
+
+@team_user_router.get("/user")
+async def get_user(
+    user_id: str = Depends(get_current_user),
+) -> Response:
+    """Get the current user's profile. Syncs from Supabase on cache miss."""
+    json_str, _ = await _get_user_with_cache(user_id)
+    return Response(content=json_str, media_type="application/json")
+
+
+@team_user_router.post("/user/switch-team")
+async def switch_team(
+    body: SwitchTeamRequest = Body(...),
+    user_id: str = Depends(get_current_user),
+) -> Response:
+    """Switch the user's active team."""
+    is_member = await check_permission(body.team_id, user_id, TeamRole.MEMBER)
+    if not is_member:
+        raise IntentKitAPIError(
+            status_code=403,
+            key="NotTeamMember",
+            message="Not a member of this team",
+        )
+
+    user = await UserUpdate.model_validate({"current_team_id": body.team_id}).patch(
+        user_id
+    )
+    await invalidate_user_cache(user_id)
+
+    return Response(content=user.model_dump_json(), media_type="application/json")

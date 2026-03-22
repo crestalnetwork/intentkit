@@ -18,7 +18,7 @@ team_content_router = APIRouter(tags=["Team Content"])
 
 
 @team_content_router.get(
-    "/team/{team_id}/feed/activities",
+    "/teams/{team_id}/feed/activities",
     operation_id="team_activity_feed",
     response_model=TeamFeedPage[AgentActivity],
 )
@@ -33,7 +33,7 @@ async def get_activity_feed(
 
 
 @team_content_router.get(
-    "/team/{team_id}/feed/posts",
+    "/teams/{team_id}/feed/posts",
     operation_id="team_post_feed",
     response_model=TeamFeedPage[AgentPostBrief],
 )
@@ -48,7 +48,7 @@ async def get_post_feed(
 
 
 @team_content_router.get(
-    "/team/{team_id}/subscriptions",
+    "/teams/{team_id}/subscriptions",
     operation_id="team_list_subscriptions",
     response_model=list[TeamSubscription],
 )
@@ -60,7 +60,7 @@ async def list_subscriptions(
 
 
 @team_content_router.post(
-    "/team/{team_id}/subscriptions/{agent_id}",
+    "/teams/{team_id}/subscriptions/{agent_id}",
     operation_id="team_subscribe_agent",
     response_model=TeamSubscription,
     status_code=201,
@@ -74,7 +74,7 @@ async def subscribe(
 
 
 @team_content_router.delete(
-    "/team/{team_id}/subscriptions/{agent_id}",
+    "/teams/{team_id}/subscriptions/{agent_id}",
     operation_id="team_unsubscribe_agent",
     status_code=204,
 )
