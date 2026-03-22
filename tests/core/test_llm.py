@@ -18,6 +18,7 @@ def test_llm_model_filtering():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -34,6 +35,7 @@ def test_llm_model_filtering():
             LLMProvider.ETERNAL,
             LLMProvider.REIGENT,
             LLMProvider.VENICE,
+            LLMProvider.NOVITA,
         }
 
         for model in models.values():
@@ -53,6 +55,7 @@ def test_llm_model_filtering():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -79,6 +82,7 @@ def test_llm_model_filtering():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -102,6 +106,7 @@ def test_llm_model_filtering():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -129,6 +134,7 @@ def test_llm_model_filtering():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
@@ -159,6 +165,7 @@ def test_model_id_index_suffix_matching():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
+        mock_config.novita_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None

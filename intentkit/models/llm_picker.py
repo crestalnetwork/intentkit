@@ -42,6 +42,7 @@ def pick_default_model() -> str:
     # 4. Grok: Good performance if available
     # 5. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
+        ("moonshotai/kimi-k2.5", LLMProvider.NOVITA),
         ("MiniMax-M2.7", LLMProvider.MINIMAX),
         ("minimax/minimax-m2.7", LLMProvider.OPENROUTER),
         ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),

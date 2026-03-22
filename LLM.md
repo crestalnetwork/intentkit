@@ -1,43 +1,42 @@
-# IntentKit LLM Guide
-
-## Architecture
-
-- `intentkit/` — pip package
-  - `core/` — agent system (LangGraph)
-    - `manager/` — single agent manager
-    - `system_skills/` — built-in system skills
-  - `models/` — Pydantic + SQLAlchemy dual models
-  - `config/` — system config (DB, LLM keys, skill provider keys)
-  - `skills/` — skill system (LangChain BaseTool)
-  - `abstracts/` — interfaces for core/ and skills/
-  - `utils/` — utilities
-  - `clients/` — external service clients
-- `app/` — API server, autonomous runner, background scheduler
-- `frontend/` — Next.js agent management UI (see `frontend/AGENTS.md`)
-- `integrations/` — platform integrations (each has its own `AGENTS.md`)
-  - `telegram/` — Telegram bot integration
-- `scripts/` — ops & migration scripts
-- `tests/` — `tests/core/`, `tests/api/`, `tests/skills/`
-
-## Tech Stack & Gotchas
-
-- Package manager: **uv**. Activate venv: `source .venv/bin/activate`
-- Lint: `ruff format & ruff check --fix` after edits
-- Type check: **BasedPyright** — ensure no errors in changed files
-- **SQLAlchemy 2.0** — do NOT use legacy 1.x API
-- **Pydantic V2** — do NOT use V1 API
-- Testing: **pytest**
-
 ## Rules
+- Do NOT add "Generated with Claude Code", "Co-Authored-By: Claude", or any AI-attribution footer to PR descriptions, commit messages, or code comments.
+- Do NOT use the /commit or /pr slash commands. Use git and gh CLI directly.
 
-- English for code comments and search queries
-- Do not git commit unless explicitly asked
-- Import dependency order (left cannot import right): `utils → config → models → abstracts → clients → skills → core`
-- **No ForeignKey constraints**: All tables intentionally omit `ForeignKey` constraints. Do NOT add FK constraints to any table definition.
-- **AgentCore ↔ Template sync**: `AgentCore` (Pydantic) is the shared base for both `Agent` and `Template`. When adding/removing fields in `AgentCore`, you MUST also update `TemplateTable` (SQLAlchemy columns in `intentkit/models/template.py`) to match. The `Template` Pydantic model inherits from `AgentCore` automatically, but the DB schema does not. Agent-specific fields like `slug` belong in `AgentUserInput`, not `AgentCore`.
+# Novita AI Model Catalog
 
-## Detailed Guides
+Use ONLY these model IDs. Do NOT invent or guess model IDs.
 
-- Skills: `agent_docs/skill_development.md`
-- Git/PR/Release: `agent_docs/ops_guide.md`
-- Testing: `agent_docs/test.md`
+## API Endpoints
+
+Novita AI supports two API-compatible endpoints. Choose based on which SDK the target repo uses:
+
+| SDK / Interface | Base URL | Env Var |
+|----------------|----------|---------|
+| **OpenAI-compatible** | `https://api.novita.ai/openai` | `OPENAI_BASE_URL` or `OPENAI_API_BASE` |
+| **Anthropic-compatible** | `https://api.novita.ai/anthropic` | `ANTHROPIC_BASE_URL` |
+
+- API key for both: `NOVITA_API_KEY` (or follow the repo's existing env var pattern).
+- If the repo uses the **OpenAI SDK** (`openai`, `langchain`, etc.) → use the OpenAI endpoint.
+- If the repo uses the **Anthropic SDK** (`anthropic`, `@anthropic-ai/sdk`, etc.) → use the Anthropic endpoint.
+- If the repo supports **both**, add both endpoints.
+
+## Chat / Completion Models
+
+| Model ID | Context | Max Output | Architecture | Features | Pricing (per M tokens) |
+|----------|---------|------------|--------------|----------|----------------------|
+| `moonshotai/kimi-k2.5` **(default)** | 262,144 | 262,144 | MoE | function_calling, structured_output, reasoning, vision | In: $0.6 / Out: $3 / Cache: $0.1 |
+| `zai-org/glm-5` | 202,800 | 131,072 | MoE | function_calling, structured_output, reasoning | In: $1 / Out: $3.2 / Cache: $0.2 |
+| `minimax/minimax-m2.5` | 204,800 | 131,100 | MoE | function_calling, structured_output, reasoning | In: $0.3 / Out: $1.2 / Cache: $0.03 |
+
+## Embedding Models
+
+| Model ID | Dimensions | Max Input | Pricing |
+|----------|-----------|-----------|---------|
+| `qwen/qwen3-embedding-0.6b` | 1024 | 8,192 | $0.014 / M tokens |
+
+## Selection Rules
+
+- If only one model slot: use `moonshotai/kimi-k2.5`
+- If multiple model slots: default `moonshotai/kimi-k2.5`, also add `zai-org/glm-5` and `minimax/minimax-m2.5`
+- If embedding slot: use `qwen/qwen3-embedding-0.6b`
+- If vision/multimodal slot: use `moonshotai/kimi-k2.5` (supports image + video input)

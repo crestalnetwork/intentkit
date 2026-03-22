@@ -36,3 +36,6 @@ x-ai/grok-4.1-fast,Grok 4.1 Fast,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,FALSE,FALSE,180
 x-ai/grok-4.1-fast-reasoning,Grok 4.1 Fast Reasoning,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,TRUE,TRUE,180
 MiniMax-M2.7,MiniMax M2.7,minimax,TRUE,0.1,0.01,0.4,1,204800,131072,5,3,FALSE,high,TRUE,TRUE,TRUE,300
+moonshotai/kimi-k2.5,Kimi K2.5,novita,TRUE,0.6,0.1,3,2,262144,262144,4,3,TRUE,high,TRUE,TRUE,TRUE,300
+zai-org/glm-5,GLM 5,novita,TRUE,1,0.2,3.2,3,202800,131072,5,2,FALSE,high,TRUE,TRUE,TRUE,300
+minimax/minimax-m2.5,MiniMax M2.5,novita,TRUE,0.3,0.03,1.2,2,204800,131100,5,3,FALSE,high,TRUE,TRUE,TRUE,300

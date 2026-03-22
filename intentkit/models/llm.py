@@ -190,6 +190,7 @@ class LLMProvider(str, Enum):
     MINIMAX = "minimax"
     OLLAMA = "ollama"
     OPENAI_COMPATIBLE = "openai_compatible"
+    NOVITA = "novita"
 
     @property
     def is_configured(self) -> bool:
@@ -207,6 +208,7 @@ class LLMProvider(str, Enum):
                 and config.openai_compatible_base_url
                 and config.openai_compatible_model
             ),
+            self.NOVITA: bool(config.novita_api_key),
         }
         return config_map.get(self, False)
 
@@ -221,6 +223,7 @@ class LLMProvider(str, Enum):
             self.MINIMAX: "MiniMax",
             self.OLLAMA: "Ollama",
             self.OPENAI_COMPATIBLE: config.openai_compatible_provider,
+            self.NOVITA: "Novita AI",
         }
         return display_names.get(self, self.value)
 
@@ -929,6 +932,41 @@ class OpenAICompatibleLLM(LLMModel):
         return ChatOpenAI(**kwargs)
 
 
+class NovitaLLM(LLMModel):
+    """Novita AI LLM configuration (OpenAI-compatible endpoint)."""
+
+    @override
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatOpenAI instance for Novita AI."""
+        from langchain_openai import ChatOpenAI
+
+        info = await self.model_info()
+
+        kwargs: dict[str, Any] = {
+            "model_name": info.id,
+            "openai_api_key": config.novita_api_key,
+            "openai_api_base": "https://api.novita.ai/openai",
+            "timeout": info.timeout,
+            "max_retries": 3,
+        }
+
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        if info.supports_frequency_penalty:
+            kwargs["frequency_penalty"] = self.frequency_penalty
+
+        if info.supports_presence_penalty:
+            kwargs["presence_penalty"] = self.presence_penalty
+
+        if info.reasoning_effort and info.reasoning_effort != "none":
+            kwargs["reasoning_effort"] = info.reasoning_effort
+
+        kwargs.update(params)
+
+        return ChatOpenAI(**kwargs)
+
+
 # Factory function to create the appropriate LLM model based on the model name
 async def create_llm_model(
     model_name: str,
@@ -959,6 +997,7 @@ async def create_llm_model(
         LLMProvider.OPENAI: OpenAILLM,
         LLMProvider.MINIMAX: MiniMaxLLM,
         LLMProvider.OPENAI_COMPATIBLE: OpenAICompatibleLLM,
+        LLMProvider.NOVITA: NovitaLLM,
     }
 
     model_class = provider_map.get(info.provider, OpenAILLM)

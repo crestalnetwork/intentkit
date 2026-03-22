@@ -158,6 +158,7 @@ class Config:
         self.xai_api_key: str | None = self.load("XAI_API_KEY")
         self.minimax_api_key: str | None = self.load("MINIMAX_API_KEY")
         self.openrouter_api_key: str | None = self.load("OPENROUTER_API_KEY")
+        self.novita_api_key: str | None = self.load("NOVITA_API_KEY")
         # OpenAI Compatible provider
         self.openai_compatible_api_key: str | None = self.load(
             "OPENAI_COMPATIBLE_API_KEY"
