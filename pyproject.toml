@@ -67,6 +67,8 @@ dependencies = [
     "requests>=2.32.3",
     "requests-oauthlib>=2.0.0",
     "tenacity>=9.1.2",
+    # MCP (Model Context Protocol)
+    "mcp>=1.0.0",
 ]
 keywords = ["ai", "agent", "intent", "blockchain", "crypto"]
 classifiers = [

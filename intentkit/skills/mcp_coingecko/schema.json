@@ -1,0 +1,834 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "CoinGecko",
+  "description": "Crypto market data, prices, trends, and analytics via CoinGecko API",
+  "x-tags": [
+    "Crypto",
+    "Market Data"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "title": "Skills",
+      "properties": {
+        "mcp_coingecko_get_asset_platforms": {
+          "type": "string",
+          "title": "Get Asset Platforms",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the asset platforms on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/asset_platform_get_response',\n  $defs: {\n    asset_platform_get_response: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          id: {\n            type: 'string',\n            description: 'asset platform ID'\n          },\n          chain_identifier: {\n            type: 'number',\n            description: 'chainlist\\'s chain ID'\n          },\n          image: {\n            type: 'object',\n            description: 'image of the asset platform',\n            properties: {\n              large: {\n                type: 'string'\n              },\n              small: {\n                type: 'string'\n              },\n              thumb: {\n                type: 'string'\n              }\n            }\n          },\n          name: {\n            type: 'string',\n            description: 'chain name'\n          },\n          native_coin_id: {\n            type: 'string',\n            description: 'chain native coin ID'\n          },\n          shortname: {\n            type: 'string',\n            description: 'chain shortname'\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_id_coins": {
+          "type": "string",
+          "title": "Get Id Coins",
+          "description": "This endpoint allows you to **query all the metadata (image, websites, socials, description, contract address, etc.) and market data (price, ATH, exchange tickers, etc.) of a coin from the CoinGecko coin page based on a particular coin ID**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_list_coins_categories": {
+          "type": "string",
+          "title": "Get List Coins Categories",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the coins categories on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/category_get_list_response',\n  $defs: {\n    category_get_list_response: {\n      type: 'object',\n      properties: {\n        category_id: {\n          type: 'string',\n          description: 'category ID'\n        },\n        name: {\n          type: 'string',\n          description: 'category name'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_new_coins_list": {
+          "type": "string",
+          "title": "Get New Coins List",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the latest 200 coins that recently listed on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/list_get_new_response',\n  $defs: {\n    list_get_new_response: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          id: {\n            type: 'string',\n            description: 'coin ID'\n          },\n          activated_at: {\n            type: 'number',\n            description: 'timestamp when coin was activated on CoinGecko'\n          },\n          name: {\n            type: 'string',\n            description: 'coin name'\n          },\n          symbol: {\n            type: 'string',\n            description: 'coin symbol'\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_coins_markets": {
+          "type": "string",
+          "title": "Get Coins Markets",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported coins with price, market cap, volume and market related data**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/market_get_response',\n  $defs: {\n    market_get_response: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          id: {\n            type: 'string',\n            description: 'coin ID'\n          },\n          ath: {\n            type: 'number',\n            description: 'coin all time high (ATH) in currency'\n          },\n          ath_change_percentage: {\n            type: 'number',\n            description: 'coin all time high (ATH) change in percentage'\n          },\n          ath_date: {\n            type: 'string',\n            description: 'coin all time high (ATH) date',\n            format: 'date-time'\n          },\n          atl: {\n            type: 'number',\n            description: 'coin all time low (atl) in currency'\n          },\n          atl_change_percentage: {\n            type: 'number',\n            description: 'coin all time low (atl) change in percentage'\n          },\n          atl_date: {\n            type: 'string',\n            description: 'coin all time low (atl) date',\n            format: 'date-time'\n          },\n          circulating_supply: {\n            type: 'number',\n            description: 'coin circulating supply'\n          },\n          current_price: {\n            type: 'number',\n            description: 'coin current price in currency'\n          },\n          fully_diluted_valuation: {\n            type: 'number',\n            description: 'coin fully diluted valuation (fdv) in currency'\n          },\n          high_24h: {\n            type: 'number',\n            description: 'coin 24hr price high in currency'\n          },\n          image: {\n            type: 'string',\n            description: 'coin image url'\n          },\n          last_updated: {\n            type: 'string',\n            description: 'coin last updated timestamp',\n            format: 'date-time'\n          },\n          low_24h: {\n            type: 'number',\n            description: 'coin 24hr price low in currency'\n          },\n          market_cap: {\n            type: 'number',\n            description: 'coin market cap in currency'\n          },\n          market_cap_change_24h: {\n            type: 'number',\n            description: 'coin 24hr market cap change in currency'\n          },\n          market_cap_change_percentage_24h: {\n            type: 'number',\n            description: 'coin 24hr market cap change in percentage'\n          },\n          market_cap_rank: {\n            type: 'number',\n            description: 'coin rank by market cap'\n          },\n          max_supply: {\n            type: 'number',\n            description: 'coin max supply'\n          },\n          name: {\n            type: 'string',\n            description: 'coin name'\n          },\n          price_change_24h: {\n            type: 'number',\n            description: 'coin 24hr price change in currency'\n          },\n          price_change_percentage_24h: {\n            type: 'number',\n            description: 'coin 24hr price change in percentage'\n          },\n          roi: {\n            type: 'object',\n            description: 'return on investment data',\n            properties: {\n              currency: {\n                type: 'string',\n                description: 'ROI currency'\n              },\n              percentage: {\n                type: 'number',\n                description: 'ROI percentage'\n              },\n              times: {\n                type: 'number',\n                description: 'ROI multiplier'\n              }\n            },\n            required: [              'currency',\n              'percentage',\n              'times'\n            ]\n          },\n          symbol: {\n            type: 'string',\n            description: 'coin symbol'\n          },\n          total_supply: {\n            type: 'number',\n            description: 'coin total supply'\n          },\n          total_volume: {\n            type: 'number',\n            description: 'coin total trading volume in currency'\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_coins_top_gainers_losers": {
+          "type": "string",
+          "title": "Get Coins Top Gainers Losers",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the top 30 coins with largest price gain and loss by a specific time duration**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/top_gainers_loser_get_response',\n  $defs: {\n    top_gainers_loser_get_response: {\n      type: 'object',\n      properties: {\n        top_gainers: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'coin ID'\n              },\n              image: {\n                type: 'string',\n                description: 'coin image url'\n              },\n              market_cap_rank: {\n                type: 'number',\n                description: 'coin rank by market cap'\n              },\n              name: {\n                type: 'string',\n                description: 'coin name'\n              },\n              symbol: {\n                type: 'string',\n                description: 'coin symbol'\n              },\n              usd: {\n                type: 'number',\n                description: 'coin price in USD'\n              },\n              usd_14d_change: {\n                type: 'number',\n                description: 'coin 14 day change percentage in USD'\n              },\n              usd_1h_change: {\n                type: 'number',\n                description: 'coin 1hr change percentage in USD'\n              },\n              usd_1y_change: {\n                type: 'number',\n                description: 'coin 1 year change percentage in USD'\n              },\n              usd_200d_change: {\n                type: 'number',\n                description: 'coin 200 day change percentage in USD'\n              },\n              usd_24h_change: {\n                type: 'number',\n                description: 'coin 24hr change percentage in USD'\n              },\n              usd_24h_vol: {\n                type: 'number',\n                description: 'coin 24hr volume in USD'\n              },\n              usd_30d_change: {\n                type: 'number',\n                description: 'coin 30 day change percentage in USD'\n              },\n              usd_7d_change: {\n                type: 'number',\n                description: 'coin 7 day change percentage in USD'\n              }\n            }\n          }\n        },\n        top_losers: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'coin ID'\n              },\n              image: {\n                type: 'string',\n                description: 'coin image url'\n              },\n              market_cap_rank: {\n                type: 'number',\n                description: 'coin rank by market cap'\n              },\n              name: {\n                type: 'string',\n                description: 'coin name'\n              },\n              symbol: {\n                type: 'string',\n                description: 'coin symbol'\n              },\n              usd: {\n                type: 'number',\n                description: 'coin price in USD'\n              },\n              usd_14d_change: {\n                type: 'number',\n                description: 'coin 14 day change percentage in USD'\n              },\n              usd_1h_change: {\n                type: 'number',\n                description: 'coin 1hr change percentage in USD'\n              },\n              usd_1y_change: {\n                type: 'number',\n                description: 'coin 1 year change percentage in USD'\n              },\n              usd_200d_change: {\n                type: 'number',\n                description: 'coin 200 day change percentage in USD'\n              },\n              usd_24h_change: {\n                type: 'number',\n                description: 'coin 24hr change percentage in USD'\n              },\n              usd_24h_vol: {\n                type: 'number',\n                description: 'coin 24hr volume in USD'\n              },\n              usd_30d_change: {\n                type: 'number',\n                description: 'coin 30 day change percentage in USD'\n              },\n              usd_7d_change: {\n                type: 'number',\n                description: 'coin 7 day change percentage in USD'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_coins_contract": {
+          "type": "string",
+          "title": "Get Coins Contract",
+          "description": "This endpoint allows you to **query all the metadata (image, websites, socials, description, contract address, etc.) and market data (price, ATH, exchange tickers, etc.) of a coin from the CoinGecko coin page based on an asset platform and a particular token contract address**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_range_contract_coins_market_chart": {
+          "type": "string",
+          "title": "Get Range Contract Coins Market Chart",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the historical chart data within certain time range in UNIX along with price, market cap and 24hr volume based on asset platform and particular token contract address**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/market_chart_get_range_response',\n  $defs: {\n    market_chart_get_range_response: {\n      type: 'object',\n      properties: {\n        market_caps: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        prices: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        total_volumes: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_coins_history": {
+          "type": "string",
+          "title": "Get Coins History",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the historical data (price, market cap, 24hrs volume, ...) at a given date for a coin based on a particular coin ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/history_get_response',\n  $defs: {\n    history_get_response: {\n      type: 'object',\n      properties: {\n        id: {\n          type: 'string',\n          description: 'coin ID'\n        },\n        community_data: {\n          type: 'object',\n          description: 'coin community data',\n          properties: {\n            facebook_likes: {\n              type: 'number',\n              description: 'coin facebook likes'\n            },\n            reddit_accounts_active_48h: {\n              type: 'number',\n              description: 'coin reddit accounts active 48h'\n            },\n            reddit_average_comments_48h: {\n              type: 'number',\n              description: 'coin reddit average comments 48h'\n            },\n            reddit_average_posts_48h: {\n              type: 'number',\n              description: 'coin reddit average posts 48h'\n            },\n            reddit_subscribers: {\n              type: 'number',\n              description: 'coin reddit subscribers'\n            }\n          }\n        },\n        developer_data: {\n          type: 'object',\n          description: 'coin developer data',\n          properties: {\n            closed_issues: {\n              type: 'number',\n              description: 'coin repository closed issues'\n            },\n            code_additions_deletions_4_weeks: {\n              type: 'object',\n              description: 'coin code additions deletions 4 weeks',\n              properties: {\n                additions: {\n                  type: 'number'\n                },\n                deletions: {\n                  type: 'number'\n                }\n              }\n            },\n            commit_count_4_weeks: {\n              type: 'number',\n              description: 'coin commit count 4 weeks'\n            },\n            forks: {\n              type: 'number',\n              description: 'coin repository forks'\n            },\n            pull_request_contributors: {\n              type: 'number',\n              description: 'coin repository pull request contributors'\n            },\n            pull_requests_merged: {\n              type: 'number',\n              description: 'coin repository pull requests merged'\n            },\n            stars: {\n              type: 'number',\n              description: 'coin repository stars'\n            },\n            subscribers: {\n              type: 'number',\n              description: 'coin repository subscribers'\n            },\n            total_issues: {\n              type: 'number',\n              description: 'coin repository total issues'\n            }\n          }\n        },\n        image: {\n          type: 'object',\n          description: 'coin image url',\n          properties: {\n            small: {\n              type: 'string'\n            },\n            thumb: {\n              type: 'string'\n            }\n          }\n        },\n        localization: {\n          type: 'object',\n          description: 'coin localization',\n          additionalProperties: true\n        },\n        market_data: {\n          type: 'object',\n          description: 'coin market data',\n          properties: {\n            current_price: {\n              type: 'object',\n              description: 'coin current price',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eur: {\n                  type: 'number'\n                },\n                usd: {\n                  type: 'number'\n                }\n              }\n            },\n            market_cap: {\n              type: 'object',\n              description: 'coin market cap',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eur: {\n                  type: 'number'\n                },\n                usd: {\n                  type: 'number'\n                }\n              }\n            },\n            total_volume: {\n              type: 'object',\n              description: 'coin total volume',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eur: {\n                  type: 'number'\n                },\n                usd: {\n                  type: 'number'\n                }\n              }\n            }\n          }\n        },\n        name: {\n          type: 'string',\n          description: 'coin name'\n        },\n        public_interest_stats: {\n          type: 'object',\n          description: 'coin public interest stats',\n          properties: {\n            alexa_rank: {\n              type: 'number',\n              description: 'coin alexa rank'\n            },\n            bing_matches: {\n              type: 'number',\n              description: 'coin bing matches'\n            }\n          }\n        },\n        symbol: {\n          type: 'string',\n          description: 'coin symbol'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_range_coins_market_chart": {
+          "type": "string",
+          "title": "Get Range Coins Market Chart",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the historical chart data of a coin within certain time range in UNIX along with price, market cap and 24hr volume based on particular coin ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/market_chart_get_range_response',\n  $defs: {\n    market_chart_get_range_response: {\n      type: 'object',\n      properties: {\n        market_caps: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        prices: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        total_volumes: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_range_coins_ohlc": {
+          "type": "string",
+          "title": "Get Range Coins Ohlc",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the OHLC chart (Open, High, Low, Close) of a coin within a range of timestamp based on particular coin ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/ohlc_get_range_response',\n  $defs: {\n    ohlc_get_range_response: {\n      type: 'array',\n      items: {\n        type: 'array',\n        items: {\n          type: 'number'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_id_exchanges": {
+          "type": "string",
+          "title": "Get Id Exchanges",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query exchange's data (name, year established, country, ...), exchange volume in BTC and top 100 tickers based on exchange's ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/exchange_get_id_response',\n  $defs: {\n    exchange_get_id_response: {\n      type: 'object',\n      properties: {\n        alert_notice: {\n          type: 'string',\n          description: 'alert notice for exchange'\n        },\n        centralized: {\n          type: 'boolean',\n          description: 'exchange type (true for centralized, false for decentralized)'\n        },\n        coins: {\n          type: 'number',\n          description: 'number of coins listed on the exchange'\n        },\n        country: {\n          type: 'string',\n          description: 'exchange incorporated country'\n        },\n        description: {\n          type: 'string',\n          description: 'exchange description'\n        },\n        facebook_url: {\n          type: 'string',\n          description: 'exchange facebook url'\n        },\n        has_trading_incentive: {\n          type: 'boolean',\n          description: 'exchange trading incentive'\n        },\n        image: {\n          type: 'string',\n          description: 'exchange image url'\n        },\n        name: {\n          type: 'string',\n          description: 'exchange name'\n        },\n        other_url_1: {\n          type: 'string'\n        },\n        other_url_2: {\n          type: 'string'\n        },\n        pairs: {\n          type: 'number',\n          description: 'number of trading pairs on the exchange'\n        },\n        public_notice: {\n          type: 'string',\n          description: 'public notice for exchange'\n        },\n        reddit_url: {\n          type: 'string',\n          description: 'exchange reddit url'\n        },\n        slack_url: {\n          type: 'string',\n          description: 'exchange slack url'\n        },\n        telegram_url: {\n          type: 'string',\n          description: 'exchange telegram url'\n        },\n        tickers: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              name: {\n                type: 'string',\n                description: 'coin name'\n              },\n              tickers: {\n                type: 'array',\n                description: 'list of tickers',\n                items: {\n                  type: 'object',\n                  properties: {\n                    base: {\n                      type: 'string',\n                      description: 'coin ticker base currency'\n                    },\n                    bid_ask_spread_percentage: {\n                      type: 'number',\n                      description: 'coin ticker bid ask spread percentage'\n                    },\n                    coin_id: {\n                      type: 'string',\n                      description: 'coin ticker base currency coin ID'\n                    },\n                    converted_last: {\n                      type: 'object',\n                      description: 'coin ticker converted last price',\n                      properties: {\n                        btc: {\n                          type: 'number'\n                        },\n                        eth: {\n                          type: 'number'\n                        },\n                        usd: {\n                          type: 'number'\n                        }\n                      }\n                    },\n                    converted_volume: {\n                      type: 'object',\n                      description: 'coin ticker converted volume',\n                      properties: {\n                        btc: {\n                          type: 'number'\n                        },\n                        eth: {\n                          type: 'number'\n                        },\n                        usd: {\n                          type: 'number'\n                        }\n                      }\n                    },\n                    cost_to_move_down_usd: {\n                      type: 'number',\n                      description: 'coin ticker cost to move down in usd'\n                    },\n                    cost_to_move_up_usd: {\n                      type: 'number',\n                      description: 'coin ticker cost to move up in usd'\n                    },\n                    is_anomaly: {\n                      type: 'boolean',\n                      description: 'coin ticker anomaly'\n                    },\n                    is_stale: {\n                      type: 'boolean',\n                      description: 'coin ticker stale'\n                    },\n                    last: {\n                      type: 'number',\n                      description: 'coin ticker last price'\n                    },\n                    last_fetch_at: {\n                      type: 'string',\n                      description: 'coin ticker last fetch timestamp'\n                    },\n                    last_traded_at: {\n                      type: 'string',\n                      description: 'coin ticker last traded timestamp'\n                    },\n                    market: {\n                      type: 'object',\n                      description: 'coin ticker exchange',\n                      properties: {\n                        has_trading_incentive: {\n                          type: 'boolean',\n                          description: 'exchange trading incentive'\n                        },\n                        identifier: {\n                          type: 'string',\n                          description: 'exchange identifier'\n                        },\n                        name: {\n                          type: 'string',\n                          description: 'exchange name'\n                        },\n                        logo: {\n                          type: 'string',\n                          description: 'exchange image url'\n                        }\n                      },\n                      required: [                        'has_trading_incentive',\n                        'identifier',\n                        'name'\n                      ]\n                    },\n                    target: {\n                      type: 'string',\n                      description: 'coin ticker target currency'\n                    },\n                    target_coin_id: {\n                      type: 'string',\n                      description: 'coin ticker target currency coin ID'\n                    },\n                    timestamp: {\n                      type: 'string',\n                      description: 'coin ticker timestamp'\n                    },\n                    token_info_url: {\n                      type: 'string',\n                      description: 'coin ticker token info url'\n                    },\n                    trade_url: {\n                      type: 'string',\n                      description: 'coin ticker trade url'\n                    },\n                    trust_score: {\n                      type: 'string',\n                      description: 'coin ticker trust score'\n                    },\n                    volume: {\n                      type: 'number',\n                      description: 'coin ticker volume'\n                    }\n                  }\n                }\n              }\n            }\n          }\n        },\n        trade_volume_24h_btc: {\n          type: 'number'\n        },\n        trust_score: {\n          type: 'number',\n          description: 'exchange trust score'\n        },\n        trust_score_rank: {\n          type: 'number',\n          description: 'exchange trust score rank'\n        },\n        twitter_handle: {\n          type: 'string',\n          description: 'exchange twitter handle'\n        },\n        url: {\n          type: 'string',\n          description: 'exchange website url'\n        },\n        year_established: {\n          type: 'number',\n          description: 'exchange established year'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_list_exchanges": {
+          "type": "string",
+          "title": "Get List Exchanges",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the exchanges with ID and name**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/exchange_get_list_response',\n  $defs: {\n    exchange_get_list_response: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          id: {\n            type: 'string',\n            description: 'exchange ID'\n          },\n          name: {\n            type: 'string',\n            description: 'exchange name'\n          }\n        },\n        required: [          'id',\n          'name'\n        ]\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_exchanges_tickers": {
+          "type": "string",
+          "title": "Get Exchanges Tickers",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query exchange's tickers based on exchange's ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/ticker_get_response',\n  $defs: {\n    ticker_get_response: {\n      type: 'object',\n      properties: {\n        name: {\n          type: 'string',\n          description: 'coin name'\n        },\n        tickers: {\n          type: 'array',\n          description: 'list of tickers',\n          items: {\n            type: 'object',\n            properties: {\n              base: {\n                type: 'string',\n                description: 'coin ticker base currency'\n              },\n              bid_ask_spread_percentage: {\n                type: 'number',\n                description: 'coin ticker bid ask spread percentage'\n              },\n              coin_id: {\n                type: 'string',\n                description: 'coin ticker base currency coin ID'\n              },\n              converted_last: {\n                type: 'object',\n                description: 'coin ticker converted last price',\n                properties: {\n                  btc: {\n                    type: 'number'\n                  },\n                  eth: {\n                    type: 'number'\n                  },\n                  usd: {\n                    type: 'number'\n                  }\n                }\n              },\n              converted_volume: {\n                type: 'object',\n                description: 'coin ticker converted volume',\n                properties: {\n                  btc: {\n                    type: 'number'\n                  },\n                  eth: {\n                    type: 'number'\n                  },\n                  usd: {\n                    type: 'number'\n                  }\n                }\n              },\n              cost_to_move_down_usd: {\n                type: 'number',\n                description: 'coin ticker cost to move down in usd'\n              },\n              cost_to_move_up_usd: {\n                type: 'number',\n                description: 'coin ticker cost to move up in usd'\n              },\n              is_anomaly: {\n                type: 'boolean',\n                description: 'coin ticker anomaly'\n              },\n              is_stale: {\n                type: 'boolean',\n                description: 'coin ticker stale'\n              },\n              last: {\n                type: 'number',\n                description: 'coin ticker last price'\n              },\n              last_fetch_at: {\n                type: 'string',\n                description: 'coin ticker last fetch timestamp'\n              },\n              last_traded_at: {\n                type: 'string',\n                description: 'coin ticker last traded timestamp'\n              },\n              market: {\n                type: 'object',\n                description: 'coin ticker exchange',\n                properties: {\n                  has_trading_incentive: {\n                    type: 'boolean',\n                    description: 'exchange trading incentive'\n                  },\n                  identifier: {\n                    type: 'string',\n                    description: 'exchange identifier'\n                  },\n                  name: {\n                    type: 'string',\n                    description: 'exchange name'\n                  },\n                  logo: {\n                    type: 'string',\n                    description: 'exchange image url'\n                  }\n                },\n                required: [                  'has_trading_incentive',\n                  'identifier',\n                  'name'\n                ]\n              },\n              target: {\n                type: 'string',\n                description: 'coin ticker target currency'\n              },\n              target_coin_id: {\n                type: 'string',\n                description: 'coin ticker target currency coin ID'\n              },\n              timestamp: {\n                type: 'string',\n                description: 'coin ticker timestamp'\n              },\n              token_info_url: {\n                type: 'string',\n                description: 'coin ticker token info url'\n              },\n              trade_url: {\n                type: 'string',\n                description: 'coin ticker trade url'\n              },\n              trust_score: {\n                type: 'string',\n                description: 'coin ticker trust score'\n              },\n              volume: {\n                type: 'number',\n                description: 'coin ticker volume'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_range_exchanges_volume_chart": {
+          "type": "string",
+          "title": "Get Range Exchanges Volume Chart",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the historical volume chart data in BTC by specifying date range in UNIX based on exchange's ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/volume_chart_get_range_response',\n  $defs: {\n    volume_chart_get_range_response: {\n      type: 'array',\n      items: {\n        type: 'array',\n        items: {\n          type: 'number'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_global": {
+          "type": "string",
+          "title": "Get Global",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you **query cryptocurrency global data including active cryptocurrencies, markets, total crypto market cap and etc**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/global_get_response',\n  $defs: {\n    global_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            active_cryptocurrencies: {\n              type: 'number',\n              description: 'number of active cryptocurrencies'\n            },\n            ended_icos: {\n              type: 'number',\n              description: 'number of ended icos'\n            },\n            market_cap_change_percentage_24h_usd: {\n              type: 'number',\n              description: 'cryptocurrencies market cap change percentage in 24 hours in usd'\n            },\n            market_cap_percentage: {\n              type: 'object',\n              description: 'cryptocurrencies market cap percentage',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eth: {\n                  type: 'number'\n                }\n              }\n            },\n            markets: {\n              type: 'number',\n              description: 'number of exchanges'\n            },\n            ongoing_icos: {\n              type: 'number',\n              description: 'number of ongoing icos'\n            },\n            total_market_cap: {\n              type: 'object',\n              description: 'cryptocurrencies total market cap',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eth: {\n                  type: 'number'\n                }\n              }\n            },\n            total_volume: {\n              type: 'object',\n              description: 'cryptocurrencies total volume',\n              properties: {\n                btc: {\n                  type: 'number'\n                },\n                eth: {\n                  type: 'number'\n                }\n              }\n            },\n            upcoming_icos: {\n              type: 'number',\n              description: 'number of upcoming icos'\n            },\n            updated_at: {\n              type: 'number'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_id_nfts": {
+          "type": "string",
+          "title": "Get Id Nfts",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the NFT data (name, floor price, 24hr volume ...) based on the NFT collection ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/nft_get_id_response',\n  $defs: {\n    nft_get_id_response: {\n      type: 'object',\n      properties: {\n        id: {\n          type: 'string',\n          description: 'NFT collection ID'\n        },\n        asset_platform_id: {\n          type: 'string',\n          description: 'NFT collection asset platform ID'\n        },\n        ath: {\n          type: 'object',\n          description: 'NFT collection all time highs',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        ath_change_percentage: {\n          type: 'object',\n          description: 'NFT collection all time highs change percentage',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        ath_date: {\n          type: 'object',\n          description: 'NFT collection all time highs date',\n          properties: {\n            native_currency: {\n              type: 'string',\n              format: 'date-time'\n            },\n            usd: {\n              type: 'string',\n              format: 'date-time'\n            }\n          }\n        },\n        banner_image: {\n          type: 'object',\n          description: 'NFT collection banner image url',\n          properties: {\n            small: {\n              type: 'string'\n            }\n          }\n        },\n        contract_address: {\n          type: 'string',\n          description: 'NFT collection contract address'\n        },\n        description: {\n          type: 'string',\n          description: 'NFT collection description'\n        },\n        explorers: {\n          type: 'array',\n          description: 'NFT collection block explorers links',\n          items: {\n            type: 'object',\n            properties: {\n              link: {\n                type: 'string'\n              },\n              name: {\n                type: 'string'\n              }\n            }\n          }\n        },\n        floor_price: {\n          type: 'object',\n          description: 'NFT collection floor price',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_14d_percentage_change: {\n          type: 'object',\n          description: 'NFT collection floor price 14 days percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_1y_percentage_change: {\n          type: 'object',\n          description: 'NFT collection floor price 1 year percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_24h_percentage_change: {\n          type: 'object',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_30d_percentage_change: {\n          type: 'object',\n          description: 'NFT collection floor price 30 days percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_60d_percentage_change: {\n          type: 'object',\n          description: 'NFT collection floor price 60 days percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_7d_percentage_change: {\n          type: 'object',\n          description: 'NFT collection floor price 7 days percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_in_usd_24h_percentage_change: {\n          type: 'number',\n          description: 'NFT collection floor price in usd 24 hours percentage change'\n        },\n        image: {\n          type: 'object',\n          description: 'NFT collection image url',\n          properties: {\n            small: {\n              type: 'string'\n            },\n            small_2x: {\n              type: 'string'\n            }\n          }\n        },\n        links: {\n          type: 'object',\n          description: 'NFT collection links',\n          properties: {\n            discord: {\n              type: 'string'\n            },\n            homepage: {\n              type: 'string'\n            },\n            twitter: {\n              type: 'string'\n            }\n          }\n        },\n        market_cap: {\n          type: 'object',\n          description: 'NFT collection market cap',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        market_cap_24h_percentage_change: {\n          type: 'object',\n          description: 'NFT collection market cap 24 hours percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        market_cap_rank: {\n          type: 'number',\n          description: 'coin market cap rank'\n        },\n        name: {\n          type: 'string',\n          description: 'NFT collection name'\n        },\n        native_currency: {\n          type: 'string',\n          description: 'NFT collection native currency'\n        },\n        native_currency_symbol: {\n          type: 'string',\n          description: 'NFT collection native currency symbol'\n        },\n        number_of_unique_addresses: {\n          type: 'number',\n          description: 'number of unique address owning the NFTs'\n        },\n        number_of_unique_addresses_24h_percentage_change: {\n          type: 'number',\n          description: 'number of unique address owning the NFTs 24 hours percentage change'\n        },\n        one_day_average_sale_price: {\n          type: 'number',\n          description: 'NFT collection one day average sale price'\n        },\n        one_day_average_sale_price_24h_percentage_change: {\n          type: 'number',\n          description: 'NFT collection one day average sale price 24 hours percentage change'\n        },\n        one_day_sales: {\n          type: 'number',\n          description: 'NFT collection one day sales'\n        },\n        one_day_sales_24h_percentage_change: {\n          type: 'number',\n          description: 'NFT collection one day sales 24 hours percentage change'\n        },\n        symbol: {\n          type: 'string',\n          description: 'NFT collection symbol'\n        },\n        total_supply: {\n          type: 'number',\n          description: 'NFT collection total supply'\n        },\n        user_favorites_count: {\n          type: 'number',\n          description: 'NFT collection user favorites count'\n        },\n        volume_24h: {\n          type: 'object',\n          description: 'NFT collection volume in 24 hours',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        volume_24h_percentage_change: {\n          type: 'object',\n          description: 'NFT collection volume in 24 hours percentage change',\n          properties: {\n            native_currency: {\n              type: 'number'\n            },\n            usd: {\n              type: 'number'\n            }\n          }\n        },\n        volume_in_usd_24h_percentage_change: {\n          type: 'number',\n          description: 'NFT collection volume in usd 24 hours percentage change'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_list_nfts": {
+          "type": "string",
+          "title": "Get List Nfts",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all supported NFTs with ID, contract address, name, asset platform ID and symbol on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/nft_get_list_response',\n  $defs: {\n    nft_get_list_response: {\n      type: 'object',\n      properties: {\n        id: {\n          type: 'string',\n          description: 'NFT collection ID'\n        },\n        asset_platform_id: {\n          type: 'string',\n          description: 'NFT collection asset platform ID'\n        },\n        contract_address: {\n          type: 'string',\n          description: 'NFT collection contract address'\n        },\n        name: {\n          type: 'string',\n          description: 'NFT collection name'\n        },\n        symbol: {\n          type: 'string',\n          description: 'NFT collection symbol'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_markets_nfts": {
+          "type": "string",
+          "title": "Get Markets Nfts",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported NFT collections with floor price, market cap, volume and market related data on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/nft_get_markets_response',\n  $defs: {\n    nft_get_markets_response: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          id: {\n            type: 'string',\n            description: 'NFT collection ID'\n          },\n          asset_platform_id: {\n            type: 'string',\n            description: 'NFT collection asset platform ID'\n          },\n          contract_address: {\n            type: 'string',\n            description: 'NFT collection contract address'\n          },\n          description: {\n            type: 'string',\n            description: 'NFT collection description'\n          },\n          floor_price: {\n            type: 'object',\n            description: 'NFT collection floor price',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          floor_price_24h_percentage_change: {\n            type: 'object',\n            description: 'NFT collection floor price 24 hours percentage change',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          floor_price_in_usd_24h_percentage_change: {\n            type: 'number',\n            description: 'NFT collection floor price in usd 24 hours percentage change'\n          },\n          image: {\n            type: 'object',\n            description: 'NFT collection image url',\n            properties: {\n              small: {\n                type: 'string'\n              },\n              small_2x: {\n                type: 'string'\n              }\n            }\n          },\n          market_cap: {\n            type: 'object',\n            description: 'NFT collection market cap',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          market_cap_24h_percentage_change: {\n            type: 'object',\n            description: 'NFT collection market cap 24 hours percentage change',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          market_cap_rank: {\n            type: 'number',\n            description: 'coin market cap rank'\n          },\n          name: {\n            type: 'string',\n            description: 'NFT collection name'\n          },\n          native_currency: {\n            type: 'string',\n            description: 'NFT collection native currency'\n          },\n          native_currency_symbol: {\n            type: 'string',\n            description: 'NFT collection native currency symbol'\n          },\n          number_of_unique_addresses: {\n            type: 'number',\n            description: 'number of unique address owning the NFTs'\n          },\n          number_of_unique_addresses_24h_percentage_change: {\n            type: 'number',\n            description: 'number of unique address owning the NFTs 24 hours percentage change'\n          },\n          one_day_average_sale_price: {\n            type: 'number',\n            description: 'NFT collection one day average sale price'\n          },\n          one_day_average_sale_price_24h_percentage_change: {\n            type: 'number',\n            description: 'NFT collection one day average sale price 24 hours percentage change'\n          },\n          one_day_sales: {\n            type: 'number',\n            description: 'NFT collection one day sales'\n          },\n          one_day_sales_24h_percentage_change: {\n            type: 'number',\n            description: 'NFT collection one day sales 24 hours percentage change'\n          },\n          symbol: {\n            type: 'string',\n            description: 'NFT collection symbol'\n          },\n          total_supply: {\n            type: 'number',\n            description: 'NFT collection total supply'\n          },\n          volume_24h: {\n            type: 'object',\n            description: 'NFT collection volume in 24 hours',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          volume_24h_percentage_change: {\n            type: 'object',\n            description: 'NFT collection volume in 24 hours percentage change',\n            properties: {\n              native_currency: {\n                type: 'number'\n              },\n              usd: {\n                type: 'number'\n              }\n            }\n          },\n          volume_in_usd_24h_percentage_change: {\n            type: 'number',\n            description: 'NFT collection volume in usd 24 hours percentage change'\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_nfts_market_chart": {
+          "type": "string",
+          "title": "Get Nfts Market Chart",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you **query historical market data of a NFT collection, including floor price, market cap, and 24hr volume, by number of days away from now**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/market_chart_get_response',\n  $defs: {\n    market_chart_get_response: {\n      type: 'object',\n      properties: {\n        floor_price_native: {\n          type: 'array',\n          description: 'NFT collection floor price in native currency',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        floor_price_usd: {\n          type: 'array',\n          description: 'NFT collection floor price in usd',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        h24_volume_native: {\n          type: 'array',\n          description: 'NFT collection volume in 24 hours in native currency',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        h24_volume_usd: {\n          type: 'array',\n          description: 'NFT collection volume in 24 hours in usd',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        market_cap_native: {\n          type: 'array',\n          description: 'NFT collection market cap in native currency',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        market_cap_usd: {\n          type: 'array',\n          description: 'NFT collection market cap in usd',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_onchain_categories": {
+          "type": "string",
+          "title": "Get Onchain Categories",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported categories on GeckoTerminal**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/category_get_response',\n  $defs: {\n    category_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  description: {\n                    type: 'string'\n                  },\n                  fdv_usd: {\n                    type: 'string'\n                  },\n                  h24_tx_count: {\n                    type: 'integer'\n                  },\n                  h24_volume_usd: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  reserve_in_usd: {\n                    type: 'string'\n                  },\n                  volume_change_percentage: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h12: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_pools_onchain_categories": {
+          "type": "string",
+          "title": "Get Pools Onchain Categories",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the pools based on the provided category ID**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/category_get_pools_response',\n  $defs: {\n    category_get_pools_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  base_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  base_token_price_quote_token: {\n                    type: 'string'\n                  },\n                  base_token_price_usd: {\n                    type: 'string'\n                  },\n                  fdv_usd: {\n                    type: 'string'\n                  },\n                  h24_tx_count: {\n                    type: 'integer'\n                  },\n                  h24_volume_usd: {\n                    type: 'string'\n                  },\n                  market_cap_usd: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  pool_created_at: {\n                    type: 'string',\n                    format: 'date-time'\n                  },\n                  price_change_percentage: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      },\n                      m15: {\n                        type: 'string'\n                      },\n                      m30: {\n                        type: 'string'\n                      },\n                      m5: {\n                        type: 'string'\n                      }\n                    }\n                  },\n                  quote_token_price_base_token: {\n                    type: 'string'\n                  },\n                  quote_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  quote_token_price_usd: {\n                    type: 'string'\n                  },\n                  reserve_in_usd: {\n                    type: 'string'\n                  }\n                }\n              },\n              relationships: {\n                type: 'object',\n                properties: {\n                  base_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  dex: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  network: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  quote_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        },\n        included: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  coingecko_coin_id: {\n                    type: 'string'\n                  },\n                  decimals: {\n                    type: 'integer'\n                  },\n                  image_url: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  symbol: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_onchain_networks": {
+          "type": "string",
+          "title": "Get Onchain Networks",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported networks on GeckoTerminal**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/network_get_response',\n  $defs: {\n    network_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  coingecko_asset_platform_id: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_networks_onchain_new_pools": {
+          "type": "string",
+          "title": "Get Networks Onchain New Pools",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the latest pools across all networks on GeckoTerminal**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/new_pool_get_response',\n  $defs: {\n    new_pool_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  base_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  base_token_price_quote_token: {\n                    type: 'string'\n                  },\n                  base_token_price_usd: {\n                    type: 'string'\n                  },\n                  community_sus_report: {\n                    type: 'number'\n                  },\n                  fdv_usd: {\n                    type: 'string'\n                  },\n                  market_cap_usd: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  pool_created_at: {\n                    type: 'string'\n                  },\n                  price_change_percentage: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      },\n                      m15: {\n                        type: 'string'\n                      },\n                      m30: {\n                        type: 'string'\n                      },\n                      m5: {\n                        type: 'string'\n                      }\n                    }\n                  },\n                  quote_token_price_base_token: {\n                    type: 'string'\n                  },\n                  quote_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  quote_token_price_usd: {\n                    type: 'string'\n                  },\n                  reserve_in_usd: {\n                    type: 'string'\n                  },\n                  sentiment_vote_negative_percentage: {\n                    type: 'number'\n                  },\n                  sentiment_vote_positive_percentage: {\n                    type: 'number'\n                  },\n                  transactions: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      h24: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m15: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m30: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m5: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  volume_usd: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      },\n                      m15: {\n                        type: 'string'\n                      },\n                      m30: {\n                        type: 'string'\n                      },\n                      m5: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                }\n              },\n              relationships: {\n                type: 'object',\n                properties: {\n                  base_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  dex: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  quote_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        },\n        included: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  coingecko_coin_id: {\n                    type: 'string'\n                  },\n                  decimals: {\n                    type: 'integer'\n                  },\n                  image_url: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  symbol: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_network_networks_onchain_new_pools": {
+          "type": "string",
+          "title": "Get Network Networks Onchain New Pools",
+          "description": "This endpoint allows you to **query all the latest pools based on provided network**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_networks_onchain_dexes": {
+          "type": "string",
+          "title": "Get Networks Onchain Dexes",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported decentralized exchanges (DEXs) based on the provided network on GeckoTerminal**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/dex_get_response',\n  $defs: {\n    dex_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  name: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_addresses_pools_networks_onchain_multi": {
+          "type": "string",
+          "title": "Get Addresses Pools Networks Onchain Multi",
+          "description": "This endpoint allows you to **query multiple pools based on the provided network and pool address**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_pools_networks_onchain_info": {
+          "type": "string",
+          "title": "Get Pools Networks Onchain Info",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query pool metadata (base and quote token details, image, socials, websites, description, contract address, etc.) based on a provided pool contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/info_get_response',\n  $defs: {\n    info_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              data: {\n                type: 'object',\n                properties: {\n                  id: {\n                    type: 'string'\n                  },\n                  attributes: {\n                    type: 'object',\n                    properties: {\n                      address: {\n                        type: 'string'\n                      },\n                      categories: {\n                        type: 'array',\n                        items: {\n                          type: 'string'\n                        }\n                      },\n                      coingecko_coin_id: {\n                        type: 'string'\n                      },\n                      description: {\n                        type: 'string'\n                      },\n                      discord_url: {\n                        type: 'string'\n                      },\n                      farcaster_url: {\n                        type: 'string'\n                      },\n                      freeze_authority: {\n                        type: 'string'\n                      },\n                      gt_categories_id: {\n                        type: 'array',\n                        items: {\n                          type: 'string'\n                        }\n                      },\n                      gt_score: {\n                        type: 'number'\n                      },\n                      gt_score_details: {\n                        type: 'object',\n                        properties: {\n                          creation: {\n                            type: 'number'\n                          },\n                          holders: {\n                            type: 'number'\n                          },\n                          info: {\n                            type: 'number'\n                          },\n                          pool: {\n                            type: 'number'\n                          },\n                          transaction: {\n                            type: 'number'\n                          }\n                        }\n                      },\n                      holders: {\n                        type: 'object',\n                        properties: {\n                          count: {\n                            type: 'integer'\n                          },\n                          distribution_percentage: {\n                            type: 'object',\n                            properties: {\n                              '11_30': {\n                                type: 'number'\n                              },\n                              '31_50': {\n                                type: 'number'\n                              },\n                              rest: {\n                                type: 'number'\n                              },\n                              top_10: {\n                                type: 'number'\n                              }\n                            }\n                          },\n                          last_updated: {\n                            type: 'string'\n                          }\n                        }\n                      },\n                      image: {\n                        type: 'object',\n                        properties: {\n                          large: {\n                            type: 'string'\n                          },\n                          small: {\n                            type: 'string'\n                          },\n                          thumb: {\n                            type: 'string'\n                          }\n                        }\n                      },\n                      image_url: {\n                        type: 'string'\n                      },\n                      is_honeypot: {\n                        anyOf: [                          {\n                            type: 'boolean'\n                          },\n                          {\n                            type: 'string'\n                          }\n                        ]\n                      },\n                      mint_authority: {\n                        type: 'string'\n                      },\n                      name: {\n                        type: 'string'\n                      },\n                      symbol: {\n                        type: 'string'\n                      },\n                      telegram_handle: {\n                        type: 'string'\n                      },\n                      twitter_handle: {\n                        type: 'string'\n                      },\n                      websites: {\n                        type: 'array',\n                        items: {\n                          type: 'string'\n                        }\n                      },\n                      zora_url: {\n                        type: 'string'\n                      }\n                    }\n                  },\n                  type: {\n                    type: 'string'\n                  }\n                }\n              }\n            }\n          }\n        },\n        included: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  base_token_address: {\n                    type: 'string'\n                  },\n                  community_sus_report: {\n                    type: 'number'\n                  },\n                  quote_token_address: {\n                    type: 'string'\n                  },\n                  sentiment_vote_negative_percentage: {\n                    type: 'number'\n                  },\n                  sentiment_vote_positive_percentage: {\n                    type: 'number'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_timeframe_pools_networks_onchain_ohlcv": {
+          "type": "string",
+          "title": "Get Timeframe Pools Networks Onchain Ohlcv",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the OHLCV chart (Open, High, Low, Close, Volume) of a pool based on the provided pool address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/ohlcv_get_timeframe_response',\n  $defs: {\n    ohlcv_get_timeframe_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                ohlcv_list: {\n                  type: 'array',\n                  items: {\n                    type: 'array',\n                    items: {\n                      type: 'number'\n                    }\n                  }\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        },\n        meta: {\n          type: 'object',\n          properties: {\n            base: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                }\n              }\n            },\n            quote: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_pools_networks_onchain_trades": {
+          "type": "string",
+          "title": "Get Pools Networks Onchain Trades",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the last 300 trades in the past 24 hours based on the provided pool address**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/trade_get_response',\n  $defs: {\n    trade_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  block_number: {\n                    type: 'integer'\n                  },\n                  block_timestamp: {\n                    type: 'string'\n                  },\n                  from_token_address: {\n                    type: 'string'\n                  },\n                  from_token_amount: {\n                    type: 'string'\n                  },\n                  kind: {\n                    type: 'string'\n                  },\n                  price_from_in_currency_token: {\n                    type: 'string'\n                  },\n                  price_from_in_usd: {\n                    type: 'string'\n                  },\n                  price_to_in_currency_token: {\n                    type: 'string'\n                  },\n                  price_to_in_usd: {\n                    type: 'string'\n                  },\n                  to_token_address: {\n                    type: 'string'\n                  },\n                  to_token_amount: {\n                    type: 'string'\n                  },\n                  tx_from_address: {\n                    type: 'string'\n                  },\n                  tx_hash: {\n                    type: 'string'\n                  },\n                  volume_in_usd: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_addresses_tokens_networks_onchain_multi": {
+          "type": "string",
+          "title": "Get Addresses Tokens Networks Onchain Multi",
+          "description": "This endpoint allows you to **query multiple tokens data based on the provided token contract addresses on a network**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_info": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Info",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query token metadata (name, symbol,  CoinGecko ID, image, socials, websites, description, etc.) based on a provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/info_get_response',\n  $defs: {\n    info_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                categories: {\n                  type: 'array',\n                  items: {\n                    type: 'string'\n                  }\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                description: {\n                  type: 'string'\n                },\n                discord_url: {\n                  type: 'string'\n                },\n                farcaster_url: {\n                  type: 'string'\n                },\n                freeze_authority: {\n                  type: 'string'\n                },\n                gt_categories_id: {\n                  type: 'array',\n                  items: {\n                    type: 'string'\n                  }\n                },\n                gt_score: {\n                  type: 'number'\n                },\n                gt_score_details: {\n                  type: 'object',\n                  properties: {\n                    creation: {\n                      type: 'number'\n                    },\n                    holders: {\n                      type: 'number'\n                    },\n                    info: {\n                      type: 'number'\n                    },\n                    pool: {\n                      type: 'number'\n                    },\n                    transaction: {\n                      type: 'number'\n                    }\n                  }\n                },\n                holders: {\n                  type: 'object',\n                  properties: {\n                    count: {\n                      type: 'integer'\n                    },\n                    distribution_percentage: {\n                      type: 'object',\n                      properties: {\n                        '11_30': {\n                          type: 'number'\n                        },\n                        '31_50': {\n                          type: 'number'\n                        },\n                        rest: {\n                          type: 'number'\n                        },\n                        top_10: {\n                          type: 'number'\n                        }\n                      }\n                    },\n                    last_updated: {\n                      type: 'string'\n                    }\n                  }\n                },\n                image: {\n                  type: 'object',\n                  properties: {\n                    large: {\n                      type: 'string'\n                    },\n                    small: {\n                      type: 'string'\n                    },\n                    thumb: {\n                      type: 'string'\n                    }\n                  }\n                },\n                image_url: {\n                  type: 'string'\n                },\n                is_honeypot: {\n                  anyOf: [                    {\n                      type: 'boolean'\n                    },\n                    {\n                      type: 'string'\n                    }\n                  ]\n                },\n                mint_authority: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                },\n                telegram_handle: {\n                  type: 'string'\n                },\n                twitter_handle: {\n                  type: 'string'\n                },\n                websites: {\n                  type: 'array',\n                  items: {\n                    type: 'string'\n                  }\n                },\n                zora_url: {\n                  type: 'string'\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_top_holders": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Top Holders",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query top token holders based on the provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/top_holder_get_response',\n  $defs: {\n    top_holder_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                holders: {\n                  type: 'array',\n                  items: {\n                    type: 'object',\n                    properties: {\n                      address: {\n                        type: 'string'\n                      },\n                      amount: {\n                        type: 'string'\n                      },\n                      label: {\n                        type: 'string'\n                      },\n                      percentage: {\n                        type: 'string'\n                      },\n                      rank: {\n                        type: 'number'\n                      },\n                      value: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                },\n                last_updated_at: {\n                  type: 'string'\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_holders_chart": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Holders Chart",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the historical token holders chart based on the provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/holders_chart_get_response',\n  $defs: {\n    holders_chart_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                token_holders_list: {\n                  type: 'array',\n                  items: {\n                    type: 'array',\n                    items: {\n                      type: 'string'\n                    }\n                  }\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        },\n        meta: {\n          type: 'object',\n          properties: {\n            token: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_timeframe_tokens_networks_onchain_ohlcv": {
+          "type": "string",
+          "title": "Get Timeframe Tokens Networks Onchain Ohlcv",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get the OHLCV chart (Open, High, Low, Close, Volume) of a token based on the provided token address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/ohlcv_get_timeframe_response',\n  $defs: {\n    ohlcv_get_timeframe_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                ohlcv_list: {\n                  type: 'array',\n                  items: {\n                    type: 'array',\n                    items: {\n                      type: 'number'\n                    }\n                  }\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        },\n        meta: {\n          type: 'object',\n          properties: {\n            base: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                }\n              }\n            },\n            quote: {\n              type: 'object',\n              properties: {\n                address: {\n                  type: 'string'\n                },\n                coingecko_coin_id: {\n                  type: 'string'\n                },\n                name: {\n                  type: 'string'\n                },\n                symbol: {\n                  type: 'string'\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_pools": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Pools",
+          "description": "This endpoint allows you to **query top pools based on the provided token contract address on a network**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_trades": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Trades",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the last 300 trades in the past 24 hours, across all pools, based on the provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/trade_get_response',\n  $defs: {\n    trade_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  block_number: {\n                    type: 'integer'\n                  },\n                  block_timestamp: {\n                    type: 'string'\n                  },\n                  from_token_address: {\n                    type: 'string'\n                  },\n                  from_token_amount: {\n                    type: 'string'\n                  },\n                  kind: {\n                    type: 'string'\n                  },\n                  pool_address: {\n                    type: 'string'\n                  },\n                  pool_dex: {\n                    type: 'string'\n                  },\n                  price_from_in_currency_token: {\n                    type: 'string'\n                  },\n                  price_from_in_usd: {\n                    type: 'string'\n                  },\n                  price_to_in_currency_token: {\n                    type: 'string'\n                  },\n                  price_to_in_usd: {\n                    type: 'string'\n                  },\n                  to_token_address: {\n                    type: 'string'\n                  },\n                  to_token_amount: {\n                    type: 'string'\n                  },\n                  tx_from_address: {\n                    type: 'string'\n                  },\n                  tx_hash: {\n                    type: 'string'\n                  },\n                  volume_in_usd: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_tokens_networks_onchain_top_traders": {
+          "type": "string",
+          "title": "Get Tokens Networks Onchain Top Traders",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query top token traders based on the provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/top_trader_get_response',\n  $defs: {\n    top_trader_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                traders: {\n                  type: 'array',\n                  items: {\n                    type: 'object',\n                    properties: {\n                      address: {\n                        type: 'string'\n                      },\n                      average_buy_price_usd: {\n                        type: 'string'\n                      },\n                      average_sell_price_usd: {\n                        type: 'string'\n                      },\n                      explorer_url: {\n                        type: 'string'\n                      },\n                      label: {\n                        type: 'string'\n                      },\n                      name: {\n                        type: 'string'\n                      },\n                      realized_pnl_usd: {\n                        type: 'string'\n                      },\n                      token_balance: {\n                        type: 'string'\n                      },\n                      total_buy_count: {\n                        type: 'integer'\n                      },\n                      total_buy_token_amount: {\n                        type: 'string'\n                      },\n                      total_buy_usd: {\n                        type: 'string'\n                      },\n                      total_sell_count: {\n                        type: 'integer'\n                      },\n                      total_sell_token_amount: {\n                        type: 'string'\n                      },\n                      total_sell_usd: {\n                        type: 'string'\n                      },\n                      type: {\n                        type: 'string'\n                      },\n                      unrealized_pnl_usd: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_pools_onchain_megafilter": {
+          "type": "string",
+          "title": "Get Pools Onchain Megafilter",
+          "description": "This endpoint allows you to **query pools based on various filters across all networks on GeckoTerminal**",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_pools_onchain_trending_search": {
+          "type": "string",
+          "title": "Get Pools Onchain Trending Search",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the trending search pools across all networks on GeckoTerminal**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/trending_search_get_response',\n  $defs: {\n    trending_search_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  fdv_usd: {\n                    type: 'string'\n                  },\n                  market_cap_usd: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  pool_created_at: {\n                    type: 'string'\n                  },\n                  reserve_in_usd: {\n                    type: 'string'\n                  },\n                  trending_rank: {\n                    type: 'number'\n                  },\n                  volume_usd: {\n                    type: 'object',\n                    properties: {\n                      h24: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                }\n              },\n              relationships: {\n                type: 'object',\n                properties: {\n                  base_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  dex: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  network: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  quote_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        },\n        included: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  coingecko_coin_id: {\n                    type: 'string'\n                  },\n                  decimals: {\n                    type: 'integer'\n                  },\n                  image_url: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  symbol: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_search_onchain_pools": {
+          "type": "string",
+          "title": "Get Search Onchain Pools",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **search for pools on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/pool_get_response',\n  $defs: {\n    pool_get_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  base_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  base_token_price_quote_token: {\n                    type: 'string'\n                  },\n                  base_token_price_usd: {\n                    type: 'string'\n                  },\n                  fdv_usd: {\n                    type: 'string'\n                  },\n                  market_cap_usd: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  pool_created_at: {\n                    type: 'string'\n                  },\n                  price_change_percentage: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      },\n                      m15: {\n                        type: 'string'\n                      },\n                      m30: {\n                        type: 'string'\n                      },\n                      m5: {\n                        type: 'string'\n                      }\n                    }\n                  },\n                  quote_token_price_base_token: {\n                    type: 'string'\n                  },\n                  quote_token_price_native_currency: {\n                    type: 'string'\n                  },\n                  quote_token_price_usd: {\n                    type: 'string'\n                  },\n                  reserve_in_usd: {\n                    type: 'string'\n                  },\n                  transactions: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      h24: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m15: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m30: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      },\n                      m5: {\n                        type: 'object',\n                        properties: {\n                          buyers: {\n                            type: 'integer'\n                          },\n                          buys: {\n                            type: 'integer'\n                          },\n                          sellers: {\n                            type: 'integer'\n                          },\n                          sells: {\n                            type: 'integer'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  volume_usd: {\n                    type: 'object',\n                    properties: {\n                      h1: {\n                        type: 'string'\n                      },\n                      h24: {\n                        type: 'string'\n                      },\n                      h6: {\n                        type: 'string'\n                      },\n                      m15: {\n                        type: 'string'\n                      },\n                      m30: {\n                        type: 'string'\n                      },\n                      m5: {\n                        type: 'string'\n                      }\n                    }\n                  }\n                }\n              },\n              relationships: {\n                type: 'object',\n                properties: {\n                  base_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  dex: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  },\n                  quote_token: {\n                    type: 'object',\n                    properties: {\n                      data: {\n                        type: 'object',\n                        properties: {\n                          id: {\n                            type: 'string'\n                          },\n                          type: {\n                            type: 'string'\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        },\n        included: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string'\n              },\n              attributes: {\n                type: 'object',\n                properties: {\n                  address: {\n                    type: 'string'\n                  },\n                  coingecko_coin_id: {\n                    type: 'string'\n                  },\n                  decimals: {\n                    type: 'integer'\n                  },\n                  image_url: {\n                    type: 'string'\n                  },\n                  name: {\n                    type: 'string'\n                  },\n                  symbol: {\n                    type: 'string'\n                  }\n                }\n              },\n              type: {\n                type: 'string'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_addresses_networks_simple_onchain_token_price": {
+          "type": "string",
+          "title": "Get Addresses Networks Simple Onchain Token Price",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **get token price based on the provided token contract address on a network**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/token_price_get_addresses_response',\n  $defs: {\n    token_price_get_addresses_response: {\n      type: 'object',\n      properties: {\n        data: {\n          type: 'object',\n          properties: {\n            id: {\n              type: 'string'\n            },\n            attributes: {\n              type: 'object',\n              properties: {\n                h24_price_change_percentage: {\n                  type: 'object',\n                  additionalProperties: true\n                },\n                h24_volume_usd: {\n                  type: 'object',\n                  additionalProperties: true\n                },\n                last_trade_timestamp: {\n                  type: 'object',\n                  additionalProperties: true\n                },\n                market_cap_usd: {\n                  type: 'object',\n                  additionalProperties: true\n                },\n                token_prices: {\n                  type: 'object',\n                  additionalProperties: true\n                },\n                total_reserve_in_usd: {\n                  type: 'object',\n                  additionalProperties: true\n                }\n              }\n            },\n            type: {\n              type: 'string'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_holding_chart_public_treasury": {
+          "type": "string",
+          "title": "Get Holding Chart Public Treasury",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query historical cryptocurrency holdings chart of public companies & governments** by Entity ID and Coin ID\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/public_treasury_get_holding_chart_response',\n  $defs: {\n    public_treasury_get_holding_chart_response: {\n      type: 'object',\n      properties: {\n        holding_value_in_usd: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        },\n        holdings: {\n          type: 'array',\n          items: {\n            type: 'array',\n            items: {\n              type: 'number'\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_transaction_history_public_treasury": {
+          "type": "string",
+          "title": "Get Transaction History Public Treasury",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you **query public companies & governments' cryptocurrency transaction history** by Entity ID\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/public_treasury_get_transaction_history_response',\n  $defs: {\n    public_treasury_get_transaction_history_response: {\n      type: 'object',\n      properties: {\n        transactions: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              average_entry_value_usd: {\n                type: 'number',\n                description: 'average entry value in usd after the transaction'\n              },\n              coin_id: {\n                type: 'string',\n                description: 'coin ID'\n              },\n              date: {\n                type: 'number',\n                description: 'transaction date in UNIX timestamp'\n              },\n              holding_balance: {\n                type: 'number',\n                description: 'total holding balance after the transaction'\n              },\n              holding_net_change: {\n                type: 'number',\n                description: 'net change in holdings after the transaction'\n              },\n              source_url: {\n                type: 'string',\n                description: 'source document URL'\n              },\n              transaction_value_usd: {\n                type: 'number',\n                description: 'transaction value in usd'\n              },\n              type: {\n                type: 'string',\n                description: 'transaction type: buy or sell',\n                enum: [                  'buy',\n                  'sell'\n                ]\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_search": {
+          "type": "string",
+          "title": "Get Search",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **search for coins, categories and markets listed on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/search_get_response',\n  $defs: {\n    search_get_response: {\n      type: 'object',\n      properties: {\n        categories: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'category ID'\n              },\n              name: {\n                type: 'string',\n                description: 'category name'\n              }\n            }\n          }\n        },\n        coins: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'coin ID'\n              },\n              api_symbol: {\n                type: 'string',\n                description: 'coin api symbol'\n              },\n              large: {\n                type: 'string',\n                description: 'coin large image url'\n              },\n              market_cap_rank: {\n                type: 'number',\n                description: 'coin market cap rank'\n              },\n              name: {\n                type: 'string',\n                description: 'coin name'\n              },\n              symbol: {\n                type: 'string',\n                description: 'coin symbol'\n              },\n              thumb: {\n                type: 'string',\n                description: 'coin thumb image url'\n              }\n            }\n          }\n        },\n        exchanges: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'exchange ID'\n              },\n              large: {\n                type: 'string',\n                description: 'exchange large image url'\n              },\n              market_type: {\n                type: 'string',\n                description: 'exchange market type'\n              },\n              name: {\n                type: 'string',\n                description: 'exchange name'\n              },\n              thumb: {\n                type: 'string',\n                description: 'exchange thumb image url'\n              }\n            }\n          }\n        },\n        icos: {\n          type: 'array',\n          items: {\n            type: 'string'\n          }\n        },\n        nfts: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'NFT collection ID'\n              },\n              name: {\n                type: 'string',\n                description: 'NFT name'\n              },\n              symbol: {\n                type: 'string',\n                description: 'NFT collection symbol'\n              },\n              thumb: {\n                type: 'string',\n                description: 'NFT collection thumb image url'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_search_trending": {
+          "type": "string",
+          "title": "Get Search Trending",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you **query trending search coins, NFTs and categories on CoinGecko in the last 24 hours**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/trending_get_response',\n  $defs: {\n    trending_get_response: {\n      type: 'object',\n      properties: {\n        categories: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'number'\n              },\n              coins_count: {\n                type: 'number',\n                description: 'category number of coins'\n              },\n              data: {\n                type: 'object',\n                properties: {\n                  market_cap: {\n                    type: 'number',\n                    description: 'category market cap'\n                  },\n                  market_cap_btc: {\n                    type: 'number',\n                    description: 'category market cap in btc'\n                  },\n                  market_cap_change_percentage_24h: {\n                    type: 'object',\n                    description: 'category market cap change percentage in 24 hours',\n                    properties: {\n                      btc: {\n                        type: 'number'\n                      },\n                      usd: {\n                        type: 'number'\n                      }\n                    }\n                  },\n                  sparkline: {\n                    type: 'string',\n                    description: 'category sparkline image url'\n                  },\n                  total_volume: {\n                    type: 'number',\n                    description: 'category total volume'\n                  },\n                  total_volume_btc: {\n                    type: 'number',\n                    description: 'category total volume in btc'\n                  }\n                }\n              },\n              market_cap_1h_change: {\n                type: 'number',\n                description: 'category market cap 1 hour change'\n              },\n              name: {\n                type: 'string',\n                description: 'category name'\n              },\n              slug: {\n                type: 'string',\n                description: 'category web slug'\n              }\n            }\n          }\n        },\n        coins: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'coin ID'\n              },\n              coin_id: {\n                type: 'number'\n              },\n              data: {\n                type: 'object',\n                properties: {\n                  content: {\n                    type: 'string'\n                  },\n                  market_cap: {\n                    type: 'string',\n                    description: 'coin market cap in usd'\n                  },\n                  market_cap_btc: {\n                    type: 'string',\n                    description: 'coin market cap in btc'\n                  },\n                  price: {\n                    type: 'number',\n                    description: 'coin price in usd'\n                  },\n                  price_btc: {\n                    type: 'string',\n                    description: 'coin price in btc'\n                  },\n                  price_change_percentage_24h: {\n                    type: 'object',\n                    description: 'coin price change percentage in 24 hours',\n                    properties: {\n                      btc: {\n                        type: 'number'\n                      },\n                      usd: {\n                        type: 'number'\n                      }\n                    }\n                  },\n                  sparkline: {\n                    type: 'string',\n                    description: 'coin sparkline image url'\n                  },\n                  total_volume: {\n                    type: 'string',\n                    description: 'coin total volume in usd'\n                  },\n                  total_volume_btc: {\n                    type: 'string',\n                    description: 'coin total volume in btc'\n                  }\n                }\n              },\n              large: {\n                type: 'string',\n                description: 'coin large image url'\n              },\n              market_cap_rank: {\n                type: 'number',\n                description: 'coin market cap rank'\n              },\n              name: {\n                type: 'string',\n                description: 'coin name'\n              },\n              price_btc: {\n                type: 'number',\n                description: 'coin price in btc'\n              },\n              score: {\n                type: 'number',\n                description: 'coin sequence in the list'\n              },\n              slug: {\n                type: 'string',\n                description: 'coin web slug'\n              },\n              small: {\n                type: 'string',\n                description: 'coin small image url'\n              },\n              symbol: {\n                type: 'string',\n                description: 'coin symbol'\n              },\n              thumb: {\n                type: 'string',\n                description: 'coin thumb image url'\n              }\n            }\n          }\n        },\n        nfts: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: {\n              id: {\n                type: 'string',\n                description: 'NFT collection ID'\n              },\n              data: {\n                type: 'object',\n                properties: {\n                  content: {\n                    type: 'string'\n                  },\n                  floor_price: {\n                    type: 'string',\n                    description: 'NFT collection floor price'\n                  },\n                  floor_price_in_usd_24h_percentage_change: {\n                    type: 'string',\n                    description: 'NFT collection floor price in usd 24 hours percentage change'\n                  },\n                  h24_average_sale_price: {\n                    type: 'string',\n                    description: 'NFT collection 24 hours average sale price'\n                  },\n                  h24_volume: {\n                    type: 'string',\n                    description: 'NFT collection volume in 24 hours'\n                  },\n                  sparkline: {\n                    type: 'string',\n                    description: 'NFT collection sparkline image url'\n                  }\n                }\n              },\n              floor_price_24h_percentage_change: {\n                type: 'number',\n                description: 'NFT collection floor price 24 hours percentage change'\n              },\n              floor_price_in_native_currency: {\n                type: 'number',\n                description: 'NFT collection floor price in native currency'\n              },\n              name: {\n                type: 'string',\n                description: 'NFT collection name'\n              },\n              native_currency_symbol: {\n                type: 'string',\n                description: 'NFT collection native currency symbol'\n              },\n              nft_contract_id: {\n                type: 'number'\n              },\n              symbol: {\n                type: 'string',\n                description: 'NFT collection symbol'\n              },\n              thumb: {\n                type: 'string',\n                description: 'NFT collection thumb image url'\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_simple_price": {
+          "type": "string",
+          "title": "Get Simple Price",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query the prices of one or more coins by using their unique Coin API IDs**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/price_get_response',\n  $defs: {\n    price_get_response: {\n      type: 'object',\n      additionalProperties: true\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_simple_supported_vs_currencies": {
+          "type": "string",
+          "title": "Get Simple Supported Vs Currencies",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query all the supported currencies on CoinGecko**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/supported_vs_currency_get_response',\n  $defs: {\n    supported_vs_currency_get_response: {\n      type: 'array',\n      items: {\n        type: 'string'\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_get_id_simple_token_price": {
+          "type": "string",
+          "title": "Get Id Simple Token Price",
+          "description": "When using this tool, always use the `jq_filter` parameter to reduce the response size and improve performance.\n\nOnly omit if you're sure you don't need the data.\n\nThis endpoint allows you to **query one or more token prices using their token contract addresses**\n\n# Response Schema\n```json\n{\n  $ref: '#/$defs/token_price_get_id_response',\n  $defs: {\n    token_price_get_id_response: {\n      type: 'object',\n      properties: {\n        last_updated_at: {\n          type: 'number',\n          description: 'last updated timestamp'\n        },\n        usd: {\n          type: 'number',\n          description: 'price in USD'\n        },\n        usd_24h_change: {\n          type: 'number',\n          description: '24hr change in USD'\n        },\n        usd_24h_vol: {\n          type: 'number',\n          description: '24hr volume in USD'\n        },\n        usd_market_cap: {\n          type: 'number',\n          description: 'market cap in USD'\n        }\n      }\n    }\n  }\n}\n```",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        },
+        "mcp_coingecko_search_docs": {
+          "type": "string",
+          "title": "Search Docs",
+          "description": "Search for documentation for how to use the client to interact with the API.",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled"
+        }
+      }
+    },
+    "api_key": {
+      "type": "string",
+      "title": "API Key (optional, overrides system key)",
+      "x-sensitive": true,
+      "description": "Your own API key for CoinGecko. Leave empty to use the system key."
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
