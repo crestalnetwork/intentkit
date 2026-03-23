@@ -1,13 +1,18 @@
 """CDP native_transfer skill - Transfer native tokens."""
 
-from decimal import Decimal
+import re
+from decimal import Decimal, InvalidOperation
 from typing import override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
+from web3 import Web3
 
 from intentkit.skills.cdp.base import CDPBaseTool
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ADDRESS_PATTERN = re.compile(r"^0x[0-9a-fA-F]{40}$")
 
 
 class NativeTransferInput(BaseModel):
@@ -46,14 +51,47 @@ class CDPNativeTransfer(CDPBaseTool):
             A message containing the transfer details and transaction hash.
         """
         try:
+            # Validate destination address format
+            if not ADDRESS_PATTERN.match(to):
+                raise ToolException(
+                    f"Error: Invalid destination address format: {to}. "
+                    "Address must be a 42-character hex string starting with '0x'."
+                )
+
+            if to.lower() == ZERO_ADDRESS:
+                raise ToolException(
+                    "Error: Cannot transfer to the zero address (0x0000...0000). "
+                    "This would result in permanent loss of funds."
+                )
+
+            # Normalize to checksum address
+            try:
+                to = Web3.to_checksum_address(to)
+            except ValueError:
+                raise ToolException(
+                    f"Error: Invalid Ethereum address: {to}. "
+                    "Please verify the destination address."
+                )
+
             # Ensure the wallet provider is CDP
             self.ensure_cdp_provider()
 
             # Get the unified wallet
             wallet = await self.get_unified_wallet()
 
-            # Convert value to Decimal
-            value_decimal = Decimal(value)
+            # Validate transfer amount
+            try:
+                value_decimal = Decimal(value)
+            except InvalidOperation:
+                raise ToolException(
+                    f"Error: Invalid amount format: {value}. "
+                    "Amount must be a valid number (e.g., '0.1')."
+                )
+
+            if value_decimal <= 0:
+                raise ToolException(
+                    f"Error: Transfer amount must be greater than zero. Got: {value}"
+                )
 
             # Convert to wei (18 decimals)
             value_wei = int(value_decimal * Decimal(10**18))
