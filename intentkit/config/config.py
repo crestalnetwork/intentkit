@@ -124,6 +124,7 @@ class Config:
         self.supabase_jwt_signing_key: str | None = self.load(
             "SUPABASE_JWT_SIGNING_KEY"
         )
+        self.supabase_jwks_url: str | None = self.load("SUPABASE_JWKS_URL")
         self.supabase_url: str | None = self.load("SUPABASE_URL")
         self.supabase_service_role_key: str | None = self.load(
             "SUPABASE_SERVICE_ROLE_KEY"

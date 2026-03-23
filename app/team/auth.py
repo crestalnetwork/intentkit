@@ -3,8 +3,9 @@
 import logging
 
 import jwt
-from fastapi import Depends, Path, Request
+from fastapi import Depends, Path
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import PyJWKClient
 
 from intentkit.config.config import config
 from intentkit.core.team.membership import check_permission
@@ -13,20 +14,35 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+# Cached JWKS client — reuses fetched keys until they expire
+_jwks_client: PyJWKClient | None = None
 
-def _get_jwt_signing_key() -> str:
-    """Get the Supabase JWT signing key from config."""
-    if not config.supabase_jwt_signing_key:
-        raise IntentKitAPIError(
-            status_code=500,
-            key="ConfigMissing",
-            message="SUPABASE_JWT_SIGNING_KEY is not configured",
-        )
-    return config.supabase_jwt_signing_key
+
+def _get_jwks_client() -> PyJWKClient:
+    """Get or create a cached PyJWKClient for Supabase JWKS verification."""
+    global _jwks_client
+    if _jwks_client is not None:
+        return _jwks_client
+
+    jwks_url = config.supabase_jwks_url
+    if not jwks_url:
+        # Derive from supabase_url if JWKS URL not explicitly set
+        if config.supabase_url:
+            jwks_url = (
+                f"{config.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+            )
+        else:
+            raise IntentKitAPIError(
+                status_code=500,
+                key="ConfigMissing",
+                message="SUPABASE_JWKS_URL or SUPABASE_URL must be configured",
+            )
+
+    _jwks_client = PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
+    return _jwks_client
 
 
 async def get_current_user(
-    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ) -> str:
     """Verify Supabase JWT and return the user ID (sub claim).
@@ -43,12 +59,23 @@ async def get_current_user(
         )
 
     # Debug mode for local development
-    if token == "debug" and request.url.hostname == "localhost":
+    if token == "debug" and config.debug:
         logger.warning("Debug token used, returning 'system' user")
         return "system"
 
-    signing_key = _get_jwt_signing_key()
+    # Legacy HS256 fallback if signing key is configured and no JWKS URL
+    if config.supabase_jwt_signing_key and not (
+        config.supabase_jwks_url or config.supabase_url
+    ):
+        return _verify_hs256(token)
 
+    return _verify_jwks(token)
+
+
+def _verify_hs256(token: str) -> str:
+    """Verify JWT using HS256 symmetric key (legacy)."""
+    signing_key = config.supabase_jwt_signing_key
+    assert signing_key is not None
     try:
         payload = jwt.decode(
             token,
@@ -77,7 +104,49 @@ async def get_current_user(
             key="InvalidToken",
             message="Token missing sub claim",
         )
+    return user_id
 
+
+def _verify_jwks(token: str) -> str:
+    """Verify JWT using JWKS (RS256) — the recommended approach."""
+    client = _get_jwks_client()
+
+    try:
+        signing_key = client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={"require": ["sub", "exp"]},
+        )
+    except jwt.ExpiredSignatureError:
+        raise IntentKitAPIError(
+            status_code=401,
+            key="TokenExpired",
+            message="Token has expired",
+        )
+    except jwt.InvalidTokenError as e:
+        logger.info("Invalid JWT token: %s", e)
+        raise IntentKitAPIError(
+            status_code=401,
+            key="InvalidToken",
+            message="Invalid token",
+        )
+    except Exception as e:
+        logger.error("JWKS verification error: %s", e)
+        raise IntentKitAPIError(
+            status_code=401,
+            key="InvalidToken",
+            message="Token verification failed",
+        )
+
+    user_id: str | None = payload.get("sub")
+    if not user_id:
+        raise IntentKitAPIError(
+            status_code=401,
+            key="InvalidToken",
+            message="Token missing sub claim",
+        )
     return user_id
 
 
