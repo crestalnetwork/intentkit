@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from intentkit.skills.dune import Config, SkillStates, available, get_skills
-from intentkit.skills.dune.base import DuneBaseTool
 from intentkit.skills.dune.execute_query import DuneExecuteQuery, DuneExecuteQueryInput
 from intentkit.skills.dune.get_query_results import (
     DuneGetQueryResults,
