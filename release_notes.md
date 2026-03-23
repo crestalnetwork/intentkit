@@ -1,17 +1,12 @@
 ## New Features
 
-- **Team API**: Full team-scoped API for agent management, autonomous scheduling, and chat — enabling multi-user teams to manage agents collaboratively via authenticated endpoints.
-- **Team Content Feed**: Teams can now subscribe to agents and receive aggregated activity and post feeds. Teams auto-subscribe to their own agents, and can subscribe to any public agent. Content is distributed in real-time via fan-out-on-write.
-- **Video Generation Skills**: New video generation skill category with support for Grok, Sora (OpenAI), Veo (Google), and MiniMax providers.
-- **MiniMax LLM Provider**: Added MiniMax as a supported LLM provider, including image generation support.
+- **Supabase Authentication & User Management**: Full Supabase-based authentication with user and team management, enabling secure multi-user access to team resources.
+- **Standalone Team API**: Comprehensive team API with endpoints for agent management, core configuration, metadata, autonomous scheduling, content feeds, and chat — ready for frontend integration.
+- **JWKS JWT Verification**: Team API now supports RS256 JWT verification via JWKS, with automatic key rotation support. Legacy HS256 signing key remains as a fallback.
 
 ## Improvements
 
-- Agent-to-agent calls now propagate attachments from the called agent's response.
-- Updated LLM model list with latest provider offerings.
+- Improved team API structure with dedicated routers for core and metadata operations.
+- Enhanced team membership and permission system.
 
-## Bug Fixes
-
-- Fixed documentation site domain configuration.
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.13.0...v0.14.0
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.14.0...v0.15.0
