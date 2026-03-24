@@ -1,11 +1,13 @@
 """Team management endpoints."""
 
+import json
 import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Body, Depends, Path, Response
 from pydantic import BaseModel, Field, TypeAdapter
 
+from intentkit.core.team.channel import get_default_channel, set_default_channel
 from intentkit.core.team.membership import (
     check_permission,
     create_invite,
@@ -196,3 +198,41 @@ async def remove_member_endpoint(
         await invalidate_user_cache(member_id)
 
     return Response(content='{"ok":true}', media_type="application/json")
+
+
+@team_management_router.get("/teams/{team_id}/channels/default")
+async def get_team_default_channel_endpoint(
+    auth: tuple[str, str] = Depends(verify_team_member),
+) -> Response:
+    """Get the default notification channel for the team."""
+    _, team_id = auth
+    channel = await get_default_channel(team_id)
+    return Response(
+        content=json.dumps({"default_channel": channel}),
+        media_type="application/json",
+    )
+
+
+class SetDefaultChannelRequest(BaseModel):
+    channel_type: str
+
+
+@team_management_router.put("/teams/{team_id}/channels/default")
+async def set_team_default_channel_endpoint(
+    body: SetDefaultChannelRequest = Body(...),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+) -> Response:
+    """Set the default notification channel. Requires admin or owner role."""
+    _, team_id = auth
+    try:
+        await set_default_channel(team_id, body.channel_type)
+    except ValueError as e:
+        raise IntentKitAPIError(
+            status_code=400,
+            key="InvalidDefaultChannel",
+            message=str(e),
+        )
+    return Response(
+        content=json.dumps({"default_channel": body.channel_type}),
+        media_type="application/json",
+    )

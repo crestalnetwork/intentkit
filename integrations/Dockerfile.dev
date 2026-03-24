@@ -1,0 +1,26 @@
+# Shared dev Dockerfile for Go integration services.
+# Uses air for hot-reload: watches source files and rebuilds on change.
+#
+# Usage in docker-compose:
+#   build:
+#     context: ./integrations
+#     dockerfile: Dockerfile.dev
+#     args:
+#       SERVICE: telegram   # or wechat
+FROM golang:1.26-alpine
+
+ARG SERVICE
+
+RUN apk add --no-cache git
+
+# Install air for hot-reload
+RUN go install github.com/air-verse/air@latest
+
+WORKDIR /app/${SERVICE}
+
+# Pre-download dependencies (will be overridden by volume mount but speeds up first build)
+COPY types/ /app/types/
+COPY ${SERVICE}/go.mod ${SERVICE}/go.sum /app/${SERVICE}/
+RUN go mod download
+
+CMD ["air"]

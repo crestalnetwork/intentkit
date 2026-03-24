@@ -21,7 +21,7 @@ from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.core.lead.engine import stream_lead
 from intentkit.core.lead.service import verify_team_membership
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
-from intentkit.models.user import User
+from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
 
 # ⚠️ INTERNAL API ONLY - DO NOT EXPOSE TO PUBLIC INTERNET ⚠️
@@ -128,6 +128,15 @@ class TeamLeadExecuteRequest(BaseModel):
     message: str
 
 
+class WechatLeadExecuteRequest(BaseModel):
+    """Request body for team lead execution from WeChat."""
+
+    team_id: str
+    wechat_user_id: str  # e.g. xxxxx@im.wechat
+    chat_id: str
+    message: str
+
+
 # ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
 @core_router.post("/lead/execute", response_model=list[ChatMessage])
 async def execute_team_lead(
@@ -159,6 +168,53 @@ async def execute_team_lead(
 
     messages: list[ChatMessage] = []
     async for chat_message in stream_lead(request.team_id, user.id, chat_msg):
+        messages.append(chat_message)
+
+    return messages
+
+
+# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
+@core_router.post("/lead/wechat/execute", response_model=list[ChatMessage])
+async def execute_wechat_team_lead(
+    request: WechatLeadExecuteRequest = Body(...),
+) -> list[ChatMessage]:
+    """Execute the team lead agent for a WeChat team channel message.
+
+    Attempts to resolve wechat_user_id → IntentKit user. If no bound user
+    is found, uses the wechat_user_id directly as the user identity
+    (supports local/single-user mode where user binding may not exist).
+    """
+    user = await User.get_by_wechat_id(request.wechat_user_id)
+    if not user:
+        # Auto-bind: set wechat_id on the team owner (local mode: "system" user)
+        from intentkit.models.team import Team
+
+        owner_id = await Team.get_owner(request.team_id)
+        if owner_id:
+            await UserUpdate.model_validate(
+                {"wechat_id": request.wechat_user_id}
+            ).patch(owner_id)
+            user = await User.get(owner_id)
+
+    if user:
+        user_id = user.id
+        await verify_team_membership(request.team_id, user_id)
+    else:
+        user_id = request.wechat_user_id
+
+    chat_msg = ChatMessageCreate(
+        id=str(XID()),
+        agent_id=request.team_id,
+        chat_id=f"wx_team:{request.team_id}:{request.chat_id}",
+        user_id=user_id,
+        author_id=user_id,
+        author_type=AuthorType.WECHAT,
+        thread_type=AuthorType.WECHAT,
+        message=request.message,
+    )
+
+    messages: list[ChatMessage] = []
+    async for chat_message in stream_lead(request.team_id, user_id, chat_msg):
         messages.append(chat_message)
 
     return messages

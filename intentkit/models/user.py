@@ -64,6 +64,7 @@ class UserTable(Base):
         Index("ix_users_x_username", "x_username"),
         Index("ix_users_telegram_username", "telegram_username"),
         Index("ix_users_telegram_id", "telegram_id"),
+        Index("ix_users_wechat_id", "wechat_id"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -92,6 +93,10 @@ class UserTable(Base):
         nullable=True,
     )
     telegram_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    wechat_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
@@ -158,6 +163,9 @@ class UserUpdate(BaseModel):
     ]
     telegram_id: Annotated[
         str | None, Field(None, description="User's Telegram numeric ID")
+    ]
+    wechat_id: Annotated[
+        str | None, Field(None, description="User's WeChat ID (e.g. xxxxx@im.wechat)")
     ]
     extra: Annotated[
         dict[str, object] | None, Field(None, description="Additional user information")
@@ -404,6 +412,30 @@ class User(UserUpdate):
                 select(user_table_class).where(
                     user_table_class.telegram_id == telegram_id
                 )
+            )
+            user = result.scalars().first()
+            if user is None:
+                return None
+            return cast(Any, user_model_class.model_validate(user))
+
+    @classmethod
+    async def get_by_wechat_id(cls, wechat_id: str) -> "User | None":
+        """Get a user by WeChat ID.
+
+        Args:
+            wechat_id: WeChat user ID (e.g. xxxxx@im.wechat)
+
+        Returns:
+            User model or None if not found
+        """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(user_table_class.wechat_id == wechat_id)
             )
             user = result.scalars().first()
             if user is None:

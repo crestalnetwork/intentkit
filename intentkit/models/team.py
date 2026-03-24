@@ -70,6 +70,10 @@ class TeamTable(Base):
         nullable=False,
         server_default=func.now(),
     )
+    default_channel: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -171,6 +175,13 @@ class TeamCreate(BaseModel):
         Field(
             default=None,
             description="Avatar URL of the team",
+        ),
+    ]
+    default_channel: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Default notification channel (telegram, wechat)",
         ),
     ]
 

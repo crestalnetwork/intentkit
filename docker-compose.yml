@@ -205,9 +205,13 @@ services:
 
   telegram:
     build:
-      context: ./integrations/telegram
+      context: ./integrations
+      dockerfile: Dockerfile.dev
       args:
-        - RELEASE=${RELEASE:-latest}
+        SERVICE: telegram
+    volumes:
+      - ./integrations/telegram:/app/telegram
+      - ./integrations/types:/app/types
     depends_on:
       db:
         condition: service_healthy
@@ -224,6 +228,35 @@ services:
       - REDIS_HOST=redis
       - INTERNAL_BASE_URL=http://api:8000
       - TG_NEW_AGENT_POLL_INTERVAL=10
+    healthcheck:
+      test: ["CMD", "find", "/tmp/healthy", "-mmin", "-2"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  wechat:
+    build:
+      context: ./integrations
+      dockerfile: Dockerfile.dev
+      args:
+        SERVICE: wechat
+    volumes:
+      - ./integrations/wechat:/app/wechat
+      - ./integrations/types:/app/types
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=intentkit
+      - INTERNAL_BASE_URL=http://api:8000
+      - WX_NEW_CHANNEL_POLL_INTERVAL=10
     healthcheck:
       test: ["CMD", "find", "/tmp/healthy", "-mmin", "-2"]
       interval: 30s

@@ -34,6 +34,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { ChatThread } from "@/types/chat";
 
+interface ExtraNavLink {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}
+
 interface ChatSidebarProps {
   agentId: string;
   activeTab?: "chat" | "activities" | "posts" | "tasks";
@@ -46,6 +52,7 @@ interface ChatSidebarProps {
   onDeleteThread: (threadId: string) => Promise<void>;
   isLoading?: boolean;
   hideNavLinks?: boolean;
+  extraNavLinks?: ExtraNavLink[];
 }
 
 type ThreadGroupKey = "today" | "yesterday" | "7days" | "30days" | "more";
@@ -70,6 +77,7 @@ export function ChatSidebar({
   onDeleteThread,
   isLoading,
   hideNavLinks,
+  extraNavLinks,
 }: ChatSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -184,6 +192,25 @@ export function ChatSidebar({
           New Chat Thread
         </Button>
       </div>
+
+      {/* Extra Navigation Links */}
+      {extraNavLinks && extraNavLinks.length > 0 && (
+        <>
+          <div className="px-3 pb-3 space-y-1">
+            {extraNavLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="border-t mx-3 mb-2" />
+        </>
+      )}
 
       {/* Navigation Links */}
       {!hideNavLinks && (

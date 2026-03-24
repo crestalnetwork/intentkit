@@ -439,6 +439,110 @@ export const chatApi = {
  * - POST /lead/chats/{chat_id}/messages - Send message (supports streaming)
  * - POST /lead/chats/{chat_id}/cancel - Cancel generation
  */
+/**
+ * Channel type definitions
+ */
+export interface TeamChannel {
+  team_id: string;
+  channel_type: string;
+  enabled: boolean;
+  config: Record<string, string> | null;
+  owner_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WechatQrCodeResponse {
+  qrcode: string;
+  qrcode_img_content: string;
+}
+
+export interface WechatQrStatusResponse {
+  status: string;
+  bot_token: string | null;
+  baseurl: string | null;
+  ilink_bot_id: string | null;
+  user_id: string | null;
+}
+
+/**
+ * Channel API functions for lead channel management
+ */
+export const channelApi = {
+  async listChannels(): Promise<TeamChannel[]> {
+    const response = await fetch(`${API_BASE}/lead/channels`);
+    if (!response.ok) {
+      throw new Error(`Failed to list channels: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async setChannel(
+    channelType: string,
+    config: Record<string, string>,
+  ): Promise<TeamChannel> {
+    const response = await fetch(`${API_BASE}/lead/channels/${channelType}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to set channel: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async deleteChannel(channelType: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/lead/channels/${channelType}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete channel: ${response.statusText}`);
+    }
+  },
+
+  async getWechatQrCode(): Promise<WechatQrCodeResponse> {
+    const response = await fetch(`${API_BASE}/wechat/qrcode`);
+    if (!response.ok) {
+      throw new Error(`Failed to get WeChat QR code: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async pollWechatQrStatus(qrcode: string): Promise<WechatQrStatusResponse> {
+    const response = await fetch(
+      `${API_BASE}/wechat/qrcode/status?qrcode=${encodeURIComponent(qrcode)}`,
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to poll WeChat QR status: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async connectWechat(credentials: {
+    bot_token: string;
+    baseurl: string;
+    ilink_bot_id: string;
+    user_id: string;
+  }): Promise<TeamChannel> {
+    const response = await fetch(`${API_BASE}/wechat/connect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to connect WeChat: ${response.statusText}`);
+    }
+    return response.json();
+  },
+};
+
 export const leadApi = {
   async listChats(): Promise<ChatThread[]> {
     const response = await fetch(`${API_BASE}/lead/chats`);

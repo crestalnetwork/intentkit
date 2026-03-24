@@ -11,57 +11,40 @@ import (
 )
 
 func (m *Manager) handleMessage(bot *telego.Bot, message telego.Message, agentID string) {
-    // Basic text filter for now
-    if message.Text == "" {
-        return
-    }
-	    
-		slog.Info("Received message", "agent_id", agentID, "chat_id", message.Chat.ID)
+	if message.Text == "" {
+		return
+	}
 
-        // Show typing action
-        _ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))
+	slog.Info("Received message", "agent_id", agentID, "chat_id", message.Chat.ID)
 
-		// Prepare payload for Core API
-		// Assuming ChatMessageCreate structure:
-		// agent_id, chat_id, user_id, author_id, author_type, thread_type, message
-		
-		userID := fmt.Sprintf("%d", message.From.ID)
-		if message.From.Username != "" {
-		    // Prefer username if available, fall back to numeric ID for reliability.
-            if message.From.Username != "" {
-                userID = message.From.Username
-            }
+	_ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))
+
+	userID := fmt.Sprintf("%d", message.From.ID)
+	if message.From.Username != "" {
+		userID = message.From.Username
+	}
+
+	payload := map[string]interface{}{
+		"id":          xid.New().String(),
+		"agent_id":    agentID,
+		"chat_id":     fmt.Sprintf("%d", message.Chat.ID),
+		"user_id":     userID,
+		"author_id":   userID,
+		"author_type": "telegram",
+		"thread_type": "telegram",
+		"message":     message.Text,
+	}
+
+	resp, err := m.apiClient.ExecuteAgent(payload)
+	if err != nil {
+		slog.Error("Failed to execute agent", "error", err)
+		_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), "Sorry, I encountered an error processing your request."))
+		return
+	}
+
+	for _, chatMsg := range resp {
+		if chatMsg.IsAgentResponse() {
+			_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), chatMsg.Message))
 		}
-
-		payload := map[string]interface{}{
-		    "id": xid.New().String(),
-			"agent_id":    agentID,
-			"chat_id":     fmt.Sprintf("%d", message.Chat.ID), // Treat simple chat ID as string
-			"user_id":     userID,
-			"author_id":   userID,
-			"author_type": "telegram",
-			"thread_type": "telegram",
-			"message":     message.Text,
-		}
-
-		// Call Core API
-		resp, err := m.apiClient.ExecuteAgent(payload)
-		if err != nil {
-			slog.Error("Failed to execute agent", "error", err)
-			_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), "Sorry, I encountered an error processing your request."))
-			return
-		}
-
-        // Process response
-        // Expecting list of messages. We typically want the last one or all new ones.
-        // Core API returns list[ChatMessage].
-        if len(resp) > 0 {
-            for _, msg := range resp {
-                if msgMap, ok := msg.(map[string]interface{}); ok {
-                    if text, ok := msgMap["message"].(string); ok && text != ""{
-                         _, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), text))
-                    }
-                }
-            }
-        }
+	}
 }

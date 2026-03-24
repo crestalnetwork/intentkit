@@ -3,18 +3,18 @@ FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
-# Install git and build tools if necessary
 RUN apk add --no-cache git
 
-# Copy module files and download dependencies
-COPY go.mod go.sum ./
+# Copy shared types package first
+COPY types/ /app/types/
+
+# Copy telegram module
+COPY telegram/go.mod telegram/go.sum /app/telegram/
+WORKDIR /app/telegram
 RUN go mod download
 
-# Copy source code
-COPY . .
+COPY telegram/ /app/telegram/
 
-# Build the binary
-# CGO_ENABLED=0 creates a statically linked binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o intent-telegram .
 
 # Run stage
@@ -25,14 +25,10 @@ ENV RELEASE=${RELEASE}
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS requests (required for Telegram API and Core API)
 RUN apk --no-cache add ca-certificates tzdata
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/intent-telegram .
+COPY --from=builder /app/telegram/intent-telegram .
 
-# Set default environment variables (can be overridden at runtime)
 ENV TG_NEW_AGENT_POLL_INTERVAL=10
 
-# Command to run the application
 CMD ["./intent-telegram"]

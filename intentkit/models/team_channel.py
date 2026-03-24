@@ -64,6 +64,24 @@ class TelegramChannelData(BaseModel):
     bot_name: str | None = None
 
 
+class WechatChannelConfig(BaseModel):
+    """Validation model for WeChat channel config."""
+
+    bot_token: str
+    baseurl: str
+    ilink_bot_id: str
+    user_id: str
+
+
+class WechatChannelData(BaseModel):
+    """Typed runtime data for a WeChat channel bot."""
+
+    bot_id: str | None = None
+    bot_name: str | None = None
+    typing_ticket: str | None = None
+    context_token: str | None = None
+
+
 class TeamChannel(BaseModel):
     """Read model for team channels."""
 

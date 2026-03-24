@@ -6,6 +6,7 @@ from app.local.health import health_router
 from app.local.lead import lead_router
 from app.local.metadata import metadata_router
 from app.local.schema import schema_router
+from app.local.wechat import wechat_router
 
 __all__ = [
     "agent_router",
@@ -16,4 +17,5 @@ __all__ = [
     "lead_router",
     "schema_router",
     "metadata_router",
+    "wechat_router",
 ]

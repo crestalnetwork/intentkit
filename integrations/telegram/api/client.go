@@ -5,17 +5,18 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/crestalnetwork/intentkit/integrations/types"
 	"github.com/go-resty/resty/v2"
 )
 
 type Client struct {
-	client *resty.Client
+	client  *resty.Client
 	baseURL string
 }
 
 func NewClient(baseURL string) *Client {
 	return &Client{
-		client: resty.New().SetTimeout(30 * time.Second),
+		client:  resty.New().SetTimeout(10 * time.Minute),
 		baseURL: baseURL,
 	}
 }
@@ -33,8 +34,8 @@ func (c *Client) CheckHealth() error {
 }
 
 // ExecuteAgent calls the /core/execute endpoint
-func (c *Client) ExecuteAgent(payload map[string]interface{}) ([]interface{}, error) {
-    var result []interface{}
+func (c *Client) ExecuteAgent(payload map[string]interface{}) ([]types.ChatMessage, error) {
+	var result []types.ChatMessage
 	resp, err := c.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(payload).
@@ -44,10 +45,9 @@ func (c *Client) ExecuteAgent(payload map[string]interface{}) ([]interface{}, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute agent: %w", err)
 	}
-	
+
 	if resp.IsError() {
-	    // Try to parse error message if available
-	    slog.Error("Core API returned error", "status", resp.StatusCode(), "body", string(resp.Body()))
+		slog.Error("Core API returned error", "status", resp.StatusCode(), "body", string(resp.Body()))
 		return nil, fmt.Errorf("core api returned error status: %d", resp.StatusCode())
 	}
 
@@ -55,8 +55,8 @@ func (c *Client) ExecuteAgent(payload map[string]interface{}) ([]interface{}, er
 }
 
 // ExecuteTeamLead calls the /core/lead/execute endpoint for team channel messages
-func (c *Client) ExecuteTeamLead(payload map[string]interface{}) ([]interface{}, error) {
-	var result []interface{}
+func (c *Client) ExecuteTeamLead(payload map[string]interface{}) ([]types.ChatMessage, error) {
+	var result []types.ChatMessage
 	resp, err := c.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(payload).

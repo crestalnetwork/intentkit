@@ -1,0 +1,20 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/intent-telegram ."
+  entrypoint = ["./tmp/intent-telegram"]
+  delay = 1000
+  exclude_dir = ["tmp"]
+  exclude_regex = ["_test\\.go"]
+  include_dir = [".", "../types"]
+  include_ext = ["go", "mod", "sum"]
+  kill_delay = "1s"
+  poll = true
+  poll_interval = 2000
+
+[log]
+  time = false
+
+[misc]
+  clean_on_exit = true

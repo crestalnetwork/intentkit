@@ -12,5 +12,8 @@
 *.out
 telegram
 
+# Air hot-reload build artifacts
+tmp/
+
 # Dependency directories (remove the comment below to include it)
 # vendor/

@@ -42,6 +42,7 @@ from app.local import (
     lead_router,
     metadata_router,
     schema_router,
+    wechat_router,
 )
 from app.services.twitter.oauth2 import twitter_oauth2_router
 from app.services.twitter.oauth2_callback import twitter_callback_router
@@ -142,6 +143,7 @@ _ = app.include_router(lead_router)
 _ = app.include_router(content_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(schema_router)
+_ = app.include_router(wechat_router)
 _ = app.include_router(core_router)
 _ = app.include_router(twitter_callback_router, include_in_schema=False)
 _ = app.include_router(twitter_oauth2_router)

@@ -11,6 +11,7 @@ import textwrap
 from epyxid import XID
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     Path,
     Query,
@@ -18,12 +19,20 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, ValidationError
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_db
 from intentkit.core.lead import stream_lead
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
+from intentkit.core.team.channel import (
+    get_default_channel,
+    get_team_channels,
+    remove_team_channel,
+    set_default_channel,
+    set_team_channel,
+)
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -32,6 +41,7 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageTable,
 )
+from intentkit.models.team_channel import TeamChannel
 from intentkit.utils.error import IntentKitAPIError
 
 from app.local.chat import (
@@ -294,3 +304,92 @@ async def cancel_lead_generation(
     """Cancel an in-progress lead generation."""
     cancelled = cancel_task(LEAD_AGENT_ID, chat_id)
     return {"cancelled": cancelled}
+
+
+# =============================================================================
+# Channel Management Endpoints
+# =============================================================================
+
+
+@lead_router.get(
+    "/lead/channels",
+    response_model=list[TeamChannel],
+    operation_id="list_lead_channels",
+    summary="List lead channel integrations",
+    tags=["Lead"],
+)
+async def list_lead_channels():
+    """Get all configured channel integrations for the lead agent."""
+    return await get_team_channels(LEAD_TEAM_ID)
+
+
+@lead_router.post(
+    "/lead/channels/{channel_type}",
+    response_model=TeamChannel,
+    operation_id="set_lead_channel",
+    summary="Set a lead channel integration",
+    tags=["Lead"],
+)
+async def set_lead_channel(
+    channel_type: str = Path(..., description="Channel type (telegram, wechat)"),
+    config: dict[str, object] = {},  # noqa: B006
+):
+    """Create or update a channel integration for the lead agent."""
+    try:
+        return await set_team_channel(
+            LEAD_TEAM_ID, channel_type, config, created_by=LEAD_USER_ID
+        )
+    except (ValueError, ValidationError) as e:
+        raise IntentKitAPIError(
+            status_code=400, key="InvalidChannelConfig", message=str(e)
+        )
+
+
+@lead_router.delete(
+    "/lead/channels/{channel_type}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="delete_lead_channel",
+    summary="Delete a lead channel integration",
+    tags=["Lead"],
+)
+async def delete_lead_channel(
+    channel_type: str = Path(..., description="Channel type (telegram, wechat)"),
+):
+    """Remove a channel integration for the lead agent."""
+    await remove_team_channel(LEAD_TEAM_ID, channel_type)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@lead_router.get(
+    "/lead/channels/default",
+    operation_id="get_lead_default_channel",
+    summary="Get the default channel for the lead agent",
+    tags=["Lead"],
+)
+async def get_lead_default_channel():
+    """Get the default notification channel type."""
+    channel = await get_default_channel(LEAD_TEAM_ID)
+    return {"default_channel": channel}
+
+
+class SetDefaultChannelRequest(BaseModel):
+    channel_type: str
+
+
+@lead_router.put(
+    "/lead/channels/default",
+    operation_id="set_lead_default_channel",
+    summary="Set the default channel for the lead agent",
+    tags=["Lead"],
+)
+async def set_lead_default_channel(
+    body: SetDefaultChannelRequest = Body(...),
+):
+    """Switch the default notification channel."""
+    try:
+        await set_default_channel(LEAD_TEAM_ID, body.channel_type)
+    except ValueError as e:
+        raise IntentKitAPIError(
+            status_code=400, key="InvalidDefaultChannel", message=str(e)
+        )
+    return {"default_channel": body.channel_type}

@@ -347,13 +347,9 @@ func (m *Manager) handleTeamMessage(bot *telego.Bot, message telego.Message, tea
 		return
 	}
 
-	if len(resp) > 0 {
-		for _, msg := range resp {
-			if msgMap, ok := msg.(map[string]interface{}); ok {
-				if text, ok := msgMap["message"].(string); ok && text != "" {
-					_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), text))
-				}
-			}
+	for _, chatMsg := range resp {
+		if chatMsg.IsAgentResponse() {
+			_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), chatMsg.Message))
 		}
 	}
 }

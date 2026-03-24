@@ -7,10 +7,12 @@ import logging
 from sqlalchemy import delete, select
 
 from intentkit.config.db import get_session
+from intentkit.models.team import TeamTable
 from intentkit.models.team_channel import (
     TeamChannel,
     TeamChannelTable,
     TelegramChannelConfig,
+    WechatChannelConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,8 @@ def _validate_channel_config(channel_type: str, config: dict[str, object]) -> No
     """Validate config for the given channel type. Raises ValueError on failure."""
     if channel_type == "telegram":
         TelegramChannelConfig.model_validate(config)
+    elif channel_type == "wechat":
+        WechatChannelConfig.model_validate(config)
     else:
         raise ValueError(f"Unknown channel type: {channel_type}")
 
@@ -27,13 +31,18 @@ def _validate_channel_config(channel_type: str, config: dict[str, object]) -> No
 async def set_team_channel(
     team_id: str, channel_type: str, config: dict[str, object], created_by: str
 ) -> TeamChannel:
-    """Create or update a team channel. Validates config per channel_type."""
+    """Create or update a team channel. Validates config per channel_type.
+
+    If this is the first channel configured for the team,
+    it will automatically become the default_channel.
+    """
     _validate_channel_config(channel_type, config)
 
     async with get_session() as db:
         existing = await db.get(
             TeamChannelTable, {"team_id": team_id, "channel_type": channel_type}
         )
+        is_new = existing is None
         if existing:
             existing.config = config
             existing.enabled = True
@@ -47,6 +56,14 @@ async def set_team_channel(
                 created_by=created_by,
             )
             db.add(record)
+
+        # Auto-set default_channel if team doesn't have one yet
+        if is_new:
+            team = await db.get(TeamTable, team_id)
+            if team and team.default_channel is None:
+                team.default_channel = channel_type
+                db.add(team)
+
         await db.commit()
 
     result = await TeamChannel.get(team_id, channel_type)
@@ -77,3 +94,38 @@ async def get_team_channels(team_id: str) -> list[TeamChannel]:
         stmt = select(TeamChannelTable).where(TeamChannelTable.team_id == team_id)
         result = await db.scalars(stmt)
         return [TeamChannel.model_validate(row) for row in result]
+
+
+async def set_default_channel(team_id: str, channel_type: str) -> None:
+    """Set the default notification channel for a team.
+
+    Validates that the channel exists and is enabled for the team.
+    """
+    async with get_session() as db:
+        # Verify the channel exists and is enabled
+        channel = await db.get(
+            TeamChannelTable, {"team_id": team_id, "channel_type": channel_type}
+        )
+        if not channel:
+            raise ValueError(
+                f"Channel '{channel_type}' is not configured for this team"
+            )
+        if not channel.enabled:
+            raise ValueError(f"Channel '{channel_type}' is not enabled for this team")
+
+        team = await db.get(TeamTable, team_id)
+        if not team:
+            raise ValueError(f"Team '{team_id}' not found")
+
+        team.default_channel = channel_type
+        db.add(team)
+        await db.commit()
+
+
+async def get_default_channel(team_id: str) -> str | None:
+    """Get the default notification channel for a team."""
+    async with get_session() as db:
+        team = await db.get(TeamTable, team_id)
+        if not team:
+            return None
+        return team.default_channel

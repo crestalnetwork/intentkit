@@ -8,6 +8,7 @@ import {
   Bot,
   User,
   AlertCircle,
+  Radio,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -447,6 +448,9 @@ export default function LeadChatPage() {
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
         hideNavLinks
+        extraNavLinks={[
+          { href: "/lead/channels", icon: Radio, label: "Channels" },
+        ]}
       />
 
       {/* Main Chat Area */}
