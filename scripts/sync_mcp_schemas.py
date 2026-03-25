@@ -118,9 +118,13 @@ async def sync_server(server_def: McpServerDef) -> bool:
     category_dir = SKILLS_DIR / server_def.name
     category_dir.mkdir(exist_ok=True)
 
-    # Write schema.json
+    # Write schema.json (preserve x-icon from existing schema if present)
     schema = generate_schema(server_def, tools)
     schema_path = category_dir / "schema.json"
+    if schema_path.exists():
+        existing = json.loads(schema_path.read_text())
+        if "x-icon" in existing:
+            schema["x-icon"] = existing["x-icon"]
     schema_path.write_text(json.dumps(schema, indent=2, ensure_ascii=False) + "\n")
     logger.info("  Wrote %s", schema_path)
 

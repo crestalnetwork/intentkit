@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "CoinGecko",
+  "x-icon": "/skills/mcp_coingecko/coingecko.svg",
   "description": "Crypto market data, prices, trends, and analytics via CoinGecko API",
   "x-tags": [
     "Crypto",
