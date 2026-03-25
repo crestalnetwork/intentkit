@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Uniswap",
+  "description": "Swap tokens and manage V3 liquidity positions on Uniswap DEX",
+  "x-icon": "/skills/uniswap/uniswap.svg",
+  "x-tags": [
+    "DeFi"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "quote": {
+          "type": "string",
+          "title": "Swap Quote",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Get swap quotes from Uniswap V3"
+        },
+        "swap": {
+          "type": "string",
+          "title": "Execute Swap",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Execute token swaps on Uniswap V3 (requires wallet)"
+        },
+        "get_positions": {
+          "type": "string",
+          "title": "View Positions",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "View Uniswap V3 liquidity positions"
+        },
+        "add_liquidity": {
+          "type": "string",
+          "title": "Add Liquidity",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Add liquidity to Uniswap V3 pools (requires wallet)"
+        },
+        "remove_liquidity": {
+          "type": "string",
+          "title": "Remove Liquidity",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "default": "disabled",
+          "description": "Remove liquidity from Uniswap V3 positions (requires wallet)"
+        }
+      },
+      "required": [
+        "quote",
+        "swap",
+        "get_positions",
+        "add_liquidity",
+        "remove_liquidity"
+      ],
+      "description": "States for each Uniswap skill"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
