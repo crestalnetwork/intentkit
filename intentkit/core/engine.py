@@ -738,6 +738,7 @@ async def stream_agent_raw(
             context=context,
             config=stream_config,
             stream_mode=["updates", "custom"],
+            durability="exit",
         ):
             this_time = time.perf_counter()
             logger.debug("stream chunk: %s", chunk, extra={"thread_id": thread_id})

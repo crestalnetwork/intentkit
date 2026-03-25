@@ -55,15 +55,19 @@ async def test_build_executor(mock_agent, mock_agent_data):
         patch("langchain.agents.create_agent") as mock_create_lc_agent,
         patch("intentkit.core.executor.get_checkpointer"),
         patch("intentkit.core.system_skills.get_system_skills", return_value=[]),
+        patch("intentkit.core.executor.pick_summarize_model", return_value="gpt-4o"),
+        patch("intentkit.core.middleware.SummarizationMiddleware"),
     ):
         mock_llm_instance = AsyncMock()
         mock_model = AsyncMock()
         mock_model.create_instance.return_value = mock_llm_instance
+        mock_model.info.context_length = 128000
+        mock_model.info.provider = "openai"
         mock_create_model.return_value = mock_model
 
         executor = await build_executor(mock_agent, mock_agent_data)
 
-        mock_create_model.assert_called_with(
+        mock_create_model.assert_any_call(
             model_name=mock_agent.model,
             temperature=0.7,
             frequency_penalty=0.0,

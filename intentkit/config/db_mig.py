@@ -98,8 +98,8 @@ async def safe_migrate(engine) -> None:
 
                         await update_table_wrapper()
 
-            # Migrate checkpoints tables
-            await migrate_checkpoints_table(conn)
+            # Checkpoint tables are managed by AsyncPostgresSaver.setup()
+            # in init_db, no need to migrate them here.
         except Exception as e:
             logger.error("Error updating database schema: %s", e)
             raise
@@ -107,116 +107,3 @@ async def safe_migrate(engine) -> None:
     logger.info("Database schema updated successfully")
 
 
-async def migrate_checkpoints_table(conn) -> None:
-    """Migrate checkpoints tables to support langgraph 2.0."""
-    tables = ["checkpoints", "checkpoint_blobs", "checkpoint_writes"]
-
-    def _get_tables(connection):
-        insp = inspect(connection)
-        return insp.get_table_names()
-
-    existing_tables = await conn.run_sync(_get_tables)
-
-    for table in tables:
-        if table not in existing_tables:
-            continue
-
-        # Step 1: Add checkpoint_ns column
-        await conn.execute(
-            text(
-                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS checkpoint_ns TEXT DEFAULT ''"
-            )
-        )
-
-        # Step 2: Check current and expected Primary Key
-        def _check_pk(connection, table_name=table):
-            insp = inspect(connection)
-            return insp.get_pk_constraint(table_name)
-
-        pk = await conn.run_sync(_check_pk)
-        current_cols = set(pk.get("constrained_columns", []))
-
-        # Expected columns depend on table
-        expected_cols = set()
-        pk_cols = ""
-        if table == "checkpoints":
-            expected_cols = {"thread_id", "checkpoint_ns"}
-            pk_cols = "thread_id, checkpoint_ns"
-        elif table == "checkpoint_blobs":
-            expected_cols = {"thread_id", "checkpoint_ns", "channel"}
-            pk_cols = "thread_id, checkpoint_ns, channel"
-        elif table == "checkpoint_writes":
-            expected_cols = {
-                "thread_id",
-                "checkpoint_ns",
-                "checkpoint_id",
-                "task_id",
-                "idx",
-            }
-            pk_cols = "thread_id, checkpoint_ns, checkpoint_id, task_id, idx"
-
-        # Step 3: Handle duplicates BEFORE dropping columns (so we can use checkpoint_id, version, etc.)
-        if current_cols != expected_cols:
-            logger.info(
-                "Migrating %s PK from %s to %s", table, current_cols, expected_cols
-            )
-
-            if table == "checkpoints" and expected_cols == {
-                "thread_id",
-                "checkpoint_ns",
-            }:
-                # Keep only the latest checkpoint based on MAX(checkpoint_id)
-                await conn.execute(
-                    text("""
-                    DELETE FROM checkpoints
-                    WHERE (thread_id, checkpoint_ns, checkpoint_id) NOT IN (
-                        SELECT thread_id, checkpoint_ns, MAX(checkpoint_id)
-                        FROM checkpoints
-                        GROUP BY thread_id, checkpoint_ns
-                    )
-                """)
-                )
-
-            elif table == "checkpoint_blobs" and expected_cols == {
-                "thread_id",
-                "checkpoint_ns",
-                "channel",
-            }:
-                # Keep only blobs referenced by checkpoints via channel_versions
-                await conn.execute(
-                    text("""
-                    DELETE FROM checkpoint_blobs cb
-                    WHERE NOT EXISTS (
-                        SELECT 1
-                        FROM checkpoints cp
-                        WHERE cp.thread_id = cb.thread_id
-                          AND cp.checkpoint_ns = cb.checkpoint_ns
-                          AND (cp.checkpoint -> 'channel_versions' ->> cb.channel) = cb.version
-                    )
-                """)
-                )
-
-        # Step 4: Update Primary Key FIRST (before dropping columns)
-        if current_cols != expected_cols:
-            if pk.get("name"):
-                await conn.execute(
-                    text(f"ALTER TABLE {table} DROP CONSTRAINT {pk['name']}")
-                )
-
-            await conn.execute(text(f"ALTER TABLE {table} ADD PRIMARY KEY ({pk_cols})"))
-
-        # Step 5: Drop columns that ShallowPostgresSaver doesn't use
-        # (Can only drop AFTER removing from PK)
-        if table == "checkpoints":
-            await conn.execute(
-                text("ALTER TABLE checkpoints DROP COLUMN IF EXISTS checkpoint_id")
-            )
-            await conn.execute(
-                text(
-                    "ALTER TABLE checkpoints DROP COLUMN IF EXISTS parent_checkpoint_id"
-                )
-            )
-        elif table == "checkpoint_blobs":
-            await conn.execute(
-                text("ALTER TABLE checkpoint_blobs DROP COLUMN IF EXISTS version")
-            )

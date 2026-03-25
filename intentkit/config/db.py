@@ -1,9 +1,10 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 from urllib.parse import quote_plus
 
-from langgraph.checkpoint.postgres.shallow import AsyncShallowPostgresSaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg import OperationalError
 from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
@@ -11,9 +12,45 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from intentkit.config.db_mig import safe_migrate
 
+logger = logging.getLogger(__name__)
+
 engine: AsyncEngine | None = None
 connection_pool: AsyncConnectionPool | None = None
-_checkpointer: AsyncShallowPostgresSaver | None = None
+_checkpointer: AsyncPostgresSaver | None = None
+
+
+async def _migrate_shallow_to_full(saver: AsyncPostgresSaver) -> None:
+    """Drop shallow-format checkpoint tables so AsyncPostgresSaver.setup() can recreate them.
+
+    AsyncShallowPostgresSaver used a different schema (no checkpoint_id column,
+    different primary keys). The two migration histories are incompatible, so the
+    cleanest path is to drop all checkpoint tables and let setup() rebuild from
+    scratch. Checkpoint data is ephemeral conversation state, safe to discard.
+    """
+    async with saver._cursor() as cur:  # pyright: ignore[reportPrivateUsage]
+        # Check if the old shallow schema is present
+        row = await (
+            await cur.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_name = 'checkpoints'"
+            )
+        ).fetchone()
+        if row is None:
+            return  # No checkpoint tables at all — fresh DB
+
+        col = await (
+            await cur.execute(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = 'checkpoints' AND column_name = 'checkpoint_id'"
+            )
+        ).fetchone()
+        if col is not None:
+            return  # Already has checkpoint_id — full schema, nothing to do
+
+        logger.info("Migrating checkpoint tables from shallow to full format …")
+        await cur.execute("DROP TABLE IF EXISTS checkpoint_writes CASCADE")
+        await cur.execute("DROP TABLE IF EXISTS checkpoint_blobs CASCADE")
+        await cur.execute("DROP TABLE IF EXISTS checkpoints CASCADE")
+        await cur.execute("DROP TABLE IF EXISTS checkpoint_migrations CASCADE")
 
 
 async def check_connection(conn):
@@ -60,7 +97,7 @@ async def init_db(
         pool_size: Database connection pool size (default: 3)
     """
     global engine, connection_pool, _checkpointer
-    # Initialize psycopg pool and AsyncShallowPostgresSaver if not already initialized
+    # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
     if connection_pool is None:
         if host:
             # Handle local PostgreSQL without authentication
@@ -82,14 +119,17 @@ async def init_db(
                 check=check_connection,
                 # Set connection max lifetime to prevent stale connections
                 max_lifetime=3600,  # 1 hour
+                open=False,
             )
+            await pool.open()
             connection_pool = pool  # pyright: ignore[reportAssignmentType]
-            _checkpointer = AsyncShallowPostgresSaver(pool)  # pyright: ignore[reportArgumentType]
+            _checkpointer = AsyncPostgresSaver(pool)  # pyright: ignore[reportArgumentType]
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
-                async with AsyncShallowPostgresSaver.from_conn_string(
+                async with AsyncPostgresSaver.from_conn_string(
                     conn_string
                 ) as saver:
+                    await _migrate_shallow_to_full(saver)
                     await saver.setup()
         else:
             # For in-memory, we don't need a pool, but we need to handle it if requested
@@ -177,11 +217,11 @@ def get_connection_pool() -> AsyncConnectionPool:
     return connection_pool
 
 
-def get_checkpointer() -> AsyncShallowPostgresSaver:
-    """Get the AsyncShallowPostgresSaver instance.
+def get_checkpointer() -> AsyncPostgresSaver:
+    """Get the AsyncPostgresSaver instance.
 
     Returns:
-        AsyncShallowPostgresSaver: The AsyncShallowPostgresSaver instance
+        AsyncPostgresSaver: The AsyncPostgresSaver instance
     """
     if _checkpointer is None:
         raise RuntimeError("Database checkpointer not initialized. Call init_db first.")

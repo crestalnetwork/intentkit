@@ -12,19 +12,19 @@ def test_generate_tx_confirm_string_prefix_and_length():
 
 
 def test_generate_tx_confirm_string_uniqueness(monkeypatch):
-    class DummyRandom:
-        def __init__(self):
-            self.calls = -1
-            self.values = list(string.ascii_letters + string.digits)
+    """Test deterministic output by patching secrets.choice."""
+    call_count = 0
+    chars = list(string.ascii_letters + string.digits)
 
-        def choice(self, seq):
-            self.calls += 1
-            return seq[self.calls % len(seq)]
+    def fake_choice(seq):
+        nonlocal call_count
+        result = seq[call_count % len(seq)]
+        call_count += 1
+        return result
 
-    dummy = DummyRandom()
-    monkeypatch.setattr("intentkit.utils.random.random", dummy)
+    monkeypatch.setattr("intentkit.utils.random.secrets.choice", fake_choice)
 
     token = generate_tx_confirm_string(4)
 
-    expected = "tx-" + "".join(dummy.values[i] for i in range(4))
+    expected = "tx-" + "".join(chars[i] for i in range(4))
     assert token == expected

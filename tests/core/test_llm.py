@@ -14,9 +14,6 @@ def test_llm_model_filtering():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = None
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -31,9 +28,7 @@ def test_llm_model_filtering():
             LLMProvider.DEEPSEEK,
             LLMProvider.XAI,
             LLMProvider.OPENROUTER,
-            LLMProvider.ETERNAL,
-            LLMProvider.REIGENT,
-            LLMProvider.VENICE,
+            LLMProvider.MINIMAX,
         }
 
         for model in models.values():
@@ -49,9 +44,6 @@ def test_llm_model_filtering():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = None
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -75,9 +67,6 @@ def test_llm_model_filtering():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = None
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -98,9 +87,6 @@ def test_llm_model_filtering():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = "or-test-key"
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -125,9 +111,6 @@ def test_llm_model_filtering():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = "or-test-key"
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
@@ -155,9 +138,6 @@ def test_model_id_index_suffix_matching():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = "or-test-key"
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
         mock_config.minimax_api_key = None
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None

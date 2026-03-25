@@ -39,7 +39,7 @@ async def clear_thread_memory(agent_id: str, chat_id: str) -> bool:
         thread_id = f"{agent_id}-{chat_id}"
 
         # Delete directly from the checkpoint tables
-        # This is necessary because AsyncShallowPostgresSaver doesn't implement adelete_thread
+        # Delete directly from the checkpoint tables for reliability
         async with get_session() as db:
             deletion_param = {"thread_id": thread_id}
             await db.execute(

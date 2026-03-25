@@ -177,13 +177,14 @@ def test_csv_loads_cached_input_price_for_claude():
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = "or-test-key"
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = load_default_llm_models()
 
-    claude = models.get("anthropic/claude-sonnet-4.6")
+    claude = models.get("openrouter:anthropic/claude-sonnet-4.6")
     assert claude is not None
     assert claude.cached_input_price == Decimal("0.3")
     assert claude.input_price == Decimal("3")
@@ -197,31 +198,33 @@ def test_csv_cached_input_price_none_for_deepseek():
         mock_config.deepseek_api_key = "ds-test-key"
         mock_config.xai_api_key = None
         mock_config.openrouter_api_key = None
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = load_default_llm_models()
 
-    deepseek = models.get("deepseek-chat")
+    deepseek = models.get("deepseek:deepseek-chat")
     assert deepseek is not None
     assert deepseek.cached_input_price is None
 
 
 def test_csv_cached_input_price_for_grok4():
-    """Grok 4 should have cached_input_price=0.75."""
+    """Grok 4.20 should have cached_input_price=0.2."""
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None
         mock_config.deepseek_api_key = None
         mock_config.xai_api_key = "xai-test-key"
         mock_config.openrouter_api_key = None
-        mock_config.eternal_api_key = None
-        mock_config.reigent_api_key = None
-        mock_config.venice_api_key = None
+        mock_config.minimax_api_key = None
+        mock_config.openai_compatible_api_key = None
+        mock_config.openai_compatible_base_url = None
+        mock_config.openai_compatible_model = None
 
         models = load_default_llm_models()
 
-    grok4 = models.get("grok-4")
+    grok4 = models.get("xai:grok-4.20-beta-0309-reasoning")
     assert grok4 is not None
-    assert grok4.cached_input_price == Decimal("0.75")
+    assert grok4.cached_input_price == Decimal("0.2")

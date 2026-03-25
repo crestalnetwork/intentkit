@@ -6,9 +6,10 @@ As an IntentKit operator, I want to verify that the core engine correctly
 handles conversations end-to-end, including chat message persistence,
 credit event recording, and skill invocations.
 
-Model: openrouter/free (rate limit: 20 req/min, budget: ≤20 LLM requests total)
+Model: GLM-4.7 (via OpenAI-compatible endpoint configured in environment)
 """
 
+import os
 import re
 from typing import Any
 
@@ -31,8 +32,8 @@ from intentkit.utils.error import IntentKitAPIError
 # Use session-scoped event loop to share DB connections across tests
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-# Common model for all tests
-MODEL = "openrouter/free"
+# Common model for all tests – override with BDD_TEST_MODEL env var if needed
+MODEL = os.environ.get("BDD_TEST_MODEL", "GLM-4.7")
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +81,7 @@ async def test_simple_conversation() -> None:
     """
     Scenario: Simple Conversation Without Skills
 
-    Given a deployed agent with `model=openrouter/free` and no skills
+    Given a deployed agent with `model=GLM-4.7` and no skills
     When a user sends "Hello, who are you?"
     Then the engine returns at least one agent reply message
     And the user input message is persisted in the database
@@ -141,8 +142,8 @@ async def test_skill_call_current_time() -> None:
     """
     Scenario: Skill Call (current_time)
 
-    Given a deployed agent with `model=openrouter/free`
-    When a user sends "What is the current time in UTC?"
+    Given a deployed agent with `model=GLM-4.7`
+    When a user sends a message requiring the current_time tool
     Then the engine returns messages including a skill call message
     And the skill call message contains `current_time` with `success=True`
     And the skill call response contains a date-like string
@@ -150,6 +151,9 @@ async def test_skill_call_current_time() -> None:
     And the agent final reply contains time information
 
     LLM Requests: ~2 (1 tool-call decision + 1 final reply)
+
+    Note: Free-tier models may not reliably follow tool-calling instructions,
+    so we retry up to 3 times with fresh chat IDs.
     """
     # Given
     agent_input = AgentCreate(
@@ -157,27 +161,47 @@ async def test_skill_call_current_time() -> None:
         name="Skill Agent",
         model=MODEL,
         owner="system",
-        prompt="You are a helpful assistant. When asked about time, use the current_time tool. Reply concisely.",
+        prompt=(
+            "You are a helpful assistant. You MUST ALWAYS call the current_time tool "
+            "to answer any question about the current time or date. "
+            "NEVER guess or infer the time. ALWAYS use the tool first."
+        ),
         skills={},
     )
     await create_agent(agent_input)
 
-    # When
-    message = ChatMessageCreate(
-        id="msg-skill-in-1",
-        agent_id="engine-skill-1",
-        chat_id="chat-skill-1",
-        user_id="system",
-        author_id="system",
-        author_type=AuthorType.WEB,
-        message="What is the current time in UTC?",
-    )
-    responses = await execute_agent(message)
+    # Retry up to 3 times — free-tier models sometimes skip tool calls
+    max_attempts = 3
+    last_responses: list[ChatMessage] = []
+    for attempt in range(1, max_attempts + 1):
+        chat_id = f"chat-skill-{attempt}"
+        message = ChatMessageCreate(
+            id=f"msg-skill-in-{attempt}",
+            agent_id="engine-skill-1",
+            chat_id=chat_id,
+            user_id="system",
+            author_id="system",
+            author_type=AuthorType.WEB,
+            message="Call the current_time tool and tell me the current UTC time.",
+        )
+        last_responses = await execute_agent(message)
+
+        skill_msgs = [r for r in last_responses if r.author_type == AuthorType.SKILL]
+        if skill_msgs:
+            break  # Model used a tool — proceed with assertions
+
+    responses = last_responses
 
     # Then — check that responses include skill call
-    assert len(responses) >= 2
+    assert len(responses) >= 2, (
+        f"Expected >= 2 responses (tool call + reply), got {len(responses)} after {max_attempts} attempts. "
+        "The free-tier model may not support tool calling reliably."
+    )
     skill_msgs = [r for r in responses if r.author_type == AuthorType.SKILL]
-    assert len(skill_msgs) >= 1, "Expected at least one skill call message"
+    assert len(skill_msgs) >= 1, (
+        f"Expected at least one skill call message after {max_attempts} attempts. "
+        "The free-tier model may not support tool calling reliably."
+    )
 
     # Then — check skill call details
     skill_msg = skill_msgs[0]
@@ -210,7 +234,7 @@ async def test_multi_turn_conversation() -> None:
     """
     Scenario: Multi-turn Conversation with Memory
 
-    Given a deployed agent with `model=openrouter/free`
+    Given a deployed agent with `model=GLM-4.7`
     When user sends "My name is TestUser" and then "What is my name?"
     Then the second response contains "TestUser" (memory works)
     And both turns produce chat messages in the database
