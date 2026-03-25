@@ -143,7 +143,7 @@ jobs:
       - name: Build and push Telegram Integration
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
         with:
-          context: ./integrations/telegram
+          context: ./integrations
           file: ./integrations/telegram/Dockerfile
           build-args: |
             RELEASE=${{ github.event.release.tag_name || 'latest'}}
@@ -152,6 +152,33 @@ jobs:
           labels: ${{ steps.meta-telegram.outputs.labels }}
           cache-from: type=gha,scope=intentkit-telegram
           cache-to: type=gha,mode=max,scope=intentkit-telegram
+
+      - name: Docker meta for WeChat Integration
+        id: meta-wechat
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-wechat
+          tags: |
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.event_name == 'release' && github.event.action == 'prereleased' }}
+            type=raw,value=prod,enable=${{ github.event_name == 'release' && github.event.action == 'released' }}
+
+      - name: Build and push WeChat Integration
+        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        with:
+          context: ./integrations
+          file: ./integrations/wechat/Dockerfile
+          build-args: |
+            RELEASE=${{ github.event.release.tag_name || 'latest'}}
+          push: true
+          tags: ${{ steps.meta-wechat.outputs.tags }}
+          labels: ${{ steps.meta-wechat.outputs.labels }}
+          cache-from: type=gha,scope=intentkit-wechat
+          cache-to: type=gha,mode=max,scope=intentkit-wechat
 
       - name: Build Success Notification
         if: ${{ success() }}
