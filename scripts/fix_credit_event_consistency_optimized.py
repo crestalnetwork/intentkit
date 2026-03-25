@@ -23,7 +23,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +66,7 @@ class OptimizedCreditEventConsistencyFixer:
 
     def check_record_consistency(
         self, record: CreditEventTable
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """Check if a single record is consistent.
 
         Returns:
@@ -130,7 +130,7 @@ class OptimizedCreditEventConsistencyFixer:
 
     def calculate_detailed_amounts(
         self, record: CreditEventTable
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Calculate the 12 detailed amount fields using the same logic as expense_skill.
 
         Returns:
@@ -262,8 +262,8 @@ class OptimizedCreditEventConsistencyFixer:
         }
 
     async def process_records_batch(
-        self, session: AsyncSession, records: List[CreditEventTable]
-    ) -> Tuple[List[Dict[str, Any]], int, int]:
+        self, session: AsyncSession, records: list[CreditEventTable]
+    ) -> tuple[list[dict[str, Any]], int, int]:
         """Process a batch of records and return updates to be applied.
 
         Returns:
@@ -296,9 +296,7 @@ class OptimizedCreditEventConsistencyFixer:
 
         return updates, fixed_count, failed_count
 
-    def _process_single_record(
-        self, record: CreditEventTable
-    ) -> Optional[Dict[str, Any]]:
+    def _process_single_record(self, record: CreditEventTable) -> dict[str, Any] | None:
         """Process a single record (CPU-intensive part).
 
         Returns:
@@ -313,8 +311,8 @@ class OptimizedCreditEventConsistencyFixer:
             raise Exception(f"Error processing record {record.id}: {str(e)}")
 
     async def batch_update_records(
-        self, session: AsyncSession, updates: List[Dict[str, Any]]
-    ) -> Tuple[int, int]:
+        self, session: AsyncSession, updates: list[dict[str, Any]]
+    ) -> tuple[int, int]:
         """Apply batch updates to the database.
 
         Returns:

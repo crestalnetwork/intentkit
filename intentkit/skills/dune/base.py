@@ -122,7 +122,7 @@ class DuneBaseTool(IntentKitSkill):
             params={"limit": limit},
         )
 
-    def _format_results(self, result_json: dict[str, Any], query_id: int | str) -> str:
+    def format_results(self, result_json: dict[str, Any], query_id: int | str) -> str:
         """Format Dune query results as readable text.
 
         Args:

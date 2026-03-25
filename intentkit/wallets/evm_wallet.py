@@ -10,7 +10,7 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, cast
 
-from eth_typing import ChecksumAddress, HexStr
+from eth_typing import HexStr
 from web3 import AsyncWeb3
 from web3.types import TxParams, Wei
 
@@ -138,7 +138,7 @@ class EvmWallet:
             return await self._provider.get_balance()
 
         checksum_addr = AsyncWeb3.to_checksum_address(self.address)
-        return await self._w3.eth.get_balance(cast(ChecksumAddress, checksum_addr))
+        return await self._w3.eth.get_balance(checksum_addr)
 
     async def send_transaction(
         self,

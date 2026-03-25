@@ -12,7 +12,7 @@ from intentkit.utils.error import IntentKitAPIError
 @pytest.mark.asyncio
 async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
     now = datetime.now()
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-safe-1",
         name="Test Agent",
         description="A test agent",
@@ -35,7 +35,7 @@ async def test_process_agent_wallet_privy_requires_privy_did_owner(monkeypatch):
         AgentData,
         "get",
         AsyncMock(
-            side_effect=lambda _id: AgentData(  # pyright: ignore[reportCallIssue]
+            side_effect=lambda _id: AgentData(
                 id=_id,
                 created_at=now,
                 updated_at=now,

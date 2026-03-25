@@ -20,7 +20,7 @@ class MiniMaxImageBase(ImageBaseTool):
     """Base class for MiniMax image generation skills."""
 
     @override
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         return bool(config.minimax_api_key)
 
     @override

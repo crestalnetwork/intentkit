@@ -22,7 +22,7 @@ class LLMModelInfoWithProviderName(LLMModelInfo):
     summary="Get all LLM models",
     description="Returns a list of all available LLM models in the system",
 )
-async def get_llms(db: AsyncSession = Depends(get_db)):  # pyright: ignore[reportUnknownParameterType]
+async def get_llms(db: AsyncSession = Depends(get_db)):
     """
     Get all LLM models available in the system.
 

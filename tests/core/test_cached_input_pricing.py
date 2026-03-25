@@ -6,11 +6,11 @@ from unittest.mock import patch
 import pytest
 
 import intentkit.models.llm as llm_module
-from intentkit.core.engine import _extract_cached_input_tokens
-from intentkit.models.llm import LLMModelInfo, LLMProvider, _load_default_llm_models
+from intentkit.core.engine import extract_cached_input_tokens
+from intentkit.models.llm import LLMModelInfo, LLMProvider, load_default_llm_models
 
 # ---------------------------------------------------------------------------
-# _extract_cached_input_tokens
+# extract_cached_input_tokens
 # ---------------------------------------------------------------------------
 
 
@@ -23,12 +23,12 @@ class _Msg:
 
 def test_extract_cached_no_usage_metadata():
     msg = _Msg(usage_metadata=None)
-    assert _extract_cached_input_tokens(msg) == 0
+    assert extract_cached_input_tokens(msg) == 0
 
 
 def test_extract_cached_no_input_token_details():
     msg = _Msg(usage_metadata={"input_tokens": 100, "output_tokens": 50})
-    assert _extract_cached_input_tokens(msg) == 0
+    assert extract_cached_input_tokens(msg) == 0
 
 
 def test_extract_cached_empty_input_token_details():
@@ -38,7 +38,7 @@ def test_extract_cached_empty_input_token_details():
             "input_token_details": {},
         }
     )
-    assert _extract_cached_input_tokens(msg) == 0
+    assert extract_cached_input_tokens(msg) == 0
 
 
 def test_extract_cached_with_cache_read():
@@ -48,7 +48,7 @@ def test_extract_cached_with_cache_read():
             "input_token_details": {"cache_read": 150, "audio": 10},
         }
     )
-    assert _extract_cached_input_tokens(msg) == 150
+    assert extract_cached_input_tokens(msg) == 150
 
 
 def test_extract_cached_object_without_attribute():
@@ -57,7 +57,7 @@ def test_extract_cached_object_without_attribute():
     class NoMeta:
         pass
 
-    assert _extract_cached_input_tokens(NoMeta()) == 0
+    assert extract_cached_input_tokens(NoMeta()) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ def _make_model_info(**overrides) -> LLMModelInfo:
 async def test_calculate_cost_no_cached_tokens(monkeypatch):
     """All input tokens billed at input_price when no cache hits."""
     model = _make_model_info()
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     # 1000 input + 500 output, 0 cached
     # input:  1000 * 1000 * 3 / 1_000_000 = 3
@@ -104,7 +104,7 @@ async def test_calculate_cost_no_cached_tokens(monkeypatch):
 async def test_calculate_cost_all_cached(monkeypatch):
     """When all input tokens are cached, cached_input_price applies to all."""
     model = _make_model_info()
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     # 1000 input (all cached), 500 output
     # cached: 1000 * 1000 * 0.3 / 1_000_000 = 0.3
@@ -117,7 +117,7 @@ async def test_calculate_cost_all_cached(monkeypatch):
 async def test_calculate_cost_partial_cached(monkeypatch):
     """Split billing: cached portion at cached_input_price, rest at input_price."""
     model = _make_model_info()
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     # 1000 input (300 cached, 700 non-cached), 0 output
     # non-cached: 1000 * 700 * 3 / 1_000_000   = 2.1
@@ -131,7 +131,7 @@ async def test_calculate_cost_partial_cached(monkeypatch):
 async def test_calculate_cost_fallback_when_no_cached_price(monkeypatch):
     """When cached_input_price is None, cached tokens are billed at input_price."""
     model = _make_model_info(cached_input_price=None)
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     cost_all_cached = await model.calculate_cost(1000, 0, cached_input_tokens=1000)
     cost_none_cached = await model.calculate_cost(1000, 0, cached_input_tokens=0)
@@ -144,7 +144,7 @@ async def test_calculate_cost_fallback_when_no_cached_price(monkeypatch):
 async def test_calculate_cost_backward_compatible(monkeypatch):
     """calculate_cost without cached_input_tokens still works (default=0)."""
     model = _make_model_info()
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     cost = await model.calculate_cost(1000, 500)
     # Same as no_cached_tokens case
@@ -155,7 +155,7 @@ async def test_calculate_cost_backward_compatible(monkeypatch):
 async def test_calculate_cost_cached_exceeds_input_clamps_to_zero(monkeypatch):
     """If cached_input_tokens > input_tokens, non-cached clamps to 0 (no negative)."""
     model = _make_model_info()
-    monkeypatch.setattr(llm_module, "_credit_per_usdc", Decimal("1000"))
+    monkeypatch.setattr(llm_module, "credit_per_usdc", Decimal("1000"))
 
     # Pass more cached than total input — should not go negative
     cost = await model.calculate_cost(100, 0, cached_input_tokens=200)
@@ -181,7 +181,7 @@ def test_csv_loads_cached_input_price_for_claude():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
     claude = models.get("anthropic/claude-sonnet-4.6")
     assert claude is not None
@@ -201,7 +201,7 @@ def test_csv_cached_input_price_none_for_deepseek():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
     deepseek = models.get("deepseek-chat")
     assert deepseek is not None
@@ -220,7 +220,7 @@ def test_csv_cached_input_price_for_grok4():
         mock_config.reigent_api_key = None
         mock_config.venice_api_key = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
     grok4 = models.get("grok-4")
     assert grok4 is not None

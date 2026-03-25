@@ -18,7 +18,7 @@ import re
 import textwrap
 import time
 import traceback
-from typing import Any, cast
+from typing import Any
 
 import httpcore
 import httpx
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 _MAX_RAW_CHUNKS = 200
 
 
-def _extract_thinking_content(msg: Any) -> str | None:
+def extract_thinking_content(msg: Any) -> str | None:
     """Extract reasoning/thinking content from a LangChain AIMessage.
 
     Handles multiple provider formats:
@@ -119,7 +119,7 @@ def _extract_thinking_content(msg: Any) -> str | None:
     return "\n\n".join(texts) if texts else None
 
 
-def _extract_text_content(content: object) -> str:
+def extract_text_content(content: object) -> str:
     if isinstance(content, list):
         texts: list[str] = []
         for item in content:
@@ -142,7 +142,7 @@ def _extract_text_content(content: object) -> str:
     return ""
 
 
-def _extract_cached_input_tokens(msg: Any) -> int:
+def extract_cached_input_tokens(msg: Any) -> int:
     """Extract cache_read token count from a LangChain message's usage_metadata."""
     if not hasattr(msg, "usage_metadata") or not msg.usage_metadata:
         return 0
@@ -152,7 +152,7 @@ def _extract_cached_input_tokens(msg: Any) -> int:
     return details.get("cache_read", 0)
 
 
-def _count_web_searches(msg: Any, provider: LLMProvider) -> int:
+def count_web_searches(msg: Any, provider: LLMProvider) -> int:
     """Count web search calls in the model response by provider."""
     additional = getattr(msg, "additional_kwargs", None) or {}
     response_meta = getattr(msg, "response_metadata", None) or {}
@@ -331,8 +331,8 @@ async def _handle_model_chunk(
     if has_tools:
         in_tools_phase = True
         cached_tool_step = msg
-    content = _extract_text_content(msg.content) if hasattr(msg, "content") else ""
-    thinking = _extract_thinking_content(msg)
+    content = extract_text_content(msg.content) if hasattr(msg, "content") else ""
+    thinking = extract_thinking_content(msg)
     # Yield standalone thinking message for tool-call chunks
     if has_tools and thinking:
         thinking_message_create = ChatMessageCreate(
@@ -365,7 +365,7 @@ async def _handle_model_chunk(
             thinking=thinking,
             input_tokens=usage.get("input_tokens", 0),
             output_tokens=usage.get("output_tokens", 0),
-            cached_input_tokens=_extract_cached_input_tokens(msg),
+            cached_input_tokens=extract_cached_input_tokens(msg),
             time_cost=this_time - last,
         )
         last = this_time
@@ -376,7 +376,7 @@ async def _handle_model_chunk(
                 chat_message_create.cached_input_tokens,
             )
 
-            search_count = _count_web_searches(msg, model.provider)
+            search_count = count_web_searches(msg, model.provider)
             if search_count > 0:
                 search_cost = await calculate_search_cost(model.provider, search_count)
                 logger.info(
@@ -485,7 +485,7 @@ async def _handle_tools_chunk(
             tool_usage.get("output_tokens", 0) if have_first_call_in_cache else 0
         ),
         cached_input_tokens=(
-            _extract_cached_input_tokens(cached_tool_step)
+            extract_cached_input_tokens(cached_tool_step)
             if have_first_call_in_cache
             else 0
         ),
@@ -520,7 +520,7 @@ async def _handle_tools_chunk(
                 payer or "",
                 skill_message_create.id,
                 user_message.id,
-                cast(str, skill_call.get("id", "")),
+                skill_call.get("id", ""),
                 skill_call["name"],
                 skill_price,
                 agent,

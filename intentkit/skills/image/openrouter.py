@@ -13,12 +13,12 @@ class OpenRouterImageBase(ImageBaseTool):
     """Base class for OpenRouter-only image generation skills."""
 
     @override
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         return False
 
     @override
     async def _generate_native(self, prompt: str, images: list[bytes] | None) -> bytes:
-        # Should never be called since _has_native_key returns False
+        # Should never be called since has_native_key returns False
         raise NotImplementedError
 
 

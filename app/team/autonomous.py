@@ -15,7 +15,7 @@ from intentkit.models.agent.autonomous import (
 )
 
 from app.local.autonomous import AutonomousResponse
-from app.team.agent import _get_team_agent
+from app.team.agent import get_team_agent
 from app.team.auth import verify_team_member
 
 team_autonomous_router = APIRouter()
@@ -35,7 +35,7 @@ async def list_autonomous(
 ) -> list[AutonomousResponse]:
     """List all autonomous tasks for a team agent."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
     tasks = agent.autonomous or []
     return [AutonomousResponse.from_model(task) for task in tasks]
 
@@ -56,7 +56,7 @@ async def add_autonomous(
 ) -> AutonomousResponse:
     """Add a new autonomous task to a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(agent_id, team_id)
+    await get_team_agent(agent_id, team_id)
     added_task = await add_autonomous_task(agent_id, task_request)
     return AutonomousResponse.from_model(added_task)
 
@@ -77,7 +77,7 @@ async def update_autonomous(
 ) -> AutonomousResponse:
     """Update a specific autonomous task for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(agent_id, team_id)
+    await get_team_agent(agent_id, team_id)
     updated_task = await update_autonomous_task(agent_id, autonomous_id, task_update)
     return AutonomousResponse.from_model(updated_task)
 
@@ -96,6 +96,6 @@ async def delete_autonomous(
 ) -> Response:
     """Delete a specific autonomous task for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(agent_id, team_id)
+    await get_team_agent(agent_id, team_id)
     await delete_autonomous_task(agent_id, autonomous_id)
     return Response(status_code=204)

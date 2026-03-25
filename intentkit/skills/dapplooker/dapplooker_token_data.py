@@ -220,10 +220,10 @@ class DappLookerTokenData(DappLookerBaseTool):
         # Ensure data is a list
         if not isinstance(data, list):
             # If data is a dict, wrap it in a list
-            if isinstance(data, dict):
-                data = [data]
+            if isinstance(data, dict):  # pyright: ignore[reportUnreachable]
+                data = [data]  # pyright: ignore[reportUnreachable]
             else:
-                raise ToolException(
+                raise ToolException(  # pyright: ignore[reportUnreachable]
                     f"Error: Unexpected data format received from API: {type(data)}"
                 )
         formatted_results = "# AI Agent Token Market Data\n\n"

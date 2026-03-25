@@ -12,7 +12,7 @@ from web3.types import TxParams, TxReceipt
 from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.privy_client import PrivyClient
-from intentkit.wallets.privy_nonce import _get_nonce_manager
+from intentkit.wallets.privy_nonce import get_nonce_manager
 from intentkit.wallets.privy_types import (
     CHAIN_CONFIGS,
     MULTI_SEND_CALL_ONLY_ADDRESS,
@@ -79,7 +79,7 @@ class SafeClient:
         owner_address = to_checksum_address(owner_address)
 
         # Build the initializer (setup call data)
-        initializer = self._build_safe_initializer(
+        initializer = self.build_safe_initializer(
             owners=[owner_address],
             threshold=threshold,
         )
@@ -87,7 +87,7 @@ class SafeClient:
         # Calculate CREATE2 address
         return self._calculate_create2_address(initializer, salt_nonce)
 
-    def _build_safe_initializer(
+    def build_safe_initializer(
         self,
         owners: list[str],
         threshold: int,
@@ -163,7 +163,7 @@ class SafeClient:
 
         return to_checksum_address(address_bytes)
 
-    def _encode_multi_send(self, transactions: list[TransactionRequest]) -> bytes:
+    def encode_multi_send(self, transactions: list[TransactionRequest]) -> bytes:
         """Encode a list of transactions for the MultiSend contract."""
         # MultiSend format:
         # operation (1 byte) | to (20 bytes) | value (32 bytes) | data_length (32 bytes) | data (bytes)
@@ -393,7 +393,7 @@ class SafeWalletProvider(WalletProvider):
                 )
 
             # 1. Encode the batch
-            multi_send_data = self.safe_client._encode_multi_send(transactions)
+            multi_send_data = self.safe_client.encode_multi_send(transactions)
 
             # MultiSend Call: to=MULTI_SEND_CALL_ONLY, value=0, data=multi_send_data, operation=1 (DelegateCall)
             to = MULTI_SEND_CALL_ONLY_ADDRESS
@@ -448,7 +448,7 @@ class SafeWalletProvider(WalletProvider):
                 )
 
                 # e. Send transaction via Master Wallet (using nonce manager)
-                tx_hash_hex = await _send_transaction_with_master_wallet(
+                tx_hash_hex = await send_transaction_with_master_wallet(
                     to=self.safe_address,
                     data=exec_tx_data,
                     chain_id=target_chain_id,
@@ -566,7 +566,7 @@ class SafeWalletProvider(WalletProvider):
 
         # Check if Allowance Module is enabled
         allowance_module = self.chain_config.allowance_module_address
-        is_enabled = await _is_module_enabled(
+        is_enabled = await is_module_enabled(
             rpc_url=rpc_url,
             safe_address=self.safe_address,
             module_address=allowance_module,
@@ -640,12 +640,12 @@ class SafeWalletProvider(WalletProvider):
             allowance_module = chain_config.allowance_module_address
 
             # Get current allowance nonce
-            nonce = await self._get_allowance_nonce(
+            nonce = await self.get_allowance_nonce(
                 rpc_url, allowance_module, token_address
             )
 
             # Generate transfer hash
-            transfer_hash = await self._generate_transfer_hash(
+            transfer_hash = await self.generate_transfer_hash(
                 rpc_url=rpc_url,
                 allowance_module=allowance_module,
                 token_address=token_address,
@@ -660,7 +660,7 @@ class SafeWalletProvider(WalletProvider):
             )
 
             # Execute the allowance transfer
-            exec_data = self._encode_execute_allowance_transfer(
+            exec_data = self.encode_execute_allowance_transfer(
                 token_address=token_address,
                 to=to,
                 amount=amount,
@@ -842,7 +842,7 @@ class SafeWalletProvider(WalletProvider):
 
         return exec_selector + exec_data
 
-    async def _get_allowance_nonce(
+    async def get_allowance_nonce(
         self,
         rpc_url: str,
         allowance_module: str,
@@ -881,7 +881,7 @@ class SafeWalletProvider(WalletProvider):
                 return int(nonce_hex, 16)
             return 0
 
-    async def _generate_transfer_hash(
+    async def generate_transfer_hash(
         self,
         rpc_url: str,
         allowance_module: str,
@@ -930,7 +930,7 @@ class SafeWalletProvider(WalletProvider):
             result = response.json().get("result", "0x")
             return bytes.fromhex(result[2:])
 
-    def _encode_execute_allowance_transfer(
+    def encode_execute_allowance_transfer(
         self,
         token_address: str,
         to: str,
@@ -1043,7 +1043,7 @@ async def deploy_safe_with_allowance(
     else:
         # Deploy the Safe
         logger.info("Deploying Safe to %s", predicted_address)
-        deploy_tx_hash, actual_address = await _deploy_safe(
+        deploy_tx_hash, actual_address = await deploy_safe(
             owner_address=owner_address,
             salt_nonce=salt_nonce,
             chain_id=chain_config.chain_id,
@@ -1067,7 +1067,7 @@ async def deploy_safe_with_allowance(
         # Wait for Safe to be visible across RPC nodes before proceeding
         # This prevents race conditions where subsequent operations fail because
         # the RPC node hasn't synced the new contract yet
-        safe_visible = await _wait_for_safe_deployed(
+        safe_visible = await wait_for_safe_deployed(
             safe_address=predicted_address,
             rpc_url=rpc_url,
             max_retries=15,  # Up to 15 seconds of waiting
@@ -1086,7 +1086,7 @@ async def deploy_safe_with_allowance(
     # We will track it locally to avoid race conditions with RPC nodes that lag behind.
     current_nonce = 0
     if result["already_deployed"]:
-        current_nonce = await _get_safe_nonce(predicted_address, rpc_url)
+        current_nonce = await get_safe_nonce(predicted_address, rpc_url)
 
     if weekly_spending_limit_usdc is not None:
         if not chain_config.usdc_address:
@@ -1123,7 +1123,7 @@ async def deploy_safe_with_allowance(
     return result
 
 
-async def _deploy_safe(
+async def deploy_safe(
     owner_address: str,
     salt_nonce: int,
     chain_id: int,
@@ -1155,7 +1155,7 @@ async def _deploy_safe(
 
     # Build initializer
     safe_client = SafeClient()
-    initializer = safe_client._build_safe_initializer(
+    initializer = safe_client.build_safe_initializer(
         owners=[owner_address],
         threshold=1,
     )
@@ -1177,7 +1177,7 @@ async def _deploy_safe(
 
     try:
         # Use distributed nonce manager with lock
-        nonce_manager = _get_nonce_manager()
+        nonce_manager = get_nonce_manager()
         if not await nonce_manager.acquire_lock():
             raise IntentKitAPIError(
                 500, "LockTimeout", "Failed to acquire nonce lock for Safe deployment"
@@ -1273,7 +1273,7 @@ async def _deploy_safe(
     return tx_hash.hex(), actual_safe_address
 
 
-async def _is_module_enabled(
+async def is_module_enabled(
     rpc_url: str,
     safe_address: str,
     module_address: str,
@@ -1305,7 +1305,7 @@ async def _is_module_enabled(
         return result.endswith("1")
 
 
-async def _wait_for_safe_deployed(
+async def wait_for_safe_deployed(
     safe_address: str,
     rpc_url: str,
     max_retries: int = 10,
@@ -1366,7 +1366,7 @@ async def _wait_for_safe_deployed(
     return False
 
 
-def _get_safe_tx_hash(
+def get_safe_tx_hash(
     safe_address: str,
     to: str,
     value: int,
@@ -1441,7 +1441,7 @@ def _get_safe_tx_hash(
     return keccak(b"\x19\x01" + domain_separator + struct_hash)
 
 
-async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
+async def get_safe_nonce(safe_address: str, rpc_url: str) -> int:
     """Get the current nonce of a Safe."""
     selector = keccak(text="nonce()")[:4]
 
@@ -1471,7 +1471,7 @@ async def _get_safe_nonce(safe_address: str, rpc_url: str) -> int:
 
 
 @overload
-async def _send_transaction_with_master_wallet(
+async def send_transaction_with_master_wallet(
     to: str,
     data: bytes,
     chain_id: int,
@@ -1482,7 +1482,7 @@ async def _send_transaction_with_master_wallet(
 
 
 @overload
-async def _send_transaction_with_master_wallet(
+async def send_transaction_with_master_wallet(
     to: str,
     data: bytes,
     chain_id: int,
@@ -1492,7 +1492,7 @@ async def _send_transaction_with_master_wallet(
 ) -> str: ...
 
 
-async def _send_transaction_with_master_wallet(
+async def send_transaction_with_master_wallet(
     to: str,
     data: bytes,
     chain_id: int,
@@ -1525,7 +1525,7 @@ async def _send_transaction_with_master_wallet(
 
     try:
         # Use distributed nonce manager with lock
-        nonce_manager = _get_nonce_manager()
+        nonce_manager = get_nonce_manager()
         if not await nonce_manager.acquire_lock():
             raise IntentKitAPIError(
                 500, "LockTimeout", "Failed to acquire nonce lock for transaction"
@@ -1589,7 +1589,7 @@ async def _send_transaction_with_master_wallet(
     return tx_hash.hex()
 
 
-async def _send_safe_transaction_with_master_wallet(
+async def send_safe_transaction_with_master_wallet(
     safe_address: str,
     exec_data: bytes,
     chain_id: int,
@@ -1617,7 +1617,7 @@ async def _send_safe_transaction_with_master_wallet(
     # We request the receipt directly to avoid a race condition where
     # a second get_transaction_receipt call might hit a different RPC node
     # that hasn't synced the transaction yet.
-    tx_hash_hex, receipt = await _send_transaction_with_master_wallet(
+    tx_hash_hex, receipt = await send_transaction_with_master_wallet(
         to=safe_address,
         data=exec_data,
         chain_id=chain_id,
@@ -1683,7 +1683,7 @@ async def _send_safe_transaction_with_master_wallet(
     return tx_hash_hex
 
 
-async def _enable_allowance_module(
+async def enable_allowance_module(
     privy_client: PrivyClient,
     privy_wallet_id: str,
     safe_address: str,
@@ -1707,10 +1707,10 @@ async def _enable_allowance_module(
     if nonce is not None:
         safe_nonce = nonce
     else:
-        safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+        safe_nonce = await get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash
-    safe_tx_hash = _get_safe_tx_hash(
+    safe_tx_hash = get_safe_tx_hash(
         safe_address=safe_address,
         to=safe_address,  # Call Safe itself to enable module
         value=0,
@@ -1767,7 +1767,7 @@ async def _enable_allowance_module(
     )
 
     # Use master wallet to send the transaction
-    tx_hash = await _send_safe_transaction_with_master_wallet(
+    tx_hash = await send_safe_transaction_with_master_wallet(
         safe_address=safe_address,
         exec_data=exec_data,
         chain_id=chain_id,
@@ -1777,7 +1777,7 @@ async def _enable_allowance_module(
     return tx_hash
 
 
-async def _set_spending_limit(
+async def set_spending_limit(
     privy_client: PrivyClient,
     privy_wallet_id: str,
     safe_address: str,
@@ -1839,11 +1839,11 @@ async def _set_spending_limit(
     if nonce is not None:
         safe_nonce = nonce
     else:
-        safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+        safe_nonce = await get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash for the MultiSend call
     # Note: We use MULTI_SEND_CALL_ONLY_ADDRESS with DelegateCall (operation=1)
-    safe_tx_hash = _get_safe_tx_hash(
+    safe_tx_hash = get_safe_tx_hash(
         safe_address=safe_address,
         to=MULTI_SEND_CALL_ONLY_ADDRESS,
         value=0,
@@ -1900,7 +1900,7 @@ async def _set_spending_limit(
     )
 
     # Use master wallet to send the transaction
-    tx_hash = await _send_safe_transaction_with_master_wallet(
+    tx_hash = await send_safe_transaction_with_master_wallet(
         safe_address=safe_address,
         exec_data=exec_data,
         chain_id=chain_id,
@@ -2010,7 +2010,7 @@ async def set_safe_token_spending_limit(
             "Spending limit exceeds uint96 maximum supported by Allowance Module.",
         )
 
-    module_enabled = await _is_module_enabled(
+    module_enabled = await is_module_enabled(
         rpc_url=rpc_url,
         safe_address=safe_checksum,
         module_address=chain_config.allowance_module_address,
@@ -2018,12 +2018,12 @@ async def set_safe_token_spending_limit(
 
     tx_hashes: list[dict[str, str]] = []
     current_nonce = (
-        nonce if nonce is not None else await _get_safe_nonce(safe_checksum, rpc_url)
+        nonce if nonce is not None else await get_safe_nonce(safe_checksum, rpc_url)
     )
 
     if allowance_amount > 0 and not module_enabled:
         logger.info("Enabling Allowance Module")
-        enable_tx_hash = await _enable_allowance_module(
+        enable_tx_hash = await enable_allowance_module(
             privy_client=privy_client,
             privy_wallet_id=privy_wallet_id,
             safe_address=safe_checksum,
@@ -2040,7 +2040,7 @@ async def set_safe_token_spending_limit(
 
     spending_limit_configured = False
     if allowance_amount > 0 or module_enabled:
-        limit_tx_hash = await _set_spending_limit(
+        limit_tx_hash = await set_spending_limit(
             privy_client=privy_client,
             privy_wallet_id=privy_wallet_id,
             safe_address=safe_checksum,
@@ -2116,10 +2116,10 @@ async def execute_gasless_transaction(
         raise ValueError(f"Unsupported network: {network_id}")
 
     # Get Safe nonce from blockchain
-    safe_nonce = await _get_safe_nonce(safe_address, rpc_url)
+    safe_nonce = await get_safe_nonce(safe_address, rpc_url)
 
     # Calculate Safe transaction hash (EIP-712)
-    safe_tx_hash = _get_safe_tx_hash(
+    safe_tx_hash = get_safe_tx_hash(
         safe_address=safe_address,
         to=to,
         value=value,
@@ -2181,7 +2181,7 @@ async def execute_gasless_transaction(
     )
 
     # Use Master Wallet to relay the transaction (pays for gas)
-    tx_hash = await _send_safe_transaction_with_master_wallet(
+    tx_hash = await send_safe_transaction_with_master_wallet(
         safe_address=safe_address,
         exec_data=exec_data,
         chain_id=chain_config.chain_id,
@@ -2195,7 +2195,7 @@ async def execute_gasless_transaction(
     return tx_hash
 
 
-async def _execute_allowance_transfer_gasless(
+async def execute_allowance_transfer_gasless(
     privy_client: PrivyClient,
     privy_wallet_id: str,
     privy_wallet_address: str,
@@ -2229,12 +2229,12 @@ async def _execute_allowance_transfer_gasless(
     )
 
     # Get nonce
-    nonce = await safe_provider._get_allowance_nonce(
+    nonce = await safe_provider.get_allowance_nonce(
         rpc_url, allowance_module, token_address
     )
 
     # Generate hash
-    transfer_hash = await safe_provider._generate_transfer_hash(
+    transfer_hash = await safe_provider.generate_transfer_hash(
         rpc_url=rpc_url,
         allowance_module=allowance_module,
         token_address=token_address,
@@ -2247,7 +2247,7 @@ async def _execute_allowance_transfer_gasless(
     signature = await privy_client.sign_hash(privy_wallet_id, transfer_hash)
 
     # Encode execution data
-    exec_data = safe_provider._encode_execute_allowance_transfer(
+    exec_data = safe_provider.encode_execute_allowance_transfer(
         token_address=token_address,
         to=to,
         amount=amount,
@@ -2256,7 +2256,7 @@ async def _execute_allowance_transfer_gasless(
 
     try:
         # Send transaction to Allowance Module via Master Wallet
-        tx_hash = await _send_transaction_with_master_wallet(
+        tx_hash = await send_transaction_with_master_wallet(
             to=allowance_module,
             data=exec_data,
             chain_id=chain_config.chain_id,
@@ -2298,7 +2298,7 @@ async def transfer_erc20_gasless(
 
     Smart Fallback:
     1. If Allowance Module is enabled and privy_wallet_address is provided,
-       uses _execute_allowance_transfer_gasless (enforces limits).
+       uses execute_allowance_transfer_gasless (enforces limits).
     2. Otherwise, falls back to execute_gasless_transaction (owner direct).
 
     Args:
@@ -2311,7 +2311,7 @@ async def transfer_erc20_gasless(
 
     # Check if Allowance Module is enabled
     allowance_module = chain_config.allowance_module_address
-    is_enabled = await _is_module_enabled(
+    is_enabled = await is_module_enabled(
         rpc_url=rpc_url,
         safe_address=safe_address,
         module_address=allowance_module,
@@ -2334,7 +2334,7 @@ async def transfer_erc20_gasless(
 
         if effective_wallet_address:
             logger.info("Allowance Module enabled, using allowance transfer (gasless)")
-            return await _execute_allowance_transfer_gasless(
+            return await execute_allowance_transfer_gasless(
                 privy_client=privy_client,
                 privy_wallet_id=privy_wallet_id,
                 privy_wallet_address=effective_wallet_address,

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import Awaitable
 
 from pydantic import BaseModel
 

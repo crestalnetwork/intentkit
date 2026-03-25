@@ -149,7 +149,7 @@ async def test_delete_autonomous(client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_update_autonomous_status_uses_core_update(monkeypatch):
+async def testupdate_autonomous_status_uses_core_update(monkeypatch):
     import app.autonomous as autonomous_module
 
     called = {"value": False}
@@ -194,7 +194,7 @@ async def test_update_autonomous_status_uses_core_update(monkeypatch):
     )
 
     try:
-        await autonomous_module._update_autonomous_status(
+        await autonomous_module.update_autonomous_status(
             "agent-1-task-1", AgentAutonomousStatus.RUNNING
         )
     except AttributeError as exc:

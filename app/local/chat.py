@@ -189,7 +189,7 @@ async def _count_user_messages(agent_id: str, chat_id: str) -> int:
         return int(count or 0)
 
 
-async def _should_schedule_chat_summary(
+async def should_schedule_chat_summary(
     agent_id: str, chat_id: str, incoming_author_type: AuthorType
 ) -> bool:
     if not _is_user_author_type(incoming_author_type):
@@ -306,17 +306,17 @@ async def _update_chat_summary_title(agent_id: str, chat_id: str) -> None:
         )
 
 
-def _schedule_chat_summary_title_update(agent_id: str, chat_id: str) -> None:
+def schedule_chat_summary_title_update(agent_id: str, chat_id: str) -> None:
     _ = asyncio.create_task(_update_chat_summary_title(agent_id, chat_id))
 
 
-def _should_summarize_first_message(first_message: str | None) -> bool:
+def should_summarize_first_message(first_message: str | None) -> bool:
     if not first_message:
         return False
     return len(first_message.encode("utf-8")) > 20
 
 
-async def _update_chat_summary_from_first_message(
+async def update_chat_summary_from_first_message(
     agent_id: str, chat_id: str, first_message: str
 ) -> None:
     chat = await Chat.get(chat_id)
@@ -394,8 +394,8 @@ async def create_chat_thread(
         rounds=0,
     )
     _ = await chat.save()
-    if request and _should_summarize_first_message(request.first_message):
-        await _update_chat_summary_from_first_message(
+    if request and should_summarize_first_message(request.first_message):
+        await update_chat_summary_from_first_message(
             aid, chat.id, request.first_message or ""
         )
     # Retrieve the full Chat object with auto-generated fields
@@ -556,7 +556,7 @@ async def send_message(
             status_code=404, key="ChatNotFound", message="Chat not found"
         )
 
-    should_schedule_summary = await _should_schedule_chat_summary(
+    should_schedule_summary = await should_schedule_chat_summary(
         aid, chat_id, AuthorType.WEB
     )
 
@@ -599,7 +599,7 @@ async def send_message(
                 async for chunk in stream_agent(user_message):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
                 if should_schedule_summary:
-                    _schedule_chat_summary_title_update(aid, chat_id)
+                    schedule_chat_summary_title_update(aid, chat_id)
             except asyncio.CancelledError:
                 logger.info("Stream cancelled for agent %s, chat %s", aid, chat_id)
                 return
@@ -614,7 +614,7 @@ async def send_message(
     else:
         response_messages = await execute_agent(user_message)
         if should_schedule_summary:
-            _schedule_chat_summary_title_update(aid, chat_id)
+            schedule_chat_summary_title_update(aid, chat_id)
         # Return messages list directly for compatibility with stream mode
         return response_messages
 

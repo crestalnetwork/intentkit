@@ -363,7 +363,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
         except ValueError as exc:
             raise ValueError("Token balance response is not valid hex.") from exc
 
-    async def _ensure_safe_funding(
+    async def ensure_safe_funding(
         self,
         *,
         amount: int,
@@ -461,7 +461,7 @@ class X402BaseSkill(IntentKitOnChainSkill):
             requirement.asset,
             amount,
         )
-        await self._ensure_safe_funding(
+        await self.ensure_safe_funding(
             amount=amount,
             token_address=requirement.asset,
             max_value=max_value,

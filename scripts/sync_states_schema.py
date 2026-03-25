@@ -6,7 +6,6 @@ import ast
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
 
 # Root directory of the project
 ROOT_DIR = Path(__file__).parent.parent
@@ -16,7 +15,7 @@ SKILLS_DIR = ROOT_DIR / "skills"
 EXCLUDED_FOLDERS = ["cdp", "goat", "defillama"]
 
 
-def get_skill_states_from_file(skill_dir: Path) -> Optional[Set[str]]:
+def get_skill_states_from_file(skill_dir: Path) -> set[str] | None:
     """Extract state names from the SkillStates class in __init__.py.
 
     Args:
@@ -57,7 +56,7 @@ def get_skill_states_from_file(skill_dir: Path) -> Optional[Set[str]]:
         return None
 
 
-def find_skill_classes(skill_dir: Path) -> Dict[str, Tuple[str, str]]:
+def find_skill_classes(skill_dir: Path) -> dict[str, tuple[str, str]]:
     """Find all skill classes in a skill directory and extract their descriptions.
 
     Args:
@@ -135,8 +134,8 @@ def find_skill_classes(skill_dir: Path) -> Dict[str, Tuple[str, str]]:
 
 
 def map_state_to_skill_class(
-    state_name: str, skill_classes: Dict[str, Tuple[str, str]], skill_name: str
-) -> Optional[str]:
+    state_name: str, skill_classes: dict[str, tuple[str, str]], skill_name: str
+) -> str | None:
     """Map a state name to a skill class description.
 
     Args:

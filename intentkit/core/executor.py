@@ -34,10 +34,10 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 # Global variable to cache all agent executors
-_agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
+agents: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
 
 # Global dictionaries to cache agent update times
-_agents_updated: dict[str, datetime] = {}
+agents_updated: dict[str, datetime] = {}
 
 # Track when each executor was last accessed, for TTL eviction
 _agents_accessed_at: dict[str, datetime] = {}
@@ -265,8 +265,8 @@ def _cleanup_cache() -> None:
     expired_before = now - _EXECUTOR_CACHE_TTL
     for aid in list(_agents_accessed_at):
         if _agents_accessed_at[aid] < expired_before:
-            _agents.pop(aid, None)
-            _agents_updated.pop(aid, None)
+            agents.pop(aid, None)
+            agents_updated.pop(aid, None)
             _agents_accessed_at.pop(aid, None)
             _build_locks.pop(aid, None)
             logger.debug("Evicted expired executor cache for %s", aid)
@@ -288,9 +288,9 @@ async def build_and_cache_executor(
         agent_data: Agent data object (wallet, API keys, credentials)
     """
     executor = await build_executor(agent, agent_data)
-    _agents[aid] = executor
+    agents[aid] = executor
     agent_ts = agent.deployed_at if agent.deployed_at else agent.updated_at
-    _agents_updated[aid] = max(agent_ts, agent_data.updated_at)
+    agents_updated[aid] = max(agent_ts, agent_data.updated_at)
     _agents_accessed_at[aid] = datetime.now(timezone.utc)
 
 
@@ -312,25 +312,24 @@ async def agent_executor(
     updated_at = max(agent_ts, agent_data.updated_at)
     # Check if agent needs reinitialization due to updates
     needs_reinit = False
-    if agent_id in _agents:
-        if agent_id not in _agents_updated or updated_at != _agents_updated[agent_id]:
+    if agent_id in agents:
+        if agent_id not in agents_updated or updated_at != agents_updated[agent_id]:
             needs_reinit = True
             logger.info("Reinitializing agent %s due to updates", agent_id)
 
     # cold start or needs reinitialization
     cold_start_cost = 0.0
-    if (agent_id not in _agents) or needs_reinit:
+    if (agent_id not in agents) or needs_reinit:
         lock = await _get_build_lock(agent_id)
         async with lock:
             # Re-check with fresh state after acquiring lock
-            still_missing = agent_id not in _agents
-            still_stale = agent_id in _agents and (
-                agent_id not in _agents_updated
-                or updated_at != _agents_updated[agent_id]
+            still_missing = agent_id not in agents
+            still_stale = agent_id in agents and (
+                agent_id not in agents_updated or updated_at != agents_updated[agent_id]
             )
             if still_missing or still_stale:
                 await build_and_cache_executor(agent_id, agent, agent_data)
                 cold_start_cost = time.perf_counter() - start
 
     _agents_accessed_at[agent_id] = datetime.now(timezone.utc)
-    return _agents[agent_id], cold_start_cost
+    return agents[agent_id], cold_start_cost

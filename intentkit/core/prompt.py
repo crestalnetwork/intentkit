@@ -36,7 +36,7 @@ def _build_system_header(agent: Agent) -> str:
     return prompt
 
 
-def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
+def build_system_skills_section(agent: Agent, context: AgentContext) -> str:
     """Build system skills guide section if running in private context."""
     if not context.is_private:
         return ""
@@ -84,7 +84,7 @@ def _build_system_skills_section(agent: Agent, context: AgentContext) -> str:
     return "".join(lines)
 
 
-async def _build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
+async def build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
     """Build sub-agents section listing available sub-agents and their purposes."""
     if not agent.sub_agents or not context.is_private:
         return ""
@@ -261,7 +261,7 @@ def build_agent_prompt(
     """
     prompt_sections = [
         _build_system_header(agent),
-        _build_system_skills_section(agent, context),
+        build_system_skills_section(agent, context),
         _build_agent_identity_section(agent),
         _build_agent_characteristics_section(agent),
         _build_social_accounts_section(agent, agent_data),
@@ -408,7 +408,7 @@ async def build_system_prompt(
     base_prompt = build_agent_prompt(agent, agent_data, context)
     final_system_prompt = base_prompt
 
-    sub_agents_section = await _build_sub_agents_section(agent, context)
+    sub_agents_section = await build_sub_agents_section(agent, context)
     if sub_agents_section:
         final_system_prompt = f"{final_system_prompt}{sub_agents_section}"
 

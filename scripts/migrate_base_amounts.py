@@ -10,7 +10,6 @@ by subtracting platform, agent, and dev fees from the respective credit type amo
 import asyncio
 import logging
 from decimal import ROUND_HALF_UP, Decimal
-from typing import List
 
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,7 +83,7 @@ def calculate_base_amounts(
 
 async def get_events_to_migrate(
     session: AsyncSession, last_id: str, batch_size: int = 1000
-) -> List[CreditEventTable]:
+) -> list[CreditEventTable]:
     """
     Get credit events that need migration using cursor-based pagination.
 
@@ -114,7 +113,7 @@ async def get_events_to_migrate(
     return result.scalars().all()
 
 
-async def migrate_batch(session: AsyncSession, events: List[CreditEventTable]) -> int:
+async def migrate_batch(session: AsyncSession, events: list[CreditEventTable]) -> int:
     """
     Migrate a batch of credit events using bulk updates for better performance.
 

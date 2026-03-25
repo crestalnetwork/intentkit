@@ -48,7 +48,7 @@ async def test_recursion_error_handling(mock_agent):
     # Mock astream to raise GraphRecursionError
     async def mock_astream(*args, **kwargs):
         raise GraphRecursionError("Recursion limit reached")
-        yield {}  # make it a generator
+        yield {}  # make it a generator  # pyright: ignore[reportUnreachable]
 
     mock_executor_instance.astream = mock_astream
 

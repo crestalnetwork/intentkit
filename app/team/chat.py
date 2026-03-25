@@ -37,12 +37,12 @@ from app.local.chat import (
     ChatUpdateRequest,
     LocalChatCreateRequest,
     LocalChatMessageRequest,
-    _schedule_chat_summary_title_update,
-    _should_schedule_chat_summary,
-    _should_summarize_first_message,
-    _update_chat_summary_from_first_message,
+    schedule_chat_summary_title_update,
+    should_schedule_chat_summary,
+    should_summarize_first_message,
+    update_chat_summary_from_first_message,
 )
-from app.team.agent import _get_team_agent
+from app.team.agent import get_team_agent
 from app.team.auth import verify_team_member
 
 team_chat_router = APIRouter()
@@ -68,7 +68,7 @@ async def list_chats(
 ):
     """Get all chat threads for a team agent (all team members see all chats)."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(aid, team_id)
+    agent = await get_team_agent(aid, team_id)
     async with get_session() as db:
         results = await db.scalars(
             select(ChatTable)
@@ -93,7 +93,7 @@ async def create_chat_thread(
 ):
     """Create a new chat thread for a team agent."""
     user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = ChatCreate(
         id=str(XID()),
@@ -103,8 +103,8 @@ async def create_chat_thread(
         rounds=0,
     )
     _ = await chat.save()
-    if request and _should_summarize_first_message(request.first_message):
-        await _update_chat_summary_from_first_message(
+    if request and should_summarize_first_message(request.first_message):
+        await update_chat_summary_from_first_message(
             aid, chat.id, request.first_message or ""
         )
     full_chat = await Chat.get(chat.id)
@@ -126,7 +126,7 @@ async def update_chat_thread(
 ):
     """Update a chat thread for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != aid:
@@ -150,7 +150,7 @@ async def delete_chat_thread(
 ):
     """Delete a chat thread for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != aid:
@@ -184,7 +184,7 @@ async def list_messages(
 ) -> ChatMessagesResponse:
     """Get message history for a team agent chat thread."""
     _user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != aid:
@@ -227,13 +227,13 @@ async def send_message(
 ):
     """Send a new message to a team agent chat thread."""
     user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != aid:
         raise _chat_not_found()
 
-    should_schedule_summary = await _should_schedule_chat_summary(
+    should_schedule_summary = await should_schedule_chat_summary(
         aid, chat_id, AuthorType.WEB
     )
 
@@ -274,7 +274,7 @@ async def send_message(
                 async for chunk in stream_agent(user_message):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
                 if should_schedule_summary:
-                    _schedule_chat_summary_title_update(aid, chat_id)
+                    schedule_chat_summary_title_update(aid, chat_id)
             except asyncio.CancelledError:
                 logger.info("Stream cancelled for agent %s, chat %s", aid, chat_id)
                 return
@@ -289,7 +289,7 @@ async def send_message(
     else:
         response_messages = await execute_agent(user_message)
         if should_schedule_summary:
-            _schedule_chat_summary_title_update(aid, chat_id)
+            schedule_chat_summary_title_update(aid, chat_id)
         return response_messages
 
 
@@ -306,7 +306,7 @@ async def cancel_generation(
 ):
     """Cancel an in-progress generation for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
     cancelled = cancel_task(aid, chat_id)
     return {"cancelled": cancelled}
 
@@ -326,7 +326,7 @@ async def retry_message(
 ):
     """Retry the last message in a team agent chat thread."""
     user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
     if not chat or chat.agent_id != aid:
@@ -438,7 +438,7 @@ async def get_skill_history(
 ) -> list[ChatMessage]:
     """Get last 50 skill messages for a team agent."""
     _user_id, team_id = auth
-    await _get_team_agent(aid, team_id)
+    await get_team_agent(aid, team_id)
 
     result = await db.scalars(
         select(ChatMessageTable)

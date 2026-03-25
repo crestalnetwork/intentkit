@@ -47,12 +47,12 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
     @override
     def available(self) -> bool:
         """Check if this image skill is available based on API keys."""
-        return self._has_native_key() or (
+        return self.has_native_key() or (
             bool(config.openrouter_api_key) and bool(self.openrouter_model)
         )
 
     @abstractmethod
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         """Return True if the native API key is configured."""
         ...
 
@@ -180,7 +180,7 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
                 input_images = await self._download_images(images)
 
             # Try native API first, fall back to OpenRouter
-            if self._has_native_key():
+            if self.has_native_key():
                 image_bytes = await self._generate_native(prompt, input_images)
             elif config.openrouter_api_key and self.openrouter_model:
                 image_bytes = await self._generate_via_openrouter(prompt, input_images)

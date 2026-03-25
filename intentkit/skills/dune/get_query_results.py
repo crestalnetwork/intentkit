@@ -54,4 +54,4 @@ class DuneGetQueryResults(DuneBaseTool):
             f"/query/{query_id}/results",
             params={"limit": limit, "offset": offset},
         )
-        return self._format_results(results, query_id)
+        return self.format_results(results, query_id)

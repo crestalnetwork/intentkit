@@ -3,12 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from intentkit.core.avatar import (
-    _build_agent_profile,
-    _generate_image_google,
-    _generate_image_openai,
-    _generate_image_openrouter,
-    _generate_image_xai,
+    build_agent_profile,
     generate_avatar,
+    generate_image_google,
+    generate_image_openai,
+    generate_image_openrouter,
+    generate_image_xai,
     select_model_and_generate,
 )
 
@@ -42,7 +42,7 @@ def mock_agent():
 
 class TestBuildAgentProfile:
     def test_builds_profile_from_all_fields(self, mock_agent):
-        profile = _build_agent_profile("test-agent-123", mock_agent)
+        profile = build_agent_profile("test-agent-123", mock_agent)
         assert "### Name" in profile
         assert "Test Agent" in profile
         assert "### Description" in profile
@@ -56,14 +56,14 @@ class TestBuildAgentProfile:
         mock_agent.personality = None
         mock_agent.principles = None
         mock_agent.prompt = None
-        profile = _build_agent_profile("test-agent-123", mock_agent)
+        profile = build_agent_profile("test-agent-123", mock_agent)
         assert "### Purpose" not in profile
         assert "### Personality" not in profile
         assert "### Name" in profile
 
     def test_skips_empty_string_fields(self, mock_agent):
         mock_agent.purpose = "   "
-        profile = _build_agent_profile("test-agent-123", mock_agent)
+        profile = build_agent_profile("test-agent-123", mock_agent)
         assert "### Purpose" not in profile
 
     def test_fallback_to_agent_id(self):
@@ -76,7 +76,7 @@ class TestBuildAgentProfile:
         agent.prompt = None
         agent.prompt_append = None
         agent.extra_prompt = None
-        profile = _build_agent_profile("fallback-id", agent)
+        profile = build_agent_profile("fallback-id", agent)
         assert "fallback-id" in profile
 
     def test_handles_missing_attributes(self):
@@ -86,7 +86,7 @@ class TestBuildAgentProfile:
             name = "Minimal"
 
         agent = MinimalAgent()
-        profile = _build_agent_profile("minimal-id", agent)
+        profile = build_agent_profile("minimal-id", agent)
         assert "### Name" in profile
         assert "Minimal" in profile
 
@@ -98,7 +98,7 @@ class TestSelectModelAndGenerate:
         fake_bytes = b"fake-image-data"
 
         with patch(
-            "intentkit.core.avatar._generate_image_openrouter",
+            "intentkit.core.avatar.generate_image_openrouter",
             new_callable=AsyncMock,
             return_value=fake_bytes,
         ) as mock_or:
@@ -113,7 +113,7 @@ class TestSelectModelAndGenerate:
         fake_bytes = b"google-image"
 
         with patch(
-            "intentkit.core.avatar._generate_image_google",
+            "intentkit.core.avatar.generate_image_google",
             new_callable=AsyncMock,
             return_value=fake_bytes,
         ) as mock_google:
@@ -129,7 +129,7 @@ class TestSelectModelAndGenerate:
         fake_bytes = b"openai-image"
 
         with patch(
-            "intentkit.core.avatar._generate_image_openai",
+            "intentkit.core.avatar.generate_image_openai",
             new_callable=AsyncMock,
             return_value=fake_bytes,
         ) as mock_openai:
@@ -146,7 +146,7 @@ class TestSelectModelAndGenerate:
         fake_bytes = b"xai-image"
 
         with patch(
-            "intentkit.core.avatar._generate_image_xai",
+            "intentkit.core.avatar.generate_image_xai",
             new_callable=AsyncMock,
             return_value=fake_bytes,
         ) as mock_xai:
@@ -167,12 +167,12 @@ class TestSelectModelAndGenerate:
 
         with (
             patch(
-                "intentkit.core.avatar._generate_image_openrouter",
+                "intentkit.core.avatar.generate_image_openrouter",
                 new_callable=AsyncMock,
                 return_value=None,
             ),
             patch(
-                "intentkit.core.avatar._generate_image_google",
+                "intentkit.core.avatar.generate_image_google",
                 new_callable=AsyncMock,
                 return_value=fake_bytes,
             ),
@@ -283,7 +283,7 @@ class TestProviderFunctions:
                 mock_openai_cls.return_value = mock_client
                 mock_client.images.generate.return_value = mock_response
 
-                result = await _generate_image_openrouter("test prompt")
+                result = await generate_image_openrouter("test prompt")
 
                 assert result == b"image-data"
                 mock_openai_cls.assert_called_once_with(
@@ -320,7 +320,7 @@ class TestProviderFunctions:
                 mock_openai_cls.return_value = mock_client
                 mock_client.images.generate.return_value = mock_response
 
-                result = await _generate_image_openrouter("test prompt")
+                result = await generate_image_openrouter("test prompt")
                 assert result == b"downloaded-image"
                 mock_download.assert_called_once_with("https://example.com/image.png")
 
@@ -333,7 +333,7 @@ class TestProviderFunctions:
                 mock_openai_cls.return_value = mock_client
                 mock_client.images.generate.side_effect = Exception("API error")
 
-                result = await _generate_image_openrouter("test prompt")
+                result = await generate_image_openrouter("test prompt")
                 assert result is None
 
     @pytest.mark.asyncio
@@ -357,7 +357,7 @@ class TestProviderFunctions:
                     return_value=mock_response
                 )
 
-                result = await _generate_image_google("test prompt")
+                result = await generate_image_google("test prompt")
                 assert result == b"google-image-bytes"
 
     @pytest.mark.asyncio
@@ -380,7 +380,7 @@ class TestProviderFunctions:
                     return_value=mock_response
                 )
 
-                result = await _generate_image_google("test prompt")
+                result = await generate_image_google("test prompt")
                 assert result is None
 
     @pytest.mark.asyncio
@@ -402,7 +402,7 @@ class TestProviderFunctions:
                 mock_openai_cls.return_value = mock_client
                 mock_client.images.generate.return_value = mock_response
 
-                result = await _generate_image_openai("test prompt")
+                result = await generate_image_openai("test prompt")
                 assert result == b"openai-image"
                 mock_openai_cls.assert_called_once_with(api_key="openai-key")
                 call_kwargs = mock_client.images.generate.call_args[1]
@@ -429,7 +429,7 @@ class TestProviderFunctions:
                 mock_openai_cls.return_value = mock_client
                 mock_client.images.generate.return_value = mock_response
 
-                result = await _generate_image_xai("test prompt")
+                result = await generate_image_xai("test prompt")
                 assert result == b"xai-image"
                 mock_openai_cls.assert_called_once_with(
                     api_key="xai-key",

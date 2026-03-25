@@ -189,7 +189,7 @@ async def test_create_agent_from_template_without_team(mock_process_agent_wallet
 async def test_create_template_from_agent():
     """Test creating a template from an agent."""
     # 1. Setup Agent Data
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-1",
         name="Source Agent",
         description="Agent Description",
@@ -258,7 +258,7 @@ async def test_render_agent():
     }
     mock_template_row = TemplateTable(**template_data)
 
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-1",
         name=None,  # Should take from template
         picture="agent_pic.png",  # Should KEEP agent's
@@ -302,7 +302,7 @@ async def test_render_agent():
 @pytest.mark.asyncio
 async def test_render_agent_no_template():
     """Test rendering an agent that has no template linked."""
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-no-temp",
         name="Just Agent",
         model="gpt-3.5",

@@ -64,7 +64,7 @@ async def verify_activity_creation():
         # BaseTool call method handles it.
 
         try:
-            res = await skill._arun(text="Test Activity for Redundant Fields")
+            res = await skill._arun(text="Test Activity for Redundant Fields")  # pyright: ignore[reportPrivateUsage]
             print(f"Activity creation result: {res}")
 
             # Extract ID and check DB
@@ -128,7 +128,7 @@ async def verify_post_creation():
             import time
 
             slug = f"test-post-{int(time.time())}"
-            res = await skill._arun(
+            res = await skill._arun(  # pyright: ignore[reportPrivateUsage]
                 title="Test Post for Redundant Fields",
                 markdown="Content...",
                 slug=slug,

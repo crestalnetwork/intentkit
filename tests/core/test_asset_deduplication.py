@@ -31,7 +31,7 @@ async def test_asset_deduplication_usdc(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module._build_assets_list(agent, agent_data, web3_client)
+    assets = await asset_module.build_assets_list(agent, agent_data, web3_client)
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]
@@ -63,7 +63,7 @@ async def test_asset_deduplication_nation(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module._build_assets_list(agent, agent_data, web3_client)
+    assets = await asset_module.build_assets_list(agent, agent_data, web3_client)
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]
@@ -95,7 +95,7 @@ async def test_asset_no_deduplication_custom_token(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module._build_assets_list(agent, agent_data, web3_client)
+    assets = await asset_module.build_assets_list(agent, agent_data, web3_client)
 
     assert len(assets) == 4
     symbols = [asset.symbol for asset in assets]
@@ -126,7 +126,7 @@ async def test_case_insensitive_deduplication(monkeypatch):
     monkeypatch.setattr(asset_module, "_get_eth_balance", mock_get_eth_balance)
     monkeypatch.setattr(asset_module, "_get_token_balance", mock_get_token_balance)
 
-    assets = await asset_module._build_assets_list(agent, agent_data, web3_client)
+    assets = await asset_module.build_assets_list(agent, agent_data, web3_client)
 
     assert len(assets) == 3
     symbols = [asset.symbol for asset in assets]

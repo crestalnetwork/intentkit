@@ -11,7 +11,7 @@ from intentkit.wallets.privy import (
 
 
 @pytest.mark.asyncio
-async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
+async def testdeploy_safe_with_allowance_nonce_threading(monkeypatch):
     """
     Verify that deploy_safe_with_allowance properly threads the nonce
     when enabling module and setting spending limit.
@@ -33,7 +33,7 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
         "0x00000000000000000000000000000000000000Aa"
     )
     mock_safe_client_instance.is_deployed = AsyncMock(return_value=False)
-    mock_safe_client_instance._build_safe_initializer.return_value = b"\x00" * 32
+    mock_safe_client_instance.build_safe_initializer.return_value = b"\x00" * 32
 
     mock_safe_client_class = MagicMock(return_value=mock_safe_client_instance)
     monkeypatch.setattr(
@@ -41,14 +41,14 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._deploy_safe",
+        "intentkit.wallets.privy_safe.deploy_safe",
         AsyncMock(
             return_value=("0xDeployTx", "0x00000000000000000000000000000000000000Aa")
         ),
     )
 
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._wait_for_safe_deployed",
+        "intentkit.wallets.privy_safe.wait_for_safe_deployed",
         AsyncMock(return_value=True),
     )
 
@@ -77,7 +77,7 @@ async def test_deploy_safe_with_allowance_nonce_threading(monkeypatch):
     )
 
     mock_get_nonce = AsyncMock(return_value=999)
-    monkeypatch.setattr("intentkit.wallets.privy_safe._get_safe_nonce", mock_get_nonce)
+    monkeypatch.setattr("intentkit.wallets.privy_safe.get_safe_nonce", mock_get_nonce)
 
     await deploy_safe_with_allowance(
         privy_client=privy_client,
@@ -128,17 +128,17 @@ async def test_set_safe_token_spending_limit_overwrites_same_token(monkeypatch):
     monkeypatch.setitem(CHAIN_CONFIGS, "test-network-overwrite", chain_config)
 
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._is_module_enabled",
+        "intentkit.wallets.privy_safe.is_module_enabled",
         AsyncMock(side_effect=[False, True]),
     )
     mock_enable = AsyncMock(return_value="0xEnableTx")
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._enable_allowance_module",
+        "intentkit.wallets.privy_safe.enable_allowance_module",
         mock_enable,
     )
     mock_set_limit = AsyncMock(side_effect=["0xLimitTx1", "0xLimitTx2"])
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._set_spending_limit",
+        "intentkit.wallets.privy_safe.set_spending_limit",
         mock_set_limit,
     )
 
@@ -199,17 +199,17 @@ async def test_set_safe_token_spending_limit_supports_multiple_tokens(monkeypatc
     monkeypatch.setitem(CHAIN_CONFIGS, "test-network-multi-token", chain_config)
 
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._is_module_enabled",
+        "intentkit.wallets.privy_safe.is_module_enabled",
         AsyncMock(side_effect=[True, True]),
     )
     mock_enable = AsyncMock(return_value="0xEnableTx")
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._enable_allowance_module",
+        "intentkit.wallets.privy_safe.enable_allowance_module",
         mock_enable,
     )
     mock_set_limit = AsyncMock(side_effect=["0xTokenATx", "0xTokenBTx"])
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._set_spending_limit",
+        "intentkit.wallets.privy_safe.set_spending_limit",
         mock_set_limit,
     )
 
@@ -261,12 +261,12 @@ async def test_set_safe_token_spending_limit_reads_decimals_via_network_id(monke
     )
     monkeypatch.setitem(CHAIN_CONFIGS, "test-network-decimals", chain_config)
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._is_module_enabled",
+        "intentkit.wallets.privy_safe.is_module_enabled",
         AsyncMock(return_value=True),
     )
     mock_set_limit = AsyncMock(return_value="0xLimitTx")
     monkeypatch.setattr(
-        "intentkit.wallets.privy_safe._set_spending_limit", mock_set_limit
+        "intentkit.wallets.privy_safe.set_spending_limit", mock_set_limit
     )
 
     mock_contract = MagicMock()

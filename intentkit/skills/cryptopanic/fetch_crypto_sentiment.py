@@ -80,7 +80,7 @@ Analyze these headlines for {currency}. Summarize trends, opportunities, and ris
         news_skill = FetchCryptoNews()
 
         try:
-            news_output: CryptopanicNewsOutput = await news_skill._arun(
+            news_output: CryptopanicNewsOutput = await news_skill._arun(  # pyright: ignore[reportPrivateUsage]
                 query=f"insights for {currency}",
                 currency=currency,
             )

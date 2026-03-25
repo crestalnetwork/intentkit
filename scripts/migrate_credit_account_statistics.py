@@ -13,7 +13,6 @@ for each record to prevent interference from running programs.
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, List
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +55,7 @@ async def create_backup_table(session: AsyncSession) -> None:
 
 async def calculate_statistics_from_transactions(
     session: AsyncSession, account_id: str
-) -> Dict[str, Decimal]:
+) -> dict[str, Decimal]:
     """Calculate statistics for a specific account from transaction history.
 
     Args:
@@ -117,7 +116,7 @@ async def calculate_statistics_from_transactions(
 
 
 async def update_account_statistics(
-    session: AsyncSession, account_id: str, statistics: Dict[str, Decimal]
+    session: AsyncSession, account_id: str, statistics: dict[str, Decimal]
 ) -> bool:
     """Update account statistics in the database.
 
@@ -195,7 +194,7 @@ async def process_single_account(account_id: str) -> bool:
             return False
 
 
-async def get_all_account_ids() -> List[str]:
+async def get_all_account_ids() -> list[str]:
     """Get credit account IDs that need migration (all 8 statistics fields are 0).
 
     Returns:

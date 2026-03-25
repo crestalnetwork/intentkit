@@ -98,7 +98,7 @@ async def test_agent_asset_success(monkeypatch):
         async def get(cls, agent_id: str):
             return SimpleNamespace(evm_wallet_address="0x123")
 
-    async def mock_build_assets_list(agent_obj, agent_data_obj, web3_client):
+    async def mockbuild_assets_list(agent_obj, agent_data_obj, web3_client):
         return [Asset(symbol="ETH", balance=Decimal("1"))]
 
     async def mock_get_wallet_net_worth(wallet, network_id):
@@ -110,7 +110,7 @@ async def test_agent_asset_success(monkeypatch):
     monkeypatch.setattr(
         asset_module, "get_async_web3_client", lambda network: MagicMock()
     )
-    monkeypatch.setattr(asset_module, "_build_assets_list", mock_build_assets_list)
+    monkeypatch.setattr(asset_module, "build_assets_list", mockbuild_assets_list)
     monkeypatch.setattr(
         asset_module, "_get_wallet_net_worth", mock_get_wallet_net_worth
     )

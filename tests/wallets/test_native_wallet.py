@@ -229,7 +229,7 @@ class TestNativeWalletProviderTransactions:
                 )
 
         assert res.success is True
-        args, kwargs = mock_exec.call_args
+        _args, kwargs = mock_exec.call_args
         assert kwargs["to"] == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
         assert kwargs["value"] == 0
         assert isinstance(kwargs["data"], bytes)
@@ -306,7 +306,7 @@ class TestNativeWalletProviderTransactions:
             )
 
         assert txh == "0xbbb"
-        args, kwargs = mock_exec.call_args
+        _args, kwargs = mock_exec.call_args
         assert kwargs["to"] == "0x0000000000000000000000000000000000000001"
         assert kwargs["value"] == int(Decimal("1.5") * Decimal(10**18))
 

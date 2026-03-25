@@ -355,7 +355,7 @@ async def store_file_bytes(
         elif file_type == FileType.PDF:
             content_type = "application/pdf"
         else:
-            raise ValueError(f"Unsupported file type: {file_type}")
+            raise ValueError(f"Unsupported file type: {file_type}")  # pyright: ignore[reportUnreachable]
 
         logger.info("Uploading %s to S3 with content type %s", file_type, content_type)
 

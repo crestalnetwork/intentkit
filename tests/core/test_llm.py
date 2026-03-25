@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from intentkit.models.llm import LLMProvider, _load_default_llm_models
+from intentkit.models.llm import LLMProvider, load_default_llm_models
 
 
 def test_llm_model_filtering():
@@ -22,7 +22,7 @@ def test_llm_model_filtering():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         # Verify restricted providers are filtered out
         restricted_providers = {
@@ -57,7 +57,7 @@ def test_llm_model_filtering():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         # Verify OpenAI models are present
         openai_models = [m for m in models.values() if m.provider == LLMProvider.OPENAI]
@@ -83,7 +83,7 @@ def test_llm_model_filtering():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         openai_models = [m for m in models.values() if m.provider == LLMProvider.OPENAI]
         google_models = [m for m in models.values() if m.provider == LLMProvider.GOOGLE]
@@ -106,7 +106,7 @@ def test_llm_model_filtering():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         # Both native and OpenRouter variants should exist
         gpt5mini_openai = models.get("openai:gpt-5.4-mini")
@@ -133,7 +133,7 @@ def test_llm_model_filtering():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         # Native variant should not exist
         assert models.get("openai:gpt-5.4-mini") is None
@@ -163,7 +163,7 @@ def test_model_id_index_suffix_matching():
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
 
-        models = _load_default_llm_models()
+        models = load_default_llm_models()
 
         # Build index the same way the module does
         index: dict[str, list[str]] = {}

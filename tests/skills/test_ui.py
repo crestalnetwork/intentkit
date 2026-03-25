@@ -99,7 +99,7 @@ async def test_ask_user_three_options():
         option_c_content="Third",
     )
 
-    content, attachments = result
+    _content, attachments = result
     att = attachments[0]
     options = att["json"]
     assert "c" in options

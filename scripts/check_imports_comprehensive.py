@@ -8,7 +8,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 
 def run_py_compile_check(directory: Path) -> bool:
@@ -112,7 +111,7 @@ def test_direct_import() -> bool:
         return False
 
 
-def find_python_files(directory: Path) -> List[Path]:
+def find_python_files(directory: Path) -> list[Path]:
     """Find all Python files in the given directory."""
     python_files = []
     for root, dirs, files in os.walk(directory):

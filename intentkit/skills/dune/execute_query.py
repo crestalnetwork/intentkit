@@ -71,4 +71,4 @@ class DuneExecuteQuery(DuneBaseTool):
 
         # Fetch results
         results = await self._get_results(execution_id, limit)
-        return self._format_results(results, query_id)
+        return self.format_results(results, query_id)

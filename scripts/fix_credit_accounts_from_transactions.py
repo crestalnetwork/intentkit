@@ -11,7 +11,6 @@ import asyncio
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Tuple
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,7 +49,7 @@ async def create_backup_table(session: AsyncSession) -> str:
 
 async def calculate_credits_from_transactions(
     session: AsyncSession, account_id: str
-) -> Tuple[Decimal, Decimal, Decimal]:
+) -> tuple[Decimal, Decimal, Decimal]:
     """Calculate the three types of credits from transactions for an account.
 
     Args:
@@ -103,7 +102,7 @@ async def calculate_credits_from_transactions(
 
 async def get_current_account_credits(
     session: AsyncSession, account_id: str
-) -> Tuple[Decimal, Decimal, Decimal]:
+) -> tuple[Decimal, Decimal, Decimal]:
     """Get current credit values from account table.
 
     Args:

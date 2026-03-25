@@ -134,7 +134,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
             )
         # Validate and set defaults
         if formats is None:
-            formats = ["markdown"]
+            formats = ["markdown"]  # pyright: ignore[reportUnreachable]
 
         # Validate formats
         valid_formats = ["markdown", "html", "rawHtml", "screenshot", "links", "json"]

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from intentkit.core.engine import _extract_text_content, _extract_thinking_content
+from intentkit.core.engine import extract_text_content, extract_thinking_content
 
 
 def test_extract_from_list_mixed_types():
@@ -15,26 +15,26 @@ def test_extract_from_list_mixed_types():
         {"type": "text", "text": "Hello"},
         {"type": "text", "text": " World"},
     ]
-    assert _extract_text_content(content) == "Hello World"
+    assert extract_text_content(content) == "Hello World"
 
 
 def test_extract_from_dict_text_type():
     content = {"type": "text", "text": "ABC"}
-    assert _extract_text_content(content) == "ABC"
+    assert extract_text_content(content) == "ABC"
 
 
 def test_extract_from_dict_with_text_without_type():
     content = {"text": "XYZ"}
-    assert _extract_text_content(content) == "XYZ"
+    assert extract_text_content(content) == "XYZ"
 
 
 def test_extract_from_dict_without_text():
     content = {"type": "reasoning", "summary": []}
-    assert _extract_text_content(content) == ""
+    assert extract_text_content(content) == ""
 
 
 def test_extract_from_string():
-    assert _extract_text_content("plain") == "plain"
+    assert extract_text_content("plain") == "plain"
 
 
 # Helper to create a fake AIMessage-like object
@@ -45,7 +45,7 @@ def _msg(content=None, additional_kwargs=None):
     )
 
 
-# Tests for _extract_thinking_content
+# Tests for extract_thinking_content
 
 
 def test_thinking_additional_kwargs_reasoning_content():
@@ -54,7 +54,7 @@ def test_thinking_additional_kwargs_reasoning_content():
         content=[{"type": "text", "text": "Hello"}],
         additional_kwargs={"reasoning_content": "I am reasoning about this."},
     )
-    assert _extract_thinking_content(msg) == "I am reasoning about this."
+    assert extract_thinking_content(msg) == "I am reasoning about this."
 
 
 def test_thinking_additional_kwargs_reasoning_v0():
@@ -70,7 +70,7 @@ def test_thinking_additional_kwargs_reasoning_v0():
             }
         },
     )
-    assert _extract_thinking_content(msg) == "Step one.\n\nStep two."
+    assert extract_thinking_content(msg) == "Step one.\n\nStep two."
 
 
 def test_thinking_content_reasoning_standard():
@@ -81,7 +81,7 @@ def test_thinking_content_reasoning_standard():
             {"type": "text", "text": "Hello"},
         ],
     )
-    assert _extract_thinking_content(msg) == "My reasoning text."
+    assert extract_thinking_content(msg) == "My reasoning text."
 
 
 def test_thinking_content_reasoning_summary_list():
@@ -99,7 +99,7 @@ def test_thinking_content_reasoning_summary_list():
             {"type": "text", "text": "Hello"},
         ],
     )
-    assert _extract_thinking_content(msg) == "First thought.\n\nSecond thought."
+    assert extract_thinking_content(msg) == "First thought.\n\nSecond thought."
 
 
 def test_thinking_content_reasoning_direct_text():
@@ -110,7 +110,7 @@ def test_thinking_content_reasoning_direct_text():
             {"type": "text", "text": "Response"},
         ],
     )
-    assert _extract_thinking_content(msg) == "I am thinking about this."
+    assert extract_thinking_content(msg) == "I am thinking about this."
 
 
 def test_thinking_content_thinking_block():
@@ -121,26 +121,26 @@ def test_thinking_content_thinking_block():
             {"type": "text", "text": "Response"},
         ],
     )
-    assert _extract_thinking_content(msg) == "Claude's extended thinking here."
+    assert extract_thinking_content(msg) == "Claude's extended thinking here."
 
 
 def test_thinking_no_reasoning_blocks():
     msg = _msg(content=[{"type": "text", "text": "Hello"}])
-    assert _extract_thinking_content(msg) is None
+    assert extract_thinking_content(msg) is None
 
 
 def test_thinking_no_content_no_kwargs():
     msg = _msg()
-    assert _extract_thinking_content(msg) is None
+    assert extract_thinking_content(msg) is None
 
 
 def test_thinking_empty_summary():
     msg = _msg(
         content=[{"type": "reasoning", "id": "rs_1", "summary": []}],
     )
-    assert _extract_thinking_content(msg) is None
+    assert extract_thinking_content(msg) is None
 
 
 def test_thinking_plain_object_without_attrs():
     """Object without content/additional_kwargs returns None."""
-    assert _extract_thinking_content(object()) is None
+    assert extract_thinking_content(object()) is None

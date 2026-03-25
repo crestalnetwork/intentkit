@@ -90,7 +90,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
 
         # Ensure to_symbols is a list
         if not isinstance(to_symbols, list):
-            to_symbols = [to_symbols] if to_symbols else ["USD"]
+            to_symbols = [to_symbols] if to_symbols else ["USD"]  # pyright: ignore[reportUnreachable]
 
         params = {
             "fsym": from_symbol.upper(),

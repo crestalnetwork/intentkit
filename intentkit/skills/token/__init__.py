@@ -47,7 +47,7 @@ async def get_skills(
         A list of Token blockchain analysis skills.
     """
     if "states" not in config:
-        logger.error("No 'states' field in config")
+        logger.error("No 'states' field in config")  # pyright: ignore[reportUnreachable]
         return []
 
     available_skills = []

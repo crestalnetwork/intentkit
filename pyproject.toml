@@ -137,6 +137,15 @@ reportUnknownVariableType = false
 reportUnknownArgumentType = false
 reportImplicitStringConcatenation = false
 reportUnusedCallResult = false
+reportMissingParameterType = false
+reportUnknownParameterType = false
+reportImplicitOverride = false
+reportUnusedParameter = false
+reportUnannotatedClassAttribute = false
+reportUnknownLambdaType = false
+reportMissingTypeArgument = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryComparison = false
 
 [build-system]
 requires = ["hatchling"]

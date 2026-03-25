@@ -26,7 +26,7 @@ class GrokVideoBase(VideoBaseTool):
     """Base class for Grok video generation skills."""
 
     @override
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         return bool(config.xai_api_key)
 
     @override

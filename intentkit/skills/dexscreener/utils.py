@@ -169,7 +169,7 @@ def get_sort_function(
     elif sort_by == SortBy.VOLUME:
         return lambda pair: get_volume_value(pair, volume_timeframe)
     else:
-        logger.warning("Invalid sort_by value '%s', defaulting to liquidity.", sort_by)
+        logger.warning("Invalid sort_by value '%s', defaulting to liquidity.", sort_by)  # pyright: ignore[reportUnreachable]
         return get_liquidity_value
 
 

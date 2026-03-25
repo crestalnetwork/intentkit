@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from intentkit.config.db_mig import safe_migrate
 
 engine: AsyncEngine | None = None
-_connection_pool: AsyncConnectionPool | None = None
+connection_pool: AsyncConnectionPool | None = None
 _checkpointer: AsyncShallowPostgresSaver | None = None
 
 
@@ -59,9 +59,9 @@ async def init_db(
         auto_migrate: Whether to run migrations automatically (default: True)
         pool_size: Database connection pool size (default: 3)
     """
-    global engine, _connection_pool, _checkpointer
+    global engine, connection_pool, _checkpointer
     # Initialize psycopg pool and AsyncShallowPostgresSaver if not already initialized
-    if _connection_pool is None:
+    if connection_pool is None:
         if host:
             # Handle local PostgreSQL without authentication
             username_str = username or ""
@@ -83,7 +83,7 @@ async def init_db(
                 # Set connection max lifetime to prevent stale connections
                 max_lifetime=3600,  # 1 hour
             )
-            _connection_pool = pool  # pyright: ignore[reportAssignmentType]
+            connection_pool = pool  # pyright: ignore[reportAssignmentType]
             _checkpointer = AsyncShallowPostgresSaver(pool)  # pyright: ignore[reportArgumentType]
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
@@ -172,9 +172,9 @@ def get_connection_pool() -> AsyncConnectionPool:
     Returns:
         AsyncConnectionPool: The AsyncConnectionPool instance
     """
-    if _connection_pool is None:
+    if connection_pool is None:
         raise RuntimeError("Database pool not initialized. Call init_db first.")
-    return _connection_pool
+    return connection_pool
 
 
 def get_checkpointer() -> AsyncShallowPostgresSaver:

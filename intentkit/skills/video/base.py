@@ -49,10 +49,10 @@ class VideoBaseTool(IntentKitSkill, metaclass=ABCMeta):
     @override
     def available(self) -> bool:
         """Check if this video skill is available based on API keys."""
-        return self._has_native_key()
+        return self.has_native_key()
 
     @abstractmethod
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         """Return True if the native API key is configured."""
         ...
 
@@ -103,7 +103,7 @@ class VideoBaseTool(IntentKitSkill, metaclass=ABCMeta):
             if image:
                 input_image = await self._download_image(image)
 
-            if self._has_native_key():
+            if self.has_native_key():
                 video_bytes = await self._generate_native(prompt, input_image)
             else:
                 raise ToolException(

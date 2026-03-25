@@ -85,8 +85,8 @@ async def setup_bdd_database(postgresql_server):
 
     if db.engine:
         await db.engine.dispose()
-    if db._connection_pool:
-        await db._connection_pool.close()
+    if db.connection_pool:
+        await db.connection_pool.close()
     try:
         redis_client = get_redis()
         await redis_client.aclose()

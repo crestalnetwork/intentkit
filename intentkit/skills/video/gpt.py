@@ -25,7 +25,7 @@ class SoraVideoBase(VideoBaseTool):
     """Base class for OpenAI Sora video generation skills."""
 
     @override
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         return bool(config.openai_api_key)
 
     @override

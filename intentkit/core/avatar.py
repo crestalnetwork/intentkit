@@ -48,7 +48,7 @@ async def _download_image(url: str) -> bytes:
         return response.content
 
 
-async def _generate_image_openrouter(prompt: str) -> bytes | None:
+async def generate_image_openrouter(prompt: str) -> bytes | None:
     """Generate image using OpenRouter with bytedance-seed/seedream-4.5."""
     try:
         client = AsyncOpenAI(
@@ -70,7 +70,7 @@ async def _generate_image_openrouter(prompt: str) -> bytes | None:
     return None
 
 
-async def _generate_image_google(prompt: str) -> bytes | None:
+async def generate_image_google(prompt: str) -> bytes | None:
     """Generate image using Google Gemini gemini-2.5-flash with native image output."""
     try:
         client = genai.Client(api_key=config.google_api_key)
@@ -96,7 +96,7 @@ async def _generate_image_google(prompt: str) -> bytes | None:
     return None
 
 
-async def _generate_image_openai(prompt: str) -> bytes | None:
+async def generate_image_openai(prompt: str) -> bytes | None:
     """Generate image using OpenAI gpt-image-1-mini."""
     try:
         client = AsyncOpenAI(api_key=config.openai_api_key)
@@ -117,7 +117,7 @@ async def _generate_image_openai(prompt: str) -> bytes | None:
     return None
 
 
-async def _generate_image_xai(prompt: str) -> bytes | None:
+async def generate_image_xai(prompt: str) -> bytes | None:
     """Generate image using xAI grok-imagine-image."""
     try:
         client = AsyncOpenAI(
@@ -150,11 +150,11 @@ async def select_model_and_generate(prompt: str) -> bytes | None:
         (
             config.openrouter_api_key,
             "OpenRouter/seedream-4.5",
-            _generate_image_openrouter,
+            generate_image_openrouter,
         ),
-        (config.google_api_key, "Google/gemini-2.5-flash", _generate_image_google),
-        (config.openai_api_key, "OpenAI/gpt-image-1-mini", _generate_image_openai),
-        (config.xai_api_key, "xAI/grok-imagine-image", _generate_image_xai),
+        (config.google_api_key, "Google/gemini-2.5-flash", generate_image_google),
+        (config.openai_api_key, "OpenAI/gpt-image-1-mini", generate_image_openai),
+        (config.xai_api_key, "xAI/grok-imagine-image", generate_image_xai),
     ]
 
     for api_key, provider_name, generate_fn in providers:
@@ -170,7 +170,7 @@ async def select_model_and_generate(prompt: str) -> bytes | None:
     return None
 
 
-def _build_agent_profile(agent_id: str, agent: Any) -> str:
+def build_agent_profile(agent_id: str, agent: Any) -> str:
     """Extract prompt-related fields from an agent object and build a profile string."""
     sections: list[str] = []
     for field_name, label in _PROMPT_FIELDS:
@@ -222,7 +222,7 @@ async def generate_image_prompt_from_profile(profile: str, system_prompt: str) -
 
 async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
     """Use a cheap LLM to turn agent profile into an image generation prompt."""
-    profile = _build_agent_profile(agent_id, agent)
+    profile = build_agent_profile(agent_id, agent)
 
     try:
         image_prompt = await generate_image_prompt_from_profile(

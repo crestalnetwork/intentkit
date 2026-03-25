@@ -6,9 +6,9 @@ import pytest
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.prompt import (
-    _build_sub_agents_section,
-    _build_system_skills_section,
+    build_sub_agents_section,
     build_system_prompt,
+    build_system_skills_section,
 )
 from intentkit.core.system_skills import get_system_skills
 
@@ -25,7 +25,7 @@ class TestSystemSkillsSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = _build_system_skills_section(agent, context)
+        result = build_system_skills_section(agent, context)
         assert "update_memory" in result
 
     def test_excludes_update_memory_when_disabled(self):
@@ -39,7 +39,7 @@ class TestSystemSkillsSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = _build_system_skills_section(agent, context)
+        result = build_system_skills_section(agent, context)
         assert "update_memory" not in result
 
     def test_excludes_update_memory_when_none(self):
@@ -53,7 +53,7 @@ class TestSystemSkillsSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = _build_system_skills_section(agent, context)
+        result = build_system_skills_section(agent, context)
         assert "update_memory" not in result
 
     def test_excludes_call_agent_from_system_skills_section(self):
@@ -67,7 +67,7 @@ class TestSystemSkillsSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = _build_system_skills_section(agent, context)
+        result = build_system_skills_section(agent, context)
         assert "call_agent" not in result
 
 
@@ -264,7 +264,7 @@ class TestSubAgentsPromptSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = await _build_sub_agents_section(agent, context)
+        result = await build_sub_agents_section(agent, context)
         assert result == ""
 
     @pytest.mark.asyncio
@@ -275,7 +275,7 @@ class TestSubAgentsPromptSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
-        result = await _build_sub_agents_section(agent, context)
+        result = await build_sub_agents_section(agent, context)
         assert result == ""
 
     @pytest.mark.asyncio
@@ -286,7 +286,7 @@ class TestSubAgentsPromptSection:
         context = MagicMock(spec=AgentContext)
         context.is_private = False
 
-        result = await _build_sub_agents_section(agent, context)
+        result = await build_sub_agents_section(agent, context)
         assert result == ""
 
     @pytest.mark.asyncio
@@ -306,7 +306,7 @@ class TestSubAgentsPromptSection:
             new_callable=AsyncMock,
             return_value=target_agent,
         ):
-            result = await _build_sub_agents_section(agent, context)
+            result = await build_sub_agents_section(agent, context)
 
         assert "## Sub-Agents" in result
         assert "call_agent" in result
@@ -329,7 +329,7 @@ class TestSubAgentsPromptSection:
             new_callable=AsyncMock,
             return_value=target_agent,
         ):
-            result = await _build_sub_agents_section(agent, context)
+            result = await build_sub_agents_section(agent, context)
 
         assert "helper-bot: Help with complex tasks" in result
 
@@ -350,7 +350,7 @@ class TestSubAgentsPromptSection:
             new_callable=AsyncMock,
             return_value=target_agent,
         ):
-            result = await _build_sub_agents_section(agent, context)
+            result = await build_sub_agents_section(agent, context)
 
         assert "Always delegate math questions." in result
 

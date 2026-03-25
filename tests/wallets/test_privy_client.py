@@ -138,8 +138,8 @@ class TestPrivyClient:
         assert len(decoded) == 91
 
 
-def test_send_transaction_with_master_wallet_overloads() -> None:
-    overloads = get_overloads(privy._send_transaction_with_master_wallet)
+def testsend_transaction_with_master_wallet_overloads() -> None:
+    overloads = get_overloads(privy.send_transaction_with_master_wallet)
     assert overloads
     returns = {get_type_hints(overload)["return"] for overload in overloads}
     assert str in returns

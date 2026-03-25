@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 # Process-lifetime cache for the credit-per-USDC rate fetched from AppSetting.
 # This value is loaded on first use and never refreshed until the process restarts,
 # which is acceptable because rate changes are infrequent and a restart picks them up.
-_credit_per_usdc = None
+credit_per_usdc = None
 FOURPLACES = Decimal("0.0001")
 
 
@@ -56,7 +56,7 @@ def _parse_optional_decimal(value: str | None) -> Decimal | None:
     return Decimal(value) if value else None
 
 
-def _load_default_llm_models() -> dict[str, "LLMModelInfo"]:
+def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
     """Load default LLM models from a CSV file.
 
     Models are keyed by ``{provider}:{id}`` so that the same model ID from
@@ -449,9 +449,9 @@ class LLMModelInfo(BaseModel):
         self, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0
     ) -> Decimal:
         """Calculate the cost for a given number of tokens."""
-        global _credit_per_usdc
-        if not _credit_per_usdc:
-            _credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
+        global credit_per_usdc
+        if not credit_per_usdc:
+            credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
 
         # Determine effective price for cached input tokens
         effective_cached_price = (
@@ -465,19 +465,19 @@ class LLMModelInfo(BaseModel):
         non_cached_input = input_tokens - effective_cached
 
         input_cost = (
-            _credit_per_usdc
+            credit_per_usdc
             * Decimal(non_cached_input)
             * self.input_price
             / Decimal(1000000)
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         cached_input_cost = (
-            _credit_per_usdc
+            credit_per_usdc
             * Decimal(effective_cached)
             * effective_cached_price
             / Decimal(1000000)
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
         output_cost = (
-            _credit_per_usdc
+            credit_per_usdc
             * Decimal(output_tokens)
             * self.output_price
             / Decimal(1000000)
@@ -488,7 +488,7 @@ class LLMModelInfo(BaseModel):
 
 
 # Default models loaded from CSV
-AVAILABLE_MODELS = _load_default_llm_models()
+AVAILABLE_MODELS = load_default_llm_models()
 
 # Reverse index: model id → list of composite keys in AVAILABLE_MODELS.
 # Indexed by both full id (e.g. "openai/gpt-5-mini") and base name after "/"
@@ -519,10 +519,10 @@ async def calculate_search_cost(provider: LLMProvider, search_count: int) -> Dec
     price = get_search_price(provider)
     if not price or search_count <= 0:
         return Decimal("0")
-    global _credit_per_usdc
-    if not _credit_per_usdc:
-        _credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
-    return (_credit_per_usdc * Decimal(search_count) * price).quantize(
+    global credit_per_usdc
+    if not credit_per_usdc:
+        credit_per_usdc = (await AppSetting.payment()).credit_per_usdc
+    return (credit_per_usdc * Decimal(search_count) * price).quantize(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 

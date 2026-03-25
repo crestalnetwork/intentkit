@@ -9,10 +9,10 @@ the version tag if the title is empty or doesn't match the expected format.
 import json
 import subprocess
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 
-def run_command(cmd: List[str]) -> str:
+def run_command(cmd: list[str]) -> str:
     """Run a shell command and return its output."""
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -22,7 +22,7 @@ def run_command(cmd: List[str]) -> str:
         sys.exit(1)
 
 
-def get_releases(limit: int = 20) -> List[Dict[str, Any]]:
+def get_releases(limit: int = 20) -> list[dict[str, Any]]:
     """Get list of releases from GitHub."""
     output = run_command(
         [

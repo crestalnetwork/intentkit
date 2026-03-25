@@ -87,7 +87,7 @@ def update_states_field(schema_path: Path, schema: dict[str, Any]) -> bool:
         # Check if properties exists in states
         if "properties" in states_schema:
             # Update each state property to ensure it has the correct enum and default value
-            for state_name, state_props in states_schema["properties"].items():
+            for _state_name, state_props in states_schema["properties"].items():
                 # Ensure enum values are correct
                 if "enum" not in state_props or set(state_props["enum"]) != {
                     "disabled",

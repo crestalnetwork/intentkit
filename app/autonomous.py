@@ -91,7 +91,7 @@ def _resolve_autonomous_ids_from_job(job: Job | None) -> tuple[str, str] | None:
     return agent_id, autonomous_id
 
 
-async def _update_autonomous_status(
+async def update_autonomous_status(
     job_id: str, status: AgentAutonomousStatus | None
 ) -> None:
     """Update the status and next_run_time of an autonomous task in the database.
@@ -133,15 +133,15 @@ async def _update_autonomous_status(
     )
 
 
-async def _update_autonomous_status_safe(
+async def update_autonomous_status_safe(
     job_id: str, status: AgentAutonomousStatus | None
 ) -> None:
-    """Wrapper around _update_autonomous_status with error handling.
+    """Wrapper around update_autonomous_status with error handling.
 
     This ensures exceptions don't get silently swallowed when called via create_task.
     """
     try:
-        await _update_autonomous_status(job_id, status)
+        await update_autonomous_status(job_id, status)
     except Exception as e:
         logger.error("Failed to update autonomous status for job %s: %s", job_id, e)
 
@@ -163,7 +163,7 @@ def _handle_autonomous_event(
     else:
         return
 
-    _ = asyncio.create_task(_update_autonomous_status_safe(event.job_id, status))
+    _ = asyncio.create_task(update_autonomous_status_safe(event.job_id, status))
 
 
 async def send_autonomous_heartbeat():

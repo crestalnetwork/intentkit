@@ -298,7 +298,7 @@ def convert_amount_to_wei(amount: str, token_symbol: str = "ETH") -> str:
     """Convert a token amount into the smallest denomination expected by LiFi."""
 
     if amount is None:
-        raise ToolException("Amount is required")
+        raise ToolException("Amount is required")  # pyright: ignore[reportUnreachable]
 
     normalized_amount = amount.strip()
     if not normalized_amount:

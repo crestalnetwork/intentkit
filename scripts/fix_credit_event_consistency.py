@@ -15,7 +15,7 @@ The 12 fields that will be recalculated and updated are:
 import asyncio
 import logging
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,11 +46,11 @@ class CreditEventConsistencyFixer:
         self.inconsistent_records = 0
         self.fixed_records = 0
         self.failed_fixes = 0
-        self.inconsistent_details: List[Dict[str, Any]] = []
+        self.inconsistent_details: list[dict[str, Any]] = []
 
     def check_record_consistency(
         self, record: CreditEventTable
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """Check if a single record is consistent.
 
         Returns:
@@ -114,7 +114,7 @@ class CreditEventConsistencyFixer:
 
     def calculate_detailed_amounts(
         self, record: CreditEventTable
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Calculate the 12 detailed amount fields using the same logic as expense_skill.
 
         Returns:

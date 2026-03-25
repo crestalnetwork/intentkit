@@ -90,12 +90,12 @@ class TokenExecute(LiFiBaseTool):
                 allowed_chains=allowed_chains,
             )
 
-    def _format_quote_result(self, data: dict[str, Any]) -> str:
+    def format_quote_result(self, data: dict[str, Any]) -> str:
         """Format the quote result in a readable format."""
         if self.quote_tool is None:
             raise ToolException("Quote tool is not initialized")
         # Use the same formatting as token_quote
-        return self.quote_tool._format_quote_result(data)
+        return self.quote_tool.format_quote_result(data)
 
     async def _arun(
         self,
@@ -414,7 +414,7 @@ class TokenExecute(LiFiBaseTool):
         )
 
         # Format quote details
-        formatted_quote = self._format_quote_result(quote_data)
+        formatted_quote = self.format_quote_result(quote_data)
 
         # Handle cross-chain vs same-chain transfers
         if from_chain.lower() != to_chain.lower():

@@ -113,7 +113,7 @@ class MasterWalletNonceManager:
 _nonce_manager: MasterWalletNonceManager | None = None
 
 
-def _get_nonce_manager() -> MasterWalletNonceManager:
+def get_nonce_manager() -> MasterWalletNonceManager:
     """Get or create the nonce manager singleton for the master wallet."""
     global _nonce_manager
     if _nonce_manager is None:

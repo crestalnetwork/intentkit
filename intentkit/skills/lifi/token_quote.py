@@ -132,13 +132,13 @@ class TokenQuote(LiFiBaseTool):
                     return error
 
                 # Format the quote result
-                return self._format_quote_result(data)
+                return self.format_quote_result(data)
 
         except Exception as e:
             self.logger.error("LiFi_Error: %s", str(e))
             return f"An unexpected error occurred: {str(e)}"
 
-    def _format_quote_result(self, data: dict[str, Any]) -> str:
+    def format_quote_result(self, data: dict[str, Any]) -> str:
         """Format quote result into human-readable text."""
         try:
             # Get basic info

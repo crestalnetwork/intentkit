@@ -50,7 +50,7 @@ async def test_safe_funding_transfers_when_balance_insufficient():
             new=AsyncMock(return_value="0xhash"),
         ) as mock_transfer,
     ):
-        await skill._ensure_safe_funding(
+        await skill.ensure_safe_funding(
             amount=REQUIRED_AMOUNT,
             token_address="0x3333333333333333333333333333333333333333",
             max_value=REQUIRED_AMOUNT,
@@ -104,7 +104,7 @@ async def test_safe_funding_skips_when_balance_sufficient():
             new=AsyncMock(return_value="0xhash"),
         ) as mock_transfer,
     ):
-        await skill._ensure_safe_funding(
+        await skill.ensure_safe_funding(
             amount=REQUIRED_AMOUNT,
             token_address="0x3333333333333333333333333333333333333333",
             max_value=REQUIRED_AMOUNT,

@@ -6,9 +6,9 @@ from langchain_core.messages import AIMessage
 
 from intentkit.core.engine import stream_agent
 from intentkit.core.executor import (
-    _agents,
-    _agents_updated,
     agent_executor,
+    agents,
+    agents_updated,
     build_executor,
 )
 from intentkit.models.agent import Agent, AgentData
@@ -77,8 +77,8 @@ async def test_build_executor(mock_agent, mock_agent_data):
 async def test_agent_executor_caching(mock_agent):
     """Test agent executor caching mechanism."""
     # Reset cache
-    _agents.clear()
-    _agents_updated.clear()
+    agents.clear()
+    agents_updated.clear()
 
     with (
         patch(
@@ -98,8 +98,8 @@ async def test_agent_executor_caching(mock_agent):
         mock_agent_data_get.return_value = mock_agent_data
 
         async def side_effect(aid, agent, agent_data):
-            _agents[aid] = mock_executor
-            _agents_updated[aid] = max(
+            agents[aid] = mock_executor
+            agents_updated[aid] = max(
                 agent.deployed_at if agent.deployed_at else agent.updated_at,
                 agent_data.updated_at,
             )
@@ -107,12 +107,12 @@ async def test_agent_executor_caching(mock_agent):
         mock_build_and_cache.side_effect = side_effect
 
         # First call - should initialize
-        executor1, cost1 = await agent_executor(mock_agent.id)
+        executor1, _cost1 = await agent_executor(mock_agent.id)
         assert executor1 == mock_executor
         assert mock_build_and_cache.call_count == 1
 
         # Second call - should use cache
-        executor2, cost2 = await agent_executor(mock_agent.id)
+        executor2, _cost2 = await agent_executor(mock_agent.id)
         assert executor2 == mock_executor
         assert mock_build_and_cache.call_count == 1  # Still 1
 
@@ -127,14 +127,14 @@ async def test_agent_executor_caching(mock_agent):
         mock_agent.deployed_at = datetime.now()
 
         # Third call - should re-initialize
-        executor3, cost3 = await agent_executor(mock_agent.id)
+        _executor3, _cost3 = await agent_executor(mock_agent.id)
         assert mock_build_and_cache.call_count == 2
 
         # Fourth call - update only agent_data.updated_at to force re-init
         time.sleep(0.001)
         mock_agent_data.updated_at = datetime.now()
 
-        executor4, cost4 = await agent_executor(mock_agent.id)
+        _executor4, _cost4 = await agent_executor(mock_agent.id)
         assert mock_build_and_cache.call_count == 3
 
 

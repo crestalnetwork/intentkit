@@ -8,12 +8,12 @@ from intentkit.models.chat import AuthorType
 
 
 @pytest.mark.asyncio
-async def test_should_schedule_chat_summary_when_third_user_message(monkeypatch):
+async def testshould_schedule_chat_summary_when_third_user_message(monkeypatch):
     import app.local.chat as chat_module
 
     monkeypatch.setattr(chat_module, "_count_user_messages", AsyncMock(return_value=2))
 
-    should_schedule = await chat_module._should_schedule_chat_summary(
+    should_schedule = await chat_module.should_schedule_chat_summary(
         "agent-1", "chat-1", AuthorType.WEB
     )
 
@@ -26,7 +26,7 @@ async def test_should_not_schedule_chat_summary_for_non_third_message(monkeypatc
 
     monkeypatch.setattr(chat_module, "_count_user_messages", AsyncMock(return_value=1))
 
-    should_schedule = await chat_module._should_schedule_chat_summary(
+    should_schedule = await chat_module.should_schedule_chat_summary(
         "agent-1", "chat-1", AuthorType.WEB
     )
 
@@ -40,7 +40,7 @@ async def test_should_not_schedule_chat_summary_for_non_web_author(monkeypatch):
     count_mock = AsyncMock(return_value=2)
     monkeypatch.setattr(chat_module, "_count_user_messages", count_mock)
 
-    should_schedule = await chat_module._should_schedule_chat_summary(
+    should_schedule = await chat_module.should_schedule_chat_summary(
         "agent-1", "chat-1", AuthorType.API
     )
 
@@ -60,12 +60,12 @@ async def test_send_message_schedules_background_summary_task(monkeypatch):
     monkeypatch.setattr(chat_module, "get_agent", AsyncMock(return_value=MagicMock()))
     monkeypatch.setattr(chat_module.Chat, "get", AsyncMock(return_value=mock_chat))
     monkeypatch.setattr(
-        chat_module, "_should_schedule_chat_summary", AsyncMock(return_value=True)
+        chat_module, "should_schedule_chat_summary", AsyncMock(return_value=True)
     )
     monkeypatch.setattr(chat_module, "execute_agent", AsyncMock(return_value=[]))
     schedule_mock = MagicMock()
     monkeypatch.setattr(
-        chat_module, "_schedule_chat_summary_title_update", schedule_mock
+        chat_module, "schedule_chat_summary_title_update", schedule_mock
     )
 
     request = chat_module.LocalChatMessageRequest(
@@ -104,11 +104,11 @@ def test_normalize_summary_title_limits_to_40_chars():
     assert len(title) <= 40
 
 
-def test_should_summarize_first_message_uses_byte_length():
+def testshould_summarize_first_message_uses_byte_length():
     import app.local.chat as chat_module
 
-    assert chat_module._should_summarize_first_message("hello") is False
-    assert chat_module._should_summarize_first_message("这是超过二十字节") is True
+    assert chat_module.should_summarize_first_message("hello") is False
+    assert chat_module.should_summarize_first_message("这是超过二十字节") is True
 
 
 @pytest.mark.asyncio
@@ -127,7 +127,7 @@ async def test_create_chat_thread_triggers_summary_with_long_first_message(monke
     monkeypatch.setattr(chat_module.Chat, "get", AsyncMock(return_value=mock_full_chat))
     update_mock = AsyncMock()
     monkeypatch.setattr(
-        chat_module, "_update_chat_summary_from_first_message", update_mock
+        chat_module, "update_chat_summary_from_first_message", update_mock
     )
 
     request = chat_module.LocalChatCreateRequest(
@@ -158,7 +158,7 @@ async def test_create_chat_thread_skips_summary_with_short_first_message(monkeyp
     monkeypatch.setattr(chat_module.Chat, "get", AsyncMock(return_value=mock_full_chat))
     update_mock = AsyncMock()
     monkeypatch.setattr(
-        chat_module, "_update_chat_summary_from_first_message", update_mock
+        chat_module, "update_chat_summary_from_first_message", update_mock
     )
 
     request = chat_module.LocalChatCreateRequest(first_message="short msg")

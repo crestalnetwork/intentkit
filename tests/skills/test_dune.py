@@ -94,7 +94,7 @@ def test_format_results_with_rows():
             ],
         }
     }
-    output = tool._format_results(result_json, 42)
+    output = tool.format_results(result_json, 42)
     assert "Query 42 results" in output
     assert "2 rows" in output
     assert "block | tx_hash | value" in output
@@ -115,7 +115,7 @@ def test_format_results_no_rows():
             "rows": [],
         }
     }
-    output = tool._format_results(result_json, 1)
+    output = tool.format_results(result_json, 1)
     assert "No rows returned" in output
 
 
@@ -133,7 +133,7 @@ def test_format_results_truncation():
             "rows": rows,
         }
     }
-    output = tool._format_results(result_json, 1)
+    output = tool.format_results(result_json, 1)
     assert "truncated" in output
     assert len(output) < 5000
 

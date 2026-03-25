@@ -49,10 +49,10 @@ from app.local.chat import (
     ChatUpdateRequest,
     LocalChatCreateRequest,
     LocalChatMessageRequest,
-    _schedule_chat_summary_title_update,
-    _should_schedule_chat_summary,
-    _should_summarize_first_message,
-    _update_chat_summary_from_first_message,
+    schedule_chat_summary_title_update,
+    should_schedule_chat_summary,
+    should_summarize_first_message,
+    update_chat_summary_from_first_message,
 )
 
 # init logger
@@ -102,8 +102,8 @@ async def create_lead_chat_thread(
         rounds=0,
     )
     _ = await chat.save()
-    if request and _should_summarize_first_message(request.first_message):
-        await _update_chat_summary_from_first_message(
+    if request and should_summarize_first_message(request.first_message):
+        await update_chat_summary_from_first_message(
             LEAD_AGENT_ID, chat.id, request.first_message or ""
         )
     full_chat = await Chat.get(chat.id)
@@ -225,7 +225,7 @@ async def send_lead_message(
             status_code=404, key="ChatNotFound", message="Chat not found"
         )
 
-    should_schedule_summary = await _should_schedule_chat_summary(
+    should_schedule_summary = await should_schedule_chat_summary(
         LEAD_AGENT_ID, chat_id, AuthorType.WEB
     )
 
@@ -270,7 +270,7 @@ async def send_lead_message(
                 ):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
                 if should_schedule_summary:
-                    _schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
+                    schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
             except asyncio.CancelledError:
                 logger.info("Stream cancelled for lead chat %s", chat_id)
                 return
@@ -288,7 +288,7 @@ async def send_lead_message(
         async for chunk in stream_lead(LEAD_TEAM_ID, LEAD_USER_ID, user_message):
             response_messages.append(chunk)
         if should_schedule_summary:
-            _schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
+            schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
         return response_messages
 
 

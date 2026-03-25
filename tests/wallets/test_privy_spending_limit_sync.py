@@ -12,7 +12,7 @@ from intentkit.models.agent_data import AgentData
 
 @pytest.mark.asyncio
 async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-123",
         name="Test Agent",
         description="A test agent",
@@ -91,7 +91,7 @@ async def test_process_agent_wallet_syncs_privy_limit_when_changed(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_process_agent_wallet_disables_privy_limit_when_set_to_none(monkeypatch):
-    agent = Agent(  # pyright: ignore[reportCallIssue]
+    agent = Agent(
         id="agent-123",
         name="Test Agent",
         description="A test agent",

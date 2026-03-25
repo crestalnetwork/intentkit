@@ -11,10 +11,10 @@ from intentkit.config.config import config
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.privy_types import PrivyWallet
 from intentkit.wallets.privy_utils import (
-    _canonicalize_json,
-    _convert_typed_data_to_privy_format,
-    _privy_private_key_to_pem,
-    _sanitize_for_json,
+    canonicalize_json,
+    convert_typed_data_to_privy_format,
+    privy_private_key_to_pem,
+    sanitize_for_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class PrivyClient:
 
         for raw_key in self.authorization_private_keys:
             try:
-                pem = _privy_private_key_to_pem(raw_key)
+                pem = privy_private_key_to_pem(raw_key)
                 key_obj = serialization.load_pem_private_key(pem, password=None)
                 if not isinstance(key_obj, ec.EllipticCurvePrivateKey):
                     logger.warning(
@@ -115,7 +115,7 @@ class PrivyClient:
             "body": body,
             "headers": signed_headers,
         }
-        serialized_payload = _canonicalize_json(payload).encode("utf-8")
+        serialized_payload = canonicalize_json(payload).encode("utf-8")
         payload_hash = hashlib.sha256(serialized_payload).hexdigest()[:16]
         logger.info("Privy auth payload sha256: %s", payload_hash)
 
@@ -455,8 +455,8 @@ class PrivyClient:
         url = f"{self.base_url}/wallets/{wallet_id}/rpc"
         # Convert typed_data to Privy format (primaryType -> primary_type)
         # then sanitize to convert bytes to hex strings for JSON serialization
-        privy_typed_data = _convert_typed_data_to_privy_format(typed_data)
-        sanitized_typed_data = _sanitize_for_json(privy_typed_data)
+        privy_typed_data = convert_typed_data_to_privy_format(typed_data)
+        sanitized_typed_data = sanitize_for_json(privy_typed_data)
         payload = {
             "method": "eth_signTypedData_v4",
             "params": {

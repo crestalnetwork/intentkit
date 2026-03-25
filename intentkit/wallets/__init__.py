@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.cdp import (
@@ -32,9 +32,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-WalletProviderType = Union[
-    "CdpWalletProvider", "NativeWalletProvider", "SafeWalletProvider"
-]
+WalletProviderType: TypeAlias = (
+    "CdpWalletProvider | NativeWalletProvider | SafeWalletProvider"
+)
 WalletSignerType = (
     Any  # Can be EvmLocalAccount, NativeWalletSigner, or PrivyWalletSigner
 )

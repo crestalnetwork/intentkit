@@ -10,7 +10,7 @@ for platform fees, dev fees, agent fees, and total amounts.
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,16 +33,16 @@ class CreditEventConsistencyChecker:
         self.zero_sum_inconsistent_count = (
             0  # Cases where detail sum is 0 but total is not 0
         )
-        self.zero_sum_inconsistent_details: List[
-            Dict[str, Any]
+        self.zero_sum_inconsistent_details: list[
+            dict[str, Any]
         ] = []  # Cases where detail sum is 0 but total is not 0
-        self.non_zero_sum_inconsistent_details: List[
-            Dict[str, Any]
+        self.non_zero_sum_inconsistent_details: list[
+            dict[str, Any]
         ] = []  # Unexpected errors where details are non-zero but still unequal
 
     def check_record_consistency(
         self, record: CreditEventTable
-    ) -> Tuple[bool, List[str], bool]:
+    ) -> tuple[bool, list[str], bool]:
         """Check if a single record is consistent.
 
         Returns:

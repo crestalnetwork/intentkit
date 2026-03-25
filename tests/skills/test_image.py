@@ -123,34 +123,34 @@ async def test_get_skills_filters_by_state():
 
 
 def test_native_key_checks():
-    """Test _has_native_key for each provider."""
+    """Test has_native_key for each provider."""
     with patch(
         "intentkit.skills.image.gpt.config",
         _MockConfig(openai_api_key="test"),
     ):
-        assert GPTImageFlagship()._has_native_key() is True
+        assert GPTImageFlagship().has_native_key() is True
 
     with patch("intentkit.skills.image.gpt.config", _MockConfig()):
-        assert GPTImageFlagship()._has_native_key() is False
+        assert GPTImageFlagship().has_native_key() is False
 
     with patch(
         "intentkit.skills.image.gemini.config",
         _MockConfig(google_api_key="test"),
     ):
-        assert GeminiImagePro()._has_native_key() is True
+        assert GeminiImagePro().has_native_key() is True
 
     with patch("intentkit.skills.image.gemini.config", _MockConfig()):
-        assert GeminiImagePro()._has_native_key() is False
+        assert GeminiImagePro().has_native_key() is False
 
     with patch(
         "intentkit.skills.image.grok.config",
         _MockConfig(xai_api_key="test"),
     ):
-        assert GrokImagePro()._has_native_key() is True
+        assert GrokImagePro().has_native_key() is True
 
     with patch("intentkit.skills.image.grok.config", _MockConfig()):
-        assert GrokImagePro()._has_native_key() is False
+        assert GrokImagePro().has_native_key() is False
 
     # OpenRouter-only skills always return False
-    assert FluxPro()._has_native_key() is False
-    assert Riverflow()._has_native_key() is False
+    assert FluxPro().has_native_key() is False
+    assert Riverflow().has_native_key() is False

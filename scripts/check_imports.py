@@ -10,10 +10,9 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
-def find_python_files(directory: Path) -> List[Path]:
+def find_python_files(directory: Path) -> list[Path]:
     """Find all Python files in the given directory."""
     python_files = []
     for root, dirs, files in os.walk(directory):
@@ -31,7 +30,7 @@ def find_python_files(directory: Path) -> List[Path]:
     return python_files
 
 
-def extract_imports(file_path: Path) -> List[Tuple[str, int]]:
+def extract_imports(file_path: Path) -> list[tuple[str, int]]:
     """Extract all import statements from a Python file."""
     imports = []
 
@@ -88,7 +87,7 @@ def validate_import(import_name: str) -> bool:
         return False
 
 
-def check_imports_in_file(file_path: Path) -> List[Tuple[str, int]]:
+def check_imports_in_file(file_path: Path) -> list[tuple[str, int]]:
     """Check all imports in a file and return invalid ones."""
     imports = extract_imports(file_path)
     invalid_imports = []

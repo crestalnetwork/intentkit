@@ -145,7 +145,7 @@ async def _get_wallet_net_worth(wallet_address: str, network_id: str | None) -> 
         return "0"
 
 
-async def _build_assets_list(
+async def build_assets_list(
     agent: Agent, agent_data: AgentData, web3_client: AsyncWeb3
 ) -> list[Asset]:
     """Build the assets list based on network conditions and agent configuration."""
@@ -213,7 +213,7 @@ async def agent_asset(agent_id: str) -> AgentAssets:
     else:
         try:
             web3_client = get_async_web3_client(str(agent.network_id))
-            tokens = await _build_assets_list(agent, agent_data, web3_client)
+            tokens = await build_assets_list(agent, agent_data, web3_client)
             net_worth = await _get_wallet_net_worth(
                 agent_data.evm_wallet_address, str(agent.network_id)
             )
@@ -253,6 +253,6 @@ __all__ = [
     "USDC_ADDRESSES",
     "NATION_ADDRESS",
     "agent_asset",
-    "_build_assets_list",
+    "build_assets_list",
     "_get_wallet_net_worth",
 ]

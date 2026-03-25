@@ -18,7 +18,7 @@ class GeminiImageBase(ImageBaseTool):
     """Base class for Gemini image generation skills."""
 
     @override
-    def _has_native_key(self) -> bool:
+    def has_native_key(self) -> bool:
         return bool(config.google_api_key)
 
     @override

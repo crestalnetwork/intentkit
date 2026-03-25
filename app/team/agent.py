@@ -35,7 +35,7 @@ team_agent_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-async def _get_team_agent(agent_id: str, team_id: str) -> Agent:
+async def get_team_agent(agent_id: str, team_id: str) -> Agent:
     """Fetch an agent and verify it belongs to the team.
 
     Raises:
@@ -142,7 +142,7 @@ async def get_agent(
 ) -> Response:
     """Get a single agent by ID or slug within the team."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
     agent_data = await AgentData.get(agent.id)
     agent_response = await AgentResponse.from_agent(agent, agent_data)
     return Response(
@@ -164,7 +164,7 @@ async def get_agent_editable(
 ) -> Response:
     """Get agent with full editable fields within the team."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
     editable_agent = AgentUpdate.model_validate(agent)
     return Response(
         content=editable_agent.model_dump_json(),
@@ -185,7 +185,7 @@ async def patch_agent_endpoint(
 ) -> Response:
     """Patch an existing agent within the team."""
     _user_id, team_id = auth
-    existing_agent = await _get_team_agent(agent_id, team_id)
+    existing_agent = await get_team_agent(agent_id, team_id)
 
     update_fields = agent.model_dump(exclude_unset=True)
     picture_explicitly_set = "picture" in update_fields and update_fields["picture"]
@@ -220,7 +220,7 @@ async def archive_agent(
 ) -> Response:
     """Archive an agent within the team."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
 
     async with get_session() as db:
         result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))
@@ -246,7 +246,7 @@ async def reactivate_agent(
 ) -> Response:
     """Reactivate an archived agent within the team."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
 
     async with get_session() as db:
         result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))
@@ -271,7 +271,7 @@ async def unlink_twitter_endpoint(
 ) -> Response:
     """Unlink Twitter/X from an agent within the team."""
     _user_id, team_id = auth
-    agent = await _get_team_agent(agent_id, team_id)
+    agent = await get_team_agent(agent_id, team_id)
     agent_data = await unlink_twitter(agent.id)
     agent_response = await AgentResponse.from_agent(agent, agent_data)
     return Response(
