@@ -182,6 +182,8 @@ class Config:
             "XMTP_SYSTEM_PROMPT",
             "You are assisting a user who uses an XMTP client that only displays plain-text messages, so do not use Markdown formatting.",
         )
+        # WeChat
+        self.wechat_system_prompt: str | None = self.load("WECHAT_SYSTEM_PROMPT")
         # Telegram server settings
         self.tg_system_prompt: str | None = self.load("TG_SYSTEM_PROMPT")
         self.tg_base_url: str | None = self.load("TG_BASE_URL")

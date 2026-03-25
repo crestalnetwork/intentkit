@@ -366,6 +366,18 @@ async def build_entrypoint_prompt(agent: Agent, context: AgentContext) -> str | 
             entrypoint_prompt = _append(entrypoint_prompt, config.xmtp_system_prompt)
         if agent.xmtp_entrypoint_prompt:
             entrypoint_prompt = _append(entrypoint_prompt, agent.xmtp_entrypoint_prompt)
+    elif entrypoint == AuthorType.WECHAT.value:
+        wechat_hardcoded = (
+            "WeChat only supports plain text and emoji. Do not use markdown formatting. "
+            "WeChat does not support rendering UI components. Do not call ui_ skills."
+        )
+        entrypoint_prompt = _append(entrypoint_prompt, wechat_hardcoded)
+        if config.wechat_system_prompt:
+            entrypoint_prompt = _append(entrypoint_prompt, config.wechat_system_prompt)
+        if agent.wechat_entrypoint_prompt:
+            entrypoint_prompt = _append(
+                entrypoint_prompt, agent.wechat_entrypoint_prompt
+            )
     elif entrypoint == AuthorType.TRIGGER.value:
         entrypoint_prompt = "\n\n" + _build_autonomous_task_prompt(agent, context)
 

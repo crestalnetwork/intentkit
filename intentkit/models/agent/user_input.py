@@ -110,6 +110,14 @@ class AgentUserInput(AgentCore):
             max_length=10000,
         ),
     ] = None
+    wechat_entrypoint_prompt: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Extra prompt for wechat entrypoint",
+            max_length=10000,
+        ),
+    ] = None
 
 
 class AgentUpdate(AgentUserInput):

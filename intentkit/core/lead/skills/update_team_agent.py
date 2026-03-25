@@ -70,6 +70,9 @@ class UpdateTeamAgentInput(BaseModel):
     xmtp_entrypoint_prompt: str | None = Field(
         default=None, description="Extra prompt for XMTP"
     )
+    wechat_entrypoint_prompt: str | None = Field(
+        default=None, description="Extra prompt for WeChat"
+    )
 
 
 class UpdateTeamAgentOutput(BaseModel):
@@ -119,6 +122,7 @@ class UpdateTeamAgent(LeadSkill):
         discord_entrypoint_enabled: bool | None = None,
         discord_config: dict[str, Any] | None = None,
         xmtp_entrypoint_prompt: str | None = None,
+        wechat_entrypoint_prompt: str | None = None,
         **kwargs: Any,
     ) -> UpdateTeamAgentOutput:
         context = self.get_context()
@@ -152,6 +156,7 @@ class UpdateTeamAgent(LeadSkill):
             "discord_entrypoint_enabled": discord_entrypoint_enabled,
             "discord_config": discord_config,
             "xmtp_entrypoint_prompt": xmtp_entrypoint_prompt,
+            "wechat_entrypoint_prompt": wechat_entrypoint_prompt,
         }
         for key, value in local_vars.items():
             if value is not None:

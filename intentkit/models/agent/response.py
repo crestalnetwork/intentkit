@@ -39,6 +39,7 @@ class AgentResponse(Agent):
     telegram_config: SkipJsonSchema[dict[str, Any] | None] = None
     discord_config: SkipJsonSchema[dict[str, Any] | None] = None
     xmtp_entrypoint_prompt: SkipJsonSchema[str | None] = None
+    wechat_entrypoint_prompt: SkipJsonSchema[str | None] = None
 
     # Additional fields specific to AgentResponse
     cdp_wallet_address: Annotated[
@@ -266,6 +267,7 @@ class AgentResponse(Agent):
             "telegram_config",
             "discord_config",
             "xmtp_entrypoint_prompt",
+            "wechat_entrypoint_prompt",
         }
         for field in privacy_fields:
             data.pop(field, None)

@@ -185,6 +185,11 @@ class AgentUserInputColumns:
         nullable=True,
         comment="Extra prompt for xmtp entrypoint",
     )
+    wechat_entrypoint_prompt: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        comment="Extra prompt for wechat entrypoint",
+    )
 
 
 class AgentTable(Base, AgentUserInputColumns):
