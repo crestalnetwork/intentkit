@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Polymarket",
+  "description": "Integration with Polymarket prediction market for browsing markets, checking prices, and trading outcome tokens",
+  "type": "object",
+  "x-icon": "/skills/polymarket/polymarket.png",
+  "x-tags": [
+    "Crypto",
+    "Analytics"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Enable or disable Polymarket skills.",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "title": "Skill States",
+      "description": "Configure which Polymarket skills are available. Public skills (search, market info) need no wallet. Trading skills require a configured wallet with signing capabilities.",
+      "properties": {
+        "search_markets": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Search and browse Polymarket prediction markets by keyword or tag. Returns market titles, current probabilities, and trading volumes.",
+          "default": "public"
+        },
+        "get_market": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Get detailed information about a specific market including description, outcome token IDs, current probabilities, volume, and resolution details.",
+          "default": "public"
+        },
+        "get_orderbook": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Get the order book (bids/asks) for a market outcome token. Shows current buy and sell orders with prices, sizes, spread, and depth.",
+          "default": "disabled"
+        },
+        "get_price_history": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Get historical price data for a market outcome token. Returns time-series data showing probability changes over time.",
+          "default": "disabled"
+        },
+        "place_order": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Place a limit order to buy or sell outcome tokens. Requires a wallet with signing capabilities and USDC balance on Polygon.",
+          "default": "disabled"
+        },
+        "cancel_order": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "Cancel a specific order by ID or cancel all open orders at once.",
+          "default": "disabled"
+        },
+        "get_positions": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "View current positions (holdings) showing all outcome tokens held with quantities and current market values.",
+          "default": "disabled"
+        },
+        "get_orders": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "View open orders with details including side, price, size, and status. Optionally filter by market.",
+          "default": "disabled"
+        },
+        "get_trades": {
+          "type": "string",
+          "enum": ["disabled", "public", "private"],
+          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "description": "View trade history showing executed trades with prices, sizes, fees, and timestamps.",
+          "default": "disabled"
+        }
+      }
+    }
+  },
+  "required": [
+    "enabled",
+    "states"
+  ],
+  "additionalProperties": true
+}
