@@ -112,10 +112,6 @@ class Config:
         self.hourly_budget: Decimal | None = self.load_decimal("HOURLY_BUDGET")
         # App (frontend) base URL
         self.app_base_url: str = self.load("APP_BASE_URL", "http://localhost:3000")
-        # Open API for agent
-        self.open_api_base_url: str = self.load(
-            "OPEN_API_BASE_URL", "http://localhost:8000"
-        )
         # CDP SDK Configuration
         self.cdp_api_key_id: str | None = self.load("CDP_API_KEY_ID")
         self.cdp_api_key_secret: str | None = self.load("CDP_API_KEY_SECRET")
@@ -176,7 +172,6 @@ class Config:
         # LLM Config
         self.system_prompt: str | None = self.load("SYSTEM_PROMPT")
         self.intentkit_prompt: str | None = self.load("INTENTKIT_PROMPT")
-        self.input_token_limit: int = self.load_int("INPUT_TOKEN_LIMIT", 60000)
         # XMTP
         self.xmtp_system_prompt: str | None = self.load(
             "XMTP_SYSTEM_PROMPT",
@@ -186,16 +181,6 @@ class Config:
         self.wechat_system_prompt: str | None = self.load("WECHAT_SYSTEM_PROMPT")
         # Telegram server settings
         self.tg_system_prompt: str | None = self.load("TG_SYSTEM_PROMPT")
-        self.tg_base_url: str | None = self.load("TG_BASE_URL")
-        self.tg_server_host: str = self.load("TG_SERVER_HOST", "127.0.0.1")
-        self.tg_server_port: str = self.load("TG_SERVER_PORT", "8081")
-        self.tg_new_agent_poll_interval: str = self.load(
-            "TG_NEW_AGENT_POLL_INTERVAL", "60"
-        )
-        # Discord server settings
-        self.discord_new_agent_poll_interval: str = self.load(
-            "DISCORD_NEW_AGENT_POLL_INTERVAL", "30"
-        )
         # Twitter
         self.twitter_oauth2_client_id: str | None = self.load(
             "TWITTER_OAUTH2_CLIENT_ID"
@@ -206,9 +191,6 @@ class Config:
         self.twitter_oauth2_redirect_uri: str | None = self.load(
             "TWITTER_OAUTH2_REDIRECT_URI"
         )
-        self.twitter_entrypoint_interval: int = self.load_int(
-            "TWITTER_ENTRYPOINT_INTERVAL", 5
-        )  # in minutes
         # Slack Alert
         self.slack_alert_token: str | None = self.load("SLACK_ALERT_TOKEN")
         self.slack_alert_channel: str | None = self.load("SLACK_ALERT_CHANNEL")
@@ -216,7 +198,6 @@ class Config:
         self.tg_alert_bot_token: str | None = self.load("TG_ALERT_BOT_TOKEN")
         self.tg_alert_chat_id: str | None = self.load("TG_ALERT_CHAT_ID")
         # Skills - Platform Hosted Keys
-        self.acolyt_api_key: str | None = self.load("ACOLYT_API_KEY")
         self.allora_api_key: str | None = self.load("ALLORA_API_KEY")
         self.carv_api_key: str | None = self.load("CARV_API_KEY")
         self.elfa_api_key: str | None = self.load("ELFA_API_KEY")
@@ -260,10 +241,6 @@ class Config:
 
         if self.chain_provider:
             self.chain_provider.init_chain_configs()
-
-        # Nation
-        self.nation_api_key: str | None = self.load("NATION_API_KEY")
-        self.nation_api_url: str = self.load("NATION_API_URL", "")
 
         # Agent Execution Limits
         self.recursion_limit: int = self.load_int("RECURSION_LIMIT", 100)
