@@ -3,6 +3,7 @@
   "type": "object",
   "title": "Video Generation",
   "description": "Generate videos from text prompts or images using multiple AI providers. Supports Grok, Sora, and Veo models.",
+  "x-icon": "/skills/video/video.svg",
   "x-tags": [
     "Media",
     "AI"

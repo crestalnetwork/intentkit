@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="#E17055"/>
+  <!-- Film strip body -->
+  <rect x="20" y="28" width="88" height="72" rx="8" fill="white" opacity="0.95"/>
+  <!-- Film strip holes top -->
+  <rect x="26" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="40" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="54" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="68" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="82" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="96" y="32" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <!-- Film strip holes bottom -->
+  <rect x="26" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="40" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="54" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="68" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="82" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <rect x="96" y="90" width="8" height="6" rx="2" fill="#E17055" opacity="0.5"/>
+  <!-- Play button -->
+  <circle cx="64" cy="64" r="22" fill="#E17055" opacity="0.9"/>
+  <polygon points="56,50 56,78 80,64" fill="white"/>
+  <!-- Sparkle top-right -->
+  <path d="M108,16 L110,22 L116,24 L110,26 L108,32 L106,26 L100,24 L106,22 Z" fill="#FFF176"/>
+  <!-- Sparkle small -->
+  <path d="M16,18 L17,21 L20,22 L17,23 L16,26 L15,23 L12,22 L15,21 Z" fill="#FFF176" opacity="0.8"/>
+</svg>

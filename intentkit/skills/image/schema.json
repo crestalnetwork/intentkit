@@ -3,10 +3,8 @@
   "type": "object",
   "title": "Image Generation",
   "description": "Generate images from text prompts using multiple AI providers. Supports GPT, Gemini, Grok, FLUX, and Riverflow models with automatic API fallback to OpenRouter.",
-  "x-tags": [
-    "Media",
-    "AI"
-  ],
+  "x-icon": "/skills/image/image.svg",
+  "x-tags": ["Media", "AI"],
   "properties": {
     "enabled": {
       "type": "boolean",
@@ -21,7 +19,11 @@
           "type": "string",
           "title": "GPT Image 1.5",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using OpenAI GPT Image 1.5.",
           "default": "disabled"
         },
@@ -29,23 +31,35 @@
           "type": "string",
           "title": "GPT Image 1 Mini",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using OpenAI GPT Image 1 Mini (faster, cheaper).",
           "default": "disabled"
         },
         "image_gemini_pro": {
           "type": "string",
-          "title": "Gemini 3 Pro",
+          "title": "Nano Banana Pro",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using Google Gemini 3 Pro.",
           "default": "disabled"
         },
         "image_gemini_flash": {
           "type": "string",
-          "title": "Gemini 3.1 Flash",
+          "title": "Nano Banana 2",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using Google Gemini 3.1 Flash (faster, cheaper).",
           "default": "disabled"
         },
@@ -53,7 +67,11 @@
           "type": "string",
           "title": "Grok Imagine Pro",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using xAI Grok Imagine Image Pro.",
           "default": "disabled"
         },
@@ -61,7 +79,11 @@
           "type": "string",
           "title": "Grok Imagine",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using xAI Grok Imagine Image (faster, cheaper).",
           "default": "disabled"
         },
@@ -69,7 +91,11 @@
           "type": "string",
           "title": "FLUX.2 Pro",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using FLUX.2 Pro via OpenRouter.",
           "default": "disabled"
         },
@@ -77,7 +103,11 @@
           "type": "string",
           "title": "Riverflow v2 Fast",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using Riverflow v2 Fast via OpenRouter.",
           "default": "disabled"
         },
@@ -85,7 +115,11 @@
           "type": "string",
           "title": "MiniMax image-01",
           "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
           "description": "Generate images using MiniMax image-01. Supports subject reference.",
           "default": "disabled"
         }
