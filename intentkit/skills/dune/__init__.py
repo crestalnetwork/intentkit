@@ -50,13 +50,13 @@ async def get_skills(
 
     result = []
     for name in available_skills:
-        skill = _get_dune_skill(name)
+        skill = get_dune_skill(name)
         if skill:
             result.append(skill)
     return result
 
 
-def _get_dune_skill(name: str) -> DuneBaseTool | None:
+def get_dune_skill(name: str) -> DuneBaseTool | None:
     """Get a Dune skill by name with caching."""
     if name in _cache:
         return _cache[name]

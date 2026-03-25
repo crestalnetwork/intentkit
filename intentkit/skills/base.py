@@ -69,8 +69,7 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
     category: str
     """Get the category of the skill."""
 
-    @classmethod
-    def available(cls) -> bool:
+    def available(self) -> bool:
         """Check if this skill is available. Override in subclasses to check dependencies."""
         return True
 

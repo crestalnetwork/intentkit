@@ -44,6 +44,13 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
     native_model: str = ""
     openrouter_model: str = ""
 
+    @override
+    def available(self) -> bool:
+        """Check if this image skill is available based on API keys."""
+        return self._has_native_key() or (
+            bool(config.openrouter_api_key) and bool(self.openrouter_model)
+        )
+
     @abstractmethod
     def _has_native_key(self) -> bool:
         """Return True if the native API key is configured."""

@@ -46,6 +46,11 @@ class VideoBaseTool(IntentKitSkill, metaclass=ABCMeta):
     # Subclasses set these
     native_model: str = ""
 
+    @override
+    def available(self) -> bool:
+        """Check if this video skill is available based on API keys."""
+        return self._has_native_key()
+
     @abstractmethod
     def _has_native_key(self) -> bool:
         """Return True if the native API key is configured."""

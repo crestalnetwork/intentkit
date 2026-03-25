@@ -73,13 +73,13 @@ async def get_skills(
 
     result = []
     for name in available_skills:
-        skill = _get_image_skill(name)
+        skill = get_image_skill(name)
         if skill:
             result.append(skill)
     return result
 
 
-def _get_image_skill(name: str) -> ImageBaseTool | None:
+def get_image_skill(name: str) -> ImageBaseTool | None:
     """Get an image skill by name with caching."""
     if name in _cache:
         return _cache[name]

@@ -66,13 +66,13 @@ async def get_skills(
 
     result = []
     for name in available_skills:
-        skill = _get_video_skill(name)
+        skill = get_video_skill(name)
         if skill:
             result.append(skill)
     return result
 
 
-def _get_video_skill(name: str) -> VideoBaseTool | None:
+def get_video_skill(name: str) -> VideoBaseTool | None:
     """Get a video skill by name with caching."""
     if name in _cache:
         return _cache[name]
