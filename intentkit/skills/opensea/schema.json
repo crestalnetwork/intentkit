@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenSea",
+  "description": "Integration with OpenSea marketplace API for NFT collection data, listings, offers, events, and marketplace operations (buy, list, cancel, update)",
+  "type": "object",
+  "x-icon": "/skills/opensea/opensea.svg",
+  "x-tags": [
+    "NFT"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Enable or disable OpenSea skills.",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "title": "Skill States",
+      "description": "Enable/disable specific OpenSea tools.",
+      "properties": {
+        "opensea_get_collection": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get detailed information about an NFT collection including name, description, image, social links, and contract addresses.",
+          "default": "disabled"
+        },
+        "opensea_get_collection_stats": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get collection statistics including floor price, total volume, total supply, number of owners, and average price.",
+          "default": "disabled"
+        },
+        "opensea_get_nft": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get detailed information about a specific NFT including metadata, traits, and rarity.",
+          "default": "disabled"
+        },
+        "opensea_get_listings": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get the best active listings for an NFT collection, sorted by price ascending.",
+          "default": "disabled"
+        },
+        "opensea_get_offers": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get offers for an NFT collection including offer price, bidder, and expiration.",
+          "default": "disabled"
+        },
+        "opensea_get_events": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get marketplace events for a collection including sales, listings, offers, transfers, and cancellations.",
+          "default": "disabled"
+        },
+        "opensea_get_nfts_by_account": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get NFTs owned by an account on a specific blockchain.",
+          "default": "disabled"
+        },
+        "opensea_create_listing": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Create a listing to sell an NFT on OpenSea. Requires on-chain wallet with NFT ownership.",
+          "default": "disabled"
+        },
+        "opensea_buy_nft": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Buy an NFT by fulfilling a listing on OpenSea. Requires on-chain wallet with sufficient ETH.",
+          "default": "disabled"
+        },
+        "opensea_cancel_listing": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Cancel an existing NFT listing on OpenSea (off-chain cancellation, no gas required).",
+          "default": "disabled"
+        },
+        "opensea_update_listing": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Update the price of an existing listing by canceling and relisting. Requires on-chain wallet.",
+          "default": "disabled"
+        }
+      }
+    }
+  },
+  "required": [
+    "enabled",
+    "states"
+  ],
+  "additionalProperties": true
+}

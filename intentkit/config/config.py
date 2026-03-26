@@ -215,6 +215,7 @@ class Config:
         self.cryptocompare_api_key: str | None = self.load("CRYPTOCOMPARE_API_KEY")
         self.venice_api_key: str | None = self.load("VENICE_API_KEY")
         self.coingecko_api_key: str | None = self.load("COINGECKO_API_KEY")
+        self.opensea_api_key: str | None = self.load("OPENSEA_API_KEY")
         # Cloudflare Browser Rendering
         self.cloudflare_account_id: str | None = self.load("CLOUDFLARE_ACCOUNT_ID")
         self.cloudflare_api_token: str | None = self.load("CLOUDFLARE_API_TOKEN")
