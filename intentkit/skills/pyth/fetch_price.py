@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from intentkit.skills.pyth.base import PythBaseTool
 
+PYTH_HERMES_URL = "https://hermes.pyth.network/v2"
+
 
 class FetchPriceInput(BaseModel):
     """Input schema for fetching Pyth price."""
@@ -38,9 +40,7 @@ class PythFetchPrice(PythBaseTool):
         Returns:
             JSON string with the price or error details.
         """
-        url = (
-            f"https://hermes.pyth.network/v2/updates/price/latest?ids[]={price_feed_id}"
-        )
+        url = f"{PYTH_HERMES_URL}/updates/price/latest?ids[]={price_feed_id}"
 
         try:
             async with httpx.AsyncClient() as client:

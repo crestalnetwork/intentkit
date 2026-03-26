@@ -3,6 +3,7 @@
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_dex_summary
@@ -93,22 +94,14 @@ class DefiLlamaFetchDexSummary(DefiLlamaBaseTool):
         Returns:
             FetchDexSummaryResponse containing protocol data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchDexSummaryResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch protocol data from API
-            result = await fetch_dex_summary(protocol=protocol)
+        # Fetch protocol data from API
+        result = await fetch_dex_summary(protocol=protocol)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchDexSummaryResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchDexSummaryResponse(**result)
-
-        except Exception as e:
-            return FetchDexSummaryResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchDexSummaryResponse(**result)

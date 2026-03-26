@@ -24,7 +24,6 @@ from intentkit.skills.lifi.utils import (
     prepare_transaction_params,
     validate_inputs,
 )
-from intentkit.utils.error import IntentKitAPIError
 
 
 class TokenExecuteInput(BaseModel):
@@ -113,8 +112,8 @@ class TokenExecute(LiFiBaseTool):
             if slippage is None:
                 slippage = self.default_slippage
 
-            # Validate all inputs
-            validation_error = validate_inputs(
+            # Validate all inputs (raises ToolException on invalid)
+            validate_inputs(
                 from_chain,
                 to_chain,
                 from_token,
@@ -123,21 +122,21 @@ class TokenExecute(LiFiBaseTool):
                 slippage,
                 self.allowed_chains,
             )
-            if validation_error:
-                return validation_error
 
             # Get agent context for CDP wallet
             context = self.get_context()
             agent = context.agent
             network_id = agent.network_id
             if not network_id:
-                return "Agent network ID is not configured. Please set it before executing on-chain transactions."
+                raise ToolException(
+                    "Agent network ID is not configured. Please set it before executing on-chain transactions."
+                )
 
             try:
                 cdp_network = self.get_cdp_network()
             except Exception as e:
                 self.logger.error("LiFi_CDP_Network_Error: %s", str(e))
-                return f"Invalid agent network for CDP: {str(e)}"
+                raise ToolException(f"Invalid agent network for CDP: {e!s}")
 
             self.logger.info(
                 f"Executing LiFi transfer: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
@@ -145,18 +144,20 @@ class TokenExecute(LiFiBaseTool):
 
             # Get CDP EVM account and web3 client
             evm_account = await self._get_evm_account()
-            if isinstance(evm_account, str):  # Error message
-                return evm_account
 
             from_address = evm_account.address
             if not from_address:
-                return "No wallet address available. Please check your CDP wallet configuration."
+                raise ToolException(
+                    "No wallet address available. Please check your CDP wallet configuration."
+                )
 
             try:
                 web3 = self.web3_client()
             except Exception as e:
                 self.logger.error("LiFi_Web3_Error: %s", str(e))
-                return "Unable to initialize Web3 client. Please verify the agent's network configuration."
+                raise ToolException(
+                    "Unable to initialize Web3 client. Please verify the agent's network configuration."
+                )
 
             # Get quote and execute transfer
             async with httpx.AsyncClient() as client:
@@ -171,8 +172,6 @@ class TokenExecute(LiFiBaseTool):
                     slippage,
                     from_address,
                 )
-                if isinstance(quote_data, str):  # Error message
-                    return quote_data
 
                 # Step 2: Handle token approval if needed
                 approval_result = await self._handle_token_approval(
@@ -199,25 +198,30 @@ class TokenExecute(LiFiBaseTool):
                     client, tx_hash, from_chain, to_chain, quote_data
                 )
 
+        except ToolException:
+            raise
         except Exception as e:
             self.logger.error("LiFi_Error: %s", str(e))
-            return f"An unexpected error occurred: {str(e)}"
+            raise ToolException(f"An unexpected error occurred: {e!s}")
 
-    async def _get_evm_account(self) -> EvmServerAccount | str:
+    async def _get_evm_account(self) -> EvmServerAccount:
         """Get CDP EVM account with error handling."""
         try:
             evm_account = await self.get_evm_account()
             if not evm_account:
-                return "CDP wallet account not configured. Please set up your agent's CDP wallet first."
+                raise ToolException(
+                    "CDP wallet account not configured. Please set up your agent's CDP wallet first."
+                )
 
             return evm_account
 
-        except IntentKitAPIError as e:
-            self.logger.error("LiFi_CDP_Error: %s", str(e))
-            return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
+        except ToolException:
+            raise
         except Exception as e:
             self.logger.error("LiFi_CDP_Error: %s", str(e))
-            return f"Cannot access CDP wallet: {str(e)}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
+            raise ToolException(
+                f"Cannot access CDP wallet: {e!s}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
+            )
 
     async def _get_quote(
         self,
@@ -229,7 +233,7 @@ class TokenExecute(LiFiBaseTool):
         from_amount: str,
         slippage: float,
         from_address: str,
-    ) -> dict[str, Any] | str:
+    ) -> dict[str, Any]:
         """Get quote from LiFi API."""
         api_params = build_quote_params(
             from_chain,
@@ -248,24 +252,30 @@ class TokenExecute(LiFiBaseTool):
                 timeout=30.0,
             )
         except httpx.TimeoutException:
-            return "Request timed out. The LiFi service might be temporarily unavailable. Please try again."
+            raise ToolException(
+                "Request timed out. The LiFi service might be temporarily unavailable. Please try again."
+            )
         except httpx.ConnectError:
-            return "Connection error. Unable to reach LiFi service. Please check your internet connection."
+            raise ToolException(
+                "Connection error. Unable to reach LiFi service. Please check your internet connection."
+            )
         except Exception as e:
             self.logger.error("LiFi_API_Error: %s", str(e))
-            raise ToolException(f"Error making API request: {str(e)}")
+            raise ToolException(f"Error making API request: {e!s}")
         # Handle response
         data, error = handle_api_response(
             response, from_token, from_chain, to_token, to_chain
         )
         if error:
             self.logger.error("LiFi_API_Error: %s", error)
-            return error
+            raise ToolException(error)
 
         # Validate transaction request
         transaction_request = data.get("transactionRequest")
         if not transaction_request:
-            return "No transaction request found in the quote. Cannot execute transfer."
+            raise ToolException(
+                "No transaction request found in the quote. Cannot execute transfer."
+            )
 
         return data
 

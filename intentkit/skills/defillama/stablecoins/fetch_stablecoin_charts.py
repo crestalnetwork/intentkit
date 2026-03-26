@@ -1,6 +1,7 @@
 """Tool for fetching stablecoin charts via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_stablecoin_charts
@@ -77,33 +78,21 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
         Returns:
             FetchStablecoinChartsResponse containing historical data or error
         """
-        try:
-            # Validate chain if provided
-            if chain:
-                is_valid, normalized_chain = await self.validate_chain(chain)
-                if not is_valid:
-                    return FetchStablecoinChartsResponse(
-                        error=f"Invalid chain: {chain}"
-                    )
-                chain = normalized_chain
+        # Validate chain if provided
+        if chain:
+            is_valid, normalized_chain = await self.validate_chain(chain)
+            if not is_valid:
+                raise ToolException(f"Invalid chain: {chain}")
+            chain = normalized_chain
 
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchStablecoinChartsResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch chart data from API
-            result = await fetch_stablecoin_charts(
-                stablecoin_id=stablecoin_id, chain=chain
-            )
+        # Fetch chart data from API
+        result = await fetch_stablecoin_charts(stablecoin_id=stablecoin_id, chain=chain)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchStablecoinChartsResponse(error=result["error"])
-
-            # Parse response data
-            return FetchStablecoinChartsResponse(data=result, chain=chain)
-
-        except Exception as e:
-            return FetchStablecoinChartsResponse(error=str(e))
+        # Parse response data
+        return FetchStablecoinChartsResponse(data=result, chain=chain)

@@ -114,7 +114,9 @@ class PancakeSwapQuote(PancakeSwapBaseTool):
                     continue
 
             if best_out == 0:
-                return "No liquidity found for this pair on PancakeSwap V3."
+                raise ToolException(
+                    "No liquidity found for this pair on PancakeSwap V3."
+                )
 
             # Format output
             out_human = Decimal(best_out) / Decimal(10**decimals_out)

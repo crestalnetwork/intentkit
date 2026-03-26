@@ -6,7 +6,7 @@ import httpx
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel
 
-from .base import base_url
+from .base import ELFA_BASE_URL
 
 
 class ElfaResponse(BaseModel):
@@ -41,7 +41,7 @@ async def make_elfa_request(
     if not api_key:
         raise ToolException("Elfa API key not found")
 
-    url = f"{base_url}/{endpoint}"
+    url = f"{ELFA_BASE_URL}/{endpoint}"
     headers = {
         "accept": "application/json",
         "x-elfa-api-key": api_key,

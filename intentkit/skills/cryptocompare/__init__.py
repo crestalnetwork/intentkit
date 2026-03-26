@@ -74,7 +74,7 @@ async def get_skills(
 
 def get_cryptocompare_skill(
     name: str,
-) -> CryptoCompareBaseTool:
+) -> CryptoCompareBaseTool | None:
     """Get a CryptoCompare skill by name.
 
     Args:

@@ -1,6 +1,7 @@
 """Tool for fetching chain TVL data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_chains
@@ -67,27 +68,17 @@ class DefiLlamaFetchChains(DefiLlamaBaseTool):
         Returns:
             FetchChainsResponse containing chain TVL data and total TVL or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchChainsResponse(chains=[], total_tvl=0, error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch chains data from API
-            result = await fetch_chains()
+        # Fetch chains data from API
+        result = await fetch_chains()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchChainsResponse(
-                    chains=[], total_tvl=0, error=result["error"]
-                )
+        # Parse chains data and calculate total TVL
+        chains = [ChainTVLData(**chain_data) for chain_data in result]
+        total_tvl = sum(chain.tvl for chain in chains)
 
-            # Parse chains data and calculate total TVL
-            chains = [ChainTVLData(**chain_data) for chain_data in result]
-            total_tvl = sum(chain.tvl for chain in chains)
-
-            return FetchChainsResponse(chains=chains, total_tvl=total_tvl)
-
-        except Exception as e:
-            return FetchChainsResponse(chains=[], total_tvl=0, error=str(e))
+        return FetchChainsResponse(chains=chains, total_tvl=total_tvl)

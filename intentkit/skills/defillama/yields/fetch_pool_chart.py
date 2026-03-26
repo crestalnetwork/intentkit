@@ -1,6 +1,7 @@
 """Tool for fetching pool chart data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_pool_chart
@@ -67,22 +68,14 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
         Returns:
             FetchPoolChartResponse containing historical data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchPoolChartResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch chart data from API
-            result = await fetch_pool_chart(pool_id=pool_id)
+        # Fetch chart data from API
+        result = await fetch_pool_chart(pool_id=pool_id)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchPoolChartResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchPoolChartResponse(**result)
-
-        except Exception as e:
-            return FetchPoolChartResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchPoolChartResponse(**result)

@@ -125,7 +125,9 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
                     continue
 
             if best_out == 0:
-                return "No liquidity found for this pair on PancakeSwap V3."
+                raise ToolException(
+                    "No liquidity found for this pair on PancakeSwap V3."
+                )
 
             # Calculate minimum output with slippage
             slippage_factor = Decimal(1) - Decimal(str(slippage)) / Decimal(100)

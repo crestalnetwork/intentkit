@@ -74,44 +74,49 @@ def validate_inputs(
     from_amount: str,
     slippage: float,
     allowed_chains: list[str] | None = None,
-) -> str | None:
-    """
-    Validate all input parameters for LiFi operations.
+) -> None:
+    """Validate all input parameters for LiFi operations.
 
-    Returns:
-        None if valid, error message string if invalid
+    Raises:
+        ToolException: If any input parameter is invalid.
     """
     # Validate slippage
     if slippage < 0.001 or slippage > 0.5:
-        return "Invalid slippage: must be between 0.001 (0.1%) and 0.5 (50%)"
+        raise ToolException(
+            "Invalid slippage: must be between 0.001 (0.1%) and 0.5 (50%)"
+        )
 
     # Validate chain identifiers can be converted to chain IDs
     try:
         convert_chain_to_id(from_chain)
     except ValueError as e:
-        return f"Invalid source chain: {str(e)}"
+        raise ToolException(f"Invalid source chain: {e!s}")
 
     try:
         convert_chain_to_id(to_chain)
     except ValueError as e:
-        return f"Invalid destination chain: {str(e)}"
+        raise ToolException(f"Invalid destination chain: {e!s}")
 
     # Validate chains if restricted (use original chain names for restriction check)
     if allowed_chains:
         if from_chain not in allowed_chains:
-            return f"Source chain '{from_chain}' is not allowed. Allowed chains: {', '.join(allowed_chains)}"
+            raise ToolException(
+                f"Source chain '{from_chain}' is not allowed. Allowed chains: {', '.join(allowed_chains)}"
+            )
         if to_chain not in allowed_chains:
-            return f"Destination chain '{to_chain}' is not allowed. Allowed chains: {', '.join(allowed_chains)}"
+            raise ToolException(
+                f"Destination chain '{to_chain}' is not allowed. Allowed chains: {', '.join(allowed_chains)}"
+            )
 
     # Validate amount is numeric and positive
     try:
         amount_float = float(from_amount)
         if amount_float <= 0:
-            return "Amount must be greater than 0"
+            raise ToolException("Amount must be greater than 0")
     except ValueError:
-        return f"Invalid amount format: {from_amount}. Must be a numeric value."
-
-    return None
+        raise ToolException(
+            f"Invalid amount format: {from_amount}. Must be a numeric value."
+        )
 
 
 def format_amount(amount: str, decimals: int) -> str:

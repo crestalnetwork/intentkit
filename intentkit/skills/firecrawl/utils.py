@@ -198,7 +198,6 @@ class FirecrawlMetadataManager:
         }
 
     @staticmethod
-    @staticmethod
     async def update_metadata(agent_id: str, new_metadata: dict[str, Any]) -> None:
         """Update metadata for an agent."""
         try:

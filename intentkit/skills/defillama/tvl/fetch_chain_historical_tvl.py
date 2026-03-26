@@ -1,6 +1,7 @@
 """Tool for fetching chain historical TVL via DeFiLlama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_chain_historical_tvl
@@ -64,35 +65,21 @@ class DefiLlamaFetchChainHistoricalTvl(DefiLlamaBaseTool):
         Returns:
             FetchChainHistoricalTVLResponse containing chain name, TVL history or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchChainHistoricalTVLResponse(chain=chain, error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Validate chain parameter
-            is_valid, normalized_chain = await self.validate_chain(chain)
-            if not is_valid or normalized_chain is None:
-                return FetchChainHistoricalTVLResponse(
-                    chain=chain, error=f"Invalid chain: {chain}"
-                )
+        # Validate chain parameter
+        is_valid, normalized_chain = await self.validate_chain(chain)
+        if not is_valid or normalized_chain is None:
+            raise ToolException(f"Invalid chain: {chain}")
 
-            # Fetch TVL history from API
-            result = await fetch_chain_historical_tvl(normalized_chain)
+        # Fetch TVL history from API
+        result = await fetch_chain_historical_tvl(normalized_chain)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchChainHistoricalTVLResponse(
-                    chain=normalized_chain, error=result["error"]
-                )
+        # Parse response into our schema
+        data_points = [HistoricalTVLDataPoint(**point) for point in result]
 
-            # Parse response into our schema
-            data_points = [HistoricalTVLDataPoint(**point) for point in result]
-
-            return FetchChainHistoricalTVLResponse(
-                chain=normalized_chain, data=data_points
-            )
-
-        except Exception as e:
-            return FetchChainHistoricalTVLResponse(chain=chain, error=str(e))
+        return FetchChainHistoricalTVLResponse(chain=normalized_chain, data=data_points)

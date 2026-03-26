@@ -245,12 +245,16 @@ class GetAccountFeed(CookieFunBaseTool):
                     )
                     logger.error("Error in API response: %s", error_msg)
                     raise ToolException(f"Error fetching account feed: {error_msg}")
+        except ToolException:
+            raise
         except httpx.HTTPStatusError as e:
             logger.error("HTTP error: %d - %s", e.response.status_code, e.response.text)
-            return f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
+            raise ToolException(
+                f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
+            )
         except httpx.RequestError as e:
-            logger.error("Request error: %s", str(e))
-            return f"Request error occurred: {str(e)}"
+            logger.error("Request error: %s", e)
+            raise ToolException(f"Request error occurred: {e!s}")
         except Exception as e:
             logger.exception("Unexpected error occurred")
-            return f"An unexpected error occurred: {str(e)}"
+            raise ToolException(f"An unexpected error occurred: {e!s}")

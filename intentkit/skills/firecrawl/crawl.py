@@ -362,7 +362,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
 
                     elif status == "failed":
                         error_msg = status_data.get("error", "Crawl failed")
-                        return f"Crawl failed: {error_msg}"
+                        raise ToolException(f"Crawl failed: {error_msg}")
 
                     elif status in ["scraping", "active"]:
                         # Still in progress, wait and poll again
@@ -384,14 +384,18 @@ class FirecrawlCrawl(FirecrawlBaseTool):
                         await asyncio.sleep(5)
                         poll_count += 1
 
-                # If we've exceeded max polls, return partial results
-                return f"Crawl timeout: The crawl of {url} is taking longer than expected. Please try again later or reduce the crawl limit."
+                # If we've exceeded max polls, raise timeout
+                raise ToolException(
+                    f"Crawl timeout: The crawl of {url} is taking longer than expected. Please try again later or reduce the crawl limit."
+                )
 
+        except ToolException:
+            raise
         except httpx.TimeoutException:
             logger.error("firecrawl_crawl: Timeout crawling URL: %s", url)
-            return (
+            raise ToolException(
                 f"Timeout error: The request to crawl {url} took too long to complete."
             )
         except Exception as e:
             logger.error("firecrawl_crawl: Error crawling URL: %s", e, exc_info=True)
-            return f"An error occurred while crawling the URL: {str(e)}"
+            raise ToolException(f"An error occurred while crawling the URL: {e!s}")

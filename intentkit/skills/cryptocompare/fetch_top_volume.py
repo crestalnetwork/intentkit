@@ -50,7 +50,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
             Exception: If there's an error accessing the CryptoCompare API.
         """
         try:
-            context = self.get_context()
+            self.get_context()
 
             # Check rate limit
             await self.check_rate_limit(max_requests=5, interval=60)
@@ -89,6 +89,8 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
 
             return result
 
+        except ToolException:
+            raise
         except Exception as e:
-            logger.error("Error fetching top volume: %s", str(e))
-            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e
+            logger.error("Error fetching top volume: %s", e)
+            raise ToolException(f"Failed to fetch top volume: {e!s}")

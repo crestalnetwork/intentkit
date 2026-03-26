@@ -1,6 +1,7 @@
 """Tool for fetching protocol TVL via DeFiLlama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol_current_tvl
@@ -52,32 +53,18 @@ class DefiLlamaFetchProtocolCurrentTvl(DefiLlamaBaseTool):
         Returns:
             FetchProtocolCurrentTVLResponse containing protocol name, TVL value or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchProtocolCurrentTVLResponse(
-                    protocol=protocol, tvl=0, error=error_msg
-                )
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Normalize protocol slug
-            normalized_protocol = protocol.lower().replace(" ", "-")
+        # Normalize protocol slug
+        normalized_protocol = protocol.lower().replace(" ", "-")
 
-            # Fetch TVL from API
-            result = await fetch_protocol_current_tvl(normalized_protocol)
+        # Fetch TVL from API
+        result = await fetch_protocol_current_tvl(normalized_protocol)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchProtocolCurrentTVLResponse(
-                    protocol=normalized_protocol, tvl=0, error=result["error"]
-                )
-
-            return FetchProtocolCurrentTVLResponse(
-                protocol=normalized_protocol, tvl=float(result)
-            )
-
-        except Exception as e:
-            return FetchProtocolCurrentTVLResponse(
-                protocol=protocol, tvl=0, error=str(e)
-            )
+        return FetchProtocolCurrentTVLResponse(
+            protocol=normalized_protocol, tvl=float(result)
+        )

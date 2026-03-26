@@ -66,7 +66,7 @@ async def get_skills(
 
 def get_web_scraper_skill(
     name: str,
-) -> WebScraperBaseTool:
+) -> WebScraperBaseTool | None:
     """Get a web scraper skill by name.
 
     Args:

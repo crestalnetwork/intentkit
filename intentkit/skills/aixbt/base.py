@@ -3,6 +3,8 @@ from langchain_core.tools.base import ToolException
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
+AIXBT_BASE_URL = "https://api.aixbt.tech/v1"
+
 
 class AIXBTBaseTool(IntentKitSkill):
     """Base class for AIXBT API tools."""

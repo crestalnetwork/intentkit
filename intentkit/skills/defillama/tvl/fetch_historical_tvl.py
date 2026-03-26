@@ -1,6 +1,7 @@
 """Tool for fetching total historical TVL via DeFiLlama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_tvl
@@ -63,24 +64,16 @@ class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):
         Returns:
             FetchHistoricalTVLResponse containing TVL history or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchHistoricalTVLResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch TVL history from API
-            result = await fetch_historical_tvl()
+        # Fetch TVL history from API
+        result = await fetch_historical_tvl()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchHistoricalTVLResponse(error=result["error"])
+        # Parse response into our schema
+        data_points = [HistoricalTVLDataPoint(**point) for point in result]
 
-            # Parse response into our schema
-            data_points = [HistoricalTVLDataPoint(**point) for point in result]
-
-            return FetchHistoricalTVLResponse(data=data_points)
-
-        except Exception as e:
-            return FetchHistoricalTVLResponse(error=str(e))
+        return FetchHistoricalTVLResponse(data=data_points)

@@ -1,10 +1,15 @@
 """Tool for fetching all protocols via DeFi Llama API."""
 
+import logging
+
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocols
 from intentkit.skills.defillama.base import DefiLlamaBaseTool
+
+logger = logging.getLogger(__name__)
 
 FETCH_PROTOCOLS_PROMPT = (
     """Fetch all DeFi protocols tracked by DefiLlama with TVL, chain, and metadata."""
@@ -102,45 +107,40 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
         Returns:
             DefiLlamaProtocolsOutput containing list of protocols or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return DefiLlamaProtocolsOutput(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch protocols from API
-            result = await fetch_protocols()
+        # Fetch protocols from API
+        result = await fetch_protocols()
 
-            if isinstance(result, dict) and "error" in result:
-                return DefiLlamaProtocolsOutput(error=result["error"])
+        # Convert raw data to Protocol models
+        protocols = []
+        for protocol_data in result:
+            try:
+                # Process hallmarks if present
+                hallmarks = None
+                if "hallmarks" in protocol_data and protocol_data["hallmarks"]:
+                    hallmarks = [
+                        Hallmark(timestamp=h[0], description=h[1])
+                        for h in protocol_data["hallmarks"]
+                    ]
 
-            # Convert raw data to Protocol models
-            protocols = []
-            for protocol_data in result:
-                try:
-                    # Process hallmarks if present
-                    hallmarks = None
-                    if "hallmarks" in protocol_data and protocol_data["hallmarks"]:
-                        hallmarks = [
-                            Hallmark(timestamp=h[0], description=h[1])
-                            for h in protocol_data["hallmarks"]
-                        ]
+                # Create protocol model
+                protocol = Protocol(
+                    **{k: v for k, v in protocol_data.items() if k != "hallmarks"},
+                    hallmarks=hallmarks,
+                )
+                protocols.append(protocol)
+            except Exception as e:
+                # Log error for individual protocol processing but continue with others
+                logger.error(
+                    "Error processing protocol %s: %s",
+                    protocol_data.get("name", "unknown"),
+                    e,
+                )
+                continue
 
-                    # Create protocol model
-                    protocol = Protocol(
-                        **{k: v for k, v in protocol_data.items() if k != "hallmarks"},
-                        hallmarks=hallmarks,
-                    )
-                    protocols.append(protocol)
-                except Exception as e:
-                    # Log error for individual protocol processing but continue with others
-                    print(
-                        f"Error processing protocol {protocol_data.get('name', 'unknown')}: {str(e)}"
-                    )
-                    continue
-
-            return DefiLlamaProtocolsOutput(protocols=protocols)
-
-        except Exception as e:
-            return DefiLlamaProtocolsOutput(error=str(e))
+        return DefiLlamaProtocolsOutput(protocols=protocols)

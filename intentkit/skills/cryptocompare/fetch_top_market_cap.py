@@ -49,7 +49,7 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
         Raises:
             Exception: If there's an error accessing the CryptoCompare API.
         """
-        context = self.get_context()
+        self.get_context()
         try:
             # Check rate limit
             await self.check_rate_limit(max_requests=5, interval=60)
@@ -88,5 +88,8 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
 
             return result
 
+        except ToolException:
+            raise
         except Exception as e:
-            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e
+            logger.error("Error fetching top market cap: %s", e)
+            raise ToolException(f"Failed to fetch top market cap: {e!s}")

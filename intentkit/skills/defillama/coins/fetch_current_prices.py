@@ -1,6 +1,7 @@
 """Tool for fetching token prices via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_current_prices
@@ -67,22 +68,14 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
         Returns:
             FetchCurrentPricesResponse containing token prices or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchCurrentPricesResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch prices from API
-            result = await fetch_current_prices(coins=coins)
+        # Fetch prices from API
+        result = await fetch_current_prices(coins=coins)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchCurrentPricesResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchCurrentPricesResponse(coins=result["coins"])
-
-        except Exception as e:
-            return FetchCurrentPricesResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchCurrentPricesResponse(coins=result["coins"])

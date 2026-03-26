@@ -1,15 +1,12 @@
 """Base class for all DeFi Llama tools."""
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.skills.base import IntentKitSkill
 from intentkit.skills.defillama.config.chains import (
     get_chain_from_alias,
 )
-
-DEFILLAMA_BASE_URL = "https://api.llama.fi"
 
 
 class DefiLlamaBaseTool(IntentKitSkill):
@@ -19,7 +16,6 @@ class DefiLlamaBaseTool(IntentKitSkill):
     - Rate limiting
     - State management
     - Chain validation
-    - Error handling
     """
 
     category: str = "defillama"
@@ -77,34 +73,6 @@ class DefiLlamaBaseTool(IntentKitSkill):
             return False, None
 
         return True, normalized_chain
-
-    def get_endpoint_url(self, endpoint: str) -> str:
-        """Construct full endpoint URL.
-
-        Args:
-            endpoint: API endpoint path
-
-        Returns:
-            Complete URL for the endpoint
-        """
-        return f"{self.base_url}/{endpoint.lstrip('/')}"
-
-    def format_error_response(self, status_code: int, message: str) -> dict[str, Any]:
-        """Format error responses consistently.
-
-        Args:
-            status_code: HTTP status code
-            message: Error message
-
-        Returns:
-            Formatted error response dictionary
-        """
-        return {
-            "error": True,
-            "status_code": status_code,
-            "message": message,
-            "timestamp": datetime.now(tz=UTC).isoformat(),
-        }
 
     def get_current_timestamp(self) -> int:
         """Get current timestamp in UTC.

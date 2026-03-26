@@ -1,6 +1,7 @@
 """Tool for fetching token price percentage changes via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_price_percentage
@@ -55,22 +56,14 @@ class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):
         Returns:
             FetchPricePercentageResponse containing price percentage changes or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchPricePercentageResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch price percentage data from API
-            result = await fetch_price_percentage(coins=coins)
+        # Fetch price percentage data from API
+        result = await fetch_price_percentage(coins=coins)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchPricePercentageResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchPricePercentageResponse(coins=result["coins"])
-
-        except Exception as e:
-            return FetchPricePercentageResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchPricePercentageResponse(coins=result["coins"])

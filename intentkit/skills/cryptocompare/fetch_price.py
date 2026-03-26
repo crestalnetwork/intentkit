@@ -51,7 +51,7 @@ class CryptoCompareFetchPrice(CryptoCompareBaseTool):
             Exception: If there's an error accessing the CryptoCompare API.
         """
         try:
-            context = self.get_context()
+            self.get_context()
 
             # Check rate limit
             await self.check_rate_limit(max_requests=10, interval=60)
@@ -79,6 +79,8 @@ class CryptoCompareFetchPrice(CryptoCompareBaseTool):
 
             return result
 
+        except ToolException:
+            raise
         except Exception as e:
-            logger.error("Error fetching price: %s", str(e))
-            raise type(e)(f"[agent:{context.agent_id}]: {e}") from e
+            logger.error("Error fetching price: %s", e)
+            raise ToolException(f"Failed to fetch price: {e!s}")

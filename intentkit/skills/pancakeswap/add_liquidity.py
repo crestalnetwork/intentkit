@@ -270,7 +270,7 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
             )
             receipt = await wallet.wait_for_receipt(tx_hash)
             if receipt.get("status", 0) != 1:
-                return "Not staked (farm transaction failed)"
+                raise ToolException("Not staked (farm transaction failed)")
 
             # Persist staked token ID
             staked_data = await self.get_agent_skill_data("staked_token_ids")
@@ -283,8 +283,10 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
             )
 
             return "Staked in MasterChef V3 farm"
+        except ToolException:
+            raise
         except Exception:
-            return "Not staked (pool not eligible for farming)"
+            raise ToolException("Not staked (pool not eligible for farming)")
 
 
 def _to_hex(value: Any) -> str:

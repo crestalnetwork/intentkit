@@ -1,6 +1,7 @@
 """Tool for fetching pool data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.base import NoArgsSchema
@@ -88,22 +89,14 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
         Returns:
             FetchPoolsResponse containing pool data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchPoolsResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch pool data from API
-            result = await fetch_pools()
+        # Fetch pool data from API
+        result = await fetch_pools()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchPoolsResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchPoolsResponse(**result)
-
-        except Exception as e:
-            return FetchPoolsResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchPoolsResponse(**result)

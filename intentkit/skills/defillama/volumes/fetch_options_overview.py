@@ -1,6 +1,7 @@
 """Tool for fetching options overview data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_options_overview
@@ -93,22 +94,14 @@ class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
         Returns:
             FetchOptionsOverviewResponse containing comprehensive overview data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchOptionsOverviewResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch overview data from API
-            result = await fetch_options_overview()
+        # Fetch overview data from API
+        result = await fetch_options_overview()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchOptionsOverviewResponse(error=result["error"])
-
-            # Return the parsed response
-            return FetchOptionsOverviewResponse(**result)
-
-        except Exception as e:
-            return FetchOptionsOverviewResponse(error=str(e))
+        # Return the parsed response
+        return FetchOptionsOverviewResponse(**result)

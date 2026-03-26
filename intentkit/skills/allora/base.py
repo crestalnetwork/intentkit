@@ -3,7 +3,7 @@ from langchain_core.tools.base import ToolException
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
-base_url = "https://api.upshot.xyz/v2/allora"
+ALLORA_BASE_URL = "https://api.upshot.xyz/v2/allora"
 
 
 class AlloraBaseTool(IntentKitSkill):

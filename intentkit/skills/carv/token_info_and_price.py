@@ -3,6 +3,7 @@ import re
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.carv.base import CarvBaseTool
@@ -42,32 +43,21 @@ class TokenInfoAndPriceTool(CarvBaseTool):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if not ticker:
-            return {
-                "error": True,
-                "message": "ticker is null",
-                "suggestion": "ask the user for the specific ticker, and fill the `ticker` field when calling this tool",
-            }
+            raise ToolException(
+                "ticker is null. Please provide the specific ticker symbol."
+            )
 
         context = self.get_context()
         params = {"ticker": ticker}
         path = "/ai-agent-backend/token_info"
         method = "GET"
 
-        result, error = await self._call_carv_api(
+        result = await self._call_carv_api(
             context=context,
             endpoint=path,
             params=params,
             method=method,
         )
-
-        if error is not None or result is None:
-            logger.error("Error returned from CARV API: %s", error)
-            return {
-                "error": True,
-                "error_type": "APIError",
-                "message": "Failed to fetch token info from CARV API.",
-                "details": error,
-            }
 
         # retry with token_name if price is 0 or missing
         if "price" not in result or result["price"] == 0:
@@ -77,21 +67,19 @@ class TokenInfoAndPriceTool(CarvBaseTool):
             )
 
             fallback_params = {"ticker": fallback_ticker}
-            result, error = await self._call_carv_api(
-                context=context,
-                endpoint=path,
-                params=fallback_params,
-                method=method,
-            )
-
-            if error is not None or result is None or result.get("price") == 0:
-                logger.error("Fallback error returned from CARV API: %s", error)
-                return {
-                    "error": True,
-                    "error_type": "APIError",
-                    "message": "Failed to fetch token info from CARV API with fallback.",
-                    "details": error,
-                }
+            try:
+                result = await self._call_carv_api(
+                    context=context,
+                    endpoint=path,
+                    params=fallback_params,
+                    method=method,
+                )
+                if result.get("price") == 0:
+                    raise ToolException(
+                        "Failed to fetch token price from CARV API with fallback."
+                    )
+            except ToolException:
+                raise
 
         if "price" in result and amount is not None:
             return {

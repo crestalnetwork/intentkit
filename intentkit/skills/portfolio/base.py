@@ -1,6 +1,5 @@
 """Base classes for portfolio skills."""
 
-import asyncio
 import logging
 from abc import ABC
 from typing import Any
@@ -101,7 +100,3 @@ class PortfolioBaseTool(IntentKitSkill, ABC):
                     raise ToolException(
                         "Moralis API returned invalid JSON payload."
                     ) from exc
-
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
-        """Execute the tool synchronously by running the async version in a loop."""
-        return asyncio.run(self._arun(*args, **kwargs))

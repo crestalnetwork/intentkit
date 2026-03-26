@@ -56,7 +56,7 @@ async def get_skills(
 
 def get_slack_skill(
     name: str,
-) -> SlackBaseTool:
+) -> SlackBaseTool | None:
     """Get a Slack skill by name.
 
     Args:

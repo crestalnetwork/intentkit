@@ -86,8 +86,8 @@ class TokenQuote(LiFiBaseTool):
             if slippage is None:
                 slippage = self.default_slippage
 
-            # Validate all inputs
-            validation_error = validate_inputs(
+            # Validate all inputs (raises ToolException on invalid)
+            validate_inputs(
                 from_chain,
                 to_chain,
                 from_token,
@@ -96,8 +96,6 @@ class TokenQuote(LiFiBaseTool):
                 slippage,
                 self.allowed_chains,
             )
-            if validation_error:
-                return validation_error
 
             self.logger.info(
                 f"Requesting LiFi quote: {from_amount} {from_token} on {from_chain} -> {to_token} on {to_chain}"
@@ -119,24 +117,28 @@ class TokenQuote(LiFiBaseTool):
                 except httpx.TimeoutException:
                     return "Request timed out. The LiFi service might be temporarily unavailable. Please try again."
                 except httpx.ConnectError:
-                    return "Connection error. Unable to reach LiFi service. Please check your internet connection."
+                    raise ToolException(
+                        "Connection error. Unable to reach LiFi service. Please check your internet connection."
+                    )
                 except Exception as e:
                     self.logger.error("LiFi_API_Error: %s", str(e))
-                    raise ToolException(f"Error making API request: {str(e)}")
+                    raise ToolException(f"Error making API request: {e!s}")
                 # Handle response
                 data, error = handle_api_response(
                     response, from_token, from_chain, to_token, to_chain
                 )
                 if error:
                     self.logger.error("LiFi_API_Error: %s", error)
-                    return error
+                    raise ToolException(error)
 
                 # Format the quote result
                 return self.format_quote_result(data)
 
+        except ToolException:
+            raise
         except Exception as e:
             self.logger.error("LiFi_Error: %s", str(e))
-            return f"An unexpected error occurred: {str(e)}"
+            raise ToolException(f"An unexpected error occurred: {e!s}")
 
     def format_quote_result(self, data: dict[str, Any]) -> str:
         """Format quote result into human-readable text."""
@@ -183,4 +185,6 @@ class TokenQuote(LiFiBaseTool):
 
         except Exception as e:
             self.logger.error("Format_Error: %s", str(e))
-            return f"Quote received but formatting failed: {str(e)}\nRaw data: {str(data)[:500]}..."
+            raise ToolException(
+                f"Quote received but formatting failed: {e!s}\nRaw data: {str(data)[:500]}..."
+            )

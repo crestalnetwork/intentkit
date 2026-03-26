@@ -37,9 +37,8 @@ class CarvBaseTool(IntentKitSkill):
         method: str = "GET",
         params: dict[str, Any] | None = None,
         payload: dict[str, Any] | None = None,
-    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-        """
-        Makes a call to the CARV API and returns a tuple of (success, error).
+    ) -> dict[str, Any]:
+        """Makes a call to the CARV API and returns the response data.
 
         Args:
             context: The skill context.
@@ -49,10 +48,11 @@ class CarvBaseTool(IntentKitSkill):
             payload: JSON payload for POST/PUT requests.
 
         Returns:
-            Tuple where the first element is the response data if successful,
-            and the second element is an error dict if an error occurred.
-        """
+            The response data dict on success.
 
+        Raises:
+            ToolException: On API errors, network errors, or invalid responses.
+        """
         url = f"{CARV_API_BASE_URL}{endpoint}"
 
         try:
@@ -64,7 +64,11 @@ class CarvBaseTool(IntentKitSkill):
             }
 
             logger.debug(
-                f"Calling CARV API: {method} {url} with params {params}, payload {payload}"
+                "Calling CARV API: %s %s with params %s, payload %s",
+                method,
+                url,
+                params,
+                payload,
             )
 
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -75,43 +79,31 @@ class CarvBaseTool(IntentKitSkill):
                         url, headers=headers, json=payload, params=params
                     )
                 else:
-                    return None, {"error": f"Unsupported HTTP method: {method}"}
+                    raise ToolException(f"Unsupported HTTP method: {method}")
 
-                # Do NOT raise for status here; always parse JSON
                 try:
                     response_json: dict[str, Any] = response.json()
                 except Exception as json_err:
-                    err_msg = f"Failed to parse JSON response: {json_err}"
-                    logger.error(err_msg)
-                    return None, {"error": err_msg}
+                    raise ToolException(f"Failed to parse JSON response: {json_err!s}")
 
                 logger.debug(
-                    f"CARV API Response (status {response.status_code}): {response_json}"
+                    "CARV API Response (status %d): %s",
+                    response.status_code,
+                    response_json,
                 )
 
-                # Check if response_json signals an error explicitly (custom API error)
                 if response.status_code >= 400 or "error" in response_json:
-                    # Return full error info (including status code, body, etc.)
-                    return None, {
-                        "error": response_json.get("error", "Unknown API error"),
-                        "status_code": response.status_code,
-                        "response": response_json,
-                        "url": url,
-                        "method": method,
-                        "params": params,
-                        "payload": payload,
-                    }
+                    error_msg = response_json.get("error", "Unknown API error")
+                    raise ToolException(
+                        f"CARV API error ({response.status_code}): {error_msg}"
+                    )
 
-                # Otherwise return the 'data' field if present, else full response
-                return response_json.get("data", response_json), None
+                return response_json.get("data", response_json)
 
+        except ToolException:
+            raise
         except Exception as e:
             logger.error(
-                f"Error calling CARV API to {method} > {url}: {e}", exc_info=True
+                "Error calling CARV API to %s > %s: %s", method, url, e, exc_info=True
             )
-            return None, {
-                "error": str(e),
-                "url": url,
-                "method": method,
-                "params": params,
-            }
+            raise ToolException(f"CARV API request failed: {e!s}")

@@ -1,6 +1,7 @@
 """Tool for fetching first recorded token prices via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_first_price
@@ -63,22 +64,14 @@ class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
         Returns:
             FetchFirstPriceResponse containing first price data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchFirstPriceResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch first price data from API
-            result = await fetch_first_price(coins=coins)
+        # Fetch first price data from API
+        result = await fetch_first_price(coins=coins)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchFirstPriceResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchFirstPriceResponse(coins=result["coins"])
-
-        except Exception as e:
-            return FetchFirstPriceResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchFirstPriceResponse(coins=result["coins"])

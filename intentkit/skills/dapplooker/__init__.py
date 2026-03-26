@@ -58,7 +58,7 @@ async def get_skills(
 
 def get_dapplooker_skill(
     name: str,
-) -> DappLookerBaseTool:
+) -> DappLookerBaseTool | None:
     """Get a DappLooker skill by name.
 
     Args:

@@ -63,7 +63,7 @@ async def get_skills(
 
 def get_http_skill(
     name: str,
-) -> HttpBaseTool:
+) -> HttpBaseTool | None:
     """Get an HTTP client skill by name.
 
     Args:

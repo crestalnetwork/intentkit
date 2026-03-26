@@ -1,6 +1,7 @@
 """Tool for fetching stablecoin data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.base import NoArgsSchema
@@ -80,22 +81,14 @@ class DefiLlamaFetchStablecoins(DefiLlamaBaseTool):
         Returns:
             FetchStablecoinsResponse containing stablecoin data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchStablecoinsResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch stablecoin data from API
-            result = await fetch_stablecoins()
+        # Fetch stablecoin data from API
+        result = await fetch_stablecoins()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchStablecoinsResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchStablecoinsResponse(**result)
-
-        except Exception as e:
-            return FetchStablecoinsResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchStablecoinsResponse(**result)

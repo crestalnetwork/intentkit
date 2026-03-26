@@ -82,7 +82,7 @@ async def get_skills(
 
 def get_heurist_skill(
     name: str,
-) -> HeuristBaseTool:
+) -> HeuristBaseTool | None:
     """Get a Heurist AI skill by name.
 
     Args:

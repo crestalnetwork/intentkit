@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from intentkit.skills.allora.base import AlloraBaseTool
 
-from .base import base_url
+from .base import ALLORA_BASE_URL
 
 
 class AlloraGetPriceInput(BaseModel):
@@ -80,7 +80,7 @@ class AlloraGetPrice(AlloraBaseTool):
         if not api_key:
             raise ToolException("Allora API key not found")
 
-        url = f"{base_url}/consumer/price/ethereum-11155111/{token}/{time_frame}"
+        url = f"{ALLORA_BASE_URL}/consumer/price/ethereum-11155111/{token}/{time_frame}"
         headers = {
             "accept": "application/json",
             "x-api-key": api_key,

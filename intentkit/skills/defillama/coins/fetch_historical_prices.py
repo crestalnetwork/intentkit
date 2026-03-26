@@ -1,6 +1,7 @@
 """Tool for fetching historical token prices via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_historical_prices
@@ -71,22 +72,14 @@ class DefiLlamaFetchHistoricalPrices(DefiLlamaBaseTool):
         Returns:
             FetchHistoricalPricesResponse containing historical token prices or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchHistoricalPricesResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch historical prices from API
-            result = await fetch_historical_prices(timestamp=timestamp, coins=coins)
+        # Fetch historical prices from API
+        result = await fetch_historical_prices(timestamp=timestamp, coins=coins)
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchHistoricalPricesResponse(error=result["error"])
-
-            # Return the response matching the API structure
-            return FetchHistoricalPricesResponse(coins=result["coins"])
-
-        except Exception as e:
-            return FetchHistoricalPricesResponse(error=str(e))
+        # Return the response matching the API structure
+        return FetchHistoricalPricesResponse(coins=result["coins"])

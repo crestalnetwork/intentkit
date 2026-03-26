@@ -56,38 +56,20 @@ class OnchainQueryTool(CarvBaseTool):
         Queries the CARV SQL Query API and returns the response.
         """
         context = self.get_context()
-        try:
-            await self.apply_rate_limit(context)
 
-            payload = {"question": question}
+        await self.apply_rate_limit(context)
 
-            result, error = await self._call_carv_api(
-                context=context,
-                endpoint="/ai-agent-backend/sql_query_by_llm",
-                method="POST",
-                payload=payload,
-            )
+        payload = {"question": question}
 
-            if error is not None or result is None:
-                logger.error("Error returned from CARV API: %s", error)
-                return {
-                    "error": True,
-                    "error_type": "APIError",
-                    "message": "Failed to fetch data from CARV API.",
-                    "details": error,
-                }
+        result = await self._call_carv_api(
+            context=context,
+            endpoint="/ai-agent-backend/sql_query_by_llm",
+            method="POST",
+            payload=payload,
+        )
 
-            _normalize_unit(result, chain)
-            return {"success": True, **result}
-
-        except Exception as e:
-            logger.error("An unexpected error occurred: %s", e, exc_info=True)
-            return {
-                "error": True,
-                "error_type": type(e).__name__,
-                "message": "An unexpected error occurred.",
-                "details": str(e),
-            }
+        _normalize_unit(result, chain)
+        return {"success": True, **result}
 
 
 def _normalize_unit(response_data: dict[str, Any], chain: str) -> None:

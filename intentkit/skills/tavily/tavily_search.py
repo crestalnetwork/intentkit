@@ -10,6 +10,8 @@ from intentkit.skills.tavily.base import TavilyBaseTool
 
 logger = logging.getLogger(__name__)
 
+TAVILY_API_URL = "https://api.tavily.com/search"
+
 
 class TavilySearchInput(BaseModel):
     """Input for Tavily search tool."""
@@ -89,7 +91,7 @@ class TavilySearch(TavilyBaseTool):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
-                    "https://api.tavily.com/search",
+                    TAVILY_API_URL,
                     json={
                         "api_key": api_key,
                         "query": query,

@@ -6,7 +6,7 @@ import httpx
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
-from intentkit.skills.aixbt.base import AIXBTBaseTool
+from intentkit.skills.aixbt.base import AIXBT_BASE_URL, AIXBTBaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class AIXBTProjects(AIXBTBaseTool):
         # Get the API key from platform config
         api_key = self.get_api_key()
 
-        base_url = "https://api.aixbt.tech/v1/projects"
+        base_url = f"{AIXBT_BASE_URL}/projects"
 
         # Build query parameters
         params = {"limit": limit}

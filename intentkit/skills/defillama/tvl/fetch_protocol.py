@@ -3,6 +3,7 @@
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_protocol
@@ -131,40 +132,33 @@ class DefiLlamaFetchProtocol(DefiLlamaBaseTool):
         Returns:
             DefiLlamaProtocolOutput containing protocol details or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return DefiLlamaProtocolOutput(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch protocol data from API
-            result = await fetch_protocol(protocol)
+        # Fetch protocol data from API
+        result = await fetch_protocol(protocol)
 
-            if isinstance(result, dict) and "error" in result:
-                return DefiLlamaProtocolOutput(error=result["error"])
+        # Process hallmarks if present
+        hallmarks = None
+        if "hallmarks" in result:
+            hallmarks = [
+                Hallmark(timestamp=h[0], description=h[1])
+                for h in result.get("hallmarks", [])
+            ]
 
-            # Process hallmarks if present
-            hallmarks = None
-            if "hallmarks" in result:
-                hallmarks = [
-                    Hallmark(timestamp=h[0], description=h[1])
-                    for h in result.get("hallmarks", [])
-                ]
+        # Create raises objects if present
+        raises = None
+        if "raises" in result:
+            raises = [Raise(**r) for r in result.get("raises", [])]
 
-            # Create raises objects if present
-            raises = None
-            if "raises" in result:
-                raises = [Raise(**r) for r in result.get("raises", [])]
+        # Create protocol detail object
+        protocol_detail = ProtocolDetail(
+            **{k: v for k, v in result.items() if k not in ["hallmarks", "raises"]},
+            hallmarks=hallmarks,
+            raises=raises,
+        )
 
-            # Create protocol detail object
-            protocol_detail = ProtocolDetail(
-                **{k: v for k, v in result.items() if k not in ["hallmarks", "raises"]},
-                hallmarks=hallmarks,
-                raises=raises,
-            )
-
-            return DefiLlamaProtocolOutput(protocol=protocol_detail)
-
-        except Exception as e:
-            return DefiLlamaProtocolOutput(error=str(e))
+        return DefiLlamaProtocolOutput(protocol=protocol_detail)

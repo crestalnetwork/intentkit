@@ -3,7 +3,7 @@ from langchain_core.tools.base import ToolException
 from intentkit.config.config import config
 from intentkit.skills.base import IntentKitSkill
 
-base_url = "https://api.elfa.ai/v2"
+ELFA_BASE_URL = "https://api.elfa.ai/v2"
 
 
 class ElfaBaseTool(IntentKitSkill):

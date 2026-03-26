@@ -63,7 +63,7 @@ async def get_skills(
 
 def get_supabase_skill(
     name: str,
-) -> SupabaseBaseTool:
+) -> SupabaseBaseTool | None:
     """Get a Supabase skill by name.
 
     Args:

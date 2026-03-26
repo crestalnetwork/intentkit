@@ -1,6 +1,7 @@
 """Tool for fetching fees overview data via DeFi Llama API."""
 
 from langchain_core.tools import ArgsSchema
+from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.skills.defillama.api import fetch_fees_overview
@@ -92,22 +93,14 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
         Returns:
             FetchFeesOverviewResponse containing comprehensive fee data or error
         """
-        try:
-            # Check rate limiting
-            context = self.get_context()
-            is_rate_limited, error_msg = await self.check_rate_limit(context)
-            if is_rate_limited:
-                return FetchFeesOverviewResponse(error=error_msg)
+        # Check rate limiting
+        context = self.get_context()
+        is_rate_limited, error_msg = await self.check_rate_limit(context)
+        if is_rate_limited:
+            raise ToolException(error_msg)
 
-            # Fetch fees data from API
-            result = await fetch_fees_overview()
+        # Fetch fees data from API
+        result = await fetch_fees_overview()
 
-            # Check for API errors
-            if isinstance(result, dict) and "error" in result:
-                return FetchFeesOverviewResponse(error=result["error"])
-
-            # Return the parsed response
-            return FetchFeesOverviewResponse(**result)
-
-        except Exception as e:
-            return FetchFeesOverviewResponse(error=str(e))
+        # Return the parsed response
+        return FetchFeesOverviewResponse(**result)

@@ -46,10 +46,6 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
     ) -> str:
         """Query the indexed Firecrawl content."""
         try:
-            # Get agent context - throw error if not available
-            # Configuration is always available in new runtime
-            pass
-
             context = self.get_context()
             if not context or not context.agent_id:
                 raise ToolException(
@@ -108,19 +104,8 @@ class FirecrawlQueryIndexedContent(FirecrawlBaseTool):
 
             return response
 
+        except ToolException:
+            raise
         except Exception as e:
-            # Extract agent_id for error logging if possible
-            agent_id = "UNKNOWN"
-            try:
-                # TODO: Fix config reference
-                context = self.get_context()
-                if context and context.agent_id:
-                    agent_id = context.agent_id
-            except Exception:
-                pass
-
-            logger.error(
-                f"[{agent_id}] Error in FirecrawlQueryIndexedContent: {e}",
-                exc_info=True,
-            )
-            raise type(e)(f"[agent:{agent_id}]: {e}") from e
+            logger.error("Error in FirecrawlQueryIndexedContent: %s", e, exc_info=True)
+            raise ToolException(f"Failed to query indexed content: {e!s}")
