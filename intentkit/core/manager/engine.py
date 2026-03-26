@@ -87,7 +87,7 @@ def _build_manager_agent(agent_id: str, user_id: str) -> Agent:
         "Use the `gpt_avatar_generator` skill to generate avatar-friendly images."
         "After get the avatar url from the skill result, you can update the `picture` field in the draft."
         "\n\n### Model Choice\n\n"
-        "Use `gpt-5-mini` for normal requests, and `gpt-5` for complex requests."
+        "Use `gpt-5.4-mini` for normal requests, and `gpt-5` for complex requests."
         "If the user specified a model, call the `get_available_llms` skill to retrieve all"
         " available model IDs and find the closest match."
         "\n\n### Skill Configuration\n\n"

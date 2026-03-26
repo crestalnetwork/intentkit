@@ -16,7 +16,7 @@ def test_pick_summarize_model_prefers_google_then_openai():
         mock_config.deepseek_api_key = None
         mock_config.minimax_api_key = None
 
-        assert pick_summarize_model() == "gpt-5-mini"
+        assert pick_summarize_model() == "gpt-5.4-mini"
 
 
 def test_pick_summarize_model_xai_when_available():
@@ -93,4 +93,4 @@ def test_pick_default_model_fallback_when_none():
         mock_config.minimax_api_key = None
 
         result = pick_default_model()
-        assert result == "gpt-5-mini"
+        assert result == "gpt-5.4-mini"

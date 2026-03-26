@@ -72,7 +72,7 @@ async def _build_lead_agent(team_id: str) -> Agent:
         "### Agent Creation\n\n"
         "When creating a new agent, guide the user through:\n"
         "1. Name and purpose\n"
-        "2. Model selection (use `gpt-5-mini` for normal, `gpt-5` for complex tasks; "
+        "2. Model selection (use `gpt-5.4-mini` for normal, `gpt-5` for complex tasks; "
         "call `lead_get_available_llms` if user specifies a particular model)\n"
         "3. Skill configuration\n"
         "4. Additional settings as needed\n\n"

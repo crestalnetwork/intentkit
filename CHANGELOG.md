@@ -1731,7 +1731,7 @@ This release focuses on improving the x402 integration with better error handlin
 - **Optimization**: Optimize credit event consistency checking scripts for better performance
 
 ### Fixes
-- **Model Update**: Change default model to gpt-5-mini for improved performance
+- **Model Update**: Change default model to gpt-5.4-mini for improved performance
 - **Credit Events**: Update and improve credit event consistency check script
 - **Workflow**: Update pypi publish workflow and changelog
 

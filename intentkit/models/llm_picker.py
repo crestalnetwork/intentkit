@@ -18,9 +18,11 @@ def pick_summarize_model() -> str:
     order: list[tuple[str, LLMProvider]] = [
         ("z-ai/glm-4.7-flash", LLMProvider.OPENROUTER),
         ("gemini-3.1-flash-lite-preview", LLMProvider.GOOGLE),
-        ("gpt-5-mini", LLMProvider.OPENAI),
+        ("gpt-5.4-mini", LLMProvider.OPENAI),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
+        ("MiniMax-M2.7", LLMProvider.MINIMAX),
+        ("GLM-4.7-Flash", LLMProvider.OPENAI_COMPATIBLE),
     ]
 
     for model_id, provider in order:
@@ -42,10 +44,11 @@ def pick_default_model() -> str:
     # 4. Grok: Good performance if available
     # 5. DeepSeek: Final fallback
     order: list[tuple[str, LLMProvider]] = [
+        ("GLM-5-Turbo", LLMProvider.OPENAI_COMPATIBLE),
         ("MiniMax-M2.7", LLMProvider.MINIMAX),
         ("minimax/minimax-m2.7", LLMProvider.OPENROUTER),
         ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),
-        ("gpt-5-mini", LLMProvider.OPENAI),
+        ("gpt-5.4-mini", LLMProvider.OPENAI),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
     ]
@@ -56,7 +59,7 @@ def pick_default_model() -> str:
 
     # Fallback to a reasonable default rather than crashing, since this is
     # also used as a SQLAlchemy column default for TemplateTable.
-    return "gpt-5-mini"
+    return "gpt-5.4-mini"
 
 
 def pick_long_context_model() -> str:
@@ -69,8 +72,10 @@ def pick_long_context_model() -> str:
         ("gemini-3.1-flash-lite-preview", LLMProvider.GOOGLE),
         ("grok-4-1-fast-non-reasoning", LLMProvider.XAI),
         ("qwen/qwen3.5-flash-02-23", LLMProvider.OPENROUTER),
-        ("gpt-5-nano", LLMProvider.OPENAI),
+        ("gpt-5.4-nano", LLMProvider.OPENAI),
         ("deepseek-chat", LLMProvider.DEEPSEEK),
+        ("MiniMax-M2.7", LLMProvider.MINIMAX),
+        ("GLM-5-Turbo", LLMProvider.OPENAI_COMPATIBLE),
     ]
 
     for model_id, provider in order:

@@ -130,8 +130,8 @@ def test_llm_model_filtering():
 def test_model_id_index_suffix_matching():
     """Test that _MODEL_ID_INDEX includes base name entries for backward compat."""
 
-    # Models with slash in id (e.g. "openai/gpt-5-mini") should also be
-    # indexed by the base name ("gpt-5-mini") for legacy agent configs.
+    # Models with slash in id (e.g. "openai/gpt-5.4-mini") should also be
+    # indexed by the base name ("gpt-5.4-mini") for legacy agent configs.
     with patch("intentkit.models.llm.config") as mock_config:
         mock_config.openai_api_key = None
         mock_config.google_api_key = None

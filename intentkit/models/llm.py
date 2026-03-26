@@ -491,8 +491,8 @@ class LLMModelInfo(BaseModel):
 AVAILABLE_MODELS = load_default_llm_models()
 
 # Reverse index: model id → list of composite keys in AVAILABLE_MODELS.
-# Indexed by both full id (e.g. "openai/gpt-5-mini") and base name after "/"
-# (e.g. "gpt-5-mini") for backward compatibility with legacy agent configs.
+# Indexed by both full id (e.g. "openai/gpt-5.4-mini") and base name after "/"
+# (e.g. "gpt-5.4-mini") for backward compatibility with legacy agent configs.
 _MODEL_ID_INDEX: dict[str, list[str]] = {}
 for _key, _model in AVAILABLE_MODELS.items():
     _MODEL_ID_INDEX.setdefault(_model.id, []).append(_key)
