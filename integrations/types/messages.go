@@ -2,6 +2,25 @@
 // These types mirror the Python Pydantic models in intentkit/models/chat.py.
 package types
 
+// AuthorType constants mirror intentkit.models.chat.AuthorType.
+const (
+	AuthorTypeAgent    = "agent"
+	AuthorTypeSkill    = "skill"
+	AuthorTypeThinking = "thinking"
+	AuthorTypeSystem   = "system"
+)
+
+// AttachmentType constants mirror intentkit.models.chat.ChatMessageAttachmentType.
+const (
+	AttachImage  = "image"
+	AttachVideo  = "video"
+	AttachFile   = "file"
+	AttachCard   = "card"
+	AttachChoice = "choice"
+	AttachLink   = "link"
+	AttachXMTP   = "xmtp"
+)
+
 // ChatMessage mirrors intentkit.models.chat.ChatMessage.
 // Only fields relevant to integration message handling are included.
 type ChatMessage struct {
@@ -40,10 +59,4 @@ type ChatMessageAttach struct {
 	LeadText *string                `json:"lead_text,omitempty"`
 	URL      *string                `json:"url,omitempty"`
 	JSON     map[string]interface{} `json:"json,omitempty"`
-}
-
-// IsAgentResponse returns true if this message is a response that should be
-// sent back to the user (agent reply or system message with content).
-func (m *ChatMessage) IsAgentResponse() bool {
-	return m.Message != "" && (m.AuthorType == "agent" || m.AuthorType == "system")
 }

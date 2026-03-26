@@ -144,7 +144,7 @@ jobs:
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
         with:
           context: ./integrations
-          file: ./integrations/telegram/Dockerfile
+          file: ./integrations/Dockerfile.telegram
           build-args: |
             RELEASE=${{ github.event.release.tag_name || 'latest'}}
           push: true
@@ -171,7 +171,7 @@ jobs:
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
         with:
           context: ./integrations
-          file: ./integrations/wechat/Dockerfile
+          file: ./integrations/Dockerfile.wechat
           build-args: |
             RELEASE=${{ github.event.release.tag_name || 'latest'}}
           push: true

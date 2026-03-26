@@ -1,15 +1,13 @@
 root = "."
-tmp_dir = "tmp"
+tmp_dir = "tmp/wechat"
 
 [build]
-  cmd = "go build -o ./tmp/intent-wechat ."
-  entrypoint = ["./tmp/intent-wechat"]
+  cmd = "go build -o ./tmp/wechat/intent-wechat ./cmd/wechat"
+  bin = "./tmp/wechat/intent-wechat"
   delay = 1000
   exclude_dir = ["tmp"]
   exclude_regex = ["_test\\.go"]
-  include_dir = [".", "../types"]
   include_ext = ["go", "mod", "sum"]
-  kill_delay = "1s"
   poll = true
   poll_interval = 2000
 

@@ -12,7 +12,6 @@ import (
 	"github.com/crestalnetwork/intentkit/integrations/telegram/config"
 	"github.com/crestalnetwork/intentkit/integrations/telegram/store"
 	"github.com/mymmrac/telego"
-	tu "github.com/mymmrac/telego/telegoutil"
 	"gorm.io/gorm"
 )
 
@@ -171,6 +170,9 @@ func (m *Manager) ensureBotRunning(agent *store.Agent) {
 			if update.Message != nil {
 				m.handleMessage(bot, *update.Message, agent.ID)
 			}
+			if update.CallbackQuery != nil {
+				m.handleCallbackQuery(bot, *update.CallbackQuery, agent.ID, false)
+			}
 		}
 	}()
 
@@ -277,6 +279,9 @@ func (m *Manager) ensureTeamBotRunning(tc *store.TeamChannel) {
 			if update.Message != nil {
 				m.handleTeamMessage(bot, *update.Message, tc.TeamID)
 			}
+			if update.CallbackQuery != nil {
+				m.handleCallbackQuery(bot, *update.CallbackQuery, tc.TeamID, true)
+			}
 		}
 	}()
 
@@ -320,38 +325,6 @@ func (m *Manager) updateTeamChannelData(teamID string, bot *telego.Bot) error {
 	return m.db.Model(&store.TeamChannelData{}).
 		Where("team_id = ? AND channel_type = ?", teamID, "telegram").
 		Update("data", jsonData).Error
-}
-
-func (m *Manager) handleTeamMessage(bot *telego.Bot, message telego.Message, teamID string) {
-	if message.Text == "" || message.From == nil {
-		return
-	}
-
-	slog.Info("Received team message", "team_id", teamID, "chat_id", message.Chat.ID)
-
-	_ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))
-
-	telegramID := fmt.Sprintf("%d", message.From.ID)
-
-	payload := map[string]interface{}{
-		"team_id":     teamID,
-		"telegram_id": telegramID,
-		"chat_id":     fmt.Sprintf("%d", message.Chat.ID),
-		"message":     message.Text,
-	}
-
-	resp, err := m.apiClient.ExecuteTeamLead(payload)
-	if err != nil {
-		slog.Error("Failed to execute team lead", "error", err)
-		_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), "Sorry, I encountered an error processing your request."))
-		return
-	}
-
-	for _, chatMsg := range resp {
-		if chatMsg.IsAgentResponse() {
-			_, _ = bot.SendMessage(context.Background(), tu.Message(tu.ID(message.Chat.ID), chatMsg.Message))
-		}
-	}
 }
 
 func getTokenFromConfig(config map[string]interface{}) string {

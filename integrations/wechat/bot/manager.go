@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/crestalnetwork/intentkit/integrations/shared"
+	"github.com/crestalnetwork/intentkit/integrations/types"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/api"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/config"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/ilink"
@@ -15,8 +17,9 @@ import (
 )
 
 type botEntry struct {
-	client       *ilink.Client
-	typingTicket string
+	client           *ilink.Client
+	typingTicket     string
+	lastContextToken string // cached to avoid DB write on every message
 }
 
 // Manager manages WeChat bot lifecycles for team channels.
@@ -269,8 +272,11 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 
 	slog.Info("Received wechat message", "team_id", teamID, "from", msg.FromUserID)
 
-	// Store latest context_token for proactive messaging
-	m.updateContextToken(teamID, msg.ContextToken)
+	// Store latest context_token for proactive messaging (skip DB write if unchanged)
+	if msg.ContextToken != entry.lastContextToken {
+		entry.lastContextToken = msg.ContextToken
+		m.updateContextToken(teamID, msg.ContextToken)
+	}
 
 	// Lazy-fetch typing_ticket on first message (requires user_id + context_token)
 	if entry.typingTicket == "" {
@@ -301,7 +307,7 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 		}()
 	}
 
-	// Call Core API
+	// Call Core API via SSE streaming
 	payload := map[string]interface{}{
 		"team_id":        teamID,
 		"wechat_user_id": msg.FromUserID,
@@ -309,26 +315,18 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 		"message":        text,
 	}
 
-	resp, err := m.apiClient.ExecuteWechatTeamLead(payload)
+	sender := NewWechatSender(entry.client, msg.FromUserID, msg.ContextToken)
+	err := m.apiClient.StreamWechatTeamLead(context.Background(), payload, func(chatMsg types.ChatMessage) error {
+		shared.DispatchMessage(context.Background(), chatMsg, sender)
+		return nil
+	})
 	typingCancel() // stop typing indicator
+
 	if err != nil {
-		slog.Error("Failed to execute wechat team lead", "error", err)
+		slog.Error("Failed to stream wechat team lead", "error", err)
 		if sendErr := entry.client.SendMessage(context.Background(), msg.FromUserID, msg.ContextToken, "Sorry, I encountered an error processing your request."); sendErr != nil {
 			slog.Error("Failed to send error reply", "team_id", teamID, "error", sendErr)
 		}
 		return
-	}
-
-	// Send response messages back to WeChat
-	slog.Info("Got response from core API", "team_id", teamID, "msg_count", len(resp))
-	for i, chatMsg := range resp {
-		slog.Info("Response message", "index", i, "author_type", chatMsg.AuthorType, "msg_len", len(chatMsg.Message), "is_agent_resp", chatMsg.IsAgentResponse())
-		if chatMsg.IsAgentResponse() {
-			if err := entry.client.SendMessage(context.Background(), msg.FromUserID, msg.ContextToken, chatMsg.Message); err != nil {
-				slog.Error("Failed to send wechat message", "team_id", teamID, "error", err)
-			} else {
-				slog.Info("Sent wechat message", "team_id", teamID, "text_len", len(chatMsg.Message))
-			}
-		}
 	}
 }

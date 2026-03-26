@@ -66,8 +66,11 @@ type WeixinMessage struct {
 
 // ItemObj represents a message item (text, image, etc.).
 type ItemObj struct {
-	Type     int       `json:"type"`
-	TextItem *TextItem `json:"text_item,omitempty"`
+	Type      int        `json:"type"`
+	TextItem  *TextItem  `json:"text_item,omitempty"`
+	ImageItem *ImageItem `json:"image_item,omitempty"`
+	VideoItem *VideoItem `json:"video_item,omitempty"`
+	FileItem  *FileItem  `json:"file_item,omitempty"`
 }
 
 // TextItem holds text content for a message item.
@@ -130,4 +133,60 @@ type GetConfigResponse struct {
 	Ret          int    `json:"ret"`
 	ErrMsg       string `json:"errmsg,omitempty"`
 	TypingTicket string `json:"typing_ticket"`
+}
+
+// --- Media Item Types ---
+
+// CDNMedia references an encrypted file on WeChat's CDN.
+type CDNMedia struct {
+	EncryptQueryParam string `json:"encrypt_query_param"`
+	AESKey            string `json:"aes_key"`
+	EncryptType       int    `json:"encrypt_type"`
+}
+
+// ImageItem holds image content for a message item.
+type ImageItem struct {
+	Media       CDNMedia `json:"media"`
+	ThumbMedia  CDNMedia `json:"thumb_media"`
+	MidSize     int      `json:"mid_size"`
+	ThumbSize   int      `json:"thumb_size"`
+	ThumbHeight int      `json:"thumb_height"`
+	ThumbWidth  int      `json:"thumb_width"`
+}
+
+// VideoItem holds video content for a message item.
+type VideoItem struct {
+	Media CDNMedia `json:"media"`
+}
+
+// FileItem holds file content for a message item.
+type FileItem struct {
+	Media    CDNMedia `json:"media"`
+	FileName string   `json:"file_name"`
+	FileSize int      `json:"file_size"`
+}
+
+// --- GetUploadURL ---
+
+// UploadParam contains the parameters for uploading a file to CDN.
+type UploadParam struct {
+	UploadURL string `json:"upload_url"`
+	FileID    string `json:"file_id"`
+	AESKey    string `json:"aes_key"`
+}
+
+// GetUploadURLRequest is the request body for the getuploadurl endpoint.
+type GetUploadURLRequest struct {
+	MediaType int      `json:"media_type"`
+	FileSize  int      `json:"file_size"`
+	FileName  string   `json:"file_name"`
+	BaseInfo  BaseInfo `json:"base_info"`
+}
+
+// GetUploadURLResponse is the response from the getuploadurl endpoint.
+type GetUploadURLResponse struct {
+	Ret              int          `json:"ret"`
+	ErrMsg           string       `json:"errmsg,omitempty"`
+	UploadParam      UploadParam  `json:"upload_param"`
+	ThumbUploadParam *UploadParam `json:"thumb_upload_param,omitempty"`
 }

@@ -1,12 +1,12 @@
 package api
 
 import (
+	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
-	"github.com/crestalnetwork/intentkit/integrations/types"
-	"github.com/go-resty/resty/v2"
+	"github.com/crestalnetwork/intentkit/integrations/shared"
+	"resty.dev/v3"
 )
 
 type Client struct {
@@ -33,44 +33,12 @@ func (c *Client) CheckHealth() error {
 	return nil
 }
 
-// ExecuteAgent calls the /core/execute endpoint
-func (c *Client) ExecuteAgent(payload map[string]interface{}) ([]types.ChatMessage, error) {
-	var result []types.ChatMessage
-	resp, err := c.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(payload).
-		SetResult(&result).
-		Post(c.baseURL + "/core/execute")
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute agent: %w", err)
-	}
-
-	if resp.IsError() {
-		slog.Error("Core API returned error", "status", resp.StatusCode(), "body", string(resp.Body()))
-		return nil, fmt.Errorf("core api returned error status: %d", resp.StatusCode())
-	}
-
-	return result, nil
+// StreamAgent calls the /core/stream endpoint with SSE streaming.
+func (c *Client) StreamAgent(ctx context.Context, payload map[string]interface{}, cb shared.StreamCallback) error {
+	return shared.StreamRequest(ctx, c.baseURL, "/core/stream", payload, cb)
 }
 
-// ExecuteTeamLead calls the /core/lead/execute endpoint for team channel messages
-func (c *Client) ExecuteTeamLead(payload map[string]interface{}) ([]types.ChatMessage, error) {
-	var result []types.ChatMessage
-	resp, err := c.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(payload).
-		SetResult(&result).
-		Post(c.baseURL + "/core/lead/execute")
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute team lead: %w", err)
-	}
-
-	if resp.IsError() {
-		slog.Error("Core API returned error for team lead", "status", resp.StatusCode(), "body", string(resp.Body()))
-		return nil, fmt.Errorf("core api returned error status: %d", resp.StatusCode())
-	}
-
-	return result, nil
+// StreamTeamLead calls the /core/lead/stream endpoint with SSE streaming.
+func (c *Client) StreamTeamLead(ctx context.Context, payload map[string]interface{}, cb shared.StreamCallback) error {
+	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/stream", payload, cb)
 }

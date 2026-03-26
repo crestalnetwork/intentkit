@@ -1,12 +1,12 @@
 package api
 
 import (
+	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
-	"github.com/crestalnetwork/intentkit/integrations/types"
-	"github.com/go-resty/resty/v2"
+	"github.com/crestalnetwork/intentkit/integrations/shared"
+	"resty.dev/v3"
 )
 
 type Client struct {
@@ -33,23 +33,7 @@ func (c *Client) CheckHealth() error {
 	return nil
 }
 
-// ExecuteWechatTeamLead calls the /core/lead/wechat/execute endpoint.
-func (c *Client) ExecuteWechatTeamLead(payload map[string]interface{}) ([]types.ChatMessage, error) {
-	var result []types.ChatMessage
-	resp, err := c.client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(payload).
-		SetResult(&result).
-		Post(c.baseURL + "/core/lead/wechat/execute")
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute wechat team lead: %w", err)
-	}
-
-	if resp.IsError() {
-		slog.Error("Core API returned error for wechat team lead", "status", resp.StatusCode(), "body", string(resp.Body()))
-		return nil, fmt.Errorf("core api returned error status: %d", resp.StatusCode())
-	}
-
-	return result, nil
+// StreamWechatTeamLead calls the /core/lead/wechat/stream endpoint with SSE streaming.
+func (c *Client) StreamWechatTeamLead(ctx context.Context, payload map[string]interface{}, cb shared.StreamCallback) error {
+	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/wechat/stream", payload, cb)
 }

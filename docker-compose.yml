@@ -210,8 +210,7 @@ services:
       args:
         SERVICE: telegram
     volumes:
-      - ./integrations/telegram:/app/telegram
-      - ./integrations/types:/app/types
+      - ./integrations:/app
     depends_on:
       db:
         condition: service_healthy
@@ -242,8 +241,7 @@ services:
       args:
         SERVICE: wechat
     volumes:
-      - ./integrations/wechat:/app/wechat
-      - ./integrations/types:/app/types
+      - ./integrations:/app
     depends_on:
       db:
         condition: service_healthy
