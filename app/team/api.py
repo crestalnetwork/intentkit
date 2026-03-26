@@ -34,6 +34,7 @@ from app.team import (
     team_autonomous_router,
     team_chat_router,
     team_content_router,
+    team_lead_router,
     team_management_router,
     team_user_router,
 )
@@ -107,6 +108,7 @@ _ = app.include_router(team_agent_router)
 _ = app.include_router(team_autonomous_router)
 _ = app.include_router(team_chat_router)
 _ = app.include_router(team_content_router)
+_ = app.include_router(team_lead_router)
 _ = app.include_router(team_management_router)
 _ = app.include_router(team_user_router)
 
