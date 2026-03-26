@@ -65,7 +65,7 @@ async def get_skills(
 
 def get_enso_skill(
     name: str,
-) -> EnsoBaseTool:
+) -> EnsoBaseTool | None:
     """Get an Enso skill by name.
 
     Args:

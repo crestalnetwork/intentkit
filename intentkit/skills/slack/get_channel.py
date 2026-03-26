@@ -48,7 +48,10 @@ class SlackGetChannel(SlackBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        client = self.get_client(skill_config.get("slack_bot_token"))
+        token = skill_config.get("slack_bot_token")
+        if not token:
+            raise ToolException("Missing required slack_bot_token in configuration")
+        client = self.get_client(token)
 
         try:
             # If no channel specified, return a dict of all channels
@@ -56,8 +59,9 @@ class SlackGetChannel(SlackBaseTool):
                 # Get all channels
                 response = client.conversations_list()
                 if response["ok"]:
-                    channels = {}
-                    for channel in response["channels"]:
+                    channels: dict[str, SlackChannel] = {}
+                    channel_list = response.get("channels") or []
+                    for channel in channel_list:
                         channels[channel["id"]] = self._format_channel(channel)
                     return channels
                 else:
@@ -67,7 +71,10 @@ class SlackGetChannel(SlackBaseTool):
             if channel_id:
                 response = client.conversations_info(channel=channel_id)
                 if response["ok"]:
-                    return self._format_channel(response["channel"])
+                    channel_data = response.get("channel")
+                    if channel_data is None:
+                        raise ToolException("Channel data missing from response")
+                    return self._format_channel(channel_data)
                 else:
                     raise ToolException(f"Error getting channel: {response['error']}")
 
@@ -80,13 +87,18 @@ class SlackGetChannel(SlackBaseTool):
                 # Get all channels and filter by name
                 response = client.conversations_list()
                 if response["ok"]:
-                    for channel in response["channels"]:
+                    channel_list = response.get("channels") or []
+                    for channel in channel_list:
                         if channel["name"] == channel_name.lstrip("#"):
                             return self._format_channel(channel)
                     raise ToolException(f"Channel {channel_name} not found")
                 else:
                     raise ToolException(f"Error getting channels: {response['error']}")
 
+            raise ToolException("No channel_id or channel_name provided")
+
+        except ToolException:
+            raise
         except Exception as e:
             raise ToolException(f"Error getting channel information: {str(e)}")
 

@@ -1,5 +1,5 @@
 import logging
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.aixbt.base import AIXBTBaseTool
@@ -20,9 +20,8 @@ class Config(SkillConfig):
     """Configuration for AIXBT API skills."""
 
     states: SkillStates
-    enabled: bool = False
-    rate_limit_number: int = 1000
-    rate_limit_minutes: int = 60
+    rate_limit_number: NotRequired[int]
+    rate_limit_minutes: NotRequired[int]
 
 
 async def get_skills(

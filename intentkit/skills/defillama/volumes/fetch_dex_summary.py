@@ -62,7 +62,7 @@ class FetchDexSummaryResponse(BaseModel):
         default_factory=list, description="Chart breakdown"
     )
     change_1d: float | None = Field(None, description="1d change %")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchDexSummary(DefiLlamaBaseTool):

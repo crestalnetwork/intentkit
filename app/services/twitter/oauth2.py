@@ -8,10 +8,10 @@ from intentkit.config.config import config
 
 # Initialize Twitter OAuth2 client
 oauth2_user_handler = OAuth2UserHandler(
-    client_id=config.twitter_oauth2_client_id,
+    client_id=config.twitter_oauth2_client_id or "",
     client_secret=config.twitter_oauth2_client_secret,
     # backend uri point to twitter_oauth_callback
-    redirect_uri=config.twitter_oauth2_redirect_uri,
+    redirect_uri=config.twitter_oauth2_redirect_uri or "",
     scope=[
         "tweet.read",
         "tweet.write",

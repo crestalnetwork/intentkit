@@ -77,7 +77,7 @@ class AIXBTProjects(AIXBTBaseTool):
         base_url = f"{AIXBT_BASE_URL}/projects"
 
         # Build query parameters
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if name:
             params["name"] = name
         if ticker:

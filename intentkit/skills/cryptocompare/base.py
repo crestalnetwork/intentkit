@@ -236,7 +236,7 @@ class CryptoCompareBaseTool(IntentKitSkill):
         if isinstance(token, list):
             token = token[0] if token else ""
 
-        params = {"categories": token.upper()}
+        params: dict[str, Any] = {"categories": token.upper()}
         if timestamp:
             params["lTs"] = timestamp
 

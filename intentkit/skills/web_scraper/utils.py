@@ -77,8 +77,10 @@ class VectorStoreManager:
 
     def create_embeddings(self) -> OpenAIEmbeddings:
         """Create OpenAI embeddings using the resolved API key."""
+        from pydantic import SecretStr
+
         api_key = self._resolve_api_key()
-        return OpenAIEmbeddings(api_key=api_key)
+        return OpenAIEmbeddings(api_key=SecretStr(api_key))
 
     def get_storage_keys(self, agent_id: str) -> tuple[str, str]:
         """Get storage keys for vector store and metadata."""

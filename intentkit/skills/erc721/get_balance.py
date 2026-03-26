@@ -56,7 +56,7 @@ class ERC721GetBalance(ERC721BaseTool):
             checksum_contract = Web3.to_checksum_address(contract_address)
 
             # Read balance from contract
-            balance = await wallet.read_contract(
+            balance = await wallet.read_contract(  # pyright: ignore[reportAttributeAccessIssue]
                 contract_address=checksum_contract,
                 abi=ERC721_ABI,
                 function_name="balanceOf",

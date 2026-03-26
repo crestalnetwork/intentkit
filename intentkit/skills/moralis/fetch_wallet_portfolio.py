@@ -1,7 +1,7 @@
 """fetching a complete wallet portfolio (EVM + Solana)."""
 
 import logging
-from typing import Any
+from typing import TypedDict
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -53,6 +53,14 @@ class PortfolioOutput(BaseModel):
     error: str | None = None
 
 
+class _PortfolioData(TypedDict):
+    """Internal typed dict for accumulating portfolio data."""
+
+    tokens: list[TokenBalance]
+    chains: dict[str, float]
+    total_net_worth: float
+
+
 class FetchWalletPortfolio(WalletBaseTool):
     """Tool for fetching a complete wallet portfolio across all chains (EVM + Solana).
 
@@ -86,7 +94,11 @@ class FetchWalletPortfolio(WalletBaseTool):
         """
         try:
             # Initialize portfolio data
-            portfolio = {"tokens": [], "chains": {}, "total_net_worth": 0}
+            portfolio: _PortfolioData = {
+                "tokens": [],
+                "chains": {},
+                "total_net_worth": 0.0,
+            }
 
             # Get EVM chain portfolio
             await self._fetch_evm_portfolio(address, chains, portfolio)
@@ -109,7 +121,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_evm_portfolio(
-        self, address: str, chains: list[int] | None, portfolio: dict[str, Any]
+        self, address: str, chains: list[int] | None, portfolio: _PortfolioData
     ) -> None:
         """Fetch portfolio data for EVM chains.
 
@@ -155,7 +167,7 @@ class FetchWalletPortfolio(WalletBaseTool):
             )
 
     async def _fetch_solana_portfolio(
-        self, address: str, network: str, portfolio: dict[str, Any]
+        self, address: str, network: str, portfolio: _PortfolioData
     ) -> None:
         """Fetch portfolio data for Solana.
 
@@ -202,13 +214,10 @@ class FetchWalletPortfolio(WalletBaseTool):
 
             # Process SPL tokens
             for token in sol_portfolio.get("tokens", []):
-                token_balance = {
-                    "symbol": token.get("symbol", "UNKNOWN"),
-                    "name": token.get("name", "Unknown Token"),
-                    "balance": float(token.get("amount", 0)),
-                    "usd_value": 0,  # Will update if price is available
-                    "chain": chain_name,
-                }
+                t_symbol: str = token.get("symbol", "UNKNOWN")
+                t_name: str = token.get("name", "Unknown Token")
+                t_balance: float = float(token.get("amount", 0))
+                t_usd_value: float = 0.0
 
                 # Try to get token price
                 if token.get("mint"):
@@ -218,12 +227,18 @@ class FetchWalletPortfolio(WalletBaseTool):
 
                     if "error" not in price_result:
                         token_price_usd = float(price_result.get("usdPrice", 0))
-                        token_balance["usd_value"] = (
-                            token_balance["balance"] * token_price_usd
-                        )
-                        chain_total += token_balance["usd_value"]
+                        t_usd_value = t_balance * token_price_usd
+                        chain_total += t_usd_value
 
-                portfolio["tokens"].append(TokenBalance(**token_balance))
+                portfolio["tokens"].append(
+                    TokenBalance(
+                        symbol=t_symbol,
+                        name=t_name,
+                        balance=t_balance,
+                        usd_value=t_usd_value,
+                        chain=chain_name,
+                    )
+                )
         else:
             # If portfolio endpoint fails, try to fetch balance and tokens separately
             sol_balance_result = await get_solana_balance(
@@ -263,13 +278,10 @@ class FetchWalletPortfolio(WalletBaseTool):
 
             if "error" not in tokens_result and isinstance(tokens_result, list):
                 for token in tokens_result:
-                    token_balance = {
-                        "symbol": token.get("symbol", "UNKNOWN"),
-                        "name": token.get("name", "Unknown Token"),
-                        "balance": float(token.get("amount", 0)),
-                        "usd_value": 0,  # Will update if price is available
-                        "chain": chain_name,
-                    }
+                    t_symbol = str(token.get("symbol", "UNKNOWN"))
+                    t_name = str(token.get("name", "Unknown Token"))
+                    t_balance = float(token.get("amount", 0))
+                    t_usd_value = 0.0
 
                     # Try to get token price
                     if token.get("mint"):
@@ -279,12 +291,18 @@ class FetchWalletPortfolio(WalletBaseTool):
 
                         if "error" not in price_result:
                             token_price_usd = float(price_result.get("usdPrice", 0))
-                            token_balance["usd_value"] = (
-                                token_balance["balance"] * token_price_usd
-                            )
-                            chain_total += token_balance["usd_value"]
+                            t_usd_value = t_balance * token_price_usd
+                            chain_total += t_usd_value
 
-                    portfolio["tokens"].append(TokenBalance(**token_balance))
+                    portfolio["tokens"].append(
+                        TokenBalance(
+                            symbol=t_symbol,
+                            name=t_name,
+                            balance=t_balance,
+                            usd_value=t_usd_value,
+                            chain=chain_name,
+                        )
+                    )
 
         # Update chain total and net worth
         portfolio["chains"][chain_name] = chain_total

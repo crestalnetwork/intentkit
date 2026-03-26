@@ -42,7 +42,7 @@ class EnsoGetWalletBalances(EnsoBaseTool):
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_enso_wallet_address(context)
+        wallet_address = await self.get_wallet_address()
 
         headers = {
             "accept": "application/json",
@@ -111,7 +111,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_enso_wallet_address(context)
+        wallet_address = await self.get_wallet_address()
 
         headers = {
             "accept": "application/json",
@@ -180,7 +180,7 @@ class EnsoWalletApprove(EnsoBaseTool):
     name: str = "enso_wallet_approve"
     description: str = "Broadcast an ERC20 token spending approval transaction."
     args_schema: ArgsSchema | None = EnsoWalletApproveInput
-    response_format: str = "content_and_artifact"
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
     async def _arun(
         self,
@@ -193,7 +193,7 @@ class EnsoWalletApprove(EnsoBaseTool):
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_enso_wallet_address(context)
+        wallet_address = await self.get_wallet_address()
 
         headers = {
             "accept": "application/json",
@@ -221,10 +221,10 @@ class EnsoWalletApprove(EnsoBaseTool):
                 content = EnsoWalletApproveOutput(**json_dict)
                 artifact = EnsoWalletApproveArtifact(**json_dict)
 
-                wallet_provider = await self.get_enso_wallet_provider(context)
+                wallet_provider = await self.get_wallet_provider()
                 tx_data = json_dict.get("tx", {})
                 if tx_data:
-                    tx_hash = await wallet_provider.send_transaction(
+                    tx_hash = await wallet_provider.send_transaction(  # pyright: ignore[reportAttributeAccessIssue]
                         {
                             "to": tx_data.get("to"),
                             "data": tx_data.get("data", "0x"),
@@ -233,7 +233,7 @@ class EnsoWalletApprove(EnsoBaseTool):
                         }
                     )
 
-                    await wallet_provider.wait_for_transaction_receipt(tx_hash)
+                    await wallet_provider.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
                     artifact.txHash = tx_hash
                 else:
                     artifact.txHash = "0x0000000000000000000000000000000000000000000000000000000000000000"

@@ -95,7 +95,7 @@ def _get_skill(name: str) -> PolymarketBaseTool | None:
         logger.warning("Unknown Polymarket skill: %s", name)
         return None
 
-    _cache[name] = skill_class()
+    _cache[name] = skill_class()  # pyright: ignore[reportCallIssue]
     return _cache[name]
 
 

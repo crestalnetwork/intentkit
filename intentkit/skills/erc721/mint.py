@@ -70,7 +70,7 @@ class ERC721Mint(ERC721BaseTool):
             )
 
             # Wait for receipt
-            receipt = await wallet.wait_for_transaction_receipt(tx_hash)
+            receipt = await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
 
             # Check transaction status
             status = receipt.get("status", 1)

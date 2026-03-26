@@ -88,26 +88,28 @@ class FetchChainPortfolio(WalletBaseTool):
         Returns:
             ChainPortfolioOutput containing portfolio data for the specified chain
         """
+        api_key = self.get_api_key()
+        chain_name = self._get_chain_name(chain_id)
         try:
             # Fetch wallet balances for the specified chain
-            balances = await fetch_wallet_balances(self.api_key, address, chain_id)
+            balances = await fetch_wallet_balances(api_key, address, chain_id)
 
             if "error" in balances:
                 return ChainPortfolioOutput(
                     address=address,
                     chain_id=chain_id,
-                    chain_name=self._get_chain_name(chain_id),
+                    chain_name=chain_name,
+                    native_token=None,
+                    tokens=[],
+                    total_usd_value=0.0,
+                    approvals=None,
                     error=balances["error"],
                 )
 
             # Process the data
-            portfolio = {
-                "address": address,
-                "chain_id": chain_id,
-                "chain_name": self._get_chain_name(chain_id),
-                "tokens": [],
-                "total_usd_value": 0.0,
-            }
+            native_token: ChainTokenBalance | None = None
+            tokens: list[ChainTokenBalance] = []
+            total_usd_value: float = 0.0
 
             for token in balances.get("result", []):
                 token_balance = ChainTokenBalance(
@@ -123,18 +125,17 @@ class FetchChainPortfolio(WalletBaseTool):
 
                 # Identify native token
                 if token.get("native_token", False):
-                    portfolio["native_token"] = token_balance
+                    native_token = token_balance
                 else:
-                    portfolio["tokens"].append(token_balance)
+                    tokens.append(token_balance)
 
                 # Add to total USD value
-                portfolio["total_usd_value"] += token_balance.balance_usd
+                total_usd_value += token_balance.balance_usd
 
             # Fetch token approvals if requested
+            approvals: list[TokenApproval] | None = None
             if include_approvals:
-                approvals_data = await fetch_token_approvals(
-                    self.api_key, address, chain_id
-                )
+                approvals_data = await fetch_token_approvals(api_key, address, chain_id)
 
                 if "error" not in approvals_data:
                     approvals = []
@@ -163,15 +164,26 @@ class FetchChainPortfolio(WalletBaseTool):
 
                         approvals.append(token_approval)
 
-                    portfolio["approvals"] = approvals
-
-            return ChainPortfolioOutput(**portfolio)
+            return ChainPortfolioOutput(
+                address=address,
+                chain_id=chain_id,
+                chain_name=chain_name,
+                native_token=native_token,
+                tokens=tokens,
+                total_usd_value=total_usd_value,
+                approvals=approvals,
+                error=None,
+            )
 
         except Exception as e:
             logger.error("Error fetching chain portfolio: %s", e)
             return ChainPortfolioOutput(
                 address=address,
                 chain_id=chain_id,
-                chain_name=self._get_chain_name(chain_id),
+                chain_name=chain_name,
+                native_token=None,
+                tokens=[],
+                total_usd_value=0.0,
+                approvals=None,
                 error=str(e),
             )

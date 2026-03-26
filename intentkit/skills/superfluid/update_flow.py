@@ -79,7 +79,7 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
 
             return (
                 f"Flow updated successfully.\n"

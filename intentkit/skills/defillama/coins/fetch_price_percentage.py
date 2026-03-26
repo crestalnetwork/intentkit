@@ -22,7 +22,7 @@ class FetchPricePercentageResponse(BaseModel):
     coins: dict[str, float] = Field(
         default_factory=dict, description="24h % changes by token ID"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):

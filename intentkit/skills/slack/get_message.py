@@ -71,12 +71,9 @@ class SlackGetMessage(SlackBaseTool):
                 response = client.conversations_history(
                     channel=channel_id, latest=ts, limit=1, inclusive=True
                 )
-                if response["ok"] and response["messages"]:
-                    return {
-                        "messages": [
-                            self._format_message(response["messages"][0], channel_id)
-                        ]
-                    }
+                messages = response.get("messages") or []
+                if response["ok"] and messages:
+                    return {"messages": [self._format_message(messages[0], channel_id)]}
                 else:
                     raise ToolException(f"Message with timestamp {ts} not found")
 
@@ -86,10 +83,10 @@ class SlackGetMessage(SlackBaseTool):
                     channel=channel_id, ts=thread_ts, limit=limit
                 )
                 if response["ok"]:
+                    messages = response.get("messages") or []
                     return {
                         "messages": [
-                            self._format_message(msg, channel_id)
-                            for msg in response["messages"]
+                            self._format_message(msg, channel_id) for msg in messages
                         ],
                         "has_more": response.get("has_more", False),
                     }
@@ -102,10 +99,10 @@ class SlackGetMessage(SlackBaseTool):
             else:
                 response = client.conversations_history(channel=channel_id, limit=limit)
                 if response["ok"]:
+                    messages = response.get("messages") or []
                     return {
                         "messages": [
-                            self._format_message(msg, channel_id)
-                            for msg in response["messages"]
+                            self._format_message(msg, channel_id) for msg in messages
                         ],
                         "has_more": response.get("has_more", False),
                     }

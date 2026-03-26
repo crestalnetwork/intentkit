@@ -99,7 +99,7 @@ class SearchAccounts(CookieFunBaseTool):
                     "Error: No API key provided for CookieFun API. Please configure the API key in the agent settings."
                 )
             # Prepare request payload
-            payload = {"searchQuery": searchQuery}
+            payload: dict[str, Any] = {"searchQuery": searchQuery}
 
             # Add optional parameters if provided
             if type is not None:

@@ -97,18 +97,18 @@ async def get_skills(
     if not config.get("enabled", False):
         return []
 
-    available_skills: list[VeniceImageBaseTool] = []
+    available_skill_names: list[str] = []
 
     # Include skills based on their state
     for skill_name, state in config["states"].items():
         if state == "disabled":
             continue
         elif state == "public" or (state == "private" and is_private):
-            available_skills.append(skill_name)
+            available_skill_names.append(skill_name)
 
     # Get each skill using the cached getter
-    result = []
-    for name in available_skills:
+    result: list[VeniceImageBaseTool] = []
+    for name in available_skill_names:
         skill = get_venice_image_skill(name, config)
         if skill:
             result.append(skill)
@@ -139,7 +139,7 @@ def get_venice_image_skill(
         return None
 
     # Cache and return the newly created instance
-    _cache[name] = skill_class()
+    _cache[name] = skill_class()  # pyright: ignore[reportCallIssue]
     return _cache[name]
 
 

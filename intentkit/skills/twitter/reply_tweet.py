@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
@@ -77,7 +78,7 @@ class TwitterReplyTweet(TwitterBaseTool):
                     )
 
             # Post reply tweet using tweepy client
-            tweet_params = {
+            tweet_params: dict[str, Any] = {
                 "text": text,
                 "user_auth": twitter.use_key,
                 "in_reply_to_tweet_id": tweet_id,
@@ -86,7 +87,10 @@ class TwitterReplyTweet(TwitterBaseTool):
             if media_ids:
                 tweet_params["media_ids"] = media_ids
 
-            response = await client.create_tweet(**tweet_params)
+            response = cast(
+                dict[str, Any],
+                await client.create_tweet(**tweet_params),
+            )
 
             if "data" in response and "id" in response["data"]:
                 # Return response with warning if image was ignored

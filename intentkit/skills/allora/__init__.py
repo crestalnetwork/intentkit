@@ -58,7 +58,7 @@ async def get_skills(
 
 def get_allora_skill(
     name: str,
-) -> AlloraBaseTool:
+) -> AlloraBaseTool | None:
     """Get an Allora skill by name.
 
     Args:

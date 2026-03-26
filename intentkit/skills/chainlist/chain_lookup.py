@@ -58,8 +58,8 @@ class ChainLookup(ChainlistBaseTool):
         chains: list[dict[str, Any]],
         search_term: str | None = None,
         chain_id: int | None = None,
-        no_tracking: bool = False,
-        limit: int = 5,
+        no_tracking: bool | None = False,
+        limit: int | None = 5,
     ) -> list[dict[str, Any]]:
         """Filter chains based on search criteria."""
         filtered_chains = chains
@@ -111,7 +111,7 @@ class ChainLookup(ChainlistBaseTool):
             filtered_chains = filtered_result
 
         # Apply limit
-        if limit > 0:
+        if limit is not None and limit > 0:
             filtered_chains = filtered_chains[:limit]
 
         return filtered_chains

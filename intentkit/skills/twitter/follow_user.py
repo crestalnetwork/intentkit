@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
@@ -26,7 +27,7 @@ class TwitterFollowUser(TwitterBaseTool):
     price: Decimal = Decimal("60")
     args_schema: ArgsSchema | None = TwitterFollowUserInput
 
-    async def _arun(self, user_id: str, **kwargs) -> bool:
+    async def _arun(self, user_id: str, **kwargs) -> dict[str, Any]:
         context = self.get_context()
         try:
             skill_config = context.agent.skill_config(self.category)
@@ -41,8 +42,11 @@ class TwitterFollowUser(TwitterBaseTool):
                 await self.check_rate_limit(max_requests=5, interval=15)
 
             # Follow the user using tweepy client
-            response = await client.follow_user(
-                target_user_id=user_id, user_auth=twitter.use_key
+            response = cast(
+                dict[str, Any],
+                await client.follow_user(
+                    target_user_id=user_id, user_auth=twitter.use_key
+                ),
             )
 
             if "data" in response and response["data"].get("following"):

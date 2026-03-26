@@ -24,7 +24,7 @@ class FetchStablecoinPricesResponse(BaseModel):
     data: list[PriceDataPoint] = Field(
         default_factory=list, description="Price data points"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
@@ -62,6 +62,6 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
         result = await fetch_stablecoin_prices()
 
         # Parse results into models
-        data_points = [PriceDataPoint(**point) for point in result]
+        data_points = [PriceDataPoint(**point) for point in result]  # pyright: ignore[reportCallIssue]
 
         return FetchStablecoinPricesResponse(data=data_points)

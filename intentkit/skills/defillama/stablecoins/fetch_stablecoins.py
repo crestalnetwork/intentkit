@@ -53,7 +53,7 @@ class FetchStablecoinsResponse(BaseModel):
     peggedAssets: list[Stablecoin] = Field(
         default_factory=list, description="Stablecoins"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchStablecoins(DefiLlamaBaseTool):

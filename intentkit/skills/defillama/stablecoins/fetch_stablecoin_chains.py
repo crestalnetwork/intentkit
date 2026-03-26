@@ -45,7 +45,7 @@ class FetchStablecoinChainsResponse(BaseModel):
     chains: list[ChainData] = Field(
         default_factory=list, description="Chains with stablecoin data"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchStablecoinChains(DefiLlamaBaseTool):

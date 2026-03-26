@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from decimal import Decimal
+from typing import Any
 
 import httpx
 from langchain_core.documents import Document
@@ -93,7 +94,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
         self,
         url: str,
         limit: int = 10,
-        formats: list[str] = None,
+        formats: list[str] | None = None,
         include_paths: list[str] | None = None,
         exclude_paths: list[str] | None = None,
         max_depth: int | None = None,
@@ -144,7 +145,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
             )
         # Validate and set defaults
         if formats is None:
-            formats = ["markdown"]  # pyright: ignore[reportUnreachable]
+            formats = ["markdown"]
 
         # Validate formats
         valid_formats = ["markdown", "html", "rawHtml", "screenshot", "links", "json"]
@@ -153,7 +154,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
             formats = ["markdown"]
 
         # Prepare the request payload
-        payload = {
+        payload: dict[str, Any] = {
             "url": url,
             "limit": min(limit, 1000),  # Cap at 1000 for safety
             "scrapeOptions": {"formats": formats, "onlyMainContent": only_main_content},

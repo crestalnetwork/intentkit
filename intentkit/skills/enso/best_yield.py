@@ -28,13 +28,13 @@ class EnsoGetBestYieldInput(BaseModel):
 class YieldOption(BaseModel):
     """Represents a yield option for a token."""
 
-    protocol_name: str = Field(None, description="Protocol name")
-    protocol_slug: str = Field(None, description="Protocol slug")
-    token_name: str = Field(None, description="Yield token name")
-    token_symbol: str = Field(None, description="Yield token symbol")
-    token_address: str = Field(None, description="Yield token address")
-    primary_address: str = Field(None, description="Protocol contract address")
-    apy: float = Field(None, description="APY")
+    protocol_name: str | None = Field(None, description="Protocol name")
+    protocol_slug: str | None = Field(None, description="Protocol slug")
+    token_name: str | None = Field(None, description="Yield token name")
+    token_symbol: str | None = Field(None, description="Yield token symbol")
+    token_address: str | None = Field(None, description="Yield token address")
+    primary_address: str | None = Field(None, description="Protocol contract address")
+    apy: float | None = Field(None, description="APY")
     tvl: float | None = Field(None, description="TVL")
     underlying_tokens: list[str] = Field([], description="Underlying token symbols")
 
@@ -45,9 +45,9 @@ class EnsoGetBestYieldOutput(BaseModel):
     best_options: list[YieldOption] = Field(
         [], description="Yield options sorted by APY descending"
     )
-    token_symbol: str = Field(None, description="Token searched")
-    chain_id: int = Field(None, description="Chain ID")
-    chain_name: str = Field(None, description="Chain name")
+    token_symbol: str | None = Field(None, description="Token searched")
+    chain_id: int | None = Field(None, description="Chain ID")
+    chain_name: str | None = Field(None, description="Chain name")
 
 
 class EnsoGetBestYield(EnsoBaseTool):
@@ -148,7 +148,9 @@ class EnsoGetBestYield(EnsoBaseTool):
                 all_yield_options.append(yield_option)
 
         # Sort yield options by APY (descending)
-        sorted_options = sorted(all_yield_options, key=lambda x: x.apy, reverse=True)
+        sorted_options = sorted(
+            all_yield_options, key=lambda x: x.apy or 0.0, reverse=True
+        )
 
         # Take the top N options
         top_options = sorted_options[:top_n]

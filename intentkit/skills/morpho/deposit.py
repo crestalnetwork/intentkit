@@ -75,7 +75,7 @@ class MorphoDeposit(MorphoBaseTool):
             checksum_receiver = w3.to_checksum_address(receiver)
 
             # Get token decimals
-            decimals = await wallet.read_contract(
+            decimals = await wallet.read_contract(  # pyright: ignore[reportAttributeAccessIssue]
                 contract_address=checksum_token,
                 abi=ERC20_ABI,
                 function_name="decimals",
@@ -98,7 +98,7 @@ class MorphoDeposit(MorphoBaseTool):
             )
 
             # Wait for approval
-            receipt = await wallet.wait_for_transaction_receipt(approve_tx_hash)
+            receipt = await wallet.wait_for_transaction_receipt(approve_tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
             if receipt.get("status", 1) == 0:
                 raise ToolException(
                     f"Error: Approval transaction failed. Hash: {approve_tx_hash}"
@@ -118,7 +118,7 @@ class MorphoDeposit(MorphoBaseTool):
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
 
             return (
                 f"Deposited {assets} to Morpho Vault {vault_address}\n"

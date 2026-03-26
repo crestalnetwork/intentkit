@@ -59,7 +59,7 @@ class FetchFeesOverviewResponse(BaseModel):
     change_1m: float = Field(..., description="1m change %")
     allChains: list[str] = Field(..., description="All chains")
     protocols: list[Protocol] = Field(..., description="Protocols")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):

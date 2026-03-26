@@ -52,8 +52,8 @@ class TokenBaseTool(IntentKitSkill):
         method: str,
         endpoint: str,
         api_key: str,
-        params: dict[str, Any] = None,
-        data: dict[str, Any] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make a request to the Moralis API.
 

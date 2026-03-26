@@ -29,6 +29,11 @@ class WalletBaseTool(IntentKitSkill):
             raise ToolException("Moralis API key is not configured")
         return config.moralis_api_key
 
+    @property
+    def api_key(self) -> str:
+        """Shorthand for get_api_key()."""
+        return self.get_api_key()
+
     category: str = "moralis"
 
     def _get_chain_name(self, chain_id: int) -> str:

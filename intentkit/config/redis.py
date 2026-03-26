@@ -51,7 +51,7 @@ async def init_redis(
             decode_responses=decode_responses,
         )
         # Test the connection
-        await _redis_client.ping()
+        await _redis_client.ping()  # pyright: ignore[reportGeneralTypeIssues]
         logger.info("Redis client initialized successfully")
         return _redis_client
     except Exception as e:

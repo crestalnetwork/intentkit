@@ -38,7 +38,7 @@ class FetchPriceChartResponse(BaseModel):
     coins: dict[str, TokenPriceChart] = Field(
         default_factory=dict, description="Charts by token ID"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):

@@ -98,7 +98,7 @@ def get_carv_skill(
     if skill_class:
         try:
             # Instantiate the skill and add to cache
-            instance = skill_class()  # type: ignore
+            instance = skill_class()  # pyright: ignore[reportCallIssue]
             _cache[name] = instance
             return instance
         except Exception as e:

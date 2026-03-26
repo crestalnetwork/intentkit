@@ -31,7 +31,7 @@ class FetchBlockResponse(BaseModel):
     chain: str = Field(..., description="Chain name")
     height: int | None = Field(None, description="Block height")
     timestamp: int | None = Field(None, description="Block timestamp")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchBlock(DefiLlamaBaseTool):

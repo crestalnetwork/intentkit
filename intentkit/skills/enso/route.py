@@ -175,7 +175,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
         # Use the wallet provider to send the transaction
-        wallet_provider = await self.get_enso_wallet_provider(context)
+        wallet_provider = await self.get_wallet_provider()
         wallet_address = wallet_provider.get_address()
 
         async with httpx.AsyncClient() as client:
@@ -187,15 +187,12 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
                 if networks:
                     resolved_key = str(resolved_chain_id)
-                    network_name = (
-                        networks.get(resolved_key).get("name")
-                        if networks.get(resolved_key)
-                        else None
-                    )
+                    network_entry = networks.get(resolved_key)
+                    network_name = network_entry.get("name") if network_entry else None
                 if network_name is None:
-                    networks = await EnsoGetNetworks().arun()
+                    networks_output = await EnsoGetNetworks().arun("")
 
-                    for network in networks.res:
+                    for network in networks_output.res or []:
                         if network.id == resolved_chain_id:
                             network_name = network.name
 
@@ -233,6 +230,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
                 # Prepare query parameters
                 params = EnsoRouteShortcutInput(
+                    broadcast_requested=broadcast_requested,
                     chainId=resolved_chain_id,
                     amountIn=amountIn,
                     tokenIn=tokenIn,
@@ -264,10 +262,10 @@ class EnsoRouteShortcut(EnsoBaseTool):
                             "data": tx_data.get("data", "0x"),
                             "value": tx_data.get("value", 0),
                         }
-                        tx_hash = await wallet_provider.send_transaction(tx_params)
+                        tx_hash = await wallet_provider.send_transaction(tx_params)  # pyright: ignore[reportAttributeAccessIssue, reportArgumentType]
 
                         # Wait for transaction confirmation
-                        await wallet_provider.wait_for_transaction_receipt(tx_hash)
+                        await wallet_provider.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
                         res.txHash = tx_hash
                     else:
                         # For now, return a placeholder transaction hash if no tx data

@@ -30,7 +30,7 @@ class FetchFirstPriceResponse(BaseModel):
     coins: dict[str, FirstPriceData] = Field(
         default_factory=dict, description="First prices by token ID"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):

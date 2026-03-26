@@ -101,7 +101,7 @@ def _get_skill(name: str) -> IntentKitSkill | None:
         logger.warning("Unknown OpenSea skill: %s", name)
         return None
 
-    _cache[name] = skill_class()
+    _cache[name] = skill_class()  # pyright: ignore[reportCallIssue]
     return _cache[name]
 
 

@@ -104,7 +104,7 @@ class WalletNFTs(PortfolioBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {
+        params: dict[str, Any] = {
             "chain": chain,
             "format": format,
             "limit": limit,

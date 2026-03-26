@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
@@ -42,7 +43,10 @@ class TwitterLikeTweet(TwitterBaseTool):
                 await self.check_rate_limit(max_requests=100, interval=1440)
 
             # Like the tweet using tweepy client
-            response = await client.like(tweet_id=tweet_id, user_auth=twitter.use_key)
+            response = cast(
+                dict[str, Any],
+                await client.like(tweet_id=tweet_id, user_auth=twitter.use_key),
+            )
 
             if "data" in response and "liked" in response["data"]:
                 return response

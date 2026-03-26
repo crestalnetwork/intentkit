@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from intentkit.skills.base import SkillConfig, SkillState
 from intentkit.skills.lifi.base import LiFiBaseTool
@@ -22,9 +22,9 @@ class Config(SkillConfig):
     """Configuration for LiFi skills."""
 
     states: SkillStates
-    default_slippage: float | None = 0.03
-    allowed_chains: list[str] | None = None
-    max_execution_time: int | None = 300
+    default_slippage: NotRequired[float | None]
+    allowed_chains: NotRequired[list[str] | None]
+    max_execution_time: NotRequired[int | None]
 
 
 async def get_skills(
@@ -78,9 +78,9 @@ def get_lifi_skill(
     cache_key = f"{name}_{id(config)}"
 
     # Extract configuration options with proper defaults
-    default_slippage = config.get("default_slippage", 0.03)
+    default_slippage: float = config.get("default_slippage", None) or 0.03
     allowed_chains = config.get("allowed_chains", None)
-    max_execution_time = config.get("max_execution_time", 300)
+    max_execution_time: int = config.get("max_execution_time", None) or 300
 
     # Validate configuration
     if default_slippage < 0.001 or default_slippage > 0.5:

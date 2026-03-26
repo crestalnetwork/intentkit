@@ -75,7 +75,7 @@ class ERC721Transfer(ERC721BaseTool):
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
 
             return (
                 f"Successfully transferred NFT {contract_address} with tokenId "

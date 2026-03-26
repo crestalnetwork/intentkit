@@ -26,14 +26,6 @@ class CryptopanicSentimentOutput(BaseModel):
     summary: str
 
 
-class CryptopanicNewsOutput(BaseModel):
-    """Output schema for fetching crypto news (used internally)."""
-
-    currency: str
-    news_items: list[BaseModel]
-    summary: str
-
-
 class FetchCryptoSentiment(CryptopanicBaseTool):
     """Skill to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
 
@@ -69,6 +61,7 @@ Analyze these headlines for {currency}. Summarize trends, opportunities, and ris
         from langchain_core.tools.base import ToolException
 
         from intentkit.skills.cryptopanic.fetch_crypto_news import (
+            CryptopanicNewsOutput,
             FetchCryptoNews,
         )  # Import here to avoid circular import
 

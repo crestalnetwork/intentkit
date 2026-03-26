@@ -1,7 +1,7 @@
 """Firecrawl skills for web scraping and crawling."""
 
 import logging
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from intentkit.config.config import config as system_config
 from intentkit.skills.base import SkillConfig, SkillState
@@ -28,8 +28,8 @@ class Config(SkillConfig):
     """Configuration for Firecrawl skills."""
 
     states: SkillStates
-    rate_limit_number: int = 100
-    rate_limit_minutes: int = 60
+    rate_limit_number: NotRequired[int]
+    rate_limit_minutes: NotRequired[int]
 
 
 async def get_skills(

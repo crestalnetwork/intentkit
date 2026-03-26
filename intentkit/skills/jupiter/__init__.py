@@ -1,3 +1,5 @@
+from typing import NotRequired
+
 from langchain_core.tools import BaseTool
 
 from intentkit.skills.base import SkillConfig
@@ -6,7 +8,7 @@ from intentkit.skills.jupiter.swap import JupiterGetQuote
 
 
 class JupiterConfig(SkillConfig):
-    api_key: str | None = None
+    api_key: NotRequired[str | None]
 
 
 async def get_skills(

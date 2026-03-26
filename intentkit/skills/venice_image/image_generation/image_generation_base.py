@@ -29,12 +29,16 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
     args_schema: ArgsSchema | None = VeniceImageGenerationInput
 
     # --- Attributes Subclasses MUST Define ---
-    name: str = Field(description="The unique name of the image generation tool/model.")
+    name: str = Field(
+        default="", description="The unique name of the image generation tool/model."
+    )
     description: str = Field(
-        description="A description of what the image generation tool/model does."
+        default="",
+        description="A description of what the image generation tool/model does.",
     )
     model_id: str = Field(
-        description="The specific model ID used in the Venice Image API call."
+        default="",
+        description="The specific model ID used in the Venice Image API call.",
     )
 
     async def _arun(

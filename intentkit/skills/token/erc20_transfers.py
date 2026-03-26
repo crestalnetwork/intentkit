@@ -110,7 +110,7 @@ class ERC20Transfers(TokenBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {"chain": chain, "limit": limit, "order": order}
+        params: dict[str, Any] = {"chain": chain, "limit": limit, "order": order}
 
         # Add optional parameters if they exist
         if contract_addresses:

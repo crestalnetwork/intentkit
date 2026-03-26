@@ -77,7 +77,7 @@ class SuperfluidDeleteFlow(SuperfluidBaseTool):
             )
 
             # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)
+            await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
 
             return (
                 f"Flow deleted successfully.\n"

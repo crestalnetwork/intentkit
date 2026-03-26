@@ -60,7 +60,7 @@ async def get_skills(
 
 def get_tavily_skill(
     name: str,
-) -> TavilyBaseTool:
+) -> TavilyBaseTool | None:
     """Get a Tavily search skill by name.
 
     Args:

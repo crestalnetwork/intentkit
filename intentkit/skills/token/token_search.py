@@ -79,7 +79,7 @@ class TokenSearch(TokenBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {"query": query}
+        params: dict[str, Any] = {"query": query}
 
         # Add optional parameters if they exist
         if chains:

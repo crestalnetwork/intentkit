@@ -58,7 +58,7 @@ class SupabaseFetchData(SupabaseBaseTool):
             supabase = self.get_supabase_client(context)
 
             # Start building the query
-            query = supabase.table(table).select(columns)
+            query = supabase.table(table).select(columns or "*")
 
             # Apply filters if provided
             if filters:

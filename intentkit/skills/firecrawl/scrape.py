@@ -85,7 +85,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
     async def _arun(
         self,
         url: str,
-        formats: list[str] = None,
+        formats: list[str] | None = None,
         only_main_content: bool = True,
         include_tags: list[str] | None = None,
         exclude_tags: list[str] | None = None,
@@ -134,7 +134,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
             )
         # Validate and set defaults
         if formats is None:
-            formats = ["markdown"]  # pyright: ignore[reportUnreachable]
+            formats = ["markdown"]
 
         # Validate formats
         valid_formats = ["markdown", "html", "rawHtml", "screenshot", "links", "json"]

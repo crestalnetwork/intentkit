@@ -100,7 +100,7 @@ class DefiLlamaProtocolOutput(BaseModel):
     """Output model for the protocol fetching tool."""
 
     protocol: ProtocolDetail | None = Field(None, description="Protocol data")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchProtocol(DefiLlamaBaseTool):

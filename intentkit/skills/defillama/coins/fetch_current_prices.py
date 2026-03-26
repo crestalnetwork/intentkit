@@ -34,7 +34,7 @@ class FetchCurrentPricesResponse(BaseModel):
     coins: dict[str, TokenPrice] = Field(
         default_factory=dict, description="Prices by token ID"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):

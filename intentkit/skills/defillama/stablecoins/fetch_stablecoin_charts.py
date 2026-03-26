@@ -40,7 +40,7 @@ class FetchStablecoinChartsResponse(BaseModel):
         default_factory=list, description="Historical data points"
     )
     chain: str | None = Field(None, description="Chain filter applied")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):

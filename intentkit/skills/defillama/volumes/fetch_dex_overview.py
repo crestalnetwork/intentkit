@@ -97,7 +97,7 @@ class FetchDexOverviewResponse(BaseModel):
     total7DaysAgo: float = Field(..., description="7d ago total")
     total30DaysAgo: float = Field(..., description="30d ago total")
     protocols: list[ProtocolInfo] = Field(..., description="Protocols")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):

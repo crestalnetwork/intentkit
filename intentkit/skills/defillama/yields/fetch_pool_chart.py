@@ -35,7 +35,7 @@ class FetchPoolChartResponse(BaseModel):
 
     status: str = Field("success", description="Status")
     data: list[PoolDataPoint] = Field(default_factory=list, description="Data points")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):

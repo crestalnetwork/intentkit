@@ -57,7 +57,7 @@ class SupabaseInvokeFunction(SupabaseBaseTool):
 
             return {
                 "success": True,
-                "data": response.json() if hasattr(response, "json") else response,
+                "data": response.json() if hasattr(response, "json") else response,  # pyright: ignore[reportAttributeAccessIssue]
                 "status_code": getattr(response, "status_code", None),
             }
 

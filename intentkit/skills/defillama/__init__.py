@@ -146,7 +146,7 @@ async def get_skills(
 
 def get_defillama_skill(
     name: str,
-) -> DefiLlamaBaseTool:
+) -> DefiLlamaBaseTool | None:
     """Get a DeFi Llama skill by name.
 
     Args:

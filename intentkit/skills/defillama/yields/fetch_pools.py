@@ -61,7 +61,7 @@ class FetchPoolsResponse(BaseModel):
 
     status: str = Field("success", description="Status")
     data: list[PoolData] = Field(default_factory=list, description="Pools")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchPools(DefiLlamaBaseTool):

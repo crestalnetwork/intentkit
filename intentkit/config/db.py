@@ -126,9 +126,7 @@ async def init_db(
             _checkpointer = AsyncPostgresSaver(pool)  # pyright: ignore[reportArgumentType]
             if auto_migrate:
                 # Migrate can not use pool, so we start from scratch
-                async with AsyncPostgresSaver.from_conn_string(
-                    conn_string
-                ) as saver:
+                async with AsyncPostgresSaver.from_conn_string(conn_string) as saver:
                     await _migrate_shallow_to_full(saver)
                     await saver.setup()
         else:

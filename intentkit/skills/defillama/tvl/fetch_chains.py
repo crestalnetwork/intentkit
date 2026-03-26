@@ -40,7 +40,7 @@ class FetchChainsResponse(BaseModel):
         default_factory=list, description="Chains with TVL"
     )
     total_tvl: float = Field(..., description="Total TVL in USD")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchChains(DefiLlamaBaseTool):

@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from langchain_core.tools.base import ToolException
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pydantic import SecretStr
 
 from intentkit.config.config import config
 from intentkit.models.skill import AgentSkillData, AgentSkillDataCreate
@@ -79,7 +80,7 @@ class FirecrawlVectorStoreManager:
         """Create OpenAI embeddings instance."""
         openai_api_key = self._resolve_api_key()
         return OpenAIEmbeddings(
-            openai_api_key=openai_api_key, model="text-embedding-3-small"
+            api_key=SecretStr(openai_api_key), model="text-embedding-3-small"
         )
 
     def encode_vector_store(self, vector_store: FAISS) -> dict[str, str]:

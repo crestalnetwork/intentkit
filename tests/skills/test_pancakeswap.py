@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain_core.tools.base import ToolException
 
 from intentkit.skills.pancakeswap.add_liquidity import PancakeSwapAddLiquidity
 from intentkit.skills.pancakeswap.get_positions import PancakeSwapGetPositions
@@ -111,7 +112,7 @@ class TestPancakeSwapQuote:
 
     @pytest.mark.asyncio
     async def test_quote_no_liquidity(self):
-        """Quote should return a helpful message when no pool has liquidity."""
+        """Quote should raise ToolException when no pool has liquidity."""
         skill = PancakeSwapQuote()
         ctx = _mock_context()
 
@@ -143,13 +144,12 @@ class TestPancakeSwapQuote:
                 return_value=mock_w3,
             ),
         ):
-            result = await skill._arun(
-                token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-                token_out="0x0000000000000000000000000000000000000001",
-                amount="1.0",
-            )
-
-        assert "No liquidity" in result
+            with pytest.raises(ToolException, match="No liquidity"):
+                await skill._arun(
+                    token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+                    token_out="0x0000000000000000000000000000000000000001",
+                    amount="1.0",
+                )
 
     @pytest.mark.asyncio
     async def test_quote_unsupported_network(self):
@@ -359,7 +359,7 @@ class TestPancakeSwapSwap:
 
     @pytest.mark.asyncio
     async def test_swap_no_liquidity(self):
-        """Swap should return helpful message when no pool has liquidity."""
+        """Swap should raise ToolException when no pool has liquidity."""
         skill = PancakeSwapSwap()
         ctx = _mock_context()
         wallet = _mock_wallet()
@@ -396,13 +396,12 @@ class TestPancakeSwapSwap:
                 return_value=mock_w3,
             ),
         ):
-            result = await skill._arun(
-                token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-                token_out="0x0000000000000000000000000000000000000001",
-                amount="1.0",
-            )
-
-        assert "No liquidity" in result
+            with pytest.raises(ToolException, match="No liquidity"):
+                await skill._arun(
+                    token_in="0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+                    token_out="0x0000000000000000000000000000000000000001",
+                    amount="1.0",
+                )
 
     @pytest.mark.asyncio
     async def test_swap_skips_approval_when_sufficient_allowance(self):
@@ -890,16 +889,16 @@ class TestPancakeSwapAddLiquidity:
                 new=AsyncMock(),
             ),
         ):
-            result = await skill._arun(
-                token_a="0x0000000000000000000000000000000000000001",
-                token_b="0x0000000000000000000000000000000000000002",
-                amount_a="1.0",
-                amount_b="1.0",
-                fee_tier=2500,
-            )
-
-        assert "Liquidity Added" in result
-        assert "not eligible" in result.lower() or "Not staked" in result
+            # _try_auto_stake raises ToolException when staking fails,
+            # which propagates through _arun's `except ToolException: raise`
+            with pytest.raises(ToolException, match="Not staked"):
+                await skill._arun(
+                    token_a="0x0000000000000000000000000000000000000001",
+                    token_b="0x0000000000000000000000000000000000000002",
+                    amount_a="1.0",
+                    amount_b="1.0",
+                    fee_tier=2500,
+                )
 
 
 # ---------------------------------------------------------------------------

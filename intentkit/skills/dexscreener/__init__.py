@@ -93,7 +93,7 @@ def get_dexscreener_skills(
         logger.warning("Unknown Dexscreener skill: %s", name)
         return None
 
-    _cache[name] = skill_class()
+    _cache[name] = skill_class()  # pyright: ignore[reportCallIssue]
     return _cache[name]
 
 

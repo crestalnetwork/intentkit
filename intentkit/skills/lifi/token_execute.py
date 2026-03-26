@@ -3,6 +3,8 @@ from typing import Any
 
 import httpx
 from cdp import EvmServerAccount, TransactionRequestEIP1559
+from eth_typing import HexStr
+from hexbytes import HexBytes
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
@@ -78,7 +80,7 @@ class TokenExecute(LiFiBaseTool):
         max_execution_time: int = 300,
     ) -> None:
         """Initialize the TokenExecute skill with configuration options."""
-        super().__init__()
+        super().__init__()  # pyright: ignore[reportCallIssue]
         self.default_slippage = default_slippage
         self.allowed_chains = allowed_chains
         self.max_execution_time = max_execution_time
@@ -266,9 +268,9 @@ class TokenExecute(LiFiBaseTool):
         data, error = handle_api_response(
             response, from_token, from_chain, to_token, to_chain
         )
-        if error:
+        if error or data is None:
             self.logger.error("LiFi_API_Error: %s", error)
-            raise ToolException(error)
+            raise ToolException(error or "No data returned from LiFi API")
 
         # Validate transaction request
         transaction_request = data.get("transactionRequest")
@@ -323,7 +325,7 @@ class TokenExecute(LiFiBaseTool):
         web3: AsyncWeb3,
     ) -> str:
         """Execute the main transfer transaction."""
-        transaction_request = quote_data.get("transactionRequest")
+        transaction_request: dict[str, Any] = quote_data.get("transactionRequest", {})
 
         try:
             tx_params = prepare_transaction_params(
@@ -374,7 +376,7 @@ class TokenExecute(LiFiBaseTool):
         """Wait for a transaction receipt."""
 
         try:
-            receipt = await web3.eth.wait_for_transaction_receipt(tx_hash)
+            receipt = await web3.eth.wait_for_transaction_receipt(HexBytes(tx_hash))
         except TimeExhausted as exc:
             self.logger.error("LiFi_Execution_Error: %s", str(exc))
             raise ToolException(
@@ -386,9 +388,6 @@ class TokenExecute(LiFiBaseTool):
 
         if receipt is None:
             return None
-
-        if isinstance(receipt, dict):
-            return receipt
 
         return dict(receipt)
 
@@ -545,7 +544,7 @@ class TokenExecute(LiFiBaseTool):
             approve_data = create_erc20_approve_data(approval_address, amount)
             approval_request = TransactionRequestEIP1559(
                 to=token_address,
-                data=approve_data,
+                data=HexStr(approve_data),
                 value=0,
             )
 

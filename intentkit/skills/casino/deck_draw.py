@@ -51,9 +51,8 @@ class CasinoDeckDraw(CasinoBaseTool):
     args_schema: ArgsSchema | None = CasinoDeckDrawInput
 
     async def _arun(self, count: int = 1, **kwargs) -> dict[str, Any]:
+        context = self.get_context()
         try:
-            context = self.get_context()
-
             # Apply rate limit using built-in user_rate_limit method
             rate_config = RATE_LIMITS["deck_draw"]
             await self.user_rate_limit(
@@ -95,12 +94,13 @@ class CasinoDeckDraw(CasinoBaseTool):
                                 "shuffled": True,
                             }
                         else:
-                            deck_info["remaining"] = data["remaining"]
+                            if deck_info is not None:
+                                deck_info["remaining"] = data["remaining"]
 
                         await self.save_agent_skill_data_raw(
                             DECK_STORAGE_KEY,
                             CURRENT_DECK_KEY,
-                            deck_info,
+                            deck_info or {},
                         )
 
                         # Format card information with images

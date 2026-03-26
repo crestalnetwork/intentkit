@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
@@ -47,8 +48,9 @@ class TwitterRetweet(TwitterBaseTool):
                 raise ToolException("Failed to get authenticated user ID.")
 
             # Retweet the tweet using tweepy client
-            response = await client.retweet(
-                tweet_id=tweet_id, user_auth=twitter.use_key
+            response = cast(
+                dict[str, Any],
+                await client.retweet(tweet_id=tweet_id, user_auth=twitter.use_key),
             )
 
             if (

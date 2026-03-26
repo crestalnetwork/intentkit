@@ -71,7 +71,7 @@ async def get_skills(
 
 def get_token_skill(
     name: str,
-) -> TokenBaseTool:
+) -> TokenBaseTool | None:
     """Get a Token blockchain analysis skill by name.
 
     Args:

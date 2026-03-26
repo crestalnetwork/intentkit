@@ -2,7 +2,7 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
-from intentkit.skills.jupiter.base import JupiterBaseTool
+from intentkit.skills.jupiter.base import COMMON_TOKENS, JupiterBaseTool
 
 
 class JupiterGetQuoteInput(BaseModel):
@@ -41,8 +41,8 @@ class JupiterGetQuote(JupiterBaseTool):
             # Format
             # Keys: inputMint, inAmount, outAmount, priceImpactPct, routePlan
 
-            in_amt = data.get("inAmount")
-            out_amt = data.get("outAmount")
+            in_amt = data.get("inAmount", "0")
+            out_amt = data.get("outAmount", "0")
             price_impact = data.get("priceImpactPct")
 
             # Format nicely
@@ -53,7 +53,7 @@ class JupiterGetQuote(JupiterBaseTool):
             in_token_name = input_mint
             out_token_name = output_mint
 
-            for sym, mint in self._get_common_tokens().items():
+            for sym, mint in COMMON_TOKENS.items():
                 if mint == input_mint:
                     in_token_name = sym
                 if mint == output_mint:

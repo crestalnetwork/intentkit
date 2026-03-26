@@ -69,7 +69,7 @@ async def get_skills(
 
 def get_twitter_skill(
     name: str,
-) -> TwitterBaseTool:
+) -> TwitterBaseTool | None:
     """Get a Twitter skill by name.
 
     Args:

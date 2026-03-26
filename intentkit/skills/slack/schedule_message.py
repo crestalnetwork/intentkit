@@ -57,26 +57,23 @@ class SlackScheduleMessage(SlackBaseTool):
         """
         context = self.get_context()
         skill_config = context.agent.skill_config(self.category)
-        client = self.get_client(skill_config.get("slack_bot_token"))
+        token = skill_config.get("slack_bot_token")
+        if not token:
+            raise ToolException("Missing required slack_bot_token in configuration")
+        client = self.get_client(token)
 
         try:
             # Convert ISO datetime string to Unix timestamp
             post_datetime = datetime.fromisoformat(post_at.replace("Z", "+00:00"))
             post_time_unix = int(post_datetime.timestamp())
 
-            # Prepare message parameters
-            message_params = {
-                "channel": channel_id,
-                "text": text,
-                "post_at": post_time_unix,
-            }
-
-            # Add thread_ts if replying to a thread
-            if thread_ts:
-                message_params["thread_ts"] = thread_ts
-
             # Schedule the message
-            response = client.chat_scheduleMessage(**message_params)
+            response = client.chat_scheduleMessage(
+                channel=channel_id,
+                text=text,
+                post_at=post_time_unix,
+                thread_ts=thread_ts if thread_ts else None,
+            )
 
             if response["ok"]:
                 return {

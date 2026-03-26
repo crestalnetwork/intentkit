@@ -454,6 +454,7 @@ class SafeWalletProvider(WalletProvider):
                     chain_id=target_chain_id,
                     network_id=self.network_id,
                     gas_limit=500000,  # Safe txs can be heavy
+                    return_receipt=False,
                 )
 
                 return TransactionResult(success=True, tx_hash=tx_hash_hex)

@@ -66,7 +66,7 @@ class TokenQuote(LiFiBaseTool):
         allowed_chains: list[str] | None = None,
     ) -> None:
         """Initialize the TokenQuote skill with configuration options."""
-        super().__init__()
+        super().__init__()  # pyright: ignore[reportCallIssue]
         self.default_slippage = default_slippage
         self.allowed_chains = allowed_chains
 
@@ -132,6 +132,8 @@ class TokenQuote(LiFiBaseTool):
                     raise ToolException(error)
 
                 # Format the quote result
+                if data is None:
+                    raise ToolException("No data returned from LiFi API")
                 return self.format_quote_result(data)
 
         except ToolException:

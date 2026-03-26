@@ -81,7 +81,7 @@ class WalletNetWorth(PortfolioBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {
+        params: dict[str, Any] = {
             "exclude_spam": exclude_spam,
             "exclude_unverified_contracts": exclude_unverified_contracts,
             "max_token_inactivity": max_token_inactivity,

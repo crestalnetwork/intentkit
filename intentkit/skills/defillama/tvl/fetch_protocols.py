@@ -73,7 +73,7 @@ class DefiLlamaProtocolsOutput(BaseModel):
     """Output model for the protocols fetching tool."""
 
     protocols: list[Protocol] = Field(default_factory=list, description="Protocols")
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchProtocols(DefiLlamaBaseTool):

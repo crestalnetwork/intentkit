@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -125,12 +125,24 @@ class FetchNftPortfolio(WalletBaseTool):
             if include_solana:
                 await self._fetch_solana_nfts(address, solana_network, limit, result)
 
-            return NftPortfolioOutput(**result)
+            return NftPortfolioOutput(
+                address=cast(str, result["address"]),
+                nfts=cast(list[NftItem], result["nfts"]),
+                total_count=cast(int, result["total_count"]),
+                chains=cast(list[str], result["chains"]),
+                cursor=cast(str | None, result.get("cursor")),
+                error=None,
+            )
 
         except Exception as e:
             logger.error("Error fetching NFT portfolio: %s", e)
             return NftPortfolioOutput(
-                address=address, nfts=[], total_count=0, chains=[], error=str(e)
+                address=address,
+                nfts=[],
+                total_count=0,
+                chains=[],
+                cursor=None,
+                error=str(e),
             )
 
     async def _fetch_evm_nfts(
@@ -152,7 +164,7 @@ class FetchNftPortfolio(WalletBaseTool):
         """
         params = {"limit": limit, "normalizeMetadata": normalize_metadata}
 
-        nft_data = await fetch_nft_data(self.api_key, address, chain_id, params)
+        nft_data = await fetch_nft_data(self.get_api_key(), address, chain_id, params)
 
         if "error" in nft_data:
             return
@@ -219,18 +231,19 @@ class FetchNftPortfolio(WalletBaseTool):
         if chain_name not in result["chains"]:
             result["chains"].append(chain_name)
 
-        nfts_result = await get_solana_nfts(self.api_key, address, network)
+        nfts_response: Any = await get_solana_nfts(self.get_api_key(), address, network)
 
-        if "error" in nfts_result:
+        if isinstance(nfts_response, dict) and "error" in nfts_response:
             return
 
-        if not isinstance(nfts_result, list):
+        if not isinstance(nfts_response, list):
             return
 
-        count = min(limit, len(nfts_result))
+        nfts_list = cast(list[dict[str, Any]], nfts_response)
+        count = min(limit, len(nfts_list))
         result["total_count"] += count
 
-        for i, nft in enumerate(nfts_result):
+        for i, nft in enumerate(nfts_list):
             if i >= limit:
                 break
 
@@ -257,10 +270,12 @@ class FetchNftPortfolio(WalletBaseTool):
             nft_item = NftItem(
                 token_id=nft.get("mint", ""),  # Use mint address as token ID
                 token_address=nft.get("mint", ""),  # Use mint address as token address
+                contract_type=None,
                 name=nft.get("name"),
                 symbol=nft.get("symbol"),
                 owner_of=address,
                 metadata=metadata,
+                floor_price=None,
                 chain=chain_name,
             )
 

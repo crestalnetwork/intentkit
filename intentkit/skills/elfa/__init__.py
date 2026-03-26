@@ -66,7 +66,7 @@ async def get_skills(
 
 def get_elfa_skill(
     name: str,
-) -> ElfaBaseTool:
+) -> ElfaBaseTool | None:
     """Get an Elfa skill by name.
 
     Args:

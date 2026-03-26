@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -64,36 +65,39 @@ class TwitterGetUserTweets(TwitterBaseTool):
             last = last or {}
             since_id = last.get("since_id")
 
-            tweets = await client.get_users_tweets(
-                user_auth=twitter.use_key,
-                id=user_id,
-                max_results=max_results,
-                since_id=since_id,
-                exclude=exclude,
-                expansions=[
-                    "referenced_tweets.id",
-                    "referenced_tweets.id.attachments.media_keys",
-                    "referenced_tweets.id.author_id",
-                    "attachments.media_keys",
-                    "author_id",
-                ],
-                tweet_fields=[
-                    "created_at",
-                    "author_id",
-                    "text",
-                    "referenced_tweets",
-                    "attachments",
-                ],
-                user_fields=[
-                    "username",
-                    "name",
-                    "profile_image_url",
-                    "description",
-                    "public_metrics",
-                    "location",
-                    "connection_status",
-                ],
-                media_fields=["url", "type", "width", "height"],
+            tweets = cast(
+                dict[str, Any],
+                await client.get_users_tweets(
+                    user_auth=twitter.use_key,
+                    id=user_id,
+                    max_results=max_results,
+                    since_id=since_id,
+                    exclude=exclude,
+                    expansions=[
+                        "referenced_tweets.id",
+                        "referenced_tweets.id.attachments.media_keys",
+                        "referenced_tweets.id.author_id",
+                        "attachments.media_keys",
+                        "author_id",
+                    ],
+                    tweet_fields=[
+                        "created_at",
+                        "author_id",
+                        "text",
+                        "referenced_tweets",
+                        "attachments",
+                    ],
+                    user_fields=[
+                        "username",
+                        "name",
+                        "profile_image_url",
+                        "description",
+                        "public_metrics",
+                        "location",
+                        "connection_status",
+                    ],
+                    media_fields=["url", "type", "width", "height"],
+                ),
             )
 
             # Update the since_id in store for the next request

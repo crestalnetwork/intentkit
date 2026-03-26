@@ -65,7 +65,7 @@ class WalletProfitability(PortfolioBaseTool):
         )
 
         # Build query parameters
-        params = {
+        params: dict[str, Any] = {
             "chain": chain,
             "days": days,
         }

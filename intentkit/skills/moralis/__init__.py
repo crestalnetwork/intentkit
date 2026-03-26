@@ -72,7 +72,7 @@ async def get_skills(
 
 def get_wallet_skill(
     name: str,
-) -> WalletBaseTool:
+) -> WalletBaseTool | None:
     """Get a specific Wallet Portfolio skill by name.
 
     Args:

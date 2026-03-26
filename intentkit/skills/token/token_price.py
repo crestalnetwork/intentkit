@@ -94,7 +94,7 @@ class TokenPrice(TokenBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {"chain": chain}
+        params: dict[str, Any] = {"chain": chain}
 
         # Add optional parameters if they exist
         if include:

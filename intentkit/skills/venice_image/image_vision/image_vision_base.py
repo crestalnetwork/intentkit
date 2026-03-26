@@ -11,7 +11,9 @@ class VeniceImageVisionBaseTool(VeniceImageBaseTool):
     /chat/completions endpoint.
     """
 
-    name: str = Field(description="The unique name of the image vision tool.")
+    name: str = Field(
+        default="", description="The unique name of the image vision tool."
+    )
     description: str = Field(
-        description="A description of what the image vision tool does."
+        default="", description="A description of what the image vision tool does."
     )

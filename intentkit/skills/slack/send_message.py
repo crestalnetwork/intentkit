@@ -51,24 +51,21 @@ class SlackSendMessage(SlackBaseTool):
         client = self.get_client(token)
 
         try:
-            # Prepare message parameters
-            message_params = {
-                "channel": channel_id,
-                "text": text,
-            }
-
-            # Add thread_ts if replying to a thread
-            if thread_ts:
-                message_params["thread_ts"] = thread_ts
-
             # Send the message
-            response = client.chat_postMessage(**message_params)
+            response = client.chat_postMessage(
+                channel=channel_id,
+                text=text,
+                thread_ts=thread_ts if thread_ts else None,
+            )
 
             if response["ok"]:
+                ts_val = response.get("ts")
+                message_data = response.get("message")
+                user_val = message_data["user"] if message_data else ""
                 return SlackMessage(
-                    ts=response["ts"],
+                    ts=str(ts_val) if ts_val else "",
                     text=text,
-                    user=response["message"]["user"],
+                    user=user_val,
                     channel=channel_id,
                     thread_ts=thread_ts,
                 )

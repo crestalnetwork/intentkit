@@ -39,7 +39,7 @@ class FetchBatchHistoricalPricesResponse(BaseModel):
     coins: dict[str, TokenPriceHistory] = Field(
         default_factory=dict, description="Prices by token ID"
     )
-    error: str | None = Field(None, description="Error message")
+    error: str | None = Field(default=None, description="Error message")
 
 
 class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):

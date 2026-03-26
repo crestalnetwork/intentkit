@@ -1,6 +1,7 @@
 import datetime
 import logging
 from decimal import Decimal
+from typing import Any, cast
 
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
@@ -60,39 +61,42 @@ class TwitterSearchTweets(TwitterBaseTool):
                 except (ValueError, TypeError):
                     since_id = None
 
-            tweets = await client.search_recent_tweets(
-                query=query,
-                user_auth=twitter.use_key,
-                since_id=since_id,
-                max_results=max_results,
-                expansions=[
-                    "referenced_tweets.id",
-                    "referenced_tweets.id.attachments.media_keys",
-                    "referenced_tweets.id.author_id",
-                    "attachments.media_keys",
-                    "author_id",
-                ],
-                tweet_fields=[
-                    "created_at",
-                    "author_id",
-                    "text",
-                    "referenced_tweets",
-                    "attachments",
-                ],
-                user_fields=[
-                    "username",
-                    "name",
-                    "profile_image_url",
-                    "description",
-                    "public_metrics",
-                    "location",
-                    "connection_status",
-                ],
-                media_fields=["url", "type", "width", "height"],
+            tweets = cast(
+                dict[str, Any],
+                await client.search_recent_tweets(
+                    query=query,
+                    user_auth=twitter.use_key,
+                    since_id=since_id,
+                    max_results=max_results,
+                    expansions=[
+                        "referenced_tweets.id",
+                        "referenced_tweets.id.attachments.media_keys",
+                        "referenced_tweets.id.author_id",
+                        "attachments.media_keys",
+                        "author_id",
+                    ],
+                    tweet_fields=[
+                        "created_at",
+                        "author_id",
+                        "text",
+                        "referenced_tweets",
+                        "attachments",
+                    ],
+                    user_fields=[
+                        "username",
+                        "name",
+                        "profile_image_url",
+                        "description",
+                        "public_metrics",
+                        "location",
+                        "connection_status",
+                    ],
+                    media_fields=["url", "type", "width", "height"],
+                ),
             )
 
             # Update the since_id in store for the next request
-            if tweets.get("meta") and tweets.get("meta").get("newest_id"):
+            if tweets.get("meta") and tweets["meta"].get("newest_id"):
                 last["since_id"] = tweets["meta"]["newest_id"]
                 last["timestamp"] = datetime.datetime.now(
                     tz=datetime.timezone.utc

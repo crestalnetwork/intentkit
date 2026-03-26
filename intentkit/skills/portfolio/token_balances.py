@@ -115,7 +115,7 @@ class TokenBalances(PortfolioBaseTool):
             return {"error": "No Moralis API key provided in the configuration."}
 
         # Build query parameters
-        params = {
+        params: dict[str, Any] = {
             "chain": chain,
             "limit": limit,
             "exclude_spam": exclude_spam,

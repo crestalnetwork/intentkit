@@ -36,7 +36,7 @@ async def add_column_if_not_exists(
         # Add DEFAULT if specified
         if column.default is not None:
             if hasattr(column.default, "arg"):
-                default_value = column.default.arg
+                default_value = column.default.arg  # pyright: ignore[reportAttributeAccessIssue]
                 if not isinstance(default_value, Callable):
                     if isinstance(default_value, bool):
                         default_value = str(default_value).lower()
@@ -105,5 +105,3 @@ async def safe_migrate(engine) -> None:
             raise
 
     logger.info("Database schema updated successfully")
-
-

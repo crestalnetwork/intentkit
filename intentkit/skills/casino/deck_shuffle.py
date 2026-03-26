@@ -53,9 +53,8 @@ class CasinoDeckShuffle(CasinoBaseTool):
     async def _arun(
         self, deck_count: int = 1, jokers_enabled: bool = False, **kwargs
     ) -> dict[str, Any]:
+        context = self.get_context()
         try:
-            context = self.get_context()
-
             # Apply rate limit using built-in user_rate_limit method
             rate_config = RATE_LIMITS["deck_shuffle"]
             await self.user_rate_limit(
@@ -69,7 +68,7 @@ class CasinoDeckShuffle(CasinoBaseTool):
 
             # Build API URL and parameters
             url = ENDPOINTS["deck_new_shuffle"]
-            params = {"deck_count": deck_count}
+            params: dict[str, Any] = {"deck_count": deck_count}
 
             if jokers_enabled:
                 params["jokers_enabled"] = "true"
