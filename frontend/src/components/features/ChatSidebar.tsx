@@ -51,6 +51,8 @@ interface ChatSidebarProps {
   onUpdateTitle: (threadId: string, title: string) => Promise<void>;
   onDeleteThread: (threadId: string) => Promise<void>;
   isLoading?: boolean;
+  enableActivity?: boolean;
+  enablePost?: boolean;
   hideNavLinks?: boolean;
   extraNavLinks?: ExtraNavLink[];
 }
@@ -76,6 +78,8 @@ export function ChatSidebar({
   onUpdateTitle,
   onDeleteThread,
   isLoading,
+  enableActivity,
+  enablePost,
   hideNavLinks,
   extraNavLinks,
 }: ChatSidebarProps) {
@@ -228,30 +232,34 @@ export function ChatSidebar({
               <ListTodo className="h-4 w-4" />
               Tasks
             </Link>
-            <Link
-              href={`/agent/${agentId}/activities`}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                activeTab === "activities"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Activity className="h-4 w-4" />
-              Activities
-            </Link>
-            <Link
-              href={`/agent/${agentId}/posts`}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
-                activeTab === "posts"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <FileText className="h-4 w-4" />
-              Posts
-            </Link>
+            {enableActivity && (
+              <Link
+                href={`/agent/${agentId}/activities`}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  activeTab === "activities"
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Activity className="h-4 w-4" />
+                Activities
+              </Link>
+            )}
+            {enablePost && (
+              <Link
+                href={`/agent/${agentId}/posts`}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  activeTab === "posts"
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                Posts
+              </Link>
+            )}
           </div>
 
           {/* Separator */}

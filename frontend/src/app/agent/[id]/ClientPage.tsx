@@ -596,6 +596,8 @@ export default function AgentChatPage() {
         onUpdateTitle={handleUpdateTitle}
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
+        enableActivity={!!agent?.enable_activity}
+        enablePost={!!agent?.enable_post}
       />
 
       {/* Main Chat Area */}

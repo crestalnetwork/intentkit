@@ -25,6 +25,8 @@ export interface Agent {
   assets: Record<string, unknown> | null;
   account_snapshot: CreditAccount | null;
   extra: Record<string, unknown> | null;
+  enable_activity: boolean | null;
+  enable_post: boolean | null;
   deployed_at: string | null;
   public_info_updated_at: string | null;
   created_at: string;
