@@ -1,12 +1,26 @@
 ## New Features
 
-- **Supabase Authentication & User Management**: Full Supabase-based authentication with user and team management, enabling secure multi-user access to team resources.
-- **Standalone Team API**: Comprehensive team API with endpoints for agent management, core configuration, metadata, autonomous scheduling, content feeds, and chat — ready for frontend integration.
-- **JWKS JWT Verification**: Team API now supports RS256 JWT verification via JWKS, with automatic key rotation support. Legacy HS256 signing key remains as a fallback.
+- **WeChat Integration**: Full WeChat bot support via iLink Bot API, with rich media messaging and SSE streaming.
+- **Telegram Rich Media**: Enhanced Telegram bot with image, video, and audio message support via SSE streaming.
+- **Team Lead API**: New team lead endpoints for managing agents, channels, and chat through the team API.
+- **DeFi Protocol Skills**: Added Aave V3 (lending/borrowing), Uniswap V3 (DEX trading), Aerodrome Slipstream (DEX), and Polymarket (prediction markets) skill categories.
+- **OpenSea NFT Skills**: Buy, sell, list, and manage NFTs on OpenSea marketplace.
+- **Remote MCP Server Support**: Wrap remote MCP servers as IntentKit skill categories.
+- **Per-Skill Availability Check**: Skills can now declare availability based on multi-provider configuration.
+- **Lead Agent Improvements**: Auto-generate avatars for lead-created agents, require slug and purpose fields, dynamic LLM model selection.
 
 ## Improvements
 
-- Improved team API structure with dedicated routers for core and metadata operations.
-- Enhanced team membership and permission system.
+- Improved LLM model picker with dynamic OpenAI-compatible provider fallbacks.
+- Activities and Posts tabs now conditionally display based on agent configuration.
+- Standardized error handling across 16 skill categories.
+- Restructured documentation and updated deployment configurations.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.14.0...v0.15.0
+## Bug Fixes
+
+- Fixed various type errors across the codebase.
+- Fixed tab visibility logic and UI improvements in the frontend.
+- Fixed lead cache invalidation and context propagation issues.
+- Resolved frontend dependency security alerts.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.15.0...v0.16.0
