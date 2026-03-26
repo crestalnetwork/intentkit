@@ -1,4 +1,4 @@
 ---
-title: "Others"
+title: "Advanced"
 weight: 99
 ---

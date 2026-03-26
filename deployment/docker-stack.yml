@@ -12,12 +12,17 @@ services:
       POSTGRES_DB: intentkit
     volumes:
       - postgres_data:/var/lib/postgresql
-    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.labels.stateful == true
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -30,31 +35,36 @@ services:
       - RUSTFS_CONSOLE_ENABLE=true
     volumes:
       - rustfs_data:/data
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
       interval: 30s
       timeout: 20s
       retries: 3
+    deploy:
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.labels.stateful == true
 
   redis:
     image: redis:8.4-bookworm
     volumes:
       - redis_data:/data
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.labels.stateful == true
 
   api:
     image: crestal/intentkit:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -84,18 +94,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
 
   autonomous:
     image: crestal/intentkit:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      api:
-        condition: service_healthy
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -118,16 +128,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
     command: python -m app.autonomous
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   scheduler:
     image: crestal/intentkit:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -149,14 +157,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
     command: python -m app.scheduler
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   frontend:
     image: crestal/intentkit-frontend:latest
-    depends_on:
-      api:
-        condition: service_healthy
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
       - NEXT_PUBLIC_AWS_S3_CDN_URL=${NEXT_PUBLIC_AWS_S3_CDN_URL:-http://localhost:9000/static}
@@ -168,17 +176,17 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
 
   telegram:
     image: crestal/intentkit-telegram:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      api:
-        condition: service_healthy
     env_file: .env
     environment:
       - DB_HOST=db
@@ -194,15 +202,13 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   wechat:
     image: crestal/intentkit-wechat:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      api:
-        condition: service_healthy
     env_file: .env
     environment:
       - DB_HOST=db
@@ -217,4 +223,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any

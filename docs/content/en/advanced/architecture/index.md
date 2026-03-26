@@ -1,3 +1,8 @@
+---
+title: "Architecture"
+weight: 1
+---
+
 # IntentKit Architecture
 
 ## Overview
