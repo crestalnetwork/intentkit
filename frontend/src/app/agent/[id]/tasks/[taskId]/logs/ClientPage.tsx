@@ -372,8 +372,8 @@ export default function TaskLogsPage() {
         onUpdateTitle={handleUpdateTitle}
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
-        enableActivity={!!agent?.enable_activity}
-        enablePost={!!agent?.enable_post}
+        enableActivity={agent?.enable_activity !== false || agent?.enable_post !== false}
+        enablePost={agent?.enable_post !== false}
       />
       <div className="flex-1 flex flex-col p-6 overflow-hidden">
         <div className="mb-4 flex items-center justify-between">

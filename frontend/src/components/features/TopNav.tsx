@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import iconSvg from "@/app/icon.svg";
 
 export function TopNav() {
   const pathname = usePathname();
@@ -22,6 +24,7 @@ export function TopNav() {
   return (
     <div className="mr-4 hidden md:flex">
       <Link className="mr-6 flex items-center space-x-2" href="/">
+        <Image src={iconSvg} alt="IntentKit" width={56} height={56} />
         <span className="hidden font-bold sm:inline-block">IntentKit</span>
       </Link>
       <nav className="flex items-center space-x-6 text-sm font-medium">

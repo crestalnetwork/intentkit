@@ -208,8 +208,8 @@ export default function AgentTasksPage() {
         onUpdateTitle={handleUpdateTitle}
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
-        enableActivity={!!agent?.enable_activity}
-        enablePost={!!agent?.enable_post}
+        enableActivity={agent?.enable_activity !== false || agent?.enable_post !== false}
+        enablePost={agent?.enable_post !== false}
       />
 
       {/* Main Content Area */}
