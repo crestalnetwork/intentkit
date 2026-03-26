@@ -199,6 +199,10 @@ async def patch_agent_endpoint(
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
+    # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
+    if "purpose" in update_fields:
+        invalidate_lead_cache(latest_agent.team_id or "system")
+
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
     # Return Response with ETag header

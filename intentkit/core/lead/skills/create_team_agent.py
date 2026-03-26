@@ -137,6 +137,11 @@ class CreateTeamAgent(LeadSkill):
         agent_create = AgentCreate.model_validate(agent_data)
         created_agent, _ = await create_agent(agent_create)
 
+        # Invalidate lead cache so lead agent rebuilds sub-agents list
+        from intentkit.core.lead.engine import invalidate_lead_cache
+
+        invalidate_lead_cache(context.agent_id)
+
         return CreateTeamAgentOutput(
             agent_id=created_agent.id,
             name=created_agent.name,

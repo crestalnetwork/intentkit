@@ -199,6 +199,11 @@ async def patch_agent_endpoint(
                 logger.error("Failed to auto-generate avatar: %s", e)
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
+
+    # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
+    if "purpose" in update_fields:
+        invalidate_lead_cache(team_id)
+
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
     return Response(
         content=agent_response.model_dump_json(),

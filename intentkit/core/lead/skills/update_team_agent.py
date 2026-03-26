@@ -166,6 +166,12 @@ class UpdateTeamAgent(LeadSkill):
         agent_update = AgentUpdate.model_validate(update_data)
         updated_agent, _ = await patch_agent(agent_id, agent_update)
 
+        # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
+        if purpose is not None:
+            from intentkit.core.lead.engine import invalidate_lead_cache
+
+            invalidate_lead_cache(context.agent_id)
+
         return UpdateTeamAgentOutput(
             agent_id=updated_agent.id,
             message=f"Agent '{updated_agent.name}' updated and deployed successfully.",
