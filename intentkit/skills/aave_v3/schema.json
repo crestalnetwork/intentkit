@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Aave V3",
+  "description": "Aave V3 lending protocol: supply, borrow, repay, and manage collateral positions across multiple EVM chains",
+  "x-icon": "/skills/aave_v3/aave_v3.svg",
+  "x-tags": [
+    "DeFi"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill is enabled",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "aave_v3_get_user_account_data": {
+          "type": "string",
+          "title": "Get Account Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get user account data (health factor, collateral, debt)",
+          "default": "disabled"
+        },
+        "aave_v3_get_reserve_data": {
+          "type": "string",
+          "title": "Get Reserve Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get reserve/market data (APY rates, available liquidity)",
+          "default": "disabled"
+        },
+        "aave_v3_supply": {
+          "type": "string",
+          "title": "Supply",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Supply (deposit) tokens into Aave V3 as collateral",
+          "default": "disabled"
+        },
+        "aave_v3_withdraw": {
+          "type": "string",
+          "title": "Withdraw",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Withdraw supplied tokens from Aave V3",
+          "default": "disabled"
+        },
+        "aave_v3_borrow": {
+          "type": "string",
+          "title": "Borrow",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Borrow tokens against collateral on Aave V3",
+          "default": "disabled"
+        },
+        "aave_v3_repay": {
+          "type": "string",
+          "title": "Repay",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Repay borrowed tokens on Aave V3",
+          "default": "disabled"
+        },
+        "aave_v3_set_collateral": {
+          "type": "string",
+          "title": "Set Collateral",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Enable or disable an asset as collateral on Aave V3",
+          "default": "disabled"
+        }
+      },
+      "required": [
+        "aave_v3_get_user_account_data",
+        "aave_v3_get_reserve_data",
+        "aave_v3_supply",
+        "aave_v3_withdraw",
+        "aave_v3_borrow",
+        "aave_v3_repay",
+        "aave_v3_set_collateral"
+      ],
+      "description": "States for each Aave V3 skill"
+    }
+  },
+  "required": [
+    "states",
+    "enabled"
+  ],
+  "additionalProperties": true
+}
