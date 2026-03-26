@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
@@ -11,14 +12,15 @@ from intentkit.core.agent.management import create_agent
 from intentkit.core.lead.skills.base import LeadSkill
 from intentkit.models.agent import AgentCreate, AgentVisibility
 
+logger = logging.getLogger(__name__)
+
 
 class CreateTeamAgentInput(BaseModel):
     """Input model for create_team_agent skill."""
 
     name: str = Field(description="Display name of the agent")
-    purpose: str | None = Field(
-        default=None, description="Purpose or role of the agent"
-    )
+    slug: str = Field(description="URL-friendly slug", min_length=3, max_length=20)
+    purpose: str = Field(description="Purpose or role of the agent")
     personality: str | None = Field(default=None, description="Personality traits")
     principles: str | None = Field(default=None, description="Principles or values")
     model: str | None = Field(default=None, description="LLM model ID")
@@ -30,7 +32,6 @@ class CreateTeamAgentInput(BaseModel):
     skills: dict[str, Any] | None = Field(
         default=None, description="Skill configurations"
     )
-    slug: str | None = Field(default=None, description="URL-friendly slug")
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
     )
@@ -73,7 +74,8 @@ class CreateTeamAgent(LeadSkill):
     async def _arun(
         self,
         name: str,
-        purpose: str | None = None,
+        purpose: str,
+        slug: str,
         personality: str | None = None,
         principles: str | None = None,
         model: str | None = None,
@@ -81,7 +83,6 @@ class CreateTeamAgent(LeadSkill):
         prompt_append: str | None = None,
         temperature: float | None = None,
         skills: dict[str, Any] | None = None,
-        slug: str | None = None,
         search_internet: bool | None = None,
         super_mode: bool | None = None,
         enable_todo: bool | None = None,
@@ -94,9 +95,7 @@ class CreateTeamAgent(LeadSkill):
     ) -> CreateTeamAgentOutput:
         context = self.get_context()
 
-        agent_data: dict[str, Any] = {"name": name}
-        if purpose is not None:
-            agent_data["purpose"] = purpose
+        agent_data: dict[str, Any] = {"name": name, "slug": slug, "purpose": purpose}
         if personality is not None:
             agent_data["personality"] = personality
         if principles is not None:
@@ -111,8 +110,6 @@ class CreateTeamAgent(LeadSkill):
             agent_data["temperature"] = temperature
         if skills is not None:
             agent_data["skills"] = skills
-        if slug is not None:
-            agent_data["slug"] = slug
         if search_internet is not None:
             agent_data["search_internet"] = search_internet
         if super_mode is not None:
@@ -130,11 +127,23 @@ class CreateTeamAgent(LeadSkill):
         if sub_agent_prompt is not None:
             agent_data["sub_agent_prompt"] = sub_agent_prompt
         # Auto-set team fields
-        agent_data["team_id"] = context.agent_id  # team_id is stored as agent_id
+        agent_data["team_id"] = context.team_id  # team_id is stored as agent_id
         agent_data["owner"] = context.user_id
         agent_data["visibility"] = AgentVisibility.TEAM
 
         agent_create = AgentCreate.model_validate(agent_data)
+
+        # Auto-generate avatar
+        if not agent_create.picture:
+            try:
+                from intentkit.core.avatar import generate_avatar
+
+                generated_avatar = await generate_avatar(agent_create.id, agent_create)
+                if generated_avatar:
+                    agent_create.picture = generated_avatar
+            except Exception as e:
+                logger.error("Failed to auto-generate avatar: %s", e)
+
         created_agent, _ = await create_agent(agent_create)
 
         # Invalidate lead cache so lead agent rebuilds sub-agents list

@@ -29,6 +29,7 @@ from intentkit.core.lead.skills import (
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
+from intentkit.models.llm_picker import pick_default_model
 from intentkit.models.team import Team
 from intentkit.utils.error import IntentKitAPIError
 
@@ -53,6 +54,8 @@ async def stream_lead(
 
     if not message.agent_id:
         message.agent_id = lead_agent.id
+    if not message.team_id:
+        message.team_id = team_id
     message.cold_start_cost = cold_start_cost
 
     async for chat_message in stream_agent_raw(message, lead_agent, executor):
@@ -124,6 +127,7 @@ async def _build_lead_agent(team_id: str) -> Agent:
     agent_data = {
         "id": "team-" + team_id,
         "owner": owner,
+        "team_id": team_id,
         "name": "Team Lead",
         "purpose": "Manage all agents in the team, create new agents, and assist team members.",
         "personality": "Organized, helpful, and proactive about team agent management.",
@@ -135,7 +139,7 @@ async def _build_lead_agent(team_id: str) -> Agent:
             "5. When configuring skills, be selective. Don't pick too many, just enough to meet user needs.\n"
             "6. Update skill is override update, you must put the whole fields to input data, not only changed fields."
         ),
-        "model": "minimax/minimax-m2.7",
+        "model": pick_default_model(),
         "prompt": prompt,
         "prompt_append": None,
         "temperature": 0.2,
