@@ -13,7 +13,6 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from intentkit.clients.s3_setup import ensure_bucket_exists_and_public
@@ -21,7 +20,6 @@ from intentkit.config.config import config
 from intentkit.config.db import get_session, init_db
 from intentkit.config.redis import init_redis
 from intentkit.core.api import core_router
-from intentkit.models.agent import AgentTable
 from intentkit.models.team import TeamMemberTable, TeamRole, TeamTable
 from intentkit.models.user import UserTable
 from intentkit.utils.alert import cleanup_alert
@@ -92,9 +90,6 @@ async def lifespan(app: FastAPI):
 
     await ensure_system_user_and_team()
 
-    # Create example agent if no agents exist
-    await create_example_agent()
-
     logger.info("API server start")
     yield
     # Clean up will run after the API server shutdown
@@ -148,52 +143,6 @@ _ = app.include_router(core_router)
 _ = app.include_router(twitter_callback_router, include_in_schema=False)
 _ = app.include_router(twitter_oauth2_router)
 _ = app.include_router(health_router)
-
-
-async def create_example_agent() -> None:
-    """Create an example agent if no agents exist in the database.
-
-    Creates an agent with ID 'example' and basic configuration if the agents table is empty.
-    """
-    try:
-        async with get_session() as session:
-            # Check if any agents exist - more efficient count query
-            result = await session.execute(
-                select(select(AgentTable.id).limit(1).exists().label("exists"))
-            )
-            if result.scalar():
-                logger.debug("Example agent not created: agents already exist")
-                return  # Agents exist, nothing to do
-
-            # Create example agent
-            example_agent = AgentTable(
-                id="example",
-                name="Example",
-                slug="example",
-                owner="system",
-                team_id="system",
-                purpose="IntentKit example agent",
-                search_internet=True,
-                enable_activity=True,
-                enable_post=True,
-                enable_long_term_memory=True,
-                skills={
-                    "ui": {
-                        "states": {
-                            "ui_ask_user": "public",
-                            "ui_show_card": "public",
-                        },
-                        "enabled": True,
-                    },
-                },
-            )
-
-            session.add(example_agent)
-            await session.commit()
-            logger.info("Created example agent with ID 'example'")
-    except Exception as e:
-        logger.error("Failed to create example agent: %s", e)
-        # Don't re-raise the exception to avoid blocking server startup
 
 
 async def ensure_system_user_and_team() -> None:
