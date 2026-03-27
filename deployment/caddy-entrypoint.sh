@@ -18,7 +18,7 @@ GENERATED="/tmp/Caddyfile"
   fi
 
   cat <<'ROUTES'
-	handle /api/* {
+	handle_path /api/* {
 		reverse_proxy api:8000
 	}
 	handle /static/* {
