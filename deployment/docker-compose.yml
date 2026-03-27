@@ -2,6 +2,8 @@ volumes:
   postgres_data:
   rustfs_data:
   redis_data:
+  caddy_data:
+  caddy_config:
 
 services:
   db:
@@ -19,11 +21,29 @@ services:
       timeout: 5s
       retries: 5
 
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    environment:
+      - API_DOMAIN=${API_DOMAIN}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - CDN_DOMAIN=${CDN_DOMAIN}
+      - TLS_EMAIL=${TLS_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
   rustfs:
     image: rustfs/rustfs:latest
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     environment:
       - RUSTFS_ACCESS_KEY=minioadmin
       - RUSTFS_SECRET_KEY=minioadmin
@@ -65,14 +85,11 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - AWS_S3_CDN_URL=http://localhost:9000/static
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=minioadmin
       - AWS_S3_SECRET_ACCESS_KEY=minioadmin
       - AWS_S3_BUCKET=static
       - AWS_S3_REGION_NAME=us-east-1
-    ports:
-      - "8000:8000"
     healthcheck:
       test:
         [
@@ -106,7 +123,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - AWS_S3_CDN_URL=http://localhost:9000/static
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=minioadmin
       - AWS_S3_SECRET_ACCESS_KEY=minioadmin
@@ -138,7 +154,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - AWS_S3_CDN_URL=http://localhost:9000/static
       - AWS_S3_ENDPOINT_URL=http://rustfs:9000
       - AWS_S3_ACCESS_KEY_ID=minioadmin
       - AWS_S3_SECRET_ACCESS_KEY=minioadmin
@@ -158,10 +173,8 @@ services:
       api:
         condition: service_healthy
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_AWS_S3_CDN_URL=${NEXT_PUBLIC_AWS_S3_CDN_URL:-http://localhost:9000/static}
-    ports:
-      - "3000:3000"
+      - NEXT_PUBLIC_API_BASE_URL=https://${API_DOMAIN}
+      - NEXT_PUBLIC_AWS_S3_CDN_URL=https://${CDN_DOMAIN}/static
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 10s

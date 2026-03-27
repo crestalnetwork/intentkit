@@ -6,66 +6,58 @@ weight: 1
 ## Prerequisites
 
 - Docker and Docker Compose v2
+- A server with ports 80 and 443 open
+- Domain names for API, frontend, and CDN (e.g., `api.example.com`, `app.example.com`, `cdn.example.com`)
 
-## Clone the repository
+## Setup
+
+Create a directory and download the required files:
 
 ```bash
-git clone https://github.com/crestalnetwork/intentkit.git
-cd intentkit
+mkdir intentkit && cd intentkit
+
+curl -O https://raw.githubusercontent.com/crestalnetwork/intentkit/main/deployment/docker-compose.yml
+curl -O https://raw.githubusercontent.com/crestalnetwork/intentkit/main/deployment/Caddyfile
+curl -O https://raw.githubusercontent.com/crestalnetwork/intentkit/main/.env.example
 ```
 
 ## Configure environment
 
 ```bash
-cp .env.example deployment/.env
+cp .env.example .env
 ```
 
-Edit `deployment/.env` and set at least:
+Edit `.env` and configure the required variables:
 
-- OPENAI_API_KEY
-
-Optional overrides:
-
-- POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
-- AWS_S3_ACCESS_KEY_ID, AWS_S3_SECRET_ACCESS_KEY, AWS_S3_BUCKET
-- NEXT_PUBLIC_API_BASE_URL (default: http://localhost:8000)
-- NEXT_PUBLIC_AWS_S3_CDN_URL (default: http://localhost:9000/static)
+- `API_DOMAIN` — domain for the API (e.g., `api.example.com`)
+- `APP_DOMAIN` — domain for the frontend (e.g., `app.example.com`)
+- `CDN_DOMAIN` — domain for static assets (e.g., `cdn.example.com`)
+- `TLS_EMAIL` — email for Let's Encrypt certificate registration
+- `OPENAI_API_KEY` — your OpenAI API key
 
 ## Start the stack
 
 ```bash
-cd deployment
 docker compose up -d
 ```
 
-## Verify services
+## Verify
+
+Check that all containers are running:
 
 ```bash
 docker compose ps
-curl http://localhost:8000/health
 ```
 
-## Access endpoints
-
-- API: http://localhost:8000
-- API docs: http://localhost:8000/redoc
-- Frontend: http://localhost:3000
-- RustFS S3 endpoint: http://localhost:9000
-- RustFS console: http://localhost:9001
-
-## View logs
+Check the logs for errors:
 
 ```bash
-# All services
 docker compose logs -f
-
-# A specific service
-docker compose logs -f api
 ```
 
-## Update services
+Visit your frontend domain (e.g., `https://app.example.com`) to confirm everything is working.
 
-After pulling new images:
+## Update services
 
 ```bash
 docker compose pull
@@ -78,7 +70,7 @@ docker compose up -d
 docker compose down
 ```
 
-Note: Named volumes (`postgres_data`, `rustfs_data`, `redis_data`) are preserved after stopping. To remove them as well:
+Note: Named volumes are preserved after stopping. To remove them as well:
 
 ```bash
 docker compose down -v
