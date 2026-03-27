@@ -17,7 +17,7 @@ interface AgentCardProps {
 
 export function AgentCard({ agent }: AgentCardProps) {
   const displayName = agent.name || agent.id;
-  const displayDescription = agent.purpose || "No description available";
+  const displayDescription = agent.description || agent.purpose || "No description available";
   const resolvedImage = getImageUrl(agent.picture);
 
   // Extract active skills
@@ -61,13 +61,13 @@ export function AgentCard({ agent }: AgentCardProps) {
                 {displayName}
               </CardTitle>
               <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground font-mono">
-                <span className="truncate max-w-[80px]" title={agent.id}>
-                  #{agent.id.slice(0, 8)}
+                <span className="shrink-0" title={agent.slug || agent.id}>
+                  #{agent.slug || agent.id.slice(0, 8)}
                 </span>
-                <span className="w-px h-3 bg-border" />
+                <span className="w-px h-3 bg-border shrink-0" />
                 <span className="flex items-center gap-1 truncate">
-                  <Cpu className="h-3 w-3" />
-                  {agent.model}
+                  <Cpu className="h-3 w-3 shrink-0" />
+                  {agent.model.includes("/") ? agent.model.split("/").pop() : agent.model}
                 </span>
               </div>
             </div>

@@ -8,6 +8,7 @@ export interface Agent {
   slug: string | null;
   picture: string | null;
   purpose: string | null;
+  description: string | null;
   personality: string | null;
   principles: string | null;
   model: string;
@@ -25,6 +26,10 @@ export interface Agent {
   assets: Record<string, unknown> | null;
   account_snapshot: CreditAccount | null;
   extra: Record<string, unknown> | null;
+  search_internet: boolean | null;
+  super_mode: boolean | null;
+  enable_todo: boolean | null;
+  enable_long_term_memory: boolean | null;
   enable_activity: boolean | null;
   enable_post: boolean | null;
   deployed_at: string | null;

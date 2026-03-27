@@ -28,7 +28,6 @@ class AgentResponse(Agent):
     )
 
     # Override privacy fields to exclude them from JSON schema
-    purpose: SkipJsonSchema[str | None] = None
     personality: SkipJsonSchema[str | None] = None
     principles: SkipJsonSchema[str | None] = None
     prompt: SkipJsonSchema[str | None] = None
@@ -256,7 +255,6 @@ class AgentResponse(Agent):
 
         # Remove privacy fields that might still be present
         privacy_fields = {
-            "purpose",
             "personality",
             "principles",
             "prompt",
