@@ -41,8 +41,9 @@ type BaseInfo struct {
 
 // GetUpdatesRequest is the request body for the getupdates endpoint.
 type GetUpdatesRequest struct {
-	GetUpdatesBuf string   `json:"get_updates_buf"`
-	BaseInfo      BaseInfo `json:"base_info"`
+	GetUpdatesBuf      string   `json:"get_updates_buf"`
+	LongpollingTimeout int      `json:"longpolling_timeout,omitempty"`
+	BaseInfo           BaseInfo `json:"base_info"`
 }
 
 // GetUpdatesResponse is the response from the getupdates endpoint.

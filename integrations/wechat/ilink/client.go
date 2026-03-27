@@ -89,13 +89,23 @@ func (c *Client) doPost(ctx context.Context, path string, body interface{}, resu
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("iLink API error", "path", path, "status", resp.StatusCode, "body", string(respBody))
-		return fmt.Errorf("ilink api returned status %d", resp.StatusCode)
+		slog.Error("iLink API HTTP error", "path", path, "status", resp.StatusCode, "body", string(respBody))
+		return fmt.Errorf("ilink api returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	// Log response for non-getupdates calls (getupdates is too noisy)
+	// Log response for non-getupdates calls (getupdates is too noisy).
+	// For getupdates, only log when there's a non-zero ret (potential auth failure).
 	if path != "/ilink/bot/getupdates" {
 		slog.Info("iLink API response", "path", path, "body", string(respBody))
+	} else {
+		// Peek at ret field to detect auth/session errors
+		var peek struct {
+			Ret    int    `json:"ret"`
+			ErrMsg string `json:"errmsg"`
+		}
+		if json.Unmarshal(respBody, &peek) == nil && peek.Ret != 0 {
+			slog.Warn("getupdates non-zero ret", "ret", peek.Ret, "errmsg", peek.ErrMsg, "body", string(respBody))
+		}
 	}
 
 	if result != nil {
@@ -109,8 +119,9 @@ func (c *Client) doPost(ctx context.Context, path string, body interface{}, resu
 // GetUpdates performs long-polling for new messages.
 func (c *Client) GetUpdates(ctx context.Context) ([]WeixinMessage, error) {
 	reqBody := GetUpdatesRequest{
-		GetUpdatesBuf: c.updatesBuf,
-		BaseInfo:      BaseInfo{ChannelVersion: channelVersion},
+		GetUpdatesBuf:      c.updatesBuf,
+		LongpollingTimeout: 30,
+		BaseInfo:           BaseInfo{ChannelVersion: channelVersion},
 	}
 
 	var resp GetUpdatesResponse

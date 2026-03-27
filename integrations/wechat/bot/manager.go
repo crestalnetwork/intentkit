@@ -178,6 +178,7 @@ func (m *Manager) ensureTeamBotRunning(tc *store.TeamChannel) {
 func (m *Manager) pollLoop(ctx context.Context, entry *botEntry, teamID string) {
 	backoff := 2 * time.Second
 	const maxBackoff = 60 * time.Second
+	consecutiveErrors := 0
 
 	for {
 		select {
@@ -191,14 +192,31 @@ func (m *Manager) pollLoop(ctx context.Context, entry *botEntry, teamID string) 
 			if ctx.Err() != nil {
 				return // context cancelled
 			}
-			slog.Error("GetUpdates failed", "team_id", teamID, "error", err)
+			consecutiveErrors++
+			slog.Error("GetUpdates failed",
+				"team_id", teamID,
+				"error", err,
+				"consecutive_errors", consecutiveErrors,
+				"next_backoff", backoff.String(),
+			)
 			time.Sleep(backoff)
 			backoff = min(backoff*2, maxBackoff)
 			continue
 		}
 
+		if consecutiveErrors > 0 {
+			slog.Info("GetUpdates recovered after errors",
+				"team_id", teamID,
+				"previous_consecutive_errors", consecutiveErrors,
+			)
+		}
 		// Reset backoff on success
+		consecutiveErrors = 0
 		backoff = 2 * time.Second
+
+		if len(msgs) > 0 {
+			slog.Debug("GetUpdates received messages", "team_id", teamID, "msg_count", len(msgs))
+		}
 
 		for _, msg := range msgs {
 			m.handleTeamMessage(entry, msg, teamID)

@@ -218,6 +218,8 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -247,6 +249,8 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - DB_HOST=db
       - DB_PORT=5432
