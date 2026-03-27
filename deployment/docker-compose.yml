@@ -29,15 +29,16 @@ services:
       frontend:
         condition: service_healthy
     environment:
-      - API_DOMAIN=${API_DOMAIN}
       - APP_DOMAIN=${APP_DOMAIN}
-      - CDN_DOMAIN=${CDN_DOMAIN}
       - TLS_EMAIL=${TLS_EMAIL}
+      - BASIC_AUTH_USER=${BASIC_AUTH_USER}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD}
+    entrypoint: /entrypoint.sh
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy-entrypoint.sh:/entrypoint.sh
       - caddy_data:/data
       - caddy_config:/config
     restart: unless-stopped
@@ -172,9 +173,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=https://${API_DOMAIN}
-      - NEXT_PUBLIC_AWS_S3_CDN_URL=https://${CDN_DOMAIN}/static
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 10s

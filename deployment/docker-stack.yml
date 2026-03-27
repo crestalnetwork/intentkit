@@ -165,9 +165,6 @@ services:
 
   frontend:
     image: ghcr.io/crestalnetwork/intentkit-frontend:latest
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_AWS_S3_CDN_URL=${NEXT_PUBLIC_AWS_S3_CDN_URL:-http://localhost:9000/static}
     ports:
       - "3000:3000"
     healthcheck:
