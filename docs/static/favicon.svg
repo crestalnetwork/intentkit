@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- 阴影与虚幻光晕效果 (Shadow and Ethereal Glow) -->
+    <filter id="ethereal-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="10" dy="15" stdDeviation="20" flood-color="#000000" flood-opacity="0.1" />
+      <feDropShadow dx="-5" dy="-5" stdDeviation="10" flood-color="#ffffff" flood-opacity="0.5" />
+    </filter>
+
+    <!-- 潜意识方块的渐变材质 (Subconsciousness Square Gradient) -->
+    <linearGradient id="sq1-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#aaaaaa" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.6" />
+    </linearGradient>
+
+    <!-- 表意识方块的渐变材质 (Consciousness Square Gradient) -->
+    <linearGradient id="sq2-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#888888" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.75" />
+    </linearGradient>
+
+    <!-- 超意识方块的渐变材质 (Superconsciousness Square Gradient) -->
+    <linearGradient id="sq3-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#666666" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.95" />
+    </linearGradient>
+  </defs>
+
+  <!-- 
+    我们要将整个图形逆时针旋转，使得小方块底部角点和大方块底部角点的 y 坐标一致。
+    由于 SVG 原点在左上角，y 坐标向下递增。所以最大 y 坐标即为图形最底部。
+    
+    我们分析这三个方块的原始位置（相对于未整体旋转的中心 256, 256）:
+    方块 1: center(150, 270), w=140, h=140, rx=32, rotate -30
+    方块 3: center(312, 280), w=220, h=220, rx=48, rotate 25
+
+    不严格考虑圆角对最值的影响（因为圆角是均匀的，角点仍代表极限位置附近），
+    正方形旋转 a 角度后，右下角的相对中心的坐标偏移量：
+    设正方形半边长 r = w/2。底边中点法向量为 (sin(a), cos(a))，右边中点法向量为 (cos(a), -sin(a))。
+    角点的偏移量其实就是 r*cos(a) + r*sin(a) 或者结合极坐标系下的最大投影。
+    更直接地，对于旋转角为 θ 的正方形，最下一角的 y 坐偏移为 r * (|sinθ| + |cosθ|) = r * \sqrt{2} * cos(|θ|-45度) [假设|θ|<90]。
+    
+    对于方块 1: θ = -30度, r = 70. MaxY1 = 270 + 70 * (sin(30) + cos(30)) = 270 + 70 * (0.5 + 0.866) = 270 + 70 * 1.366 = 365.62
+    对应最下角点坐标: 
+    x 偏移 = r*sin(-30) + r*cos(-30) = -35 + 60.62 = 25.62 => x1 = 150 - (-35) + 60.62 ... 算精确角点：(150 - 70*cos(30) + 70*sin(30), 270 + 70*sin(30) + 70*cos(30)) = (124.38, 365.62) 或者类似角。
+    实际上它的底边两个角点是：
+    (x_center - r*cos30 - r*sin30, ...), 等等。
+    最下面那个顶点是：x_v1 = 150 - r*sin30 + r*cos30 = 150 - 35 + 60.62 = 175.62， y_v1 = 365.62.
+    
+    对于方块 3: θ = 25度, r = 110. MaxY3 = 280 + 110 * (sin(25) + cos(25)) = 280 + 110 * (0.4226 + 0.9063) = 280 + 110 * 1.3289 = 280 + 146.18 = 426.18
+    对应最下角点坐标 (右下角或左下角):
+    x_v3 = 312 - 110*sin(25) - 110*cos(25) ... (由于旋转25度，底部的两个点，在最下的那个是相对于原正方形的底边左顶点还是右顶点？)
+    原点在中心。最下的点是在 (-r, r) 转过来，还是 (r, r) 转过来？
+    顺时针25度 ( SVG 里是顺时针 )
+    (r, r) 旋转 25: x = r*c - r*s, y = r*s + r*c => 最下的点。
+    (-r, r) 旋转 25: x = -r*c - r*s, y = -r*s + r*c => 如果顺转，右下角最下。
+    所以右下角是最下点：
+    x_v3 = 312 + 110*cos(25) - 110*sin(25) = 312 + 99.69 - 46.49 = 365.2
+    y_v3 = 280 + 110*sin(25) + 110*cos(25) = 426.18
+    
+    我们要找一个旋转角 -φ，中心点为整体中心比如 (256, 256)，使得 v1 和 v3 旋转后的 y 坐标相同。
+    现在的相对坐标：
+    dx1 = 175.62 - 256 = -80.38
+    dy1 = 365.62 - 256 = 109.62
+    dx3 = 365.2 - 256 = 109.2
+    dy3 = 426.18 - 256 = 170.18
+    
+    要求 dy1' = dy3', 这表示这两个点连线的斜率将被旋转平。
+    原来两点斜率: m = (dy3 - dy1) / (dx3 - dx1) = (170.18 - 109.62) / (109.2 - (-80.38)) = 60.56 / 189.58 ≈ 0.3194
+    0.3194 = tan(17.7°)。
+    这意味着原来这两个最底部的连接线相对于水平线有大约 17.7 度的倾斜（右边更低）。
+    为了让它们平齐，我们需要将整个图形逆时针旋转约 17.7 度（即 -17.7度）。
+    为了方便微调和视觉效果，我们可以设为 18度（-18）。
+    为了让旋转后依然居中且不要太靠下（因为长宽重新分布），我们可以在 g 上加 transform="rotate(-18 256 256) translate(0, 20)" 这种。
+    
+    我会使用 -18 度并且将这层控制放在一个包裹组里。
+  -->
+
+  <g filter="url(#ethereal-shadow)">
+    <!-- 整体逆时针旋转-18度，让两个底角着地。由于旋转后的 bounding box 会偏移，通过 translate 做一定的补偿 -->
+    <g transform="translate(0, 15) rotate(-18 256 256)">
+      <!-- 1. 潜意识 (最小) -->
+      <!-- 整体向右移动10 -->
+      <rect x="80" y="200" width="140" height="140" rx="32" 
+            fill="url(#sq1-grad)" 
+            stroke="rgba(255,255,255,0.4)" stroke-width="2" 
+            transform="rotate(-30 150 270)" />
+
+      <!-- 2. 表意识 (中等) -->
+      <!-- 整体向右移动10 -->
+      <rect x="146" y="86" width="180" height="180" rx="40" 
+            fill="url(#sq2-grad)" 
+            stroke="rgba(255,255,255,0.6)" stroke-width="4" 
+            transform="rotate(0 236 176)" />
+
+      <!-- 3. 超意识 (最大) -->
+      <!-- 向左20，整体向右10 -->
+      <rect x="202" y="170" width="220" height="220" rx="48" 
+            fill="url(#sq3-grad)" 
+            stroke="rgba(255,255,255,0.9)" stroke-width="6" 
+            transform="rotate(25 312 280)" />
+    </g>
+  </g>
+</svg>
