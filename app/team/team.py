@@ -4,9 +4,11 @@ import json
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Body, Depends, Path, Response
+from epyxid import XID
+from fastapi import APIRouter, Body, Depends, File, Path, Response, UploadFile
 from pydantic import BaseModel, Field, TypeAdapter
 
+from intentkit.clients.s3 import store_image_bytes
 from intentkit.core.team.channel import get_default_channel, set_default_channel
 from intentkit.core.team.membership import (
     check_permission,
@@ -140,6 +142,49 @@ async def list_members_endpoint(
         content=_team_member_list_adapter.dump_json(members),
         media_type="application/json",
     )
+
+
+@team_management_router.post(
+    "/teams/{team_id}/upload-picture",
+    tags=["Team"],
+    status_code=200,
+    operation_id="upload_team_picture",
+    summary="Upload Team Picture",
+)
+async def upload_team_picture(
+    file: UploadFile = File(..., description="Image file to upload as team picture"),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+) -> dict[str, str]:
+    """Upload an image to S3 for use as a team picture.
+
+    Accepts image files (JPEG, PNG, GIF, WebP). Max size 5MB.
+    Requires admin or owner role.
+
+    **Returns:**
+    * `dict` with `path` - The relative S3 path of the uploaded image
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise IntentKitAPIError(400, "BadRequest", "File must be an image")
+
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise IntentKitAPIError(400, "BadRequest", "Image must be less than 5MB")
+
+    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp"}
+    ext = (
+        file.filename.rsplit(".", 1)[-1].lower()
+        if file.filename and "." in file.filename
+        else ""
+    )
+    if ext not in allowed_extensions:
+        ext = "jpg"
+    key = f"avatars/{XID()}.{ext}"
+
+    path = await store_image_bytes(content, key, content_type=file.content_type)
+    if not path:
+        raise IntentKitAPIError(500, "ServerError", "Failed to upload image to storage")
+
+    return {"path": path}
 
 
 @team_management_router.patch("/teams/{team_id}")
