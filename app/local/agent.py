@@ -4,6 +4,7 @@ import logging
 from datetime import UTC, datetime
 from typing import TypedDict
 
+from epyxid import XID
 from fastapi import (
     APIRouter,
     Body,
@@ -19,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from yaml import safe_load
 
+from intentkit.clients.s3 import store_image_bytes
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
@@ -533,6 +535,48 @@ async def unlink_twitter_endpoint(
         media_type="application/json",
         headers={"ETag": agent_response.etag()},
     )
+
+
+@agent_router.post(
+    "/agents/upload-picture",
+    tags=["Agent"],
+    status_code=200,
+    operation_id="upload_agent_picture",
+    summary="Upload Agent Picture",
+)
+async def upload_agent_picture(
+    file: UploadFile = File(..., description="Image file to upload as agent picture"),
+) -> dict[str, str]:
+    """Upload an image to S3 for use as an agent picture.
+
+    Accepts image files (JPEG, PNG, GIF, WebP). Max size 5MB.
+
+    **Returns:**
+    * `dict` with `path` - The relative S3 path of the uploaded image
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise IntentKitAPIError(400, "BadRequest", "File must be an image")
+
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise IntentKitAPIError(400, "BadRequest", "Image must be less than 5MB")
+
+    # Extract and validate file extension
+    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp"}
+    ext = (
+        file.filename.rsplit(".", 1)[-1].lower()
+        if file.filename and "." in file.filename
+        else ""
+    )
+    if ext not in allowed_extensions:
+        ext = "jpg"
+    key = f"avatars/{XID()}.{ext}"
+
+    path = await store_image_bytes(content, key, content_type=file.content_type)
+    if not path:
+        raise IntentKitAPIError(500, "ServerError", "Failed to upload image to storage")
+
+    return {"path": path}
 
 
 @agent_router.put(

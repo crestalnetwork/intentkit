@@ -127,6 +127,26 @@ export const agentApi = {
   },
 
   /**
+   * Upload an image for use as agent picture
+   * POST /api/agents/upload-picture
+   */
+  async uploadPicture(file: File): Promise<{ path: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE}/agents/upload-picture`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `Failed to upload picture: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  /**
    * Archive an agent
    * PUT /api/agents/{agentId}/archive
    */

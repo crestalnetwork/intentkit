@@ -68,6 +68,10 @@ function generateUiSchema(schema: Record<string, unknown> | undefined) {
                 uiProperty["ui:widget"] = "ModelSelectWidget";
             }
 
+            if (property["x-component"] === "picture-upload") {
+                uiProperty["ui:widget"] = "PictureWidget";
+            }
+
             if (typeof property["x-placeholder"] === "string") {
                 uiProperty["ui:placeholder"] = property["x-placeholder"];
             }

@@ -3,6 +3,7 @@ import { WidgetProps, BaseInputTemplateProps } from "@rjsf/utils";
 import { Input } from "@/components/ui/input";
 import { ModelSelectWidget } from "./ModelSelectWidget";
 import { StringArrayWidget } from "./StringArrayWidget";
+import { PictureWidget } from "./PictureWidget";
 
 export const BaseInputTemplate = (props: BaseInputTemplateProps) => {
     const {
@@ -172,4 +173,5 @@ export const widgets = {
     CheckboxWidget,
     ModelSelectWidget,
     StringArrayWidget,
+    PictureWidget,
 };

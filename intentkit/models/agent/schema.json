@@ -79,8 +79,8 @@
       "title": "Picture",
       "type": "string",
       "description": "Picture of the agent",
-      "x-group": "experimental",
-      "x-placeholder": "Upload a picture of your agent"
+      "x-group": "basic",
+      "x-component": "picture-upload"
     },
     "model": {
       "title": "AI Model",
