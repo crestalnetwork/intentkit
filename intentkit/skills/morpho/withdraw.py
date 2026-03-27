@@ -1,14 +1,16 @@
 """Morpho withdraw skill - Withdraw assets from a Morpho Vault."""
 
 from decimal import Decimal
+from typing import Any, override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.skills.erc20.constants import ERC20_ABI
 from intentkit.skills.morpho.base import MorphoBaseTool
-from intentkit.skills.morpho.constants import METAMORPHO_ABI, SUPPORTED_NETWORKS
+from intentkit.skills.morpho.constants import METAMORPHO_ABI
 
 
 class WithdrawInput(BaseModel):
@@ -32,64 +34,48 @@ class MorphoWithdraw(MorphoBaseTool):
     description: str = "Withdraw assets from a Morpho Vault. Ensure sufficient vault shares. Amount in whole units."
     args_schema: ArgsSchema | None = WithdrawInput
 
+    @override
     async def _arun(
         self,
         vault_address: str,
         assets: str,
         receiver: str,
+        **kwargs: Any,
     ) -> str:
-        """Withdraw assets from a Morpho Vault.
-
-        Args:
-            vault_address: The address of the Morpho Vault.
-            assets: The amount of assets to withdraw in whole units.
-            receiver: The address to receive the assets.
-
-        Returns:
-            A message containing the result or error details.
-        """
         try:
-            # Get the unified wallet
             wallet = await self.get_unified_wallet()
-            network_id = wallet.network_id
+            self._validate_network(wallet.network_id)
+            w3 = self.web3_client()
 
-            # Check if network is supported
-            if network_id not in SUPPORTED_NETWORKS:
-                raise ToolException(
-                    f"Error: Morpho is not supported on network {network_id}. "
-                    f"Supported networks: {', '.join(SUPPORTED_NETWORKS)}"
-                )
-
-            # Validate assets amount
-            assets_decimal = Decimal(assets)
-            if assets_decimal <= Decimal("0"):
-                raise ToolException("Error: Assets amount must be greater than 0")
-            w3 = Web3()
             checksum_vault = w3.to_checksum_address(vault_address)
             checksum_receiver = w3.to_checksum_address(receiver)
 
-            # Convert assets to atomic units (assuming 18 decimals for simplicity)
-            # In a production environment, you'd want to query the token decimals
-            atomic_assets = int(assets_decimal * Decimal(10**18))
+            vault_contract = w3.eth.contract(address=checksum_vault, abi=METAMORPHO_ABI)
+            asset_address = await vault_contract.functions.asset().call()
 
-            # Encode withdraw function
-            # withdraw(uint256 assets, address receiver, address owner)
-            morpho_contract = w3.eth.contract(
-                address=checksum_vault, abi=METAMORPHO_ABI
+            token_contract = w3.eth.contract(
+                address=Web3.to_checksum_address(asset_address), abi=ERC20_ABI
             )
-            withdraw_data = morpho_contract.encode_abi(
+            decimals = await token_contract.functions.decimals().call()
+
+            assets_decimal = Decimal(assets)
+            if assets_decimal <= Decimal("0"):
+                raise ToolException("Error: Assets amount must be greater than 0")
+
+            atomic_assets = int(assets_decimal * Decimal(10**decimals))
+
+            withdraw_data = vault_contract.encode_abi(
                 "withdraw",
                 [atomic_assets, checksum_receiver, checksum_receiver],
             )
 
-            # Send withdraw transaction
             tx_hash = await wallet.send_transaction(
                 to=checksum_vault,
                 data=withdraw_data,
             )
-
-            # Wait for receipt
-            await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
+            receipt = await wallet.wait_for_receipt(tx_hash)
+            if receipt.get("status", 0) != 1:
+                raise ToolException(f"Withdraw transaction failed. Hash: {tx_hash}")
 
             return (
                 f"Withdrawn {assets} from Morpho Vault {vault_address}\n"
@@ -97,5 +83,7 @@ class MorphoWithdraw(MorphoBaseTool):
                 f"Transaction hash: {tx_hash}"
             )
 
+        except ToolException:
+            raise
         except Exception as e:
             raise ToolException(f"Error withdrawing from Morpho Vault: {e!s}")

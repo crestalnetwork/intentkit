@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Morpho",
-  "description": "Morpho lending protocol actions for depositing and withdrawing assets from vaults",
+  "description": "Morpho protocol actions for vaults (deposit/withdraw) and Morpho Blue markets (collateral, borrow, repay)",
   "x-icon": "/skills/morpho/morpho.svg",
   "x-tags": [
     "DeFi"
@@ -19,7 +19,7 @@
       "properties": {
         "morpho_deposit": {
           "type": "string",
-          "title": "Deposit",
+          "title": "Vault Deposit",
           "enum": [
             "disabled",
             "public",
@@ -30,12 +30,12 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Deposit assets into a Morpho Vault",
+          "description": "Deposit assets into a MetaMorpho Vault",
           "default": "disabled"
         },
         "morpho_withdraw": {
           "type": "string",
-          "title": "Withdraw",
+          "title": "Vault Withdraw",
           "enum": [
             "disabled",
             "public",
@@ -46,7 +46,103 @@
             "Agent Owner + All Users",
             "Agent Owner Only"
           ],
-          "description": "Withdraw assets from a Morpho Vault",
+          "description": "Withdraw assets from a MetaMorpho Vault",
+          "default": "disabled"
+        },
+        "morpho_get_vault_data": {
+          "type": "string",
+          "title": "Vault Data",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get MetaMorpho Vault info (total assets, share price, underlying token)",
+          "default": "disabled"
+        },
+        "morpho_supply_collateral": {
+          "type": "string",
+          "title": "Supply Collateral",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Supply collateral to a Morpho Blue market",
+          "default": "disabled"
+        },
+        "morpho_withdraw_collateral": {
+          "type": "string",
+          "title": "Withdraw Collateral",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Withdraw collateral from a Morpho Blue market",
+          "default": "disabled"
+        },
+        "morpho_borrow": {
+          "type": "string",
+          "title": "Borrow",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Borrow assets from a Morpho Blue market",
+          "default": "disabled"
+        },
+        "morpho_repay": {
+          "type": "string",
+          "title": "Repay",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Repay borrowed assets in a Morpho Blue market",
+          "default": "disabled"
+        },
+        "morpho_get_position": {
+          "type": "string",
+          "title": "Get Position",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Get user position in a Morpho Blue market",
           "default": "disabled"
         }
       },
