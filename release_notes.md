@@ -1,11 +1,19 @@
+## New Features
+
+- **Morpho Blue Skills**: Added full Morpho Blue lending protocol support — supply collateral, withdraw collateral, borrow, repay, and query market positions directly on Morpho Blue markets.
+- **MetaMorpho Vault Query**: New vault data skill to check MetaMorpho Vault info including total assets, share price, and underlying token.
+- **Agent UI Enhancements**: Agent cards now display description/purpose fallback text, skill & capability tags, and slug identifiers for easier navigation.
+- **Image Upload**: Added image upload support for team and agent profile pictures.
+- **WeChat Debug Logging**: Added DEBUG log level support and diagnostic logging for WeChat integration.
+
 ## Improvements
 
-- **Simplified Deployment**: Consolidated from three domains (API, App, CDN) to a single domain, reducing DNS and certificate setup complexity.
-- **Basic Auth Support**: Added optional username/password authentication for the web UI, configurable via environment variables.
-- **Updated Documentation**: Revised Docker Compose deployment guide to reflect the simplified setup.
+- Payment-related scheduler jobs are now gated behind the payment_enabled configuration flag.
+- Removed auto-creation of example agent on startup for cleaner initial setup.
 
 ## Bug Fixes
 
-- Fixed an issue where the frontend could not reach the API in Docker deployments due to Next.js build-time environment variable limitations.
+- Fixed an issue with fractional token triggers in the Summarization middleware.
+- Fixed API proxy path handling in frontend deployments.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.16.0...v0.16.1
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.16.1...v0.16.2
