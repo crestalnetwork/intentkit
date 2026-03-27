@@ -223,12 +223,10 @@ async def build_executor(
         SummarizationMiddleware(
             model=summarize_model,
             trigger=[
-                ("fraction", 0.8),
                 ("tokens", int(llm_model.info.context_length * 0.8)),
             ]
             if agent.super_mode
             else [
-                ("fraction", 0.6),
                 ("tokens", int(llm_model.info.context_length * 0.6)),
             ],
         )
