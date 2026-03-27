@@ -64,7 +64,7 @@ services:
           - node.labels.stateful == true
 
   api:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -105,7 +105,7 @@ services:
         order: start-first
 
   autonomous:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -135,7 +135,7 @@ services:
         condition: any
 
   scheduler:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     env_file: .env
     environment:
       - DB_USERNAME=postgres
@@ -164,7 +164,7 @@ services:
         condition: any
 
   frontend:
-    image: crestal/intentkit-frontend:latest
+    image: ghcr.io/crestalnetwork/intentkit-frontend:latest
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
       - NEXT_PUBLIC_AWS_S3_CDN_URL=${NEXT_PUBLIC_AWS_S3_CDN_URL:-http://localhost:9000/static}
@@ -186,7 +186,7 @@ services:
         order: start-first
 
   telegram:
-    image: crestal/intentkit-telegram:latest
+    image: ghcr.io/crestalnetwork/intentkit-telegram:latest
     env_file: .env
     environment:
       - DB_HOST=db
@@ -208,7 +208,7 @@ services:
         condition: any
 
   wechat:
-    image: crestal/intentkit-wechat:latest
+    image: ghcr.io/crestalnetwork/intentkit-wechat:latest
     env_file: .env
     environment:
       - DB_HOST=db

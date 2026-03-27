@@ -69,7 +69,7 @@ services:
       retries: 5
 
   api:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
@@ -105,7 +105,7 @@ services:
     command: uvicorn app.api:app --host 0.0.0.0 --port 8000
 
   autonomous:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
@@ -138,7 +138,7 @@ services:
     command: python -m app.autonomous
 
   scheduler:
-    image: crestal/intentkit:latest
+    image: ghcr.io/crestalnetwork/intentkit:latest
     depends_on:
       db:
         condition: service_healthy
@@ -168,7 +168,7 @@ services:
     command: python -m app.scheduler
 
   frontend:
-    image: crestal/intentkit-frontend:latest
+    image: ghcr.io/crestalnetwork/intentkit-frontend:latest
     depends_on:
       api:
         condition: service_healthy
@@ -184,7 +184,7 @@ services:
     restart: unless-stopped
 
   telegram:
-    image: crestal/intentkit-telegram:latest
+    image: ghcr.io/crestalnetwork/intentkit-telegram:latest
     depends_on:
       db:
         condition: service_healthy
@@ -210,7 +210,7 @@ services:
     restart: unless-stopped
 
   wechat:
-    image: crestal/intentkit-wechat:latest
+    image: ghcr.io/crestalnetwork/intentkit-wechat:latest
     depends_on:
       db:
         condition: service_healthy
