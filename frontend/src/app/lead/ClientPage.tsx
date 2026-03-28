@@ -24,6 +24,7 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { VideoAttachment } from "@/components/features/VideoAttachment";
 import { isUserAuthoredMessage } from "@/types/chat";
+import type { LucideIcon } from "lucide-react";
 import type {
   UIMessage,
   ChatThread,
@@ -32,6 +33,10 @@ import type {
 } from "@/types/chat";
 
 const LEAD_AGENT_ID = "system";
+
+const EXTRA_NAV_LINKS: Array<{ href: string; icon: LucideIcon; label: string }> = [
+  { href: "/lead/channels", icon: Radio, label: "Channels" },
+];
 
 const markdownProseClass =
   "prose prose-sm dark:prose-invert max-w-none break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0";
@@ -456,9 +461,7 @@ export default function LeadChatPage() {
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
         hideNavLinks
-        extraNavLinks={[
-          { href: "/lead/channels", icon: Radio, label: "Channels" },
-        ]}
+        extraNavLinks={EXTRA_NAV_LINKS}
       />
 
       {/* Main Chat Area */}

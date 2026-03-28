@@ -35,7 +35,7 @@ export default function AgentError({
                         Try Again
                     </Button>
                     <Button asChild>
-                        <Link href="/">
+                        <Link href="/agents">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Agents
                         </Link>

@@ -1,43 +1,105 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle, Trash2, Loader2, Check } from "lucide-react";
-import Link from "next/link";
+import { MessageCircle, Trash2, Loader2, Check, Radio } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChatSidebar } from "@/components/features/ChatSidebar";
+import { leadApi } from "@/lib/api";
 import {
   channelApi,
   type TeamChannel,
   type WechatQrStatusResponse,
 } from "@/lib/api";
+import type { LucideIcon } from "lucide-react";
+
+const LEAD_AGENT_ID = "system";
+
+const EXTRA_NAV_LINKS: Array<{ href: string; icon: LucideIcon; label: string }> = [
+  { href: "/lead/channels", icon: Radio, label: "Channels" },
+];
+
+function buildLeadThreadPath(threadId?: string | null) {
+  if (!threadId) return "/lead";
+  const params = new URLSearchParams({ thread: threadId });
+  return `/lead?${params.toString()}`;
+}
 
 export default function ChannelsPage() {
-  const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: channels = [], isLoading } = useQuery({
     queryKey: ["lead-channels"],
     queryFn: () => channelApi.listChannels(),
   });
 
+  // Load threads for the sidebar
+  const {
+    data: threads = [],
+    isLoading: isLoadingThreads,
+    refetch: refetchThreads,
+  } = useQuery({
+    queryKey: ["leadChats"],
+    queryFn: () => leadApi.listChats(),
+  });
+
+  const handleSelectThread = useCallback(
+    (threadId: string) => {
+      router.push(buildLeadThreadPath(threadId));
+    },
+    [router],
+  );
+
+  const handleNewThread = useCallback(() => {
+    router.push("/lead?new=true");
+  }, [router]);
+
+  const handleUpdateTitle = useCallback(
+    async (threadId: string, title: string) => {
+      await leadApi.updateChatSummary(threadId, title);
+      await refetchThreads();
+    },
+    [refetchThreads],
+  );
+
+  const handleDeleteThread = useCallback(
+    async (threadId: string) => {
+      await leadApi.deleteChat(threadId);
+      await refetchThreads();
+    },
+    [refetchThreads],
+  );
+
   const telegramChannel = channels.find((c) => c.channel_type === "telegram");
   const wechatChannel = channels.find((c) => c.channel_type === "wechat");
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
+      {/* Sidebar */}
+      <ChatSidebar
+        agentId={LEAD_AGENT_ID}
+        activeTab="chat"
+        threads={threads}
+        currentThreadId={null}
+        isNewThread={false}
+        onSelectThread={handleSelectThread}
+        onNewThread={handleNewThread}
+        onUpdateTitle={handleUpdateTitle}
+        onDeleteThread={handleDeleteThread}
+        isLoading={isLoadingThreads}
+        hideNavLinks
+        extraNavLinks={EXTRA_NAV_LINKS}
+      />
+
+      {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="flex items-center gap-3">
-            <Link href="/lead">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Channels</h1>
-          </div>
+          <h1 className="text-2xl font-bold">Channels</h1>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">

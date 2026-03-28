@@ -170,6 +170,7 @@ cython_debug/
 .vscode
 .cursor
 .zed
+CLAUDE.local.md
 
 # web3
 wallet_data.txt

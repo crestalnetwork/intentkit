@@ -330,7 +330,7 @@ export default function TaskLogsPage() {
             Please go back and select an autonomous task.
           </p>
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/">
+            <Link href="/agents">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Agents
             </Link>

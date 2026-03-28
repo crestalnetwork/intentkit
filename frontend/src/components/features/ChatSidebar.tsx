@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Plus,
   MoreVertical,
@@ -83,6 +84,7 @@ export function ChatSidebar({
   hideNavLinks,
   extraNavLinks,
 }: ChatSidebarProps) {
+  const pathname = usePathname();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -205,7 +207,12 @@ export function ChatSidebar({
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+                  pathname === link.href
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                )}
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}

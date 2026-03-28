@@ -537,7 +537,7 @@ export default function AgentChatPage() {
             Please go back and select an agent to chat with.
           </p>
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/">
+            <Link href="/agents">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Agents
             </Link>
@@ -569,7 +569,7 @@ export default function AgentChatPage() {
               : "Agent not found"}
           </p>
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/">
+            <Link href="/agents">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Agents
             </Link>
@@ -680,7 +680,7 @@ export default function AgentChatPage() {
                           description: "The agent has been archived.",
                           variant: "success",
                         });
-                        router.push("/");
+                        router.push("/agents");
                       } catch (err) {
                         toast({
                           title: "Error",
