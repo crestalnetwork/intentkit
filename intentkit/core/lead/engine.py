@@ -43,6 +43,14 @@ _lead_agents: dict[str, Agent] = {}
 _lead_cached_at: dict[str, datetime] = {}
 
 
+async def get_lead_agent(team_id: str) -> Agent:
+    """Get the lead agent for a team, using cache if available."""
+    lead_agent = _lead_agents.get(team_id)
+    if not lead_agent:
+        lead_agent = await _build_lead_agent(team_id)
+    return lead_agent
+
+
 async def stream_lead(
     team_id: str, user_id: str, message: ChatMessageCreate
 ) -> AsyncGenerator[ChatMessage, None]:

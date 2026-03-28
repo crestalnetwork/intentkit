@@ -564,6 +564,14 @@ export const channelApi = {
 };
 
 export const leadApi = {
+  async getInfo(): Promise<AgentResponse> {
+    const response = await fetch(`${API_BASE}/lead/info`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch lead info: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
   async listChats(): Promise<ChatThread[]> {
     const response = await fetch(`${API_BASE}/lead/chats`);
     if (!response.ok) {

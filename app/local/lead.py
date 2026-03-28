@@ -24,7 +24,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_db
-from intentkit.core.lead import stream_lead
+from intentkit.core.lead import get_lead_agent, stream_lead
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.core.team.channel import (
     get_default_channel,
@@ -33,6 +33,7 @@ from intentkit.core.team.channel import (
     set_default_channel,
     set_team_channel,
 )
+from intentkit.models.agent import Agent
 from intentkit.models.chat import (
     AuthorType,
     Chat,
@@ -64,6 +65,23 @@ lead_router = APIRouter()
 LEAD_TEAM_ID = "system"
 LEAD_USER_ID = "system"
 LEAD_AGENT_ID = "system"
+
+
+# =============================================================================
+# Lead Agent Info Endpoint
+# =============================================================================
+
+
+@lead_router.get(
+    "/lead/info",
+    response_model=Agent,
+    operation_id="get_lead_info",
+    summary="Get lead agent info",
+    tags=["Lead"],
+)
+async def get_lead_info():
+    """Get lead agent details."""
+    return await get_lead_agent(LEAD_TEAM_ID)
 
 
 # =============================================================================

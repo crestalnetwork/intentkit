@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { leadApi } from "@/lib/api";
+import { AgentInfoBar } from "@/components/features/AgentInfoBar";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
 import { ThinkingBlock } from "@/components/features/ThinkingBlock";
@@ -175,6 +176,13 @@ export default function LeadChatPage() {
   const wasCancelledRef = useRef(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Fetch lead agent info
+  const { data: leadAgent } = useQuery({
+    queryKey: ["leadInfo"],
+    queryFn: () => leadApi.getInfo(),
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Fetch thread list
   const {
@@ -467,6 +475,9 @@ export default function LeadChatPage() {
             </p>
           </div>
         </div>
+
+        {/* Agent Info Bar */}
+        {leadAgent && <AgentInfoBar agent={leadAgent} />}
 
         {/* Error Alert */}
         {error && (
