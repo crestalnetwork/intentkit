@@ -1097,6 +1097,7 @@ dependencies = [
     { name = "mcp" },
     { name = "mypy-boto3-s3" },
     { name = "openai" },
+    { name = "openrouter" },
     { name = "pillow" },
     { name = "psycopg" },
     { name = "psycopg-pool" },
@@ -1183,6 +1184,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "mypy-boto3-s3", specifier = ">=1.37.24,<2.0.0" },
     { name = "openai", specifier = ">=1.59.6" },
+    { name = "openrouter", specifier = "<0.8.0" },
     { name = "pillow", specifier = ">=11.1.0,<13.0.0" },
     { name = "psycopg", specifier = ">=3.2.9" },
     { name = "psycopg-pool", specifier = ">=3.2.4" },
@@ -1900,16 +1902,16 @@ wheels = [
 
 [[package]]
 name = "openrouter"
-version = "0.8.0"
+version = "0.7.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpcore" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/c1/44c5c17fdcaf36e8af25eda268d097e40799583ced48ca94adc5015576c3/openrouter-0.8.0.tar.gz", hash = "sha256:28efd76f89bcd13e195fd2729e9ed356a71d9ad88c78ded4ce073f6935381886", size = 207489, upload-time = "2026-03-27T19:20:13.601Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/07/75d8dbe6fa40017901e10acc587996229630a89c8b1f150a73fc0df9a01d/openrouter-0.7.11.tar.gz", hash = "sha256:3dcfb7c3d5a0909cca50d67b79f71f3847d03f922108ce22a91087edf2948ac8", size = 147847, upload-time = "2026-02-23T23:04:33.845Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/d1/413bbdd98aac44bf094055cb282b3edaa61a1e1b7e54ebdbf9afebfd5178/openrouter-0.8.0-py3-none-any.whl", hash = "sha256:77cf76f14f2090747ff2c153734a9112dfb27faccb5f90d760efbb94ea7e0838", size = 442960, upload-time = "2026-03-27T19:20:12.135Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/32/cfff59bdb81e5cd40bcfb01a33962c5299e3373ad24fadcb2c7f7e61a2f0/openrouter-0.7.11-py3-none-any.whl", hash = "sha256:102b4bccd435b928906ab73b111005260874a36b2ca9b34b8875b19981b09e4c", size = 300058, upload-time = "2026-02-23T23:04:35.028Z" },
 ]
 
 [[package]]
