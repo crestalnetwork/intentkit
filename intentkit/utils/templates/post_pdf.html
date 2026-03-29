@@ -4,12 +4,31 @@
 <meta charset="UTF-8">
 <title>{{ title }}</title>
 <style>
+  /* Latin/digits: always use a Latin font */
+  @font-face {
+    font-family: "PostFont";
+    src: local("Helvetica Neue"), local("Liberation Sans"), local("Arial"), local("Helvetica");
+    unicode-range: U+0000-024F, U+2000-206F, U+2070-20CF, U+2100-214F, U+2190-21FF;
+  }
+  /* CJK characters */
+  @font-face {
+    font-family: "PostFont";
+    src: local("PingFang SC"), local("Noto Sans CJK SC"), local("Noto Sans CJK TC"), local("Heiti SC");
+    unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FE30-FE4F, U+3000-303F;
+  }
+  /* Emoji */
+  @font-face {
+    font-family: "PostFont";
+    src: local("Noto Color Emoji"), local("Apple Color Emoji");
+    unicode-range: U+1F000-1FAFF, U+2600-27BF, U+FE00-FE0F, U+200D;
+  }
+
   @page {
     size: A4;
     margin: 25mm 20mm;
     @bottom-center {
       content: counter(page);
-      font-family: "Liberation Sans", "Noto Sans CJK SC", "Noto Sans CJK TC", "Heiti SC", "PingFang SC", "Noto Color Emoji", "Apple Color Emoji", "Helvetica Neue", Arial, sans-serif;
+      font-family: "PostFont", sans-serif;
       font-size: 9pt;
       color: #999;
     }
@@ -22,7 +41,7 @@
   }
 
   body {
-    font-family: "Liberation Sans", "Noto Sans CJK SC", "Noto Sans CJK TC", "Heiti SC", "PingFang SC", "Noto Color Emoji", "Apple Color Emoji", "Helvetica Neue", Arial, sans-serif;
+    font-family: "PostFont", sans-serif;
     font-size: 11pt;
     line-height: 1.7;
     color: #333;
@@ -101,7 +120,7 @@
 
   /* Code */
   .post-body code {
-    font-family: "Liberation Mono", "Noto Sans Mono CJK SC", "PingFang SC", "Courier New", monospace;
+    font-family: "Liberation Mono", "Courier New", "PostFont", monospace;
     font-size: 9.5pt;
     background: #f0f0f0;
     padding: 1px 4px;
