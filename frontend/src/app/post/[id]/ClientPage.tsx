@@ -4,13 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Calendar, Eye, User, Tag, Copy, Check } from "lucide-react";
+import { ArrowLeft, Calendar, User, Tag, Copy, Check, MoreVertical, Download } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { postApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function PostPage() {
   const params = useParams();
@@ -37,13 +43,18 @@ export default function PostPage() {
 
   const [copied, setCopied] = useState(false);
 
-  const handleCopyMarkdown = async () => {
+  const handleCopyMarkdown = useCallback(async () => {
     if (!post?.markdown) return;
     const text = `# ${post.title}\n\n${post.markdown}`;
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [post]);
+
+  const handleDownloadPdf = useCallback(() => {
+    if (!post?.id) return;
+    window.open(postApi.getPdfUrl(post.id), "_blank");
+  }, [post]);
 
   const handleBack = () => {
     if (fromAgentId) {
@@ -80,35 +91,38 @@ export default function PostPage() {
   }
 
   return (
-    <div className="container py-10 max-w-4xl">
-      <div className="mb-8">
-        <Button 
-            variant="ghost" 
+    <div className="container py-10 max-w-[768px] mx-auto">
+      <div className="mb-8 flex items-center justify-between">
+        <Button
+            variant="ghost"
             className="pl-0 hover:pl-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
             onClick={handleBack}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           {fromAgentId ? "Back to Agent Posts" : "Back to Posts"}
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleCopyMarkdown}>
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? "Copied!" : "Copy as Markdown"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDownloadPdf}>
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <article>
         <header className="mb-8 space-y-4">
-          <div className="flex items-start gap-4">
-            <h1 className="text-4xl font-bold tracking-tight min-w-0">{post.title}</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyMarkdown}
-              className="shrink-0 mt-1"
-            >
-              {copied ? (
-                <><Check className="mr-2 h-4 w-4" />Copied</>
-              ) : (
-                <><Copy className="mr-2 h-4 w-4" />Copy as Markdown</>
-              )}
-            </Button>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight">{post.title}</h1>
 
           <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">

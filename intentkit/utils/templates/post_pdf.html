@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ title }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 25mm 20mm;
+    @bottom-center {
+      content: counter(page);
+      font-family: "Liberation Sans", "Noto Sans CJK SC", "Noto Sans CJK TC", "Heiti SC", "PingFang SC", "Noto Color Emoji", "Apple Color Emoji", "Helvetica Neue", Arial, sans-serif;
+      font-size: 9pt;
+      color: #999;
+    }
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Liberation Sans", "Noto Sans CJK SC", "Noto Sans CJK TC", "Heiti SC", "PingFang SC", "Noto Color Emoji", "Apple Color Emoji", "Helvetica Neue", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.7;
+    color: #333;
+  }
+
+  /* Header */
+  .post-header {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .post-title {
+    font-size: 26pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+
+  .post-meta {
+    font-size: 10pt;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .post-meta-sep {
+    color: #ccc;
+  }
+
+  .post-tag {
+    display: inline-block;
+    background: #f0f0f0;
+    color: #555;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 9pt;
+  }
+
+  /* Cover image */
+  .post-cover {
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 24px;
+  }
+
+  /* Body typography */
+  .post-body h1 { font-size: 20pt; font-weight: 700; color: #1a1a1a; margin-top: 28px; margin-bottom: 12px; }
+  .post-body h2 { font-size: 16pt; font-weight: 600; color: #1a1a1a; margin-top: 24px; margin-bottom: 10px; }
+  .post-body h3 { font-size: 13pt; font-weight: 600; color: #333; margin-top: 20px; margin-bottom: 8px; }
+  .post-body h4 { font-size: 11pt; font-weight: 600; color: #333; margin-top: 16px; margin-bottom: 6px; }
+
+  .post-body p {
+    margin-bottom: 12px;
+  }
+
+  .post-body a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+
+  /* Lists */
+  .post-body ul, .post-body ol {
+    margin-bottom: 12px;
+    padding-left: 24px;
+  }
+
+  .post-body li {
+    margin-bottom: 4px;
+  }
+
+  /* Code */
+  .post-body code {
+    font-family: "Liberation Mono", "Noto Sans Mono CJK SC", "PingFang SC", "Courier New", monospace;
+    font-size: 9.5pt;
+    background: #f0f0f0;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  .post-body pre {
+    background: #f5f5f5;
+    border: 1px solid #e5e5e5;
+    border-radius: 5px;
+    padding: 14px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .post-body pre code {
+    background: none;
+    padding: 0;
+    font-size: 9pt;
+    line-height: 1.5;
+  }
+
+  /* Codehilite (Pygments) */
+  .post-body .codehilite {
+    background: #f5f5f5;
+    border: 1px solid #e5e5e5;
+    border-radius: 5px;
+    padding: 14px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .post-body .codehilite pre {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Tables */
+  .post-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 10pt;
+  }
+
+  .post-body th {
+    background: #f8f8f8;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    padding: 8px 12px;
+  }
+
+  .post-body td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .post-body tr:nth-child(even) td {
+    background: #fafafa;
+  }
+
+  /* Images */
+  .post-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 12px auto;
+    border-radius: 4px;
+  }
+
+  /* Blockquotes */
+  .post-body blockquote {
+    border-left: 3px solid #d1d5db;
+    padding-left: 16px;
+    margin: 12px 0;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .post-body blockquote p {
+    margin-bottom: 6px;
+  }
+
+  /* Horizontal rule */
+  .post-body hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 20px 0;
+  }
+
+  /* Task lists */
+  .post-body .task-list-item {
+    list-style: none;
+    margin-left: -20px;
+  }
+
+  .post-body .task-list-control {
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+  <div class="post-header">
+    <h1 class="post-title">{{ title }}</h1>
+    <div class="post-meta">
+      <span>{{ agent_name }}</span>
+      <span class="post-meta-sep">&middot;</span>
+      <span>{{ date }}</span>
+      {% if tags %}
+      <span class="post-meta-sep">&middot;</span>
+      {% for tag in tags %}
+      <span class="post-tag">{{ tag }}</span>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cover %}
+  <img class="post-cover" src="{{ cover }}" alt="Cover image">
+  {% endif %}
+
+  <div class="post-body">
+    {{ content }}
+  </div>
+</body>
+</html>

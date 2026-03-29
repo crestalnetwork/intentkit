@@ -857,6 +857,14 @@ export const postApi = {
     }
     return response.json();
   },
+
+  getPdfUrl(postId: string): string {
+    return `${API_BASE}/posts/${postId}/pdf`;
+  },
+
+  getPdfUrlBySlug(agentId: string, slug: string): string {
+    return `${API_BASE}/agents/${agentId}/posts/slug/${slug}/pdf`;
+  },
 };
 
 /**

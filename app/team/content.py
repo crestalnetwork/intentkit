@@ -1,8 +1,10 @@
 """Team content feed and subscription endpoints."""
 
-from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi import APIRouter, Depends, Path, Query
+from fastapi.responses import Response
 from sqlalchemy import select
 
+from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.core.lead.service import verify_agent_in_team
 from intentkit.core.team.feed import query_activity_feed, query_post_feed
@@ -15,6 +17,7 @@ from intentkit.models.agent_activity import AgentActivity, AgentActivityTable
 from intentkit.models.agent_post import AgentPost, AgentPostBrief, AgentPostTable
 from intentkit.models.team_feed import TeamFeedPage, TeamSubscription
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.pdf import post_pdf_response
 
 from app.team.auth import verify_team_member
 
@@ -159,3 +162,26 @@ async def get_post(
 
     await verify_agent_in_team(post.agent_id, team_id)
     return AgentPost.model_validate(post)
+
+
+@team_content_router.get(
+    "/teams/{team_id}/posts/{post_id}/pdf",
+    operation_id="team_get_post_pdf",
+)
+async def get_post_pdf(
+    post_id: str = Path(...),
+    auth: tuple[str, str] = Depends(verify_team_member),
+) -> Response:
+    """Download a post as a styled PDF file."""
+    _, team_id = auth
+
+    async with get_session() as db:
+        stmt = select(AgentPostTable).where(AgentPostTable.id == post_id)
+        post = (await db.scalars(stmt)).first()
+        if not post:
+            raise IntentKitAPIError(
+                status_code=404, key="NotFound", message="Post not found"
+            )
+
+    await verify_agent_in_team(post.agent_id, team_id)
+    return await post_pdf_response(post, cdn_base=config.aws_s3_cdn_url)

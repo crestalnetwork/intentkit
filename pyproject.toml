@@ -99,6 +99,10 @@ app = [
     "python-multipart>=0.0.20",
     "sentry-sdk[fastapi]>=2.20.0",
     "telegramify-markdown>=0.5.0,<0.6.0",
+    # PDF generation
+    "weasyprint>=63.0",
+    "markdown>=3.7",
+    "pymdown-extensions>=10.0",
 ]
 # Development-only dependencies (testing, linting, local dev tools)
 dev = [
