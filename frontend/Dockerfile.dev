@@ -8,4 +8,4 @@ RUN npm ci
 
 EXPOSE 3000
 
-CMD ["npx", "next", "dev", "--webpack"]
+CMD ["npx", "next", "dev"]

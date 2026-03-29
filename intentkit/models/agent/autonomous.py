@@ -268,3 +268,23 @@ class AgentAutonomous(BaseModel):
         if updates:
             return self.model_copy(update=updates)
         return self
+
+
+class AgentTasksGroup(BaseModel):
+    """A group of autonomous tasks belonging to one agent."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
+
+    agent_id: str = PydanticField(description="Agent ID")
+    agent_slug: str | None = PydanticField(
+        default=None, description="Agent slug for URL routing"
+    )
+    agent_name: str | None = PydanticField(
+        default=None, description="Agent display name"
+    )
+    agent_image: str | None = PydanticField(
+        default=None, description="Agent picture URL"
+    )
+    tasks: list[AgentAutonomous] = PydanticField(
+        default_factory=list, description="Tasks for this agent"
+    )

@@ -884,11 +884,28 @@ export interface AutonomousTask {
   chat_id: string;
 }
 
+export interface AgentTasksGroup {
+  agent_id: string;
+  agent_slug: string | null;
+  agent_name: string | null;
+  agent_image: string | null;
+  tasks: AutonomousTask[];
+}
+
 /**
  * Autonomous API functions
  * Based on app/local/autonomous.py
  */
 export const autonomousApi = {
+  async listAllTasks(): Promise<AgentTasksGroup[]> {
+    const response = await fetch(`${API_BASE}/autonomous`);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to list all autonomous tasks: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
   /**
    * List all autonomous tasks for an agent
    * GET /agents/{agentId}/autonomous

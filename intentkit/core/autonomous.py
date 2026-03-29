@@ -10,6 +10,7 @@ from intentkit.config.db import get_session
 from intentkit.models.agent.autonomous import (
     AgentAutonomous,
     AgentAutonomousStatus,
+    AgentTasksGroup,
     AutonomousCreateRequest,
     AutonomousUpdateRequest,
 )
@@ -204,3 +205,50 @@ async def update_autonomous_task_status(
         await session.commit()
 
     return updated_task
+
+
+async def list_all_autonomous_tasks(
+    team_id: str | None = None,
+) -> list[AgentTasksGroup]:
+    """List all autonomous tasks across all agents, grouped by agent.
+
+    Args:
+        team_id: If provided, only return tasks for agents in this team.
+                 If None, return tasks for all agents (local mode).
+    """
+    async with get_session() as session:
+        query = select(
+            AgentTable.id,
+            AgentTable.slug,
+            AgentTable.name,
+            AgentTable.picture,
+            AgentTable.autonomous,
+        ).where(
+            AgentTable.archived_at.is_(None),
+            AgentTable.autonomous.isnot(None),
+        )
+
+        if team_id is not None:
+            query = query.where(AgentTable.team_id == team_id)
+
+        query = query.order_by(AgentTable.name)
+        result = await session.execute(query)
+        rows = result.all()
+
+    groups: list[AgentTasksGroup] = []
+    for row in rows:
+        agent_id, slug, name, picture, autonomous_data = row
+        tasks = _deserialize_autonomous(autonomous_data)
+        if not tasks:
+            continue
+        groups.append(
+            AgentTasksGroup(
+                agent_id=agent_id,
+                agent_slug=slug,
+                agent_name=name,
+                agent_image=picture,
+                tasks=tasks,
+            )
+        )
+
+    return groups

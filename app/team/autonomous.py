@@ -7,6 +7,7 @@ from fastapi import APIRouter, Body, Depends, Path, Response
 from intentkit.core.autonomous import (
     add_autonomous_task,
     delete_autonomous_task,
+    list_all_autonomous_tasks,
     update_autonomous_task,
 )
 from intentkit.models.agent.autonomous import (
@@ -14,13 +15,37 @@ from intentkit.models.agent.autonomous import (
     AutonomousUpdateRequest,
 )
 
-from app.local.autonomous import AutonomousResponse
+from app.local.autonomous import AllTasksAgentGroup, AutonomousResponse
 from app.team.agent import get_team_agent
 from app.team.auth import verify_team_member
 
 team_autonomous_router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+
+@team_autonomous_router.get(
+    "/teams/{team_id}/autonomous",
+    tags=["Team Autonomous"],
+    operation_id="team_list_all_autonomous",
+    summary="List All Autonomous Tasks (Team)",
+)
+async def list_all_autonomous(
+    auth: tuple[str, str] = Depends(verify_team_member),
+) -> list[AllTasksAgentGroup]:
+    """List all autonomous tasks across all agents in a team, grouped by agent."""
+    _user_id, team_id = auth
+    groups = await list_all_autonomous_tasks(team_id=team_id)
+    return [
+        AllTasksAgentGroup(
+            agent_id=g.agent_id,
+            agent_slug=g.agent_slug,
+            agent_name=g.agent_name,
+            agent_image=g.agent_image,
+            tasks=[AutonomousResponse.from_model(t) for t in g.tasks],
+        )
+        for g in groups
+    ]
 
 
 @team_autonomous_router.get(
