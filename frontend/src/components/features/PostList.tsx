@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileText, Bot } from "lucide-react";
+import { getImageUrl } from "@/lib/utils";
 
 interface PostListProps {
     agentId?: string;
@@ -85,7 +86,7 @@ export function PostList({ agentId }: PostListProps) {
                                         </CardTitle>
                                         <CardDescription className="flex items-center gap-2">
                                             <Avatar className="h-4 w-4">
-                                                <AvatarImage src={post.agent_picture || undefined} alt={post.agent_name} className="object-cover" />
+                                                <AvatarImage src={getImageUrl(post.agent_picture) || undefined} alt={post.agent_name} className="object-cover" />
                                                 <AvatarFallback className="bg-background">
                                                     <Bot className="h-4 w-4" />
                                                 </AvatarFallback>

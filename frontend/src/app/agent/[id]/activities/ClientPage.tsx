@@ -170,7 +170,7 @@ export default function AgentActivitiesPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 rounded-xl border bg-card text-card-foreground shadow p-6 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <Timeline
             agentId={resolvedId}
             agentPicture={getImageUrl(agent?.picture)}
