@@ -1,3 +1,9 @@
+# Release v0.16.5
+
+## Bug Fixes
+
+- Fixed full-width digit rendering in PDF generation when using CJK fonts.
+
 # Release v0.16.4
 
 ## New Features
