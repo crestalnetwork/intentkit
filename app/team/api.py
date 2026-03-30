@@ -39,6 +39,7 @@ from app.team import (
     team_management_router,
     team_public_router,
     team_user_router,
+    team_wechat_router,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ _ = app.include_router(team_lead_router)
 _ = app.include_router(team_management_router)
 _ = app.include_router(team_user_router)
 _ = app.include_router(team_public_router)
+_ = app.include_router(team_wechat_router)
 
 
 async def ensure_system_user_and_team() -> None:
