@@ -1,8 +1,3 @@
-from fastapi import APIRouter
+from app.common.health import health_router
 
-health_router = APIRouter()
-
-
-@health_router.get("/health", include_in_schema=False)
-async def health_check():
-    return {"status": "healthy"}
+__all__ = ["health_router"]

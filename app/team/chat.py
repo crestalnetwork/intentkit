@@ -32,7 +32,7 @@ from intentkit.models.chat import (
 )
 from intentkit.utils.error import IntentKitAPIError
 
-from app.local.chat import (
+from app.common.chat import (
     ChatMessagesResponse,
     ChatUpdateRequest,
     LocalChatCreateRequest,

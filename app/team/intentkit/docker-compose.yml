@@ -59,6 +59,7 @@ services:
       - ../../../.env:/app/.env
       - ../../../intentkit:/app/intentkit
       - ../../../app:/app/app
+      - ../../../public_agents:/app/public_agents
     depends_on:
       db:
         condition: service_healthy
@@ -87,7 +88,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import requests; requests.get('http://localhost:8001/health').raise_for_status()",
+          "import requests; requests.get('http://localhost:8000/health').raise_for_status()",
         ]
       interval: 5s
       timeout: 5s

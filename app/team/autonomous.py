@@ -15,7 +15,7 @@ from intentkit.models.agent.autonomous import (
     AutonomousUpdateRequest,
 )
 
-from app.local.autonomous import AllTasksAgentGroup, AutonomousResponse
+from app.common.autonomous import AllTasksAgentGroup, AutonomousResponse
 from app.team.agent import get_team_agent
 from app.team.auth import verify_team_member
 

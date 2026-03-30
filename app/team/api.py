@@ -28,7 +28,8 @@ from intentkit.utils.error import (
     request_validation_exception_handler,
 )
 
-from app.local.metadata import metadata_router
+from app.common.health import health_router
+from app.common.metadata import metadata_router
 from app.team import (
     team_agent_router,
     team_autonomous_router,
@@ -112,6 +113,7 @@ _ = app.add_middleware(
     allow_headers=["*"],
 )
 
+_ = app.include_router(health_router)
 _ = app.include_router(core_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(team_agent_router)
