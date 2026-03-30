@@ -7,8 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.config import config
 from intentkit.config.db import get_db
+from intentkit.core.team.subscription import (
+    get_subscriptions,
+    subscribe_agent,
+    unsubscribe_agent,
+)
 from intentkit.models.agent_activity import AgentActivity, AgentActivityTable
 from intentkit.models.agent_post import AgentPost, AgentPostBrief, AgentPostTable
+from intentkit.models.team_feed import TeamSubscription
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.pdf import post_pdf_response
 
@@ -218,3 +224,43 @@ async def get_post_pdf_by_slug(
     return await post_pdf_response(
         post, filename=f"{slug}.pdf", cdn_base=config.aws_s3_cdn_url
     )
+
+
+# ---------------------------------------------------------------------------
+# Subscription endpoints
+# ---------------------------------------------------------------------------
+
+LOCAL_TEAM_ID = "system"
+
+
+@content_router.get(
+    "/subscriptions",
+    tags=["Content"],
+    operation_id="list_subscriptions",
+)
+async def list_subscriptions_endpoint() -> list[TeamSubscription]:
+    """List all subscriptions for the system team."""
+    return await get_subscriptions(LOCAL_TEAM_ID)
+
+
+@content_router.post(
+    "/subscriptions/{agent_id}",
+    tags=["Content"],
+    operation_id="subscribe_agent",
+    status_code=201,
+)
+async def subscribe_endpoint(agent_id: str = Path(...)) -> TeamSubscription:
+    """Subscribe the system team to an agent."""
+    return await subscribe_agent(LOCAL_TEAM_ID, agent_id)
+
+
+@content_router.delete(
+    "/subscriptions/{agent_id}",
+    tags=["Content"],
+    operation_id="unsubscribe_agent",
+    status_code=204,
+)
+async def unsubscribe_endpoint(agent_id: str = Path(...)) -> Response:
+    """Unsubscribe the system team from an agent."""
+    await unsubscribe_agent(LOCAL_TEAM_ID, agent_id)
+    return Response(status_code=204)

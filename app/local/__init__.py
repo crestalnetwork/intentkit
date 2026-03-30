@@ -5,6 +5,7 @@ from app.local.content import content_router
 from app.local.health import health_router
 from app.local.lead import lead_router
 from app.local.metadata import metadata_router
+from app.local.public import public_router
 from app.local.schema import schema_router
 from app.local.wechat import wechat_router
 
@@ -15,6 +16,7 @@ __all__ = [
     "content_router",
     "health_router",
     "lead_router",
+    "public_router",
     "schema_router",
     "metadata_router",
     "wechat_router",

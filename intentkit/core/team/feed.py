@@ -3,8 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_session
+from intentkit.models.agent.core import AgentVisibility
+from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent_activity import AgentActivity, AgentActivityTable
 from intentkit.models.agent_post import AgentPostBrief, AgentPostTable
 from intentkit.models.team_feed import (
@@ -16,17 +19,36 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+PUBLIC_TEAM_ID = "public"
+
+
+async def _resolve_target_teams(session: AsyncSession, agent_id: str) -> list[str]:
+    """Get all teams that should receive fan-out for an agent's content."""
+    result = await session.execute(
+        select(TeamSubscriptionTable.team_id).where(
+            TeamSubscriptionTable.agent_id == agent_id
+        )
+    )
+    team_ids = list(result.scalars().all())
+
+    # Ensure public agents fan out to the "public" virtual team
+    if PUBLIC_TEAM_ID not in team_ids:
+        agent_row = await session.get(AgentTable, agent_id)
+        if (
+            agent_row
+            and agent_row.visibility is not None
+            and agent_row.visibility >= AgentVisibility.PUBLIC
+        ):
+            team_ids.append(PUBLIC_TEAM_ID)
+
+    return team_ids
+
 
 async def fan_out_activity(
     activity_id: str, agent_id: str, created_at: datetime
 ) -> None:
     async with get_session() as session:
-        result = await session.execute(
-            select(TeamSubscriptionTable.team_id).where(
-                TeamSubscriptionTable.agent_id == agent_id
-            )
-        )
-        team_ids = result.scalars().all()
+        team_ids = await _resolve_target_teams(session, agent_id)
         if not team_ids:
             return
 
@@ -46,12 +68,7 @@ async def fan_out_activity(
 
 async def fan_out_post(post_id: str, agent_id: str, created_at: datetime) -> None:
     async with get_session() as session:
-        result = await session.execute(
-            select(TeamSubscriptionTable.team_id).where(
-                TeamSubscriptionTable.agent_id == agent_id
-            )
-        )
-        team_ids = result.scalars().all()
+        team_ids = await _resolve_target_teams(session, agent_id)
         if not team_ids:
             return
 

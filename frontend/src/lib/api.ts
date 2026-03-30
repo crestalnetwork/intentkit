@@ -868,6 +868,74 @@ export const postApi = {
 };
 
 /**
+ * Subscription API functions
+ */
+export const subscriptionApi = {
+  async list(): Promise<{ agent_id: string }[]> {
+    const response = await fetch(`${API_BASE}/subscriptions`);
+    if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+    return response.json();
+  },
+
+  async subscribe(agentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/subscriptions/${agentId}`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+  },
+
+  async unsubscribe(agentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/subscriptions/${agentId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+  },
+};
+
+/**
+ * Public API - no auth required
+ */
+export const publicApi = {
+  async getAgents(): Promise<AgentResponse[]> {
+    const response = await fetch(`${API_BASE}/public/agents`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch public agents: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async getTimeline(limit = 20, cursor?: string | null) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set("cursor", cursor);
+    const response = await fetch(`${API_BASE}/public/timeline?${params}`);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch public timeline: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async getPosts(limit = 20, cursor?: string | null) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set("cursor", cursor);
+    const response = await fetch(`${API_BASE}/public/posts?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch public posts: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async getPost(postId: string) {
+    const response = await fetch(`${API_BASE}/public/posts/${postId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch public post: ${response.statusText}`);
+    }
+    return response.json();
+  },
+};
+
+/**
  * Autonomous Task type definition
  */
 export interface AutonomousTask {

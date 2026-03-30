@@ -39,6 +39,7 @@ from app.local import (
     health_router,
     lead_router,
     metadata_router,
+    public_router,
     schema_router,
     wechat_router,
 )
@@ -89,6 +90,15 @@ async def lifespan(app: FastAPI):
     ensure_bucket_exists_and_public()
 
     await ensure_system_user_and_team()
+
+    # Sync public agents from YAML files
+    from intentkit.core.public_agents import (
+        ensure_public_agent_prerequisites,
+        sync_public_agents,
+    )
+
+    await ensure_public_agent_prerequisites()
+    await sync_public_agents()
 
     logger.info("API server start")
     yield
@@ -142,6 +152,7 @@ _ = app.include_router(wechat_router)
 _ = app.include_router(core_router)
 _ = app.include_router(twitter_callback_router, include_in_schema=False)
 _ = app.include_router(twitter_oauth2_router)
+_ = app.include_router(public_router)
 _ = app.include_router(health_router)
 
 

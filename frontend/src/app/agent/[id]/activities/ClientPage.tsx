@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { agentApi, chatApi } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 import { getImageUrl } from "@/lib/utils";
 import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { buildChatThreadPath } from "@/lib/autonomousChat";
@@ -77,6 +78,7 @@ export default function AgentActivitiesPage() {
   );
 
   const displayName = agent?.name || agent?.id || agentId;
+  const canEdit = !agent?.owner || agent.owner === "system";
 
   if (isLoadingAgent) {
     return (
@@ -131,34 +133,41 @@ export default function AgentActivitiesPage() {
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold">{displayName}</h1>
+              <h1 className="text-xl font-bold">
+                {displayName}
+                {agent?.visibility != null && agent.visibility >= 20 && (
+                  <Badge variant="secondary" className="ml-2 text-xs font-normal align-middle">Public</Badge>
+                )}
+              </h1>
               <p className="text-sm text-muted-foreground line-clamp-1">
                 {agent?.purpose || "No description"}
               </p>
             </div>
           </Link>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/agent/${agentId}/edit`}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">More actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {canEdit && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/agent/${agentId}/edit`}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">More actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="text-destructive focus:text-destructive">
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
 
         {/* Page Title */}

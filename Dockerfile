@@ -56,6 +56,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/intentkit /app/intentkit
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/scripts /app/scripts
+COPY --from=builder /app/public_agents /app/public_agents
 
 ARG RELEASE=local
 ENV RELEASE=$RELEASE

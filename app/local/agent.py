@@ -230,7 +230,12 @@ async def get_agents(db: AsyncSession = Depends(get_db)) -> list[AgentResponse]:
     """
     # Query all non-archived agents
     agents = (
-        await db.scalars(select(AgentTable).where(AgentTable.archived_at.is_(None)))
+        await db.scalars(
+            select(AgentTable).where(
+                AgentTable.team_id == "system",
+                AgentTable.archived_at.is_(None),
+            )
+        )
     ).all()
 
     # Batch get agent data

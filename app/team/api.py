@@ -36,6 +36,7 @@ from app.team import (
     team_content_router,
     team_lead_router,
     team_management_router,
+    team_public_router,
     team_user_router,
 )
 
@@ -68,6 +69,15 @@ async def lifespan(app: FastAPI):
     ensure_bucket_exists_and_public()
 
     await ensure_system_user_and_team()
+
+    # Sync public agents from YAML files
+    from intentkit.core.public_agents import (
+        ensure_public_agent_prerequisites,
+        sync_public_agents,
+    )
+
+    await ensure_public_agent_prerequisites()
+    await sync_public_agents()
 
     logger.info("Team API server start")
     yield
@@ -111,6 +121,7 @@ _ = app.include_router(team_content_router)
 _ = app.include_router(team_lead_router)
 _ = app.include_router(team_management_router)
 _ = app.include_router(team_user_router)
+_ = app.include_router(team_public_router)
 
 
 async def ensure_system_user_and_team() -> None:

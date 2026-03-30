@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
   Square,
@@ -12,6 +12,8 @@ import {
   AlertCircle,
   MoreVertical,
   Archive,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -40,7 +42,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { agentApi, chatApi } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { agentApi, chatApi, subscriptionApi } from "@/lib/api";
 import { AgentInfoBar } from "@/components/features/AgentInfoBar";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
@@ -581,6 +584,35 @@ export default function AgentChatPage() {
 
   const displayName = agent.name || agent.id;
   const cachedAvatar = getCachedAgentAvatar(agentId) ?? getImageUrl(agent.picture);
+  const canEdit = !agent?.owner || agent.owner === "system";
+
+  const isPublicAgent = agent?.visibility != null && agent.visibility >= 20;
+  const isOwnAgent = canEdit;
+
+  // Fetch subscriptions to check if we're subscribed
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: subscriptionApi.list,
+    enabled: isPublicAgent && !isOwnAgent,
+  });
+  const isSubscribed = subscriptions.some((s: { agent_id: string }) => s.agent_id === agent?.id);
+
+  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+
+  const subscribeMutation = useMutation({
+    mutationFn: () => subscriptionApi.subscribe(agent!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      setShowSubscribeDialog(false);
+    },
+  });
+  const unsubscribeMutation = useMutation({
+    mutationFn: () => subscriptionApi.unsubscribe(agent!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      setShowSubscribeDialog(false);
+    },
+  });
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
@@ -617,36 +649,64 @@ export default function AgentChatPage() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-xl font-bold">{displayName}</h1>
+              <h1 className="text-xl font-bold">
+                {displayName}
+                {agent?.visibility != null && agent.visibility >= 20 && (
+                  <Badge variant="secondary" className="ml-2 text-xs font-normal align-middle">Public</Badge>
+                )}
+              </h1>
               <p className="text-sm text-muted-foreground line-clamp-1">
                 {agent.description || agent.purpose || "No description"}
               </p>
             </div>
           </Link>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/agent/${agentId}/edit`}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">More actions</span>
+            {canEdit && (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/agent/${agentId}/edit`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setShowArchiveDialog(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">More actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => setShowArchiveDialog(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            {isPublicAgent && !isOwnAgent && (
+              <Button
+                variant={isSubscribed ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowSubscribeDialog(true)}
+              >
+                {isSubscribed ? (
+                  <>
+                    <BellOff className="mr-2 h-4 w-4" />
+                    Subscribed
+                  </>
+                ) : (
+                  <>
+                    <Bell className="mr-2 h-4 w-4" />
+                    Subscribe
+                  </>
+                )}
+              </Button>
+            )}
 
             {/* Archive Confirmation Dialog */}
             <AlertDialog
@@ -698,6 +758,38 @@ export default function AgentChatPage() {
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {isArchiving ? "Archiving..." : "Archive"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Subscribe/Unsubscribe Confirmation Dialog */}
+            <AlertDialog
+              open={showSubscribeDialog}
+              onOpenChange={setShowSubscribeDialog}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {isSubscribed ? "Unsubscribe from Agent" : "Subscribe to Agent"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {isSubscribed
+                      ? "After unsubscribing, this agent's posts and activities will no longer appear in your Timeline and Posts. Your agents will no longer be able to call this agent."
+                      : "After subscribing, this agent's posts and activities will appear in your Timeline and Posts. Your agents will be able to call this agent as a sub-agent."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      isSubscribed
+                        ? unsubscribeMutation.mutate()
+                        : subscribeMutation.mutate()
+                    }
+                    disabled={subscribeMutation.isPending || unsubscribeMutation.isPending}
+                  >
+                    {isSubscribed ? "Unsubscribe" : "Subscribe"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

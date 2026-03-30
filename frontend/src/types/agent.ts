@@ -37,6 +37,11 @@ export interface Agent {
   created_at: string;
   updated_at: string;
 
+  // Ownership and visibility
+  owner: string | null;
+  team_id: string | null;
+  visibility: number | null;
+
   // Flattened AgentResponse fields
   linked_twitter_username: string | null;
   linked_telegram_username: string | null;
