@@ -185,3 +185,5 @@ rustfs_data
 
 # worktrees
 .worktrees/
+
+.next
