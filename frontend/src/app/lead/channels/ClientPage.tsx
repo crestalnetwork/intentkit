@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Trash2, Loader2, Check, Radio } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MessageCircle, Trash2, Loader2, Check, Radio, Copy, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { leadApi } from "@/lib/api";
 import {
   channelApi,
   type TeamChannel,
+  type TelegramStatus,
   type WechatQrStatusResponse,
 } from "@/lib/api";
 import type { LucideIcon } from "lucide-react";
@@ -121,12 +122,39 @@ export default function ChannelsPage() {
 // Telegram Card
 // =============================================================================
 
+function StatusBadge({ status }: { status: string | null | undefined }) {
+  if (status === "listening") {
+    return <Badge variant="default">Listening</Badge>;
+  }
+  if (status === "error") {
+    return <Badge variant="destructive">Error</Badge>;
+  }
+  return <Badge variant="secondary">{status === "pending" ? "Connecting..." : "Disconnected"}</Badge>;
+}
+
 function TelegramCard({ channel }: { channel?: TeamChannel }) {
   const queryClient = useQueryClient();
   const [token, setToken] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const isConnected = !!channel && channel.enabled;
+
+  // Poll telegram status when connected
+  const { data: telegramStatus } = useQuery({
+    queryKey: ["telegram-status"],
+    queryFn: () => channelApi.getTelegramStatus(),
+    enabled: isConnected,
+    refetchInterval: 5000,
+  });
+
+  const removeWhitelistMutation = useMutation({
+    mutationFn: (chatId: string) =>
+      channelApi.removeTelegramWhitelist(chatId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
+    },
+  });
 
   const handleSave = async () => {
     if (!token.trim()) return;
@@ -146,9 +174,17 @@ function TelegramCard({ channel }: { channel?: TeamChannel }) {
     try {
       await channelApi.deleteChannel("telegram");
       await queryClient.invalidateQueries({ queryKey: ["lead-channels"] });
+      await queryClient.invalidateQueries({ queryKey: ["telegram-status"] });
     } catch {
       // error handled by query
     }
+  };
+
+  const handleCopyCode = async () => {
+    if (!telegramStatus?.verification_code) return;
+    await navigator.clipboard.writeText(telegramStatus.verification_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -158,25 +194,96 @@ function TelegramCard({ channel }: { channel?: TeamChannel }) {
           <MessageCircle className="h-5 w-5 text-blue-500" />
           <h3 className="font-semibold">Telegram</h3>
         </div>
-        <Badge variant={isConnected ? "default" : "secondary"}>
-          {isConnected ? "Connected" : "Disconnected"}
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-3">
         {isConnected ? (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Bot token configured
-            </p>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Disconnect
-            </Button>
-          </div>
+          <StatusBadge status={telegramStatus?.status} />
+        ) : (
+          <Badge variant="secondary">Disconnected</Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isConnected ? (
+          <>
+            {/* Bot info */}
+            {telegramStatus?.bot_username && (
+              <p className="text-sm text-muted-foreground">
+                Bot: @{telegramStatus.bot_username}
+              </p>
+            )}
+
+            {/* Verification code */}
+            {telegramStatus?.verification_code && (
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Verification Code:</span>
+                  <code className="rounded bg-muted px-2 py-1 font-mono text-lg font-bold">
+                    {telegramStatus.verification_code}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={handleCopyCode}
+                  >
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Send this code from any new Telegram chat or group to activate it with your bot.
+                </p>
+              </div>
+            )}
+
+            {/* Whitelist */}
+            {telegramStatus?.whitelist && telegramStatus.whitelist.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Verified Chats</h4>
+                <div className="rounded-md border divide-y">
+                  {telegramStatus.whitelist.map((entry) => (
+                    <div
+                      key={entry.chat_id}
+                      className="flex items-center justify-between px-3 py-2 text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium truncate block">
+                          {entry.chat_name || entry.chat_id}
+                        </span>
+                        {entry.chat_name && (
+                          <span className="text-xs text-muted-foreground">
+                            {entry.chat_id}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeWhitelistMutation.mutate(entry.chat_id)}
+                        disabled={removeWhitelistMutation.isPending}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Disconnect */}
+            <div className="flex justify-end">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Disconnect
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="flex gap-2">
             <Input

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -56,11 +58,18 @@ func main() {
 	// For safety, we won't auto-migrate Agent table as it is core. AgentData is also core.
 	// So we skip auto-migration to avoid altering core tables unexpectedly.
 
+	// Initialize Redis
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+
 	// Initialize API Client
 	apiClient := api.NewClient(cfg.InternalBaseURL)
 
 	// Initialize Bot Manager
-	manager := bot.NewManager(db, cfg, apiClient)
+	manager := bot.NewManager(db, cfg, apiClient, redisClient)
 
 	// Start Manager
 	go manager.Start()

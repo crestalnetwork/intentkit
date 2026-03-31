@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import random
 
 from sqlalchemy import delete, select
 
@@ -10,6 +11,7 @@ from intentkit.config.db import get_session
 from intentkit.models.team import TeamTable
 from intentkit.models.team_channel import (
     TeamChannel,
+    TeamChannelDataTable,
     TeamChannelTable,
     TelegramChannelConfig,
     WechatChannelConfig,
@@ -64,6 +66,31 @@ async def set_team_channel(
                 team.default_channel = channel_type
                 db.add(team)
 
+        # For telegram, initialize channel data with a pending status and verification code
+        if channel_type == "telegram":
+            code = f"{random.randint(0, 9999):04d}"
+            data_row = await db.get(
+                TeamChannelDataTable,
+                {"team_id": team_id, "channel_type": channel_type},
+            )
+            if data_row:
+                if data_row.data is None:
+                    data_row.data = {}
+                data_row.data["status"] = "pending"
+                data_row.data["verification_code"] = code
+                db.add(data_row)
+            else:
+                data_row = TeamChannelDataTable(
+                    team_id=team_id,
+                    channel_type=channel_type,
+                    data={
+                        "status": "pending",
+                        "verification_code": code,
+                        "whitelist": [],
+                    },
+                )
+                db.add(data_row)
+
         await db.commit()
 
     result = await TeamChannel.get(team_id, channel_type)
@@ -73,13 +100,19 @@ async def set_team_channel(
 
 
 async def remove_team_channel(team_id: str, channel_type: str) -> None:
-    """Delete a team channel record."""
+    """Delete a team channel record and its associated runtime data."""
     async with get_session() as db:
         stmt = delete(TeamChannelTable).where(
             TeamChannelTable.team_id == team_id,
             TeamChannelTable.channel_type == channel_type,
         )
         await db.execute(stmt)
+        # Also clean up runtime data (status, whitelist, etc.)
+        stmt_data = delete(TeamChannelDataTable).where(
+            TeamChannelDataTable.team_id == team_id,
+            TeamChannelDataTable.channel_type == channel_type,
+        )
+        await db.execute(stmt_data)
         await db.commit()
 
 

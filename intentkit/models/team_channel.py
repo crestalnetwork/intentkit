@@ -56,12 +56,49 @@ class TelegramChannelConfig(BaseModel):
     token: str
 
 
+class TelegramWhitelistEntry(BaseModel):
+    """A single verified chat in the Telegram whitelist."""
+
+    chat_id: str
+    chat_name: str | None = None
+    verified_at: str
+
+
 class TelegramChannelData(BaseModel):
     """Typed runtime data for a Telegram channel bot."""
 
-    bot_id: str
+    bot_id: str | None = None
     bot_username: str | None = None
     bot_name: str | None = None
+    status: str | None = None  # "listening" | "error" | "pending"
+    status_message: str | None = None
+    verification_code: str | None = None
+    whitelist: list[TelegramWhitelistEntry] = []
+
+
+class TelegramStatus(BaseModel):
+    """Response model for Telegram channel status endpoint."""
+
+    status: str | None = None
+    verification_code: str | None = None
+    bot_username: str | None = None
+    bot_name: str | None = None
+    whitelist: list[TelegramWhitelistEntry] = []
+
+    @classmethod
+    def from_data(cls, d: dict[str, object]) -> TelegramStatus:
+        """Parse team_channel_data JSONB dict into a TelegramStatus."""
+        try:
+            parsed = TelegramChannelData.model_validate(d)
+            return cls(
+                status=parsed.status,
+                verification_code=parsed.verification_code,
+                bot_username=parsed.bot_username,
+                bot_name=parsed.bot_name,
+                whitelist=parsed.whitelist,
+            )
+        except Exception:
+            return cls()
 
 
 class WechatChannelConfig(BaseModel):

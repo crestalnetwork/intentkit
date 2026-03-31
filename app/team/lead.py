@@ -38,7 +38,11 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageTable,
 )
-from intentkit.models.team_channel import TeamChannel
+from intentkit.models.team_channel import (
+    TeamChannel,
+    TeamChannelData,
+    TelegramStatus,
+)
 from intentkit.utils.error import IntentKitAPIError
 
 from app.common.chat import (
@@ -430,6 +434,54 @@ async def set_lead_default_channel(
             status_code=400, key="InvalidDefaultChannel", message=str(e)
         )
     return {"default_channel": body.channel_type}
+
+
+# =============================================================================
+# Telegram Status & Whitelist Endpoints
+# =============================================================================
+
+
+@team_lead_router.get(
+    "/teams/{team_id}/lead/channels/telegram/status",
+    response_model=TelegramStatus,
+    operation_id="team_get_telegram_status",
+    summary="Get Telegram channel status (Team)",
+    tags=["Team Lead"],
+)
+async def get_telegram_status(
+    auth: tuple[str, str] = Depends(verify_team_member),
+):
+    """Get the Telegram channel status including verification code and whitelist."""
+    _user_id, team_id = auth
+    data = await TeamChannelData.get(team_id, "telegram")
+    if not data or not data.data:
+        return TelegramStatus()
+    return TelegramStatus.from_data(data.data)
+
+
+@team_lead_router.delete(
+    "/teams/{team_id}/lead/channels/telegram/whitelist/{chat_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="team_remove_telegram_whitelist",
+    summary="Remove a chat from Telegram whitelist (Team)",
+    tags=["Team Lead"],
+)
+async def remove_telegram_whitelist(
+    chat_id: str = Path(..., description="Telegram chat ID to remove"),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+):
+    """Remove a chat from the Telegram channel whitelist."""
+    _user_id, team_id = auth
+    data = await TeamChannelData.get(team_id, "telegram")
+    if not data or not data.data:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    raw_whitelist = data.data.get("whitelist")
+    whitelist = list(raw_whitelist) if isinstance(raw_whitelist, list) else []
+    data.data["whitelist"] = [
+        e for e in whitelist if isinstance(e, dict) and e.get("chat_id") != chat_id
+    ]
+    await data.save()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # =============================================================================

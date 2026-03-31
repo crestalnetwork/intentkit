@@ -473,6 +473,20 @@ export interface TeamChannel {
   updated_at: string;
 }
 
+export interface TelegramWhitelistEntry {
+  chat_id: string;
+  chat_name: string | null;
+  verified_at: string;
+}
+
+export interface TelegramStatus {
+  status: string | null;
+  verification_code: string | null;
+  bot_username: string | null;
+  bot_name: string | null;
+  whitelist: TelegramWhitelistEntry[];
+}
+
 export interface WechatQrCodeResponse {
   qrcode: string;
   qrcode_img_content: string;
@@ -560,6 +574,24 @@ export const channelApi = {
       throw new Error(`Failed to connect WeChat: ${response.statusText}`);
     }
     return response.json();
+  },
+
+  async getTelegramStatus(): Promise<TelegramStatus> {
+    const response = await fetch(`${API_BASE}/lead/channels/telegram/status`);
+    if (!response.ok) {
+      throw new Error(`Failed to get Telegram status: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async removeTelegramWhitelist(chatId: string): Promise<void> {
+    const response = await fetch(
+      `${API_BASE}/lead/channels/telegram/whitelist/${encodeURIComponent(chatId)}`,
+      { method: "DELETE" },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to remove from whitelist: ${response.statusText}`);
+    }
   },
 };
 

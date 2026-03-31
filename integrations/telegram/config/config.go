@@ -21,6 +21,12 @@ type Config struct {
 	// Internal API
 	InternalBaseURL string `env:"INTERNAL_BASE_URL" default:"http://intent-api"`
 
+	// Redis
+	RedisHost     string `env:"REDIS_HOST"`
+	RedisPort     string `env:"REDIS_PORT" default:"6379"`
+	RedisPassword string `env:"REDIS_PASSWORD"`
+	RedisDB       int    `env:"REDIS_DB" default:"0"`
+
 	// Telegram
 	TgNewAgentPollInterval int `env:"TG_NEW_AGENT_POLL_INTERVAL" default:"10"`
 }
