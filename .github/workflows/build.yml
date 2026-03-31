@@ -120,6 +120,8 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          build-args: |
+            NEXT_PUBLIC_VERSION=${{ github.event.release.tag_name || 'dev' }}
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}

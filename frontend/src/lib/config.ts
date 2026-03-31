@@ -31,6 +31,10 @@ export const config = {
    * Example: "https://cdn.example.com"
    */
   awsS3CdnUrl: process.env.NEXT_PUBLIC_AWS_S3_CDN_URL || "",
+  /**
+   * Application version from build args (GitHub release tag)
+   */
+  version: process.env.NEXT_PUBLIC_VERSION || "dev",
 } as const;
 
 /**
