@@ -86,6 +86,19 @@ async def _sync_supabase_user(user_id: str) -> User:
         update_fields.setdefault("extra", {})
         update_fields["extra"]["avatar_url"] = user_metadata["avatar_url"]
 
+    # Extract wallet addresses from Web3 identities
+    # Supabase Web3 auth stores: provider="web3", identity_data={address, chain, ...}
+    for identity in data.get("identities") or []:
+        if identity.get("provider") != "web3":
+            continue
+        identity_data = identity.get("identity_data") or {}
+        address = identity_data.get("address")
+        chain = identity_data.get("chain")
+        if address and chain == "ethereum":
+            update_fields["evm_wallet_address"] = address
+        elif address and chain == "solana":
+            update_fields["solana_wallet_address"] = address
+
     update_fields["synced_at"] = datetime.now(UTC)
 
     return await UserUpdate.model_validate(update_fields).patch(user_id)
