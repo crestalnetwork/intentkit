@@ -168,7 +168,7 @@ class UpdateTeamAgent(LeadSkill):
 
         # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
         if purpose is not None:
-            from intentkit.core.lead.engine import invalidate_lead_cache
+            from intentkit.core.lead.cache import invalidate_lead_cache
 
             invalidate_lead_cache(context.agent_id)
 

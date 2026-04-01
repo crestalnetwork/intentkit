@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import AsyncGenerator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 from langgraph.graph.state import CompiledStateGraph
@@ -13,6 +13,12 @@ from langgraph.graph.state import CompiledStateGraph
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.engine import stream_agent_raw
 from intentkit.core.executor import build_executor
+from intentkit.core.lead.cache import (
+    cleanup_cache,
+    lead_agents,
+    lead_cached_at,
+    lead_executors,
+)
 from intentkit.core.lead.service import get_team_agents, verify_team_membership
 from intentkit.core.lead.skills import (
     create_team_agent_skill,
@@ -36,16 +42,9 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 
-_LEAD_CACHE_TTL = timedelta(hours=1)
-
-_lead_executors: dict[str, CompiledStateGraph[AgentState, AgentContext, Any, Any]] = {}
-_lead_agents: dict[str, Agent] = {}
-_lead_cached_at: dict[str, datetime] = {}
-
-
 async def get_lead_agent(team_id: str) -> Agent:
     """Get the lead agent for a team, using cache if available."""
-    lead_agent = _lead_agents.get(team_id)
+    lead_agent = lead_agents.get(team_id)
     if not lead_agent:
         lead_agent = await _build_lead_agent(team_id)
     return lead_agent
@@ -180,10 +179,10 @@ async def _get_lead_executor(
     team_id: str,
 ) -> tuple[CompiledStateGraph[AgentState, AgentContext, Any, Any], Agent, float]:
     now = datetime.now(timezone.utc)
-    _cleanup_cache(now)
+    cleanup_cache(now)
 
-    executor = _lead_executors.get(team_id)
-    lead_agent = _lead_agents.get(team_id)
+    executor = lead_executors.get(team_id)
+    lead_agent = lead_agents.get(team_id)
     cold_start_cost = 0.0
 
     if not executor or not lead_agent:
@@ -191,7 +190,7 @@ async def _get_lead_executor(
 
         if not lead_agent:
             lead_agent = await _build_lead_agent(team_id)
-            _lead_agents[team_id] = lead_agent
+            lead_agents[team_id] = lead_agent
 
         if not executor:
             custom_skills = [
@@ -211,40 +210,12 @@ async def _get_lead_executor(
                 AgentData.model_construct(id=lead_agent.id),
                 custom_skills,
             )
-            _lead_executors[team_id] = executor
+            lead_executors[team_id] = executor
 
         cold_start_cost = time.perf_counter() - start
-        _lead_cached_at[team_id] = now
+        lead_cached_at[team_id] = now
         logger.info("Initialized lead executor for team %s", team_id)
     else:
-        _lead_cached_at[team_id] = now
+        lead_cached_at[team_id] = now
 
     return executor, lead_agent, cold_start_cost
-
-
-def invalidate_lead_cache(team_id: str) -> None:
-    """Remove cached lead agent and executor for a team.
-
-    Call this when the team's agent list changes (create, archive, reactivate)
-    so the lead agent is rebuilt with an up-to-date sub_agents list.
-    """
-    _ = _lead_cached_at.pop(team_id, None)
-    _ = _lead_executors.pop(team_id, None)
-    _ = _lead_agents.pop(team_id, None)
-    logger.debug("Invalidated lead cache for team %s", team_id)
-
-
-def _cleanup_cache(now: datetime) -> None:
-    """Evict expired lead cache entries.
-
-    NOTE: This cleanup runs opportunistically on each request rather than via a
-    separate scheduler. This is intentional — a dedicated periodic task would be
-    too heavyweight for this use case.
-    """
-    expired_before = now - _LEAD_CACHE_TTL
-    for cache_key, cached_time in list(_lead_cached_at.items()):
-        if cached_time < expired_before:
-            _ = _lead_cached_at.pop(cache_key, None)
-            _ = _lead_executors.pop(cache_key, None)
-            _ = _lead_agents.pop(cache_key, None)
-            logger.debug("Removed expired lead executor for %s", cache_key)
