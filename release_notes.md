@@ -1,15 +1,13 @@
 ## New Features
 
-### Telegram Channel Verification System
-- Team Telegram channels now require verification before chats can interact with the bot. When a bot is connected, a 4-digit verification code is generated. New private chats or group conversations must send this code to activate. The code automatically regenerates after each successful verification for security.
+### Version Display
+- The frontend sidebar now shows the current IntentKit version, making it easier to identify which release is deployed.
 
-### Telegram Bot Status Monitoring
-- The Channels page now shows real-time bot listening status (Listening / Connecting / Error), bot username, and a list of all verified chats. Admins can remove verified chats directly from the UI.
-
-### Verification Rate Limiting
-- To prevent brute-force attempts, verification is limited to 3 attempts per chat within a 10-minute window.
+### On-Chain Skills Test Coverage
+- Added comprehensive BDD tests for on-chain read-only skills including Aave V3, Aerodrome, ERC-20, ERC-721, Morpho, PancakeSwap, and Uniswap, tested against real RPC endpoints.
 
 ## Improvements
-- Minor gitignore improvements.
+- Fixed and updated broken tests across the test suite to match the current implementation.
+- Resolved a circular import issue in the lead agent module.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.1...v0.17.2
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.3...v0.17.4
