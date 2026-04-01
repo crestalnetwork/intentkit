@@ -90,7 +90,7 @@ services:
           "-c",
           "import requests; requests.get('http://localhost:8000/health').raise_for_status()",
         ]
-      interval: 5s
+      interval: 30s
       timeout: 5s
       retries: 5
     restart: unless-stopped
@@ -131,7 +131,7 @@ services:
       - INTERNAL_BASE_URL=http://api:8000
     healthcheck:
       test: ["CMD", "python", "scripts/check_heartbeat.py", "autonomous"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 3
     restart: unless-stopped
@@ -168,7 +168,7 @@ services:
       - AWS_S3_REGION_NAME=us-east-1
     healthcheck:
       test: ["CMD", "python", "scripts/check_heartbeat.py", "scheduler"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 3
     restart: unless-stopped

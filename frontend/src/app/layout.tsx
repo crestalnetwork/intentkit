@@ -6,6 +6,7 @@ import Providers from "./providers";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { TopNav } from "@/components/features/TopNav";
+import { FloatingFooter } from "@/components/features/FloatingFooter";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           </div>
         </Providers>
         <Toaster />
+        <FloatingFooter />
       </body>
     </html>
   );

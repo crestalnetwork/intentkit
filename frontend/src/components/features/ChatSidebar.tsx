@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { config } from "@/lib/config";
 import {
   Plus,
   MoreVertical,
@@ -440,10 +439,6 @@ export function ChatSidebar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Version Footer */}
-      <div className="px-3 py-2 text-[10px] text-muted-foreground/50">
-        IntentKit {config.version} &copy; {new Date().getFullYear()} Crestal
-      </div>
     </div>
   );
 }
