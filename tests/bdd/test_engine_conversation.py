@@ -27,13 +27,15 @@ from intentkit.models.chat import (
     ChatMessageTable,
 )
 from intentkit.models.credit import CreditEventTable, EventType
+from intentkit.models.llm_picker import pick_default_model
 from intentkit.utils.error import IntentKitAPIError
 
 # Use session-scoped event loop to share DB connections across tests
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-# Common model for all tests – override with BDD_TEST_MODEL env var if needed
-MODEL = os.environ.get("BDD_TEST_MODEL", "GLM-4.7")
+# Common model for all tests – use the LLM picker's default model
+# Override with BDD_TEST_MODEL env var if needed
+MODEL = os.environ.get("BDD_TEST_MODEL") or pick_default_model()
 
 
 # ---------------------------------------------------------------------------

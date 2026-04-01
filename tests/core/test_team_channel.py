@@ -101,12 +101,14 @@ class TestSetTeamChannel:
     async def test_creates_new_channel_and_auto_sets_default(self):
         ctx, mock_db = _make_mock_session()
 
-        # First db.get -> TeamChannelTable -> None (new channel)
-        # Second db.get -> TeamTable -> team with no default_channel
+        # db.get calls:
+        # 1. TeamChannelTable -> None (new channel)
+        # 2. TeamTable -> team with no default_channel
+        # 3. TeamChannelDataTable -> None (no existing data row)
         mock_team = MagicMock(spec=TeamTable)
         mock_team.default_channel = None
 
-        mock_db.get = AsyncMock(side_effect=[None, mock_team])
+        mock_db.get = AsyncMock(side_effect=[None, mock_team, None])
 
         expected_channel = TeamChannel(
             team_id="team1",
@@ -144,8 +146,10 @@ class TestSetTeamChannel:
         ctx, mock_db = _make_mock_session()
 
         existing_row = _make_channel_table_row(config={"token": "old"})
-        # db.get returns existing row (no second call because is_new is False)
-        mock_db.get = AsyncMock(return_value=existing_row)
+        # db.get calls:
+        # 1. TeamChannelTable -> existing row (is_new=False, no TeamTable lookup)
+        # 2. TeamChannelDataTable -> None (telegram data init)
+        mock_db.get = AsyncMock(side_effect=[existing_row, None])
 
         expected_channel = TeamChannel(
             team_id="team1",
@@ -189,7 +193,8 @@ class TestRemoveTeamChannel:
         with patch(f"{MODULE}.get_session", return_value=ctx):
             await remove_team_channel("team1", "telegram")
 
-        mock_db.execute.assert_awaited_once()
+        # Two deletes: channel record + channel data
+        assert mock_db.execute.await_count == 2
         mock_db.commit.assert_awaited_once()
 
 

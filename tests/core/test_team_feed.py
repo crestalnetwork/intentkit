@@ -83,24 +83,27 @@ class TestFanOutActivity:
     async def test_no_subscriptions_returns_early(self, monkeypatch):
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(return_value=_scalars_result([]))
+        # _resolve_target_teams also calls session.get for agent visibility;
+        # return None so no public-team fan-out occurs
+        mock_session.get = AsyncMock(return_value=None)
         monkeypatch.setattr(
             feed_module, "get_session", lambda: _mock_session_context(mock_session)
         )
 
         await fan_out_activity("act-1", "agent-1", datetime.now())
 
-        # Only the subscription query should have been executed
+        # Subscription query + no insert (empty teams after visibility check)
         assert mock_session.execute.await_count == 1
         mock_session.commit.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_multiple_subscriptions_inserts(self, monkeypatch):
         mock_session = AsyncMock()
-        # First call: subscription query returns team ids
+        # First call: subscription query returns team ids (includes "public")
         # Second call: insert statement
         mock_session.execute = AsyncMock(
             side_effect=[
-                _scalars_result(["team-a", "team-b"]),
+                _scalars_result(["team-a", "public"]),
                 MagicMock(),  # insert result
             ]
         )
@@ -124,6 +127,9 @@ class TestFanOutPost:
     async def test_no_subscriptions_returns_early(self, monkeypatch):
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(return_value=_scalars_result([]))
+        # _resolve_target_teams also calls session.get for agent visibility;
+        # return None so no public-team fan-out occurs
+        mock_session.get = AsyncMock(return_value=None)
         monkeypatch.setattr(
             feed_module, "get_session", lambda: _mock_session_context(mock_session)
         )
@@ -136,9 +142,11 @@ class TestFanOutPost:
     @pytest.mark.asyncio
     async def test_multiple_subscriptions_inserts(self, monkeypatch):
         mock_session = AsyncMock()
+        # Include "public" in team ids so _resolve_target_teams skips
+        # the agent visibility check
         mock_session.execute = AsyncMock(
             side_effect=[
-                _scalars_result(["team-x", "team-y", "team-z"]),
+                _scalars_result(["team-x", "team-y", "public"]),
                 MagicMock(),
             ]
         )
