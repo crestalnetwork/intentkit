@@ -1,9 +1,5 @@
-## Improvements
+## What's New
 
-### Floating Version Footer
-- The version and copyright footer now floats at the bottom-left corner of every page, ensuring it's always visible regardless of which section you're viewing.
+- Added Web3 wallet address syncing from Supabase — EVM and Solana wallet addresses are now automatically extracted from user identities during profile sync
 
-### Infrastructure
-- Optimized Docker health check intervals for better resource efficiency.
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.4...v0.17.5
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.5...v0.17.6
