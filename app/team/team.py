@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 class CreateTeamRequest(BaseModel):
     id: str = Field(
-        ..., min_length=2, max_length=60, pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$"
+        ..., min_length=3, max_length=20, pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$"
     )
     name: str = Field(..., min_length=1, max_length=100)
 

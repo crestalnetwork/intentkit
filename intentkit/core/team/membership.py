@@ -58,10 +58,10 @@ def validate_team_id_format(team_id: str) -> dict[str, bool | str | None]:
     Returns:
         {"valid": bool, "reason": str | None}
     """
-    if len(team_id) < 2:
-        return {"valid": False, "reason": "Team ID must be at least 2 characters"}
-    if len(team_id) > 60:
-        return {"valid": False, "reason": "Team ID must be at most 60 characters"}
+    if len(team_id) < 3:
+        return {"valid": False, "reason": "Team ID must be at least 3 characters"}
+    if len(team_id) > 20:
+        return {"valid": False, "reason": "Team ID must be at most 20 characters"}
     if not _TEAM_ID_PATTERN.match(team_id):
         return {
             "valid": False,
