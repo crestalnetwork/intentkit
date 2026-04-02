@@ -171,6 +171,7 @@ cython_debug/
 .cursor
 .zed
 CLAUDE.local.md
+.obsidian
 
 # web3
 wallet_data.txt

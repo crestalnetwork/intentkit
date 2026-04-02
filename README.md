@@ -36,11 +36,11 @@ If you are looking for a robust, cloud-native solution, IntentKit is for you.
 
 ## Documentation
 
-Please check out the [Documentation](https://intentcat.com/docs) before getting started.
+Please check out the [Documentation](https://intentcat.com/docs/) before getting started.
 
 ## Deployment
 
-Read the [Deployment Guide](https://intentcat.com/docs/deployment) to get started with your setup.
+Read the [Deployment Guide](https://intentcat.com/docs/deployment/) to get started with your setup.
 
 ## Other Use Cases
 
