@@ -4,13 +4,11 @@ import json
 import logging
 from datetime import datetime
 
-from epyxid import XID
 from fastapi import APIRouter, Body, Depends, File, Path, Response, UploadFile
 from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import update as sa_update
 
 from intentkit.clients.moralis import get_wallet_net_worth
-from intentkit.clients.s3 import store_image_bytes
 from intentkit.clients.supabase import get_user_identities, parse_linked_providers
 from intentkit.config.db import get_session
 from intentkit.core.team.channel import get_default_channel, set_default_channel
@@ -26,6 +24,7 @@ from intentkit.core.team.membership import (
 from intentkit.models.team import TeamMember, TeamPlan, TeamRole, TeamTable
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.upload import validate_and_store_image
 
 from app.team.auth import get_current_user, verify_team_admin, verify_team_member
 from app.team.user import invalidate_user_cache
@@ -209,27 +208,7 @@ async def upload_team_picture(
     **Returns:**
     * `dict` with `path` - The relative S3 path of the uploaded image
     """
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise IntentKitAPIError(400, "BadRequest", "File must be an image")
-
-    content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise IntentKitAPIError(400, "BadRequest", "Image must be less than 5MB")
-
-    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp"}
-    ext = (
-        file.filename.rsplit(".", 1)[-1].lower()
-        if file.filename and "." in file.filename
-        else ""
-    )
-    if ext not in allowed_extensions:
-        ext = "jpg"
-    key = f"avatars/{XID()}.{ext}"
-
-    path = await store_image_bytes(content, key, content_type=file.content_type)
-    if not path:
-        raise IntentKitAPIError(500, "ServerError", "Failed to upload image to storage")
-
+    path = await validate_and_store_image(file, "avatars/")
     return {"path": path}
 
 

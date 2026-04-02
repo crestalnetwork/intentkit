@@ -4,7 +4,6 @@ import logging
 from datetime import UTC, datetime
 from typing import TypedDict
 
-from epyxid import XID
 from fastapi import (
     APIRouter,
     Body,
@@ -20,7 +19,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from yaml import safe_load
 
-from intentkit.clients.s3 import store_image_bytes
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
@@ -46,6 +44,7 @@ from intentkit.models.agent import (
 from intentkit.models.agent_data import AgentData, AgentDataTable
 from intentkit.skills import __all__ as skill_categories
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.upload import validate_and_store_image
 
 agent_router = APIRouter()
 
@@ -559,28 +558,7 @@ async def upload_agent_picture(
     **Returns:**
     * `dict` with `path` - The relative S3 path of the uploaded image
     """
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise IntentKitAPIError(400, "BadRequest", "File must be an image")
-
-    content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise IntentKitAPIError(400, "BadRequest", "Image must be less than 5MB")
-
-    # Extract and validate file extension
-    allowed_extensions = {"jpg", "jpeg", "png", "gif", "webp"}
-    ext = (
-        file.filename.rsplit(".", 1)[-1].lower()
-        if file.filename and "." in file.filename
-        else ""
-    )
-    if ext not in allowed_extensions:
-        ext = "jpg"
-    key = f"avatars/{XID()}.{ext}"
-
-    path = await store_image_bytes(content, key, content_type=file.content_type)
-    if not path:
-        raise IntentKitAPIError(500, "ServerError", "Failed to upload image to storage")
-
+    path = await validate_and_store_image(file, "avatars/")
     return {"path": path}
 
 

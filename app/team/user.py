@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Body, Depends, Response
-from pydantic import BaseModel, TypeAdapter
+from fastapi import APIRouter, Body, Depends, File, Response, UploadFile
+from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import update
 
 from intentkit.clients.supabase import (
@@ -22,6 +22,7 @@ from intentkit.core.team.membership import check_permission
 from intentkit.models.team import Team, TeamPlan, TeamRole, TeamTable
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.utils.upload import validate_and_store_image
 
 from app.team.auth import get_current_user
 
@@ -82,6 +83,9 @@ async def _sync_supabase_user(user_id: str) -> User:
             return existing
         return await UserUpdate.model_validate({}).patch(user_id)
 
+    # Load existing user to check current state
+    existing_user = await User.get(user_id)
+
     update_fields: dict[str, Any] = {}
     if data.get("email"):
         update_fields["email"] = data["email"]
@@ -96,11 +100,14 @@ async def _sync_supabase_user(user_id: str) -> User:
 
     # Extract wallet addresses and linked accounts from identities
     linked_accounts: dict[str, Any] = {}
+    has_google = False
+    evm_address: str | None = None
     for identity in data.get("identities") or []:
         provider = identity.get("provider")
         identity_data = identity.get("identity_data") or {}
 
         if provider == "google":
+            has_google = True
             linked_accounts["google"] = {
                 "email": identity_data.get("email"),
                 "identity_id": identity.get("id"),
@@ -109,6 +116,7 @@ async def _sync_supabase_user(user_id: str) -> User:
             address = identity_data.get("address")
             chain = identity_data.get("chain")
             if address and chain == "ethereum":
+                evm_address = address
                 update_fields["evm_wallet_address"] = address
                 linked_accounts["evm"] = {
                     "address": address,
@@ -118,6 +126,20 @@ async def _sync_supabase_user(user_id: str) -> User:
                 update_fields["solana_wallet_address"] = address
 
     update_fields["linked_accounts"] = linked_accounts
+
+    # Sync name: only set if user has no name yet (don't overwrite user-edited name)
+    if not (existing_user and existing_user.name):
+        if has_google and user_metadata.get("full_name"):
+            update_fields["name"] = user_metadata["full_name"]
+        elif evm_address:
+            update_fields["name"] = f"{evm_address[:6]}...{evm_address[-4:]}"
+
+    # Sync avatar: from Google avatar_url if user has no avatar yet
+    google_avatar = user_metadata.get("avatar_url")
+    if google_avatar and has_google:
+        if not (existing_user and existing_user.avatar):
+            update_fields["avatar"] = google_avatar
+
     update_fields["synced_at"] = datetime.now(UTC)
 
     return await UserUpdate.model_validate(update_fields).patch(user_id)
@@ -273,6 +295,49 @@ async def unlink_account(
     # Return updated state: EVM removed, Google remains
     providers.pop("evm", None)
     return _linked_accounts_response(providers)
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=100)
+    avatar: str | None = None
+
+
+@team_user_router.patch("/user/profile")
+async def update_profile(
+    body: UpdateProfileRequest = Body(...),
+    user_id: str = Depends(get_current_user),
+) -> Response:
+    """Update the current user's profile (name and/or avatar)."""
+    update_data: dict[str, Any] = {}
+    if body.name is not None:
+        update_data["name"] = body.name
+    if body.avatar is not None:
+        # Empty string clears the avatar
+        update_data["avatar"] = body.avatar or None
+
+    if not update_data:
+        raise IntentKitAPIError(
+            status_code=400,
+            key="NoFieldsToUpdate",
+            message="No fields to update",
+        )
+
+    user = await UserUpdate.model_validate(update_data).patch(user_id)
+    await invalidate_user_cache(user_id)
+    return Response(content=user.model_dump_json(), media_type="application/json")
+
+
+@team_user_router.post("/user/upload-avatar")
+async def upload_user_avatar(
+    file: UploadFile = File(..., description="Image file to upload as user avatar"),
+    user_id: str = Depends(get_current_user),
+) -> dict[str, str]:
+    """Upload an image to S3 for use as user avatar.
+
+    Accepts image files (JPEG, PNG, GIF, WebP). Max size 5MB.
+    """
+    path = await validate_and_store_image(file, "avatars/user/")
+    return {"path": path}
 
 
 @team_user_router.post("/user/post-link-sync")

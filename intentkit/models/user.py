@@ -77,6 +77,14 @@ class UserTable(Base):
         default=0,
         nullable=False,
     )
+    name: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    avatar: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
     email: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
@@ -151,6 +159,10 @@ class UserUpdate(BaseModel):
 
     nft_count: Annotated[
         int, Field(default=0, description="Number of NFTs owned by the user")
+    ]
+    name: Annotated[str | None, Field(None, description="User's display name")]
+    avatar: Annotated[
+        str | None, Field(None, description="User's avatar image path or URL")
     ]
     email: Annotated[str | None, Field(None, description="User's email address")]
     x_username: Annotated[
