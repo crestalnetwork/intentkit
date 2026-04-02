@@ -1,6 +1,5 @@
-# v0.17.10
+# v0.17.11
 
-- Fixed false positive alerts in account checking where zero-amount events were incorrectly flagged as orphaned
-- Fixed incorrect check count and singular/plural formatting in account checking alerts
+- Fixed authentication failure in Team API where login always returned 401 due to JWT algorithm mismatch with modern Supabase signing keys
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.9...v0.17.10
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.10...v0.17.11
