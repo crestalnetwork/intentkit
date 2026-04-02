@@ -455,6 +455,7 @@ async def check_orphaned_events() -> list[AccountCheckingResult]:
         FROM credit_events e
         LEFT JOIN credit_transactions t ON e.id = t.event_id
         WHERE t.id IS NULL
+        AND e.total_amount != 0
     """)
 
         result = await session.execute(query)
@@ -757,7 +758,7 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
         )
 
     # Create a summary message with color based on status
-    total_checks = sum(len(check_results) for check_results in results.values())
+    total_checks = len(results)
 
     if all_passed:
         color = "good"  # Green color
@@ -767,7 +768,7 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
     else:
         color = "danger"  # Red color
         title = "❌ Quick Account Checking Found Issues"
-        text = f"Quick account checking found {failed_count} issues out of {total_checks} checks."
+        text = f"Quick account checking found {failed_count} {'issue' if failed_count == 1 else 'issues'} out of {total_checks} checks."
         notify = "<!channel> "  # Notify channel for failures
 
     # Create attachments with check details
@@ -781,7 +782,7 @@ async def run_quick_checks() -> dict[str, list[AccountCheckingResult]]:
         check_status = (
             "✅ Passed"
             if check_failed_count == 0
-            else f"❌ Failed ({check_failed_count} issues)"
+            else f"❌ Failed ({check_failed_count} {'issue' if check_failed_count == 1 else 'issues'})"
         )
 
         attachments[0]["fields"].append(
@@ -858,7 +859,7 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
         )
 
     # Create a summary message with color based on status
-    total_checks = sum(len(check_results) for check_results in results.values())
+    total_checks = len(results)
 
     if all_passed:
         color = "good"  # Green color
@@ -868,7 +869,7 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
     else:
         color = "danger"  # Red color
         title = "❌ Slow Account Checking Found Issues"
-        text = f"Slow account checking found {failed_count} issues out of {total_checks} checks."
+        text = f"Slow account checking found {failed_count} {'issue' if failed_count == 1 else 'issues'} out of {total_checks} checks."
         notify = "<!channel> "  # Notify channel for failures
 
     # Create attachments with check details
@@ -882,7 +883,7 @@ async def run_slow_checks() -> dict[str, list[AccountCheckingResult]]:
         check_status = (
             "✅ Passed"
             if check_failed_count == 0
-            else f"❌ Failed ({check_failed_count} issues)"
+            else f"❌ Failed ({check_failed_count} {'issue' if check_failed_count == 1 else 'issues'})"
         )
 
         attachments[0]["fields"].append(
