@@ -1,3 +1,19 @@
+# Release v0.17.12
+
+- Fixed authentication failure caused by missing JWT audience validation
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.11...v0.17.12
+
+---
+
+# Release v0.17.11
+
+- Fixed authentication failure in Team API where login always returned 401 due to JWT algorithm mismatch with modern Supabase signing keys
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.10...v0.17.11
+
+---
+
 # Release v0.17.10
 
 - Fixed false positive alerts in account checking where zero-amount events were incorrectly flagged as orphaned
