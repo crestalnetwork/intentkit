@@ -8,8 +8,9 @@
 </div>
 <div align="center">
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/pypi/l/intentkit" alt="PyPI - License"></a>
-  <a href="https://pypi.org/project/intentkit/#history" target="_blank"><img src="https://img.shields.io/pypi/v/intentkit?label=%20" alt="Version"></a>
+  <a href="https://pypi.org/project/intentkit/#history" target="_blank"><img src="https://img.shields.io/pypi/v/intentkit" alt="PyPI Version"></a>
   <a href="https://hub.docker.com/r/crestal/intentkit" target="_blank"><img src="https://img.shields.io/docker/v/crestal/intentkit?label=Docker" alt="Docker"></a>
+  <a href="https://intentcat.com/docs" target="_blank"><img src="https://img.shields.io/badge/docs-intentcat.com-blue" alt="Documentation"></a>
 </div>
 
 IntentKit is an open-source, self-hosted cloud agent cluster that manages a collaborative team of AI agents for you.
@@ -26,6 +27,7 @@ If you are looking for a robust, cloud-native solution, IntentKit is for you.
 ## Features
 
 - ☁️ **Cloud-Native:** Ultimate resource efficiency.
+- 🔒 **Secure by Design:** Agents are fundamentally unable to access any of your secret keys.
 - 🤖 **Collaborative AI:** Multiple agents that can call and interact with each other.
 - 🔄 **Out-of-the-Box Ready:** Fully configured and ready to use.
 - 🔗 **Crypto-Friendly:** Optional Web3 and blockchain integrations.
