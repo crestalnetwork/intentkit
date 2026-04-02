@@ -66,16 +66,16 @@ async def generate_image_openrouter(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning("OpenRouter image generation failed: %s", e)
+        logger.error("OpenRouter image generation failed: %s", e)
     return None
 
 
 async def generate_image_google(prompt: str) -> bytes | None:
-    """Generate image using Google Gemini gemini-2.5-flash with native image output."""
+    """Generate image using Google Gemini gemini-3.1-flash-image-preview."""
     try:
         client = genai.Client(api_key=config.google_api_key)
         response = await client.aio.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-3.1-flash-image-preview",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE", "TEXT"],
@@ -92,7 +92,7 @@ async def generate_image_google(prompt: str) -> bytes | None:
                     ):
                         return part.inline_data.data
     except Exception as e:
-        logger.warning("Google image generation failed: %s", e)
+        logger.error("Google image generation failed: %s", e)
     return None
 
 
@@ -113,7 +113,7 @@ async def generate_image_openai(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning("OpenAI image generation failed: %s", e)
+        logger.error("OpenAI image generation failed: %s", e)
     return None
 
 
@@ -135,7 +135,7 @@ async def generate_image_xai(prompt: str) -> bytes | None:
         if response.data and response.data[0].url:
             return await _download_image(response.data[0].url)
     except Exception as e:
-        logger.warning("xAI image generation failed: %s", e)
+        logger.error("xAI image generation failed: %s", e)
     return None
 
 
@@ -152,7 +152,7 @@ async def select_model_and_generate(prompt: str) -> bytes | None:
             "OpenRouter/seedream-4.5",
             generate_image_openrouter,
         ),
-        (config.google_api_key, "Google/gemini-2.5-flash", generate_image_google),
+        (config.google_api_key, "Google/gemini-3.1-flash-image", generate_image_google),
         (config.openai_api_key, "OpenAI/gpt-image-1-mini", generate_image_openai),
         (config.xai_api_key, "xAI/grok-imagine-image", generate_image_xai),
     ]
