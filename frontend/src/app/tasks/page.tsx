@@ -98,13 +98,11 @@ export default function AllTasksPage() {
   return (
     <div className="container py-10">
       <div className="max-w-[768px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
+      <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
           <p className="text-muted-foreground mt-2">
             All autonomous tasks across your agents.
           </p>
-        </div>
       </div>
 
       {isLoading ? (
