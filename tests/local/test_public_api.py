@@ -9,7 +9,6 @@ from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent_activity import AgentActivity
 from intentkit.models.agent_post import AgentPost, AgentPostBrief
-from intentkit.models.team_feed import TeamFeedPage
 
 
 def _get_endpoint(router, path):
@@ -140,9 +139,7 @@ async def test_get_public_post_from_public_agent(router, public_agent):
 
 
 @pytest.mark.asyncio
-async def test_get_public_post_from_private_agent_returns_404(
-    router, private_agent
-):
+async def test_get_public_post_from_private_agent_returns_404(router, private_agent):
     """Posts from private agents should return 404."""
     from intentkit.utils.error import IntentKitAPIError
 

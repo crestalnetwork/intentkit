@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from intentkit.config.base import Base
 from intentkit.config.db import get_session
 from intentkit.models.credit import CreditAccount
+from intentkit.models.team import TeamMemberTable, TeamRole
 
 logger = logging.getLogger(__name__)
 
@@ -441,6 +442,50 @@ class User(UserUpdate):
             if user is None:
                 return None
             return cast(Any, user_model_class.model_validate(user))
+
+    @classmethod
+    async def count_owned_teams(cls, user_id: str) -> int:
+        """Count teams where user is the owner.
+
+        Args:
+            user_id: The user ID.
+
+        Returns:
+            Number of teams owned by this user.
+        """
+        async with get_session() as session:
+            stmt = (
+                select(func.count())
+                .select_from(TeamMemberTable)
+                .where(
+                    TeamMemberTable.user_id == user_id,
+                    TeamMemberTable.role == TeamRole.OWNER,
+                )
+            )
+            result = await session.scalar(stmt)
+            return result or 0
+
+    @classmethod
+    async def get_first_owned_team_id(cls, user_id: str) -> str | None:
+        """Get the first team the user created (by joined_at order).
+
+        Args:
+            user_id: The user ID.
+
+        Returns:
+            Team ID of the first owned team, or None.
+        """
+        async with get_session() as session:
+            stmt = (
+                select(TeamMemberTable.team_id)
+                .where(
+                    TeamMemberTable.user_id == user_id,
+                    TeamMemberTable.role == TeamRole.OWNER,
+                )
+                .order_by(TeamMemberTable.joined_at.asc())
+                .limit(1)
+            )
+            return await session.scalar(stmt)
 
     @classmethod
     async def get_by_evm_wallet(cls, evm_wallet_address: str) -> "User | None":

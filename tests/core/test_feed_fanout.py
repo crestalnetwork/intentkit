@@ -174,9 +174,7 @@ async def test_fan_out_activity_public_agent():
     mock_session.get.return_value = agent_row
 
     with patch("intentkit.core.team.feed.get_session") as mock_get_session:
-        mock_get_session.return_value.__aenter__ = AsyncMock(
-            return_value=mock_session
-        )
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock(return_value=False)
 
         await fan_out_activity("act-1", "public-agent", datetime.now())
@@ -201,9 +199,7 @@ async def test_fan_out_activity_no_teams_skips():
     mock_session.get.return_value = agent_row
 
     with patch("intentkit.core.team.feed.get_session") as mock_get_session:
-        mock_get_session.return_value.__aenter__ = AsyncMock(
-            return_value=mock_session
-        )
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock(return_value=False)
 
         await fan_out_activity("act-1", "private-agent", datetime.now())
@@ -230,9 +226,7 @@ async def test_fan_out_post_public_agent():
     mock_session.get.return_value = agent_row
 
     with patch("intentkit.core.team.feed.get_session") as mock_get_session:
-        mock_get_session.return_value.__aenter__ = AsyncMock(
-            return_value=mock_session
-        )
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock(return_value=False)
 
         await fan_out_post("post-1", "public-agent", datetime.now())

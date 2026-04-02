@@ -38,9 +38,7 @@ async def test_ensure_prerequisites_creates_teams():
     mock_session.get.return_value = None
 
     with patch("intentkit.core.public_agents.get_session") as mock_get_session:
-        mock_get_session.return_value.__aenter__ = AsyncMock(
-            return_value=mock_session
-        )
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock(return_value=False)
 
         await ensure_public_agent_prerequisites()
@@ -61,9 +59,7 @@ async def test_ensure_prerequisites_skips_existing():
     mock_session.get.return_value = MagicMock()
 
     with patch("intentkit.core.public_agents.get_session") as mock_get_session:
-        mock_get_session.return_value.__aenter__ = AsyncMock(
-            return_value=mock_session
-        )
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock(return_value=False)
 
         await ensure_public_agent_prerequisites()

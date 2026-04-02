@@ -1,7 +1,7 @@
 """Tests for local subscription endpoints."""
 
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -47,9 +47,7 @@ async def test_subscribe_uses_system_team():
         content_module, "subscribe_agent", new_callable=AsyncMock
     ) as mock_subscribe:
         mock_subscribe.return_value = mock_sub
-        result = await content_module.subscribe_endpoint(
-            agent_id="public-blog-writer"
-        )
+        result = await content_module.subscribe_endpoint(agent_id="public-blog-writer")
 
     mock_subscribe.assert_called_once_with("system", "public-blog-writer")
     assert result.agent_id == "public-blog-writer"
