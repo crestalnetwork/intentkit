@@ -651,13 +651,24 @@ class CreditAccount(BaseModel):
         Returns:
             CreditAccount: The existing or newly created credit account
         """
-        # Get payment settings if values not provided
+        # Get quota values from team plan or payment settings
         if free_quota is None or refill_amount is None:
-            payment_settings = await AppSetting.payment()
-            if free_quota is None:
-                free_quota = payment_settings.free_quota
-            if refill_amount is None:
-                refill_amount = payment_settings.refill_amount
+            if owner_type == OwnerType.TEAM:
+                from intentkit.models.team import PLAN_CONFIGS, TeamPlan, TeamTable
+
+                team_record = await session.get(TeamTable, owner_id)
+                plan = TeamPlan(team_record.plan) if team_record else TeamPlan.NONE
+                plan_config = PLAN_CONFIGS[plan]
+                if free_quota is None:
+                    free_quota = plan_config.free_quota
+                if refill_amount is None:
+                    refill_amount = plan_config.refill_amount
+            else:
+                payment_settings = await AppSetting.payment()
+                if free_quota is None:
+                    free_quota = payment_settings.free_quota
+                if refill_amount is None:
+                    refill_amount = payment_settings.refill_amount
 
         if owner_type not in (OwnerType.USER, OwnerType.TEAM):
             # only users and teams can have daily quota

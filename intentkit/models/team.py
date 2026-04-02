@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import secrets
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Annotated, Any, ClassVar
 
@@ -20,6 +22,48 @@ class TeamRole(str, Enum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
+
+
+class TeamPlan(str, Enum):
+    """Pricing plan tier for a team."""
+
+    NONE = "none"
+    FREE = "free"
+    PRO = "pro"
+    MAX = "max"
+
+
+@dataclass(frozen=True)
+class PlanConfig:
+    """Configuration for a pricing plan tier."""
+
+    free_quota: Decimal
+    refill_amount: Decimal
+    monthly_permanent_credits: Decimal
+
+
+PLAN_CONFIGS: dict[TeamPlan, PlanConfig] = {
+    TeamPlan.NONE: PlanConfig(
+        free_quota=Decimal("0"),
+        refill_amount=Decimal("0"),
+        monthly_permanent_credits=Decimal("0"),
+    ),
+    TeamPlan.FREE: PlanConfig(
+        free_quota=Decimal("50"),
+        refill_amount=Decimal("1"),
+        monthly_permanent_credits=Decimal("0"),
+    ),
+    TeamPlan.PRO: PlanConfig(
+        free_quota=Decimal("500"),
+        refill_amount=Decimal("10"),
+        monthly_permanent_credits=Decimal("10000"),
+    ),
+    TeamPlan.MAX: PlanConfig(
+        free_quota=Decimal("5000"),
+        refill_amount=Decimal("100"),
+        monthly_permanent_credits=Decimal("100000"),
+    ),
+}
 
 
 class TeamMemberTable(Base):
@@ -72,6 +116,20 @@ class TeamTable(Base):
     )
     default_channel: Mapped[str | None] = mapped_column(
         String,
+        nullable=True,
+    )
+    plan: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default=TeamPlan.NONE,
+        server_default=TeamPlan.NONE.value,
+    )
+    plan_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    next_credit_issue_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
     updated_at: Mapped[datetime] = mapped_column(
@@ -219,6 +277,18 @@ class Team(TeamCreate):
         from_attributes=True,
     )
 
+    plan: Annotated[
+        TeamPlan,
+        Field(default=TeamPlan.NONE, description="Pricing plan tier"),
+    ]
+    plan_expires_at: Annotated[
+        datetime | None,
+        Field(default=None, description="When the current plan expires"),
+    ]
+    next_credit_issue_at: Annotated[
+        datetime | None,
+        Field(default=None, description="Next scheduled monthly credit issue"),
+    ]
     created_at: Annotated[
         datetime, Field(description="Timestamp when this team was created")
     ]
@@ -226,9 +296,13 @@ class Team(TeamCreate):
         datetime, Field(description="Timestamp when this team was last updated")
     ]
 
-    @field_serializer("created_at", "updated_at")
+    @field_serializer(
+        "created_at", "updated_at", "plan_expires_at", "next_credit_issue_at"
+    )
     @classmethod
-    def serialize_datetime(cls, v: datetime) -> str:
+    def serialize_datetime(cls, v: datetime | None) -> str | None:
+        if v is None:
+            return None
         return v.isoformat(timespec="milliseconds")
 
     @classmethod

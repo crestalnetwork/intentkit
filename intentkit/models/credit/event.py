@@ -39,6 +39,7 @@ class EventType(str, Enum):
     REWARD = "reward"
     EVENT_REWARD = "event_reward"
     RECHARGE_BONUS = "recharge_bonus"
+    PLAN_CREDIT = "plan_credit"
 
     @classmethod
     def get_reward_types(cls):

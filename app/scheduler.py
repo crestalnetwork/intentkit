@@ -17,6 +17,7 @@ from intentkit.config.redis import (
     init_redis,
     send_heartbeat,
 )
+from intentkit.core.credit.plan_credit import issue_all_plan_credits
 from intentkit.core.scheduler import create_scheduler
 from intentkit.utils.alert import cleanup_alert
 
@@ -96,6 +97,14 @@ if __name__ == "__main__":
             trigger=CronTrigger(minute="*/5", timezone="UTC"),
             id="refresh_twitter_tokens",
             name="Refresh expiring Twitter tokens",
+            replace_existing=True,
+        )
+
+        _ = scheduler.add_job(
+            issue_all_plan_credits,
+            trigger=CronTrigger(minute="0", timezone="UTC"),
+            id="issue_plan_credits",
+            name="Issue monthly plan credits to eligible teams",
             replace_existing=True,
         )
 

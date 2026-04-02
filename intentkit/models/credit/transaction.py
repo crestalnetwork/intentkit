@@ -39,6 +39,7 @@ class TransactionType(str, Enum):
     REWARD = "reward"
     EVENT_REWARD = "event_reward"
     RECHARGE_BONUS = "recharge_bonus"
+    PLAN_CREDIT = "plan_credit"
 
 
 class CreditDebit(str, Enum):
