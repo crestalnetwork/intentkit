@@ -91,6 +91,7 @@ def _verify_hs256(token: str) -> str:
             token,
             signing_key,
             algorithms=["HS256"],
+            audience="authenticated",
             options={"require": ["sub", "exp"]},
         )
     except jwt.ExpiredSignatureError:
@@ -129,6 +130,7 @@ def _verify_jwks(token: str) -> str:
             token,
             signing_key.key,
             algorithms=[alg],
+            audience="authenticated",
             options={"require": ["sub", "exp"]},
         )
     except jwt.ExpiredSignatureError:
