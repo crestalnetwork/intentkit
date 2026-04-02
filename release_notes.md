@@ -1,5 +1,6 @@
-# v0.17.9
+# v0.17.10
 
-- Added startup notification alert when the autonomous service starts, including environment and release information.
+- Fixed false positive alerts in account checking where zero-amount events were incorrectly flagged as orphaned
+- Fixed incorrect check count and singular/plural formatting in account checking alerts
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.8...v0.17.9
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.9...v0.17.10
