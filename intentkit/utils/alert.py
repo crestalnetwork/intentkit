@@ -6,10 +6,11 @@ Based on configuration, it routes messages to either Telegram or Slack.
 If neither is configured, messages are logged instead.
 """
 
+import html as html_mod
 import logging
 from collections.abc import Sequence
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -122,23 +123,79 @@ def _format_telegram_message(
     message: str,
     blocks: Sequence[dict[str, Any]] | None = None,
     attachments: Sequence[dict[str, Any]] | None = None,
-) -> str:
+) -> tuple[str, Literal["HTML", "Markdown", "MarkdownV2"] | None]:
     """
-    Format alert content for Telegram by converting blocks and attachments to text.
+    Format alert content for Telegram by converting Slack-style blocks and attachments.
+
+    Returns:
+        A tuple of (formatted_message, parse_mode).
+        parse_mode is "HTML" when attachments/blocks are present, None otherwise.
     """
-    lines: list[str] = [message]
+    # Convert Slack-specific syntax in the message
+    # <!channel> is Slack's @channel mention
+    message = message.replace("<!channel>", "").strip()
+
+    if not blocks and not attachments:
+        return message, None
+
+    # Use HTML formatting for structured content
+    lines: list[str] = [f"<b>{html_mod.escape(message)}</b>"]
+
+    if attachments:
+        for attachment in attachments:
+            lines.append("")
+
+            # Color indicator
+            color = attachment.get("color", "")
+            color_emoji = {"good": "🟢", "danger": "🔴", "warning": "🟡"}.get(
+                color, "⚪"
+            )
+
+            # Title
+            title = attachment.get("title")
+            if title:
+                lines.append(f"{color_emoji} <b>{html_mod.escape(str(title))}</b>")
+
+            # Text body
+            text = attachment.get("text")
+            if text:
+                lines.append(html_mod.escape(str(text)))
+
+            # Fields (key-value pairs)
+            fields = attachment.get("fields")
+            if fields:
+                for field in fields:
+                    field_title = field.get("title", "")
+                    field_value = field.get("value", "")
+                    lines.append(
+                        f"• <b>{html_mod.escape(str(field_title))}</b>: {html_mod.escape(str(field_value))}"
+                    )
 
     if blocks:
         lines.append("")
-        lines.append("Blocks:")
-        lines.extend([str(block) for block in blocks])
+        for block in blocks:
+            # Best-effort: extract text from common Slack block types
+            block_type = block.get("type", "")
+            if block_type == "section":
+                block_text = block.get("text", {})
+                if isinstance(block_text, dict):
+                    lines.append(html_mod.escape(block_text.get("text", str(block))))
+                else:
+                    lines.append(html_mod.escape(str(block_text)))
+            elif block_type == "header":
+                header_text = block.get("text", {})
+                if isinstance(header_text, dict):
+                    lines.append(
+                        f"<b>{html_mod.escape(header_text.get('text', ''))}</b>"
+                    )
+                else:
+                    lines.append(f"<b>{html_mod.escape(str(header_text))}</b>")
+            elif block_type == "divider":
+                lines.append("───────────")
+            else:
+                lines.append(html_mod.escape(str(block)))
 
-    if attachments:
-        lines.append("")
-        lines.append("Attachments:")
-        lines.extend([str(attachment) for attachment in attachments])
-
-    return "\n".join(lines).strip()
+    return "\n".join(lines).strip(), "HTML"
 
 
 def send_alert(
@@ -166,12 +223,12 @@ def send_alert(
     if _alert_type == AlertType.TELEGRAM:
         from intentkit.utils.telegram_alert import send_telegram_message
 
-        telegram_message = _format_telegram_message(
+        telegram_message, parse_mode = _format_telegram_message(
             message=message,
             blocks=blocks,
             attachments=attachments,
         )
-        send_telegram_message(telegram_message)
+        send_telegram_message(telegram_message, parse_mode=parse_mode)
 
     elif _alert_type == AlertType.SLACK:
         from intentkit.utils.slack_alert import send_slack_message
