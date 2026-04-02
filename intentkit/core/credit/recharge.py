@@ -27,23 +27,23 @@ logger = logging.getLogger(__name__)
 
 async def recharge(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     amount: Decimal,
     upstream_tx_id: str,
     note: str | None = None,
 ) -> CreditAccount:
     """
-    Recharge credits to a user account.
+    Recharge credits to a team account.
 
     Args:
         session: Async session to use for database operations
-        user_id: ID of the user to recharge
+        team_id: ID of the team to recharge
         amount: Amount of credits to recharge
         upstream_tx_id: ID of the upstream transaction
         note: Optional note for the transaction
 
     Returns:
-        Updated user credit account
+        Updated team credit account
     """
     # Check for idempotency - prevent duplicate transactions
     await CreditEvent.check_upstream_tx_id_exists(
@@ -56,11 +56,11 @@ async def recharge(
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
-    # 2. Update user account - add credits
-    user_account = await CreditAccount.income_in_session(
+    # 2. Update team account - add credits
+    team_account = await CreditAccount.income_in_session(
         session=session,
-        owner_type=OwnerType.USER,
-        owner_id=user_id,
+        owner_type=OwnerType.TEAM,
+        owner_id=team_id,
         amount_details={
             CreditType.PERMANENT: amount
         },  # Recharge adds to permanent credits
@@ -81,17 +81,17 @@ async def recharge(
     event = CreditEventTable(
         id=event_id,
         event_type=EventType.RECHARGE,
-        user_id=user_id,
+        team_id=team_id,
         upstream_type=UpstreamType.API,
         upstream_tx_id=upstream_tx_id,
         direction=Direction.INCOME,
-        account_id=user_account.id,
+        account_id=team_account.id,
         total_amount=amount,
         credit_type=CreditType.PERMANENT,
         credit_types=[CreditType.PERMANENT],
-        balance_after=user_account.credits
-        + user_account.free_credits
-        + user_account.reward_credits,
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
         base_amount=amount,
         base_original_amount=amount,
         base_free_amount=Decimal("0"),  # No free credits involved in base amount
@@ -107,10 +107,10 @@ async def recharge(
     await session.flush()
 
     # 4. Create credit transaction records
-    # 4.1 User account transaction (credit)
-    user_tx = CreditTransactionTable(
+    # 4.1 Team account transaction (credit)
+    team_tx = CreditTransactionTable(
         id=str(XID()),
-        account_id=user_account.id,
+        account_id=team_account.id,
         event_id=event_id,
         tx_type=TransactionType.RECHARGE,
         credit_debit=CreditDebit.CREDIT,
@@ -120,7 +120,7 @@ async def recharge(
         reward_amount=Decimal("0"),
         permanent_amount=amount,
     )
-    session.add(user_tx)
+    session.add(team_tx)
 
     # 4.2 Platform recharge account transaction (debit)
     platform_tx = CreditTransactionTable(
@@ -144,13 +144,13 @@ async def recharge(
     try:
         send_alert(
             f"💰 **Credit Recharge**\n"
-            f"• User ID: `{user_id}`\n"
+            f"• Team ID: `{team_id}`\n"
             f"• Amount: `{amount}` credits\n"
             f"• Transaction ID: `{upstream_tx_id}`\n"
-            f"• New Balance: `{user_account.credits + user_account.free_credits + user_account.reward_credits}` credits\n"
+            f"• New Balance: `{team_account.credits + team_account.free_credits + team_account.reward_credits}` credits\n"
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
         logger.error("Failed to send notification for recharge: %s", e)
 
-    return user_account
+    return team_account

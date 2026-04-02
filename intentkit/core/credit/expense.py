@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 #   Step 0: Idempotency check — reject duplicate upstream transaction IDs
 #   Step 1: Validate & quantize the base amount (LLM cost or skill price)
 #   Step 2: Compute fees — discount, platform fee %, agent fee %
-#   Step 3: Deduct total from user's credit account (or get/create if $0)
+#   Step 3: Deduct total from team's credit account (or get/create if $0)
 #   Step 4: Track free credit usage against agent's daily quota
 #   Step 5: Split the deducted amount by credit type (free/reward/permanent)
 #   Step 6: Proportionally allocate platform & agent fees across credit types
@@ -85,25 +85,28 @@ logger = logging.getLogger(__name__)
 
 async def expense_message(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     message_id: str,
     start_message_id: str,
     base_llm_amount: Decimal,
     agent: Agent,
+    user_id: str | None = None,
 ) -> CreditEvent:
     """
-    Deduct credits from a user account for message expenses.
+    Deduct credits from a team account for message expenses.
     Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
-        user_id: ID of the user to deduct credits from
+        team_id: ID of the team to deduct credits from
         message_id: ID of the message that incurred the expense
         start_message_id: ID of the starting message in a conversation
         base_llm_amount: Amount of LLM costs
+        agent: Agent instance
+        user_id: ID of the user who triggered the expense (for audit trail)
 
     Returns:
-        Updated user credit account
+        CreditEvent: The created credit event
     """
     # --- SHARED STEP 0: Idempotency check (see module-level comment) ---
     # Check for idempotency - prevent duplicate transactions
@@ -119,7 +122,7 @@ async def expense_message(
         raise ValueError("Base LLM amount must be non-negative")
 
     # MESSAGE-SPECIFIC: Track hourly budget usage after validation
-    _ = await accumulate_hourly_base_llm_amount(f"base_llm:{user_id}", base_llm_amount)
+    _ = await accumulate_hourly_base_llm_amount(f"base_llm:{team_id}", base_llm_amount)
 
     # --- SHARED STEP 2: Compute fees (discount, platform %, agent %) ---
     # Get payment settings
@@ -141,7 +144,7 @@ async def expense_message(
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_agent_amount = Decimal("0")
-    if agent.fee_percentage and user_id != agent.owner:
+    if agent.fee_percentage and team_id != agent.team_id:
         fee_agent_amount = (
             (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -149,25 +152,25 @@ async def expense_message(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 
-    # --- SHARED STEP 3: Deduct from user account ---
+    # --- SHARED STEP 3: Deduct from team account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
-    # 2. Update user account - deduct credits
+    # 2. Update team account - deduct credits
     details: dict[CreditType, Decimal] = {}
     if total_amount > 0:
-        user_account, details = await CreditAccount.expense_in_session(
+        team_account, details = await CreditAccount.expense_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
             amount=total_amount,
             event_id=event_id,
         )
     else:
-        user_account = await CreditAccount.get_or_create_in_session(
+        team_account = await CreditAccount.get_or_create_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
         )
 
     # --- SHARED STEP 4: Track free credit usage against agent quota ---
@@ -250,7 +253,7 @@ async def expense_message(
     )
 
     # --- SHARED STEP 8: Credit destination accounts ---
-    # 4. Update fee account - add credits with detailed amounts
+    # 4. Update destination accounts - add credits with detailed amounts
     agent_account: CreditAccount | None = None
     if total_amount > 0:
         _ = await CreditAccount.income_in_session(
@@ -296,9 +299,10 @@ async def expense_message(
     # MESSAGE-SPECIFIC: event_type=MESSAGE, records base_llm_amount
     event = CreditEventTable(
         id=event_id,
-        account_id=user_account.id,
+        account_id=team_account.id,
         event_type=EventType.MESSAGE,
         user_id=user_id,
+        team_id=team_id,
         upstream_type=UpstreamType.EXECUTOR,
         upstream_tx_id=message_id,
         direction=Direction.EXPENSE,
@@ -309,9 +313,9 @@ async def expense_message(
         total_amount=total_amount,
         credit_type=credit_type,
         credit_types=list(details.keys()),
-        balance_after=user_account.credits
-        + user_account.free_credits
-        + user_account.reward_credits,
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
         base_amount=base_amount,
         base_original_amount=base_original_amount,
         base_discount_amount=base_discount_amount,
@@ -339,10 +343,10 @@ async def expense_message(
     # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if total_amount > 0:
-        # 4.1 User account transaction (debit)
-        user_tx = CreditTransactionTable(
+        # 4.1 Team account transaction (debit)
+        team_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=user_account.id,
+            account_id=team_account.id,
             event_id=event_id,
             tx_type=TransactionType.PAY,
             credit_debit=CreditDebit.DEBIT,
@@ -352,7 +356,7 @@ async def expense_message(
             reward_amount=reward_amount,
             permanent_amount=permanent_amount,
         )
-        session.add(user_tx)
+        session.add(team_tx)
 
         # 4.2 MESSAGE-SPECIFIC: credit to PLATFORM_ACCOUNT_MESSAGE
         message_tx = CreditTransactionTable(
@@ -407,7 +411,7 @@ async def expense_message(
 
 async def skill_cost(
     price: Decimal,
-    user_id: str,
+    team_id: str,
     agent: Agent,
 ) -> SkillCost:
     """
@@ -415,7 +419,7 @@ async def skill_cost(
 
     Args:
         price: Base price for the skill
-        user_id: ID of the user making the skill call
+        team_id: ID of the team paying for the skill call
         agent: Agent using the skill
 
     Returns:
@@ -444,7 +448,7 @@ async def skill_cost(
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_agent_amount = Decimal("0")
-    if agent.fee_percentage and user_id != agent.owner:
+    if agent.fee_percentage and team_id != agent.team_id:
         fee_agent_amount = (
             (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -466,27 +470,29 @@ async def skill_cost(
 
 async def expense_skill(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     message_id: str,
     start_message_id: str,
     skill_call_id: str,
     skill_name: str,
     price: Decimal,
     agent: Agent,
+    user_id: str | None = None,
 ) -> CreditEvent:
     """
-    Deduct credits from a user account for skill call expenses.
+    Deduct credits from a team account for skill call expenses.
     Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
-        user_id: ID of the user to deduct credits from
+        team_id: ID of the team to deduct credits from
         message_id: ID of the message that incurred the expense
         start_message_id: ID of the starting message in a conversation
         skill_call_id: ID of the skill call
         skill_name: Name of the skill being used
         price: Base price for the skill
         agent: Agent using the skill
+        user_id: ID of the user who triggered the expense (for audit trail)
 
     Returns:
         CreditEvent: The created credit event
@@ -503,28 +509,28 @@ async def expense_skill(
     # --- SHARED STEPS 1-2: Validate amount & compute fees ---
     # SKILL-SPECIFIC: Uses skill_cost() helper for pre-calculation
     # Calculate skill cost using the skill_cost function
-    skill_cost_info = await skill_cost(price, user_id, agent)
+    skill_cost_info = await skill_cost(price, team_id, agent)
 
-    # --- SHARED STEP 3: Deduct from user account ---
+    # --- SHARED STEP 3: Deduct from team account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
-    # 2. Update user account - deduct credits
+    # 2. Update team account - deduct credits
     details = {}
-    user_account: CreditAccount | None = None
+    team_account: CreditAccount | None = None
     if skill_cost_info.total_amount > 0:
-        user_account, details = await CreditAccount.expense_in_session(
+        team_account, details = await CreditAccount.expense_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
             amount=skill_cost_info.total_amount,
             event_id=event_id,
         )
     else:
-        user_account = await CreditAccount.get_or_create_in_session(
+        team_account = await CreditAccount.get_or_create_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
         )
 
     # --- SHARED STEP 4: Track free credit usage against agent quota ---
@@ -672,9 +678,10 @@ async def expense_skill(
 
     event = CreditEventTable(
         id=event_id,
-        account_id=user_account.id,
+        account_id=team_account.id,
         event_type=EventType.SKILL_CALL,
         user_id=user_id,
+        team_id=team_id,
         upstream_type=UpstreamType.EXECUTOR,
         upstream_tx_id=upstream_tx_id,
         direction=Direction.EXPENSE,
@@ -686,9 +693,9 @@ async def expense_skill(
         total_amount=skill_cost_info.total_amount,
         credit_type=credit_type,
         credit_types=list(details.keys()),
-        balance_after=user_account.credits
-        + user_account.free_credits
-        + user_account.reward_credits,
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
         base_amount=skill_cost_info.base_amount,
         base_original_amount=skill_cost_info.base_original_amount,
         base_discount_amount=skill_cost_info.base_discount_amount,
@@ -721,10 +728,10 @@ async def expense_skill(
     # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if skill_cost_info.total_amount > 0:
-        # 4.1 User account transaction (debit)
-        user_tx = CreditTransactionTable(
+        # 4.1 Team account transaction (debit)
+        team_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=user_account.id,
+            account_id=team_account.id,
             event_id=event_id,
             tx_type=TransactionType.PAY,
             credit_debit=CreditDebit.DEBIT,
@@ -734,7 +741,7 @@ async def expense_skill(
             reward_amount=reward_amount,
             permanent_amount=permanent_amount,
         )
-        session.add(user_tx)
+        session.add(team_tx)
 
         # 4.2 Skill account transaction (credit)
         assert skill_account is not None
@@ -792,26 +799,28 @@ async def expense_skill(
 
 async def expense_summarize(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     message_id: str,
     start_message_id: str,
     base_llm_amount: Decimal,
     agent: Agent,
+    user_id: str | None = None,
 ) -> CreditEvent:
     """
-    Deduct credits from a user account for memory/summarize expenses.
+    Deduct credits from a team account for memory/summarize expenses.
     Don't forget to commit the session after calling this function.
 
     Args:
         session: Async session to use for database operations
-        user_id: ID of the user to deduct credits from
+        team_id: ID of the team to deduct credits from
         message_id: ID of the message that incurred the expense
         start_message_id: ID of the starting message in a conversation
         base_llm_amount: Amount of LLM costs
         agent: Agent instance
+        user_id: ID of the user who triggered the expense (for audit trail)
 
     Returns:
-        Updated user credit account
+        CreditEvent: The created credit event
     """
     # --- SHARED STEP 0: Idempotency check ---
     # Check for idempotency - prevent duplicate transactions
@@ -845,7 +854,7 @@ async def expense_summarize(
         base_amount * payment_settings.fee_platform_percentage / Decimal("100")
     ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
     fee_agent_amount = Decimal("0")
-    if agent.fee_percentage and user_id != agent.owner:
+    if agent.fee_percentage and team_id != agent.team_id:
         fee_agent_amount = (
             (base_amount + fee_platform_amount) * agent.fee_percentage / Decimal("100")
         ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
@@ -853,26 +862,26 @@ async def expense_summarize(
         FOURPLACES, rounding=ROUND_HALF_UP
     )
 
-    # --- SHARED STEP 3: Deduct from user account ---
+    # --- SHARED STEP 3: Deduct from team account ---
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
-    # 2. Update user account - deduct credits
+    # 2. Update team account - deduct credits
     details: dict[CreditType, Decimal] = {}
-    user_account: CreditAccount
+    team_account: CreditAccount
     if total_amount > 0:
-        user_account, details = await CreditAccount.expense_in_session(
+        team_account, details = await CreditAccount.expense_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
             amount=total_amount,
             event_id=event_id,
         )
     else:
-        user_account = await CreditAccount.get_or_create_in_session(
+        team_account = await CreditAccount.get_or_create_in_session(
             session=session,
-            owner_type=OwnerType.USER,
-            owner_id=user_id,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
         )
 
     # --- SHARED STEP 4: Track free credit usage against agent quota ---
@@ -1008,9 +1017,10 @@ async def expense_summarize(
 
     event = CreditEventTable(
         id=event_id,
-        account_id=user_account.id,
+        account_id=team_account.id,
         event_type=EventType.MEMORY,
         user_id=user_id,
+        team_id=team_id,
         upstream_type=UpstreamType.EXECUTOR,
         upstream_tx_id=message_id,
         direction=Direction.EXPENSE,
@@ -1021,9 +1031,9 @@ async def expense_summarize(
         total_amount=total_amount,
         credit_type=credit_type,
         credit_types=list(details.keys()),
-        balance_after=user_account.credits
-        + user_account.free_credits
-        + user_account.reward_credits,
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
         base_amount=base_amount,
         base_original_amount=base_original_amount,
         base_discount_amount=base_discount_amount,
@@ -1050,10 +1060,10 @@ async def expense_summarize(
     # --- SHARED STEP 10: Create CreditTransaction records ---
     # 4. Create credit transaction records
     if total_amount > 0:
-        # 4.1 User account transaction (debit)
-        user_tx = CreditTransactionTable(
+        # 4.1 Team account transaction (debit)
+        team_tx = CreditTransactionTable(
             id=str(XID()),
-            account_id=user_account.id,
+            account_id=team_account.id,
             event_id=event_id,
             tx_type=TransactionType.PAY,
             credit_debit=CreditDebit.DEBIT,
@@ -1063,7 +1073,7 @@ async def expense_summarize(
             reward_amount=reward_amount,
             permanent_amount=permanent_amount,
         )
-        session.add(user_tx)
+        session.add(team_tx)
 
         # 4.2 SUMMARIZE-SPECIFIC: credit to PLATFORM_ACCOUNT_MEMORY
         assert memory_account is not None
@@ -1114,7 +1124,7 @@ async def expense_summarize(
             session.add(agent_tx)
 
     # 5. Refresh session to get updated data
-    await session.refresh(user_account)
+    await session.refresh(team_account)
     await session.refresh(event)
 
     # 6. Return credit event model
@@ -1122,7 +1132,7 @@ async def expense_summarize(
 
 
 async def expense_skill_internal_llm(
-    user_id: str,
+    team_id: str,
     agent: Agent,
     skill_name: str,
     skill_call_id: str,
@@ -1131,16 +1141,17 @@ async def expense_skill_internal_llm(
     input_tokens: int,
     output_tokens: int,
     cached_input_tokens: int = 0,
+    user_id: str | None = None,
 ) -> None:
     """
     Bill for an LLM call made internally within a skill execution.
 
     This is a convenience function for skills that need to call an LLM
-    (e.g. for content cleaning) and bill the user for the token cost.
+    (e.g. for content cleaning) and bill the team for the token cost.
     It calculates the cost from token usage and creates a SKILL_CALL credit event.
 
     Args:
-        user_id: ID of the user to charge
+        team_id: ID of the team to charge
         agent: Agent instance
         skill_name: Name of the skill making the LLM call
         skill_call_id: ID of the tool call (from LangChain runtime)
@@ -1149,6 +1160,7 @@ async def expense_skill_internal_llm(
         input_tokens: Number of input tokens used
         output_tokens: Number of output tokens used
         cached_input_tokens: Number of cached input tokens used
+        user_id: ID of the user who triggered the expense (for audit trail)
     """
     from intentkit.config.db import get_session
 
@@ -1163,12 +1175,13 @@ async def expense_skill_internal_llm(
     async with get_session() as session:
         await expense_skill(
             session,
-            user_id,
+            team_id,
             "",  # no message_id available from within skill
             start_message_id,
             skill_call_id,
             skill_name,
             llm_cost,
             agent,
+            user_id=user_id,
         )
         await session.commit()

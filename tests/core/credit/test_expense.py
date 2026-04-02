@@ -18,6 +18,7 @@ async def test_skill_cost_basic_pricing():
     agent = MagicMock(spec=Agent)
     agent.id = "agent-1"
     agent.owner = "user-1"
+    agent.team_id = "team-1"
     agent.fee_percentage = Decimal("0")
     agent.skills = {}
 
@@ -29,7 +30,7 @@ async def test_skill_cost_basic_pricing():
     ):
         mock_payment.return_value.fee_platform_percentage = Decimal("0")
 
-        cost = await skill_cost(Decimal("1.0000"), "user-2", agent)
+        cost = await skill_cost(Decimal("1.0000"), "team-2", agent)
 
     assert cost.base_skill_amount == Decimal("1.0000")
     assert cost.total_amount == Decimal("1.0000")
@@ -40,6 +41,7 @@ async def test_skill_cost_with_platform_fee():
     agent = MagicMock(spec=Agent)
     agent.id = "agent-1"
     agent.owner = "user-1"
+    agent.team_id = "team-1"
     agent.fee_percentage = Decimal("0")
     agent.skills = {}
 
@@ -51,7 +53,7 @@ async def test_skill_cost_with_platform_fee():
     ):
         mock_payment.return_value.fee_platform_percentage = Decimal("100")
 
-        cost = await skill_cost(Decimal("1.0000"), "user-2", agent)
+        cost = await skill_cost(Decimal("1.0000"), "team-2", agent)
 
     assert cost.base_skill_amount == Decimal("1.0000")
     assert cost.fee_platform_amount == Decimal("1.0000")
@@ -63,6 +65,7 @@ async def test_expense_skill_creates_transactions():
     agent = MagicMock(spec=Agent)
     agent.id = "agent-1"
     agent.owner = "owner-1"
+    agent.team_id = "team-1"
     agent.fee_percentage = Decimal("10.0")
 
     skill_cost_info = MagicMock()
@@ -126,13 +129,14 @@ async def test_expense_skill_creates_transactions():
 
         result = await expense_skill(
             mock_session,
-            "user-1",
-            "msg-1",
-            "start-1",
-            "skill-1",
-            "skill-name",
-            Decimal("4.0000"),
-            agent,
+            team_id="team-1",
+            message_id="msg-1",
+            start_message_id="start-1",
+            skill_call_id="skill-1",
+            skill_name="skill-name",
+            price=Decimal("4.0000"),
+            agent=agent,
+            user_id="user-1",
         )
 
     assert result.event_type == "skill_call"
@@ -148,7 +152,7 @@ async def test_expense_skill_creates_transactions():
 
 @pytest.mark.asyncio
 async def test_expense_summarize_with_payment_enabled_creates_transactions():
-    user_id = "user-1"
+    team_id = "team-1"
     message_id = "msg-1"
     start_message_id = "start-1"
     base_llm_amount = Decimal("0.0100")
@@ -156,6 +160,7 @@ async def test_expense_summarize_with_payment_enabled_creates_transactions():
     agent = MagicMock(spec=Agent)
     agent.id = "agent-1"
     agent.owner = "owner-1"
+    agent.team_id = "team-1"
     agent.fee_percentage = Decimal("0")
     agent.model = "gpt-4"
 
@@ -209,11 +214,12 @@ async def test_expense_summarize_with_payment_enabled_creates_transactions():
 
         result = await expense_summarize(
             mock_session,
-            user_id,
-            message_id,
-            start_message_id,
-            base_llm_amount,
-            agent,
+            team_id=team_id,
+            message_id=message_id,
+            start_message_id=start_message_id,
+            base_llm_amount=base_llm_amount,
+            agent=agent,
+            user_id="user-1",
         )
 
     assert result.event_type == "memory"

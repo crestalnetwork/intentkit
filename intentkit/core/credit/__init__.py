@@ -34,7 +34,7 @@ from .list_events import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
     list_credit_events,
-    list_credit_events_by_user,
+    list_credit_events_by_team,
     list_fee_events_by_agent,
 )
 from .recharge import recharge
@@ -72,7 +72,7 @@ __all__ = [
     "fetch_credit_event_by_id",
     "fetch_credit_event_by_upstream_tx_id",
     "list_credit_events",
-    "list_credit_events_by_user",
+    "list_credit_events_by_team",
     "list_fee_events_by_agent",
     "recharge",
     "refill_all_free_credits",

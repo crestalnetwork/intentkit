@@ -101,14 +101,14 @@ class PaymentSettings(BaseModel):
             description="Daily free credit quota for new users",
             ge=0,
         ),
-    ] = Decimal("480")
+    ] = Decimal("0")
     refill_amount: Annotated[
         Decimal,
         Field(
             description="Hourly refill amount for free credits",
             ge=0,
         ),
-    ] = Decimal("20")
+    ] = Decimal("0")
     agent_whitelist_enabled: Annotated[
         bool,
         Field(description="Whether agent whitelist is enabled"),

@@ -19,20 +19,20 @@ from intentkit.utils.error import IntentKitAPIError
 logger = logging.getLogger(__name__)
 
 
-async def list_credit_events_by_user(
+async def list_credit_events_by_team(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     direction: Direction | None = None,
     cursor: str | None = None,
     limit: int = 20,
     event_type: EventType | None = None,
 ) -> tuple[list[CreditEvent], str | None, bool]:
     """
-    List credit events for a user account with cursor pagination.
+    List credit events for a team account with cursor pagination.
 
     Args:
         session: Async database session.
-        user_id: The ID of the user.
+        team_id: The ID of the team.
         direction: The direction of the events (INCOME or EXPENSE).
         cursor: The ID of the last event from the previous page.
         limit: Maximum number of events to return per page.
@@ -44,8 +44,8 @@ async def list_credit_events_by_user(
         - The cursor for the next page (ID of the last event in the list).
         - A boolean indicating if there are more events available.
     """
-    # 1. Find the account for the owner
-    account = await CreditAccount.get_in_session(session, OwnerType.USER, user_id)
+    # 1. Find the account for the team
+    account = await CreditAccount.get_in_session(session, OwnerType.TEAM, team_id)
     if not account:
         # Decide if returning empty or raising error is better. Empty list seems reasonable.
         # Or raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{owner_type.value.capitalize()} account not found")

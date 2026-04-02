@@ -20,21 +20,22 @@ from intentkit.models.credit import (
 @pytest.mark.asyncio
 async def test_expense_message_soft_off():
     """Test expense_message with payment disabled (soft off)."""
-    user_id = "user_1"
+    team_id = "team_1"
     message_id = "msg_1"
     start_message_id = "start_1"
     base_llm_amount = Decimal("0.0100")
     agent = MagicMock(spec=Agent)
     agent.id = "agent_1"
     agent.owner = "owner_1"
+    agent.team_id = "team_1"
     agent.fee_percentage = Decimal("10.0")
     agent.model = "gpt-4"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("100.0000")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("100.0000")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_agent_data = MagicMock()
     mock_agent_data.evm_wallet_address = "0x123"
@@ -72,7 +73,7 @@ async def test_expense_message_soft_off():
         ),
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
-        mock_get_or_create.return_value = mock_user_account
+        mock_get_or_create.return_value = mock_team_account
         mock_agent_data_get.return_value = mock_agent_data
 
         mock_session = AsyncMock()
@@ -81,7 +82,13 @@ async def test_expense_message_soft_off():
 
         # Run
         _ = await expense_message(
-            mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
+            mock_session,
+            team_id=team_id,
+            message_id=message_id,
+            start_message_id=start_message_id,
+            base_llm_amount=base_llm_amount,
+            agent=agent,
+            user_id="user_1",
         )
 
         # Verify
@@ -115,21 +122,22 @@ async def test_expense_message_soft_off():
 @pytest.mark.asyncio
 async def test_expense_message_enabled():
     """Test expense_message with payment enabled."""
-    user_id = "user_1"
+    team_id = "team_1"
     message_id = "msg_1"
     start_message_id = "start_1"
     base_llm_amount = Decimal("0.0100")
     agent = MagicMock(spec=Agent)
     agent.id = "agent_1"
     agent.owner = "owner_1"
+    agent.team_id = "team_1"
     agent.fee_percentage = Decimal("10.0")
     agent.model = "gpt-4"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("100.0000")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("100.0000")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_agent_data = MagicMock()
     mock_agent_data.evm_wallet_address = "0x123"
@@ -176,7 +184,7 @@ async def test_expense_message_enabled():
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
         mock_expense.return_value = (
-            mock_user_account,
+            mock_team_account,
             {},
         )  # Return account and details
         mock_agent_data_get.return_value = mock_agent_data
@@ -188,7 +196,13 @@ async def test_expense_message_enabled():
 
         # Run
         _ = await expense_message(
-            mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
+            mock_session,
+            team_id=team_id,
+            message_id=message_id,
+            start_message_id=start_message_id,
+            base_llm_amount=base_llm_amount,
+            agent=agent,
+            user_id="user_1",
         )
 
         # Verify
@@ -219,10 +233,11 @@ async def test_expense_message_enabled():
 @pytest.mark.asyncio
 async def test_skill_cost_soft_off():
     """Test skill_cost with payment disabled."""
-    user_id = "user_1"
+    team_id = "team_1"
     agent = MagicMock(spec=Agent)
     agent.id = "agent_1"
     agent.owner = "owner_1"
+    agent.team_id = "team_1"
     agent.fee_percentage = Decimal("10.0")
     agent.skills = {}
 
@@ -234,7 +249,7 @@ async def test_skill_cost_soft_off():
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
 
-        cost_info = await skill_cost(Decimal("1.0000"), user_id, agent)
+        cost_info = await skill_cost(Decimal("1.0000"), team_id, agent)
 
         assert cost_info.base_original_amount == Decimal("1.0000")
         assert cost_info.base_discount_amount == Decimal("1.0000")
@@ -246,21 +261,22 @@ async def test_skill_cost_soft_off():
 @pytest.mark.asyncio
 async def test_expense_summarize_soft_off():
     """Test expense_summarize with payment disabled."""
-    user_id = "user_1"
+    team_id = "team_1"
     message_id = "msg_sum_1"
     start_message_id = "start_1"
     base_llm_amount = Decimal("0.0500")
     agent = MagicMock(spec=Agent)
     agent.id = "agent_1"
     agent.owner = "owner_1"
+    agent.team_id = "team_1"
     agent.fee_percentage = Decimal("10.0")
     agent.model = "gpt-4"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("100.0000")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("100.0000")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_agent_data = MagicMock()
     mock_agent_data.evm_wallet_address = "0x123"
@@ -298,7 +314,7 @@ async def test_expense_summarize_soft_off():
         ),
     ):
         mock_payment_settings.return_value.fee_platform_percentage = Decimal("20.0")
-        mock_get_or_create.return_value = mock_user_account
+        mock_get_or_create.return_value = mock_team_account
         mock_agent_data_get.return_value = mock_agent_data
 
         mock_session = AsyncMock()
@@ -306,7 +322,13 @@ async def test_expense_summarize_soft_off():
         mock_session.refresh.side_effect = side_effect_refresh
 
         _ = await expense_summarize(
-            mock_session, user_id, message_id, start_message_id, base_llm_amount, agent
+            mock_session,
+            team_id=team_id,
+            message_id=message_id,
+            start_message_id=start_message_id,
+            base_llm_amount=base_llm_amount,
+            agent=agent,
+            user_id="user_1",
         )
 
         mock_get_or_create.assert_called_once()

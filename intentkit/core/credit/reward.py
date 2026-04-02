@@ -26,24 +26,24 @@ logger = logging.getLogger(__name__)
 
 async def reward(
     session: AsyncSession,
-    user_id: str,
+    team_id: str,
     amount: Decimal,
     upstream_tx_id: str,
     note: str | None = None,
     reward_type: RewardType | None = RewardType.REWARD,
 ) -> CreditAccount:
     """
-    Reward a user account with reward credits.
+    Reward a team account with reward credits.
 
     Args:
         session: Async session to use for database operations
-        user_id: ID of the user to reward
+        team_id: ID of the team to reward
         amount: Amount of reward credits to add
         upstream_tx_id: ID of the upstream transaction
         note: Optional note for the transaction
 
     Returns:
-        Updated user credit account
+        Updated team credit account
     """
     # Check for idempotency - prevent duplicate transactions
     await CreditEvent.check_upstream_tx_id_exists(
@@ -56,11 +56,11 @@ async def reward(
     # 1. Create credit event record first to get event_id
     event_id = str(XID())
 
-    # 2. Update user account - add reward credits
-    user_account = await CreditAccount.income_in_session(
+    # 2. Update team account - add reward credits
+    team_account = await CreditAccount.income_in_session(
         session=session,
-        owner_type=OwnerType.USER,
-        owner_id=user_id,
+        owner_type=OwnerType.TEAM,
+        owner_id=team_id,
         amount_details={CreditType.REWARD: amount},  # Reward adds to reward credits
         event_id=event_id,
     )
@@ -79,17 +79,17 @@ async def reward(
     event = CreditEventTable(
         id=event_id,
         event_type=reward_type,
-        user_id=user_id,
+        team_id=team_id,
         upstream_type=UpstreamType.API,
         upstream_tx_id=upstream_tx_id,
         direction=Direction.INCOME,
-        account_id=user_account.id,
+        account_id=team_account.id,
         total_amount=amount,
         credit_type=CreditType.REWARD,
         credit_types=[CreditType.REWARD],
-        balance_after=user_account.credits
-        + user_account.free_credits
-        + user_account.reward_credits,
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
         base_amount=amount,
         base_original_amount=amount,
         base_free_amount=Decimal("0"),  # No free credits involved in base amount
@@ -107,10 +107,10 @@ async def reward(
     await session.flush()
 
     # 4. Create credit transaction records
-    # 4.1 User account transaction (credit)
-    user_tx = CreditTransactionTable(
+    # 4.1 Team account transaction (credit)
+    team_tx = CreditTransactionTable(
         id=str(XID()),
-        account_id=user_account.id,
+        account_id=team_account.id,
         event_id=event_id,
         tx_type=reward_type,
         credit_debit=CreditDebit.CREDIT,
@@ -120,7 +120,7 @@ async def reward(
         reward_amount=amount,
         permanent_amount=Decimal("0"),
     )
-    session.add(user_tx)
+    session.add(team_tx)
 
     # 4.2 Platform reward account transaction (debit)
     platform_tx = CreditTransactionTable(
@@ -145,14 +145,14 @@ async def reward(
         reward_type_name = reward_type.value if reward_type else "REWARD"
         send_alert(
             f"🎁 **Credit Reward**\n"
-            f"• User ID: `{user_id}`\n"
+            f"• Team ID: `{team_id}`\n"
             f"• Amount: `{amount}` reward credits\n"
             f"• Transaction ID: `{upstream_tx_id}`\n"
             f"• Reward Type: `{reward_type_name}`\n"
-            f"• New Balance: `{user_account.credits + user_account.free_credits + user_account.reward_credits}` credits\n"
+            f"• New Balance: `{team_account.credits + team_account.free_credits + team_account.reward_credits}` credits\n"
             f"• Note: {note or 'N/A'}"
         )
     except Exception as e:
         logger.error("Failed to send notification for reward: %s", e)
 
-    return user_account
+    return team_account

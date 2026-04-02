@@ -166,7 +166,7 @@ class ReadWebpageSkill(SystemSkill):
                 from intentkit.core.credit.expense import expense_skill_internal_llm
 
                 await expense_skill_internal_llm(
-                    user_id=payer,
+                    team_id=payer,
                     agent=context.agent,
                     skill_name=self.name,
                     skill_call_id=tool_call_id,
@@ -175,6 +175,7 @@ class ReadWebpageSkill(SystemSkill):
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     cached_input_tokens=cached_input_tokens,
+                    user_id=context.user_id,
                 )
         except Exception as e:
             logger.warning("Failed to bill for LLM cleaning: %s", e)

@@ -45,8 +45,7 @@ from intentkit.core.executor import (  # noqa: F401
     agent_executor,
 )
 from intentkit.models.agent import Agent
-from intentkit.models.agent_data import AgentQuota
-from intentkit.models.app_setting import AppSetting, SystemMessageType
+from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     ChatMessage,
@@ -258,43 +257,25 @@ async def _validate_payment(
     Returns ``None`` when validation passes, or a saved ``ChatMessage``
     error that the caller should yield and then return.
     """
-    if not user_message.user_id or not agent.owner:
+    if not payer:
         raise IntentKitAPIError(
             500,
             "PaymentError",
-            "Payment is enabled but user_id or agent owner is not set",
+            "Payment is enabled but no team_id available for billing",
         )
     if agent.fee_percentage and agent.fee_percentage > 100:
-        owner = await User.get(agent.owner)
+        owner = await User.get(agent.owner) if agent.owner else None
         if owner and agent.fee_percentage > 100 + owner.nft_count * 10:
             return await _create_system_error_response(
                 SystemMessageType.SERVICE_FEE_ERROR,
                 user_message,
                 time.perf_counter() - start,
             )
-    # Fetch independent data concurrently
-    user_account, quota, payment_settings = await asyncio.gather(
-        CreditAccount.get_or_create(OwnerType.USER, payer or ""),
-        AgentQuota.get(user_message.agent_id),
-        AppSetting.payment(),
-    )
-    # agent abuse check
-    abuse_check = True
-    if (
-        payment_settings.agent_whitelist_enabled
-        and agent.id in payment_settings.agent_whitelist
-    ):
-        abuse_check = False
-    if abuse_check and payer != agent.owner and user_account.free_credits > 0:
-        if quota and quota.free_income_daily > 24000:
-            return await _create_system_error_response(
-                SystemMessageType.DAILY_USAGE_LIMIT_EXCEEDED,
-                user_message,
-                time.perf_counter() - start,
-            )
+    # Fetch team credit account
+    team_account = await CreditAccount.get_or_create(OwnerType.TEAM, payer)
     # As long as balance is positive, allow one conversation opportunity.
     # Credit can go negative during the conversation — that is acceptable.
-    if user_account.balance <= 0:
+    if team_account.balance <= 0:
         return await _create_system_error_response(
             SystemMessageType.INSUFFICIENT_BALANCE,
             user_message,
@@ -389,11 +370,12 @@ async def _handle_model_chunk(
                 amount += search_cost
             credit_event = await expense_message(
                 session,
-                payer or "",
-                chat_message_create.id,
-                user_message.id,
-                amount,
-                agent,
+                team_id=payer or "",
+                message_id=chat_message_create.id,
+                start_message_id=user_message.id,
+                base_llm_amount=amount,
+                agent=agent,
+                user_id=user_message.user_id,
             )
             logger.info("[%s] expense message: %s", user_message.agent_id, amount)
             chat_message_create.credit_event_id = credit_event.id
@@ -502,11 +484,12 @@ async def _handle_tools_chunk(
             )
             message_payment_event = await expense_message(
                 session,
-                payer or "",
-                skill_message_create.id,
-                user_message.id,
-                message_amount,
-                agent,
+                team_id=payer or "",
+                message_id=skill_message_create.id,
+                start_message_id=user_message.id,
+                base_llm_amount=message_amount,
+                agent=agent,
+                user_id=user_message.user_id,
             )
             skill_message_create.credit_event_id = message_payment_event.id
             skill_message_create.credit_cost = message_payment_event.total_amount
@@ -517,13 +500,14 @@ async def _handle_tools_chunk(
             skill_price = get_skill_price(skill_call["name"])
             payment_event = await expense_skill(
                 session,
-                payer or "",
-                skill_message_create.id,
-                user_message.id,
-                skill_call.get("id", ""),
-                skill_call["name"],
-                skill_price,
-                agent,
+                team_id=payer or "",
+                message_id=skill_message_create.id,
+                start_message_id=user_message.id,
+                skill_call_id=skill_call.get("id", ""),
+                skill_name=skill_call["name"],
+                price=skill_price,
+                agent=agent,
+                user_id=user_message.user_id,
             )
             skill_call["credit_event_id"] = payment_event.id
             skill_call["credit_cost"] = payment_event.total_amount
@@ -614,8 +598,10 @@ async def stream_agent_raw(
 
     payment_enabled = config.payment_enabled
 
-    # Determine payer (needed for credit event recording regardless of payment_enabled)
-    payer = user_message.user_id
+    # Determine payer team (needed for credit event recording regardless of payment_enabled)
+    # Normal user conversations: user's team pays
+    # Platform channels (Telegram/Discord/Twitter/API/X402): agent's team pays
+    payer = message.team_id
     if user_message.author_type in [
         AuthorType.TELEGRAM,
         AuthorType.DISCORD,
@@ -623,7 +609,7 @@ async def stream_agent_raw(
         AuthorType.API,
         AuthorType.X402,
     ]:
-        payer = agent.owner
+        payer = agent.team_id
 
     budget_status = await check_hourly_budget_exceeded(f"base_llm:{payer}")
     if budget_status.exceeded:

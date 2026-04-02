@@ -23,17 +23,17 @@ from intentkit.utils.error import IntentKitAPIError
 
 @pytest.mark.asyncio
 async def test_adjustment_positive_success():
-    """Test positive adjustment uses income for user and deduction for platform."""
-    user_id = "user_1"
+    """Test positive adjustment uses income for team and deduction for platform."""
+    team_id = "team_1"
     amount = Decimal("10.0000")
     upstream_tx_id = "tx_adj_pos"
     note = "Positive adjustment"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("10")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("10")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -52,20 +52,20 @@ async def test_adjustment_positive_success():
             new_callable=AsyncMock,
         ) as mock_deduction,
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
         result = await adjustment(
-            mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
+            mock_session, team_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
-        # Positive amount: income for user
+        # Positive amount: income for team
         mock_income.assert_called_once()
-        assert mock_income.call_args[1]["owner_id"] == user_id
+        assert mock_income.call_args[1]["owner_id"] == team_id
         assert mock_income.call_args[1]["amount_details"] == {
             CreditType.PERMANENT: amount
         }
@@ -80,17 +80,17 @@ async def test_adjustment_positive_success():
 
 @pytest.mark.asyncio
 async def test_adjustment_negative_success():
-    """Test negative adjustment uses deduction for user and income for platform."""
-    user_id = "user_1"
+    """Test negative adjustment uses deduction for team and income for platform."""
+    team_id = "team_1"
     amount = Decimal("-5.0000")
     upstream_tx_id = "tx_adj_neg"
     note = "Correction"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("10")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("10")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -109,20 +109,20 @@ async def test_adjustment_negative_success():
             new_callable=AsyncMock,
         ) as mock_income,
     ):
-        mock_deduction.return_value = mock_user_account
+        mock_deduction.return_value = mock_team_account
         mock_income.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
         result = await adjustment(
-            mock_session, user_id, CreditType.PERMANENT, amount, upstream_tx_id, note
+            mock_session, team_id, CreditType.PERMANENT, amount, upstream_tx_id, note
         )
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
-        # Negative amount: deduction for user (with positive abs amount)
+        # Negative amount: deduction for team (with positive abs amount)
         mock_deduction.assert_called_once()
-        assert mock_deduction.call_args[1]["owner_id"] == user_id
+        assert mock_deduction.call_args[1]["owner_id"] == team_id
         assert mock_deduction.call_args[1]["amount"] == Decimal("5.0000")
 
         # Negative amount: income for platform
@@ -143,7 +143,7 @@ async def test_adjustment_zero_amount_raises():
         with pytest.raises(ValueError, match="Adjustment amount cannot be zero"):
             await adjustment(
                 AsyncMock(),
-                "user_1",
+                "team_1",
                 CreditType.PERMANENT,
                 Decimal("0"),
                 "tx_zero",
@@ -163,7 +163,7 @@ async def test_adjustment_empty_note_raises():
         ):
             await adjustment(
                 AsyncMock(),
-                "user_1",
+                "team_1",
                 CreditType.PERMANENT,
                 Decimal("5.0000"),
                 "tx_no_note",
@@ -174,16 +174,16 @@ async def test_adjustment_empty_note_raises():
 @pytest.mark.asyncio
 async def test_adjustment_free_credit_type():
     """Test adjustment with FREE credit type sets correct credit fields."""
-    user_id = "user_1"
+    team_id = "team_1"
     amount = Decimal("10.0000")
     upstream_tx_id = "tx_adj_free"
     note = "Free credit adjustment"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("0")
-    mock_user_account.free_credits = Decimal("10")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("0")
+    mock_team_account.free_credits = Decimal("10")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -202,16 +202,16 @@ async def test_adjustment_free_credit_type():
             new_callable=AsyncMock,
         ) as mock_deduction,
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
         result = await adjustment(
-            mock_session, user_id, CreditType.FREE, amount, upstream_tx_id, note
+            mock_session, team_id, CreditType.FREE, amount, upstream_tx_id, note
         )
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
         # Verify income called with FREE credit type
         mock_income.assert_called_once()
@@ -225,16 +225,16 @@ async def test_adjustment_free_credit_type():
 @pytest.mark.asyncio
 async def test_adjustment_reward_credit_type():
     """Test adjustment with REWARD credit type sets correct credit fields."""
-    user_id = "user_1"
+    team_id = "team_1"
     amount = Decimal("10.0000")
     upstream_tx_id = "tx_adj_reward"
     note = "Reward credit adjustment"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("0")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("10")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("0")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("10")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -253,16 +253,16 @@ async def test_adjustment_reward_credit_type():
             new_callable=AsyncMock,
         ) as mock_deduction,
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
         result = await adjustment(
-            mock_session, user_id, CreditType.REWARD, amount, upstream_tx_id, note
+            mock_session, team_id, CreditType.REWARD, amount, upstream_tx_id, note
         )
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
         # Verify income called with REWARD credit type
         mock_income.assert_called_once()
@@ -286,7 +286,7 @@ async def test_recharge_negative_amount_raises():
         new_callable=AsyncMock,
     ):
         with pytest.raises(ValueError, match="Recharge amount must be positive"):
-            await recharge(AsyncMock(), "user_1", Decimal("-10.0"), "tx_neg")
+            await recharge(AsyncMock(), "team_1", Decimal("-10.0"), "tx_neg")
 
 
 @pytest.mark.asyncio
@@ -297,22 +297,22 @@ async def test_recharge_zero_amount_raises():
         new_callable=AsyncMock,
     ):
         with pytest.raises(ValueError, match="Recharge amount must be positive"):
-            await recharge(AsyncMock(), "user_1", Decimal("0"), "tx_zero")
+            await recharge(AsyncMock(), "team_1", Decimal("0"), "tx_zero")
 
 
 @pytest.mark.asyncio
 async def test_recharge_creates_correct_transactions():
     """Test recharge creates correct event and transaction objects in session."""
-    user_id = "user_1"
+    team_id = "team_1"
     amount = Decimal("100.0000")
     upstream_tx_id = "tx_recharge"
     note = "Test recharge"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("100")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("0")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("100")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("0")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -332,14 +332,14 @@ async def test_recharge_creates_correct_transactions():
         ) as mock_deduction,
         patch("intentkit.core.credit.recharge.send_alert") as mock_slack,
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        result = await recharge(mock_session, user_id, amount, upstream_tx_id, note)
+        result = await recharge(mock_session, team_id, amount, upstream_tx_id, note)
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
         # Should add event + 2 transactions = 3 session.add calls
         assert mock_session.add.call_count == 3
@@ -368,15 +368,15 @@ async def test_recharge_creates_correct_transactions():
 @pytest.mark.asyncio
 async def test_reward_success():
     """Test successful reward with REWARD type income and platform deduction."""
-    user_id = "user_1"
+    team_id = "team_1"
     amount = Decimal("10.0000")
     upstream_tx_id = "tx_reward"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("0")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("10")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("0")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("10")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -396,16 +396,16 @@ async def test_reward_success():
         ) as mock_deduction,
         patch("intentkit.core.credit.reward.send_alert"),
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
-        result = await reward(mock_session, user_id, amount, upstream_tx_id)
+        result = await reward(mock_session, team_id, amount, upstream_tx_id)
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
-        # Verify user income with REWARD type
+        # Verify team income with REWARD type
         mock_income.assert_called_once()
         assert mock_income.call_args[1]["amount_details"] == {CreditType.REWARD: amount}
 
@@ -424,7 +424,7 @@ async def test_reward_negative_amount_raises():
         new_callable=AsyncMock,
     ):
         with pytest.raises(ValueError, match="Reward amount must be positive"):
-            await reward(AsyncMock(), "user_1", Decimal("-5.0"), "tx_neg_reward")
+            await reward(AsyncMock(), "team_1", Decimal("-5.0"), "tx_neg_reward")
 
 
 @pytest.mark.asyncio
@@ -435,21 +435,21 @@ async def test_reward_zero_amount_raises():
         new_callable=AsyncMock,
     ):
         with pytest.raises(ValueError, match="Reward amount must be positive"):
-            await reward(AsyncMock(), "user_1", Decimal("0"), "tx_zero_reward")
+            await reward(AsyncMock(), "team_1", Decimal("0"), "tx_zero_reward")
 
 
 @pytest.mark.asyncio
 async def test_reward_custom_reward_type():
     """Test reward with custom reward_type parameter is used in event."""
-    user_id = "user_1"
+    team_id = "team_1"
     amount = Decimal("25.0000")
     upstream_tx_id = "tx_event_reward"
 
-    mock_user_account = MagicMock(spec=CreditAccountTable)
-    mock_user_account.id = "acc_user"
-    mock_user_account.credits = Decimal("0")
-    mock_user_account.free_credits = Decimal("0")
-    mock_user_account.reward_credits = Decimal("25")
+    mock_team_account = MagicMock(spec=CreditAccountTable)
+    mock_team_account.id = "acc_team"
+    mock_team_account.credits = Decimal("0")
+    mock_team_account.free_credits = Decimal("0")
+    mock_team_account.reward_credits = Decimal("25")
 
     mock_platform_account = MagicMock(spec=CreditAccountTable)
     mock_platform_account.id = "acc_platform"
@@ -469,20 +469,20 @@ async def test_reward_custom_reward_type():
         ) as mock_deduction,
         patch("intentkit.core.credit.reward.send_alert"),
     ):
-        mock_income.return_value = mock_user_account
+        mock_income.return_value = mock_team_account
         mock_deduction.return_value = mock_platform_account
 
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
         result = await reward(
             mock_session,
-            user_id,
+            team_id,
             amount,
             upstream_tx_id,
             reward_type=RewardType.EVENT_REWARD,
         )
 
-        assert result == mock_user_account
+        assert result == mock_team_account
 
         # Verify income called with REWARD credit type
         mock_income.assert_called_once()

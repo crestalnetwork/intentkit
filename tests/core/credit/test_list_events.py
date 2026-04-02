@@ -8,7 +8,7 @@ from intentkit.core.credit import (
     fetch_credit_event_by_id,
     fetch_credit_event_by_upstream_tx_id,
     list_credit_events,
-    list_credit_events_by_user,
+    list_credit_events_by_team,
     list_fee_events_by_agent,
 )
 from intentkit.models.credit import (
@@ -47,7 +47,7 @@ class SelectQueryStub:
 
 
 @pytest.mark.asyncio
-async def test_list_credit_events_by_user_filters_and_pagination():
+async def test_list_credit_events_by_team_filters_and_pagination():
     account = MagicMock()
     account.id = "acc-1"
 
@@ -98,7 +98,7 @@ async def test_list_credit_events_by_user_filters_and_pagination():
             side_effect=lambda event: event,
         ),
     ):
-        result, cursor, has_more = await list_credit_events_by_user(
+        result, cursor, has_more = await list_credit_events_by_team(
             mock_session,
             "user-1",
             direction=Direction.INCOME,
@@ -115,7 +115,7 @@ async def test_list_credit_events_by_user_filters_and_pagination():
 
 
 @pytest.mark.asyncio
-async def test_list_credit_events_by_user_missing_account():
+async def test_list_credit_events_by_team_missing_account():
     mock_session = AsyncMock()
 
     with patch(
@@ -123,7 +123,7 @@ async def test_list_credit_events_by_user_missing_account():
         new_callable=AsyncMock,
         return_value=None,
     ):
-        events, cursor, has_more = await list_credit_events_by_user(
+        events, cursor, has_more = await list_credit_events_by_team(
             mock_session, "missing"
         )
 

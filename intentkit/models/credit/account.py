@@ -659,8 +659,8 @@ class CreditAccount(BaseModel):
             if refill_amount is None:
                 refill_amount = payment_settings.refill_amount
 
-        if owner_type != OwnerType.USER:
-            # only users have daily quota
+        if owner_type not in (OwnerType.USER, OwnerType.TEAM):
+            # only users and teams can have daily quota
             free_quota = Decimal("0.0")
             refill_amount = Decimal("0.0")
         # Create event_id at the beginning for consistency
@@ -677,9 +677,11 @@ class CreditAccount(BaseModel):
             credits=Decimal("0"),
             income_at=datetime.now(UTC),
             expense_at=None,
-            last_event_id=event_id if owner_type == OwnerType.USER else None,
+            last_event_id=event_id
+            if owner_type in (OwnerType.USER, OwnerType.TEAM)
+            else None,
             # Initialize new statistics fields
-            # For USER accounts, initial free_quota counts as income
+            # For USER/TEAM accounts, initial free_quota counts as income
             total_income=free_quota,
             total_free_income=free_quota,
             total_reward_income=Decimal("0"),
@@ -695,8 +697,8 @@ class CreditAccount(BaseModel):
         session.add(account)
         await session.flush()
         await session.refresh(account)
-        # Only user accounts have first refill
-        if owner_type == OwnerType.USER:
+        # User and team accounts can have first refill
+        if owner_type in (OwnerType.USER, OwnerType.TEAM) and free_quota > 0:
             # First refill account
             _ = await cls.deduction_in_session(
                 session,
@@ -710,7 +712,8 @@ class CreditAccount(BaseModel):
             event = CreditEventTable(
                 id=event_id,
                 event_type=EventType.REFILL,
-                user_id=owner_id,
+                user_id=owner_id if owner_type == OwnerType.USER else None,
+                team_id=owner_id if owner_type == OwnerType.TEAM else None,
                 upstream_type=UpstreamType.INITIALIZER,
                 upstream_tx_id=account.id,
                 direction=Direction.INCOME,
@@ -732,8 +735,8 @@ class CreditAccount(BaseModel):
             await session.flush()
 
             # Create credit transaction records
-            # 1. User account transaction (credit)
-            user_tx = CreditTransactionTable(
+            # 1. Owner account transaction (credit)
+            owner_tx = CreditTransactionTable(
                 id=str(XID()),
                 account_id=account.id,
                 event_id=event_id,
@@ -745,9 +748,9 @@ class CreditAccount(BaseModel):
                 reward_amount=Decimal("0"),
                 permanent_amount=Decimal("0"),
             )
-            session.add(user_tx)
+            session.add(owner_tx)
 
-            # 2. Platform recharge account transaction (debit)
+            # 2. Platform refill account transaction (debit)
             platform_tx = CreditTransactionTable(
                 id=str(XID()),
                 account_id=DEFAULT_PLATFORM_ACCOUNT_REFILL,
