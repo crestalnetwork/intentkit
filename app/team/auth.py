@@ -47,6 +47,10 @@ async def get_current_user(
 ) -> str:
     """Verify Supabase JWT and return the user ID (sub claim).
 
+    Verification strategy:
+    1. HS256 if SUPABASE_JWT_SIGNING_KEY is configured (default for most Supabase projects)
+    2. JWKS/RS256 if SUPABASE_JWKS_URL or SUPABASE_URL is configured (for RS256 projects)
+
     Raises:
         IntentKitAPIError 401 if token is missing, invalid, or expired.
     """
@@ -63,17 +67,23 @@ async def get_current_user(
         logger.warning("Debug token used, returning 'system' user")
         return "system"
 
-    # Legacy HS256 fallback if signing key is configured and no JWKS URL
-    if config.supabase_jwt_signing_key and not (
-        config.supabase_jwks_url or config.supabase_url
-    ):
+    # HS256 with explicit signing key
+    if config.supabase_jwt_signing_key:
         return _verify_hs256(token)
 
-    return _verify_jwks(token)
+    # JWKS/RS256 for asymmetric signing (modern Supabase default)
+    if config.supabase_jwks_url or config.supabase_url:
+        return _verify_jwks(token)
+
+    raise IntentKitAPIError(
+        status_code=500,
+        key="ConfigMissing",
+        message="SUPABASE_JWT_SIGNING_KEY or SUPABASE_JWKS_URL must be configured",
+    )
 
 
 def _verify_hs256(token: str) -> str:
-    """Verify JWT using HS256 symmetric key (legacy)."""
+    """Verify JWT using HS256 symmetric key."""
     signing_key = config.supabase_jwt_signing_key
     assert signing_key is not None
     try:
@@ -108,15 +118,17 @@ def _verify_hs256(token: str) -> str:
 
 
 def _verify_jwks(token: str) -> str:
-    """Verify JWT using JWKS (RS256) — the recommended approach."""
+    """Verify JWT using JWKS — supports any algorithm advertised by the JWKS endpoint."""
     client = _get_jwks_client()
 
     try:
         signing_key = client.get_signing_key_from_jwt(token)
+        # Use the algorithm from the JWK itself instead of hardcoding
+        alg = signing_key.algorithm_name
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["RS256"],
+            algorithms=[alg],
             options={"require": ["sub", "exp"]},
         )
     except jwt.ExpiredSignatureError:
