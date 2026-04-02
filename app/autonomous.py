@@ -29,7 +29,7 @@ from intentkit.config.redis import (
 from intentkit.core.agent import get_agent
 from intentkit.core.autonomous import update_autonomous_task_status
 from intentkit.models.agent import Agent, AgentAutonomousStatus, AgentTable
-from intentkit.utils.alert import cleanup_alert
+from intentkit.utils.alert import cleanup_alert, send_alert
 
 from app.entrypoints.autonomous import run_autonomous_task
 
@@ -349,6 +349,12 @@ if __name__ == "__main__":
         try:
             logger.info("Starting autonomous agents scheduler...")
             scheduler.start()
+
+            # Send startup alert
+            send_alert(
+                f"IntentKit autonomous service started\n"
+                f"env: {config.env} | release: {config.release}"
+            )
 
             # Wait for shutdown event
             logger.info(
