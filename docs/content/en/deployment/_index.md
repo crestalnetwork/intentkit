@@ -5,7 +5,8 @@ weight: 2
 
 Choose the setup that matches your environment:
 
-- Docker Compose for local development and evaluation
+- Local for quick preview and evaluation on your own machine
+- Docker Compose for remote server deployment
 - Docker Swarm for production-style deployments
 
-Both options run the API server, background workers, and the supporting services (Postgres, Redis, and RustFS).
+All options run the API server, background workers, and the supporting services (Postgres, Redis, and RustFS).
