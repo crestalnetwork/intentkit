@@ -1,28 +1,17 @@
-# P1: Pricing Plans & Stripe Integration
+# P1: Pricing Plans & Stripe Integration — PARTIALLY COMPLETED
 
-## Context
+## Completed
 
-After P0 (team billing migration), we need:
-1. Pricing plan/tier model (Free / Pro / Enterprise)
-2. Each plan defines: free_quota, refill_amount, rate limits, feature gates
-3. Stripe integration for payment processing
-4. Team ↔ Plan binding
-5. Subscription lifecycle management (create, upgrade, downgrade, cancel)
+- Plan model: `TeamPlan` enum (NONE/FREE/PRO/MAX) with `PLAN_CONFIGS` defining free_quota, refill_amount, monthly_permanent_credits
+- Team plan assignment: teams get plan on creation based on signup method
+- Plan-based quota allocation: credit account creation reads from team's plan config
+- Monthly plan credit issuance: `issue_all_plan_credits()` runs hourly for PRO/MAX teams
+- Plan expiration tracking: `plan_expires_at` and `next_credit_issue_at` fields on TeamTable
 
-## Scope (TBD)
+## Remaining (TBD)
 
-- Plan model & DB schema
+- Stripe integration for payment processing
 - Stripe checkout session creation
 - Stripe webhook handling (payment success, subscription changes)
-- Team plan assignment and enforcement
-- Plan-based quota allocation (replaces global PaymentSettings defaults)
+- Subscription lifecycle management (create, upgrade, downgrade, cancel)
 - Admin API for plan management
-
-## Dependencies
-
-- Requires P0 (team billing) to be complete
-- Requires Stripe account setup and API keys
-
-## Notes
-
-- Details to be refined after P0 is implemented and validated

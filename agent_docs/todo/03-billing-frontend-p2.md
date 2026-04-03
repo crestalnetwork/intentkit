@@ -1,25 +1,15 @@
-# P2: Team Billing Frontend & APIs
+# P2: Team Billing Frontend & APIs — PARTIALLY COMPLETED
 
-## Context
+## Completed
 
-After P0 (team billing) and P1 (pricing plans), we need user-facing billing features.
+- Team credit balance display: GET /teams/{team_id}/usage API endpoint
+- Team consumption history: Recent events list with cursor pagination
+- Usage page in intentcat: `/team/usage` with credit bars and activity log
 
-## Scope (TBD)
+## Remaining (TBD)
 
-- Team credit balance display (API + frontend)
-- Team consumption history / event list (API + frontend)
 - Team recharge / top-up flow (tied to Stripe from P1)
 - Plan management UI (current plan, upgrade/downgrade)
 - Invoice / billing history
 - Usage analytics dashboard (per-agent breakdown, cost trends)
-- Both `frontend/` and `intentcat/` need corresponding pages
-
-## Dependencies
-
-- Requires P0 (team billing) complete
-- Requires P1 (pricing plans) for plan management UI
-- API endpoints needed before frontend work
-
-## Notes
-
-- Details to be refined after P0 and P1 are implemented
+- Pagination UI for events ("load more")
