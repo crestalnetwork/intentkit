@@ -11,6 +11,7 @@ from app.common.chat import (
 )
 from app.common.health import health_router
 from app.common.metadata import metadata_router
+from app.common.schema import schema_router
 
 __all__ = [
     "AllTasksAgentGroup",
@@ -21,6 +22,7 @@ __all__ = [
     "LocalChatMessageRequest",
     "health_router",
     "metadata_router",
+    "schema_router",
     "schedule_chat_summary_title_update",
     "should_schedule_chat_summary",
     "should_summarize_first_message",

@@ -49,7 +49,6 @@ export function SkillsField(props: FieldProps<SkillsFormData>) {
                 enabled,
             },
         };
-        // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
         onChange(newFormData, fieldPathId.path);
     };
 

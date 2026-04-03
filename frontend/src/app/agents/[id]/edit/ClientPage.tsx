@@ -3,129 +3,50 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { customizeValidator } from "@rjsf/validator-ajv8";
 import Form, { IChangeEvent } from "@rjsf/core";
-import { RJSFSchema, RegistryFieldsType } from "@rjsf/utils";
+import { RJSFSchema } from "@rjsf/utils";
 import { agentApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { widgets, BaseInputTemplate } from "../../new/widgets";
 import { templates } from "../../new/templates";
-import { SkillsField } from "../../new/SkillsField";
+import {
+    validator,
+    fields,
+    onFormError,
+    generateUiSchema,
+    createTransformErrors,
+    cleanSkillsData,
+    filterBySchema,
+} from "../../new/formUtils";
 import { toast } from "@/hooks/use-toast";
 
-// Custom validator with options to handle optional fields properly
-const validator = customizeValidator({
-    ajvOptionsOverrides: {
-        removeAdditional: true,
-    },
-});
-
-// Custom fields for RJSF
-const fields: RegistryFieldsType = {
-    SkillsField: SkillsField,
-};
-
-function generateUiSchema(schema: Record<string, unknown> | undefined) {
-    const uiSchema: Record<string, unknown> = {
-        "ui:title": " ", // Hide default title
-        "ui:description": " ", // Hide default description
-    };
-
-    if (schema && typeof schema.properties === "object" && schema.properties !== null) {
-        const properties = schema.properties as Record<string, Record<string, unknown>>;
-        Object.keys(properties).forEach((key) => {
-            const property = properties[key];
-            const uiProperty: Record<string, unknown> = {};
-
-            // Use custom SkillsField for skills
-            if (key === "skills") {
-                uiProperty["ui:field"] = "SkillsField";
-            }
-
-            // Make id field read-only in edit mode
-            if (key === "id") {
-                uiProperty["ui:readonly"] = true;
-            }
-
-            if (property["x-component"] === "category-select") {
-                uiProperty["ui:widget"] = "ModelSelectWidget";
-            }
-
-            if (property["x-component"] === "picture-upload") {
-                uiProperty["ui:widget"] = "PictureWidget";
-            }
-
-            if (typeof property["x-placeholder"] === "string") {
-                uiProperty["ui:placeholder"] = property["x-placeholder"];
-            }
-
-            if (typeof property.maxLength === "number" && property.maxLength > 200) {
-                uiProperty["ui:widget"] = "textarea";
-            }
-
-            // Use StringArrayWidget for string array fields
-            if (property.type === "array" && (property.items as Record<string, unknown>)?.type === "string") {
-                uiProperty["ui:widget"] = "StringArrayWidget";
-            }
-
-            if (Object.keys(uiProperty).length > 0) {
-                uiSchema[key] = uiProperty;
-            }
-        });
-    }
-
-    return uiSchema;
-}
+const SCHEMA_STALE_TIME = 5 * 60 * 1000;
 
 export default function EditAgentPage() {
     const router = useRouter();
     const params = useParams();
     const agentId = params.id as string;
-    
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch the agent schema
     const { data: schema, isLoading: isSchemaLoading, error: schemaError } = useQuery({
         queryKey: ["agent-schema"],
         queryFn: agentApi.getSchema,
+        staleTime: SCHEMA_STALE_TIME,
     });
 
-    // Fetch the existing agent data
     const { data: agent, isLoading: isAgentLoading, error: agentError } = useQuery({
         queryKey: ["agent-editable", agentId],
         queryFn: () => agentApi.getEditableById(agentId),
         enabled: !!agentId,
     });
 
-    // Resolve the actual agent ID (URL param may be a slug)
     const resolvedId = (agent as Record<string, unknown> | undefined)?.id as string | undefined;
 
-    // Filter agent data to only include fields defined in the schema
-    const filterBySchema = (
-        agentData: Record<string, unknown>,
-        schemaData: Record<string, unknown>
-    ): Record<string, unknown> => {
-        if (!schemaData.properties || typeof schemaData.properties !== "object") {
-            return {};
-        }
-        const schemaProperties = schemaData.properties as Record<string, unknown>;
-        const filtered: Record<string, unknown> = {};
-        
-        for (const key of Object.keys(schemaProperties)) {
-            if (key in agentData) {
-                filtered[key] = agentData[key];
-            }
-        }
-        
-        return filtered;
-    };
-
-    // Initialize formData from agent data, filtered by schema
     const [formData, setFormData] = useState<Record<string, unknown>>({});
-    
-    // Update formData when agent data and schema are loaded
+
     React.useEffect(() => {
         if (agent && schema) {
             const filteredData = filterBySchema(
@@ -136,91 +57,7 @@ export default function EditAgentPage() {
         }
     }, [agent, schema]);
 
-    const uiSchema = useMemo(() => generateUiSchema(schema), [schema]);
-
-    // Clean up skills data before submission:
-    // - Remove categories where enabled=false
-    // - Remove skill states that are 'disabled'
-    // - Remove skills that are not defined in the schema (handles renamed skills)
-    const cleanSkillsData = (data: Record<string, unknown>, schemaData: Record<string, unknown> | undefined): Record<string, unknown> => {
-        const skills = data.skills as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
-        if (!skills) return data;
-
-        // Extract valid skill keys from the schema for each category
-        const getValidSkillsForCategory = (categoryKey: string): Set<string> | null => {
-            if (!schemaData?.properties) return null;
-            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
-            const skillsSchema = schemaProperties.skills;
-            if (!skillsSchema?.properties) return null;
-            const skillsCategoriesSchema = skillsSchema.properties as Record<string, Record<string, unknown>>;
-            const categorySchema = skillsCategoriesSchema[categoryKey];
-            if (!categorySchema?.properties) return null;
-            const categoryProperties = categorySchema.properties as Record<string, Record<string, unknown>>;
-            const statesSchema = categoryProperties.states;
-            if (!statesSchema?.properties) return null;
-            const statesProperties = statesSchema.properties as Record<string, unknown>;
-            return new Set(Object.keys(statesProperties));
-        };
-
-        // Extract valid category keys from the schema
-        const getValidCategories = (): Set<string> | null => {
-            if (!schemaData?.properties) return null;
-            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
-            const skillsSchema = schemaProperties.skills;
-            if (!skillsSchema?.properties) return null;
-            const skillsCategoriesSchema = skillsSchema.properties as Record<string, unknown>;
-            return new Set(Object.keys(skillsCategoriesSchema));
-        };
-
-        const validCategories = getValidCategories();
-        const cleanedSkills: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
-        for (const [categoryKey, categoryData] of Object.entries(skills)) {
-            // Skip categories that are explicitly disabled
-            if (categoryData.enabled === false) continue;
-
-            // Skip categories not in schema (removed categories)
-            if (validCategories && !validCategories.has(categoryKey)) {
-                console.log(`[cleanSkillsData] Removing category not in schema: ${categoryKey}`);
-                continue;
-            }
-
-            // Get valid skills for this category
-            const validSkills = getValidSkillsForCategory(categoryKey);
-
-            // Clean up states - only keep non-disabled skills that exist in schema
-            const states = categoryData.states || {};
-            const cleanedStates: Record<string, string> = {};
-            for (const [skillKey, skillValue] of Object.entries(states)) {
-                // Skip disabled skills
-                if (skillValue === 'disabled') continue;
-                
-                // Skip skills not in schema (old/renamed skills)
-                if (validSkills && !validSkills.has(skillKey)) {
-                    console.log(`[cleanSkillsData] Removing skill not in schema: ${categoryKey}.${skillKey}`);
-                    continue;
-                }
-                
-                cleanedStates[skillKey] = skillValue;
-            }
-
-            // Only include category if it's enabled
-            if (categoryData.enabled === true) {
-                cleanedSkills[categoryKey] = {
-                    enabled: true,
-                    states: Object.keys(cleanedStates).length > 0 ? cleanedStates : undefined,
-                };
-            }
-        }
-
-        const restData = { ...data };
-        if ("autonomous" in restData) {
-            delete (restData as Record<string, unknown>).autonomous;
-        }
-        return {
-            ...restData,
-            skills: Object.keys(cleanedSkills).length > 0 ? cleanedSkills : undefined,
-        };
-    };
+    const uiSchema = useMemo(() => generateUiSchema(schema, ["id", "slug"]), [schema]);
 
     const handleSubmit = async ({ formData }: IChangeEvent<Record<string, unknown>>) => {
         if (!formData) return;
@@ -243,47 +80,10 @@ export default function EditAgentPage() {
         }
     };
 
-    const log = (type: string) => console.log.bind(console, type);
-
-    // Transform errors to filter out optional field validation errors
-    // and log validation data for debugging
     const transformErrors = useCallback(
-        (errors: ReturnType<typeof validator.validateFormData>["errors"]) => {
-            console.log("[RJSF Validator] Form data before validation:", JSON.stringify(formData, null, 2));
-            console.log("[RJSF Validator] Schema:", JSON.stringify(schema, null, 2));
-            console.log("[RJSF Validator] Raw validation errors:", errors);
-            
-            // Get required fields from schema
-            const requiredFields = (schema?.required as string[]) || [];
-            
-            // Filter out errors for optional fields with empty/undefined values
-            const filteredErrors = errors.filter((error) => {
-                // Extract field name from the error property path
-                const fieldName = error.property?.replace(/^\./, "").split(".")[0] || "";
-                
-                // If the field is required, keep the error
-                if (requiredFields.includes(fieldName)) {
-                    return true;
-                }
-                
-                // If the error is about type mismatch for an optional field
-                // and the value is empty/undefined, filter it out
-                if (error.name === "type") {
-                    const fieldValue = (formData as Record<string, unknown>)[fieldName];
-                    if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
-                        console.log(`[RJSF Validator] Filtering out type error for optional empty field: ${fieldName}`);
-                        return false;
-                    }
-                }
-                
-                return true;
-            });
-            
-            console.log("[RJSF Validator] Filtered errors:", filteredErrors);
-            return filteredErrors;
-        },
+        () => createTransformErrors(formData, schema),
         [formData, schema]
-    );
+    )();
 
     if (isSchemaLoading || isAgentLoading) {
         return (
@@ -334,7 +134,7 @@ export default function EditAgentPage() {
                     formData={formData}
                     onChange={(e) => setFormData(e.formData || {})}
                     onSubmit={handleSubmit}
-                    onError={log("errors")}
+                    onError={onFormError}
                     transformErrors={transformErrors}
                     className="space-y-6"
                     widgets={widgets}

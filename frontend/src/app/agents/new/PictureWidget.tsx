@@ -97,6 +97,7 @@ export const PictureWidget = (props: WidgetProps) => {
                     </div>
                     <p className="text-xs text-muted-foreground">
                         JPEG, PNG, GIF or WebP. Max 5MB.
+                        Don&apos;t worry, if you don&apos;t upload an avatar, AI will automatically create one for you.
                     </p>
                     {uploadError && (
                         <p className="text-xs text-destructive">{uploadError}</p>

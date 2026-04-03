@@ -30,6 +30,7 @@ from intentkit.utils.error import (
 
 from app.common.health import health_router
 from app.common.metadata import metadata_router
+from app.common.schema import schema_router
 from app.team import (
     team_agent_router,
     team_autonomous_router,
@@ -118,6 +119,7 @@ _ = app.add_middleware(
 _ = app.include_router(health_router)
 _ = app.include_router(core_router)
 _ = app.include_router(metadata_router)
+_ = app.include_router(schema_router)
 _ = app.include_router(team_agent_router)
 _ = app.include_router(team_autonomous_router)
 _ = app.include_router(team_chat_router)
