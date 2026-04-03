@@ -37,3 +37,4 @@ Follow Semantic Versioning
 4. Diff `origin/main` with it, summarize release notes to business language, not a technical one. List new features. For bug fixes and improvements, provide vague descriptions, such as "fixed bugs in the xxx module". Then save it to `release_notes.md` for later use. Add a diff link to release note too, the from and to should be the version number.
 5. If the release is **not pre-release**, also insert the release note to the beginning of `CHANGELOG.md` (This file contains all history release notes, don't use it in gh command). Commit and push `release_notes.md` and `CHANGELOG.md`.
 6. Construct `gh release create` command, use `release_notes.md` as notes file in gh command.
+7. Git Pull back the new tags.
