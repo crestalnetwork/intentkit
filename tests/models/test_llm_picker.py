@@ -33,6 +33,10 @@ def mock_llm_config(**keys):
         openai_compatible_base_url=None,
         openai_compatible_model=None,
         openai_compatible_model_lite=None,
+        anthropic_compatible_api_key=None,
+        anthropic_compatible_base_url=None,
+        anthropic_compatible_model=None,
+        anthropic_compatible_model_lite=None,
     )
     defaults.update(keys)
     with (

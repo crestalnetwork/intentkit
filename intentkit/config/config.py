@@ -169,6 +169,22 @@ class Config:
         self.openai_compatible_model_lite: str | None = self.load(
             "OPENAI_COMPATIBLE_MODEL_LITE"
         )
+        # Anthropic Compatible provider
+        self.anthropic_compatible_api_key: str | None = self.load(
+            "ANTHROPIC_COMPATIBLE_API_KEY"
+        )
+        self.anthropic_compatible_provider: str = self.load(
+            "ANTHROPIC_COMPATIBLE_PROVIDER", "Anthropic Compatible"
+        )
+        self.anthropic_compatible_base_url: str | None = self.load(
+            "ANTHROPIC_COMPATIBLE_BASE_URL"
+        )
+        self.anthropic_compatible_model: str | None = self.load(
+            "ANTHROPIC_COMPATIBLE_MODEL"
+        )
+        self.anthropic_compatible_model_lite: str | None = self.load(
+            "ANTHROPIC_COMPATIBLE_MODEL_LITE"
+        )
         # LLM Config
         self.system_prompt: str | None = self.load("SYSTEM_PROMPT")
         self.intentkit_prompt: str | None = self.load("INTENTKIT_PROMPT")

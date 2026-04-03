@@ -178,6 +178,53 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
             )
             defaults[f"{provider.value}:{lite_id}"] = lite_model
 
+    # Load Anthropic Compatible models from config (not CSV)
+    if (
+        config.anthropic_compatible_api_key
+        and config.anthropic_compatible_base_url
+        and config.anthropic_compatible_model
+    ):
+        timestamp = datetime.now(UTC)
+        provider = LLMProvider.ANTHROPIC_COMPATIBLE
+        base_attrs = {
+            "provider": provider,
+            "enabled": True,
+            "input_price": Decimal("0"),
+            "output_price": Decimal("0"),
+            "context_length": 200000,
+            "output_length": 64000,
+            "supports_image_input": False,
+            "supports_temperature": True,
+            "supports_frequency_penalty": False,
+            "supports_presence_penalty": False,
+            "timeout": 300,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+        }
+
+        model_id = config.anthropic_compatible_model
+        model = LLMModelInfo(
+            id=model_id,
+            name=model_id,
+            intelligence=3,
+            speed=3,
+            reasoning_effort="high",
+            **base_attrs,
+        )
+        defaults[f"{provider.value}:{model_id}"] = model
+
+        if config.anthropic_compatible_model_lite:
+            lite_id = config.anthropic_compatible_model_lite
+            lite_model = LLMModelInfo(
+                id=lite_id,
+                name=lite_id,
+                intelligence=2,
+                speed=4,
+                reasoning_effort=None,
+                **base_attrs,
+            )
+            defaults[f"{provider.value}:{lite_id}"] = lite_model
+
     return defaults
 
 
@@ -190,6 +237,7 @@ class LLMProvider(str, Enum):
     MINIMAX = "minimax"
     OLLAMA = "ollama"
     OPENAI_COMPATIBLE = "openai_compatible"
+    ANTHROPIC_COMPATIBLE = "anthropic_compatible"
 
     @property
     def is_configured(self) -> bool:
@@ -207,6 +255,11 @@ class LLMProvider(str, Enum):
                 and config.openai_compatible_base_url
                 and config.openai_compatible_model
             ),
+            self.ANTHROPIC_COMPATIBLE: bool(
+                config.anthropic_compatible_api_key
+                and config.anthropic_compatible_base_url
+                and config.anthropic_compatible_model
+            ),
         }
         return config_map.get(self, False)
 
@@ -221,6 +274,7 @@ class LLMProvider(str, Enum):
             self.MINIMAX: "MiniMax",
             self.OLLAMA: "Ollama",
             self.OPENAI_COMPATIBLE: config.openai_compatible_provider,
+            self.ANTHROPIC_COMPATIBLE: config.anthropic_compatible_provider,
         }
         return display_names.get(self, self.value)
 
@@ -893,6 +947,34 @@ class MiniMaxLLM(LLMModel):
         return ChatAnthropic(**kwargs)
 
 
+class AnthropicCompatibleLLM(LLMModel):
+    """Anthropic Compatible LLM configuration."""
+
+    @override
+    async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
+        """Create and return a ChatAnthropic instance for Anthropic-compatible provider."""
+        from langchain_anthropic import ChatAnthropic
+
+        info = await self.model_info()
+
+        kwargs: dict[str, Any] = {
+            "model": info.id,
+            "api_key": config.anthropic_compatible_api_key,
+            "base_url": config.anthropic_compatible_base_url,
+            "timeout": info.timeout,
+            "max_retries": 3,
+        }
+
+        # Add optional parameters based on model support
+        if info.supports_temperature:
+            kwargs["temperature"] = self.temperature
+
+        # Update kwargs with params to allow overriding
+        kwargs.update(params)
+
+        return ChatAnthropic(**kwargs)
+
+
 class OpenAICompatibleLLM(LLMModel):
     """OpenAI Compatible LLM configuration."""
 
@@ -959,6 +1041,7 @@ async def create_llm_model(
         LLMProvider.OPENAI: OpenAILLM,
         LLMProvider.MINIMAX: MiniMaxLLM,
         LLMProvider.OPENAI_COMPATIBLE: OpenAICompatibleLLM,
+        LLMProvider.ANTHROPIC_COMPATIBLE: AnthropicCompatibleLLM,
     }
 
     model_class = provider_map.get(info.provider, OpenAILLM)

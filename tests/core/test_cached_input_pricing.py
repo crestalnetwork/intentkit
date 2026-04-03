@@ -181,6 +181,9 @@ def test_csv_loads_cached_input_price_for_claude():
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
+        mock_config.anthropic_compatible_api_key = None
+        mock_config.anthropic_compatible_base_url = None
+        mock_config.anthropic_compatible_model = None
 
         models = load_default_llm_models()
 
@@ -202,6 +205,9 @@ def test_csv_cached_input_price_none_for_deepseek():
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
+        mock_config.anthropic_compatible_api_key = None
+        mock_config.anthropic_compatible_base_url = None
+        mock_config.anthropic_compatible_model = None
 
         models = load_default_llm_models()
 
@@ -222,6 +228,9 @@ def test_csv_cached_input_price_for_grok4():
         mock_config.openai_compatible_api_key = None
         mock_config.openai_compatible_base_url = None
         mock_config.openai_compatible_model = None
+        mock_config.anthropic_compatible_api_key = None
+        mock_config.anthropic_compatible_base_url = None
+        mock_config.anthropic_compatible_model = None
 
         models = load_default_llm_models()
 
