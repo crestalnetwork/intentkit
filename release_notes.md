@@ -1,6 +1,5 @@
-# v0.17.14
+# v0.17.16
 
-- Added team usage page API for viewing credit balances and recent activity
-- Updated billing roadmap documentation to reflect completed milestones
+- Fixed a crash on the agent chat page that could occur when loading agents
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.13...v0.17.14
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.15...v0.17.16
