@@ -1,5 +1,5 @@
-# v0.17.16
+# v0.17.17
 
-- Fixed a crash on the agent chat page that could occur when loading agents
+- Added Anthropic Compatible LLM provider, allowing connection to any Anthropic-API-compatible service via environment variables
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.15...v0.17.16
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.16...v0.17.17
