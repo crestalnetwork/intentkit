@@ -531,6 +531,35 @@ export default function AgentChatPage() {
     }
   };
 
+  // Subscription hooks must be before early returns to maintain consistent hook order
+  const isPublicAgent = agent?.visibility != null && agent.visibility >= 20;
+  const canEdit = !agent?.owner || agent.owner === "system";
+  const isOwnAgent = canEdit;
+
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: subscriptionApi.list,
+    enabled: isPublicAgent && !isOwnAgent,
+  });
+  const isSubscribed = subscriptions.some((s: { agent_id: string }) => s.agent_id === agent?.id);
+
+  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+
+  const subscribeMutation = useMutation({
+    mutationFn: () => subscriptionApi.subscribe(agent!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      setShowSubscribeDialog(false);
+    },
+  });
+  const unsubscribeMutation = useMutation({
+    mutationFn: () => subscriptionApi.unsubscribe(agent!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      setShowSubscribeDialog(false);
+    },
+  });
+
   if (!agentId) {
     return (
       <div className="container py-10">
@@ -584,35 +613,6 @@ export default function AgentChatPage() {
 
   const displayName = agent.name || agent.id;
   const cachedAvatar = getCachedAgentAvatar(agentId) ?? getImageUrl(agent.picture);
-  const canEdit = !agent?.owner || agent.owner === "system";
-
-  const isPublicAgent = agent?.visibility != null && agent.visibility >= 20;
-  const isOwnAgent = canEdit;
-
-  // Fetch subscriptions to check if we're subscribed
-  const { data: subscriptions = [] } = useQuery({
-    queryKey: ["subscriptions"],
-    queryFn: subscriptionApi.list,
-    enabled: isPublicAgent && !isOwnAgent,
-  });
-  const isSubscribed = subscriptions.some((s: { agent_id: string }) => s.agent_id === agent?.id);
-
-  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
-
-  const subscribeMutation = useMutation({
-    mutationFn: () => subscriptionApi.subscribe(agent!.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      setShowSubscribeDialog(false);
-    },
-  });
-  const unsubscribeMutation = useMutation({
-    mutationFn: () => subscriptionApi.unsubscribe(agent!.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      setShowSubscribeDialog(false);
-    },
-  });
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
