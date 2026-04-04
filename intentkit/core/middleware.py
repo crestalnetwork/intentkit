@@ -16,7 +16,7 @@ from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.core.prompt import build_system_prompt
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
-from intentkit.models.llm import LLMModel, LLMProvider
+from intentkit.models.llm import LLMModel
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +50,20 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     llm_model: LLMModel
     public_tools: list[BaseTool | dict[str, Any]]
     private_tools: list[BaseTool | dict[str, Any]]
+    extra_llm_params: dict[str, Any]
 
     def __init__(
         self,
         llm_model: LLMModel,
         public_tools: list[BaseTool | dict[str, Any]],
         private_tools: list[BaseTool | dict[str, Any]],
+        extra_llm_params: dict[str, Any] | None = None,
     ) -> None:
         super().__init__()
         self.llm_model = llm_model
         self.public_tools = public_tools
         self.private_tools = private_tools
+        self.extra_llm_params = extra_llm_params or {}
 
     @override
     async def awrap_model_call(  # type: ignore[override]
@@ -70,22 +73,11 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     ) -> ModelResponse:
         context: AgentContext = request.runtime.context
 
-        llm_params: dict[str, Any] = {}
+        llm_params: dict[str, Any] = {**self.extra_llm_params}
         # Tools are already deduplicated at build time in executor.py
         tools: list[BaseTool | dict[str, Any]] = list(
             self.private_tools if context.is_private else self.public_tools
         )
-
-        if context.agent.search_internet:
-            model_info = await self.llm_model.model_info()
-            if model_info.provider == LLMProvider.OPENAI:
-                tools.append({"type": "web_search"})
-            elif model_info.provider == LLMProvider.XAI:
-                tools.extend([{"type": "web_search"}, {"type": "x_search"}])
-            elif model_info.provider == LLMProvider.OPENROUTER:
-                llm_params["plugins"] = [{"id": "web"}]
-            elif model_info.provider == LLMProvider.GOOGLE:
-                tools.extend([{"google_search": {}}, {"url_context": {}}])
 
         model = await self.llm_model.create_instance(llm_params)
         updated_request = request.override(

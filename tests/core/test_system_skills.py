@@ -14,8 +14,13 @@ from intentkit.core.system_skills.create_activity import (
 )
 from intentkit.core.system_skills.current_time import CurrentTimeSkill
 from intentkit.core.system_skills.get_post import GetPostSkill
+from intentkit.core.system_skills.read_webpage import (
+    ReadWebpageCloudflareSkill,
+    ReadWebpageZaiSkill,
+)
 from intentkit.core.system_skills.recent_activities import RecentActivitiesSkill
 from intentkit.core.system_skills.recent_posts import RecentPostsSkill
+from intentkit.core.system_skills.search_web import SearchWebZaiSkill
 from intentkit.models.chat import AuthorType
 
 
@@ -365,3 +370,105 @@ async def test_recent_posts_empty(mock_runtime):
         result = await skill._arun()  # pyright: ignore[reportPrivateUsage]
 
     assert result == "No recent posts found."
+
+
+# ──────────────────────────────────────────────
+# ReadWebpageCloudflareSkill
+# ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_cloudflare_missing_config():
+    """Missing config raises ToolException."""
+    skill = ReadWebpageCloudflareSkill()
+    with patch("intentkit.config.config.config") as mock_config:
+        mock_config.cloudflare_account_id = None
+        mock_config.cloudflare_api_token = None
+        with pytest.raises(
+            ToolException, match="Cloudflare Browser Rendering is not configured"
+        ):
+            await skill._arun("https://example.com")  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_cloudflare_success():
+    """Successful fetch and clean returns content."""
+    skill = ReadWebpageCloudflareSkill()
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        patch.object(
+            skill, "_fetch_markdown", new=AsyncMock(return_value="raw markdown")
+        ),
+        patch.object(
+            skill, "_clean_with_llm", new=AsyncMock(return_value="cleaned markdown")
+        ),
+    ):
+        mock_config.cloudflare_account_id = "test_id"
+        mock_config.cloudflare_api_token = "test_token"
+        result = await skill._arun("https://example.com", tool_call_id="call_1")  # pyright: ignore[reportPrivateUsage]
+
+    assert result == "cleaned markdown"
+
+
+# ──────────────────────────────────────────────
+# ReadWebpageZaiSkill
+# ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_zai_missing_config():
+    """Missing config raises ToolException."""
+    skill = ReadWebpageZaiSkill()
+    with patch("intentkit.config.config.config") as mock_config:
+        mock_config.zai_plan_api_key = None
+        with pytest.raises(ToolException, match="Z.AI Plan API is not configured"):
+            await skill._arun("https://example.com")  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.asyncio
+async def test_read_webpage_zai_success():
+    """Successful fetch returns content."""
+    skill = ReadWebpageZaiSkill()
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        patch.object(
+            skill, "_fetch_markdown", new=AsyncMock(return_value="raw markdown")
+        ),
+    ):
+        mock_config.zai_plan_api_key = "test_key"
+        result = await skill._arun("https://example.com")  # pyright: ignore[reportPrivateUsage]
+
+    assert result == "raw markdown"
+
+
+# ──────────────────────────────────────────────
+# SearchWebZaiSkill
+# ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_search_web_zai_missing_config():
+    """Missing config raises ToolException."""
+    skill = SearchWebZaiSkill()
+    with patch("intentkit.config.config.config") as mock_config:
+        mock_config.zai_plan_api_key = None
+        with pytest.raises(ToolException, match="Z.AI Plan API is not configured"):
+            await skill._arun("test query")  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.asyncio
+async def test_search_web_zai_success():
+    """Successful search returns formatted results."""
+    skill = SearchWebZaiSkill()
+    mock_results = [
+        {"title": "Test", "url": "https://test.com", "snippet": "Test snippet"}
+    ]
+    with (
+        patch("intentkit.config.config.config") as mock_config,
+        patch.object(skill, "_search", new=AsyncMock(return_value=mock_results)),
+        patch.object(skill, "_format_results", return_value="Formatted Results"),
+    ):
+        mock_config.zai_plan_api_key = "test_key"
+        result = await skill._arun("test query")  # pyright: ignore[reportPrivateUsage]
+
+    assert result == "Formatted Results"

@@ -235,6 +235,8 @@ class Config:
         # Cloudflare Browser Rendering
         self.cloudflare_account_id: str | None = self.load("CLOUDFLARE_ACCOUNT_ID")
         self.cloudflare_api_token: str | None = self.load("CLOUDFLARE_API_TOKEN")
+        # Z.AI Plan API
+        self.zai_plan_api_key: str | None = self.load("ZAI_PLAN_API_KEY")
         # Sentry
         self.sentry_dsn: str | None = self.load("SENTRY_DSN")
         self.sentry_sample_rate: float = self.load_float("SENTRY_SAMPLE_RATE", 0.1)

@@ -14,9 +14,13 @@ from intentkit.core.system_skills.create_activity import CreateActivitySkill
 from intentkit.core.system_skills.create_post import CreatePostSkill
 from intentkit.core.system_skills.current_time import CurrentTimeSkill
 from intentkit.core.system_skills.get_post import GetPostSkill
-from intentkit.core.system_skills.read_webpage import ReadWebpageSkill
+from intentkit.core.system_skills.read_webpage import (
+    ReadWebpageCloudflareSkill,
+    ReadWebpageZaiSkill,
+)
 from intentkit.core.system_skills.recent_activities import RecentActivitiesSkill
 from intentkit.core.system_skills.recent_posts import RecentPostsSkill
+from intentkit.core.system_skills.search_web import SearchWebZaiSkill
 from intentkit.core.system_skills.update_memory import UpdateMemorySkill
 
 if TYPE_CHECKING:
@@ -29,10 +33,15 @@ __all__ = [
     "CreatePostSkill",
     "CurrentTimeSkill",
     "GetPostSkill",
-    "ReadWebpageSkill",
+    "ReadWebpageCloudflareSkill",
+    "ReadWebpageZaiSkill",
+    "SearchWebZaiSkill",
     "RecentActivitiesSkill",
     "RecentPostsSkill",
     "UpdateMemorySkill",
+    "read_webpage_cloudflare",
+    "read_webpage_zai",
+    "search_web_zai",
 ]
 
 # Cached singleton instances
@@ -43,8 +52,10 @@ _recent_activities = RecentActivitiesSkill()
 _create_post = CreatePostSkill()
 _get_post = GetPostSkill()
 _recent_posts = RecentPostsSkill()
-_read_webpage = ReadWebpageSkill()
 _update_memory = UpdateMemorySkill()
+read_webpage_cloudflare = ReadWebpageCloudflareSkill()
+read_webpage_zai = ReadWebpageZaiSkill()
+search_web_zai = SearchWebZaiSkill()
 
 
 def get_system_skills(agent: Agent) -> list[SystemSkill]:
@@ -77,9 +88,4 @@ def get_system_skills(agent: Agent) -> list[SystemSkill]:
 
     if agent.enable_long_term_memory:
         skills.append(_update_memory)
-    if agent.search_internet:
-        from intentkit.config.config import config
-
-        if config.cloudflare_account_id and config.cloudflare_api_token:
-            skills.append(_read_webpage)
     return skills

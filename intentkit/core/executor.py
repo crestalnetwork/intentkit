@@ -142,15 +142,46 @@ async def build_executor(
     from intentkit.core.system_skills import get_system_skills
 
     system_skills = get_system_skills(agent)
-    # Skip read_webpage for providers that have native search capabilities
-    model_provider = llm_model.info.provider
-    if model_provider in (LLMProvider.GOOGLE, LLMProvider.OPENAI):
-        system_skills = [s for s in system_skills if s.name != "read_webpage"]
     # current_time is available to all users (public), other system skills are private-only
     for skill in system_skills:
         if skill.name == "current_time":
             tools.append(skill)
     private_tools.extend(system_skills)
+
+    # Add search-related tools based on provider
+    extra_llm_params: dict[str, Any] = {}
+    if agent.search_internet:
+        model_provider = llm_model.info.provider
+        if model_provider == LLMProvider.OPENAI:
+            search_tools: list[dict[str, Any]] = [{"type": "web_search"}]
+            tools.extend(search_tools)
+            private_tools.extend(search_tools)
+        elif model_provider == LLMProvider.XAI:
+            search_tools = [{"type": "web_search"}, {"type": "x_search"}]
+            tools.extend(search_tools)
+            private_tools.extend(search_tools)
+        elif model_provider == LLMProvider.OPENROUTER:
+            extra_llm_params["plugins"] = [{"id": "web"}]
+            # OpenRouter doesn't have native webpage reading
+            if config.cloudflare_account_id and config.cloudflare_api_token:
+                from intentkit.core.system_skills import read_webpage_cloudflare
+
+                tools.append(read_webpage_cloudflare)
+                private_tools.append(read_webpage_cloudflare)
+        elif model_provider == LLMProvider.GOOGLE:
+            search_tools = [{"google_search": {}}, {"url_context": {}}]
+            tools.extend(search_tools)
+            private_tools.extend(search_tools)
+        else:
+            # For other providers (e.g. compatible), use zai skills if configured
+            if config.zai_plan_api_key:
+                from intentkit.core.system_skills import (
+                    read_webpage_zai,
+                    search_web_zai,
+                )
+
+                tools.extend([search_web_zai, read_webpage_zai])
+                private_tools.extend([search_web_zai, read_webpage_zai])
 
     # filter out unavailable skills
     tools = [t for t in tools if not isinstance(t, IntentKitSkill) or t.available()]
@@ -182,7 +213,7 @@ async def build_executor(
     base_model = await llm_model.create_instance()
 
     middleware: list[Any] = [
-        ToolBindingMiddleware(llm_model, tools, private_tools),
+        ToolBindingMiddleware(llm_model, tools, private_tools, extra_llm_params),
         DynamicPromptMiddleware(agent, agent_data),
         StepTrackingMiddleware(),
         ToolRetryMiddleware(),
