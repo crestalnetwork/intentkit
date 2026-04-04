@@ -1,5 +1,6 @@
 """Skills for reading webpage content as markdown via different providers."""
 
+import json
 import logging
 import re
 from typing import Annotated, override
@@ -9,6 +10,8 @@ from langchain_core.tools import ArgsSchema, InjectedToolCallId
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.clients.mcp.client import McpToolError, call_mcp_tool
+from intentkit.clients.mcp.registry import McpServerDef
 from intentkit.core.system_skills.base import SystemSkill
 
 logger = logging.getLogger(__name__)
@@ -25,7 +28,17 @@ Return ONLY the clean, readable main content in markdown format. \
 Do not add any commentary or explanation."""
 
 
-ZAI_API_BASE = "https://api.z.ai/api/coding/paas/v4"
+# MCP server definition for Z.AI web reader
+_ZAI_READER_SERVER = McpServerDef(
+    name="zai_web_reader",
+    display_name="Z.AI Web Reader",
+    description="Web page reader via Z.AI MCP",
+    url="https://api.z.ai/api/mcp/web_reader/mcp",
+    transport="streamable_http",
+    api_key_config_attr="zai_plan_api_key",
+    api_key_header="Authorization",
+    api_key_prefix="Bearer",
+)
 
 _MAX_CONTENT_CHARS = 50000
 
@@ -42,6 +55,26 @@ def _truncate(text: str) -> str:
     if len(text) > _MAX_CONTENT_CHARS:
         return text[:_MAX_CONTENT_CHARS] + "\n\n... (content truncated)"
     return text
+
+
+def _extract_mcp_reader_content(raw: str) -> str:
+    """Extract content from Z.AI MCP reader response.
+
+    The MCP reader returns double-encoded JSON: the text content is a JSON
+    string that, when decoded, yields another JSON string containing a dict
+    with a ``content`` key.
+    """
+    try:
+        decoded = json.loads(raw)
+        if isinstance(decoded, dict):
+            return decoded.get("content", raw)
+        if isinstance(decoded, str):
+            inner = json.loads(decoded)
+            if isinstance(inner, dict):
+                return inner.get("content", raw)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return raw
 
 
 class ReadWebpageInput(BaseModel):
@@ -196,7 +229,7 @@ class ReadWebpageCloudflareSkill(SystemSkill):
 
 
 class ReadWebpageZaiSkill(SystemSkill):
-    """Skill for reading webpage content as markdown via Z.AI reader API."""
+    """Skill for reading webpage content as markdown via Z.AI MCP web reader."""
 
     name: str = "read_webpage_zai"
     description: str = (
@@ -211,15 +244,7 @@ class ReadWebpageZaiSkill(SystemSkill):
         url: str,
         tool_call_id: Annotated[str | None, InjectedToolCallId] = None,
     ) -> str:
-        """Read a webpage and return its content as markdown.
-
-        Args:
-            url: The URL of the webpage to read.
-            tool_call_id: Injected by LangChain runtime.
-
-        Returns:
-            The webpage content converted to markdown.
-        """
+        """Read a webpage via Z.AI MCP web reader and return its content."""
         try:
             from intentkit.config.config import config
 
@@ -229,40 +254,25 @@ class ReadWebpageZaiSkill(SystemSkill):
                     "Z.AI Plan API is not configured. Set ZAI_PLAN_API_KEY."
                 )
 
-            raw_markdown = await self._fetch_markdown(api_key, url)
-            if not raw_markdown:
+            raw = await call_mcp_tool(
+                _ZAI_READER_SERVER,
+                api_key,
+                "webReader",
+                {"url": url, "return_format": "markdown"},
+            )
+            if not raw:
                 return "The webpage returned no content."
 
-            return _truncate(_normalize_whitespace(raw_markdown))
+            content = _extract_mcp_reader_content(raw)
+            if not content:
+                return "The webpage returned no content."
+
+            return _truncate(_normalize_whitespace(content))
 
         except ToolException:
             raise
+        except McpToolError as e:
+            raise ToolException(str(e)) from e
         except Exception as e:
             logger.error("read_webpage_zai failed: %s", e, exc_info=True)
             raise ToolException(f"Failed to read webpage: {e}") from e
-
-    async def _fetch_markdown(self, api_key: str, url: str) -> str:
-        """Fetch a URL and convert to markdown via Z.AI reader API."""
-        api_url = f"{ZAI_API_BASE}/reader"
-
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(
-                api_url,
-                json={
-                    "url": url,
-                    "return_format": "markdown",
-                },
-                headers={"Authorization": f"Bearer {api_key}"},
-            )
-
-        if response.status_code != 200:
-            raise ToolException(
-                f"Z.AI reader API returned status {response.status_code}: {response.text}"
-            )
-
-        data = response.json()
-        reader_result = data.get("reader_result")
-        if not reader_result:
-            raise ToolException(f"Z.AI reader API error: {data}")
-
-        return reader_result.get("content", "")

@@ -10,7 +10,7 @@ import httpx
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamable_http_client
-from mcp.types import TextContent
+from mcp.types import Implementation, TextContent
 
 from intentkit.clients.mcp.registry import McpServerDef
 
@@ -39,6 +39,9 @@ def _build_headers(server_def: McpServerDef, api_key: str | None) -> dict[str, s
     return headers
 
 
+_CLIENT_INFO = Implementation(name="claude-code", version="1.0.12")
+
+
 @asynccontextmanager
 async def _connect(
     server_def: McpServerDef, headers: dict[str, str]
@@ -47,14 +50,16 @@ async def _connect(
     if server_def.transport == "sse":
         cm = sse_client(server_def.url, headers=headers)
     elif server_def.transport == "streamable_http":
-        http_client = httpx.AsyncClient(headers=headers)
+        http_client = httpx.AsyncClient(headers=headers, timeout=60)
         cm = streamable_http_client(server_def.url, http_client=http_client)
     else:
         raise ValueError(f"Unknown transport: {server_def.transport}")
 
     async with cm as transport:
         read_stream, write_stream = transport[0], transport[1]
-        async with ClientSession(read_stream, write_stream) as session:
+        async with ClientSession(
+            read_stream, write_stream, client_info=_CLIENT_INFO
+        ) as session:
             yield session
 
 

@@ -431,8 +431,9 @@ async def test_read_webpage_zai_success():
     skill = ReadWebpageZaiSkill()
     with (
         patch("intentkit.config.config.config") as mock_config,
-        patch.object(
-            skill, "_fetch_markdown", new=AsyncMock(return_value="raw markdown")
+        patch(
+            "intentkit.core.system_skills.read_webpage.call_mcp_tool",
+            new=AsyncMock(return_value="raw markdown"),
         ),
     ):
         mock_config.zai_plan_api_key = "test_key"
@@ -458,17 +459,16 @@ async def test_search_web_zai_missing_config():
 
 @pytest.mark.asyncio
 async def test_search_web_zai_success():
-    """Successful search returns formatted results."""
+    """Successful search returns MCP tool result."""
     skill = SearchWebZaiSkill()
-    mock_results = [
-        {"title": "Test", "url": "https://test.com", "snippet": "Test snippet"}
-    ]
     with (
         patch("intentkit.config.config.config") as mock_config,
-        patch.object(skill, "_search", new=AsyncMock(return_value=mock_results)),
-        patch.object(skill, "_format_results", return_value="Formatted Results"),
+        patch(
+            "intentkit.core.system_skills.search_web.call_mcp_tool",
+            new=AsyncMock(return_value="MCP search results"),
+        ),
     ):
         mock_config.zai_plan_api_key = "test_key"
         result = await skill._arun("test query")  # pyright: ignore[reportPrivateUsage]
 
-    assert result == "Formatted Results"
+    assert result == "MCP search results"
