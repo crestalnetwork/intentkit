@@ -121,7 +121,7 @@ class TeamTable(Base):
     plan: Mapped[str] = mapped_column(
         String,
         nullable=False,
-        default=TeamPlan.NONE,
+        default=TeamPlan.NONE.value,
         server_default=TeamPlan.NONE.value,
     )
     plan_expires_at: Mapped[datetime | None] = mapped_column(

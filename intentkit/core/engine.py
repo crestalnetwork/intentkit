@@ -552,6 +552,57 @@ def _is_unrecoverable_checkpoint_error(exc: Exception) -> bool:
     return False
 
 
+async def _cancel_cleanup(
+    executor: Any,
+    stream_config: dict,
+    in_tools_phase: bool,
+    user_message: "ChatMessageCreate",
+    thread_id: str,
+    start: float,
+) -> None:
+    """Run cancel-time DB cleanup, intended to be called inside asyncio.shield()."""
+    if in_tools_phase:
+        # Cancelled during tool execution — checkpoint has tool_calls without results.
+        # Remove the last AIMessage (with tool_calls) to prevent re-execution on next message.
+        try:
+            snap = await executor.aget_state(stream_config)
+            msgs = snap.values.get("messages") if snap.values else None
+            if msgs and isinstance(msgs[-1], AIMessage) and msgs[-1].tool_calls:
+                await executor.aupdate_state(
+                    stream_config,
+                    {"messages": [RemoveMessage(id=msgs[-1].id)]},
+                )
+                logger.info(
+                    f"Removed dangling tool_call message for {user_message.agent_id}",
+                    extra={"thread_id": thread_id},
+                )
+            else:
+                logger.info(
+                    f"No dangling tool_call found for {user_message.agent_id}, skipping cleanup",
+                    extra={"thread_id": thread_id},
+                )
+        except Exception:
+            logger.warning(
+                f"Failed to remove dangling tool_call message, clearing thread for {user_message.agent_id}",
+                extra={"thread_id": thread_id},
+                exc_info=True,
+            )
+    # Save cancellation message directly (stream is already dead, can't yield)
+    cancel_message_create = ChatMessageCreate(
+        id=str(XID()),
+        agent_id=user_message.agent_id,
+        chat_id=user_message.chat_id,
+        user_id=user_message.user_id,
+        author_id=user_message.agent_id,
+        author_type=AuthorType.SYSTEM,
+        thread_type=user_message.author_type,
+        reply_to=user_message.id,
+        message="User cancelled the conversation",
+        time_cost=time.perf_counter() - start,
+    )
+    await cancel_message_create.save()
+
+
 async def stream_agent_raw(
     message: ChatMessageCreate,
     agent: Agent,
@@ -782,46 +833,19 @@ async def stream_agent_raw(
             f"Agent execution cancelled for {user_message.agent_id}",
             extra={"thread_id": thread_id},
         )
-        if in_tools_phase:
-            # Cancelled during tool execution — checkpoint has tool_calls without results.
-            # Remove the last AIMessage (with tool_calls) to prevent re-execution on next message.
-            try:
-                snap = await executor.aget_state(stream_config)
-                msgs = snap.values.get("messages") if snap.values else None
-                if msgs and isinstance(msgs[-1], AIMessage) and msgs[-1].tool_calls:
-                    await executor.aupdate_state(
-                        stream_config,
-                        {"messages": [RemoveMessage(id=msgs[-1].id)]},
-                    )
-                    logger.info(
-                        f"Removed dangling tool_call message for {user_message.agent_id}",
-                        extra={"thread_id": thread_id},
-                    )
-                else:
-                    logger.info(
-                        f"No dangling tool_call found for {user_message.agent_id}, skipping cleanup",
-                        extra={"thread_id": thread_id},
-                    )
-            except Exception:
-                logger.warning(
-                    f"Failed to remove dangling tool_call message, clearing thread for {user_message.agent_id}",
-                    extra={"thread_id": thread_id},
-                    exc_info=True,
-                )
-        # Save cancellation message directly (stream is already dead, can't yield)
-        cancel_message_create = ChatMessageCreate(
-            id=str(XID()),
-            agent_id=user_message.agent_id,
-            chat_id=user_message.chat_id,
-            user_id=user_message.user_id,
-            author_id=user_message.agent_id,
-            author_type=AuthorType.SYSTEM,
-            thread_type=user_message.author_type,
-            reply_to=user_message.id,
-            message="User cancelled the conversation",
-            time_cost=time.perf_counter() - start,
+        # Shield cleanup DB operations from cancellation propagation.
+        # Without shield, awaits inside CancelledError handler also get cancelled,
+        # causing SQLAlchemy connection termination errors.
+        await asyncio.shield(
+            _cancel_cleanup(
+                executor,
+                stream_config,
+                in_tools_phase,
+                user_message,
+                thread_id,
+                start,
+            )
         )
-        await cancel_message_create.save()
         return
     except (httpx.TimeoutException, httpcore.ReadTimeout, asyncio.TimeoutError):
         logger.error(

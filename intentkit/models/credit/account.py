@@ -657,7 +657,14 @@ class CreditAccount(BaseModel):
                 from intentkit.models.team import PLAN_CONFIGS, TeamPlan, TeamTable
 
                 team_record = await session.get(TeamTable, owner_id)
-                plan = TeamPlan(team_record.plan) if team_record else TeamPlan.NONE
+                if team_record:
+                    plan_value = team_record.plan
+                    # Handle legacy data where str(TeamPlan.NONE) was stored
+                    if plan_value.startswith("TeamPlan."):
+                        plan_value = plan_value.removeprefix("TeamPlan.").lower()
+                    plan = TeamPlan(plan_value)
+                else:
+                    plan = TeamPlan.NONE
                 plan_config = PLAN_CONFIGS[plan]
                 if free_quota is None:
                     free_quota = plan_config.free_quota
