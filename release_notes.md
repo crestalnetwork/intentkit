@@ -1,7 +1,6 @@
-# v0.17.19
+- Migrated Z.AI web search and webpage reader from REST API to MCP protocol for improved reliability
+- Optimized LLM model selection priority for better performance and cost efficiency
+- Fixed an issue with team plan handling that could cause errors in certain configurations
+- Improved conversation cancellation reliability
 
-- Provider-based web search: web search and webpage reading now use provider-native capabilities (OpenAI, xAI, Google, OpenRouter), with Z.AI fallback for other providers
-- Added Z.AI web search and webpage reader skills
-- Consolidated search logic from middleware into executor for cleaner architecture
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.18...v0.17.19
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.19...v0.17.20
