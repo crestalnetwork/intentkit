@@ -1,7 +1,7 @@
-# v0.17.18
+# v0.17.19
 
-- Added Qwen 3.6 Plus model support
-- Fixed an issue where team agent chat was not working due to missing billing context
-- Updated dependencies
+- Provider-based web search: web search and webpage reading now use provider-native capabilities (OpenAI, xAI, Google, OpenRouter), with Z.AI fallback for other providers
+- Added Z.AI web search and webpage reader skills
+- Consolidated search logic from middleware into executor for cleaner architecture
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.17...v0.17.18
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.18...v0.17.19
