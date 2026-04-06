@@ -118,6 +118,10 @@ class TeamTable(Base):
         String,
         nullable=True,
     )
+    default_channel_chat_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
     plan: Mapped[str] = mapped_column(
         String,
         nullable=False,
@@ -240,6 +244,13 @@ class TeamCreate(BaseModel):
         Field(
             default=None,
             description="Default notification channel (telegram, wechat)",
+        ),
+    ]
+    default_channel_chat_id: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Default push chat ID within the channel",
         ),
     ]
 

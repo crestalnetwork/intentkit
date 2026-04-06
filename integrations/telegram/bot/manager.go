@@ -552,6 +552,13 @@ func (m *Manager) addToWhitelist(teamID string, chatID string, chatName string) 
 	// Sync to DB
 	m.syncTeamChannelData(teamID)
 
+	// Auto-set as push channel if none is set yet
+	go func() {
+		if err := m.apiClient.SetPushChannel(context.Background(), teamID, "telegram", chatID, true); err != nil {
+			slog.Warn("Failed to auto-set push channel", "team_id", teamID, "chat_id", chatID, "error", err)
+		}
+	}()
+
 	return newCode
 }
 

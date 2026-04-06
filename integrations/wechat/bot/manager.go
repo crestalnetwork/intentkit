@@ -225,28 +225,16 @@ func (m *Manager) pollLoop(ctx context.Context, entry *botEntry, teamID string) 
 }
 
 func (m *Manager) updateTeamChannelData(teamID, typingTicket string) {
-	jsonData := map[string]interface{}{
-		"typing_ticket": typingTicket,
-	}
-
-	var data store.TeamChannelData
-	result := m.db.Where("team_id = ? AND channel_type = ?", teamID, "wechat").First(&data)
-	if result.Error != nil {
-		data = store.TeamChannelData{
-			TeamID:      teamID,
-			ChannelType: "wechat",
-			Data:        jsonData,
-		}
-		if err := m.db.Create(&data).Error; err != nil {
-			slog.Error("Failed to create team channel data", "team_id", teamID, "error", err)
-		}
+	if typingTicket == "" {
 		return
 	}
-
-	if err := m.db.Model(&store.TeamChannelData{}).
-		Where("team_id = ? AND channel_type = ?", teamID, "wechat").
-		Update("data", jsonData).Error; err != nil {
-		slog.Error("Failed to update team channel data", "team_id", teamID, "error", err)
+	// Use JSONB merge to update only the typing_ticket key without overwriting other data (e.g. context_token)
+	err := m.db.Exec(
+		`UPDATE team_channel_data SET data = COALESCE(data, '{}'::jsonb) || jsonb_build_object('typing_ticket', to_jsonb(?::text)) WHERE team_id = ? AND channel_type = ?`,
+		typingTicket, teamID, "wechat",
+	).Error
+	if err != nil {
+		slog.Error("Failed to update typing_ticket", "team_id", teamID, "error", err)
 	}
 }
 
@@ -294,6 +282,17 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 	if msg.ContextToken != entry.lastContextToken {
 		entry.lastContextToken = msg.ContextToken
 		m.updateContextToken(teamID, msg.ContextToken)
+	}
+
+	// Intercept /default command — set this chat as the push channel
+	if text == "/default" {
+		if err := m.apiClient.SetPushChannel(context.Background(), teamID, "wechat", msg.FromUserID, false); err != nil {
+			slog.Error("Failed to set push channel", "team_id", teamID, "error", err)
+			_ = entry.client.SendMessage(context.Background(), msg.FromUserID, msg.ContextToken, "Failed to set push channel.")
+		} else {
+			_ = entry.client.SendMessage(context.Background(), msg.FromUserID, msg.ContextToken, "This chat is now the default push channel.")
+		}
+		return
 	}
 
 	// Lazy-fetch typing_ticket on first message (requires user_id + context_token)

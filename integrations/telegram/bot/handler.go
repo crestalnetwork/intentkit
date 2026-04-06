@@ -118,6 +118,20 @@ func (m *Manager) handleTeamMessage(bot *telego.Bot, message telego.Message, tea
 
 // forwardTeamMessage sends a whitelisted team message to the lead agent.
 func (m *Manager) forwardTeamMessage(bot *telego.Bot, message telego.Message, teamID string) {
+	chatIDStr := fmt.Sprintf("%d", message.Chat.ID)
+
+	// Intercept /default command — set this chat as the push channel
+	if strings.TrimSpace(message.Text) == "/default" {
+		sender := NewTelegramSender(bot, message.Chat.ID)
+		if err := m.apiClient.SetPushChannel(context.Background(), teamID, "telegram", chatIDStr, false); err != nil {
+			slog.Error("Failed to set push channel", "team_id", teamID, "error", err)
+			_ = sender.SendText(context.Background(), "Failed to set push channel.")
+		} else {
+			_ = sender.SendText(context.Background(), "This chat is now the default push channel.")
+		}
+		return
+	}
+
 	slog.Info("Received team message", "team_id", teamID, "chat_id", message.Chat.ID)
 	_ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))
 
@@ -126,7 +140,7 @@ func (m *Manager) forwardTeamMessage(bot *telego.Bot, message telego.Message, te
 	payload := map[string]interface{}{
 		"team_id":     teamID,
 		"telegram_id": telegramID,
-		"chat_id":     fmt.Sprintf("%d", message.Chat.ID),
+		"chat_id":     chatIDStr,
 		"message":     message.Text,
 	}
 

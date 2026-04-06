@@ -21,6 +21,7 @@ from pydantic import AfterValidator, BaseModel
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.core.lead.engine import stream_lead
 from intentkit.core.lead.service import verify_team_membership
+from intentkit.core.team.channel import set_push_channel, set_push_channel_if_empty
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
@@ -194,3 +195,28 @@ async def stream_wechat_team_lead(
     """Stream the team lead agent execution for a WeChat team channel message."""
     user_id, chat_msg = await _resolve_wechat_lead(request)
     return _sse_response(stream_lead(request.team_id, user_id, chat_msg))
+
+
+class SetPushChannelRequest(BaseModel):
+    """Request body for setting the push channel target."""
+
+    team_id: str
+    channel_type: str
+    chat_id: str
+    if_empty: bool = False
+
+
+# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
+@core_router.post("/lead/set-push-channel")
+async def set_push_channel_endpoint(
+    request: SetPushChannelRequest = Body(...),
+):
+    """Set the push channel target for a team. Called by Go integrations."""
+    if request.if_empty:
+        result = await set_push_channel_if_empty(
+            request.team_id, request.channel_type, request.chat_id
+        )
+        return {"ok": True, "was_set": result}
+    else:
+        await set_push_channel(request.team_id, request.channel_type, request.chat_id)
+        return {"ok": True}

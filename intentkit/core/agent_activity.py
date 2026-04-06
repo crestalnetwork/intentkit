@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -22,14 +23,51 @@ async def create_agent_activity(activity_create: AgentActivityCreate) -> AgentAc
         await session.refresh(db_activity)
         activity = AgentActivity.model_validate(db_activity)
 
+    team_ids: list[str] = []
     try:
         from intentkit.core.team.feed import fan_out_activity
 
-        await fan_out_activity(activity.id, activity.agent_id, activity.created_at)
+        team_ids = await fan_out_activity(
+            activity.id, activity.agent_id, activity.created_at
+        )
     except Exception:
         logger.exception("Failed to fan out activity %s", activity.id)
 
+    # Push to each team's channel in background (don't block the caller)
+    if team_ids:
+        asyncio.create_task(_push_activity_to_teams(activity, team_ids))
+
     return activity
+
+
+async def _push_activity_to_teams(activity: AgentActivity, team_ids: list[str]) -> None:
+    """Push activity to all target teams' channels concurrently."""
+    try:
+        from intentkit.core.team.push import push_to_team
+
+        push_text = _format_activity_push(activity)
+        targets = [tid for tid in team_ids if tid != "public"]
+        if not targets:
+            return
+
+        results = await asyncio.gather(
+            *(push_to_team(tid, push_text) for tid in targets),
+            return_exceptions=True,
+        )
+        for tid, result in zip(targets, results):
+            if isinstance(result, Exception):
+                logger.exception("Failed to push activity to team %s: %s", tid, result)
+    except Exception:
+        logger.exception("Failed to push activity %s", activity.id)
+
+
+def _format_activity_push(activity: AgentActivity) -> str:
+    """Format an activity as a push notification message."""
+    name = activity.agent_name or activity.agent_id
+    text = f"[{name}] {activity.text}"
+    if activity.link:
+        text += f"\n{activity.link}"
+    return text
 
 
 async def get_agent_activity(activity_id: str) -> AgentActivity | None:

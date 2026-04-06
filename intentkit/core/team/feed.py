@@ -46,11 +46,12 @@ async def _resolve_target_teams(session: AsyncSession, agent_id: str) -> list[st
 
 async def fan_out_activity(
     activity_id: str, agent_id: str, created_at: datetime
-) -> None:
+) -> list[str]:
+    """Fan out an activity to subscribed teams. Returns the list of target team IDs."""
     async with get_session() as session:
         team_ids = await _resolve_target_teams(session, agent_id)
         if not team_ids:
-            return
+            return []
 
         values = [
             {
@@ -64,6 +65,7 @@ async def fan_out_activity(
         stmt = insert(TeamActivityFeedTable).values(values).on_conflict_do_nothing()
         await session.execute(stmt)
         await session.commit()
+        return team_ids
 
 
 async def fan_out_post(post_id: str, agent_id: str, created_at: datetime) -> None:
