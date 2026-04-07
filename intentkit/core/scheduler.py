@@ -94,7 +94,7 @@ def create_scheduler(
             replace_existing=True,
         )
 
-        # Run quick account consistency checks every 2 hours at the top of the hour
+        # Run quick account consistency checks every 8 hours
         from intentkit.core.account_checking import run_quick_checks, run_slow_checks
 
         async def run_quick_account_checks():
@@ -126,8 +126,8 @@ def create_scheduler(
         _ = scheduler.add_job(
             run_quick_account_checks,
             trigger=CronTrigger(
-                hour="*/2", minute="30", timezone="UTC"
-            ),  # Run every 2 hours
+                hour="*/8", minute="30", timezone="UTC"
+            ),  # Run every 8 hours
             id="quick_account_checks",
             name="Quick Account Consistency Checks",
             replace_existing=True,
