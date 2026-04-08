@@ -138,27 +138,52 @@ async def build_executor(
     if custom_skills and len(custom_skills) > 0:
         private_tools.extend(custom_skills)
 
-    # add system skills
-    from intentkit.core.system_skills import get_system_skills
+    # add system skills — each conditionally based on agent config and provider
+    from intentkit.core.system_skills import (
+        call_agent,
+        create_activity,
+        create_post,
+        current_time,
+        get_post,
+        read_webpage_cloudflare,
+        read_webpage_zai,
+        recent_activities,
+        recent_posts,
+        search_web_zai,
+        update_memory,
+    )
 
-    system_skills = get_system_skills(agent)
     model_provider = llm_model.info.provider
 
-    # For OpenRouter, use server tool for datetime instead of our custom current_time
+    # current_time: public skill, but OpenRouter uses server tool instead
     if model_provider == LLMProvider.OPENROUTER:
-        system_skills = [s for s in system_skills if s.name != "current_time"]
         datetime_tool: dict[str, Any] = {"type": "openrouter:datetime"}
         tools.append(datetime_tool)
         private_tools.append(datetime_tool)
     else:
-        # current_time is available to all users (public)
-        for skill in system_skills:
-            if skill.name == "current_time":
-                tools.append(skill)
-    # Other system skills are private-only
-    private_tools.extend(system_skills)
+        tools.append(current_time)
+        private_tools.append(current_time)
 
-    # Add search-related tools based on provider
+    # call_agent: only when sub-agents are configured
+    if agent.sub_agents:
+        private_tools.append(call_agent)
+
+    # activity skills: enabled by default
+    if agent.is_activity_enabled:
+        private_tools.append(create_activity)
+        private_tools.append(recent_activities)
+
+    # post skills: enabled by default
+    if agent.is_post_enabled:
+        private_tools.append(create_post)
+        private_tools.append(get_post)
+        private_tools.append(recent_posts)
+
+    # long-term memory
+    if agent.enable_long_term_memory:
+        private_tools.append(update_memory)
+
+    # search-related tools based on provider
     extra_llm_params: dict[str, Any] = {}
     if agent.search_internet:
         if model_provider == LLMProvider.OPENAI:
@@ -175,8 +200,6 @@ async def build_executor(
             private_tools.append(search_tool)
             # OpenRouter doesn't have native webpage reading
             if config.cloudflare_account_id and config.cloudflare_api_token:
-                from intentkit.core.system_skills import read_webpage_cloudflare
-
                 tools.append(read_webpage_cloudflare)
                 private_tools.append(read_webpage_cloudflare)
         elif model_provider == LLMProvider.GOOGLE:
@@ -186,11 +209,6 @@ async def build_executor(
         else:
             # For other providers (e.g. compatible), use zai skills if configured
             if config.zai_plan_api_key:
-                from intentkit.core.system_skills import (
-                    read_webpage_zai,
-                    search_web_zai,
-                )
-
                 tools.extend([search_web_zai, read_webpage_zai])
                 private_tools.extend([search_web_zai, read_webpage_zai])
 

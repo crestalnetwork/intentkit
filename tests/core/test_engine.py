@@ -54,7 +54,6 @@ async def test_build_executor(mock_agent, mock_agent_data):
         ) as mock_create_model,
         patch("langchain.agents.create_agent") as mock_create_lc_agent,
         patch("intentkit.core.executor.get_checkpointer"),
-        patch("intentkit.core.system_skills.get_system_skills", return_value=[]),
         patch("intentkit.core.executor.pick_summarize_model", return_value="gpt-4o"),
         patch("intentkit.core.middleware.SummarizationMiddleware"),
     ):

@@ -217,6 +217,16 @@ class AgentCore(BaseModel):
         ),
     ] = None
 
+    @property
+    def is_activity_enabled(self) -> bool:
+        """Whether activity skills are enabled (defaults to True when None)."""
+        return self.enable_activity is not False
+
+    @property
+    def is_post_enabled(self) -> bool:
+        """Whether post skills are enabled (defaults to True when None)."""
+        return self.enable_post is not False
+
     @field_validator("search_internet", mode="before")
     @classmethod
     def _set_search_internet_default(cls, v: bool | None) -> bool:

@@ -10,18 +10,31 @@ from intentkit.core.prompt import (
     build_system_prompt,
     build_system_skills_section,
 )
-from intentkit.core.system_skills import get_system_skills
+from intentkit.core.system_skills import (
+    call_agent,
+    create_activity,
+    create_post,
+    current_time,
+    get_post,
+    recent_activities,
+    recent_posts,
+    update_memory,
+)
 
 
 class TestSystemSkillsSection:
-    def test_includes_update_memory_when_enabled(self):
+    @staticmethod
+    def _make_agent(**overrides):
         agent = MagicMock()
-        agent.enable_activity = True
-        agent.enable_post = True
-        agent.enable_long_term_memory = True
+        agent.is_activity_enabled = overrides.get("is_activity_enabled", True)
+        agent.is_post_enabled = overrides.get("is_post_enabled", True)
+        agent.enable_long_term_memory = overrides.get("enable_long_term_memory", False)
         agent.skills = None
         agent.telegram_entrypoint_enabled = False
+        return agent
 
+    def test_includes_update_memory_when_enabled(self):
+        agent = self._make_agent(enable_long_term_memory=True)
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
@@ -29,13 +42,7 @@ class TestSystemSkillsSection:
         assert "update_memory" in result
 
     def test_excludes_update_memory_when_disabled(self):
-        agent = MagicMock()
-        agent.enable_activity = True
-        agent.enable_post = True
-        agent.enable_long_term_memory = False
-        agent.skills = None
-        agent.telegram_entrypoint_enabled = False
-
+        agent = self._make_agent(enable_long_term_memory=False)
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
@@ -43,13 +50,7 @@ class TestSystemSkillsSection:
         assert "update_memory" not in result
 
     def test_excludes_update_memory_when_none(self):
-        agent = MagicMock()
-        agent.enable_activity = True
-        agent.enable_post = True
-        agent.enable_long_term_memory = None
-        agent.skills = None
-        agent.telegram_entrypoint_enabled = False
-
+        agent = self._make_agent(enable_long_term_memory=None)
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
@@ -57,18 +58,31 @@ class TestSystemSkillsSection:
         assert "update_memory" not in result
 
     def test_excludes_call_agent_from_system_skills_section(self):
-        agent = MagicMock()
-        agent.enable_activity = True
-        agent.enable_post = True
-        agent.enable_long_term_memory = False
-        agent.skills = None
-        agent.telegram_entrypoint_enabled = False
-
+        agent = self._make_agent()
         context = MagicMock(spec=AgentContext)
         context.is_private = True
 
         result = build_system_skills_section(agent, context)
         assert "call_agent" not in result
+
+    def test_excludes_post_skills_when_disabled(self):
+        agent = self._make_agent(is_post_enabled=False)
+        context = MagicMock(spec=AgentContext)
+        context.is_private = True
+
+        result = build_system_skills_section(agent, context)
+        assert "create_post" not in result
+        assert "get_post" not in result
+        assert "recent_posts" not in result
+
+    def test_excludes_activity_skills_when_disabled(self):
+        agent = self._make_agent(is_activity_enabled=False)
+        context = MagicMock(spec=AgentContext)
+        context.is_private = True
+
+        result = build_system_skills_section(agent, context)
+        assert "create_activity" not in result
+        assert "recent_activities" not in result
 
 
 class TestBuildSystemPromptMemory:
@@ -79,8 +93,8 @@ class TestBuildSystemPromptMemory:
         agent.name = "Test"
         agent.ticker = None
         agent.enable_long_term_memory = True
-        agent.enable_activity = True
-        agent.enable_post = True
+        agent.is_activity_enabled = True
+        agent.is_post_enabled = True
         agent.skills = None
         agent.telegram_entrypoint_enabled = False
         agent.purpose = None
@@ -127,8 +141,8 @@ class TestBuildSystemPromptMemory:
         agent.name = "Test"
         agent.ticker = None
         agent.enable_long_term_memory = True
-        agent.enable_activity = True
-        agent.enable_post = True
+        agent.is_activity_enabled = True
+        agent.is_post_enabled = True
         agent.skills = None
         agent.telegram_entrypoint_enabled = False
         agent.purpose = None
@@ -174,8 +188,8 @@ class TestBuildSystemPromptMemory:
         agent.name = "Test"
         agent.ticker = None
         agent.enable_long_term_memory = False
-        agent.enable_activity = True
-        agent.enable_post = True
+        agent.is_activity_enabled = True
+        agent.is_post_enabled = True
         agent.skills = None
         agent.telegram_entrypoint_enabled = False
         agent.purpose = None
@@ -214,45 +228,26 @@ class TestBuildSystemPromptMemory:
         assert "## Memory" not in result
 
 
-class TestGetSystemSkills:
-    def _make_agent(self, **overrides):
-        agent = MagicMock()
-        agent.enable_activity = overrides.get("enable_activity", True)
-        agent.enable_post = overrides.get("enable_post", True)
-        agent.enable_long_term_memory = overrides.get("enable_long_term_memory", False)
-        agent.sub_agents = overrides.get("sub_agents", None)
-        agent.search_internet = overrides.get("search_internet", True)
-        return agent
+class TestSystemSkillInstances:
+    """Test that system skill singleton instances are correctly initialized."""
 
-    def test_includes_update_memory_when_enabled(self):
-        agent = self._make_agent(enable_long_term_memory=True)
-        skills = get_system_skills(agent)
-        skill_names = [s.name for s in skills]
-        assert "update_memory" in skill_names
+    def test_current_time_instance(self):
+        assert current_time.name == "current_time"
 
-    def test_excludes_update_memory_by_default(self):
-        agent = self._make_agent()
-        skills = get_system_skills(agent)
-        skill_names = [s.name for s in skills]
-        assert "update_memory" not in skill_names
+    def test_call_agent_instance(self):
+        assert call_agent.name == "call_agent"
 
-    def test_excludes_update_memory_when_disabled(self):
-        agent = self._make_agent(enable_long_term_memory=False)
-        skills = get_system_skills(agent)
-        skill_names = [s.name for s in skills]
-        assert "update_memory" not in skill_names
+    def test_activity_instances(self):
+        assert create_activity.name == "create_activity"
+        assert recent_activities.name == "recent_activities"
 
-    def test_includes_call_agent_when_sub_agents_enabled(self):
-        agent = self._make_agent(sub_agents=["helper-bot"])
-        skills = get_system_skills(agent)
-        skill_names = [s.name for s in skills]
-        assert "call_agent" in skill_names
+    def test_post_instances(self):
+        assert create_post.name == "create_post"
+        assert get_post.name == "get_post"
+        assert recent_posts.name == "recent_posts"
 
-    def test_excludes_call_agent_by_default(self):
-        agent = self._make_agent()
-        skills = get_system_skills(agent)
-        skill_names = [s.name for s in skills]
-        assert "call_agent" not in skill_names
+    def test_update_memory_instance(self):
+        assert update_memory.name == "update_memory"
 
 
 class TestSubAgentsPromptSection:
@@ -361,8 +356,8 @@ class TestSubAgentsPromptSection:
         agent.name = "Test"
         agent.ticker = None
         agent.enable_long_term_memory = False
-        agent.enable_activity = True
-        agent.enable_post = True
+        agent.is_activity_enabled = True
+        agent.is_post_enabled = True
         agent.skills = None
         agent.telegram_entrypoint_enabled = False
         agent.purpose = None

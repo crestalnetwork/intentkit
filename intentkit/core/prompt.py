@@ -41,23 +41,18 @@ def build_system_skills_section(agent: Agent, context: AgentContext) -> str:
     if not context.is_private:
         return ""
 
-    enable_activity = (
-        agent.enable_activity if agent.enable_activity is not None else True
-    )
-    enable_post = agent.enable_post if agent.enable_post is not None else True
-
     lines = [
         "## System Skills Guide\n\n",
         "You have access to several system skills for internal operations:\n",
     ]
 
-    if enable_post:
+    if agent.is_post_enabled:
         lines.append(
             "- create_post: Publish long-form content or articles.\n"
             "- get_post: Get the full content of a post by its ID.\n"
             "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
         )
-    if enable_activity:
+    if agent.is_activity_enabled:
         lines.append(
             "- create_activity: Publish an activity to your public timeline. ONLY use when user explicitly requests it.\n"
             "- recent_activities: Retrieve your recent activities to maintain context.\n"
@@ -68,9 +63,9 @@ def build_system_skills_section(agent: Agent, context: AgentContext) -> str:
         )
 
     cautions = []
-    if enable_post:
+    if agent.is_post_enabled:
         cautions.append("create_post")
-    if enable_activity:
+    if agent.is_activity_enabled:
         cautions.append("create_activity")
     if cautions:
         lines.append(
