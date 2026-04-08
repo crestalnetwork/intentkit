@@ -112,9 +112,10 @@ def parse_linked_providers(
             }
         elif provider == "web3":
             chain = identity_data.get("chain")
-            if chain == "ethereum":
+            address = identity_data.get("address")
+            if address and (chain == "ethereum" or chain is None):
                 result["evm"] = {
-                    "address": identity_data.get("address"),
+                    "address": address,
                     "identity_id": identity.get("id"),
                     "linked": True,
                 }

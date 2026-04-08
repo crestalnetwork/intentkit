@@ -114,7 +114,7 @@ async def _sync_supabase_user(user_id: str) -> User:
         elif provider == "web3":
             address = identity_data.get("address")
             chain = identity_data.get("chain")
-            if address and chain == "ethereum":
+            if address and (chain == "ethereum" or chain is None):
                 evm_address = address
                 update_fields["evm_wallet_address"] = address
                 linked_accounts["evm"] = {
