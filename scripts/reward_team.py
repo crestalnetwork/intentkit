@@ -32,8 +32,11 @@ async def main() -> None:
     note = sys.argv[3] if len(sys.argv) > 3 else "Manual team reward"
     upstream_tx_id = f"manual_reward_{XID()}"
 
-    from intentkit.config.db import get_session
+    from intentkit.config.config import config
+    from intentkit.config.db import get_session, init_db
     from intentkit.core.credit.reward import reward
+
+    await init_db(**config.db)
 
     async with get_session() as session:
         account = await reward(
