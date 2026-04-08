@@ -13,7 +13,6 @@ from sqlalchemy import update
 from intentkit.clients.supabase import (
     get_user_identities,
     parse_linked_providers,
-    unlink_identity,
 )
 from intentkit.config.config import config
 from intentkit.config.db import get_session
@@ -233,68 +232,6 @@ async def get_linked_accounts(
     providers = parse_linked_providers(identities)
     return _linked_accounts_response(providers)
 
-
-class UnlinkAccountRequest(BaseModel):
-    provider: str
-
-
-@team_user_router.post("/user/unlink-account")
-async def unlink_account(
-    body: UnlinkAccountRequest = Body(...),
-    user_id: str = Depends(get_current_user),
-) -> Response:
-    """Unlink an identity provider from the user's account.
-
-    Only EVM wallet can be unlinked, and only if Google is already linked.
-    """
-    if body.provider != "evm":
-        raise IntentKitAPIError(
-            status_code=400,
-            key="CannotUnlink",
-            message="Only EVM wallet can be unlinked",
-        )
-
-    identities = await get_user_identities(user_id)
-    providers = parse_linked_providers(identities)
-
-    if "google" not in providers:
-        raise IntentKitAPIError(
-            status_code=400,
-            key="GoogleRequired",
-            message="Must have Google linked before unlinking EVM wallet",
-        )
-
-    evm_info = providers.get("evm")
-    if not evm_info:
-        raise IntentKitAPIError(
-            status_code=400,
-            key="NotLinked",
-            message="EVM wallet is not linked",
-        )
-
-    identity_id = evm_info.get("identity_id")
-    if not identity_id:
-        raise IntentKitAPIError(
-            status_code=400,
-            key="MissingIdentityId",
-            message="Cannot determine EVM identity to unlink",
-        )
-
-    success = await unlink_identity(user_id, identity_id)
-    if not success:
-        raise IntentKitAPIError(
-            status_code=500,
-            key="UnlinkFailed",
-            message="Failed to unlink EVM wallet from Supabase",
-        )
-
-    # Clear wallet address on user record
-    await UserUpdate.model_validate({"evm_wallet_address": None}).patch(user_id)
-    await invalidate_user_cache(user_id)
-
-    # Return updated state: EVM removed, Google remains
-    providers.pop("evm", None)
-    return _linked_accounts_response(providers)
 
 
 class UpdateProfileRequest(BaseModel):
