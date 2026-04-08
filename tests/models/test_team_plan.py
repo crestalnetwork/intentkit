@@ -26,16 +26,22 @@ def test_free_plan():
 
 def test_pro_plan():
     cfg = PLAN_CONFIGS[TeamPlan.PRO]
-    assert cfg.free_quota == Decimal("500")
-    assert cfg.refill_amount == Decimal("10")
+    assert cfg.free_quota == Decimal("1000")
+    assert cfg.refill_amount == Decimal("20")
     assert cfg.monthly_permanent_credits == Decimal("10000")
+    assert cfg.seats == 3
+    assert cfg.month_price_cents == 1900
+    assert cfg.year_price_cents == 19000
 
 
 def test_max_plan():
     cfg = PLAN_CONFIGS[TeamPlan.MAX]
-    assert cfg.free_quota == Decimal("5000")
-    assert cfg.refill_amount == Decimal("100")
+    assert cfg.free_quota == Decimal("10000")
+    assert cfg.refill_amount == Decimal("200")
     assert cfg.monthly_permanent_credits == Decimal("100000")
+    assert cfg.seats == 15
+    assert cfg.month_price_cents == 19900
+    assert cfg.year_price_cents == 199000
 
 
 def test_plan_enum_values():

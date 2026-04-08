@@ -40,14 +40,14 @@ class TestValidateTeamIdFormat:
         self.validate = validate_team_id_format
 
     def test_too_short(self):
-        result = self.validate("a")
+        result = self.validate("ab")
         assert result["valid"] is False
-        assert "at least 2" in result["reason"]
+        assert "at least 3" in result["reason"]
 
     def test_too_long(self):
-        result = self.validate("a" * 61)
+        result = self.validate("a" * 21)
         assert result["valid"] is False
-        assert "at most 60" in result["reason"]
+        assert "at most 20" in result["reason"]
 
     def test_uppercase_rejected(self):
         result = self.validate("MyTeam")
@@ -66,15 +66,15 @@ class TestValidateTeamIdFormat:
         assert result["valid"] is False
 
     def test_valid_short(self):
-        assert self.validate("ab")["valid"] is True
+        assert self.validate("abc")["valid"] is True
 
     def test_valid_with_hyphens_and_digits(self):
         assert self.validate("my-team-1")["valid"] is True
 
     def test_valid_max_length(self):
-        # 60 chars: starts with letter, ends with digit
-        team_id = "a" + "b" * 58 + "1"
-        assert len(team_id) == 60
+        # 20 chars: starts with letter, ends with digit
+        team_id = "a" + "b" * 18 + "1"
+        assert len(team_id) == 20
         assert self.validate(team_id)["valid"] is True
 
     def test_valid_returns_none_reason(self):
@@ -92,9 +92,9 @@ class TestValidateTeamId:
     async def test_invalid_format_returns_format_error(self):
         from intentkit.core.team.membership import validate_team_id
 
-        result = await validate_team_id("A")
+        result = await validate_team_id("ab")
         assert result["valid"] is False
-        assert "at least 2" in result["reason"]
+        assert "at least 3" in result["reason"]
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.Team.get", new_callable=AsyncMock)
@@ -433,6 +433,8 @@ class TestJoinTeam:
         mock_session.execute = AsyncMock(
             side_effect=[mock_result_invite, mock_result_member, mock_result_update]
         )
+        # seats check: scalar returns current member count (0 < seats limit)
+        mock_session.scalar = AsyncMock(return_value=0)
 
         team = _make_team()
         mock_team_get.return_value = team
