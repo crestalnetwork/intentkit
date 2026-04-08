@@ -10,12 +10,14 @@ from typing import TYPE_CHECKING
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
 from intentkit.models.team import (
+    PLAN_CONFIGS,
     Team,
     TeamCreate,
     TeamInvite,
     TeamInviteTable,
     TeamMember,
     TeamMemberTable,
+    TeamPlan,
     TeamRole,
     TeamTable,
 )
@@ -256,7 +258,7 @@ async def join_team(code: str, user_id: str) -> Team:
         ValueError: If invite is invalid, expired, or used up,
                     or if user is already a member.
     """
-    from sqlalchemy import select, update
+    from sqlalchemy import func, select, update
 
     async with get_session() as db:
         # Find invite with row lock to prevent race conditions
@@ -287,6 +289,22 @@ async def join_team(code: str, user_id: str) -> Team:
         existing = await db.execute(member_stmt)
         if existing.scalar_one_or_none():
             raise ValueError("User is already a member of this team")
+
+        # Check seats limit
+        team = await Team.get(invite.team_id)
+        if team:
+            cfg = PLAN_CONFIGS.get(team.plan, PLAN_CONFIGS[TeamPlan.NONE])
+            count_stmt = (
+                select(func.count())
+                .select_from(TeamMemberTable)
+                .where(TeamMemberTable.team_id == invite.team_id)
+            )
+            member_count = await db.scalar(count_stmt) or 0
+            if member_count >= cfg.seats:
+                raise ValueError(
+                    f"Team has reached the maximum number of seats "
+                    f"({cfg.seats}) for the {cfg.name} plan"
+                )
 
         # Capture values before commit (expire_on_commit=True)
         invite_team_id = invite.team_id
@@ -413,13 +431,32 @@ async def remove_member(team_id: str, user_id: str) -> None:
 
 
 async def get_members(team_id: str) -> list["TeamMember"]:
-    """Get all members of a team."""
+    """Get all members of a team, including user profile info."""
     from sqlalchemy import select
 
+    from intentkit.models.user import UserTable
+
     async with get_session() as db:
-        stmt = select(TeamMemberTable).where(TeamMemberTable.team_id == team_id)
-        result = await db.scalars(stmt)
-        return [TeamMember.model_validate(m) for m in result]
+        stmt = (
+            select(
+                TeamMemberTable,
+                UserTable.name,
+                UserTable.email,
+                UserTable.evm_wallet_address,
+            )
+            .outerjoin(UserTable, UserTable.id == TeamMemberTable.user_id)
+            .where(TeamMemberTable.team_id == team_id)
+        )
+        result = await db.execute(stmt)
+        members = []
+        for row in result:
+            member_row, name, email, evm_wallet = row.tuple()
+            m = TeamMember.model_validate(member_row)
+            m.name = name
+            m.email = email
+            m.evm_wallet_address = evm_wallet
+            members.append(m)
+        return members
 
 
 async def check_permission(team_id: str, user_id: str, required_role: TeamRole) -> bool:

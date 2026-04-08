@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from sqlalchemy import DateTime, Index, Integer, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,31 +37,65 @@ class TeamPlan(str, Enum):
 class PlanConfig:
     """Configuration for a pricing plan tier."""
 
+    name: str
+    description: str
     free_quota: Decimal
     refill_amount: Decimal
     monthly_permanent_credits: Decimal
+    seats: int
+    month_price_cents: int
+    year_price_cents: int
 
 
 PLAN_CONFIGS: dict[TeamPlan, PlanConfig] = {
     TeamPlan.NONE: PlanConfig(
+        name="No Plan",
+        description="No active plan.",
         free_quota=Decimal("0"),
         refill_amount=Decimal("0"),
         monthly_permanent_credits=Decimal("0"),
+        seats=1,
+        month_price_cents=0,
+        year_price_cents=0,
     ),
     TeamPlan.FREE: PlanConfig(
+        name="Free",
+        description=(
+            "Basic plan with limited credits. "
+            "Refills 1 credit/hour. No monthly permanent credits."
+        ),
         free_quota=Decimal("50"),
         refill_amount=Decimal("1"),
         monthly_permanent_credits=Decimal("0"),
+        seats=1,
+        month_price_cents=0,
+        year_price_cents=0,
     ),
     TeamPlan.PRO: PlanConfig(
-        free_quota=Decimal("500"),
-        refill_amount=Decimal("10"),
+        name="Pro",
+        description=(
+            "Professional plan with enhanced credits. "
+            "Refills 20 credits/hour. 10,000 permanent credits/month."
+        ),
+        free_quota=Decimal("1000"),
+        refill_amount=Decimal("20"),
         monthly_permanent_credits=Decimal("10000"),
+        seats=3,
+        month_price_cents=1900,
+        year_price_cents=19000,
     ),
     TeamPlan.MAX: PlanConfig(
-        free_quota=Decimal("5000"),
-        refill_amount=Decimal("100"),
+        name="Max",
+        description=(
+            "Maximum plan with full credits. "
+            "Refills 200 credits/hour. 100,000 permanent credits/month."
+        ),
+        free_quota=Decimal("10000"),
+        refill_amount=Decimal("200"),
         monthly_permanent_credits=Decimal("100000"),
+        seats=15,
+        month_price_cents=19900,
+        year_price_cents=199000,
     ),
 }
 
@@ -203,6 +237,9 @@ class TeamMember(BaseModel):
     team_id: str
     role: TeamRole
     joined_at: datetime
+    name: str | None = None
+    email: str | None = None
+    evm_wallet_address: str | None = None
 
     @field_serializer("joined_at")
     @classmethod
@@ -312,6 +349,38 @@ class Team(TeamCreate):
     updated_at: Annotated[
         datetime, Field(description="Timestamp when this team was last updated")
     ]
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def plan_name(self) -> str:
+        """Display name derived from the plan's PlanConfig."""
+        return PLAN_CONFIGS.get(self.plan, PLAN_CONFIGS[TeamPlan.NONE]).name
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def plan_description(self) -> str:
+        """Description derived from the plan's PlanConfig."""
+        return PLAN_CONFIGS.get(self.plan, PLAN_CONFIGS[TeamPlan.NONE]).description
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def plan_seats(self) -> int:
+        """Max seats derived from the plan's PlanConfig."""
+        return PLAN_CONFIGS.get(self.plan, PLAN_CONFIGS[TeamPlan.NONE]).seats
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def plan_month_price_cents(self) -> int:
+        """Monthly price in cents derived from the plan's PlanConfig."""
+        return PLAN_CONFIGS.get(
+            self.plan, PLAN_CONFIGS[TeamPlan.NONE]
+        ).month_price_cents
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def plan_year_price_cents(self) -> int:
+        """Yearly price in cents derived from the plan's PlanConfig."""
+        return PLAN_CONFIGS.get(self.plan, PLAN_CONFIGS[TeamPlan.NONE]).year_price_cents
 
     @field_serializer(
         "created_at", "updated_at", "plan_expires_at", "next_credit_issue_at"
