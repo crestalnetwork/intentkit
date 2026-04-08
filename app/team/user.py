@@ -233,7 +233,6 @@ async def get_linked_accounts(
     return _linked_accounts_response(providers)
 
 
-
 class UpdateProfileRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     avatar: str | None = None

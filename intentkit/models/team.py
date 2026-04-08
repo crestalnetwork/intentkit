@@ -288,6 +288,12 @@ class Team(TeamCreate):
         from_attributes=True,
     )
 
+    role: Annotated[
+        TeamRole | None,
+        Field(
+            default=None, description="User's role (only set in user-specific queries)"
+        ),
+    ]
     plan: Annotated[
         TeamPlan,
         Field(default=TeamPlan.NONE, description="Pricing plan tier"),
@@ -341,10 +347,10 @@ class Team(TeamCreate):
 
     @classmethod
     async def get_by_user(cls, user_id: str) -> list["Team"]:
-        """Get all teams a user belongs to."""
+        """Get all teams a user belongs to, including the user's role."""
         async with get_session() as db:
             stmt = (
-                select(TeamTable)
+                select(TeamTable, TeamMemberTable.role)
                 .join(
                     TeamMemberTable,
                     TeamMemberTable.team_id == TeamTable.id,
@@ -352,8 +358,13 @@ class Team(TeamCreate):
                 .where(TeamMemberTable.user_id == user_id)
                 .order_by(TeamTable.name)
             )
-            result = await db.scalars(stmt)
-            return [cls.model_validate(team) for team in result]
+            result = await db.execute(stmt)
+            teams = []
+            for team, role in result:
+                t = cls.model_validate(team)
+                t.role = role
+                teams.append(t)
+            return teams
 
 
 class TeamInvite(BaseModel):

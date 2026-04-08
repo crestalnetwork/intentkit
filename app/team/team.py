@@ -230,6 +230,43 @@ async def update_team_endpoint(
     return Response(content=team.model_dump_json(), media_type="application/json")
 
 
+async def _clear_current_team_if_needed(user_id: str, team_id: str) -> None:
+    """Clear user's current_team_id if it points to the given team."""
+    user = await User.get(user_id)
+    if user and user.current_team_id == team_id:
+        await UserUpdate.model_validate({"current_team_id": None}).patch(user_id)
+        await invalidate_user_cache(user_id)
+
+
+@team_management_router.post("/teams/{team_id}/leave")
+async def leave_team_endpoint(
+    auth: tuple[str, str] = Depends(verify_team_member),
+) -> Response:
+    """Leave a team. Owners cannot leave their team."""
+    user_id, team_id = auth
+
+    is_owner = await check_permission(team_id, user_id, TeamRole.OWNER)
+    if is_owner:
+        raise IntentKitAPIError(
+            status_code=400,
+            key="OwnerCannotLeave",
+            message="Owners cannot leave their team. Transfer ownership first.",
+        )
+
+    try:
+        await remove_member(team_id, user_id)
+    except ValueError as e:
+        raise IntentKitAPIError(
+            status_code=400,
+            key="LeaveTeamFailed",
+            message=str(e),
+        )
+
+    await _clear_current_team_if_needed(user_id, team_id)
+
+    return Response(content='{"ok":true}', media_type="application/json")
+
+
 @team_management_router.delete("/teams/{team_id}/members/{member_id}")
 async def remove_member_endpoint(
     member_id: str = Path(..., description="User ID of the member to remove"),
@@ -241,7 +278,6 @@ async def remove_member_endpoint(
     """
     caller_id, team_id = auth
 
-    # Admins can only remove members; owners can remove anyone except the last owner
     caller_is_owner = await check_permission(team_id, caller_id, TeamRole.OWNER)
     if not caller_is_owner:
         target_is_admin = await check_permission(team_id, member_id, TeamRole.ADMIN)
@@ -261,11 +297,7 @@ async def remove_member_endpoint(
             message=str(e),
         )
 
-    # Clear removed user's current_team_id if it pointed to this team
-    removed_user = await User.get(member_id)
-    if removed_user and removed_user.current_team_id == team_id:
-        await UserUpdate.model_validate({"current_team_id": None}).patch(member_id)
-        await invalidate_user_cache(member_id)
+    await _clear_current_team_if_needed(member_id, team_id)
 
     return Response(content='{"ok":true}', media_type="application/json")
 
