@@ -1,13 +1,11 @@
 ## New Features
 
-- Users can now leave a team from their account page (owners must transfer ownership first)
-- Teams now include plan details (name, description, seats, pricing) for frontend display
-- Team list API now returns each user's role for proper role-based UI
+- OpenRouter agents now use native server tools for web search and datetime, improving response speed and accuracy
+- Added new LLM models: Gemma 4 31B, upgraded GLM 5.1, and updated Qwen 3.6 Plus pricing
 
 ## Improvements
 
-- Improved EVM wallet detection for users who registered via Web3 login
-- Simplified account linking by removing unused EVM wallet unlink flow
-- Enriched team members API with additional user details
+- Streamlined internal system skills architecture for cleaner conditional loading
+- Various bug fixes and test improvements
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.21...v0.17.22
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.22...v0.17.23
