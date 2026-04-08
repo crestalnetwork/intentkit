@@ -825,8 +825,7 @@ class OpenRouterLLM(LLMModel):
 
     @override
     async def create_instance(self, params: dict[str, Any] = {}) -> BaseChatModel:
-        """Create and return a ChatOpenRouter instance."""
-        from langchain_openrouter import ChatOpenRouter
+        """Create and return a ChatOpenRouter instance with server tool support."""
 
         info = await self.model_info()
 
@@ -853,7 +852,99 @@ class OpenRouterLLM(LLMModel):
         # Update kwargs with params to allow overriding
         kwargs.update(params)
 
-        return ChatOpenRouter(**kwargs)
+        return _create_openrouter_with_server_tools(**kwargs)
+
+
+_openrouter_sdk_patched = False
+
+
+def _patch_openrouter_sdk() -> None:
+    """Patch the OpenRouter SDK to accept server tools.
+
+    The SDK's ``ToolDefinitionJSON`` model requires ``type="function"`` and
+    a mandatory ``function`` field. OpenRouter server tools like
+    ``openrouter:web_search`` use different types and have no ``function``
+    field. This patch broadens ``ToolDefinitionJSON`` to accept any ``type``
+    string and makes ``function`` optional, so server-tool dicts pass through
+    the SDK's validation and are serialised as-is.
+    """
+    global _openrouter_sdk_patched  # noqa: PLW0603
+    if _openrouter_sdk_patched:
+        return
+    try:
+        from openrouter.components import (
+            ToolDefinitionJSON,  # type: ignore[import-untyped]
+        )
+
+        tool_model: Any = ToolDefinitionJSON
+        type_field = tool_model.model_fields.get("type")
+        func_field = tool_model.model_fields.get("function")
+        if type_field is None or func_field is None:
+            logger.warning(
+                "OpenRouter SDK ToolDefinitionJSON schema changed — "
+                "server tools patch skipped; update the integration"
+            )
+            return
+        # Broaden type from Literal["function"] to str
+        type_field.annotation = str
+        tool_model.__annotations__["type"] = str
+        # Make function optional (server tools don't have it)
+        orig = func_field.annotation
+        func_field.annotation = orig | None
+        func_field.default = None
+        tool_model.__annotations__["function"] = orig | None
+        tool_model.model_rebuild(force=True)
+        _openrouter_sdk_patched = True
+    except Exception:
+        logger.warning("Failed to patch OpenRouter SDK for server tools", exc_info=True)
+
+
+def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
+    """Create a ChatOpenRouter subclass that supports server tools.
+
+    OpenRouter server tools (e.g. ``{"type": "openrouter:web_search"}``) are
+    not recognised by ``convert_to_openai_tool`` used inside the upstream
+    ``ChatOpenRouter.bind_tools``.  This subclass overrides ``bind_tools``
+    to pull server-tool dicts out, delegate the rest to the parent, and
+    re-inject the server tools into the bound kwargs so they are sent as-is
+    in the API request.
+
+    Additionally, the OpenRouter Python SDK's request model is patched once to
+    accept non-function tool types in the request body.
+    """
+    from langchain_openrouter import ChatOpenRouter
+
+    _patch_openrouter_sdk()
+
+    class _WithServerTools(ChatOpenRouter):
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+            **bt_kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            server_tools: list[dict[str, Any]] = []
+            regular_tools: list[dict[str, Any] | type | Callable | BaseTool] = []
+            for tool in tools:
+                if (
+                    isinstance(tool, dict)
+                    and isinstance(tool.get("type"), str)
+                    and tool["type"].startswith("openrouter:")
+                ):
+                    server_tools.append(tool)
+                else:
+                    regular_tools.append(tool)
+
+            bound = super().bind_tools(regular_tools, **bt_kwargs)
+
+            if server_tools:
+                bound_kwargs: dict[str, Any] = bound.kwargs  # pyright: ignore[reportAttributeAccessIssue]
+                existing = list(bound_kwargs.get("tools", []))
+                updated = {k: v for k, v in bound_kwargs.items() if k != "tools"}
+                return self.bind(tools=existing + server_tools, **updated)
+            return bound
+
+    return _WithServerTools(**kwargs)
 
 
 class GoogleLLM(LLMModel):

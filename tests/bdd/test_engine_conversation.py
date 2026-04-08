@@ -144,30 +144,40 @@ async def test_skill_call_current_time() -> None:
     """
     Scenario: Skill Call (current_time)
 
-    Given a deployed agent with `model=GLM-4.7`
-    When a user sends a message requiring the current_time tool
-    Then the engine returns messages including a skill call message
-    And the skill call message contains `current_time` with `success=True`
-    And the skill call response contains a date-like string
-    And credit events include both `message` and `skill_call` types
-    And the agent final reply contains time information
-
-    LLM Requests: ~2 (1 tool-call decision + 1 final reply)
+    Given a deployed agent
+    When a user sends a message requiring the current time
+    Then for OpenRouter models: the server tool openrouter:datetime handles it
+        transparently — the agent reply contains time info (no visible skill call)
+    Or for other providers: the engine returns messages including a skill call
+        message with `current_time` / `success=True` and a date-like string
+    And credit events are recorded
 
     Note: Free-tier models may not reliably follow tool-calling instructions,
     so we retry up to 3 times with fresh chat IDs.
     """
+    from intentkit.models.llm import LLMProvider, create_llm_model
+
+    # Determine whether this model uses OpenRouter server tools
+    llm_model = await create_llm_model(model_name=MODEL)
+    uses_server_datetime = llm_model.info.provider == LLMProvider.OPENROUTER
+
     # Given
+    prompt = (
+        "You are a helpful assistant. Tell the user the current time or date "
+        "when asked. Use whatever datetime tool is available to you."
+        if uses_server_datetime
+        else (
+            "You are a helpful assistant. You MUST ALWAYS call the current_time tool "
+            "to answer any question about the current time or date. "
+            "NEVER guess or infer the time. ALWAYS use the tool first."
+        )
+    )
     agent_input = AgentCreate(
         id="engine-skill-1",
         name="Skill Agent",
         model=MODEL,
         owner="system",
-        prompt=(
-            "You are a helpful assistant. You MUST ALWAYS call the current_time tool "
-            "to answer any question about the current time or date. "
-            "NEVER guess or infer the time. ALWAYS use the tool first."
-        ),
+        prompt=prompt,
         skills={},
     )
     await create_agent(agent_input)
@@ -184,41 +194,60 @@ async def test_skill_call_current_time() -> None:
             user_id="system",
             author_id="system",
             author_type=AuthorType.WEB,
-            message="Call the current_time tool and tell me the current UTC time.",
+            message="What is the current UTC time right now?",
         )
         last_responses = await execute_agent(message)
 
-        skill_msgs = [r for r in last_responses if r.author_type == AuthorType.SKILL]
-        if skill_msgs:
-            break  # Model used a tool — proceed with assertions
+        if uses_server_datetime:
+            # Server tools are transparent — any agent reply is fine
+            agent_replies = [
+                r for r in last_responses if r.author_type == AuthorType.AGENT
+            ]
+            if agent_replies:
+                break
+        else:
+            skill_msgs = [
+                r for r in last_responses if r.author_type == AuthorType.SKILL
+            ]
+            if skill_msgs:
+                break  # Model used a tool — proceed with assertions
 
     responses = last_responses
 
-    # Then — check that responses include skill call
-    assert len(responses) >= 2, (
-        f"Expected >= 2 responses (tool call + reply), got {len(responses)} after {max_attempts} attempts. "
-        "The free-tier model may not support tool calling reliably."
-    )
-    skill_msgs = [r for r in responses if r.author_type == AuthorType.SKILL]
-    assert len(skill_msgs) >= 1, (
-        f"Expected at least one skill call message after {max_attempts} attempts. "
-        "The free-tier model may not support tool calling reliably."
-    )
+    if uses_server_datetime:
+        # OpenRouter handles datetime server-side — just check the reply
+        agent_replies = [r for r in responses if r.author_type == AuthorType.AGENT]
+        assert len(agent_replies) >= 1, "Expected at least one agent reply"
+        reply_text = agent_replies[0].message or ""
+        assert re.search(r"\d{1,2}:\d{2}", reply_text) or re.search(
+            r"\d{4}-\d{2}-\d{2}", reply_text
+        ), f"Expected time/date info in reply, got: {reply_text}"
+    else:
+        # Non-OpenRouter: verify visible skill call
+        assert len(responses) >= 2, (
+            f"Expected >= 2 responses (tool call + reply), got {len(responses)} after {max_attempts} attempts. "
+            "The free-tier model may not support tool calling reliably."
+        )
+        skill_msgs = [r for r in responses if r.author_type == AuthorType.SKILL]
+        assert len(skill_msgs) >= 1, (
+            f"Expected at least one skill call message after {max_attempts} attempts. "
+            "The free-tier model may not support tool calling reliably."
+        )
 
-    # Then — check skill call details
-    skill_msg = skill_msgs[0]
-    assert skill_msg.skill_calls is not None
-    assert len(skill_msg.skill_calls) >= 1
+        # Then — check skill call details
+        skill_msg = skill_msgs[0]
+        assert skill_msg.skill_calls is not None
+        assert len(skill_msg.skill_calls) >= 1
 
-    time_call = None
-    for call in skill_msg.skill_calls:
-        if call["name"] == "current_time":
-            time_call = call
-            break
-    assert time_call is not None, "Expected current_time skill call"
-    assert time_call["success"] is True
-    # Response should contain a date pattern like "2026-02-10"
-    assert re.search(r"\d{4}-\d{2}-\d{2}", time_call.get("response", ""))
+        time_call = None
+        for call in skill_msg.skill_calls:
+            if call["name"] == "current_time":
+                time_call = call
+                break
+        assert time_call is not None, "Expected current_time skill call"
+        assert time_call["success"] is True
+        # Response should contain a date pattern like "2026-02-10"
+        assert re.search(r"\d{4}-\d{2}-\d{2}", time_call.get("response", ""))
 
     # Then — check agent final reply
     agent_replies = [r for r in responses if r.author_type == AuthorType.AGENT]
@@ -226,9 +255,10 @@ async def test_skill_call_current_time() -> None:
 
     # Then — check credit events
     message_events = await query_credit_events("engine-skill-1", EventType.MESSAGE)
-    skill_events = await query_credit_events("engine-skill-1", EventType.SKILL_CALL)
     assert len(message_events) >= 1, "Expected at least one message credit event"
-    assert len(skill_events) >= 1, "Expected at least one skill call credit event"
+    if not uses_server_datetime:
+        skill_events = await query_credit_events("engine-skill-1", EventType.SKILL_CALL)
+        assert len(skill_events) >= 1, "Expected at least one skill call credit event"
 
 
 @pytest.mark.bdd

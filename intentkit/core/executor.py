@@ -142,16 +142,25 @@ async def build_executor(
     from intentkit.core.system_skills import get_system_skills
 
     system_skills = get_system_skills(agent)
-    # current_time is available to all users (public), other system skills are private-only
-    for skill in system_skills:
-        if skill.name == "current_time":
-            tools.append(skill)
+    model_provider = llm_model.info.provider
+
+    # For OpenRouter, use server tool for datetime instead of our custom current_time
+    if model_provider == LLMProvider.OPENROUTER:
+        system_skills = [s for s in system_skills if s.name != "current_time"]
+        datetime_tool: dict[str, Any] = {"type": "openrouter:datetime"}
+        tools.append(datetime_tool)
+        private_tools.append(datetime_tool)
+    else:
+        # current_time is available to all users (public)
+        for skill in system_skills:
+            if skill.name == "current_time":
+                tools.append(skill)
+    # Other system skills are private-only
     private_tools.extend(system_skills)
 
     # Add search-related tools based on provider
     extra_llm_params: dict[str, Any] = {}
     if agent.search_internet:
-        model_provider = llm_model.info.provider
         if model_provider == LLMProvider.OPENAI:
             search_tools: list[dict[str, Any]] = [{"type": "web_search"}]
             tools.extend(search_tools)
@@ -161,7 +170,9 @@ async def build_executor(
             tools.extend(search_tools)
             private_tools.extend(search_tools)
         elif model_provider == LLMProvider.OPENROUTER:
-            extra_llm_params["plugins"] = [{"id": "web"}]
+            search_tool: dict[str, Any] = {"type": "openrouter:web_search"}
+            tools.append(search_tool)
+            private_tools.append(search_tool)
             # OpenRouter doesn't have native webpage reading
             if config.cloudflare_account_id and config.cloudflare_api_token:
                 from intentkit.core.system_skills import read_webpage_cloudflare
@@ -190,18 +201,13 @@ async def build_executor(
     ]
 
     # filter the duplicate tools
-    tools = list(
-        {
-            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
-            for tool in tools
-        }.values()
-    )
-    private_tools = list(
-        {
-            (tool.name if isinstance(tool, BaseTool) else str(tool.get("name"))): tool
-            for tool in private_tools
-        }.values()
-    )
+    def _tool_key(tool: BaseTool | dict[str, Any]) -> str:
+        if isinstance(tool, BaseTool):
+            return tool.name
+        return str(tool.get("name") or tool.get("type") or tool)
+
+    tools = list({_tool_key(t): t for t in tools}.values())
+    private_tools = list({_tool_key(t): t for t in private_tools}.values())
 
     for tool in private_tools:
         logger.info(
