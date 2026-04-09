@@ -93,7 +93,7 @@ export function createTransformErrors(
                 return true;
             }
 
-            if (error.name === "type") {
+            if (error.name === "type" || error.name === "enum") {
                 const fieldValue = formData[fieldName];
                 if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
                     return false;

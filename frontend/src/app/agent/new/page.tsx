@@ -185,10 +185,10 @@ export default function NewAgentPage() {
                 
                 // If the error is about type mismatch for an optional field
                 // and the value is empty/undefined, filter it out
-                if (error.name === "type") {
+                if (error.name === "type" || error.name === "enum") {
                     const fieldValue = (formData as Record<string, unknown>)[fieldName];
                     if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
-                        console.log(`[RJSF Validator] Filtering out type error for optional empty field: ${fieldName}`);
+                        console.log(`[RJSF Validator] Filtering out type/enum error for optional empty field: ${fieldName}`);
                         return false;
                     }
                 }
