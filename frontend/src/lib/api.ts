@@ -500,10 +500,44 @@ export interface WechatQrStatusResponse {
   user_id: string | null;
 }
 
+export interface DefaultChannelInfo {
+  default_channel: string | null;
+  default_channel_chat_id: string | null;
+}
+
 /**
  * Channel API functions for lead channel management
  */
 export const channelApi = {
+  async getDefaultChannel(): Promise<DefaultChannelInfo> {
+    const response = await fetch(`${API_BASE}/lead/channel/default`);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to get default channel: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async listDefaultChannelMessages(
+    cursor?: string,
+    limit: number = 50,
+  ): Promise<ChatMessagesResponse> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) {
+      params.append("cursor", cursor);
+    }
+    const response = await fetch(
+      `${API_BASE}/lead/channel/default/messages?${params.toString()}`,
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to list default channel messages: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
   async listChannels(): Promise<TeamChannel[]> {
     const response = await fetch(`${API_BASE}/lead/channels`);
     if (!response.ok) {

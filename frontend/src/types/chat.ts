@@ -13,6 +13,7 @@ export type AuthorType =
   | "discord"
   | "web"
   | "api"
+  | "wechat"
   | "xmtp"
   | "x402"
   | "internal";
@@ -77,7 +78,11 @@ export interface Chat {
 export type ChatThread = Chat;
 
 export const isUserAuthoredMessage = (authorType: AuthorType) =>
-  authorType === "web" || authorType === "api" || authorType === "trigger";
+  authorType === "web" ||
+  authorType === "api" ||
+  authorType === "trigger" ||
+  authorType === "telegram" ||
+  authorType === "wechat";
 
 // Response type for paginated message list
 export interface ChatMessagesResponse {

@@ -23,6 +23,7 @@ from intentkit.config.db import get_db
 from intentkit.core.lead import get_lead_agent, stream_lead
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.core.team.channel import (
+    build_channel_chat_id,
     get_default_channel,
     get_team_channels,
     remove_team_channel,
@@ -38,6 +39,7 @@ from intentkit.models.chat import (
     ChatMessageCreate,
     ChatMessageTable,
 )
+from intentkit.models.team import TeamTable
 from intentkit.models.team_channel import (
     TeamChannel,
     TeamChannelData,
@@ -397,7 +399,7 @@ async def delete_lead_channel(
 
 
 @team_lead_router.get(
-    "/teams/{team_id}/lead/channels/default",
+    "/teams/{team_id}/lead/channel/default",
     operation_id="team_get_lead_default_channel",
     summary="Get the default channel (Team)",
     tags=["Team Lead"],
@@ -405,10 +407,10 @@ async def delete_lead_channel(
 async def get_lead_default_channel(
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
-    """Get the default notification channel type for a team."""
+    """Get the default notification channel type and chat ID for a team."""
     _user_id, team_id = auth
-    channel = await get_default_channel(team_id)
-    return {"default_channel": channel}
+    channel_info = await get_default_channel(team_id)
+    return channel_info
 
 
 class SetDefaultChannelRequest(BaseModel):
@@ -416,7 +418,7 @@ class SetDefaultChannelRequest(BaseModel):
 
 
 @team_lead_router.put(
-    "/teams/{team_id}/lead/channels/default",
+    "/teams/{team_id}/lead/channel/default",
     operation_id="team_set_lead_default_channel",
     summary="Set the default channel (Team)",
     tags=["Team Lead"],
@@ -434,6 +436,56 @@ async def set_lead_default_channel(
             status_code=400, key="InvalidDefaultChannel", message=str(e)
         )
     return {"default_channel": body.channel_type}
+
+
+@team_lead_router.get(
+    "/teams/{team_id}/lead/channel/default/messages",
+    response_model=ChatMessagesResponse,
+    operation_id="team_list_lead_default_channel_messages",
+    summary="List messages from the default channel (Team)",
+    tags=["Team Lead"],
+)
+async def list_lead_default_channel_messages(
+    auth: tuple[str, str] = Depends(verify_team_member),
+    db: AsyncSession = Depends(get_db),
+    cursor: str | None = Query(None, description="Cursor for pagination (message id)"),
+    limit: int = Query(
+        20, ge=1, le=100, description="Maximum number of messages to return"
+    ),
+) -> ChatMessagesResponse:
+    """Get the message history for the default channel chat."""
+    _user_id, team_id = auth
+    team = await db.get(TeamTable, team_id)
+    if not team or not team.default_channel or not team.default_channel_chat_id:
+        return ChatMessagesResponse(data=[], has_more=False, next_cursor=None)
+
+    full_chat_id = build_channel_chat_id(
+        team.default_channel, team_id, team.default_channel_chat_id
+    )
+
+    stmt = (
+        select(ChatMessageTable)
+        .where(
+            ChatMessageTable.agent_id == team_id,
+            ChatMessageTable.chat_id == full_chat_id,
+        )
+        .order_by(desc(ChatMessageTable.id))
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(ChatMessageTable.id < cursor)
+    result = await db.scalars(stmt)
+    messages = result.all()
+    has_more = len(messages) > limit
+    messages_to_return = messages[:limit]
+    next_cursor = (
+        str(messages_to_return[-1].id) if has_more and messages_to_return else None
+    )
+    return ChatMessagesResponse(
+        data=[ChatMessage.model_validate(m) for m in messages_to_return],
+        has_more=has_more,
+        next_cursor=next_cursor,
+    )
 
 
 # =============================================================================

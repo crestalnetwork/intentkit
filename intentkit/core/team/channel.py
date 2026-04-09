@@ -160,13 +160,19 @@ async def set_default_channel(team_id: str, channel_type: str) -> None:
         await db.commit()
 
 
-async def get_default_channel(team_id: str) -> str | None:
-    """Get the default notification channel for a team."""
+async def get_default_channel(team_id: str) -> dict[str, str | None]:
+    """Get the default notification channel and chat ID for a team."""
     async with get_session() as db:
         team = await db.get(TeamTable, team_id)
         if not team:
-            return None
-        return team.default_channel
+            return {
+                "default_channel": None,
+                "default_channel_chat_id": None,
+            }
+        return {
+            "default_channel": team.default_channel,
+            "default_channel_chat_id": team.default_channel_chat_id,
+        }
 
 
 async def set_push_channel(team_id: str, channel_type: str, chat_id: str) -> None:
@@ -206,6 +212,20 @@ async def set_push_channel_if_empty(
         db.add(team)
         await db.commit()
         return True
+
+
+CHANNEL_CHAT_ID_PREFIXES: dict[str, str] = {
+    "telegram": "tg_team",
+    "wechat": "wx_team",
+}
+
+
+def build_channel_chat_id(channel_type: str, team_id: str, raw_chat_id: str) -> str:
+    """Build the full chat_id used in chat_messages for a channel conversation."""
+    prefix = CHANNEL_CHAT_ID_PREFIXES.get(channel_type)
+    if prefix is None:
+        raise ValueError(f"Unknown channel type: {channel_type!r}")
+    return f"{prefix}:{team_id}:{raw_chat_id}"
 
 
 async def get_push_channel(team_id: str) -> tuple[str, str] | None:

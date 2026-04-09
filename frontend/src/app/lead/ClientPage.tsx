@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Send,
@@ -8,14 +8,13 @@ import {
   Bot,
   User,
   AlertCircle,
-  Radio,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { leadApi } from "@/lib/api";
+import { leadApi, channelApi } from "@/lib/api";
 import { AgentInfoBar } from "@/components/features/AgentInfoBar";
 import { ChatSidebar } from "@/components/features/ChatSidebar";
 import { SkillCallBadgeList } from "@/components/features/SkillCallBadge";
@@ -24,19 +23,13 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { VideoAttachment } from "@/components/features/VideoAttachment";
 import { isUserAuthoredMessage } from "@/types/chat";
-import type { LucideIcon } from "lucide-react";
 import type {
   UIMessage,
   ChatThread,
   ChatMessage,
   ChatMessageAttachment,
 } from "@/types/chat";
-
-const LEAD_AGENT_ID = "system";
-
-const EXTRA_NAV_LINKS: Array<{ href: string; icon: LucideIcon; label: string }> = [
-  { href: "/lead/channels", icon: Radio, label: "Channels" },
-];
+import { LEAD_AGENT_ID, buildExtraNavLinks } from "./constants";
 
 const markdownProseClass =
   "prose prose-sm dark:prose-invert max-w-none break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0";
@@ -188,6 +181,18 @@ export default function LeadChatPage() {
     queryFn: () => leadApi.getInfo(),
     staleTime: 10 * 60 * 1000,
   });
+
+  // Fetch default channel info for sidebar nav
+  const { data: defaultChannelInfo } = useQuery({
+    queryKey: ["defaultChannelInfo"],
+    queryFn: () => channelApi.getDefaultChannel(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const extraNavLinks = useMemo(
+    () => buildExtraNavLinks(defaultChannelInfo),
+    [defaultChannelInfo],
+  );
 
   // Fetch thread list
   const {
@@ -461,7 +466,7 @@ export default function LeadChatPage() {
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
         hideNavLinks
-        extraNavLinks={EXTRA_NAV_LINKS}
+        extraNavLinks={extraNavLinks}
       />
 
       {/* Main Chat Area */}

@@ -302,15 +302,15 @@ async def remove_member_endpoint(
     return Response(content='{"ok":true}', media_type="application/json")
 
 
-@team_management_router.get("/teams/{team_id}/channels/default")
+@team_management_router.get("/teams/{team_id}/channel/default")
 async def get_team_default_channel_endpoint(
     auth: tuple[str, str] = Depends(verify_team_member),
 ) -> Response:
-    """Get the default notification channel for the team."""
+    """Get the default notification channel and chat ID for the team."""
     _, team_id = auth
-    channel = await get_default_channel(team_id)
+    channel_info = await get_default_channel(team_id)
     return Response(
-        content=json.dumps({"default_channel": channel}),
+        content=json.dumps(channel_info),
         media_type="application/json",
     )
 
@@ -319,7 +319,7 @@ class SetDefaultChannelRequest(BaseModel):
     channel_type: str
 
 
-@team_management_router.put("/teams/{team_id}/channels/default")
+@team_management_router.put("/teams/{team_id}/channel/default")
 async def set_team_default_channel_endpoint(
     body: SetDefaultChannelRequest = Body(...),
     auth: tuple[str, str] = Depends(verify_team_admin),

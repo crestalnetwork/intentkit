@@ -291,16 +291,23 @@ class TestGetDefaultChannel:
         with patch(f"{MODULE}.get_session", return_value=ctx):
             result = await get_default_channel("team1")
 
-        assert result is None
+        assert result == {
+            "default_channel": None,
+            "default_channel_chat_id": None,
+        }
 
     @pytest.mark.asyncio
     async def test_returns_default_channel(self):
         ctx, mock_db = _make_mock_session()
         mock_team = MagicMock(spec=TeamTable)
         mock_team.default_channel = "telegram"
+        mock_team.default_channel_chat_id = "123456"
         mock_db.get = AsyncMock(return_value=mock_team)
 
         with patch(f"{MODULE}.get_session", return_value=ctx):
             result = await get_default_channel("team1")
 
-        assert result == "telegram"
+        assert result == {
+            "default_channel": "telegram",
+            "default_channel_chat_id": "123456",
+        }

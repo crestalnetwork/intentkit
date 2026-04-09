@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Trash2, Loader2, Check, Radio, Copy, X } from "lucide-react";
+import { MessageCircle, Trash2, Loader2, Check, Copy, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,7 @@ import {
   type TelegramStatus,
   type WechatQrStatusResponse,
 } from "@/lib/api";
-import type { LucideIcon } from "lucide-react";
-
-const LEAD_AGENT_ID = "system";
-
-const EXTRA_NAV_LINKS: Array<{ href: string; icon: LucideIcon; label: string }> = [
-  { href: "/lead/channels", icon: Radio, label: "Channels" },
-];
+import { LEAD_AGENT_ID, buildExtraNavLinks } from "../constants";
 
 function buildLeadThreadPath(threadId?: string | null) {
   if (!threadId) return "/lead";
@@ -38,6 +32,17 @@ export default function ChannelsPage() {
     queryKey: ["lead-channels"],
     queryFn: () => channelApi.listChannels(),
   });
+
+  const { data: defaultChannelInfo } = useQuery({
+    queryKey: ["defaultChannelInfo"],
+    queryFn: () => channelApi.getDefaultChannel(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const extraNavLinks = useMemo(
+    () => buildExtraNavLinks(defaultChannelInfo),
+    [defaultChannelInfo],
+  );
 
   // Load threads for the sidebar
   const {
@@ -94,7 +99,7 @@ export default function ChannelsPage() {
         onDeleteThread={handleDeleteThread}
         isLoading={isLoadingThreads}
         hideNavLinks
-        extraNavLinks={EXTRA_NAV_LINKS}
+        extraNavLinks={extraNavLinks}
       />
 
       {/* Main Content */}
