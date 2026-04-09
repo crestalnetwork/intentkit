@@ -1,8 +1,11 @@
+import io
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from PIL import Image
 
 from intentkit.core.avatar import (
+    _normalize_avatar,
     build_agent_profile,
     generate_avatar,
     generate_image_google,
@@ -11,6 +14,14 @@ from intentkit.core.avatar import (
     generate_image_xai,
     select_model_and_generate,
 )
+
+
+def _make_png(width: int, height: int) -> bytes:
+    """Create a minimal PNG image of given size."""
+    img = Image.new("RGB", (width, height), color="red")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 @pytest.fixture
@@ -89,6 +100,38 @@ class TestBuildAgentProfile:
         profile = build_agent_profile("minimal-id", agent)
         assert "### Name" in profile
         assert "Minimal" in profile
+
+
+class TestNormalizeAvatar:
+    def test_square_image_resized(self):
+        png = _make_png(1024, 1024)
+        result = _normalize_avatar(png)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (512, 512)
+
+    def test_landscape_image_cropped_and_resized(self):
+        png = _make_png(800, 400)
+        result = _normalize_avatar(png)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (512, 512)
+
+    def test_portrait_image_cropped_and_resized(self):
+        png = _make_png(400, 800)
+        result = _normalize_avatar(png)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (512, 512)
+
+    def test_already_512(self):
+        png = _make_png(512, 512)
+        result = _normalize_avatar(png)
+        img = Image.open(io.BytesIO(result))
+        assert img.size == (512, 512)
+
+    def test_output_is_png(self):
+        png = _make_png(1024, 768)
+        result = _normalize_avatar(png)
+        img = Image.open(io.BytesIO(result))
+        assert img.format == "PNG"
 
 
 class TestSelectModelAndGenerate:
@@ -187,7 +230,7 @@ class TestGenerateAvatar:
         mock_config.openrouter_api_key = "or-key"
         mock_config.aws_s3_cdn_url = "https://cdn.example.com"
 
-        fake_image = b"png-image-bytes"
+        fake_image = _make_png(1024, 768)
 
         with (
             patch(
@@ -210,11 +253,13 @@ class TestGenerateAvatar:
 
             mock_store.assert_called_once()
             call_args = mock_store.call_args
-            assert call_args[0][0] == fake_image
+            # Verify the stored image is normalized to 512x512
+            stored_bytes = call_args[0][0]
+            stored_img = Image.open(io.BytesIO(stored_bytes))
+            assert stored_img.size == (512, 512)
             assert "avatars/test-agent-123/" in call_args[0][1]
             assert call_args[1]["content_type"] == "image/png"
 
-            # store_image_bytes now returns a relative path directly
             assert path == "test/avatars/test-agent-123/abc.png"
 
     @pytest.mark.asyncio
@@ -251,7 +296,7 @@ class TestGenerateAvatar:
             patch(
                 "intentkit.core.avatar.select_model_and_generate",
                 new_callable=AsyncMock,
-                return_value=b"image-bytes",
+                return_value=_make_png(256, 256),
             ),
             patch(
                 "intentkit.core.avatar.store_image_bytes",

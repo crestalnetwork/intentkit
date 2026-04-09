@@ -1,4 +1,5 @@
 import base64
+import io
 import logging
 from typing import Any
 
@@ -6,6 +7,7 @@ import httpx
 from google import genai
 from google.genai import types
 from openai import AsyncOpenAI
+from PIL import Image
 
 from intentkit.clients.s3 import store_image_bytes
 from intentkit.config.config import config
@@ -38,6 +40,22 @@ Requirements for the avatar:
 - Square composition with the subject centered
 
 Output ONLY the image generation prompt, nothing else."""
+
+
+def _normalize_avatar(image_bytes: bytes, size: int = 512) -> bytes:
+    """Crop image to square (center crop) and resize to size x size, return PNG bytes."""
+    img = Image.open(io.BytesIO(image_bytes))
+    w, h = img.size
+    if w != h:
+        side = min(w, h)
+        left = (w - side) // 2
+        top = (h - side) // 2
+        img = img.crop((left, top, left + side, top + side))
+    if img.size != (size, size):
+        img = img.resize((size, size), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 async def _download_image(url: str) -> bytes:
@@ -261,7 +279,14 @@ async def generate_avatar(agent_id: str, agent: Any) -> str | None:
     if not image_bytes:
         return None
 
-    # Step 3: Upload to S3
+    # Step 3: Normalize — crop to square and resize to 512x512
+    try:
+        image_bytes = _normalize_avatar(image_bytes)
+    except Exception as e:
+        logger.error("Failed to normalize avatar image: %s", e)
+        return None
+
+    # Step 4: Upload to S3
     try:
         from epyxid import XID
 
