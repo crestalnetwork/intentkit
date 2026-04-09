@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "ACP Commerce",
+  "description": "Purchase products from ACP (Agentic Commerce Protocol) merchants using x402 crypto payments.",
+  "x-icon": "/skills/acp/acp.png",
+  "x-tags": [
+    "Commerce",
+    "Crypto"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Whether this skill category is enabled.",
+      "default": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "acp_list_products": {
+          "type": "string",
+          "title": "List Products",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "List available products from an ACP merchant.",
+          "default": "disabled"
+        },
+        "acp_create_checkout": {
+          "type": "string",
+          "title": "Create Checkout",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Create a checkout session with selected products.",
+          "default": "disabled"
+        },
+        "acp_get_checkout": {
+          "type": "string",
+          "title": "Get Checkout Status",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Check the status of a checkout session.",
+          "default": "disabled"
+        },
+        "acp_complete_checkout": {
+          "type": "string",
+          "title": "Complete Checkout",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Complete a checkout session with payment proof (tx_hash).",
+          "default": "disabled"
+        },
+        "acp_cancel_checkout": {
+          "type": "string",
+          "title": "Cancel Checkout",
+          "enum": [
+            "disabled",
+            "public",
+            "private"
+          ],
+          "x-enum-title": [
+            "Disabled",
+            "Agent Owner + All Users",
+            "Agent Owner Only"
+          ],
+          "description": "Cancel an unpaid checkout session.",
+          "default": "disabled"
+        }
+      }
+    }
+  }
+}
