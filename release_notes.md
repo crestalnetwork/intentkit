@@ -1,9 +1,8 @@
+# Release v0.17.27
+
 ## New Features
 
-- Added ACP (Agentic Commerce Protocol) skill category, enabling agents to browse and purchase products from ACP merchants using x402 crypto payments
+- Redesigned the team lead agent with a coordinator and sub-agents architecture, improving task delegation and specialization
+- Added self-updater and content-manager sub-agents, allowing the team lead to better manage its own configuration and content workflows
 
-## Bug Fixes
-
-- Fixed form validation errors for optional fields with enum constraints in the agent creation form
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.25...v0.17.26
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.26...v0.17.27
