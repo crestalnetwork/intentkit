@@ -48,7 +48,7 @@ class LeadDeleteAutonomousTask(LeadSkill):
         **kwargs: Any,
     ) -> DeleteAutonomousTaskOutput:
         context = self.get_context()
-        await verify_agent_in_team(agent_id, context.agent_id)
+        await verify_agent_in_team(agent_id, context.team_id)
         await delete_autonomous_task(agent_id, task_id)
         return DeleteAutonomousTaskOutput(
             success=True, message=f"Successfully deleted autonomous task {task_id}"

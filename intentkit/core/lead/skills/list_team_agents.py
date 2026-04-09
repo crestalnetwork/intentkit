@@ -42,7 +42,7 @@ class ListTeamAgents(LeadSkill):
     @override
     async def _arun(self, **kwargs: Any) -> ListTeamAgentsOutput:
         context = self.get_context()
-        agents = await get_team_agents(context.agent_id)
+        agents = await get_team_agents(context.team_id)
         summaries = [
             AgentSummary(
                 id=a.id,

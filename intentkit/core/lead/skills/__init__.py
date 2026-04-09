@@ -4,6 +4,10 @@ from intentkit.core.lead.skills.add_autonomous_task import (
     LeadAddAutonomousTask,
     lead_add_autonomous_task_skill,
 )
+from intentkit.core.lead.skills.call_agent import (
+    LeadCallAgent,
+    lead_call_agent_skill,
+)
 from intentkit.core.lead.skills.create_team_agent import (
     CreateTeamAgent,
     create_team_agent_skill,
@@ -28,6 +32,10 @@ from intentkit.core.lead.skills.list_autonomous_tasks import (
     LeadListAutonomousTasks,
     lead_list_autonomous_tasks_skill,
 )
+from intentkit.core.lead.skills.list_skills import (
+    LeadListAvailableSkills,
+    lead_list_available_skills_skill,
+)
 from intentkit.core.lead.skills.list_team_agents import (
     ListTeamAgents,
     list_team_agents_skill,
@@ -50,6 +58,8 @@ __all__ = [
     "get_team_info_skill",
     "LeadAddAutonomousTask",
     "lead_add_autonomous_task_skill",
+    "LeadCallAgent",
+    "lead_call_agent_skill",
     "LeadDeleteAutonomousTask",
     "lead_delete_autonomous_task_skill",
     "LeadEditAutonomousTask",
@@ -58,6 +68,8 @@ __all__ = [
     "lead_get_available_llms_skill",
     "LeadListAutonomousTasks",
     "lead_list_autonomous_tasks_skill",
+    "LeadListAvailableSkills",
+    "lead_list_available_skills_skill",
     "ListTeamAgents",
     "list_team_agents_skill",
     "UpdateTeamAgent",

@@ -23,8 +23,9 @@ lead_cached_at: dict[str, datetime] = {}
 def invalidate_lead_cache(team_id: str) -> None:
     """Remove cached lead agent and executor for a team.
 
-    Call this when the team's agent list changes (create, archive, reactivate)
-    so the lead agent is rebuilt with an up-to-date sub_agents list.
+    Call this when the team's agent list changes (create, archive, reactivate).
+    Sub-agent caches are NOT invalidated here because sub-agents are static
+    definitions that don't depend on the team's agent list.
     """
     _ = lead_cached_at.pop(team_id, None)
     _ = lead_executors.pop(team_id, None)
@@ -46,3 +47,7 @@ def cleanup_cache(now: datetime) -> None:
             _ = lead_executors.pop(cache_key, None)
             _ = lead_agents.pop(cache_key, None)
             logger.debug("Removed expired lead executor for %s", cache_key)
+
+    from intentkit.core.lead.sub_agents import cleanup_sub_agent_caches
+
+    cleanup_sub_agent_caches(expired_before)

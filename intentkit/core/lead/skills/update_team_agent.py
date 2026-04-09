@@ -126,7 +126,7 @@ class UpdateTeamAgent(LeadSkill):
         **kwargs: Any,
     ) -> UpdateTeamAgentOutput:
         context = self.get_context()
-        await verify_agent_in_team(agent_id, context.agent_id)
+        await verify_agent_in_team(agent_id, context.team_id)
 
         # Build update data from explicitly provided fields
         update_data: dict[str, Any] = {}
@@ -170,7 +170,7 @@ class UpdateTeamAgent(LeadSkill):
         if purpose is not None:
             from intentkit.core.lead.cache import invalidate_lead_cache
 
-            invalidate_lead_cache(context.agent_id)
+            invalidate_lead_cache(context.team_id)
 
         return UpdateTeamAgentOutput(
             agent_id=updated_agent.id,

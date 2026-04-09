@@ -63,7 +63,7 @@ class LeadEditAutonomousTask(LeadSkill):
         **kwargs: Any,
     ) -> EditAutonomousTaskOutput:
         context = self.get_context()
-        await verify_agent_in_team(agent_id, context.agent_id)
+        await verify_agent_in_team(agent_id, context.team_id)
 
         task_update = AutonomousUpdateRequest(
             name=name,

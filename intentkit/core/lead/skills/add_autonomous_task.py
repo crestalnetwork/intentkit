@@ -63,7 +63,7 @@ class LeadAddAutonomousTask(LeadSkill):
         **kwargs: Any,
     ) -> AddAutonomousTaskOutput:
         context = self.get_context()
-        await verify_agent_in_team(agent_id, context.agent_id)
+        await verify_agent_in_team(agent_id, context.team_id)
 
         task_request = AutonomousCreateRequest(
             name=name,

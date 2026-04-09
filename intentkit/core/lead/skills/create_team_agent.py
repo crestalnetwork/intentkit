@@ -149,7 +149,7 @@ class CreateTeamAgent(LeadSkill):
         # Invalidate lead cache so lead agent rebuilds sub-agents list
         from intentkit.core.lead.cache import invalidate_lead_cache
 
-        invalidate_lead_cache(context.agent_id)
+        invalidate_lead_cache(context.team_id)
 
         return CreateTeamAgentOutput(
             agent_id=created_agent.id,

@@ -36,7 +36,7 @@ class GetTeamAgent(LeadSkill):
     @override
     async def _arun(self, agent_id: str, **kwargs: Any) -> GetTeamAgentOutput:
         context = self.get_context()
-        agent = await verify_agent_in_team(agent_id, context.agent_id)
+        agent = await verify_agent_in_team(agent_id, context.team_id)
         return GetTeamAgentOutput(agent=agent.model_dump(mode="json"))
 
 
