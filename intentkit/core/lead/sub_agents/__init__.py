@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 # Sub-agent slug constants
 SLUG_AGENT_MANAGER = "agent-manager"
 SLUG_TASK_MANAGER = "task-manager"
+SLUG_SELF_UPDATER = "self-updater"
+SLUG_CONTENT_MANAGER = "content-manager"
 
 
 @dataclass
@@ -98,6 +100,14 @@ from intentkit.core.lead.sub_agents.agent_manager import (  # noqa: E402
     build_agent_manager,
     get_agent_manager_skills,
 )
+from intentkit.core.lead.sub_agents.content_manager import (  # noqa: E402
+    build_content_manager,
+    get_content_manager_skills,
+)
+from intentkit.core.lead.sub_agents.self_updater import (  # noqa: E402
+    build_self_updater,
+    get_self_updater_skills,
+)
 from intentkit.core.lead.sub_agents.task_manager import (  # noqa: E402
     build_task_manager,
     get_task_manager_skills,
@@ -120,5 +130,21 @@ SUB_AGENT_REGISTRY: dict[str, SubAgentDefinition] = {
         ),
         build_fn=build_task_manager,
         skills_fn=get_task_manager_skills,
+    ),
+    SLUG_SELF_UPDATER: SubAgentDefinition(
+        slug=SLUG_SELF_UPDATER,
+        description=(
+            "Updates the lead agent itself: name, avatar, personality, and memory."
+        ),
+        build_fn=build_self_updater,
+        skills_fn=get_self_updater_skills,
+    ),
+    SLUG_CONTENT_MANAGER: SubAgentDefinition(
+        slug=SLUG_CONTENT_MANAGER,
+        description=(
+            "Reads team content: recent activities, post listings, and full post content."
+        ),
+        build_fn=build_content_manager,
+        skills_fn=get_content_manager_skills,
     ),
 }

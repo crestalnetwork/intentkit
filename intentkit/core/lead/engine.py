@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -19,6 +20,7 @@ from intentkit.core.lead.cache import (
     lead_cached_at,
     lead_executors,
 )
+from intentkit.core.lead.constants import LEAD_DEFAULT_NAME, LEAD_DEFAULT_PERSONALITY
 from intentkit.core.lead.service import verify_team_membership
 from intentkit.core.lead.skills import (
     get_team_info_skill,
@@ -69,29 +71,39 @@ async def _build_lead_agent(team_id: str) -> Agent:
         "### Sub-Agents\n\n"
         "Use `lead_call_agent` to delegate:\n\n"
         "- `agent-manager`: Agent CRUD, LLM model info, skill listing.\n"
-        "- `task-manager`: Autonomous task scheduling and management.\n\n"
+        "- `task-manager`: Autonomous task scheduling and management.\n"
+        "- `self-updater`: Update your own name, avatar, personality, or memory.\n"
+        "- `content-manager`: Read team activities and posts.\n\n"
         "### Workflow\n\n"
         "- Agent operations (create, configure, update, model/skill queries) "
         "→ `agent-manager`\n"
         "- Task management (schedule, edit, delete) → `task-manager`\n"
+        "- Self-improvement (update your name, avatar, personality, memory) "
+        "→ `self-updater`\n"
+        "- Content review (activities, posts) → `content-manager`\n"
         "- Quick team overview → answer directly via "
         "`lead_get_team_info` or `lead_list_team_agents`\n"
         "- Pass full user context when delegating, including agent IDs/names if provided.\n"
     )
 
-    owner = await Team.get_owner(team_id)
+    # Parallelize independent DB lookups
+    owner, lead_config = await asyncio.gather(
+        Team.get_owner(team_id),
+        Team.get_lead_agent_config(team_id),
+    )
     if not owner:
         raise IntentKitAPIError(
             500, "TeamOwnerNotFound", f"Team '{team_id}' has no owner"
         )
+    lead_config = lead_config or {}
 
     agent_data = {
         "id": "team-" + team_id,
         "owner": owner,
         "team_id": team_id,
-        "name": "Team Lead",
+        "name": lead_config.get("name", LEAD_DEFAULT_NAME),
         "purpose": "Coordinate sub-agents for team agent and task management.",
-        "personality": "Helpful team assistant. Let sub-agents handle technical details.",
+        "personality": lead_config.get("personality", LEAD_DEFAULT_PERSONALITY),
         "principles": "Speak to users in the language they ask their questions.",
         "model": pick_default_model(),
         "prompt": prompt,
@@ -119,7 +131,13 @@ async def _build_lead_agent(team_id: str) -> Agent:
         "updated_at": now,
     }
 
-    return Agent.model_validate(agent_data)
+    agent = Agent.model_validate(agent_data)
+
+    # Apply persisted avatar override
+    if lead_config.get("avatar"):
+        agent.picture = lead_config["avatar"]
+
+    return agent
 
 
 async def _get_lead_executor(

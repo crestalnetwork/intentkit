@@ -10,6 +10,7 @@ from typing import Annotated, Any, ClassVar
 from epyxid import XID
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from sqlalchemy import DateTime, Index, Integer, String, func, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -170,6 +171,11 @@ class TeamTable(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    lead_agent: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(),
+        nullable=True,
+        comment="Persisted lead agent config (name, avatar, personality)",
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -325,6 +331,14 @@ class Team(TeamCreate):
         from_attributes=True,
     )
 
+    lead_agent: Annotated[
+        dict[str, Any] | None,
+        Field(
+            default=None,
+            exclude=True,
+            description="Persisted lead agent config (internal only)",
+        ),
+    ]
     role: Annotated[
         TeamRole | None,
         Field(
@@ -413,6 +427,48 @@ class Team(TeamCreate):
                 TeamMemberTable.role == TeamRole.OWNER,
             )
             return await db.scalar(stmt)
+
+    @classmethod
+    async def get_lead_agent_config(cls, team_id: str) -> dict[str, Any] | None:
+        """Get the persisted lead agent config for a team."""
+        async with get_session() as db:
+            stmt = select(TeamTable.lead_agent).where(TeamTable.id == team_id)
+            return await db.scalar(stmt)
+
+    @classmethod
+    async def update_lead_agent_config(
+        cls, team_id: str, updates: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Merge updates into the persisted lead agent config atomically.
+
+        Uses PostgreSQL JSONB `||` operator for race-free merge.
+
+        Args:
+            team_id: Team ID.
+            updates: Fields to merge (name, avatar, personality).
+
+        Returns:
+            The updated lead agent config dict.
+        """
+        from sqlalchemy import cast, func
+        from sqlalchemy import update as sa_update
+
+        async with get_session() as db:
+            # Atomic JSONB merge: coalesce(lead_agent, '{}') || updates
+            merged_expr = func.coalesce(TeamTable.lead_agent, cast({}, JSONB)).concat(
+                cast(updates, JSONB)
+            )
+            await db.execute(
+                sa_update(TeamTable)
+                .where(TeamTable.id == team_id)
+                .values(lead_agent=merged_expr)
+            )
+            await db.commit()
+            # Read back the merged result
+            result = await db.scalar(
+                select(TeamTable.lead_agent).where(TeamTable.id == team_id)
+            )
+            return result or {}
 
     @classmethod
     async def get_by_user(cls, user_id: str) -> list["Team"]:
