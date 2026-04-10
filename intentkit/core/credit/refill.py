@@ -101,7 +101,7 @@ async def refill_free_credits_for_account(
         reward_amount=Decimal("0"),  # No reward credits involved
         permanent_amount=Decimal("0"),  # No permanent credits involved
         agent_wallet_address=None,  # No agent involved in refill
-        note=f"Hourly free credits refill of {amount_to_add}",
+        note=f"Daily free credits refill of {amount_to_add}",
     )
     session.add(event)
     await session.flush()

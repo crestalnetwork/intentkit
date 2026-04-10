@@ -105,7 +105,7 @@ class PaymentSettings(BaseModel):
     refill_amount: Annotated[
         Decimal,
         Field(
-            description="Hourly refill amount for free credits",
+            description="Daily refill amount for free credits",
             ge=0,
         ),
     ] = Decimal("0")

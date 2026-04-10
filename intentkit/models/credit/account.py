@@ -180,7 +180,7 @@ class CreditAccount(BaseModel):
         Decimal,
         Field(
             default=Decimal("0"),
-            description="Amount to refill hourly, not exceeding free_quota",
+            description="Amount to refill daily, not exceeding free_quota",
         ),
     ]
     free_credits: Annotated[
@@ -646,7 +646,7 @@ class CreditAccount(BaseModel):
             owner_type: Type of the owner
             owner_id: ID of the owner
             free_quota: Daily quota for a new account if created (if None, reads from payment settings)
-            refill_amount: Hourly refill amount (if None, reads from payment settings)
+            refill_amount: Daily refill amount (if None, reads from payment settings)
 
         Returns:
             CreditAccount: The existing or newly created credit account
@@ -802,7 +802,7 @@ class CreditAccount(BaseModel):
             session: Async session to use for database operations
             user_id: ID of the user to update
             free_quota: Optional new daily quota value
-            refill_amount: Optional amount to refill hourly, not exceeding free_quota
+            refill_amount: Optional amount to refill daily, not exceeding free_quota
             upstream_tx_id: ID of the upstream transaction (for logging purposes)
             note: Explanation for changing the daily quota
 

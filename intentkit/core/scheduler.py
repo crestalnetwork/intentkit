@@ -57,10 +57,10 @@ def create_scheduler(
     )
 
     if config.payment_enabled:
-        # Refill free credits every hour at minute 20
+        # Refill free credits once a day at UTC 00:20
         _ = scheduler.add_job(
             refill_all_free_credits,
-            trigger=CronTrigger(minute="20", timezone="UTC"),
+            trigger=CronTrigger(hour=0, minute=0, timezone="UTC"),
             id="refill_free_credits",
             name="Refill free credits",
             replace_existing=True,

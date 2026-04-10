@@ -63,10 +63,10 @@ PLAN_CONFIGS: dict[TeamPlan, PlanConfig] = {
         name="Free",
         description=(
             "Basic plan with limited credits. "
-            "Refills 1 credit/hour. No monthly permanent credits."
+            "Refills 10 credits/day. No monthly permanent credits."
         ),
         free_quota=Decimal("50"),
-        refill_amount=Decimal("1"),
+        refill_amount=Decimal("10"),
         monthly_permanent_credits=Decimal("0"),
         seats=1,
         month_price_cents=0,
@@ -76,10 +76,10 @@ PLAN_CONFIGS: dict[TeamPlan, PlanConfig] = {
         name="Pro",
         description=(
             "Professional plan with enhanced credits. "
-            "Refills 20 credits/hour. 10,000 permanent credits/month."
+            "Refills 500 credits/day. 10,000 permanent credits/month."
         ),
         free_quota=Decimal("1000"),
-        refill_amount=Decimal("20"),
+        refill_amount=Decimal("500"),
         monthly_permanent_credits=Decimal("10000"),
         seats=3,
         month_price_cents=1900,
@@ -89,10 +89,10 @@ PLAN_CONFIGS: dict[TeamPlan, PlanConfig] = {
         name="Max",
         description=(
             "Maximum plan with full credits. "
-            "Refills 200 credits/hour. 100,000 permanent credits/month."
+            "Refills 5,000 credits/day. 100,000 permanent credits/month."
         ),
         free_quota=Decimal("10000"),
-        refill_amount=Decimal("200"),
+        refill_amount=Decimal("5000"),
         monthly_permanent_credits=Decimal("100000"),
         seats=15,
         month_price_cents=19900,

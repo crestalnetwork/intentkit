@@ -82,7 +82,7 @@ async def update_daily_quota(
         session: Async session to use for database operations
         user_id: ID of the user to update
         free_quota: Optional new daily quota value
-        refill_amount: Optional amount to refill hourly, not exceeding free_quota
+        refill_amount: Optional amount to refill daily, not exceeding free_quota
         upstream_tx_id: ID of the upstream transaction (for logging purposes)
         note: Explanation for changing the daily quota
 
