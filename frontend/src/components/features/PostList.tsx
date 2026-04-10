@@ -77,7 +77,7 @@ export function PostList({ agentId }: PostListProps) {
                         href={post.slug ? `/agent/${post.agent_id}/post/${post.slug}` : `/post/${post.id}`}
                         className="block h-full group"
                     >
-                        <Card className="h-full transition-all hover:border-primary/50 hover:shadow-sm">
+                        <Card className="h-full transition-all hover:border-primary/50 hover:shadow-xs">
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">

@@ -51,7 +51,7 @@ export function SkillCallBadge({ skillCall, isLoading }: SkillCallBadgeProps) {
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all",
-          "border cursor-pointer hover:shadow-sm",
+          "border cursor-pointer hover:shadow-xs",
           isLoading
             ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300"
             : skillCall.success

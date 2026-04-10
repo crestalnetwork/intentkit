@@ -62,7 +62,7 @@ export const TextareaWidget = (props: WidgetProps) => {
         <div className="mb-4">
             <textarea
                 id={id}
-                className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${rawErrors.length > 0 ? "border-destructive" : ""
+                className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${rawErrors.length > 0 ? "border-destructive" : ""
                     }`}
                 value={value || ""}
                 placeholder={placeholder}
@@ -101,7 +101,7 @@ export const SelectWidget = (props: WidgetProps) => {
             <select
                 id={id}
                 multiple={multiple}
-                className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${rawErrors.length > 0 ? "border-destructive" : ""
+                className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${rawErrors.length > 0 ? "border-destructive" : ""
                     }`}
                 value={value || ""}
                 required={required}
@@ -156,7 +156,7 @@ export const CheckboxWidget = (props: WidgetProps) => {
                     onChange={(e) => onChange(e.target.checked)}
                     onBlur={onBlur && ((e) => onBlur(id, e.target.checked))}
                     onFocus={onFocus && ((e) => onFocus(id, e.target.checked))}
-                    className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 {schema.description && (
                     <p className="text-sm text-muted-foreground">{schema.description}</p>

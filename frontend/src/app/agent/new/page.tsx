@@ -238,7 +238,7 @@ export default function NewAgentPage() {
                 </p>
             </div>
 
-            <div className="bg-card rounded-lg border shadow-sm p-6">
+            <div className="bg-card rounded-lg border shadow-xs p-6">
                 {error && (
                     <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-4 text-sm">
                         {error}

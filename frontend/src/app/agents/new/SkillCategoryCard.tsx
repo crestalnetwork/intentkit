@@ -47,7 +47,7 @@ export function SkillCategoryCard({
     ).length;
 
     return (
-        <div className="border rounded-lg bg-card shadow-sm overflow-hidden">
+        <div className="border rounded-lg bg-card shadow-xs overflow-hidden">
             {/* Header */}
             <div
                 className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"

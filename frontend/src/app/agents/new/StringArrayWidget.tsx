@@ -103,7 +103,7 @@ export const StringArrayWidget = (props: WidgetProps) => {
                     value={inputValue}
                     disabled={disabled || readonly}
                     placeholder={items.length === 0 ? (placeholder || "Type and press Enter to add") : ""}
-                    className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground"
+                    className="flex-1 min-w-[120px] bg-transparent outline-hidden placeholder:text-muted-foreground"
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}

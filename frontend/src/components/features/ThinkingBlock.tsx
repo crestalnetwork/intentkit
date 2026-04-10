@@ -14,7 +14,7 @@ export function ThinkingBlock({ thinking }: ThinkingBlockProps) {
     <div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border cursor-pointer hover:shadow-sm bg-muted/30 border-border/50 text-muted-foreground"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border cursor-pointer hover:shadow-xs bg-muted/30 border-border/50 text-muted-foreground"
       >
         <Sparkles className="h-3 w-3" />
         <span>Thinking</span>
