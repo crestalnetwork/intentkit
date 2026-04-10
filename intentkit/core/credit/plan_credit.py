@@ -149,7 +149,10 @@ async def issue_all_plan_credits() -> None:
             if team is None:
                 break
 
-            plan = TeamPlan(team.plan)
+            plan_value = team.plan
+            if plan_value.startswith("TeamPlan."):
+                plan_value = plan_value.removeprefix("TeamPlan.").lower()
+            plan = TeamPlan(plan_value)
             plan_config = PLAN_CONFIGS[plan]
             # Base next issue on the originally scheduled time, not actual run time
             scheduled_at = team.next_credit_issue_at or now

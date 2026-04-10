@@ -8,7 +8,14 @@ from enum import Enum
 from typing import Annotated, Any, ClassVar
 
 from epyxid import XID
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_serializer,
+    field_validator,
+)
 from sqlalchemy import DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -349,6 +356,15 @@ class Team(TeamCreate):
         TeamPlan,
         Field(default=TeamPlan.NONE, description="Pricing plan tier"),
     ]
+
+    @field_validator("plan", mode="before")
+    @classmethod
+    def normalize_plan(cls, v: Any) -> Any:
+        """Handle legacy data where str(TeamPlan.X) was stored instead of .value."""
+        if isinstance(v, str) and v.startswith("TeamPlan."):
+            return v.removeprefix("TeamPlan.").lower()
+        return v
+
     plan_expires_at: Annotated[
         datetime | None,
         Field(default=None, description="When the current plan expires"),
