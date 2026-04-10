@@ -205,6 +205,7 @@ class TestFormatActivityPush:
         activity.agent_id = "bot1"
         activity.text = "Hello world"
         activity.link = None
+        activity.post_id = None
 
         result = _format_activity_push(activity)
         assert result == "[TestBot] Hello world"
@@ -217,6 +218,7 @@ class TestFormatActivityPush:
         activity.agent_id = "bot1"
         activity.text = "Check this out"
         activity.link = "https://example.com"
+        activity.post_id = None
 
         result = _format_activity_push(activity)
         assert result == "[TestBot] Check this out\nhttps://example.com"
@@ -229,6 +231,21 @@ class TestFormatActivityPush:
         activity.agent_id = "bot1"
         activity.text = "Hello"
         activity.link = None
+        activity.post_id = None
 
         result = _format_activity_push(activity)
         assert result == "[bot1] Hello"
+
+    def test_with_post_id(self):
+        from intentkit.core.agent_activity import _format_activity_push
+        from intentkit.config.config import config
+
+        activity = MagicMock()
+        activity.agent_name = "TestBot"
+        activity.agent_id = "bot1"
+        activity.text = "Hello"
+        activity.link = None
+        activity.post_id = "post123"
+
+        result = _format_activity_push(activity)
+        assert result == f"[TestBot] Hello\n{config.app_base_url}/post/post123"
