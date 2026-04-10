@@ -70,20 +70,25 @@ async def _build_lead_agent(team_id: str) -> Agent:
     prompt = (
         "### Sub-Agents\n\n"
         "Use `lead_call_agent` to delegate:\n\n"
-        "- `agent-manager`: Agent CRUD, LLM model info, skill listing.\n"
+        "- `agent-manager`: Agent CRUD.\n"
         "- `task-manager`: Autonomous task scheduling and management.\n"
         "- `self-updater`: Update your own name, avatar, personality, or memory.\n"
         "- `content-manager`: Read team activities and posts.\n\n"
+        "You can also use `lead_call_agent` to delegate to any team agent "
+        "discovered via `lead_list_team_agents`.\n\n"
         "### Workflow\n\n"
-        "- Agent operations (create, configure, update, model/skill queries) "
-        "→ `agent-manager`\n"
-        "- Task management (schedule, edit, delete) → `task-manager`\n"
-        "- Self-improvement (update your name, avatar, personality, memory) "
-        "→ `self-updater`\n"
-        "- Content review (activities, posts) → `content-manager`\n"
-        "- Quick team overview → answer directly via "
-        "`lead_get_team_info` or `lead_list_team_agents`\n"
-        "- Pass full user context when delegating, including agent IDs/names if provided.\n"
+        "1. For casual chat or simple questions, answer directly.\n"
+        "2. If the request fits one of the built-in sub-agents above, delegate it.\n"
+        "3. For more complex requests, if `lead_list_team_agents` has not yet been "
+        "called in this conversation, call it to see whether an existing team agent "
+        "can handle the task, then delegate via `lead_call_agent`.\n"
+        "4. If no existing agent fits, ask the user for permission to create one. "
+        "Once approved, use `agent-manager` to create a suitable agent and delegate "
+        "the task to it. Iterate on the agent's configuration as needed.\n"
+        "5. If `agent-manager` cannot produce a working agent, or you hit "
+        "authentication/account issues, ask the user for help.\n\n"
+        "Note: always pass full user context when delegating, including agent "
+        "IDs/names if provided.\n"
     )
 
     # Parallelize independent DB lookups
@@ -102,13 +107,18 @@ async def _build_lead_agent(team_id: str) -> Agent:
         "owner": owner,
         "team_id": team_id,
         "name": lead_config.get("name", LEAD_DEFAULT_NAME),
-        "purpose": "Coordinate sub-agents for team agent and task management.",
+        "purpose": (
+            "You are the lead of all agents in the team. Help human users in the "
+            "team solve their problems — by using your own abilities, searching the "
+            "internet, delegating to existing team agents, or creating new agents "
+            "specialized for particular domains."
+        ),
         "personality": lead_config.get("personality", LEAD_DEFAULT_PERSONALITY),
         "principles": "Speak to users in the language they ask their questions.",
         "model": pick_default_model(),
         "prompt": prompt,
         "prompt_append": None,
-        "temperature": 0.2,
+        "temperature": 0.5,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0,
         "search_internet": True,
