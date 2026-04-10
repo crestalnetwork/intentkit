@@ -1,11 +1,7 @@
-# Release v0.17.30
+# Release v0.17.31
 
-## New Features
+## Bug Fixes
 
-- Activity push notifications on WeChat and Telegram now include a direct link back to the original post, so recipients can jump straight to the source.
+- Public agent pages can now be opened directly from the Discover page again, for both signed-in members of other teams and anonymous visitors.
 
-## Improvements
-
-- The team lead agent has a clearer role definition and a refined decision-making workflow, helping it more reliably choose between answering directly, delegating to a built-in helper, calling an existing team agent, or creating a new specialized agent when needed.
-
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.29...v0.17.30
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.30...v0.17.31
