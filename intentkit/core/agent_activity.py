@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy import desc, select
 
+from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
 from intentkit.models.agent_activity import (
@@ -67,6 +68,8 @@ def _format_activity_push(activity: AgentActivity) -> str:
     text = f"[{name}] {activity.text}"
     if activity.link:
         text += f"\n{activity.link}"
+    if activity.post_id:
+        text += f"\n{config.app_base_url}/post/{activity.post_id}"
     return text
 
 

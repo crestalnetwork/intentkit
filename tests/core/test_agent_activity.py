@@ -6,6 +6,7 @@ import pytest
 
 import intentkit.core.agent_activity as agent_activity_module
 from intentkit.core.agent_activity import (
+    _format_activity_push,  # pyright: ignore[reportPrivateUsage]
     create_agent_activity,
     get_agent_activities,
     get_agent_activity,
@@ -270,3 +271,43 @@ async def test_create_agent_activity_with_none_agent_info(monkeypatch):
     assert result.agent_name is None
     assert result.agent_picture is None
     assert result.text == "Activity without agent info"
+
+
+def _make_activity(**overrides) -> AgentActivity:
+    base = {
+        "id": "activity-1",
+        "agent_id": "agent-1",
+        "agent_name": "Alice",
+        "agent_picture": None,
+        "text": "hello world",
+        "images": None,
+        "video": None,
+        "link": None,
+        "link_meta": None,
+        "post_id": None,
+        "created_at": datetime.now(),
+    }
+    base.update(overrides)
+    return AgentActivity.model_validate(base)
+
+
+def test_format_activity_push_plain():
+    activity = _make_activity()
+    assert _format_activity_push(activity) == "[Alice] hello world"
+
+
+def test_format_activity_push_with_link():
+    activity = _make_activity(link="https://example.com/x")
+    assert _format_activity_push(activity) == (
+        "[Alice] hello world\nhttps://example.com/x"
+    )
+
+
+def test_format_activity_push_with_post_id(monkeypatch):
+    from intentkit.config.config import config
+
+    monkeypatch.setattr(config, "app_base_url", "https://app.example.com")
+    activity = _make_activity(text="Published a new post: hi", post_id="post-42")
+    assert _format_activity_push(activity) == (
+        "[Alice] Published a new post: hi\nhttps://app.example.com/post/post-42"
+    )
