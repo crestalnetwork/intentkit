@@ -153,11 +153,19 @@ async def _get_lead_executor(
     if not executor or not lead_agent:
         start = time.perf_counter()
 
-        if not lead_agent:
-            lead_agent = await _build_lead_agent(team_id)
-            lead_agents[team_id] = lead_agent
-
+        # The executor needs a real AgentData so DynamicPromptMiddleware can
+        # render long_term_memory into the system prompt. When both the agent
+        # and executor are cold, fetch agent_data in parallel with the build.
         if not executor:
+            if not lead_agent:
+                lead_agent, agent_data = await asyncio.gather(
+                    _build_lead_agent(team_id),
+                    AgentData.get(f"team-{team_id}"),
+                )
+                lead_agents[team_id] = lead_agent
+            else:
+                agent_data = await AgentData.get(lead_agent.id)
+
             custom_skills = [
                 lead_call_agent_skill,
                 get_team_info_skill,
@@ -165,10 +173,13 @@ async def _get_lead_executor(
             ]
             executor = await build_executor(
                 lead_agent,
-                AgentData.model_construct(id=lead_agent.id),
+                agent_data,
                 custom_skills,
             )
             lead_executors[team_id] = executor
+        elif not lead_agent:
+            lead_agent = await _build_lead_agent(team_id)
+            lead_agents[team_id] = lead_agent
 
         cold_start_cost = time.perf_counter() - start
         lead_cached_at[team_id] = now

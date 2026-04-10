@@ -178,7 +178,7 @@ async def test_update_self_name_truncation(mock_lead_runtime):
 
 @pytest.mark.asyncio
 async def test_update_self_memory(mock_lead_runtime):
-    """Updates lead agent memory via standard memory mechanism."""
+    """Updates lead agent memory via the shared update_memory function."""
     from intentkit.core.lead.skills.update_self_memory import LeadUpdateSelfMemory
 
     skill = LeadUpdateSelfMemory()

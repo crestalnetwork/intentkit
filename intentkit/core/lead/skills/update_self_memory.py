@@ -42,6 +42,8 @@ class LeadUpdateSelfMemory(LeadSkill):
             raise ToolException("No team_id in context")
         lead_agent_id = f"team-{context.team_id}"
 
+        # update_memory invalidates the lead cache internally for team-* IDs,
+        # so no explicit invalidate_lead_cache call is needed here.
         updated = await update_memory(lead_agent_id, content)
         return f"Lead agent memory updated successfully. Current memory:\n{updated}"
 

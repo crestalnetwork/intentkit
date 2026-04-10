@@ -237,3 +237,67 @@ class TestUpdateMemory:
             result = await update_memory("agent-1", "new content")
             # Should be converted to string
             assert isinstance(result, str)
+
+    @pytest.mark.asyncio
+    async def test_invalidates_lead_cache_for_team_agent(
+        self, mock_agent_data, mock_llm
+    ):
+        """team-* agent IDs should trigger lead cache invalidation."""
+        mock_llm_model, _ = mock_llm
+
+        with (
+            patch(
+                "intentkit.core.memory.AgentData.get",
+                new_callable=AsyncMock,
+                return_value=mock_agent_data,
+            ),
+            patch(
+                "intentkit.core.memory.AgentData.patch",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "intentkit.models.llm_picker.pick_summarize_model",
+                return_value="test-model",
+            ),
+            patch(
+                "intentkit.models.llm.create_llm_model",
+                new_callable=AsyncMock,
+                return_value=mock_llm_model,
+            ),
+            patch("intentkit.core.lead.cache.invalidate_lead_cache") as mock_invalidate,
+        ):
+            await update_memory("team-my-team-id", "new content")
+
+            mock_invalidate.assert_called_once_with("my-team-id")
+
+    @pytest.mark.asyncio
+    async def test_does_not_invalidate_lead_cache_for_regular_agent(
+        self, mock_agent_data, mock_llm
+    ):
+        """Regular agent IDs should not trigger lead cache invalidation."""
+        mock_llm_model, _ = mock_llm
+
+        with (
+            patch(
+                "intentkit.core.memory.AgentData.get",
+                new_callable=AsyncMock,
+                return_value=mock_agent_data,
+            ),
+            patch(
+                "intentkit.core.memory.AgentData.patch",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "intentkit.models.llm_picker.pick_summarize_model",
+                return_value="test-model",
+            ),
+            patch(
+                "intentkit.models.llm.create_llm_model",
+                new_callable=AsyncMock,
+                return_value=mock_llm_model,
+            ),
+            patch("intentkit.core.lead.cache.invalidate_lead_cache") as mock_invalidate,
+        ):
+            await update_memory("agent-xyz", "new content")
+
+            mock_invalidate.assert_not_called()
