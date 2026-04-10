@@ -17,6 +17,7 @@ from intentkit.core.agent import (
 )
 from intentkit.core.avatar import generate_avatar
 from intentkit.core.lead import invalidate_lead_cache
+from intentkit.core.team.membership import check_permission
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
     Agent,
@@ -25,10 +26,12 @@ from intentkit.models.agent import (
     AgentTable,
     AgentUpdate,
 )
+from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.agent_data import AgentData, AgentDataTable
+from intentkit.models.team import TeamRole
 from intentkit.utils.error import IntentKitAPIError
 
-from app.team.auth import verify_team_member
+from app.team.auth import get_current_user_optional, verify_team_member
 
 team_agent_router = APIRouter()
 
@@ -47,6 +50,51 @@ async def get_team_agent(agent_id: str, team_id: str) -> Agent:
             status_code=404, key="NotFound", message="Agent not found"
         )
     return agent
+
+
+async def _agent_visible_to(agent: Agent, user_id: str | None) -> bool:
+    """Return True if the caller may view this agent.
+
+    Public agents are visible to anyone (unless archived). Team/private agents
+    are visible only to members of the owning team, including archived ones.
+    """
+    is_public = (
+        agent.visibility is not None and agent.visibility >= AgentVisibility.PUBLIC
+    )
+    if is_public and agent.archived_at is None:
+        return True
+    if not user_id or not agent.team_id:
+        return False
+    return await check_permission(agent.team_id, user_id, TeamRole.MEMBER)
+
+
+@team_agent_router.get(
+    "/agents/{agent_id}",
+    tags=["Agent"],
+    operation_id="get_agent",
+    summary="Get Agent",
+)
+async def get_agent_unified(
+    agent_id: str = Path(..., description="Agent ID or slug"),
+    user_id: str | None = Depends(get_current_user_optional),
+) -> Response:
+    """Get a single agent by ID or slug.
+
+    Permission is determined by visibility: public agents are accessible
+    anonymously; team/private agents require membership in the owning team.
+    """
+    agent = await get_agent_by_id_or_slug(agent_id)
+    if not agent or not await _agent_visible_to(agent, user_id):
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
+    agent_data = await AgentData.get(agent.id)
+    agent_response = await AgentResponse.from_agent(agent, agent_data)
+    return Response(
+        content=agent_response.model_dump_json(),
+        media_type="application/json",
+        headers={"ETag": agent_response.etag()},
+    )
 
 
 @team_agent_router.post(

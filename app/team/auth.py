@@ -14,6 +14,8 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+_bearer_optional = HTTPBearer(auto_error=False)
+
 # Cached JWKS client — reuses fetched keys until they expire
 _jwks_client: PyJWKClient | None = None
 
@@ -162,6 +164,28 @@ def _verify_jwks(token: str) -> str:
             message="Token missing sub claim",
         )
     return user_id
+
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_optional),
+) -> str | None:
+    """Return the current user ID, or None if no valid token is provided.
+
+    Used by endpoints that should be accessible both anonymously (for public
+    resources) and to authenticated team members (for private resources).
+    Any credential-related error silently downgrades to anonymous.
+    """
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        return await get_current_user(credentials=credentials)
+    except IntentKitAPIError as e:
+        # Downgrade only for invalid/expired tokens (401/403). Let infrastructure
+        # failures (ConfigMissing, JWKS fetch errors, etc.) surface so they're
+        # visible in monitoring instead of masquerading as "resource not found".
+        if e.status_code in (401, 403):
+            return None
+        raise
 
 
 async def verify_team_member(
