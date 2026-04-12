@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import override
+from typing import Any, override
 
 import filetype
 from langchain_core.tools.base import ToolException
@@ -19,6 +19,8 @@ class VeoVideoBase(VideoBaseTool):
 
     @override
     def has_native_key(self) -> bool:
+        if config.google_genai_use_vertexai:
+            return True
         return bool(config.google_api_key)
 
     @override
@@ -27,7 +29,13 @@ class VeoVideoBase(VideoBaseTool):
             from google import genai
             from google.genai import types
 
-            client = genai.Client(api_key=config.google_api_key)
+            if config.google_genai_use_vertexai:
+                client_kwargs: dict[str, Any] = {"vertexai": True}
+                if config.google_cloud_project:
+                    client_kwargs["project"] = config.google_cloud_project
+                client = genai.Client(**client_kwargs)
+            else:
+                client = genai.Client(api_key=config.google_api_key)
 
             # Build the generation config
             generate_config = types.GenerateVideosConfig(

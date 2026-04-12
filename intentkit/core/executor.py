@@ -27,7 +27,7 @@ from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.llm import LLMProvider, create_llm_model
-from intentkit.models.llm_picker import pick_summarize_model
+from intentkit.models.llm_picker import pick_summarize_model, pick_tool_selector_model
 from intentkit.skills.base import IntentKitSkill
 from intentkit.utils.error import IntentKitAPIError
 
@@ -248,11 +248,12 @@ async def build_executor(
         middleware.append(TodoListMiddleware())
 
     # Auto-enable LLM tool selector when there are many tools
-    if len(private_tools) > 10:
-        selector_model_name = pick_summarize_model()
-        selector_llm = await create_llm_model(model_name=selector_model_name)
-        selector_model = await selector_llm.create_instance()
-        middleware.append(LLMToolSelectorMiddleware(model=selector_model))
+    if len(private_tools) > 15:
+        selector_model_name = pick_tool_selector_model()
+        if selector_model_name:
+            selector_llm = await create_llm_model(model_name=selector_model_name)
+            selector_model = await selector_llm.create_instance()
+            middleware.append(LLMToolSelectorMiddleware(model=selector_model))
 
     # Context editing clears old tool results at 40% context to free space.
     # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware

@@ -73,6 +73,30 @@ def pick_default_model() -> str:
     return "gpt-5.4-mini"
 
 
+def pick_tool_selector_model() -> str | None:
+    """
+    Pick the best available model for LLM-based tool selection.
+
+    Returns None when no suitable model is available, so the caller can
+    skip the tool-selector middleware gracefully.
+
+    Tool selection uses `response_format: json_schema` structured output.
+    Only OpenAI models are known to handle the LangChain
+    LLMToolSelectorMiddleware schema reliably (see langchain-ai/langchain
+    #33651, #24225 for Gemini/GLM incompatibilities).
+    """
+    order: list[tuple[str, LLMProvider]] = [
+        ("gpt-5.4-nano", LLMProvider.OPENAI),
+        ("openai/gpt-5.4-nano", LLMProvider.OPENROUTER),
+    ]
+
+    for model_id, provider in order:
+        if provider.is_configured:
+            return model_id
+
+    return None
+
+
 def pick_long_context_model() -> str:
     """
     Pick the cheapest available model with context length >= 1,000,000 tokens.
