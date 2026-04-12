@@ -85,7 +85,11 @@ class VideoBaseTool(IntentKitSkill, metaclass=ABCMeta):
             "url": url,
             "json": None,
         }
-        return f"Video generated successfully: {url}", [attachment]
+        return (
+            f"Video generated successfully: {url} . "
+            "The video has been displayed to the user via attachment. "
+            "Do not include the video URL in your response unless the user explicitly asks for it."
+        ), [attachment]
 
     @override
     async def _arun(

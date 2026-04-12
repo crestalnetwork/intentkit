@@ -161,7 +161,11 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
             "url": url,
             "json": None,
         }
-        return f"Image generated successfully: {url}", [attachment]
+        return (
+            f"Image generated successfully: {url} . "
+            "The image has been displayed to the user via attachment. "
+            "Do not include the image URL in your response unless the user explicitly asks for it."
+        ), [attachment]
 
     @override
     async def _arun(
