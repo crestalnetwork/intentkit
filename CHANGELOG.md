@@ -1,3 +1,14 @@
+# Release v0.17.33
+
+## Bug Fixes
+
+- Markdown images in chat messages are now constrained to a reasonable max height (320px) instead of rendering at full size.
+- Image attachment thumbnail hover overlay now matches the actual image bounds for portrait/narrow images instead of extending beyond the image area.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.32...v0.17.33
+
+---
+
 # Release v0.17.32
 
 ## Bug Fixes
