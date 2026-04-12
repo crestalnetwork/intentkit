@@ -95,7 +95,7 @@ export function ImageAttachment({ att }: { att: ChatMessageAttachment }) {
   return (
     <>
       <div
-        className="relative group max-w-xs cursor-pointer"
+        className="relative group max-w-xs w-fit cursor-pointer"
         onClick={() => setIsOpen(true)}
       >
         <img

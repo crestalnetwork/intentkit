@@ -52,7 +52,7 @@ function ImagePreview({ href, alt }: { href: string; alt: string }) {
       <img
         src={href}
         alt={alt}
-        className="max-w-full rounded-md my-1"
+        className="max-w-full max-h-80 rounded-md my-1 object-contain"
         loading="lazy"
         onError={() => setFailed(true)}
       />
@@ -62,6 +62,16 @@ function ImagePreview({ href, alt }: { href: string; alt: string }) {
 
 // Default components with image preview for URLs and safe link handling
 const defaultComponents: Components = {
+  img: ({ src, alt, ...props }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt || ""}
+      className="max-w-full max-h-80 rounded-md my-1 object-contain"
+      loading="lazy"
+      {...props}
+    />
+  ),
   a: ({ href, children, ...props }) => {
     // Auto-preview: if the URL points to a common image, render as image preview
     if (href && isImageUrl(href)) {
