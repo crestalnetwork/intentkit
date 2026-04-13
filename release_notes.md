@@ -1,12 +1,8 @@
-# Release v0.17.38
-
-## Improvements
-
-- Improved type safety across the codebase, resolving 122 type checker errors in source code, models, and tests
-- Fixed Pydantic model field defaults to be compatible with static type checkers
+# Release v0.17.39
 
 ## Bug Fixes
 
-- Fixed a model name typo
+- Fixed image and video files not displaying correctly in WeChat and mobile browsers due to missing file extensions
+- Fixed Telegram messaging issues
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.37...v0.17.38
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.38...v0.17.39
