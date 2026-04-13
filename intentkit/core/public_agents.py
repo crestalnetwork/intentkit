@@ -87,7 +87,7 @@ async def sync_public_agents() -> None:
         logger.info("No public_agents directory found, skipping sync")
         return
 
-    yaml_files = sorted(PUBLIC_AGENTS_DIR.glob("*.yaml"))
+    yaml_files = sorted(PUBLIC_AGENTS_DIR.rglob("*.yaml"))
     if not yaml_files:
         logger.info("No YAML files found in public_agents/, skipping sync")
         return
@@ -95,7 +95,10 @@ async def sync_public_agents() -> None:
     logger.info("Syncing %d public agent definitions...", len(yaml_files))
 
     # Parse and validate all YAML files first
-    agents_to_sync: list[tuple[str, str, AgentUpdate, str, str | None]] = []
+    # Each entry: (slug, AgentUpdate, hash, description, tags)
+    agents_to_sync: list[
+        tuple[str, AgentUpdate, str, str | None, list[str] | None]
+    ] = []
     for yaml_file in yaml_files:
         try:
             with open(yaml_file) as f:
@@ -104,13 +107,13 @@ async def sync_public_agents() -> None:
                 logger.warning("Empty YAML file: %s", yaml_file.name)
                 continue
             slug = data.get("slug") or yaml_file.stem
-            agent_id = f"public-{slug}"
             agent_update = AgentUpdate.model_validate(data)
             # Hash from validated model ensures consistency with what gets written
             new_hash = agent_update.hash()
-            # description is on AgentTable but not AgentUpdate, so extract separately
+            # Fields on AgentTable but not AgentUpdate, extract separately
             description = data.get("description")
-            agents_to_sync.append((agent_id, slug, agent_update, new_hash, description))
+            tags = data.get("tags")
+            agents_to_sync.append((slug, agent_update, new_hash, description, tags))
         except Exception:
             logger.exception("Failed to parse public agent from %s", yaml_file.name)
 
@@ -120,28 +123,42 @@ async def sync_public_agents() -> None:
     created = 0
     updated = 0
     skipped = 0
+    archived = 0
     errors = 0
 
     async with get_session() as session:
-        # Bulk-fetch all existing public agents in one query
-        agent_ids = [a[0] for a in agents_to_sync]
+        # Bulk-fetch all existing predefined agents
         result = await session.execute(
-            select(AgentTable).where(AgentTable.id.in_(agent_ids))
+            select(AgentTable).where(AgentTable.owner == OWNER)
         )
-        existing_map: dict[str, AgentTable] = {a.id: a for a in result.scalars().all()}
+        existing_by_slug: dict[str, AgentTable] = {}
+        all_predefined: dict[str, AgentTable] = {}
+        for a in result.scalars().all():
+            all_predefined[a.id] = a
+            if a.slug:
+                existing_by_slug[a.slug] = a
 
-        # Also check for slug collisions with non-public agents
-        slugs = [a[1] for a in agents_to_sync]
-        slug_result = await session.execute(
-            select(AgentTable.slug).where(
-                AgentTable.slug.in_(slugs),
-                AgentTable.id.notin_(agent_ids),
+        # Collect slugs we're syncing for archive detection
+        syncing_slugs: set[str] = {a[0] for a in agents_to_sync}
+
+        # Check for slug collisions with non-predefined agents
+        slugs = [a[0] for a in agents_to_sync]
+        predefined_ids = list(all_predefined.keys())
+        if predefined_ids:
+            slug_result = await session.execute(
+                select(AgentTable.slug).where(
+                    AgentTable.slug.in_(slugs),
+                    AgentTable.id.notin_(predefined_ids),
+                )
             )
-        )
+        else:
+            slug_result = await session.execute(
+                select(AgentTable.slug).where(AgentTable.slug.in_(slugs))
+            )
         taken_slugs: set[str] = {row[0] for row in slug_result.all() if row[0]}
 
-        for agent_id, slug, agent_update, new_hash, description in agents_to_sync:
-            existing = existing_map.get(agent_id)
+        for slug, agent_update, new_hash, description, tags in agents_to_sync:
+            existing = existing_by_slug.get(slug)
             model_available = _is_model_available(agent_update.model)
 
             if not model_available:
@@ -149,13 +166,13 @@ async def sync_public_agents() -> None:
                     existing.archived_at = datetime.now(UTC)
                     logger.info(
                         "Archived public agent %s: model %s not available",
-                        agent_id,
+                        slug,
                         agent_update.model,
                     )
                 elif not existing:
                     logger.info(
                         "Skipping public agent %s: model %s not available",
-                        agent_id,
+                        slug,
                         agent_update.model,
                     )
                 skipped += 1
@@ -165,7 +182,7 @@ async def sync_public_agents() -> None:
                 # Un-archive if model became available again
                 if existing.archived_at is not None:
                     existing.archived_at = None
-                    logger.info("Un-archived public agent: %s", agent_id)
+                    logger.info("Un-archived public agent: %s", slug)
                 skipped += 1
                 continue
 
@@ -176,21 +193,23 @@ async def sync_public_agents() -> None:
                     setattr(existing, key, value)
                 if description is not None:
                     existing.description = description
+                if tags is not None:
+                    existing.tags = tags
                 existing.version = new_hash
                 existing.deployed_at = func.now()
                 existing.visibility = AgentVisibility.PUBLIC
                 existing.archived_at = None  # Un-archive on update
                 updated += 1
-                logger.info("Updated public agent: %s", agent_id)
+                logger.info("Updated public agent: %s (id=%s)", slug, existing.id)
             else:
                 if slug in taken_slugs:
                     logger.warning(
-                        "Slug '%s' already taken by another agent, skipping %s",
+                        "Slug '%s' already taken by another agent, skipping",
                         slug,
-                        agent_id,
                     )
                     errors += 1
                     continue
+                agent_id = f"public-{slug}"
                 db_agent = AgentTable(**update_data)
                 db_agent.id = agent_id
                 db_agent.slug = slug
@@ -201,9 +220,23 @@ async def sync_public_agents() -> None:
                 db_agent.visibility = AgentVisibility.PUBLIC
                 if description is not None:
                     db_agent.description = description
+                if tags is not None:
+                    db_agent.tags = tags
                 session.add(db_agent)
                 created += 1
-                logger.info("Created public agent: %s", agent_id)
+                logger.info("Created public agent: %s (id=%s)", slug, agent_id)
+
+        # Archive predefined agents whose slug is no longer in YAML files
+        for agent in all_predefined.values():
+            if agent.slug and agent.slug not in syncing_slugs:
+                if agent.archived_at is None:
+                    agent.archived_at = datetime.now(UTC)
+                    archived += 1
+                    logger.info(
+                        "Archived removed public agent: %s (id=%s)",
+                        agent.slug,
+                        agent.id,
+                    )
 
         try:
             await session.commit()
@@ -215,16 +248,22 @@ async def sync_public_agents() -> None:
     # Auto-subscribe the "public" team to each synced agent
     from intentkit.core.team.subscription import auto_subscribe_team
 
-    for agent_id, slug, agent_update, new_hash, description in agents_to_sync:
+    for slug, agent_update, new_hash, description, tags in agents_to_sync:
+        existing = existing_by_slug.get(slug)
+        if existing:
+            agent_id = existing.id
+        else:
+            agent_id = f"public-{slug}"
         try:
             await auto_subscribe_team("public", agent_id)
         except Exception:
             logger.exception("Failed to subscribe public team to %s", agent_id)
 
     logger.info(
-        "Public agents sync complete: %d created, %d updated, %d skipped, %d errors",
+        "Public agents sync complete: %d created, %d updated, %d skipped, %d archived, %d errors",
         created,
         updated,
         skipped,
+        archived,
         errors,
     )

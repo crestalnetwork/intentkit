@@ -79,8 +79,7 @@ async def get_agent_by_id_or_slug(agent_id: str) -> Agent | None:
     async with get_session() as db:
         item = None
 
-        if len(query_id) <= 20 or query_id.startswith("0x"):
-            item = await db.scalar(select(AgentTable).where(AgentTable.id == query_id))
+        item = await db.scalar(select(AgentTable).where(AgentTable.id == query_id))
 
         if item is None:
             slug_stmt = select(AgentTable).where(AgentTable.slug == query_id)

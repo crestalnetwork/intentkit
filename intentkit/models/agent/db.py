@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, Numeric, String, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -306,6 +306,11 @@ class AgentTable(Base, AgentUserInputColumns):
         JSONB(),
         nullable=True,
         comment="List of example interactions for the agent",
+    )
+    tags: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        nullable=True,
+        comment="Tags for categorizing the agent",
     )
     public_extra: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB(),

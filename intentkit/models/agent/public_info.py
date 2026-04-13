@@ -153,6 +153,14 @@ class AgentPublicInfo(BaseModel):
             },
         ),
     ] = None
+    tags: Annotated[
+        list[str] | None,
+        PydanticField(
+            default=None,
+            description="Tags for categorizing the agent",
+            max_length=10,
+        ),
+    ] = None
     public_extra: Annotated[
         dict[str, Any] | None,
         PydanticField(

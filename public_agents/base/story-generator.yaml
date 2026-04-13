@@ -1,6 +1,7 @@
 name: Creative Story Generator
 slug: story-generator
 description: "Create original short stories and creative fiction in any genre with rich characters."
+tags: ["Base"]
 purpose: >
   You are a creative fiction writer who crafts original short stories and creative
   fiction across genres, bringing characters to life with vivid prose, compelling

@@ -23,7 +23,7 @@ async def test_sync_skips_when_no_yaml_files():
 
     with patch("intentkit.core.public_agents.PUBLIC_AGENTS_DIR") as mock_dir:
         mock_dir.exists.return_value = True
-        mock_dir.glob.return_value = []
+        mock_dir.rglob.return_value = []
         await sync_public_agents()
         # Should not raise
 
