@@ -18,7 +18,7 @@ from intentkit.utils.error import IntentKitAPIError
 
 from app.team.auth import verify_team_member
 
-team_usage_router = APIRouter()
+team_usage_router = APIRouter(tags=["Billing"])
 
 logger = logging.getLogger(__name__)
 

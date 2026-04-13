@@ -80,7 +80,7 @@ def _lead_agent_id(team_id: str) -> str:
     response_model=Agent,
     operation_id="team_get_lead_info",
     summary="Get lead agent info (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def get_lead_info(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -100,7 +100,7 @@ async def get_lead_info(
     response_model=list[Chat],
     operation_id="team_list_lead_chats",
     summary="List lead chat threads (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def list_lead_chats(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -116,7 +116,7 @@ async def list_lead_chats(
     response_model=Chat,
     operation_id="team_create_lead_chat",
     summary="Create lead chat thread (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def create_lead_chat_thread(
     request: LocalChatCreateRequest | None = None,
@@ -146,7 +146,7 @@ async def create_lead_chat_thread(
     response_model=Chat,
     operation_id="team_update_lead_chat",
     summary="Update lead chat thread (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def update_lead_chat_thread(
     request: ChatUpdateRequest,
@@ -168,7 +168,7 @@ async def update_lead_chat_thread(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="team_delete_lead_chat",
     summary="Delete lead chat thread (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def delete_lead_chat_thread(
     chat_id: str = Path(..., description="Chat ID"),
@@ -194,7 +194,7 @@ async def delete_lead_chat_thread(
     response_model=ChatMessagesResponse,
     operation_id="team_list_lead_messages",
     summary="List lead messages (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def list_lead_messages(
     chat_id: str = Path(..., description="Chat ID"),
@@ -246,7 +246,7 @@ async def list_lead_messages(
         "Send a new message to a lead chat thread. "
         "When `stream: true`, returns SSE stream with `event: message` events."
     ),
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def send_lead_message(
     request: LocalChatMessageRequest,
@@ -326,7 +326,7 @@ async def send_lead_message(
     "/teams/{team_id}/lead/chats/{chat_id}/cancel",
     operation_id="team_cancel_lead_generation",
     summary="Cancel lead generation (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def cancel_lead_generation(
     chat_id: str = Path(..., description="Chat ID"),
@@ -349,7 +349,7 @@ async def cancel_lead_generation(
     response_model=list[TeamChannel],
     operation_id="team_list_lead_channels",
     summary="List lead channel integrations (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def list_lead_channels(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -364,7 +364,7 @@ async def list_lead_channels(
     response_model=TeamChannel,
     operation_id="team_set_lead_channel",
     summary="Set a lead channel integration (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def set_lead_channel(
     channel_type: str = Path(..., description="Channel type (telegram, wechat)"),
@@ -386,7 +386,7 @@ async def set_lead_channel(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="team_delete_lead_channel",
     summary="Delete a lead channel integration (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def delete_lead_channel(
     channel_type: str = Path(..., description="Channel type (telegram, wechat)"),
@@ -402,7 +402,7 @@ async def delete_lead_channel(
     "/teams/{team_id}/lead/channel/default",
     operation_id="team_get_lead_default_channel",
     summary="Get the default channel (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def get_lead_default_channel(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -421,7 +421,7 @@ class SetDefaultChannelRequest(BaseModel):
     "/teams/{team_id}/lead/channel/default",
     operation_id="team_set_lead_default_channel",
     summary="Set the default channel (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def set_lead_default_channel(
     body: SetDefaultChannelRequest = Body(...),
@@ -443,7 +443,7 @@ async def set_lead_default_channel(
     response_model=ChatMessagesResponse,
     operation_id="team_list_lead_default_channel_messages",
     summary="List messages from the default channel (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def list_lead_default_channel_messages(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -498,7 +498,7 @@ async def list_lead_default_channel_messages(
     response_model=TelegramStatus,
     operation_id="team_get_telegram_status",
     summary="Get Telegram channel status (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def get_telegram_status(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -516,7 +516,7 @@ async def get_telegram_status(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="team_remove_telegram_whitelist",
     summary="Remove a chat from Telegram whitelist (Team)",
-    tags=["Team Lead"],
+    tags=["Lead"],
 )
 async def remove_telegram_whitelist(
     chat_id: str = Path(..., description="Telegram chat ID to remove"),

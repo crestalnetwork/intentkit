@@ -22,16 +22,15 @@ from intentkit.core.team.membership import (
     update_team,
 )
 from intentkit.models.team import TeamMember, TeamPlan, TeamRole, TeamTable
-from intentkit.models.user import User, UserUpdate
+from intentkit.models.user import User
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.upload import validate_and_store_image
 
 from app.team.auth import get_current_user, verify_team_admin, verify_team_member
-from app.team.user import invalidate_user_cache
 
 _team_member_list_adapter = TypeAdapter(list[TeamMember])
 
-team_management_router = APIRouter()
+team_management_router = APIRouter(tags=["Team"])
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +74,6 @@ async def create_team_endpoint(
             )
             await db.commit()
         team = team.model_copy(update={"plan": plan})
-
-    await UserUpdate.model_validate({"current_team_id": team.id}).patch(user_id)
-    await invalidate_user_cache(user_id)
 
     return Response(
         content=team.model_dump_json(),
@@ -169,10 +165,6 @@ async def join_team_endpoint(
             message=str(e),
         )
 
-    # Auto-switch to the joined team
-    await UserUpdate.model_validate({"current_team_id": team.id}).patch(user_id)
-    await invalidate_user_cache(user_id)
-
     return Response(content=team.model_dump_json(), media_type="application/json")
 
 
@@ -191,7 +183,6 @@ async def list_members_endpoint(
 
 @team_management_router.post(
     "/teams/{team_id}/upload-picture",
-    tags=["Team"],
     status_code=200,
     operation_id="upload_team_picture",
     summary="Upload Team Picture",
@@ -230,14 +221,6 @@ async def update_team_endpoint(
     return Response(content=team.model_dump_json(), media_type="application/json")
 
 
-async def _clear_current_team_if_needed(user_id: str, team_id: str) -> None:
-    """Clear user's current_team_id if it points to the given team."""
-    user = await User.get(user_id)
-    if user and user.current_team_id == team_id:
-        await UserUpdate.model_validate({"current_team_id": None}).patch(user_id)
-        await invalidate_user_cache(user_id)
-
-
 @team_management_router.post("/teams/{team_id}/leave")
 async def leave_team_endpoint(
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -261,8 +244,6 @@ async def leave_team_endpoint(
             key="LeaveTeamFailed",
             message=str(e),
         )
-
-    await _clear_current_team_if_needed(user_id, team_id)
 
     return Response(content='{"ok":true}', media_type="application/json")
 
@@ -296,8 +277,6 @@ async def remove_member_endpoint(
             key="RemoveMemberFailed",
             message=str(e),
         )
-
-    await _clear_current_team_if_needed(member_id, team_id)
 
     return Response(content='{"ok":true}', media_type="application/json")
 

@@ -18,7 +18,7 @@ from app.team.auth import verify_team_admin
 
 logger = logging.getLogger(__name__)
 
-team_wechat_router = APIRouter(tags=["Team WeChat"])
+team_wechat_router = APIRouter(tags=["WeChat"])
 
 
 @team_wechat_router.get(
@@ -26,7 +26,7 @@ team_wechat_router = APIRouter(tags=["Team WeChat"])
     response_model=WechatQrCodeResponse,
     operation_id="team_get_wechat_qrcode",
     summary="Get WeChat login QR code (Team)",
-    tags=["Team WeChat"],
+    tags=["WeChat"],
 )
 async def get_wechat_qrcode(
     auth: tuple[str, str] = Depends(verify_team_admin),
@@ -40,7 +40,7 @@ async def get_wechat_qrcode(
     response_model=WechatQrStatusResponse,
     operation_id="team_poll_wechat_qrcode_status",
     summary="Poll WeChat QR code scan status (Team)",
-    tags=["Team WeChat"],
+    tags=["WeChat"],
 )
 async def poll_wechat_qrcode_status(
     qrcode: str = Query(..., description="QR code UUID from get_wechat_qrcode"),
@@ -55,7 +55,7 @@ async def poll_wechat_qrcode_status(
     response_model=TeamChannel,
     operation_id="team_connect_wechat_channel",
     summary="Save WeChat credentials after QR scan (Team)",
-    tags=["Team WeChat"],
+    tags=["WeChat"],
 )
 async def connect_wechat_channel(
     request: WechatConnectRequest = Body(...),

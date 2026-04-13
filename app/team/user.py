@@ -17,8 +17,7 @@ from intentkit.clients.supabase import (
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
-from intentkit.core.team.membership import check_permission
-from intentkit.models.team import Team, TeamPlan, TeamRole, TeamTable
+from intentkit.models.team import Team, TeamPlan, TeamTable
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.upload import validate_and_store_image
@@ -27,7 +26,7 @@ from app.team.auth import get_current_user
 
 _team_list_adapter = TypeAdapter(list[Team])
 
-team_user_router = APIRouter()
+team_user_router = APIRouter(tags=["User"])
 
 logger = logging.getLogger(__name__)
 
@@ -176,10 +175,6 @@ def _linked_accounts_response(providers: dict[str, dict[str, Any]]) -> Response:
     return Response(content=json.dumps(result), media_type="application/json")
 
 
-class SwitchTeamRequest(BaseModel):
-    team_id: str
-
-
 @team_user_router.get("/user")
 async def get_user(
     user_id: str = Depends(get_current_user),
@@ -199,28 +194,6 @@ async def list_user_teams(
         content=_team_list_adapter.dump_json(teams),
         media_type="application/json",
     )
-
-
-@team_user_router.post("/user/switch-team")
-async def switch_team(
-    body: SwitchTeamRequest = Body(...),
-    user_id: str = Depends(get_current_user),
-) -> Response:
-    """Switch the user's active team."""
-    is_member = await check_permission(body.team_id, user_id, TeamRole.MEMBER)
-    if not is_member:
-        raise IntentKitAPIError(
-            status_code=403,
-            key="NotTeamMember",
-            message="Not a member of this team",
-        )
-
-    user = await UserUpdate.model_validate({"current_team_id": body.team_id}).patch(
-        user_id
-    )
-    await invalidate_user_cache(user_id)
-
-    return Response(content=user.model_dump_json(), media_type="application/json")
 
 
 @team_user_router.get("/user/linked-accounts")

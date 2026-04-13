@@ -124,7 +124,7 @@ def _simplify_skill_schema(skill_schema: dict[str, Any]) -> dict[str, Any]:
     return simplified
 
 
-@schema_router.get("/schema/agent", tags=["Schema"], operation_id="get_agent_schema")
+@schema_router.get("/schema/agent", tags=["Metadata"], operation_id="get_agent_schema")
 async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
     """Get the JSON schema for Agent model with all $ref references resolved.
 
@@ -198,7 +198,7 @@ async def get_agent_schema(db: AsyncSession = Depends(get_db)) -> JSONResponse:
 
 @schema_router.get(
     "/skills/{skill}/schema.json",
-    tags=["Schema"],
+    tags=["Metadata"],
     operation_id="get_skill_schema",
     responses={
         200: {"description": "Success"},
@@ -238,7 +238,7 @@ async def get_skill_schema(
 
 @schema_router.get(
     "/skills/{skill}/{icon_name}.{ext}",
-    tags=["Schema"],
+    tags=["Metadata"],
     operation_id="get_skill_icon",
     responses={
         200: {"description": "Success"},

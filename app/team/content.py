@@ -21,7 +21,7 @@ from intentkit.utils.pdf import post_pdf_response
 from app.team.agent import get_accessible_agent
 from app.team.auth import verify_team_member
 
-team_content_router = APIRouter(tags=["Team Content"])
+team_content_router = APIRouter(tags=["Content"])
 
 
 @team_content_router.get(

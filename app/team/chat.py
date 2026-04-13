@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
     response_model=list[Chat],
     operation_id="team_list_chats",
     summary="List chat threads (Team)",
-    tags=["Team Thread"],
+    tags=["Thread"],
 )
 async def list_chats(
     aid: str = Path(..., description="Agent ID"),
@@ -90,7 +90,7 @@ async def list_chats(
     response_model=Chat,
     operation_id="team_create_chat",
     summary="Create chat thread (Team)",
-    tags=["Team Thread"],
+    tags=["Thread"],
 )
 async def create_chat_thread(
     request: LocalChatCreateRequest | None = None,
@@ -122,7 +122,7 @@ async def create_chat_thread(
     response_model=Chat,
     operation_id="team_update_chat",
     summary="Update chat thread (Team)",
-    tags=["Team Thread"],
+    tags=["Thread"],
 )
 async def update_chat_thread(
     request: ChatUpdateRequest,
@@ -150,7 +150,7 @@ async def update_chat_thread(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="team_delete_chat",
     summary="Delete chat thread (Team)",
-    tags=["Team Thread"],
+    tags=["Thread"],
 )
 async def delete_chat_thread(
     aid: str = Path(..., description="Agent ID"),
@@ -182,7 +182,7 @@ async def delete_chat_thread(
     response_model=ChatMessagesResponse,
     operation_id="team_list_messages",
     summary="List messages (Team)",
-    tags=["Team Message"],
+    tags=["Message"],
 )
 async def list_messages(
     aid: str = Path(..., description="Agent ID"),
@@ -232,7 +232,7 @@ async def list_messages(
     response_model=list[ChatMessage],
     operation_id="team_send_message",
     summary="Send message (Team)",
-    tags=["Team Message"],
+    tags=["Message"],
 )
 async def send_message(
     request: LocalChatMessageRequest,
@@ -316,7 +316,7 @@ async def send_message(
     "/teams/{team_id}/agents/{aid}/chats/{chat_id}/cancel",
     operation_id="team_cancel_message",
     summary="Cancel generation (Team)",
-    tags=["Team Message"],
+    tags=["Message"],
 )
 async def cancel_generation(
     aid: str = Path(..., description="Agent ID"),
@@ -343,7 +343,7 @@ async def cancel_generation(
     response_model=list[ChatMessage],
     operation_id="team_retry_message",
     summary="Retry message (Team)",
-    tags=["Team Message"],
+    tags=["Message"],
 )
 async def retry_message(
     aid: str = Path(..., description="Agent ID"),
@@ -457,7 +457,7 @@ async def retry_message(
 
 @team_chat_router.get(
     "/teams/{team_id}/agents/{aid}/skill/history",
-    tags=["Team Message"],
+    tags=["Message"],
     response_model=list[ChatMessage],
     operation_id="team_skill_history",
     summary="Skill History (Team)",

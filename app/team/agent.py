@@ -124,7 +124,7 @@ async def get_agent_unified(
 
 @team_agent_router.post(
     "/teams/{team_id}/agents",
-    tags=["Team Agent"],
+    tags=["Agent"],
     status_code=201,
     operation_id="team_create_agent",
     summary="Create Agent (Team)",
@@ -161,7 +161,7 @@ async def create_agent_endpoint(
 
 @team_agent_router.get(
     "/teams/{team_id}/agents",
-    tags=["Team Agent"],
+    tags=["Agent"],
     operation_id="team_get_agents",
     summary="List Agents (Team)",
 )
@@ -205,7 +205,7 @@ async def get_agents(
 
 @team_agent_router.get(
     "/teams/{team_id}/agents/{agent_id}",
-    tags=["Team Agent"],
+    tags=["Agent"],
     operation_id="team_get_agent",
     summary="Get Agent (Team)",
 )
@@ -227,7 +227,7 @@ async def get_agent(
 
 @team_agent_router.get(
     "/teams/{team_id}/agents/{agent_id}/editable",
-    tags=["Team Agent"],
+    tags=["Agent"],
     operation_id="team_get_agent_editable",
     summary="Get Agent Editable (Team)",
 )
@@ -247,7 +247,7 @@ async def get_agent_editable(
 
 @team_agent_router.patch(
     "/teams/{team_id}/agents/{agent_id}",
-    tags=["Team Agent"],
+    tags=["Agent"],
     operation_id="team_patch_agent",
     summary="Patch Agent (Team)",
 )
@@ -287,7 +287,7 @@ async def patch_agent_endpoint(
 
 @team_agent_router.put(
     "/teams/{team_id}/agents/{agent_id}/archive",
-    tags=["Team Agent"],
+    tags=["Agent"],
     status_code=204,
     operation_id="team_archive_agent",
     summary="Archive Agent (Team)",
@@ -313,7 +313,7 @@ async def archive_agent(
 
 @team_agent_router.put(
     "/teams/{team_id}/agents/{agent_id}/reactivate",
-    tags=["Team Agent"],
+    tags=["Agent"],
     status_code=204,
     operation_id="team_reactivate_agent",
     summary="Reactivate Agent (Team)",
@@ -339,7 +339,7 @@ async def reactivate_agent(
 
 @team_agent_router.put(
     "/teams/{team_id}/agents/{agent_id}/twitter/unlink",
-    tags=["Team OAuth"],
+    tags=["OAuth"],
     operation_id="team_unlink_twitter",
     summary="Unlink Twitter (Team)",
 )
