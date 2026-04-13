@@ -24,7 +24,6 @@ from intentkit.core.lead.service import verify_team_membership
 from intentkit.core.team.channel import set_push_channel, set_push_channel_if_empty
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
 from intentkit.models.user import User, UserUpdate
-from intentkit.utils.error import IntentKitAPIError
 
 # ⚠️ INTERNAL API ONLY - DO NOT EXPOSE TO PUBLIC INTERNET ⚠️
 core_router = APIRouter(
@@ -97,24 +96,35 @@ class WechatLeadExecuteRequest(BaseModel):
 async def _resolve_telegram_lead(
     request: TeamLeadExecuteRequest,
 ) -> tuple[str, ChatMessageCreate]:
-    """Resolve Telegram user and build ChatMessageCreate for team lead."""
+    """Resolve Telegram user (with auto-bind) and build ChatMessageCreate for team lead."""
     user = await User.get_by_telegram_id(request.telegram_id)
     if not user:
-        raise IntentKitAPIError(
-            403, "Forbidden", "Telegram user not bound to any IntentKit account"
-        )
-    await verify_team_membership(request.team_id, user.id)
+        from intentkit.models.team import Team
+
+        owner_id = await Team.get_owner(request.team_id)
+        if owner_id:
+            await UserUpdate.model_validate({"telegram_id": request.telegram_id}).patch(
+                owner_id
+            )
+            user = await User.get(owner_id)
+
+    if user:
+        user_id = user.id
+        await verify_team_membership(request.team_id, user_id)
+    else:
+        user_id = request.telegram_id
+
     chat_msg = ChatMessageCreate(
         id=str(XID()),
         agent_id=f"team-{request.team_id}",
         chat_id=f"tg_team:{request.team_id}:{request.chat_id}",
-        user_id=user.id,
-        author_id=user.id,
+        user_id=user_id,
+        author_id=user_id,
         author_type=AuthorType.TELEGRAM,
         thread_type=AuthorType.TELEGRAM,
         message=request.message,
     )
-    return user.id, chat_msg
+    return user_id, chat_msg
 
 
 async def _resolve_wechat_lead(

@@ -367,8 +367,14 @@ func (m *Manager) initTeamChannelData(teamID string, bot *telego.Bot) error {
 		wl = make(map[string]whitelistEntry)
 	}
 
-	// Generate verification code
-	code := generateVerificationCode()
+	// Reuse existing verification code if present, otherwise generate a new one
+	code := ""
+	if result.Error == nil && existing.Data != nil {
+		code, _ = existing.Data["verification_code"].(string)
+	}
+	if code == "" {
+		code = generateVerificationCode()
+	}
 
 	m.mu.Lock()
 	m.whitelists[key] = wl
