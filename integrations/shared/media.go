@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -58,6 +59,39 @@ func FilenameFromURL(url string) string {
 		name = "file"
 	}
 	return name
+}
+
+// EnsureFileExtension appends an appropriate file extension to name
+// if it doesn't already have one, based on content type detection of data.
+func EnsureFileExtension(name string, data []byte) string {
+	if dotIdx := lastIndexByte(name, '.'); dotIdx >= 0 && dotIdx < len(name)-1 {
+		return name
+	}
+	ct := http.DetectContentType(data)
+	ext := extensionForContentType(ct)
+	if ext != "" {
+		return name + "." + ext
+	}
+	return name
+}
+
+func extensionForContentType(ct string) string {
+	switch {
+	case strings.HasPrefix(ct, "image/jpeg"):
+		return "jpg"
+	case strings.HasPrefix(ct, "image/png"):
+		return "png"
+	case strings.HasPrefix(ct, "image/gif"):
+		return "gif"
+	case strings.HasPrefix(ct, "image/webp"):
+		return "webp"
+	case strings.HasPrefix(ct, "video/mp4"):
+		return "mp4"
+	case strings.HasPrefix(ct, "audio/mpeg"):
+		return "mp3"
+	default:
+		return ""
+	}
 }
 
 func lastIndexByte(s string, c byte) int {

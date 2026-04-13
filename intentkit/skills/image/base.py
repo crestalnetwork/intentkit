@@ -5,6 +5,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Any, Literal, override
 
+import filetype
 import httpx
 from epyxid import XID
 from langchain_core.tools import ArgsSchema
@@ -149,8 +150,13 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Upload image to S3 and return text + attachment tuple."""
         job_id = str(XID())
-        image_key = f"{context.agent_id}/image/{skill_name}/{job_id}"
-        stored_path = await store_image_bytes(image_bytes, image_key)
+        kind = filetype.guess(image_bytes)
+        ext = kind.extension if kind else "png"
+        content_type = kind.mime if kind else "image/png"
+        image_key = f"{context.agent_id}/image/{skill_name}/{job_id}.{ext}"
+        stored_path = await store_image_bytes(
+            image_bytes, image_key, content_type=content_type
+        )
         if not stored_path:
             raise ToolException("Failed to store image: S3 storage not configured")
         url = get_cdn_url(stored_path)

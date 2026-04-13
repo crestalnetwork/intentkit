@@ -49,6 +49,7 @@ func (s *WechatSender) uploadAndBuildMedia(ctx context.Context, url string, medi
 	if fileName == "" {
 		fileName = shared.FilenameFromURL(url)
 	}
+	fileName = shared.EnsureFileExtension(fileName, data)
 
 	uploadResp, err := s.client.GetUploadURL(ctx, mediaType, fileSize, fileName)
 	if err != nil {

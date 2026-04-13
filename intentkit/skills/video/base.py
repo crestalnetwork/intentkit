@@ -73,7 +73,7 @@ class VideoBaseTool(IntentKitSkill, metaclass=ABCMeta):
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Upload video to S3 and return text + attachment tuple."""
         job_id = str(XID())
-        video_key = f"{context.agent_id}/video/{skill_name}/{job_id}"
+        video_key = f"{context.agent_id}/video/{skill_name}/{job_id}.mp4"
         stored_path = await store_file_bytes(video_bytes, video_key, FileType.VIDEO)
         if not stored_path:
             raise ToolException("Failed to store video: S3 storage not configured")
