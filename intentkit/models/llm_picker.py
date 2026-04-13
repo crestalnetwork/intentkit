@@ -47,7 +47,7 @@ def pick_default_model() -> str:
     Used as the default_factory for the agent model field.
     """
     order: list[tuple[str, LLMProvider]] = [
-        ("google/gemini-3-flash-preview", LLMProvider.GOOGLE),
+        ("gemini-3-flash-preview", LLMProvider.GOOGLE),
         ("MiniMax-M2.7", LLMProvider.MINIMAX),
         ("minimax/minimax-m2.7", LLMProvider.OPENROUTER),
         ("gpt-5.4-mini", LLMProvider.OPENAI),

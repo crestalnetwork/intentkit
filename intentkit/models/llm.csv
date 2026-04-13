@@ -30,8 +30,8 @@ deepseek-chat,Deepseek V3.2,deepseek,TRUE,0.28,,0.42,2,128000,4096,4,3,FALSE,non
 deepseek/deepseek-v3.2,Deepseek V3.2,openrouter,TRUE,0.28,,0.42,2,128000,4096,4,3,FALSE,none,TRUE,TRUE,TRUE,300
 deepseek-reasoner,DeepSeek V3.2 Thinking,deepseek,TRUE,0.28,,0.42,2,128000,32000,5,1,FALSE,high,TRUE,TRUE,TRUE,300
 deepseek/deepseek-v3.2-thinking,DeepSeek V3.2 Thinking,openrouter,TRUE,0.28,,0.42,2,128000,32000,5,1,FALSE,high,TRUE,TRUE,TRUE,300
-grok-4.20-beta-0309-reasoning,Grok 4.20,xai,TRUE,2,0.2,6,3,2000000,4096,5,3,TRUE,high,TRUE,FALSE,FALSE,180
-x-ai/grok-4.20-beta,Grok 4.20,openrouter,TRUE,2,0.2,6,3,2000000,4096,5,3,TRUE,high,TRUE,TRUE,TRUE,180
+grok-4.20-0309-reasoning,Grok 4.20,xai,TRUE,2,0.2,6,3,2000000,4096,5,3,TRUE,high,TRUE,FALSE,FALSE,180
+x-ai/grok-4.20,Grok 4.20,openrouter,TRUE,2,0.2,6,3,2000000,4096,5,3,TRUE,high,TRUE,TRUE,TRUE,180
 grok-4-1-fast-non-reasoning,Grok 4.1 Fast,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,none,TRUE,FALSE,FALSE,180
 x-ai/grok-4.1-fast,Grok 4.1 Fast,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,none,TRUE,TRUE,TRUE,180
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,high,TRUE,FALSE,FALSE,180
