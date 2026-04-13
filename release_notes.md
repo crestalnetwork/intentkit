@@ -1,9 +1,11 @@
-# Release v0.17.32
+# Release v0.17.34
 
 ## Bug Fixes
 
-- Gemini image and Veo video skills now respect Vertex AI configuration (`GOOGLE_GENAI_USE_VERTEXAI`, `GOOGLE_CLOUD_PROJECT`), fixing failures when using Vertex AI credentials instead of a direct API key.
-- LLM tool selector middleware now uses a dedicated model picker (`pick_tool_selector_model`) restricted to OpenAI, avoiding structured-output incompatibilities with Gemini and GLM that caused tool selection to fail silently or return descriptions instead of tool names (see langchain-ai/langchain#33651).
-- Tool selector activation threshold raised from 10 to 15 tools, reducing unnecessary overhead for agents with moderate tool counts.
+- Fixed an issue where public agents could not be accessed for chat or content viewing through the Team API. Chat history, messages, activities, and posts for public agents were inaccessible to users outside the agent's owning team.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.31...v0.17.32
+## Improvements
+
+- Improved chat data isolation so that teams can only view and interact with their own conversations on public agents.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.33...v0.17.34
