@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/aes"
+	"crypto/md5"
+	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -12,6 +14,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -241,100 +244,123 @@ func aesECBEncrypt(key, plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// GetUploadURL requests an upload URL for a media file.
-func (c *Client) GetUploadURL(ctx context.Context, mediaType int, fileSize int, fileName string) (*GetUploadURLResponse, error) {
-	reqBody := GetUploadURLRequest{
-		MediaType: mediaType,
-		FileSize:  fileSize,
-		FileName:  fileName,
-		BaseInfo:  BaseInfo{ChannelVersion: channelVersion},
+const cdnBaseURL = "https://novac2c.cdn.weixin.qq.com/c2c/upload"
+
+// UploadMedia handles the full media upload flow for WeChat CDN:
+// 1. Generates client-side AES key and filekey
+// 2. Requests upload permission via getuploadurl
+// 3. Encrypts data with AES-128-ECB
+// 4. Uploads encrypted data to CDN
+// Returns a CDNMedia reference for use in sendmessage, plus ciphertext size.
+func (c *Client) UploadMedia(ctx context.Context, data []byte, mediaType int, toUserID string) (CDNMedia, int, error) {
+	// Generate random 16-byte AES key and filekey
+	aesKey := make([]byte, 16)
+	if _, err := crand.Read(aesKey); err != nil {
+		return CDNMedia{}, 0, fmt.Errorf("generate aes key: %w", err)
+	}
+	filekey := make([]byte, 16)
+	if _, err := crand.Read(filekey); err != nil {
+		return CDNMedia{}, 0, fmt.Errorf("generate filekey: %w", err)
 	}
 
-	var resp GetUploadURLResponse
-	if err := c.doPost(ctx, "/ilink/bot/getuploadurl", reqBody, &resp); err != nil {
-		return nil, err
+	aesKeyHex := hex.EncodeToString(aesKey)
+	filekeyHex := hex.EncodeToString(filekey)
+
+	rawSize := len(data)
+	md5Sum := md5.Sum(data)
+	rawMD5Hex := hex.EncodeToString(md5Sum[:])
+	ciphertextSize := (rawSize/16 + 1) * 16 // PKCS7 always adds at least 1 byte
+
+	// Step 1: Get upload param from API
+	uploadReqBody := GetUploadURLRequest{
+		FileKey:     filekeyHex,
+		MediaType:   mediaType,
+		ToUserID:    toUserID,
+		RawSize:     rawSize,
+		RawFileMD5:  rawMD5Hex,
+		FileSize:    ciphertextSize,
+		NoNeedThumb: true,
+		AESKey:      aesKeyHex,
+		BaseInfo:    BaseInfo{ChannelVersion: channelVersion},
 	}
 
-	if resp.Ret != 0 {
-		return nil, fmt.Errorf("getuploadurl returned ret=%d errmsg=%s", resp.Ret, resp.ErrMsg)
+	var uploadResp GetUploadURLResponse
+	if err := c.doPost(ctx, "/ilink/bot/getuploadurl", uploadReqBody, &uploadResp); err != nil {
+		return CDNMedia{}, 0, fmt.Errorf("getuploadurl: %w", err)
+	}
+	if uploadResp.Ret != 0 {
+		return CDNMedia{}, 0, fmt.Errorf("getuploadurl returned ret=%d errmsg=%s", uploadResp.Ret, uploadResp.ErrMsg)
+	}
+	if uploadResp.UploadParam == "" {
+		return CDNMedia{}, 0, fmt.Errorf("getuploadurl returned empty upload_param")
 	}
 
-	return &resp, nil
-}
-
-// UploadToCDN encrypts the data with AES-128-ECB and uploads it to WeChat's CDN.
-// Returns the encrypt_query_param for constructing CDNMedia references.
-func (c *Client) UploadToCDN(ctx context.Context, uploadURL string, fileID string, aesKeyBase64 string, data []byte) (string, error) {
-	// Decode AES key from base64
-	keyBytes, err := base64.StdEncoding.DecodeString(aesKeyBase64)
+	// Step 2: Encrypt data with AES-128-ECB + PKCS7
+	encrypted, err := aesECBEncrypt(aesKey, data)
 	if err != nil {
-		return "", fmt.Errorf("decode aes key base64: %w", err)
+		return CDNMedia{}, 0, fmt.Errorf("encrypt data: %w", err)
 	}
 
-	// If decoded bytes are 32 chars (hex-encoded 16-byte key), decode hex
-	if len(keyBytes) == 32 {
-		hexDecoded, err := hex.DecodeString(string(keyBytes))
-		if err != nil {
-			return "", fmt.Errorf("decode aes key hex: %w", err)
-		}
-		keyBytes = hexDecoded
-	}
+	// Step 3: Upload encrypted data to CDN
+	query := url.Values{}
+	query.Set("encrypted_query_param", uploadResp.UploadParam)
+	query.Set("filekey", filekeyHex)
+	cdnURL := cdnBaseURL + "?" + query.Encode()
 
-	if len(keyBytes) != 16 {
-		return "", fmt.Errorf("unexpected aes key length: %d (expected 16)", len(keyBytes))
-	}
-
-	// Encrypt the data
-	encrypted, err := aesECBEncrypt(keyBytes, data)
+	req, err := http.NewRequestWithContext(ctx, "POST", cdnURL, bytes.NewReader(encrypted))
 	if err != nil {
-		return "", fmt.Errorf("encrypt data: %w", err)
-	}
-
-	// Upload encrypted data to CDN
-	reqURL := uploadURL + "?file_id=" + fileID
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewReader(encrypted))
-	if err != nil {
-		return "", fmt.Errorf("create upload request: %w", err)
+		return CDNMedia{}, 0, fmt.Errorf("create cdn upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
-	c.setHeaders(req)
+	// CDN upload does NOT use bot auth headers
 
-	resp, err := c.cdnClient.Do(req)
+	cdnResp, err := c.cdnClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("upload to cdn: %w", err)
+		return CDNMedia{}, 0, fmt.Errorf("cdn upload: %w", err)
 	}
-	defer resp.Body.Close()
+	defer cdnResp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read upload response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("CDN upload failed", "status", resp.StatusCode, "body", string(respBody))
-		return "", fmt.Errorf("cdn upload returned status %d", resp.StatusCode)
+	cdnBody, _ := io.ReadAll(cdnResp.Body)
+	if cdnResp.StatusCode != http.StatusOK {
+		slog.Error("CDN upload failed", "status", cdnResp.StatusCode, "body", string(cdnBody))
+		return CDNMedia{}, 0, fmt.Errorf("cdn upload returned status %d", cdnResp.StatusCode)
 	}
 
-	slog.Info("CDN upload response", "status", resp.StatusCode, "body", string(respBody))
-
-	// Try to parse encrypt_query_param from response body
-	var cdnResp struct {
-		EncryptQueryParam string `json:"encrypt_query_param"`
-		FileID            string `json:"file_id"`
+	// Read download param from response header
+	downloadParam := cdnResp.Header.Get("X-Encrypted-Param")
+	if downloadParam == "" {
+		// Fallback: try response body
+		var bodyResp struct {
+			EncryptedParam string `json:"encrypt_query_param"`
+		}
+		if json.Unmarshal(cdnBody, &bodyResp) == nil && bodyResp.EncryptedParam != "" {
+			downloadParam = bodyResp.EncryptedParam
+		}
 	}
-	if err := json.Unmarshal(respBody, &cdnResp); err == nil && cdnResp.EncryptQueryParam != "" {
-		return cdnResp.EncryptQueryParam, nil
+	if downloadParam == "" {
+		slog.Error("CDN upload: no download param", "headers", cdnResp.Header, "body", string(cdnBody))
+		return CDNMedia{}, 0, fmt.Errorf("cdn upload returned no download param")
 	}
 
-	// Fallback: use file_id as encrypt_query_param
-	return fileID, nil
+	slog.Info("Media uploaded to WeChat CDN", "mediaType", mediaType, "rawSize", rawSize)
+
+	// Build CDNMedia: aes_key for sendmessage = base64(hex_string)
+	aesKeyForMsg := base64.StdEncoding.EncodeToString([]byte(aesKeyHex))
+
+	media := CDNMedia{
+		EncryptQueryParam: downloadParam,
+		AESKey:            aesKeyForMsg,
+		EncryptType:       1,
+	}
+
+	return media, ciphertextSize, nil
 }
 
 // SendImage sends an image message to a WeChat user.
-func (c *Client) SendImage(ctx context.Context, toUserID, contextToken string, media CDNMedia, aesKey string, fileSize int) error {
+func (c *Client) SendImage(ctx context.Context, toUserID, contextToken string, media CDNMedia, ciphertextSize int) error {
 	reqBody := SendMessageRequest{
 		Msg: SendMsg{
-			FromUserID:   c.botID,
+			FromUserID:   "",
 			ToUserID:     toUserID,
 			ClientID:     xid.New().String(),
 			MessageType:  MessageTypeBot,
@@ -344,16 +370,8 @@ func (c *Client) SendImage(ctx context.Context, toUserID, contextToken string, m
 				{
 					Type: ItemTypeImage,
 					ImageItem: &ImageItem{
-						Media: media,
-						ThumbMedia: CDNMedia{
-							EncryptQueryParam: media.EncryptQueryParam,
-							AESKey:            aesKey,
-							EncryptType:       media.EncryptType,
-						},
-						MidSize:     fileSize,
-						ThumbSize:   fileSize,
-						ThumbHeight: 0,
-						ThumbWidth:  0,
+						Media:   media,
+						MidSize: ciphertextSize,
 					},
 				},
 			},
@@ -377,7 +395,7 @@ func (c *Client) SendImage(ctx context.Context, toUserID, contextToken string, m
 func (c *Client) SendVideo(ctx context.Context, toUserID, contextToken string, media CDNMedia) error {
 	reqBody := SendMessageRequest{
 		Msg: SendMsg{
-			FromUserID:   c.botID,
+			FromUserID:   "",
 			ToUserID:     toUserID,
 			ClientID:     xid.New().String(),
 			MessageType:  MessageTypeBot,
@@ -411,7 +429,7 @@ func (c *Client) SendVideo(ctx context.Context, toUserID, contextToken string, m
 func (c *Client) SendFile(ctx context.Context, toUserID, contextToken, fileName string, media CDNMedia, fileSize int) error {
 	reqBody := SendMessageRequest{
 		Msg: SendMsg{
-			FromUserID:   c.botID,
+			FromUserID:   "",
 			ToUserID:     toUserID,
 			ClientID:     xid.New().String(),
 			MessageType:  MessageTypeBot,

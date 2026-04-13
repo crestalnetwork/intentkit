@@ -14,7 +14,7 @@ const (
 	MessageStateFinish     = 2
 )
 
-// Item type constants
+// Item type constants (for sendmessage item_list)
 const (
 	ItemTypeNone  = 0
 	ItemTypeText  = 1
@@ -22,6 +22,14 @@ const (
 	ItemTypeVoice = 3
 	ItemTypeFile  = 4
 	ItemTypeVideo = 5
+)
+
+// Upload media type constants (for getuploadurl API, different from ItemType)
+const (
+	UploadMediaImage = 1
+	UploadMediaVideo = 2
+	UploadMediaVoice = 3
+	UploadMediaFile  = 4
 )
 
 // Credentials holds the authentication data obtained from QR code login.
@@ -147,12 +155,8 @@ type CDNMedia struct {
 
 // ImageItem holds image content for a message item.
 type ImageItem struct {
-	Media       CDNMedia `json:"media"`
-	ThumbMedia  CDNMedia `json:"thumb_media"`
-	MidSize     int      `json:"mid_size"`
-	ThumbSize   int      `json:"thumb_size"`
-	ThumbHeight int      `json:"thumb_height"`
-	ThumbWidth  int      `json:"thumb_width"`
+	Media   CDNMedia `json:"media"`
+	MidSize int      `json:"mid_size"`
 }
 
 // VideoItem holds video content for a message item.
@@ -169,25 +173,24 @@ type FileItem struct {
 
 // --- GetUploadURL ---
 
-// UploadParam contains the parameters for uploading a file to CDN.
-type UploadParam struct {
-	UploadURL string `json:"upload_url"`
-	FileID    string `json:"file_id"`
-	AESKey    string `json:"aes_key"`
-}
-
 // GetUploadURLRequest is the request body for the getuploadurl endpoint.
+// The client generates the AES key and filekey; the server returns an opaque upload token.
 type GetUploadURLRequest struct {
-	MediaType int      `json:"media_type"`
-	FileSize  int      `json:"file_size"`
-	FileName  string   `json:"file_name"`
-	BaseInfo  BaseInfo `json:"base_info"`
+	FileKey     string   `json:"filekey"`
+	MediaType   int      `json:"media_type"`
+	ToUserID    string   `json:"to_user_id"`
+	RawSize     int      `json:"rawsize"`
+	RawFileMD5  string   `json:"rawfilemd5"`
+	FileSize    int      `json:"filesize"`
+	NoNeedThumb bool     `json:"no_need_thumb"`
+	AESKey      string   `json:"aeskey"`
+	BaseInfo    BaseInfo `json:"base_info"`
 }
 
 // GetUploadURLResponse is the response from the getuploadurl endpoint.
 type GetUploadURLResponse struct {
-	Ret              int          `json:"ret"`
-	ErrMsg           string       `json:"errmsg,omitempty"`
-	UploadParam      UploadParam  `json:"upload_param"`
-	ThumbUploadParam *UploadParam `json:"thumb_upload_param,omitempty"`
+	Ret              int    `json:"ret"`
+	ErrMsg           string `json:"errmsg,omitempty"`
+	UploadParam      string `json:"upload_param"`
+	ThumbUploadParam string `json:"thumb_upload_param,omitempty"`
 }

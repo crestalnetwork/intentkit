@@ -37,47 +37,30 @@ func (s *WechatSender) sendFallback(ctx context.Context, url, prefix string) err
 	return s.client.SendMessage(ctx, s.toUserID, s.contextToken, text)
 }
 
-// uploadAndBuildMedia downloads a file from URL, uploads it to WeChat CDN,
-// and returns the CDNMedia reference along with the AES key, file size, and resolved filename.
-func (s *WechatSender) uploadAndBuildMedia(ctx context.Context, url string, mediaType int, fileName string) (ilink.CDNMedia, string, int, string, error) {
-	data, err := shared.DownloadFromURL(ctx, url)
+// downloadAndUpload downloads a file from URL and uploads it to WeChat CDN.
+// Returns the raw data, CDNMedia reference, and ciphertext size.
+func (s *WechatSender) downloadAndUpload(ctx context.Context, fileURL string, uploadMediaType int) ([]byte, ilink.CDNMedia, int, error) {
+	data, err := shared.DownloadFromURL(ctx, fileURL)
 	if err != nil {
-		return ilink.CDNMedia{}, "", 0, "", fmt.Errorf("download file: %w", err)
+		return nil, ilink.CDNMedia{}, 0, fmt.Errorf("download: %w", err)
 	}
 
-	fileSize := len(data)
-	if fileName == "" {
-		fileName = shared.FilenameFromURL(url)
-	}
-	fileName = shared.EnsureFileExtension(fileName, data)
-
-	uploadResp, err := s.client.GetUploadURL(ctx, mediaType, fileSize, fileName)
+	media, ciphertextSize, err := s.client.UploadMedia(ctx, data, uploadMediaType, s.toUserID)
 	if err != nil {
-		return ilink.CDNMedia{}, "", 0, "", fmt.Errorf("get upload url: %w", err)
+		return nil, ilink.CDNMedia{}, 0, fmt.Errorf("upload: %w", err)
 	}
 
-	encryptQueryParam, err := s.client.UploadToCDN(ctx, uploadResp.UploadParam.UploadURL, uploadResp.UploadParam.FileID, uploadResp.UploadParam.AESKey, data)
-	if err != nil {
-		return ilink.CDNMedia{}, "", 0, "", fmt.Errorf("upload to cdn: %w", err)
-	}
-
-	media := ilink.CDNMedia{
-		EncryptQueryParam: encryptQueryParam,
-		AESKey:            uploadResp.UploadParam.AESKey,
-		EncryptType:       1,
-	}
-
-	return media, uploadResp.UploadParam.AESKey, fileSize, fileName, nil
+	return data, media, ciphertextSize, nil
 }
 
 func (s *WechatSender) SendImage(ctx context.Context, url string, caption string) error {
-	media, aesKey, fileSize, _, err := s.uploadAndBuildMedia(ctx, url, ilink.ItemTypeImage, "")
+	_, media, ciphertextSize, err := s.downloadAndUpload(ctx, url, ilink.UploadMediaImage)
 	if err != nil {
 		slog.Error("Failed to upload image to WeChat CDN, falling back to text", "error", err, "url", url)
 		return s.sendFallback(ctx, url, caption)
 	}
 
-	if err := s.client.SendImage(ctx, s.toUserID, s.contextToken, media, aesKey, fileSize); err != nil {
+	if err := s.client.SendImage(ctx, s.toUserID, s.contextToken, media, ciphertextSize); err != nil {
 		slog.Error("Failed to send image message, falling back to text", "error", err)
 		return s.sendFallback(ctx, url, caption)
 	}
@@ -89,7 +72,7 @@ func (s *WechatSender) SendImage(ctx context.Context, url string, caption string
 }
 
 func (s *WechatSender) SendVideo(ctx context.Context, url string, caption string) error {
-	media, _, _, _, err := s.uploadAndBuildMedia(ctx, url, ilink.ItemTypeVideo, "")
+	_, media, _, err := s.downloadAndUpload(ctx, url, ilink.UploadMediaVideo)
 	if err != nil {
 		slog.Error("Failed to upload video to WeChat CDN, falling back to text", "error", err, "url", url)
 		return s.sendFallback(ctx, url, caption)
@@ -107,13 +90,19 @@ func (s *WechatSender) SendVideo(ctx context.Context, url string, caption string
 }
 
 func (s *WechatSender) SendFile(ctx context.Context, url string, name string, caption string) error {
-	media, _, fileSize, resolvedName, err := s.uploadAndBuildMedia(ctx, url, ilink.ItemTypeFile, name)
+	data, media, ciphertextSize, err := s.downloadAndUpload(ctx, url, ilink.UploadMediaFile)
 	if err != nil {
 		slog.Error("Failed to upload file to WeChat CDN, falling back to text", "error", err, "url", url)
 		return s.sendFallback(ctx, url, name)
 	}
 
-	if err := s.client.SendFile(ctx, s.toUserID, s.contextToken, resolvedName, media, fileSize); err != nil {
+	fileName := name
+	if fileName == "" {
+		fileName = shared.FilenameFromURL(url)
+	}
+	fileName = shared.EnsureFileExtension(fileName, data)
+
+	if err := s.client.SendFile(ctx, s.toUserID, s.contextToken, fileName, media, ciphertextSize); err != nil {
 		slog.Error("Failed to send file message, falling back to text", "error", err)
 		return s.sendFallback(ctx, url, name)
 	}
