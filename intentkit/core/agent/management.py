@@ -116,6 +116,10 @@ async def override_agent(
             update_data["autonomous"] = agent.normalize_autonomous_statuses(
                 update_data["autonomous"]
             )
+        if "skills" in update_data and update_data["skills"]:
+            from intentkit.core.manager.service import sanitize_skills
+
+            update_data["skills"] = sanitize_skills(update_data["skills"])
         for key, value in update_data.items():
             setattr(db_agent, key, value)
         # version
@@ -204,6 +208,10 @@ async def patch_agent(
             update_data["autonomous"] = agent.normalize_autonomous_statuses(
                 update_data["autonomous"]
             )
+        if "skills" in update_data and update_data["skills"]:
+            from intentkit.core.manager.service import sanitize_skills
+
+            update_data["skills"] = sanitize_skills(update_data["skills"])
         for key, value in update_data.items():
             setattr(db_agent, key, value)
         db_agent.version = agent.hash()
@@ -261,6 +269,12 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     # Validate sub-agents if present
     if agent.sub_agents:
         await _validate_sub_agents(agent.sub_agents)
+
+    # Validate skills configuration
+    if agent.skills:
+        from intentkit.core.manager.service import validate_skills
+
+        validate_skills(agent.skills)
 
     async with get_session() as db:
         try:

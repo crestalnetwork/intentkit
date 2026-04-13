@@ -44,12 +44,38 @@ def build_agent_manager(team_id: str) -> Agent:
         "1. Name, slug, and purpose\n"
         "2. Model — `lead_get_available_llms` for options. "
         "High intelligence for complex reasoning, high speed for simple tasks.\n"
-        "3. Skills — `lead_list_available_skills` for options. Keep under 20.\n"
+        "3. Skills — ALWAYS call `lead_list_available_skills` first to see all "
+        "available categories and individual skills. Pick only the skills the "
+        "agent needs based on its purpose. Keep under 20.\n"
         "4. Additional settings as needed\n\n"
-        "### Skill Configuration\n\n"
-        '```\n"skills": {"category": {"states": {"skill1": "public"}, "enabled": true}}\n```\n'
-        "`enabled` is category-level. `states` controls individual skills. "
-        "Use `private` for sensitive content, `public` for all users.\n\n"
+        "### Skill Configuration (IMPORTANT)\n\n"
+        "You MUST call `lead_list_available_skills` before configuring skills. "
+        "Only use skill names from that list.\n\n"
+        "Format:\n"
+        "```json\n"
+        "{\n"
+        '  "category_name": {\n'
+        '    "enabled": true,\n'
+        '    "states": {\n'
+        '      "skill_name_1": "public",\n'
+        '      "skill_name_2": "public"\n'
+        "    }\n"
+        "  }\n"
+        "}\n"
+        "```\n\n"
+        "Example — enable two image skills and one twitter skill:\n"
+        "```json\n"
+        "{\n"
+        '  "image": {"enabled": true, "states": {"image_gpt": "public", "image_gemini_flash": "public"}},\n'
+        '  "twitter": {"enabled": true, "states": {"post_tweet": "public"}}\n'
+        "}\n"
+        "```\n\n"
+        "Rules:\n"
+        "- `enabled`: category-level toggle (must be `true` to activate)\n"
+        "- `states`: map of individual skill names to their access level\n"
+        "- Access levels: `public` (all users), `private` (owner only)\n"
+        "- Only include skills you want to enable — omitted skills stay disabled\n"
+        "- The backend will reject unknown categories or skill names with an error\n\n"
         "### Agent Fields Reference\n\n"
         "- `name`: Display name (max 50 chars)\n"
         "- `purpose`, `personality`, `principles`: Agent character\n"
@@ -57,7 +83,7 @@ def build_agent_manager(team_id: str) -> Agent:
         "- `prompt`: Base system prompt\n"
         "- `prompt_append`: Additional system prompt (higher priority)\n"
         "- `temperature`: Randomness (0.0~2.0, lower for rigorous tasks)\n"
-        "- `skills`: Skill configurations dict\n"
+        "- `skills`: Skill configurations dict (see format above)\n"
         "- `slug`: URL-friendly slug (immutable once set)\n"
         "- `sub_agents`: List of sub-agent IDs or slugs\n"
         "- `sub_agent_prompt`: Instructions for how to use sub-agents\n"
