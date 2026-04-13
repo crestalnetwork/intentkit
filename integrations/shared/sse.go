@@ -109,7 +109,9 @@ func StreamRequest(ctx context.Context, baseURL, path string, payload interface{
 			return cbErr
 		default:
 		}
-		// Treat EOF as normal stream completion (server closed connection after sending all events)
+		// Treat clean EOF as normal stream completion. The preferred termination
+		// signal is [DONE] (which triggers es.Close() and returns nil above);
+		// EOF is a fallback for endpoints that haven't adopted [DONE] yet.
 		if errors.Is(err, io.EOF) {
 			return nil
 		}

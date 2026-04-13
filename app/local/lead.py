@@ -293,6 +293,7 @@ async def send_lead_message(
                     LEAD_TEAM_ID, LEAD_USER_ID, user_message
                 ):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+                yield "event: message\ndata: [DONE]\n\n"
                 if should_schedule_summary:
                     schedule_chat_summary_title_update(LEAD_AGENT_ID, chat_id)
             except asyncio.CancelledError:

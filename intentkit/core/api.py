@@ -40,6 +40,7 @@ def _sse_response(gen: AsyncIterator[ChatMessage]) -> StreamingResponse:
     async def generate():
         async for chat_message in gen:
             yield f"event: message\ndata: {chat_message.model_dump_json()}\n\n"
+        yield "event: message\ndata: [DONE]\n\n"
 
     return StreamingResponse(
         generate(),

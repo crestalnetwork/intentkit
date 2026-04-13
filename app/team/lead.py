@@ -300,6 +300,7 @@ async def send_lead_message(
             try:
                 async for chunk in stream_lead(team_id, user_id, user_message):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+                yield "event: message\ndata: [DONE]\n\n"
                 if should_schedule_summary:
                     schedule_chat_summary_title_update(agent_id, chat_id)
             except asyncio.CancelledError:

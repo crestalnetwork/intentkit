@@ -1,9 +1,12 @@
 package bot
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/crestalnetwork/intentkit/integrations/shared"
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
 )
@@ -19,6 +22,21 @@ func NewTelegramSender(bot *telego.Bot, chatID int64) *TelegramSender {
 	return &TelegramSender{bot: bot, chatID: chatID}
 }
 
+// downloadAsInputFile downloads the URL via the shared media client and returns
+// a telego InputFile suitable for upload. Uses the shared HTTP client with
+// timeout and size limits. If fileName is empty, derives it from the URL.
+func downloadAsInputFile(ctx context.Context, mediaURL, fileName string) (telego.InputFile, bool) {
+	data, err := shared.DownloadFromURL(ctx, mediaURL)
+	if err != nil {
+		slog.Warn("Media download failed for upload fallback", "error", err, "url", mediaURL)
+		return telego.InputFile{}, false
+	}
+	if fileName == "" {
+		fileName = shared.FilenameFromURL(mediaURL)
+	}
+	return tu.FileFromReader(bytes.NewReader(data), fileName), true
+}
+
 func (s *TelegramSender) SendText(ctx context.Context, text string) error {
 	_, err := s.bot.SendMessage(ctx, tu.Message(tu.ID(s.chatID), text))
 	return err
@@ -30,7 +48,23 @@ func (s *TelegramSender) SendImage(ctx context.Context, url string, caption stri
 		params.Caption = caption
 	}
 	_, err := s.bot.SendPhoto(ctx, params)
-	return err
+	if err == nil {
+		return nil
+	}
+
+	file, ok := downloadAsInputFile(ctx, url, "")
+	if !ok {
+		return err
+	}
+	params = tu.Photo(tu.ID(s.chatID), file)
+	if caption != "" {
+		params.Caption = caption
+	}
+	if _, uploadErr := s.bot.SendPhoto(ctx, params); uploadErr != nil {
+		slog.Warn("Upload fallback also failed for image", "error", uploadErr, "url", url)
+		return err
+	}
+	return nil
 }
 
 func (s *TelegramSender) SendVideo(ctx context.Context, url string, caption string) error {
@@ -39,7 +73,23 @@ func (s *TelegramSender) SendVideo(ctx context.Context, url string, caption stri
 		params.Caption = caption
 	}
 	_, err := s.bot.SendVideo(ctx, params)
-	return err
+	if err == nil {
+		return nil
+	}
+
+	file, ok := downloadAsInputFile(ctx, url, "")
+	if !ok {
+		return err
+	}
+	params = tu.Video(tu.ID(s.chatID), file)
+	if caption != "" {
+		params.Caption = caption
+	}
+	if _, uploadErr := s.bot.SendVideo(ctx, params); uploadErr != nil {
+		slog.Warn("Upload fallback also failed for video", "error", uploadErr, "url", url)
+		return err
+	}
+	return nil
 }
 
 func (s *TelegramSender) SendFile(ctx context.Context, url string, name string, caption string) error {
@@ -48,7 +98,23 @@ func (s *TelegramSender) SendFile(ctx context.Context, url string, name string, 
 		params.Caption = caption
 	}
 	_, err := s.bot.SendDocument(ctx, params)
-	return err
+	if err == nil {
+		return nil
+	}
+
+	file, ok := downloadAsInputFile(ctx, url, name)
+	if !ok {
+		return err
+	}
+	params = tu.Document(tu.ID(s.chatID), file)
+	if caption != "" {
+		params.Caption = caption
+	}
+	if _, uploadErr := s.bot.SendDocument(ctx, params); uploadErr != nil {
+		slog.Warn("Upload fallback also failed for file", "error", uploadErr, "url", url)
+		return err
+	}
+	return nil
 }
 
 func (s *TelegramSender) SendCard(ctx context.Context, title, description, imageURL, linkURL, label string) error {
@@ -65,8 +131,9 @@ func (s *TelegramSender) SendCard(ctx context.Context, title, description, image
 	}
 
 	if imageURL != "" {
-		// Send as photo with formatted caption
 		caption := fmt.Sprintf("*%s*\n%s", title, description)
+
+		// Try sending as photo with URL
 		params := tu.Photo(tu.ID(s.chatID), tu.FileFromURL(imageURL))
 		params.Caption = caption
 		params.ParseMode = telego.ModeMarkdown
@@ -74,10 +141,26 @@ func (s *TelegramSender) SendCard(ctx context.Context, title, description, image
 			params.ReplyMarkup = keyboard
 		}
 		_, err := s.bot.SendPhoto(ctx, params)
-		return err
+		if err == nil {
+			return nil
+		}
+
+		// Fallback: download and upload
+		if file, ok := downloadAsInputFile(ctx, imageURL, ""); ok {
+			params = tu.Photo(tu.ID(s.chatID), file)
+			params.Caption = caption
+			params.ParseMode = telego.ModeMarkdown
+			if keyboard != nil {
+				params.ReplyMarkup = keyboard
+			}
+			if _, uploadErr := s.bot.SendPhoto(ctx, params); uploadErr == nil {
+				return nil
+			}
+		}
+		// Image failed — fall through to text-only message
 	}
 
-	// No image: send as text message
+	// No image or image failed: send as text message
 	text := fmt.Sprintf("*%s*\n%s", title, description)
 	params := tu.Message(tu.ID(s.chatID), text)
 	params.ParseMode = telego.ModeMarkdown

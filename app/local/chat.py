@@ -319,6 +319,7 @@ async def send_message(
             try:
                 async for chunk in stream_agent(user_message):
                     yield f"event: message\ndata: {chunk.model_dump_json()}\n\n"
+                yield "event: message\ndata: [DONE]\n\n"
                 if should_schedule_summary:
                     schedule_chat_summary_title_update(aid, chat_id)
             except asyncio.CancelledError:
