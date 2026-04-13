@@ -163,7 +163,7 @@ async def push_to_team(team_id: str, text: str) -> bool:
                 thread_type = AuthorType.WECHAT
 
             await append_agent_message(
-                agent_id=team_id,
+                agent_id=f"team-{team_id}",
                 chat_id=lead_chat_id,
                 text=text,
                 thread_type=thread_type,

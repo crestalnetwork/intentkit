@@ -106,7 +106,7 @@ async def _resolve_telegram_lead(
     await verify_team_membership(request.team_id, user.id)
     chat_msg = ChatMessageCreate(
         id=str(XID()),
-        agent_id=request.team_id,
+        agent_id=f"team-{request.team_id}",
         chat_id=f"tg_team:{request.team_id}:{request.chat_id}",
         user_id=user.id,
         author_id=user.id,
@@ -140,7 +140,7 @@ async def _resolve_wechat_lead(
 
     chat_msg = ChatMessageCreate(
         id=str(XID()),
-        agent_id=request.team_id,
+        agent_id=f"team-{request.team_id}",
         chat_id=f"wx_team:{request.team_id}:{request.chat_id}",
         user_id=user_id,
         author_id=user_id,

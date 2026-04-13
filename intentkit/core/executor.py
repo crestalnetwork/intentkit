@@ -83,6 +83,7 @@ async def build_executor(
 
     from intentkit.core.middleware import (
         DynamicPromptMiddleware,
+        EmptyContentSafetyMiddleware,
         StepTrackingMiddleware,
         SummarizationMiddleware,
         ToolBindingMiddleware,
@@ -239,6 +240,7 @@ async def build_executor(
     middleware: list[Any] = [
         ToolBindingMiddleware(llm_model, tools, private_tools, extra_llm_params),
         DynamicPromptMiddleware(agent, agent_data),
+        EmptyContentSafetyMiddleware(),
         StepTrackingMiddleware(),
         ToolRetryMiddleware(),
         ModelRetryMiddleware(),

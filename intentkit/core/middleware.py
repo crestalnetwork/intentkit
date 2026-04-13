@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, override
 
 from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool
 from langgraph.runtime import Runtime
 
@@ -102,8 +103,47 @@ class StepTrackingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return {"step_count": step_count}
 
 
+class EmptyContentSafetyMiddleware(AgentMiddleware[AgentState, AgentContext]):
+    """Sanitize AIMessages with empty list content to prevent Gemini 3 API errors.
+
+    Gemini 3 stores empty content as [] (list) instead of "" (string).
+    If tool_calls are lost from such a message (e.g. during checkpoint
+    serialization), converting content=[] produces Content(parts=[]) which
+    the Gemini API rejects with "must include at least one parts field".
+
+    This middleware patches any such message before the model call.
+    """
+
+    @override
+    async def awrap_model_call(  # type: ignore[override]
+        self,
+        request: ModelRequest[AgentContext],
+        handler: Callable[[ModelRequest[AgentContext]], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        messages = request.messages
+        patched = False
+        for i, msg in enumerate(messages):
+            if (
+                isinstance(msg, AIMessage)
+                and isinstance(msg.content, list)
+                and len(msg.content) == 0
+                and not msg.tool_calls
+            ):
+                messages[i] = msg.model_copy(update={"content": ""})
+                patched = True
+                logger.warning(
+                    "Patched AIMessage with empty content[] at index %d "
+                    "(no tool_calls) — would have caused Gemini empty-parts error",
+                    i,
+                )
+        if patched:
+            request = request.override(messages=messages)
+        return await handler(request)
+
+
 __all__ = [
     "DynamicPromptMiddleware",
+    "EmptyContentSafetyMiddleware",
     "StepTrackingMiddleware",
     "SummarizationMiddleware",
     "ToolBindingMiddleware",

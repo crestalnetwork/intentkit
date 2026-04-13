@@ -466,7 +466,7 @@ async def list_lead_default_channel_messages(
     stmt = (
         select(ChatMessageTable)
         .where(
-            ChatMessageTable.agent_id == team_id,
+            ChatMessageTable.agent_id == _lead_agent_id(team_id),
             ChatMessageTable.chat_id == full_chat_id,
         )
         .order_by(desc(ChatMessageTable.id))
