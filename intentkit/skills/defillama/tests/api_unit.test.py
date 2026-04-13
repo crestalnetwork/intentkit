@@ -46,7 +46,7 @@ class DummyResponse:
         return self._json_data
 
 
-class TestDefiLlamaAPI(unittest.IsolatedAsyncioTestCase):
+class TestDefiLlamaAPI(unittest.IsolatedAsyncioTestCase):  # pyright: ignore[reportUninitializedInstanceVariable]
     @classmethod
     def setUpClass(cls):
         # Set up a fixed timestamp that all tests will use
@@ -54,8 +54,8 @@ class TestDefiLlamaAPI(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         # Start the patcher before each test
-        self.datetime_patcher = patch("skills.defillama.api.datetime")
-        self.mock_datetime = self.datetime_patcher.start()
+        self.datetime_patcher = patch("skills.defillama.api.datetime")  # pyright: ignore[reportUninitializedInstanceVariable]
+        self.mock_datetime = self.datetime_patcher.start()  # pyright: ignore[reportUninitializedInstanceVariable]
         # Configure the mock to return our fixed timestamp
         self.mock_datetime.now.return_value.timestamp.return_value = self.mock_timestamp
 

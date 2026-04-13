@@ -554,7 +554,7 @@ def _is_unrecoverable_checkpoint_error(exc: Exception) -> bool:
 
 async def _cancel_cleanup(
     executor: Any,
-    stream_config: dict,
+    stream_config: "RunnableConfig",
     in_tools_phase: bool,
     user_message: "ChatMessageCreate",
     thread_id: str,

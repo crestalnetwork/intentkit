@@ -25,11 +25,11 @@ from intentkit.skills.defillama.api import (
 logging.basicConfig(level=logging.WARNING)
 
 
-class QuietTestResult(TextTestResult):
+class QuietTestResult(TextTestResult):  # pyright: ignore[reportUninitializedInstanceVariable]
     """Custom TestResult class that minimizes output unless there's a failure"""
 
     def startTest(self, test):
-        self._started_at = datetime.now()
+        self._started_at = datetime.now()  # pyright: ignore[reportUninitializedInstanceVariable]
         super().startTest(test)
 
     def addSuccess(self, test):
@@ -38,23 +38,23 @@ class QuietTestResult(TextTestResult):
             self.stream.write("")
             self.stream.flush()
 
-    def addError(self, test, err):
+    def addError(self, test, err):  # pyright: ignore[reportAttributeAccessIssue]
         super().addError(test, err)
         self.stream.write("\n")
         self.stream.write(self.separator1 + "\n")
         self.stream.write(f"ERROR: {self.getDescription(test)}\n")
         self.stream.write(self.separator2 + "\n")
-        self.stream.write(self._exc_info_to_string(err, test))
+        self.stream.write(self._exc_info_to_string(err, test))  # pyright: ignore[reportAttributeAccessIssue]
         self.stream.write("\n")
         self.stream.flush()
 
-    def addFailure(self, test, err):
+    def addFailure(self, test, err):  # pyright: ignore[reportAttributeAccessIssue]
         super().addFailure(test, err)
         self.stream.write("\n")
         self.stream.write(self.separator1 + "\n")
         self.stream.write(f"FAIL: {self.getDescription(test)}\n")
         self.stream.write(self.separator2 + "\n")
-        self.stream.write(self._exc_info_to_string(err, test))
+        self.stream.write(self._exc_info_to_string(err, test))  # pyright: ignore[reportAttributeAccessIssue]
         self.stream.write("\n")
         self.stream.flush()
 
@@ -62,17 +62,17 @@ class QuietTestResult(TextTestResult):
 class QuietTestRunner(unittest.TextTestRunner):
     """Custom TestRunner that uses QuietTestResult"""
 
-    resultclass = QuietTestResult
+    resultclass: type[TextTestResult] = QuietTestResult  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
-class TestDefiLlamaAPI(unittest.TestCase):
+class TestDefiLlamaAPI(unittest.TestCase):  # pyright: ignore[reportUninitializedInstanceVariable]
     """Integration tests for DeFi Llama API client"""
 
     def setUp(self):
         """Set up the async event loop"""
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.new_event_loop()  # pyright: ignore[reportUninitializedInstanceVariable]
         asyncio.set_event_loop(self.loop)
-        self.timeout = 3000
+        self.timeout = 3000  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def tearDown(self):
         """Clean up the event loop"""

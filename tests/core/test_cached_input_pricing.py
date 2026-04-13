@@ -1,6 +1,7 @@
 """Tests for cached input token pricing support."""
 
 from decimal import Decimal
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -65,10 +66,10 @@ def test_extract_cached_object_without_attribute():
 # ---------------------------------------------------------------------------
 
 
-def _make_model_info(**overrides) -> LLMModelInfo:
+def _make_model_info(**overrides: Any) -> LLMModelInfo:
     from datetime import UTC, datetime
 
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         id="test-model",
         name="Test Model",
         provider=LLMProvider.OPENAI,

@@ -33,7 +33,11 @@ class SelectQueryStub:
         key = getattr(left, "key", "")
         op = getattr(operator, "__name__", str(operator))
         self.conditions.append(
-            (key, op, right.value if hasattr(right, "value") else right)
+            (
+                key,
+                op,
+                right.value if right is not None and hasattr(right, "value") else right,
+            )
         )
         return self
 

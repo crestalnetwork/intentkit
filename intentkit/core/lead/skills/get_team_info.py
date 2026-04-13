@@ -30,6 +30,7 @@ class GetTeamInfo(LeadSkill):
     @override
     async def _arun(self, **kwargs: Any) -> GetTeamInfoOutput:
         context = self.get_context()
+        assert context.team_id is not None
         team_info = await get_team_with_members(context.team_id)
         return GetTeamInfoOutput(team=team_info)
 

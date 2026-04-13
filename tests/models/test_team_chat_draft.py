@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from intentkit.models.chat import (
     AuthorType,
+    ChatMessageAttachment,
     ChatMessageAttachmentType,
     ChatMessageCreate,
 )
@@ -164,19 +165,19 @@ class TestChatMessageCreate:
         assert msg.time_cost == 0.0
 
     def test_chat_message_create_with_attachments(self):
-        attachments = [
-            {
-                "type": "link",
-                "lead_text": "Check this out",
-                "url": "https://example.com",
-                "json": None,
-            },
-            {
-                "type": "image",
-                "lead_text": None,
-                "url": "https://example.com/img.png",
-                "json": None,
-            },
+        attachments: list[ChatMessageAttachment] = [
+            ChatMessageAttachment(
+                type=ChatMessageAttachmentType.LINK,
+                lead_text="Check this out",
+                url="https://example.com",
+                json=None,
+            ),
+            ChatMessageAttachment(
+                type=ChatMessageAttachmentType.IMAGE,
+                lead_text=None,
+                url="https://example.com/img.png",
+                json=None,
+            ),
         ]
         msg = ChatMessageCreate(
             agent_id="agent-1",
@@ -224,7 +225,7 @@ class TestAgentDraft:
         draft = AgentDraft(
             agent_id="my-agent",
             name="Test Agent",
-            model=None,
+            model="",
             created_at=now,
             updated_at=now,
         )
@@ -246,7 +247,7 @@ class TestAgentDraft:
             id="draft-123",
             agent_id="my-agent",
             name="Test Agent",
-            model=None,
+            model="",
             owner="user-1",
             team_id="team-1",
             version="abc123",

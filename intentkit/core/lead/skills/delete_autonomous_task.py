@@ -48,6 +48,7 @@ class LeadDeleteAutonomousTask(LeadSkill):
         **kwargs: Any,
     ) -> DeleteAutonomousTaskOutput:
         context = self.get_context()
+        assert context.team_id is not None
         await verify_agent_in_team(agent_id, context.team_id)
         await delete_autonomous_task(agent_id, task_id)
         return DeleteAutonomousTaskOutput(

@@ -94,6 +94,7 @@ class CreateTeamAgent(LeadSkill):
         **kwargs: Any,
     ) -> CreateTeamAgentOutput:
         context = self.get_context()
+        assert context.team_id is not None
 
         agent_data: dict[str, Any] = {"name": name, "slug": slug, "purpose": purpose}
         if personality is not None:

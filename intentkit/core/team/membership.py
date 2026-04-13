@@ -153,7 +153,13 @@ async def create_team(team_id: str, name: str, creator_user_id: str) -> Team:
     except Exception as e:
         logger.warning("Avatar generation failed for team %s: %s", team_id, e)
 
-    team_create = TeamCreate(id=team_id, name=name, avatar=avatar, default_channel=None)
+    team_create = TeamCreate(
+        id=team_id,
+        name=name,
+        avatar=avatar,
+        default_channel=None,
+        default_channel_chat_id=None,
+    )
     return await team_create.save(creator_user_id)
 
 

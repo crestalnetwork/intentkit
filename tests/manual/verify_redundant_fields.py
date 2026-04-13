@@ -73,6 +73,7 @@ async def verify_activity_creation():
             from intentkit.core.agent_activity import get_agent_activity
 
             activity = await get_agent_activity(activity_id)
+            assert activity is not None, f"Activity {activity_id} not found"
 
             print(f"Activity Agent Name: {activity.agent_name}")
             print(f"Activity Agent Picture: {activity.agent_picture}")
@@ -137,7 +138,7 @@ async def verify_post_creation():
             )
             print(f"Post creation result: {res}")
 
-            post_id = res.split("ID: ")[1].strip()
+            post_id = res.split("ID: ")[1].strip()  # pyright: ignore[reportAttributeAccessIssue]
 
             # We assume get_agent_post exists or similar
             # If not, we query DB directly

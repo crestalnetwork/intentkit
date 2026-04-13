@@ -63,6 +63,7 @@ def test_sanitize_skills_removes_unknown_category():
         "nonexistent": {"enabled": True, "states": {"x": "public"}},
     }
     result = sanitize_skills(skills)
+    assert result is not None
     assert "ui" in result
     assert "nonexistent" not in result
 
@@ -75,6 +76,7 @@ def test_sanitize_skills_removes_unknown_skill():
         }
     }
     result = sanitize_skills(skills)
+    assert result is not None
     assert "ui_show_card" in result["ui"]["states"]
     assert "deleted_skill" not in result["ui"]["states"]
 

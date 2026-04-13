@@ -1,6 +1,7 @@
 import threading
 import time
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -16,12 +17,15 @@ def patch_agent_data_save(monkeypatch):
     monkeypatch.setattr(oauth2_refresh.AgentData, "save", fake_save)
 
 
-def _build_agent(identifier: str) -> SimpleNamespace:
-    return SimpleNamespace(
-        id=identifier,
-        twitter_refresh_token="refresh-token",
-        twitter_access_token=None,
-        twitter_access_token_expires_at=None,
+def _build_agent(identifier: str) -> Any:
+    return cast(
+        Any,
+        SimpleNamespace(
+            id=identifier,
+            twitter_refresh_token="refresh-token",
+            twitter_access_token=None,
+            twitter_access_token_expires_at=None,
+        ),
     )
 
 

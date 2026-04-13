@@ -126,6 +126,7 @@ class UpdateTeamAgent(LeadSkill):
         **kwargs: Any,
     ) -> UpdateTeamAgentOutput:
         context = self.get_context()
+        assert context.team_id is not None
         await verify_agent_in_team(agent_id, context.team_id)
 
         # Build update data from explicitly provided fields

@@ -257,10 +257,9 @@ class ChatMessageCreate(BaseModel):
     id: Annotated[
         str,
         Field(
-            default_factory=lambda: str(XID()),
             description="Unique identifier for the chat message",
         ),
-    ]
+    ] = Field(default_factory=lambda: str(XID()))
     agent_id: Annotated[
         str, Field(description="ID of the agent this message belongs to")
     ]

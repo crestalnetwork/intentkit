@@ -24,8 +24,8 @@ class DummyChainProvider(ChainProvider):
             )
         }
 
-    def init_chain_configs(self, api_key: str = ""):
-        self.api_key = api_key
+    def init_chain_configs(self, *_: object, **__: object) -> None:
+        pass
 
 
 class DummyResponse:

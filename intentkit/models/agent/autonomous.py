@@ -170,7 +170,7 @@ class AgentAutonomous(BaseModel):
                 "x-group": "autonomous",
             },
         ),
-    ]
+    ] = None
     prompt: Annotated[
         str,
         PydanticField(

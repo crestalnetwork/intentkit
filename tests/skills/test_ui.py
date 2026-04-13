@@ -1,5 +1,7 @@
 """Tests for UI skills."""
 
+from typing import Any, cast
+
 import pytest
 
 from intentkit.models.chat import ChatMessageAttachmentType
@@ -18,16 +20,19 @@ async def test_show_card_basic():
 
     content, attachments = result
     assert content == "Card displayed successfully."
+    assert attachments is not None
     assert len(attachments) == 1
 
     att = attachments[0]
     assert att["type"] == ChatMessageAttachmentType.CARD
     assert att["url"] is None
     assert att["lead_text"] is None
-    assert att["json"]["title"] == "Test Card"
-    assert att["json"]["description"] is None
-    assert att["json"]["label"] is None
-    assert att["json"]["image_url"] is None
+    json_data = att["json"]
+    assert json_data is not None
+    assert json_data["title"] == "Test Card"
+    assert json_data["description"] is None
+    assert json_data["label"] is None
+    assert json_data["image_url"] is None
 
 
 @pytest.mark.asyncio
@@ -46,12 +51,15 @@ async def test_show_card_with_lead_text_and_image():
 
     content, attachments = result
     assert content == "Card displayed successfully."
+    assert attachments is not None
     att = attachments[0]
     assert att["lead_text"] == "Check this out:"
     assert att["url"] == "https://example.com"
-    assert att["json"]["image_url"] == "https://example.com/img.png"
-    assert att["json"]["description"] == "Description"
-    assert att["json"]["label"] == "Go"
+    json_data = att["json"]
+    assert json_data is not None
+    assert json_data["image_url"] == "https://example.com/img.png"
+    assert json_data["description"] == "Description"
+    assert json_data["label"] == "Go"
 
 
 @pytest.mark.asyncio
@@ -69,6 +77,7 @@ async def test_ask_user_two_options():
 
     content, attachments = result
     assert content == "Choice displayed successfully."
+    assert attachments is not None
     assert len(attachments) == 1
 
     att = attachments[0]
@@ -76,7 +85,8 @@ async def test_ask_user_two_options():
     assert att["lead_text"] == "Which do you prefer?"
     assert att["url"] is None
 
-    options = att["json"]
+    options = cast(dict[str, Any], att["json"])
+    assert options is not None
     assert "a" in options
     assert "b" in options
     assert "c" not in options
@@ -100,8 +110,10 @@ async def test_ask_user_three_options():
     )
 
     _content, attachments = result
+    assert attachments is not None
     att = attachments[0]
-    options = att["json"]
+    options = cast(dict[str, Any], att["json"])
+    assert options is not None
     assert "c" in options
     assert options["c"]["title"] == "C"
     assert options["c"]["content"] == "Third"

@@ -237,8 +237,8 @@ class TestFormatActivityPush:
         assert result == "[bot1] Hello"
 
     def test_with_post_id(self):
-        from intentkit.core.agent_activity import _format_activity_push
         from intentkit.config.config import config
+        from intentkit.core.agent_activity import _format_activity_push
 
         activity = MagicMock()
         activity.agent_name = "TestBot"

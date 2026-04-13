@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -12,6 +12,7 @@ from intentkit.core.executor import (
     build_executor,
 )
 from intentkit.models.agent import Agent, AgentData
+from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.chat import AuthorType, ChatMessage
 
 # Mock AgentState and AgentContext if needed by type checks
@@ -32,7 +33,7 @@ def mock_agent():
         skills={},
         prompt="You are a helper.",
         temperature=0.7,
-        visibility=0,  # Use int for visibility
+        visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
     )
 
@@ -41,7 +42,8 @@ def mock_agent():
 def mock_agent_data():
     return AgentData(
         id="agent-123",
-        prompt="system prompt",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 

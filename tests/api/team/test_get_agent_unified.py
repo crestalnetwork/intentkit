@@ -49,9 +49,7 @@ class TestAgentVisibleTo:
         async def fake_check_permission(*_args, **_kwargs):
             return True
 
-        monkeypatch.setattr(
-            "app.team.agent.check_permission", fake_check_permission
-        )
+        monkeypatch.setattr("app.team.agent.check_permission", fake_check_permission)
         assert await _agent_visible_to(agent, "user-1") is True
 
     @pytest.mark.asyncio
@@ -61,9 +59,7 @@ class TestAgentVisibleTo:
         async def fake_check_permission(*_args, **_kwargs):
             return False
 
-        monkeypatch.setattr(
-            "app.team.agent.check_permission", fake_check_permission
-        )
+        monkeypatch.setattr("app.team.agent.check_permission", fake_check_permission)
         assert await _agent_visible_to(agent, "user-1") is False
 
     @pytest.mark.asyncio
@@ -73,9 +69,7 @@ class TestAgentVisibleTo:
         async def fake_check_permission(*_args, **_kwargs):
             return True
 
-        monkeypatch.setattr(
-            "app.team.agent.check_permission", fake_check_permission
-        )
+        monkeypatch.setattr("app.team.agent.check_permission", fake_check_permission)
         assert await _agent_visible_to(agent, "user-1") is True
 
     @pytest.mark.asyncio
@@ -90,8 +84,6 @@ class TestAgentVisibleTo:
         async def fake_check_permission(*_args, **_kwargs):
             return False
 
-        monkeypatch.setattr(
-            "app.team.agent.check_permission", fake_check_permission
-        )
+        monkeypatch.setattr("app.team.agent.check_permission", fake_check_permission)
         assert await _agent_visible_to(agent, None) is False
         assert await _agent_visible_to(agent, "user-1") is False

@@ -53,7 +53,7 @@ class AgentPostBase(BaseModel):
             description="URL of the cover image",
             max_length=1000,
         ),
-    ]
+    ] = None
     markdown: Annotated[
         str,
         PydanticField(
@@ -80,11 +80,10 @@ class AgentPostBase(BaseModel):
     tags: Annotated[
         list[str],
         PydanticField(
-            default_factory=list,
             description="List of tags",
             max_length=3,
         ),
-    ]
+    ] = []
 
     @field_validator("tags", mode="before")
     @classmethod

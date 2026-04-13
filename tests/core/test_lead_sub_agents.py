@@ -50,7 +50,10 @@ async def test_get_self_info_defaults(mock_lead_runtime):
 
     assert result.name == "Team Lead"
     assert result.avatar is None
-    assert "Helpful team assistant" in result.personality
+    assert (
+        result.personality is not None
+        and "Helpful team assistant" in result.personality
+    )
     assert result.memory is None
 
 

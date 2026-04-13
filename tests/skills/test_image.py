@@ -105,6 +105,7 @@ async def test_get_skills_filters_by_state():
             image_grok="disabled",
             image_flux_pro="public",
             image_riverflow="disabled",
+            image_minimax="disabled",
         ),
     }
 

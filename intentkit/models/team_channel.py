@@ -130,14 +130,14 @@ class TeamChannel(BaseModel):
     ]
     enabled: Annotated[
         bool, Field(default=True, description="Whether the channel is enabled")
-    ]
+    ] = True
     config: Annotated[
         dict[str, object] | None,
         Field(default=None, description="Platform-specific config"),
-    ]
+    ] = None
     owner_id: Annotated[
         str | None, Field(default=None, description="IntentKit user_id")
-    ]
+    ] = None
     created_by: Annotated[str, Field(description="Who set this up")]
     created_at: Annotated[datetime, Field(description="Creation timestamp")]
     updated_at: Annotated[datetime, Field(description="Last update timestamp")]

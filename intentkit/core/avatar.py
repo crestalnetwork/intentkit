@@ -52,7 +52,7 @@ def _normalize_avatar(image_bytes: bytes, size: int = 512) -> bytes:
         top = (h - side) // 2
         img = img.crop((left, top, left + side, top + side))
     if img.size != (size, size):
-        img = img.resize((size, size), Image.LANCZOS)
+        img = img.resize((size, size), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()

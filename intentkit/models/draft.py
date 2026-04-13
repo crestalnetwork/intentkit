@@ -120,10 +120,9 @@ class AgentDraft(AgentUserInput):
     id: Annotated[
         str,
         Field(
-            default_factory=lambda: str(XID()),
             description="Unique identifier for the draft",
         ),
-    ]
+    ] = Field(default_factory=lambda: str(XID()))
     agent_id: Annotated[
         str,
         Field(
@@ -137,7 +136,7 @@ class AgentDraft(AgentUserInput):
             description="Owner identifier of the agent, used for access control",
             max_length=50,
         ),
-    ]
+    ] = None
     team_id: Annotated[
         str | None,
         Field(
@@ -145,35 +144,35 @@ class AgentDraft(AgentUserInput):
             description="Team identifier of the agent, used for access control",
             max_length=50,
         ),
-    ]
+    ] = None
     version: Annotated[
         str | None,
         Field(
             default=None,
             description="Version hash of the agent",
         ),
-    ]
+    ] = None
     project_id: Annotated[
         str | None,
         Field(
             default=None,
             description="Project ID, forward compatible",
         ),
-    ]
+    ] = None
     last_draft_id: Annotated[
         str | None,
         Field(
             default=None,
             description="ID of the last draft that was deployed",
         ),
-    ]
+    ] = None
     deployed_at: Annotated[
         datetime | None,
         Field(
             default=None,
             description="Timestamp when the agent was deployed",
         ),
-    ]
+    ] = None
     # auto timestamp
     created_at: Annotated[
         datetime,

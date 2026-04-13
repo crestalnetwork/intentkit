@@ -100,4 +100,4 @@ async def test_hourly_budget_exceeded_just_over_boundary(monkeypatch):
 
     result = await check_hourly_budget_exceeded(scope)
     assert result.exceeded
-    assert result.current_total > result.budget
+    assert result.budget is not None and result.current_total > result.budget

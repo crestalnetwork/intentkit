@@ -30,7 +30,7 @@ class TestUpdateMemoryInput:
 
     def test_content_required(self):
         with pytest.raises(Exception):
-            UpdateMemoryInput()
+            UpdateMemoryInput()  # pyright: ignore[reportCallIssue]
 
 
 class TestUpdateMemorySkill:

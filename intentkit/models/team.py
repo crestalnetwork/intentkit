@@ -288,21 +288,21 @@ class TeamCreate(BaseModel):
             default=None,
             description="Avatar URL of the team",
         ),
-    ]
+    ] = None
     default_channel: Annotated[
         str | None,
         Field(
             default=None,
             description="Default notification channel (telegram, wechat)",
         ),
-    ]
+    ] = None
     default_channel_chat_id: Annotated[
         str | None,
         Field(
             default=None,
             description="Default push chat ID within the channel",
         ),
-    ]
+    ] = None
 
     async def save(self, creator_user_id: str) -> "Team":
         """Create a new team and add the creator as owner.
@@ -345,17 +345,17 @@ class Team(TeamCreate):
             exclude=True,
             description="Persisted lead agent config (internal only)",
         ),
-    ]
+    ] = None
     role: Annotated[
         TeamRole | None,
         Field(
             default=None, description="User's role (only set in user-specific queries)"
         ),
-    ]
+    ] = None
     plan: Annotated[
         TeamPlan,
         Field(default=TeamPlan.NONE, description="Pricing plan tier"),
-    ]
+    ] = TeamPlan.NONE
 
     @field_validator("plan", mode="before")
     @classmethod
@@ -368,11 +368,11 @@ class Team(TeamCreate):
     plan_expires_at: Annotated[
         datetime | None,
         Field(default=None, description="When the current plan expires"),
-    ]
+    ] = None
     next_credit_issue_at: Annotated[
         datetime | None,
         Field(default=None, description="Next scheduled monthly credit issue"),
-    ]
+    ] = None
     created_at: Annotated[
         datetime, Field(description="Timestamp when this team was created")
     ]

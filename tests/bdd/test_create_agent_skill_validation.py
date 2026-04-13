@@ -40,4 +40,5 @@ async def test_create_agent_accepts_valid_skills():
         skills={"ui": {"enabled": True, "states": {"ui_show_card": "public"}}},
     )
     created, _ = await create_agent(agent)
+    assert created.skills is not None
     assert created.skills["ui"]["states"]["ui_show_card"] == "public"

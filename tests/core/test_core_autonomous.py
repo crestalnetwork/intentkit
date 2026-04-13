@@ -4,6 +4,7 @@ import pytest
 
 from intentkit.models.agent.autonomous import (
     AgentAutonomous,
+    AgentAutonomousStatus,
     AutonomousCreateRequest,
     AutonomousUpdateRequest,
     minutes_to_cron,
@@ -48,7 +49,9 @@ async def test_add_autonomous_task():
         assert result.enabled is True
         assert result.has_memory is True
         assert result.minutes is None  # minutes should not be set
-        assert result.status.value == "waiting"  # Default status for enabled task
+        assert (
+            result.status is not None and result.status.value == "waiting"
+        )  # Default status for enabled task
         assert result.id is not None  # ID should be auto-generated
 
         # Verify DB was updated
@@ -72,7 +75,7 @@ async def test_update_autonomous_task():
         prompt="Original prompt",
         enabled=True,
         has_memory=True,
-        status="waiting",
+        status=AgentAutonomousStatus.WAITING,
     )
 
     update_request = AutonomousUpdateRequest(
@@ -154,7 +157,7 @@ async def test_list_autonomous_tasks():
         cron="*/5 * * * *",
         prompt="First task",
         enabled=True,
-        status="waiting",
+        status=AgentAutonomousStatus.WAITING,
     )
     task2 = AgentAutonomous(
         id="task-2",
@@ -316,7 +319,7 @@ def test_normalize_converts_minutes_to_cron():
 
     assert normalized.cron == "*/10 * * * *"
     assert normalized.minutes is None  # Should be cleared
-    assert normalized.status.value == "waiting"  # Should be set for enabled
+    assert normalized.status is not None and normalized.status.value == "waiting"
 
 
 def test_normalize_preserves_cron_if_set():
@@ -335,7 +338,7 @@ def test_normalize_preserves_cron_if_set():
     assert normalized.cron == "0 */2 * * *"
     # minutes should remain (cron was already set)
     assert normalized.minutes == 10
-    assert normalized.status.value == "waiting"
+    assert normalized.status is not None and normalized.status.value == "waiting"
 
 
 def test_normalize_clears_status_when_disabled():
@@ -345,7 +348,7 @@ def test_normalize_clears_status_when_disabled():
         minutes=15,
         prompt="Test prompt",
         enabled=False,
-        status="waiting",
+        status=AgentAutonomousStatus.WAITING,
     )
 
     normalized = task.normalize_status_defaults()

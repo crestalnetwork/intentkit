@@ -40,6 +40,7 @@ class LeadListAutonomousTasks(LeadSkill):
     @override
     async def _arun(self, agent_id: str, **kwargs: Any) -> ListAutonomousTasksOutput:
         context = self.get_context()
+        assert context.team_id is not None
         await verify_agent_in_team(agent_id, context.team_id)
         tasks = await list_autonomous_tasks(agent_id)
         return ListAutonomousTasksOutput(tasks=tasks)

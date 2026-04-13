@@ -24,6 +24,7 @@ async def test_override_agent_sanitizes_stale_skills():
     )
     result, _ = await override_agent("test-sanitize-1", update)
     assert "nonexistent_cat" not in (result.skills or {})
+    assert result.skills is not None
     assert "deleted_skill" not in result.skills["ui"]["states"]
     assert "ui_show_card" in result.skills["ui"]["states"]
 
@@ -46,5 +47,6 @@ async def test_patch_agent_sanitizes_stale_skills():
         },
     )
     result, _ = await patch_agent("test-sanitize-2", update)
+    assert result.skills is not None
     assert "old_skill" not in result.skills["ui"]["states"]
     assert "ui_show_card" in result.skills["ui"]["states"]

@@ -1,6 +1,7 @@
 """Tests for intentkit.core.team.membership module."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -34,6 +35,8 @@ def _make_team(team_id="my-team", name="My Team", avatar=None):
 
 
 class TestValidateTeamIdFormat:
+    validate: Any = None
+
     def setup_method(self):
         from intentkit.core.team.membership import validate_team_id_format
 
@@ -42,12 +45,12 @@ class TestValidateTeamIdFormat:
     def test_too_short(self):
         result = self.validate("ab")
         assert result["valid"] is False
-        assert "at least 3" in result["reason"]
+        assert isinstance(result["reason"], str) and "at least 3" in result["reason"]
 
     def test_too_long(self):
         result = self.validate("a" * 21)
         assert result["valid"] is False
-        assert "at most 20" in result["reason"]
+        assert isinstance(result["reason"], str) and "at most 20" in result["reason"]
 
     def test_uppercase_rejected(self):
         result = self.validate("MyTeam")
@@ -94,7 +97,7 @@ class TestValidateTeamId:
 
         result = await validate_team_id("ab")
         assert result["valid"] is False
-        assert "at least 3" in result["reason"]
+        assert isinstance(result["reason"], str) and "at least 3" in result["reason"]
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.Team.get", new_callable=AsyncMock)
@@ -104,7 +107,7 @@ class TestValidateTeamId:
         mock_get.return_value = _make_team()
         result = await validate_team_id("my-team")
         assert result["valid"] is False
-        assert "already taken" in result["reason"]
+        assert isinstance(result["reason"], str) and "already taken" in result["reason"]
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.Team.get", new_callable=AsyncMock)

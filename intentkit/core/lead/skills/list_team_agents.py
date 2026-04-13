@@ -42,6 +42,7 @@ class ListTeamAgents(LeadSkill):
     @override
     async def _arun(self, **kwargs: Any) -> ListTeamAgentsOutput:
         context = self.get_context()
+        assert context.team_id is not None
         agents = await get_team_agents(context.team_id)
         summaries = [
             AgentSummary(
