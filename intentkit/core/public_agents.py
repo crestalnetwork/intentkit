@@ -238,6 +238,16 @@ async def sync_public_agents() -> None:
                         agent.id,
                     )
 
+        # Collect agent IDs for auto-subscription before leaving the session.
+        # ORM objects become detached after session close, so we capture IDs now.
+        synced_agent_ids: list[str] = []
+        for slug, _agent_update, _new_hash, _description, _tags in agents_to_sync:
+            existing = existing_by_slug.get(slug)
+            if existing:
+                synced_agent_ids.append(existing.id)
+            else:
+                synced_agent_ids.append(f"public-{slug}")
+
         try:
             await session.commit()
         except Exception:
@@ -248,12 +258,7 @@ async def sync_public_agents() -> None:
     # Auto-subscribe the "public" team to each synced agent
     from intentkit.core.team.subscription import auto_subscribe_team
 
-    for slug, agent_update, new_hash, description, tags in agents_to_sync:
-        existing = existing_by_slug.get(slug)
-        if existing:
-            agent_id = existing.id
-        else:
-            agent_id = f"public-{slug}"
+    for agent_id in synced_agent_ids:
         try:
             await auto_subscribe_team("public", agent_id)
         except Exception:
