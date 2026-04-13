@@ -135,13 +135,12 @@ func (m *Manager) forwardTeamMessage(bot *telego.Bot, message telego.Message, te
 	slog.Info("Received team message", "team_id", teamID, "chat_id", message.Chat.ID)
 	_ = bot.SendChatAction(context.Background(), tu.ChatAction(tu.ID(message.Chat.ID), telego.ChatActionTyping))
 
-	telegramID := fmt.Sprintf("%d", message.From.ID)
-
 	payload := map[string]interface{}{
-		"team_id":     teamID,
-		"telegram_id": telegramID,
-		"chat_id":     chatIDStr,
-		"message":     message.Text,
+		"team_id":         teamID,
+		"channel_type":    "telegram",
+		"channel_user_id": fmt.Sprintf("%d", message.From.ID),
+		"chat_id":         chatIDStr,
+		"message":         message.Text,
 	}
 
 	sender := NewTelegramSender(bot, message.Chat.ID)
@@ -179,10 +178,11 @@ func (m *Manager) handleCallbackQuery(bot *telego.Bot, query telego.CallbackQuer
 		}
 
 		payload := map[string]interface{}{
-			"team_id":     agentID,
-			"telegram_id": fmt.Sprintf("%d", query.From.ID),
-			"chat_id":     chatIDStr,
-			"message":     query.Data,
+			"team_id":         agentID,
+			"channel_type":    "telegram",
+			"channel_user_id": fmt.Sprintf("%d", query.From.ID),
+			"chat_id":         chatIDStr,
+			"message":         query.Data,
 		}
 		err := m.apiClient.StreamTeamLead(context.Background(), payload, func(msg types.ChatMessage) error {
 			shared.DispatchMessage(context.Background(), msg, sender)

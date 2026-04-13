@@ -24,6 +24,7 @@ from intentkit.core.lead.service import verify_team_membership
 from intentkit.core.team.channel import set_push_channel, set_push_channel_if_empty
 from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
 from intentkit.models.user import User, UserUpdate
+from intentkit.utils.error import IntentKitAPIError
 
 # ⚠️ INTERNAL API ONLY - DO NOT EXPOSE TO PUBLIC INTERNET ⚠️
 core_router = APIRouter(
@@ -75,70 +76,45 @@ async def stream(
     return _sse_response(stream_agent(message))
 
 
-class TeamLeadExecuteRequest(BaseModel):
-    """Request body for team lead execution from Telegram."""
+class LeadExecuteRequest(BaseModel):
+    """Unified request body for team lead execution from any channel."""
 
     team_id: str
-    telegram_id: str
+    channel_type: str  # "telegram", "wechat", etc.
+    channel_user_id: str  # channel-specific user identifier
     chat_id: str
     message: str
 
 
-class WechatLeadExecuteRequest(BaseModel):
-    """Request body for team lead execution from WeChat."""
+# Per-channel config: (user_lookup, bind_field, author_type, chat_id_prefix)
+_CHANNEL_CONFIG: dict[
+    str,
+    tuple[str, str, AuthorType, str],
+] = {
+    "telegram": ("get_by_telegram_id", "telegram_id", AuthorType.TELEGRAM, "tg_team"),
+    "wechat": ("get_by_wechat_id", "wechat_id", AuthorType.WECHAT, "wx_team"),
+}
 
-    team_id: str
-    wechat_user_id: str  # e.g. xxxxx@im.wechat
-    chat_id: str
-    message: str
 
-
-async def _resolve_telegram_lead(
-    request: TeamLeadExecuteRequest,
+async def _resolve_lead(
+    request: LeadExecuteRequest,
 ) -> tuple[str, ChatMessageCreate]:
-    """Resolve Telegram user (with auto-bind) and build ChatMessageCreate for team lead."""
-    user = await User.get_by_telegram_id(request.telegram_id)
-    if not user:
-        from intentkit.models.team import Team
+    """Resolve channel user (with auto-bind) and build ChatMessageCreate for team lead."""
+    cfg = _CHANNEL_CONFIG.get(request.channel_type)
+    if not cfg:
+        raise IntentKitAPIError(
+            400, "Bad Request", f"Unsupported channel type: {request.channel_type}"
+        )
+    lookup_method, bind_field, author_type, chat_prefix = cfg
 
-        owner_id = await Team.get_owner(request.team_id)
-        if owner_id:
-            await UserUpdate.model_validate({"telegram_id": request.telegram_id}).patch(
-                owner_id
-            )
-            user = await User.get(owner_id)
-
-    if user:
-        user_id = user.id
-        await verify_team_membership(request.team_id, user_id)
-    else:
-        user_id = request.telegram_id
-
-    chat_msg = ChatMessageCreate(
-        id=str(XID()),
-        agent_id=f"team-{request.team_id}",
-        chat_id=f"tg_team:{request.team_id}:{request.chat_id}",
-        user_id=user_id,
-        author_id=user_id,
-        author_type=AuthorType.TELEGRAM,
-        thread_type=AuthorType.TELEGRAM,
-        message=request.message,
-    )
-    return user_id, chat_msg
-
-
-async def _resolve_wechat_lead(
-    request: WechatLeadExecuteRequest,
-) -> tuple[str, ChatMessageCreate]:
-    """Resolve WeChat user (with auto-bind) and build ChatMessageCreate for team lead."""
-    user = await User.get_by_wechat_id(request.wechat_user_id)
+    user = await getattr(User, lookup_method)(request.channel_user_id)
     if not user:
         from intentkit.models.team import Team
 
         owner_id = await Team.get_owner(request.team_id)
         if owner_id:
             await UserUpdate.model_validate(
-                {"wechat_id": request.wechat_user_id}
+                {bind_field: request.channel_user_id}
             ).patch(owner_id)
             user = await User.get(owner_id)
 
@@ -146,16 +122,16 @@ async def _resolve_wechat_lead(
         user_id = user.id
         await verify_team_membership(request.team_id, user_id)
     else:
-        user_id = request.wechat_user_id
+        user_id = request.channel_user_id
 
     chat_msg = ChatMessageCreate(
         id=str(XID()),
         agent_id=f"team-{request.team_id}",
-        chat_id=f"wx_team:{request.team_id}:{request.chat_id}",
+        chat_id=f"{chat_prefix}:{request.team_id}:{request.chat_id}",
         user_id=user_id,
         author_id=user_id,
-        author_type=AuthorType.WECHAT,
-        thread_type=AuthorType.WECHAT,
+        author_type=author_type,
+        thread_type=author_type,
         message=request.message,
     )
     return user_id, chat_msg
@@ -164,10 +140,10 @@ async def _resolve_wechat_lead(
 # ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
 @core_router.post("/lead/execute", response_model=list[ChatMessage])
 async def execute_team_lead(
-    request: TeamLeadExecuteRequest = Body(...),
+    request: LeadExecuteRequest = Body(...),
 ) -> list[ChatMessage]:
-    """Execute the team lead agent for a Telegram team channel message."""
-    user_id, chat_msg = await _resolve_telegram_lead(request)
+    """Execute the team lead agent for a channel message."""
+    user_id, chat_msg = await _resolve_lead(request)
     messages: list[ChatMessage] = []
     async for chat_message in stream_lead(request.team_id, user_id, chat_msg):
         messages.append(chat_message)
@@ -177,33 +153,10 @@ async def execute_team_lead(
 # ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
 @core_router.post("/lead/stream")
 async def stream_team_lead(
-    request: TeamLeadExecuteRequest = Body(...),
+    request: LeadExecuteRequest = Body(...),
 ) -> StreamingResponse:
-    """Stream the team lead agent execution for a Telegram team channel message."""
-    user_id, chat_msg = await _resolve_telegram_lead(request)
-    return _sse_response(stream_lead(request.team_id, user_id, chat_msg))
-
-
-# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
-@core_router.post("/lead/wechat/execute", response_model=list[ChatMessage])
-async def execute_wechat_team_lead(
-    request: WechatLeadExecuteRequest = Body(...),
-) -> list[ChatMessage]:
-    """Execute the team lead agent for a WeChat team channel message."""
-    user_id, chat_msg = await _resolve_wechat_lead(request)
-    messages: list[ChatMessage] = []
-    async for chat_message in stream_lead(request.team_id, user_id, chat_msg):
-        messages.append(chat_message)
-    return messages
-
-
-# ⚠️ INTERNAL USE ONLY - This endpoint bypasses authentication for internal microservice calls
-@core_router.post("/lead/wechat/stream")
-async def stream_wechat_team_lead(
-    request: WechatLeadExecuteRequest = Body(...),
-) -> StreamingResponse:
-    """Stream the team lead agent execution for a WeChat team channel message."""
-    user_id, chat_msg = await _resolve_wechat_lead(request)
+    """Stream the team lead agent execution for a channel message."""
+    user_id, chat_msg = await _resolve_lead(request)
     return _sse_response(stream_lead(request.team_id, user_id, chat_msg))
 
 

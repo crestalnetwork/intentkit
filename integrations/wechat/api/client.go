@@ -33,9 +33,9 @@ func (c *Client) CheckHealth() error {
 	return nil
 }
 
-// StreamWechatTeamLead calls the /core/lead/wechat/stream endpoint with SSE streaming.
-func (c *Client) StreamWechatTeamLead(ctx context.Context, payload map[string]interface{}, cb shared.StreamCallback) error {
-	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/wechat/stream", payload, cb)
+// StreamTeamLead calls the /core/lead/stream endpoint with SSE streaming.
+func (c *Client) StreamTeamLead(ctx context.Context, payload map[string]interface{}, cb shared.StreamCallback) error {
+	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/stream", payload, cb)
 }
 
 // SetPushChannel sets (or conditionally sets) the push channel for a team.

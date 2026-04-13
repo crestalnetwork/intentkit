@@ -326,14 +326,15 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 
 	// Call Core API via SSE streaming
 	payload := map[string]interface{}{
-		"team_id":        teamID,
-		"wechat_user_id": msg.FromUserID,
-		"chat_id":        msg.FromUserID,
-		"message":        text,
+		"team_id":         teamID,
+		"channel_type":    "wechat",
+		"channel_user_id": msg.FromUserID,
+		"chat_id":         msg.FromUserID,
+		"message":         text,
 	}
 
 	sender := NewWechatSender(entry.client, msg.FromUserID, msg.ContextToken)
-	err := m.apiClient.StreamWechatTeamLead(context.Background(), payload, func(chatMsg types.ChatMessage) error {
+	err := m.apiClient.StreamTeamLead(context.Background(), payload, func(chatMsg types.ChatMessage) error {
 		shared.DispatchMessage(context.Background(), chatMsg, sender)
 		return nil
 	})
