@@ -29,6 +29,9 @@ func DispatchMessage(ctx context.Context, msg types.ChatMessage, sender MessageS
 				slog.Error("Failed to send skill status", "error", err)
 			}
 		}
+		for _, att := range msg.Attachments {
+			dispatchAttachment(ctx, att, sender)
+		}
 
 	case types.AuthorTypeSystem:
 		if msg.Message == "" {
