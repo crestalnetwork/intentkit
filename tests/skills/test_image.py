@@ -57,6 +57,8 @@ class _MockConfig:
     def __init__(self, **kwargs: str | None):
         self.openai_api_key = kwargs.get("openai_api_key")
         self.google_api_key = kwargs.get("google_api_key")
+        self.google_genai_use_vertexai = kwargs.get("google_genai_use_vertexai", False)
+        self.google_cloud_project = kwargs.get("google_cloud_project")
         self.xai_api_key = kwargs.get("xai_api_key")
         self.openrouter_api_key = kwargs.get("openrouter_api_key")
         self.minimax_api_key = kwargs.get("minimax_api_key")
