@@ -52,6 +52,31 @@ async def get_team_agent(agent_id: str, team_id: str) -> Agent:
     return agent
 
 
+async def get_accessible_agent(agent_id: str, team_id: str) -> Agent:
+    """Fetch an agent that the team may interact with (read/chat).
+
+    Allows:
+    - Agents owned by the team (same as get_team_agent).
+    - Public, non-archived agents (any authenticated team member can access).
+
+    Raises:
+        IntentKitAPIError 404 if agent not found or not accessible.
+    """
+    agent = await get_agent_by_id_or_slug(agent_id)
+    if not agent:
+        raise IntentKitAPIError(
+            status_code=404, key="NotFound", message="Agent not found"
+        )
+    if agent.team_id == team_id:
+        return agent
+    is_public = (
+        agent.visibility is not None and agent.visibility >= AgentVisibility.PUBLIC
+    )
+    if is_public and agent.archived_at is None:
+        return agent
+    raise IntentKitAPIError(status_code=404, key="NotFound", message="Agent not found")
+
+
 async def _agent_visible_to(agent: Agent, user_id: str | None) -> bool:
     """Return True if the caller may view this agent.
 
@@ -190,7 +215,7 @@ async def get_agent(
 ) -> Response:
     """Get a single agent by ID or slug within the team."""
     _user_id, team_id = auth
-    agent = await get_team_agent(agent_id, team_id)
+    agent = await get_accessible_agent(agent_id, team_id)
     agent_data = await AgentData.get(agent.id)
     agent_response = await AgentResponse.from_agent(agent, agent_data)
     return Response(

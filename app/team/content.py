@@ -6,7 +6,6 @@ from sqlalchemy import select
 
 from intentkit.config.config import config
 from intentkit.config.db import get_session
-from intentkit.core.lead.service import verify_agent_in_team
 from intentkit.core.team.feed import query_activity_feed, query_post_feed
 from intentkit.core.team.subscription import (
     get_subscriptions,
@@ -19,6 +18,7 @@ from intentkit.models.team_feed import TeamFeedPage, TeamSubscription
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.utils.pdf import post_pdf_response
 
+from app.team.agent import get_accessible_agent
 from app.team.auth import verify_team_member
 
 team_content_router = APIRouter(tags=["Team Content"])
@@ -105,7 +105,7 @@ async def get_agent_activities(
 ) -> list[AgentActivity]:
     """Get all activities for a team's agent."""
     _, team_id = auth
-    await verify_agent_in_team(agent_id, team_id)
+    await get_accessible_agent(agent_id, team_id)
 
     async with get_session() as db:
         stmt = (
@@ -128,7 +128,7 @@ async def get_agent_posts(
 ) -> list[AgentPostBrief]:
     """Get all posts for a team's agent with truncated content."""
     _, team_id = auth
-    await verify_agent_in_team(agent_id, team_id)
+    await get_accessible_agent(agent_id, team_id)
 
     async with get_session() as db:
         stmt = (
@@ -160,7 +160,7 @@ async def get_post(
                 status_code=404, key="NotFound", message="Post not found"
             )
 
-    await verify_agent_in_team(post.agent_id, team_id)
+    await get_accessible_agent(post.agent_id, team_id)
     return AgentPost.model_validate(post)
 
 
@@ -183,5 +183,5 @@ async def get_post_pdf(
                 status_code=404, key="NotFound", message="Post not found"
             )
 
-    await verify_agent_in_team(post.agent_id, team_id)
+    await get_accessible_agent(post.agent_id, team_id)
     return await post_pdf_response(post, cdn_base=config.aws_s3_cdn_url)
