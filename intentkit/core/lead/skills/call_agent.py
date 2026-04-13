@@ -156,7 +156,7 @@ class LeadCallAgent(LeadSkill):
         return ChatMessageCreate(
             id=str(XID()),
             agent_id=target_agent_id,
-            chat_id=f"call-{context.agent_id}-{context.chat_id}",
+            chat_id=f"call-{XID()}",
             user_id=context.user_id,
             author_id=context.agent_id,
             author_type=AuthorType.INTERNAL,
