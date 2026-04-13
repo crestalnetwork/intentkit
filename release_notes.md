@@ -1,8 +1,7 @@
-# Release v0.17.40
+# Release v0.17.41
 
 ## Bug Fixes
 
-- Fixed WeChat image sending — images now display correctly instead of falling back to text links
-- Rewrote WeChat CDN upload protocol to correctly implement the iLink API specification (client-side encryption key generation, proper upload flow, correct message format)
+- Fixed a bug where sub-agent calls (via `call_agent`) reused the same conversation thread across invocations, causing stale message history to interfere with new skill configurations. Sub-agent calls are now stateless — each call gets a fresh conversation context.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.39...v0.17.40
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.40...v0.17.41
