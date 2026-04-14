@@ -7,7 +7,11 @@ import pytest
 from langchain_core.tools.base import ToolException
 
 from intentkit.abstracts.graph import AgentContext
-from intentkit.core.system_skills.call_agent import MAX_CALL_DEPTH, CallAgentSkill
+from intentkit.core.system_skills.call_agent import (
+    MAX_CALL_DEPTH,
+    CallAgentSkill,
+    render_attachments_awareness,
+)
 from intentkit.core.system_skills.create_activity import (
     CreateActivityInput,
     CreateActivitySkill,
@@ -21,7 +25,11 @@ from intentkit.core.system_skills.read_webpage import (
 from intentkit.core.system_skills.recent_activities import RecentActivitiesSkill
 from intentkit.core.system_skills.recent_posts import RecentPostsSkill
 from intentkit.core.system_skills.search_web import SearchWebZaiSkill
-from intentkit.models.chat import AuthorType
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessageAttachment,
+    ChatMessageAttachmentType,
+)
 
 
 @pytest.fixture
@@ -148,6 +156,130 @@ async def test_call_agent_success(mock_runtime):
     content, attachments = result
     assert content == "Hello from agent"
     assert isinstance(attachments, list)
+
+
+@pytest.mark.asyncio
+async def test_call_agent_success_with_attachments(mock_runtime):
+    """Successful call appends an attachments awareness block to the text."""
+    mock_resolved = MagicMock()
+    mock_resolved.id = "target_id"
+    mock_resolved.slug = "target_slug"
+
+    attachments: list[ChatMessageAttachment] = [
+        {
+            "type": ChatMessageAttachmentType.IMAGE,
+            "lead_text": "Here is the image",
+            "url": "https://example.com/img.png",
+            "json": None,
+        },
+        {
+            "type": ChatMessageAttachmentType.CARD,
+            "lead_text": None,
+            "url": "https://example.com/card",
+            "json": {
+                "title": "Status",
+                "description": "All good",
+                "label": None,
+                "image_url": None,
+            },
+        },
+    ]
+
+    mock_msg = MagicMock()
+    mock_msg.author_type = AuthorType.AGENT
+    mock_msg.message = "Done."
+    mock_msg.attachments = attachments
+
+    skill = CallAgentSkill()
+    with (
+        patch(
+            "intentkit.core.agent.get_agent_by_id_or_slug",
+            new=AsyncMock(return_value=mock_resolved),
+        ),
+        patch(
+            "intentkit.core.engine.execute_agent",
+            new=AsyncMock(return_value=[mock_msg]),
+        ),
+    ):
+        content, returned_attachments = await skill._arun(  # pyright: ignore[reportPrivateUsage]
+            agent_id="target_id", message="hello"
+        )
+
+    assert content.startswith("Done.")
+    assert "already been sent to the user" in content
+    assert "do not resend" in content
+    assert "[image]" in content
+    assert "https://example.com/img.png" in content
+    assert "[card]" in content
+    assert 'title="Status"' in content
+    assert returned_attachments == attachments
+
+
+def test_render_attachments_awareness_empty():
+    """Empty attachment list yields an empty string."""
+    assert render_attachments_awareness([]) == ""
+
+
+def test_render_attachments_awareness_xmtp_uses_metadata_description():
+    """XMTP attachments surface metadata.description instead of raw calldata."""
+    attachments: list[ChatMessageAttachment] = [
+        {
+            "type": ChatMessageAttachmentType.XMTP,
+            "lead_text": None,
+            "url": None,
+            "json": {
+                "version": "1.0",
+                "from": "0xabc",
+                "chainId": "0x1",
+                "calls": [
+                    {
+                        "to": "0xdef",
+                        "value": "0x0",
+                        "data": "0x" + "a" * 200,
+                        "metadata": {
+                            "description": "Send 10 USDC to 0xdef",
+                            "transactionType": "erc20_transfer",
+                        },
+                    }
+                ],
+            },
+        }
+    ]
+    rendered = render_attachments_awareness(attachments)
+
+    assert "[xmtp]" in rendered
+    assert 'description="Send 10 USDC to 0xdef"' in rendered
+    assert "0x" + "a" * 200 not in rendered
+
+
+def test_render_attachments_awareness_choice_and_link():
+    """Choice and link types render with their type-specific fields."""
+    attachments: list[ChatMessageAttachment] = [
+        {
+            "type": ChatMessageAttachmentType.LINK,
+            "lead_text": "Docs",
+            "url": "https://example.com",
+            "json": None,
+        },
+        {
+            "type": ChatMessageAttachmentType.CHOICE,
+            "lead_text": "Pick one?",
+            "url": None,
+            "json": {
+                "a": {"title": "Yes", "content": ""},
+                "b": {"title": "No", "content": ""},
+            },
+        },
+    ]
+    rendered = render_attachments_awareness(attachments)
+
+    assert "[link]" in rendered
+    assert 'lead_text="Docs"' in rendered
+    assert "url=https://example.com" in rendered
+    assert "[choice]" in rendered
+    assert 'lead_text="Pick one?"' in rendered
+    assert 'a="Yes"' in rendered
+    assert 'b="No"' in rendered
 
 
 @pytest.mark.asyncio

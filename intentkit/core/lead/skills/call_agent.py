@@ -12,7 +12,11 @@ from pydantic import BaseModel, Field
 
 from intentkit.abstracts.graph import AgentContext
 from intentkit.core.lead.skills.base import LeadSkill
-from intentkit.core.system_skills.call_agent import CALL_AGENT_TIMEOUT, MAX_CALL_DEPTH
+from intentkit.core.system_skills.call_agent import (
+    CALL_AGENT_TIMEOUT,
+    MAX_CALL_DEPTH,
+    render_attachments_awareness,
+)
 from intentkit.models.chat import (
     AuthorType,
     ChatMessage,
@@ -177,7 +181,10 @@ class LeadCallAgent(LeadSkill):
             raise ToolException(f"No response received from agent '{agent_id}'")
 
         if last_message.author_type == AuthorType.AGENT:
-            return last_message.message, all_attachments
+            response_text = last_message.message + render_attachments_awareness(
+                all_attachments
+            )
+            return response_text, all_attachments
 
         if last_message.author_type == AuthorType.SYSTEM:
             error_info = ""
