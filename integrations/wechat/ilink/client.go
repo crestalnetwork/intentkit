@@ -1,7 +1,6 @@
 package ilink
 
 import (
-	"bytes"
 	"context"
 	"crypto/aes"
 	"crypto/md5"
@@ -10,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
@@ -19,32 +17,61 @@ import (
 	"time"
 
 	"github.com/rs/xid"
+	"resty.dev/v3"
 )
 
 const channelVersion = "1.0.2"
 
+// maxLogBodySize caps response body strings attached to log entries.
+const maxLogBodySize = 1024
+
 // Client communicates with the WeChat iLink Bot API.
 type Client struct {
 	baseURL    string
-	botToken   string
 	botID      string
-	httpClient *http.Client // for API calls (40s timeout)
-	cdnClient  *http.Client // for CDN uploads (2min timeout)
-	updatesBuf string       // cursor for long-polling
+	apiClient  *resty.Client // for /ilink/bot/* calls
+	cdnClient  *resty.Client // for CDN uploads (with retries)
+	updatesBuf string        // cursor for long-polling
 }
 
 // NewClient creates an authenticated iLink API client.
 func NewClient(baseURL, botToken, botID string) *Client {
+	apiClient := resty.New().
+		SetTimeout(40 * time.Second).
+		SetHeaders(map[string]string{
+			"Content-Type":      "application/json",
+			"AuthorizationType": "ilink_bot_token",
+			"Authorization":     "Bearer " + botToken,
+		})
+
+	// CDN upload retries 2 times (3 attempts total) with exponential backoff.
+	// POST is non-idempotent, but filekey is random per call so dup uploads are safe.
+	cdnClient := resty.New().
+		SetTimeout(2 * time.Minute).
+		SetRetryCount(2).
+		SetRetryWaitTime(500 * time.Millisecond).
+		SetRetryMaxWaitTime(3 * time.Second).
+		SetAllowNonIdempotentRetry(true).
+		AddRetryHooks(func(resp *resty.Response, err error) {
+			attrs := []any{}
+			if resp != nil {
+				attrs = append(attrs,
+					"status", resp.StatusCode(),
+					"headers", resp.Header(),
+					"body", truncateBody(resp.Bytes()),
+				)
+			}
+			if err != nil {
+				attrs = append(attrs, "error", err)
+			}
+			slog.Warn("WeChat CDN upload retry", attrs...)
+		})
+
 	return &Client{
-		baseURL:  baseURL,
-		botToken: botToken,
-		botID:    botID,
-		httpClient: &http.Client{
-			Timeout: 40 * time.Second,
-		},
-		cdnClient: &http.Client{
-			Timeout: 2 * time.Minute,
-		},
+		baseURL:   baseURL,
+		botID:     botID,
+		apiClient: apiClient,
+		cdnClient: cdnClient,
 	}
 }
 
@@ -59,41 +86,29 @@ func generateWechatUIN() string {
 	return base64.StdEncoding.EncodeToString([]byte(strconv.FormatUint(uint64(n), 10)))
 }
 
-// setHeaders applies the required auth headers to an HTTP request.
-func (c *Client) setHeaders(req *http.Request) {
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("AuthorizationType", "ilink_bot_token")
-	req.Header.Set("X-WECHAT-UIN", generateWechatUIN())
-	req.Header.Set("Authorization", "Bearer "+c.botToken)
+// truncateBody caps a byte slice to maxLogBodySize when rendered into a log.
+func truncateBody(b []byte) string {
+	if len(b) <= maxLogBodySize {
+		return string(b)
+	}
+	return string(b[:maxLogBodySize]) + fmt.Sprintf("...(truncated, total %d bytes)", len(b))
 }
 
 // doPost performs a POST request with JSON body and decodes the JSON response.
 func (c *Client) doPost(ctx context.Context, path string, body interface{}, result interface{}) error {
-	bodyBytes, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+path, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return fmt.Errorf("create request: %w", err)
-	}
-	c.setHeaders(req)
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.apiClient.R().
+		SetContext(ctx).
+		SetHeader("X-WECHAT-UIN", generateWechatUIN()).
+		SetBody(body).
+		Post(c.baseURL + path)
 	if err != nil {
 		return fmt.Errorf("http request: %w", err)
 	}
-	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response body: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("iLink API HTTP error", "path", path, "status", resp.StatusCode, "body", string(respBody))
-		return fmt.Errorf("ilink api returned status %d: %s", resp.StatusCode, string(respBody))
+	respBody := resp.Bytes()
+	if resp.StatusCode() != http.StatusOK {
+		slog.Error("iLink API HTTP error", "path", path, "status", resp.StatusCode(), "body", truncateBody(respBody))
+		return fmt.Errorf("ilink api returned status %d: %s", resp.StatusCode(), truncateBody(respBody))
 	}
 
 	// Log response for non-getupdates calls (getupdates is too noisy).
@@ -101,7 +116,6 @@ func (c *Client) doPost(ctx context.Context, path string, body interface{}, resu
 	if path != "/ilink/bot/getupdates" {
 		slog.Info("iLink API response", "path", path, "body", string(respBody))
 	} else {
-		// Peek at ret field to detect auth/session errors
 		var peek struct {
 			Ret    int    `json:"ret"`
 			ErrMsg string `json:"errmsg"`
@@ -301,35 +315,37 @@ func (c *Client) UploadMedia(ctx context.Context, data []byte, mediaType int, to
 		return CDNMedia{}, 0, fmt.Errorf("encrypt data: %w", err)
 	}
 
-	// Step 3: Upload encrypted data to CDN
+	// Step 3: Upload encrypted data to CDN.
+	// The cdnClient is configured with retries (see NewClient) — resty handles
+	// transient 5xx/429/transport errors automatically with exponential backoff.
 	query := url.Values{}
 	query.Set("encrypted_query_param", uploadResp.UploadParam)
 	query.Set("filekey", filekeyHex)
 	cdnURL := cdnBaseURL + "?" + query.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "POST", cdnURL, bytes.NewReader(encrypted))
-	if err != nil {
-		return CDNMedia{}, 0, fmt.Errorf("create cdn upload request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	// CDN upload does NOT use bot auth headers
-
-	cdnResp, err := c.cdnClient.Do(req)
+	cdnResp, err := c.cdnClient.R().
+		SetContext(ctx).
+		SetHeader("Content-Type", "application/octet-stream").
+		SetBody(encrypted).
+		Post(cdnURL)
 	if err != nil {
 		return CDNMedia{}, 0, fmt.Errorf("cdn upload: %w", err)
 	}
-	defer cdnResp.Body.Close()
 
-	cdnBody, _ := io.ReadAll(cdnResp.Body)
-	if cdnResp.StatusCode != http.StatusOK {
-		slog.Error("CDN upload failed", "status", cdnResp.StatusCode, "body", string(cdnBody))
-		return CDNMedia{}, 0, fmt.Errorf("cdn upload returned status %d", cdnResp.StatusCode)
+	cdnBody := cdnResp.Bytes()
+	if cdnResp.StatusCode() != http.StatusOK {
+		slog.Error("CDN upload failed",
+			"status", cdnResp.StatusCode(),
+			"headers", cdnResp.Header(),
+			"body", truncateBody(cdnBody),
+			"reqBodySize", len(encrypted),
+		)
+		return CDNMedia{}, 0, fmt.Errorf("cdn upload returned status %d: %s", cdnResp.StatusCode(), truncateBody(cdnBody))
 	}
 
-	// Read download param from response header
-	downloadParam := cdnResp.Header.Get("X-Encrypted-Param")
+	// Read download param from response header, fall back to body.
+	downloadParam := cdnResp.Header().Get("X-Encrypted-Param")
 	if downloadParam == "" {
-		// Fallback: try response body
 		var bodyResp struct {
 			EncryptedParam string `json:"encrypt_query_param"`
 		}
@@ -338,7 +354,7 @@ func (c *Client) UploadMedia(ctx context.Context, data []byte, mediaType int, to
 		}
 	}
 	if downloadParam == "" {
-		slog.Error("CDN upload: no download param", "headers", cdnResp.Header, "body", string(cdnBody))
+		slog.Error("CDN upload: no download param", "headers", cdnResp.Header(), "body", truncateBody(cdnBody))
 		return CDNMedia{}, 0, fmt.Errorf("cdn upload returned no download param")
 	}
 

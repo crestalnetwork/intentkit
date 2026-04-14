@@ -2,46 +2,43 @@ package shared
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
-)
 
-// Shared HTTP client for media downloads (reuses TCP connections).
-var mediaHTTPClient = &http.Client{Timeout: 2 * time.Minute}
+	"resty.dev/v3"
+)
 
 // MaxMediaSize is the maximum allowed media file size (100 MB).
 const MaxMediaSize = 100 * 1024 * 1024
 
+// Shared HTTP client for media downloads (reuses TCP connections).
+// GET is idempotent; resty retries on transient 5xx/429 and transport errors by default.
+var mediaHTTPClient = resty.New().
+	SetTimeout(2 * time.Minute).
+	SetRetryCount(2).
+	SetRetryWaitTime(500 * time.Millisecond).
+	SetRetryMaxWaitTime(3 * time.Second).
+	SetResponseBodyLimit(MaxMediaSize)
+
 // DownloadFromURL downloads a file from the given URL and returns its bytes.
 // Returns an error if the file exceeds MaxMediaSize.
 func DownloadFromURL(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	resp, err := mediaHTTPClient.R().
+		SetContext(ctx).
+		Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("create download request: %w", err)
-	}
-	resp, err := mediaHTTPClient.Do(req)
-	if err != nil {
+		if errors.Is(err, resty.ErrReadExceedsThresholdLimit) {
+			return nil, fmt.Errorf("file exceeds maximum size of %d bytes", MaxMediaSize)
+		}
 		return nil, fmt.Errorf("download from url: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("download returned status %d", resp.StatusCode)
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("download returned status %d", resp.StatusCode())
 	}
-
-	// Limit read to prevent OOM from excessively large files
-	limited := io.LimitReader(resp.Body, MaxMediaSize+1)
-	data, err := io.ReadAll(limited)
-	if err != nil {
-		return nil, fmt.Errorf("read download body: %w", err)
-	}
-	if len(data) > MaxMediaSize {
-		return nil, fmt.Errorf("file exceeds maximum size of %d bytes", MaxMediaSize)
-	}
-	return data, nil
+	return resp.Bytes(), nil
 }
 
 // FilenameFromURL extracts a clean filename from a URL, stripping query parameters.
