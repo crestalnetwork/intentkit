@@ -289,6 +289,7 @@ class IntentKitSkill(BaseTool, metaclass=ABCMeta):
 
 
 # Global skill price registry
+_DEFAULT_PRICE = Decimal("1")
 _SKILL_PRICES: dict[str, Decimal] = {}
 _registry_built = False
 
@@ -324,22 +325,27 @@ def build_skill_prices() -> None:
                 "Failed to import skill module %s", module_info.name, exc_info=True
             )
 
-    # Collect prices from all subclasses
+    from pydantic_core import PydanticUndefined
+
+    # Pydantic v2 stores field defaults in model_fields[...].default, not as class attributes.
     for cls in _collect_subclasses(IntentKitSkill):
-        # Skip abstract classes without a name
-        name = getattr(cls, "name", None)
-        if not name or not isinstance(name, str):
+        name = cls.model_fields["name"].default
+        # Skip abstract classes without a concrete name default (isinstance excludes PydanticUndefined)
+        if not isinstance(name, str) or not name:
             continue
-        price = getattr(cls, "price", Decimal("1"))
-        _SKILL_PRICES[name] = (
-            price if isinstance(price, Decimal) else Decimal(str(price))
-        )
+        price = cls.model_fields["price"].default
+        if isinstance(price, Decimal):
+            _SKILL_PRICES[name] = price
+        elif price is PydanticUndefined:
+            _SKILL_PRICES[name] = _DEFAULT_PRICE
+        else:
+            _SKILL_PRICES[name] = Decimal(str(price))
 
     _registry_built = True
 
 
 def get_skill_price(name: str) -> Decimal:
-    """Get price for a skill by name. Returns Decimal("1") if not found."""
+    """Get price for a skill by name. Returns the default price if not found."""
     if not _registry_built:
         build_skill_prices()
-    return _SKILL_PRICES.get(name, Decimal("1"))
+    return _SKILL_PRICES.get(name, _DEFAULT_PRICE)
