@@ -171,6 +171,7 @@ cython_debug/
 .cursor
 .zed
 CLAUDE.local.md
+.claude/scheduled_tasks.lock
 .obsidian
 
 # web3
