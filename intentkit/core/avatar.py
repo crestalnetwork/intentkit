@@ -42,6 +42,20 @@ Requirements for the avatar:
 Output ONLY the image generation prompt, nothing else."""
 
 
+_USER_AVATAR_SYSTEM_PROMPT = """\
+You are an expert avatar designer. Based on the user-provided description below, \
+write a concise visual description for a profile picture (avatar).
+
+Requirements for the avatar:
+- Modern, clean, and visually striking design suitable as a profile picture
+- A single central subject or icon
+- Works well at small sizes (like a chat avatar)
+- Abstract or stylized — do NOT include any text, letters, or words in the image
+- Square composition with the subject centered
+
+Output ONLY the image generation prompt, nothing else."""
+
+
 def _normalize_avatar(image_bytes: bytes, size: int = 512) -> bytes:
     """Crop image to square (center crop) and resize to size x size, return PNG bytes."""
     img = Image.open(io.BytesIO(image_bytes))
@@ -260,6 +274,34 @@ async def _generate_image_prompt(agent_id: str, agent: Any) -> str:
         )
 
 
+async def _render_and_store(image_prompt: str, s3_key: str) -> str | None:
+    """Generate image bytes from a prompt, normalize, and upload to S3.
+
+    Shared by `generate_avatar` and `generate_avatar_from_description`.
+    """
+    image_bytes = await select_model_and_generate(image_prompt)
+    if not image_bytes:
+        return None
+
+    try:
+        image_bytes = _normalize_avatar(image_bytes)
+    except Exception as e:
+        logger.error("Failed to normalize avatar image: %s", e)
+        return None
+
+    try:
+        relative_path = await store_image_bytes(
+            image_bytes, s3_key, content_type="image/png"
+        )
+        if not relative_path:
+            logger.error("store_image_bytes returned empty path")
+            return None
+        return relative_path
+    except Exception as e:
+        logger.error("Failed to upload avatar to S3: %s", e)
+        return None
+
+
 async def generate_avatar(agent_id: str, agent: Any) -> str | None:
     """Generate an avatar image for an agent and upload it to S3.
 
@@ -271,35 +313,39 @@ async def generate_avatar(agent_id: str, agent: Any) -> str | None:
         The image path without CDN prefix (e.g. "local/intentkit/avatars/{id}/xxx.png"),
         or None if generation failed.
     """
-    # Step 1: Generate image prompt from agent profile
+    from epyxid import XID
+
     image_prompt = await _generate_image_prompt(agent_id, agent)
+    return await _render_and_store(image_prompt, f"avatars/{agent_id}/{XID()}.png")
 
-    # Step 2: Generate image bytes
-    image_bytes = await select_model_and_generate(image_prompt)
-    if not image_bytes:
-        return None
 
-    # Step 3: Normalize — crop to square and resize to 512x512
+async def generate_avatar_from_description(
+    description: str, s3_prefix: str
+) -> str | None:
+    """Generate an avatar from a free-text user description and upload to S3.
+
+    Args:
+        description: Free-text user description of the desired avatar.
+        s3_prefix: S3 key prefix where the result is stored
+            (e.g. "avatars/generated/{team_id}"). The final key is
+            "{s3_prefix}/{XID}.png".
+
+    Returns:
+        Relative S3 path on success, None on failure.
+    """
+    from epyxid import XID
+
     try:
-        image_bytes = _normalize_avatar(image_bytes)
+        image_prompt = await generate_image_prompt_from_profile(
+            description, _USER_AVATAR_SYSTEM_PROMPT
+        )
     except Exception as e:
-        logger.error("Failed to normalize avatar image: %s", e)
-        return None
-
-    # Step 4: Upload to S3
-    try:
-        from epyxid import XID
-
-        key = f"avatars/{agent_id}/{XID()}.png"
-        relative_path = await store_image_bytes(
-            image_bytes, key, content_type="image/png"
+        logger.error("Failed to generate avatar prompt via LLM: %s", e)
+        # Fallback: use the raw description as the image prompt
+        image_prompt = (
+            f"A modern, minimalist profile avatar. {description}. "
+            "Abstract geometric design, vibrant colors, clean lines, centered "
+            "composition, no text."
         )
 
-        if not relative_path:
-            logger.error("store_image_bytes returned empty path")
-            return None
-
-        return relative_path
-    except Exception as e:
-        logger.error("Failed to upload avatar to S3: %s", e)
-        return None
+    return await _render_and_store(image_prompt, f"{s3_prefix.rstrip('/')}/{XID()}.png")

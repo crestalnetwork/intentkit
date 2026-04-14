@@ -203,6 +203,81 @@ async def upload_team_picture(
     return {"path": path}
 
 
+class GenerateAvatarRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=500)
+    # Client-generated idempotency key. Duplicate POSTs with the same key (e.g.
+    # from a network timeout retry) collapse to one charge via the upstream_tx_id
+    # uniqueness constraint in the credit_events table.
+    idempotency_key: str = Field(..., min_length=8, max_length=64)
+
+
+@team_management_router.post(
+    "/teams/{team_id}/generate-avatar",
+    status_code=200,
+    operation_id="generate_team_avatar",
+    summary="Generate Avatar",
+)
+async def generate_team_avatar(
+    body: GenerateAvatarRequest = Body(...),
+    auth: tuple[str, str] = Depends(verify_team_member),
+) -> dict[str, str]:
+    """Generate an avatar image from a free-text description. Charges the team.
+
+    Used for both user-profile and team-profile avatar generation. The caller is
+    responsible for using the returned path in the appropriate profile update.
+    """
+    # Deferred imports: these pull heavy deps (PIL, google.genai, openai) that
+    # would otherwise load on every cold start of the team API process.
+    from intentkit.core.avatar import generate_avatar_from_description
+    from intentkit.core.credit import expense_media
+    from intentkit.models.credit import (
+        AVATAR_GENERATION_BASE_PRICE,
+        CreditAccount,
+        OwnerType,
+    )
+
+    user_id, team_id = auth
+    upstream_tx_id = f"avatar_{body.idempotency_key}"
+
+    # Prevent negative-balance abuse: expense_in_session intentionally allows
+    # PERMANENT credits to go negative so in-flight chat streams aren't
+    # interrupted. For this direct-API path there's no stream, so we pre-check
+    # the team has enough to cover a 100%-platform-fee expense (2x base).
+    min_required = AVATAR_GENERATION_BASE_PRICE * 2
+    team_account = await CreditAccount.get_or_create(OwnerType.TEAM, team_id)
+    total_credits = (
+        team_account.credits + team_account.free_credits + team_account.reward_credits
+    )
+    if total_credits < min_required:
+        raise IntentKitAPIError(
+            status_code=402,
+            key="InsufficientCredits",
+            message="Not enough credits to generate an avatar",
+        )
+
+    path = await generate_avatar_from_description(
+        body.prompt, s3_prefix=f"avatars/generated/{team_id}"
+    )
+    if not path:
+        raise IntentKitAPIError(
+            status_code=502,
+            key="AvatarGenerationFailed",
+            message="Avatar generation failed, please try again",
+        )
+
+    async with get_session() as session:
+        await expense_media(
+            session,
+            team_id=team_id,
+            user_id=user_id,
+            upstream_tx_id=upstream_tx_id,
+            base_original_amount=AVATAR_GENERATION_BASE_PRICE,
+        )
+        await session.commit()
+
+    return {"path": path}
+
+
 @team_management_router.patch("/teams/{team_id}")
 async def update_team_endpoint(
     body: UpdateTeamRequest = Body(...),

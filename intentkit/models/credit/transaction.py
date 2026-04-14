@@ -25,7 +25,7 @@ class TransactionType(str, Enum):
     RECEIVE_BASE_LLM = "receive_base_llm"
     RECEIVE_BASE_SKILL = "receive_base_skill"
     RECEIVE_BASE_MEMORY = "receive_base_memory"
-    RECEIVE_BASE_VOICE = "receive_base_voice"
+    RECEIVE_BASE_MEDIA = "receive_base_media"
     RECEIVE_BASE_KNOWLEDGE = "receive_base_knowledge"
     RECEIVE_FEE_DEV = "receive_fee_dev"
     RECEIVE_FEE_AGENT = "receive_fee_agent"

@@ -28,7 +28,7 @@ class EventType(str, Enum):
     MEMORY = "memory"
     MESSAGE = "message"
     SKILL_CALL = "skill_call"
-    VOICE = "voice"
+    MEDIA = "media"
     KNOWLEDGE_BASE = "knowledge_base"
     RECHARGE = "recharge"
     REFUND = "refund"

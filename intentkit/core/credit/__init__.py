@@ -24,6 +24,7 @@ from .base import (
     update_daily_quota,
 )
 from .expense import (
+    expense_media,
     expense_message,
     expense_skill,
     expense_skill_internal_llm,
@@ -65,6 +66,7 @@ __all__ = [
     "UpstreamType",
     "accumulate_hourly_base_llm_amount",
     "adjustment",
+    "expense_media",
     "expense_message",
     "expense_skill",
     "expense_skill_internal_llm",

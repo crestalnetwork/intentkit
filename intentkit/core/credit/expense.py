@@ -13,6 +13,7 @@ from intentkit.models.agent_data import AgentData, AgentQuota
 from intentkit.models.app_setting import AppSetting
 from intentkit.models.credit import (
     DEFAULT_PLATFORM_ACCOUNT_FEE,
+    DEFAULT_PLATFORM_ACCOUNT_MEDIA,
     DEFAULT_PLATFORM_ACCOUNT_MEMORY,
     DEFAULT_PLATFORM_ACCOUNT_MESSAGE,
     DEFAULT_PLATFORM_ACCOUNT_SKILL,
@@ -1185,3 +1186,225 @@ async def expense_skill_internal_llm(
             user_id=user_id,
         )
         await session.commit()
+
+
+async def expense_media(
+    session: AsyncSession,
+    team_id: str,
+    user_id: str,
+    upstream_tx_id: str,
+    base_original_amount: Decimal,
+) -> CreditEvent:
+    """Deduct credits from a team account for direct-API media generation.
+
+    Used by endpoints that generate media (e.g. avatar) outside of a chat /
+    agent context. No agent fee, no skill/message metadata. Platform fee still
+    applies. Caller must commit the session.
+
+    Args:
+        session: Async session for database operations.
+        team_id: Team to charge.
+        user_id: User who triggered the call (audit trail).
+        upstream_tx_id: Idempotency key for the upstream API call.
+        base_original_amount: Base price before discount/fee.
+
+    Returns:
+        The created CreditEvent.
+    """
+    # --- SHARED STEP 0: Idempotency check ---
+    await CreditEvent.check_upstream_tx_id_exists(
+        session, UpstreamType.API, upstream_tx_id
+    )
+
+    # --- SHARED STEPS 1-2: Validate & compute fees ---
+    base_original_amount = base_original_amount.quantize(
+        FOURPLACES, rounding=ROUND_HALF_UP
+    )
+    if base_original_amount < Decimal("0"):
+        raise ValueError("base_original_amount must be non-negative")
+
+    payment_settings = await AppSetting.payment()
+    if config.payment_enabled:
+        base_discount_amount = Decimal("0")
+    else:
+        base_discount_amount = base_original_amount
+    base_amount = base_original_amount - base_discount_amount
+    fee_platform_amount = (
+        base_amount * payment_settings.fee_platform_percentage / Decimal("100")
+    ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+    total_amount = (base_amount + fee_platform_amount).quantize(
+        FOURPLACES, rounding=ROUND_HALF_UP
+    )
+
+    # --- SHARED STEP 3: Deduct from team account ---
+    event_id = str(XID())
+    details: dict[CreditType, Decimal] = {}
+    if total_amount > 0:
+        team_account, details = await CreditAccount.expense_in_session(
+            session=session,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
+            amount=total_amount,
+            event_id=event_id,
+        )
+    else:
+        team_account = await CreditAccount.get_or_create_in_session(
+            session=session,
+            owner_type=OwnerType.TEAM,
+            owner_id=team_id,
+        )
+
+    # --- SHARED STEP 5: Split deducted amount by credit type ---
+    free_amount = details.get(CreditType.FREE, Decimal("0"))
+    reward_amount = details.get(CreditType.REWARD, Decimal("0"))
+    permanent_amount = details.get(CreditType.PERMANENT, Decimal("0"))
+    if CreditType.PERMANENT in details:
+        credit_type = CreditType.PERMANENT
+    elif CreditType.REWARD in details:
+        credit_type = CreditType.REWARD
+    else:
+        credit_type = CreditType.FREE
+
+    # --- SHARED STEP 6: Proportionally allocate platform fee across credit types ---
+    fee_platform_free_amount = Decimal("0")
+    fee_platform_reward_amount = Decimal("0")
+    fee_platform_permanent_amount = Decimal("0")
+    if fee_platform_amount > Decimal("0") and total_amount > Decimal("0"):
+        if free_amount > Decimal("0"):
+            fee_platform_free_amount = (
+                free_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+        if reward_amount > Decimal("0"):
+            fee_platform_reward_amount = (
+                reward_amount * fee_platform_amount / total_amount
+            ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+        fee_platform_permanent_amount = (
+            fee_platform_amount - fee_platform_free_amount - fee_platform_reward_amount
+        ).quantize(FOURPLACES, rounding=ROUND_HALF_UP)
+
+    # --- SHARED STEP 7: Derive base amounts per credit type by subtraction ---
+    base_free_amount = free_amount - fee_platform_free_amount
+    base_reward_amount = reward_amount - fee_platform_reward_amount
+    base_permanent_amount = permanent_amount - fee_platform_permanent_amount
+
+    # --- SHARED STEP 8: Credit destination accounts ---
+    media_account: CreditAccount | None = None
+    platform_account: CreditAccount | None = None
+    if total_amount > 0:
+        media_account = await CreditAccount.income_in_session(
+            session=session,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_MEDIA,
+            amount_details={
+                CreditType.FREE: base_free_amount,
+                CreditType.REWARD: base_reward_amount,
+                CreditType.PERMANENT: base_permanent_amount,
+            },
+            event_id=event_id,
+        )
+        platform_account = await CreditAccount.income_in_session(
+            session=session,
+            owner_type=OwnerType.PLATFORM,
+            owner_id=DEFAULT_PLATFORM_ACCOUNT_FEE,
+            amount_details={
+                CreditType.FREE: fee_platform_free_amount,
+                CreditType.REWARD: fee_platform_reward_amount,
+                CreditType.PERMANENT: fee_platform_permanent_amount,
+            },
+            event_id=event_id,
+        )
+
+    # --- SHARED STEP 9: Create CreditEvent record ---
+    event = CreditEventTable(
+        id=event_id,
+        account_id=team_account.id,
+        event_type=EventType.MEDIA,
+        user_id=user_id,
+        team_id=team_id,
+        upstream_type=UpstreamType.API,
+        upstream_tx_id=upstream_tx_id,
+        direction=Direction.EXPENSE,
+        total_amount=total_amount,
+        credit_type=credit_type,
+        credit_types=list(details.keys()) if details else [credit_type],
+        balance_after=team_account.credits
+        + team_account.free_credits
+        + team_account.reward_credits,
+        base_amount=base_amount,
+        base_original_amount=base_original_amount,
+        base_discount_amount=base_discount_amount,
+        base_llm_amount=Decimal("0"),
+        base_skill_amount=Decimal("0"),
+        base_free_amount=base_free_amount,
+        base_reward_amount=base_reward_amount,
+        base_permanent_amount=base_permanent_amount,
+        fee_platform_amount=fee_platform_amount,
+        fee_platform_free_amount=fee_platform_free_amount,
+        fee_platform_reward_amount=fee_platform_reward_amount,
+        fee_platform_permanent_amount=fee_platform_permanent_amount,
+        fee_agent_amount=Decimal("0"),
+        fee_agent_account=None,
+        fee_agent_free_amount=Decimal("0"),
+        fee_agent_reward_amount=Decimal("0"),
+        fee_agent_permanent_amount=Decimal("0"),
+        fee_dev_amount=Decimal("0"),
+        fee_dev_account=None,
+        fee_dev_free_amount=Decimal("0"),
+        fee_dev_reward_amount=Decimal("0"),
+        fee_dev_permanent_amount=Decimal("0"),
+        free_amount=free_amount,
+        reward_amount=reward_amount,
+        permanent_amount=permanent_amount,
+    )
+    session.add(event)
+    await session.flush()
+
+    # --- SHARED STEP 10: Create CreditTransaction records ---
+    if total_amount > 0:
+        team_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=team_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.PAY,
+            credit_debit=CreditDebit.DEBIT,
+            change_amount=total_amount,
+            credit_type=credit_type,
+            free_amount=free_amount,
+            reward_amount=reward_amount,
+            permanent_amount=permanent_amount,
+        )
+        session.add(team_tx)
+
+        assert media_account is not None
+        media_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=media_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_BASE_MEDIA,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=base_amount,
+            credit_type=credit_type,
+            free_amount=base_free_amount,
+            reward_amount=base_reward_amount,
+            permanent_amount=base_permanent_amount,
+        )
+        session.add(media_tx)
+
+        assert platform_account is not None
+        platform_tx = CreditTransactionTable(
+            id=str(XID()),
+            account_id=platform_account.id,
+            event_id=event_id,
+            tx_type=TransactionType.RECEIVE_FEE_PLATFORM,
+            credit_debit=CreditDebit.CREDIT,
+            change_amount=fee_platform_amount,
+            credit_type=credit_type,
+            free_amount=fee_platform_free_amount,
+            reward_amount=fee_platform_reward_amount,
+            permanent_amount=fee_platform_permanent_amount,
+        )
+        session.add(platform_tx)
+
+    await session.refresh(event)
+
+    return CreditEvent.model_validate(event)

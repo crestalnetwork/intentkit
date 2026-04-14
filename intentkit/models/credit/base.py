@@ -32,9 +32,12 @@ DEFAULT_PLATFORM_ACCOUNT_REFUND = "platform_refund"
 DEFAULT_PLATFORM_ACCOUNT_MESSAGE = "platform_message"
 DEFAULT_PLATFORM_ACCOUNT_SKILL = "platform_skill"
 DEFAULT_PLATFORM_ACCOUNT_MEMORY = "platform_memory"
-DEFAULT_PLATFORM_ACCOUNT_VOICE = "platform_voice"
+DEFAULT_PLATFORM_ACCOUNT_MEDIA = "platform_media"
 DEFAULT_PLATFORM_ACCOUNT_KNOWLEDGE = "platform_knowledge"
 DEFAULT_PLATFORM_ACCOUNT_FEE = "platform_fee"
 DEFAULT_PLATFORM_ACCOUNT_DEV = "platform_dev"
 DEFAULT_PLATFORM_ACCOUNT_WITHDRAW = "platform_withdraw"
 DEFAULT_PLATFORM_ACCOUNT_PLAN_CREDIT = "platform_plan_credit"
+
+# Base price for avatar generation (before platform fee). Anti-abuse floor.
+AVATAR_GENERATION_BASE_PRICE = Decimal("5")
