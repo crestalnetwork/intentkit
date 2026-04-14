@@ -14,8 +14,9 @@
   - `clients/` — external service clients
 - `app/` — API server, autonomous runner, background scheduler
 - `frontend/` — Next.js agent management UI (see `frontend/AGENTS.md`)
-- `integrations/` — platform integrations (each has its own `AGENTS.md`)
-  - `telegram/` — Telegram bot integration
+- `integrations/` — Go channel adapters (see `integrations/AGENTS.md`)
+  - `telegram/` — Telegram bot (see `integrations/telegram/AGENTS.md`)
+  - `wechat/` — WeChat bot (see `integrations/wechat/AGENTS.md`)
 - `scripts/` — ops & migration scripts
 - `tests/` — `tests/core/`, `tests/api/`, `tests/skills/`
 

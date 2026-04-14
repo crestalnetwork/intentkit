@@ -1,65 +1,34 @@
-# IntentKit Telegram Integration
+# Telegram Integration
 
-This integration reproduces the core Telegram logic using Golang, providing a high-performance and type-safe implementation.
+Connects Telegram bots to IntentKit. Supports both individual agents and team
+channels.
 
-## Tech Stack
+See [../AGENTS.md](../AGENTS.md) for the common Go stack, layout conventions,
+and shared env vars.
 
-- **Language**: Golang (1.23+)
-- **Telegram Bot API**: [telego](https://github.com/mymmrac/telego)
-- **Database**: [GORM](https://gorm.io/) (PostgreSQL)
-- **Logging**: `log/slog` (Standard Library)
-- **HTTP Client**: [go-resty/resty](https://github.com/go-resty/resty)
-- **Configuration**: Standard environment variables / `.env`
+## Third-party libs
 
-## Architecture
+- [telego](https://github.com/mymmrac/telego) — Telegram Bot API client
+- [redis/go-redis/v9](https://github.com/redis/go-redis) — session / cache
 
-- **`main.go`**: Entrypoint. Initializes DB, Config, and starts the Bot Manager.
-- **`store/`**: Database models (`Agent`, `AgentData`) and access layer.
-- **`bot/`**:
-    - `manager.go`: Manages the lifecycle of bots (syncing with DB, starting/stopping).
-    - `handler.go`: Handles incoming Telegram messages and routes them to the Core API.
-- **`api/`**: Client for interacting with IntentKit Core API (`/core/execute`).
-
-## usage
-
-### Prerequisites
-
-- PostgreSQL database (shared with IntentKit).
-- IntentKit API running (for Core API access).
-- Environment variables set (see below).
-
-### Environment Variables
+## Channel-specific Env Vars
 
 ```bash
-DATABASE_URL=postgres://user:password@localhost:5432/dbname
-CORE_API_URL=http://localhost:8000
-TG_NEW_AGENT_POLL_INTERVAL=10 # Seconds
-```
+# Seconds between DB sync for new/changed agents
+TG_NEW_AGENT_POLL_INTERVAL=10
 
-### Running
-You can run the application directly or using Docker.
-
-#### Direct Execution
-```bash
-go mod tidy
-go run main.go
-```
-
-#### Docker
-```bash
-# Build the image
-docker build -t intent-telegram .
-
-# Run the container
-docker run -d \
-  --name intent-telegram \
-  -e DATABASE_URL="postgres://user:password@localhost:5432/intentkit" \
-  -e CORE_API_URL="http://host.docker.internal:8000" \
-  intent-telegram
+# Redis (rate limiting / session state)
+REDIS_HOST=...
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
 ```
 
 ## Notes
 
-- This integration connects directly to the IntentKit database to read `agents` and `agent_data`.
-- It uses the internal `/core/execute` endpoint to process messages.
-- Legacy features like "God Bot" and complex filters are intentionally omitted to focus on core logic.
+- Reads both `agents` / `agent_data` (individual agents) **and** `team_channels`
+  (team-level bots).
+- Routes individual-agent messages to `/core/stream`; team-channel messages to
+  `/core/lead/stream`.
+- Legacy features from the Python implementation ("God Bot", complex filters)
+  are intentionally omitted.
