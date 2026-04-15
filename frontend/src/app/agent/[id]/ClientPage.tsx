@@ -56,6 +56,13 @@ import { useAgentSlugRewrite } from "@/hooks/useAgentSlugRewrite";
 import { isUserAuthoredMessage } from "@/types/chat";
 import type { UIMessage, ChatThread, ChatMessage } from "@/types/chat";
 import { buildChatThreadPath } from "@/lib/autonomousChat";
+import type { StreamStatus } from "@/lib/chatStreamStore";
+import {
+  cancelChatStream,
+  getChatStreamSnapshot,
+  startChatStream,
+  subscribeToChatStream,
+} from "@/lib/chatStreamStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Tailwind prose classes for markdown rendering in chat bubbles
@@ -220,8 +227,7 @@ export default function AgentChatPage() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const wasCancelledRef = useRef(false);
+  const loadedThreadRef = useRef<string | null>(null);
 
   // Archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -312,29 +318,56 @@ export default function AgentChatPage() {
     cacheAgentAvatar(agentId, agent?.picture);
   }, [agentId, agent?.picture]);
 
-  // Load messages when thread changes (but not during send operation)
+  // Load messages when thread changes. Merges any active stream snapshot on
+  // top of DB history so returning mid-generation shows both the thread so
+  // far and the in-flight response.
   useEffect(() => {
-    // Don't load messages while sending - this prevents overwriting the user's message
-    // that was just added to state when we switch from isNewThread to an actual thread
+    // Skip while sending: the optimistic user message has already been put
+    // into state and creating the thread flips currentThreadId before the
+    // server has persisted the message — a load here would flash empty.
     if (isSending) return;
-
-    // Skip reload after cancellation to preserve the local "Generation stopped" message
-    if (wasCancelledRef.current) {
-      wasCancelledRef.current = false;
-      return;
-    }
 
     if (!currentThreadId || !resolvedId || isNewThread) {
       setMessages([]);
+      loadedThreadRef.current = null;
       return;
+    }
+
+    if (loadedThreadRef.current !== currentThreadId) {
+      setMessages([]);
+      loadedThreadRef.current = currentThreadId;
     }
 
     const loadMessages = async () => {
       try {
         const response = await chatApi.listMessages(resolvedId, currentThreadId);
-        // API returns messages in DESC order, reverse for chronological display
-        const uiMessages = response.data.reverse().map(apiMessageToUIMessage);
-        setMessages(uiMessages);
+        const dbMessages = response.data.reverse().map(apiMessageToUIMessage);
+
+        setMessages((prev) => {
+          const merged = [...dbMessages];
+
+          // Overlay the background stream's current state (DB may lag behind
+          // the stream by a tick for just-yielded messages).
+          const snapshot = getChatStreamSnapshot(currentThreadId);
+          if (snapshot) {
+            for (const streamMsg of snapshot.messages) {
+              const uiMsg = apiMessageToUIMessage(streamMsg);
+              const idx = merged.findLastIndex((m) => m.id === uiMsg.id);
+              if (idx < 0) merged.push(uiMsg);
+              else merged[idx] = uiMsg;
+            }
+          }
+
+          // The cancel sentinel is UI-only (never persisted); keep it visible
+          // if it was added by the subscription before the DB reload.
+          const cancelId = `system-cancelled-${currentThreadId}`;
+          const cancelMsg = prev.find((m) => m.id === cancelId);
+          if (cancelMsg && !merged.some((m) => m.id === cancelId)) {
+            merged.push(cancelMsg);
+          }
+
+          return merged;
+        });
       } catch (err) {
         console.error("Failed to load messages:", err);
         setError("Failed to load message history");
@@ -343,6 +376,82 @@ export default function AgentChatPage() {
 
     loadMessages();
   }, [currentThreadId, resolvedId, isNewThread, isSending]);
+
+  // Subscription lets generation started before a navigation keep updating
+  // the UI when the user returns to the thread.
+  useEffect(() => {
+    if (!currentThreadId) return;
+
+    let processedCount = 0;
+    let appliedTerminalStatus: StreamStatus | null = null;
+    let lastSendingState: boolean | null = null;
+    const cancelMessageId = `system-cancelled-${currentThreadId}`;
+
+    const setSending = (next: boolean) => {
+      if (lastSendingState === next) return;
+      lastSendingState = next;
+      setIsSending(next);
+    };
+
+    const unsubscribe = subscribeToChatStream(currentThreadId, (snapshot) => {
+      if (!snapshot) {
+        processedCount = 0;
+        appliedTerminalStatus = null;
+        return;
+      }
+
+      const { messages: streamMessages } = snapshot;
+      if (streamMessages.length > processedCount) {
+        const startIdx = processedCount;
+        processedCount = streamMessages.length;
+        setMessages((prev) => {
+          let next = prev;
+          for (let i = startIdx; i < processedCount; i++) {
+            const uiMsg = apiMessageToUIMessage(streamMessages[i]);
+            // Streaming deltas and appends land at the tail, so search from there.
+            const idx = next.findLastIndex((m) => m.id === uiMsg.id);
+            if (idx < 0) {
+              next = [...next, uiMsg];
+            } else {
+              next = next.map((m, j) => (j === idx ? uiMsg : m));
+            }
+          }
+          return next;
+        });
+      }
+
+      if (snapshot.status === "active") {
+        setSending(true);
+        return;
+      }
+
+      setSending(false);
+
+      if (appliedTerminalStatus === snapshot.status) return;
+      appliedTerminalStatus = snapshot.status;
+
+      if (snapshot.status === "cancelled") {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === cancelMessageId)) return prev;
+          return [
+            ...prev,
+            {
+              id: cancelMessageId,
+              role: "system",
+              content: "User cancelled the conversation",
+              timestamp: new Date(),
+            },
+          ];
+        });
+      } else if (snapshot.status === "error" && snapshot.error) {
+        setError(snapshot.error.message);
+      } else if (snapshot.status === "done") {
+        refetchThreads();
+      }
+    });
+
+    return unsubscribe;
+  }, [currentThreadId, refetchThreads]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -412,74 +521,39 @@ export default function AgentChatPage() {
       };
 
       setMessages((prev) => [...prev, userMessage]);
+      const messageContent = inputValue;
       setInputValue("");
       setIsSending(true);
       setError(null);
 
-      const abortController = new AbortController();
-      abortControllerRef.current = abortController;
+      let threadId = currentThreadId;
 
-      try {
-        let threadId = currentThreadId;
-
-        // If this is a new thread, create it first
-        if (isNewThread || !threadId) {
+      // If this is a new thread, create it first
+      if (isNewThread || !threadId) {
+        try {
           const newThread = await chatApi.createChat(
             resolvedId,
             undefined,
-            userMessage.content,
+            messageContent,
           );
           threadId = newThread.id;
           setCurrentThreadId(threadId);
           setIsNewThread(false);
           await refetchThreads();
           router.replace(buildChatThreadPath(agentId, threadId));
-        }
-
-        // Stream the response
-        for await (const msg of chatApi.sendMessageStream(
-          resolvedId,
-          threadId,
-          userMessage.content,
-          abortController.signal,
-        )) {
-          const uiMsg = apiMessageToUIMessage(msg);
-          setMessages((prev) => {
-            // Check if message already exists (by id)
-            const existing = prev.find((m) => m.id === uiMsg.id);
-            if (existing) {
-              return prev.map((m) => (m.id === uiMsg.id ? uiMsg : m));
-            }
-            return [...prev, uiMsg];
-          });
-        }
-
-        // Refetch threads to update the summary/timestamp
-        await refetchThreads();
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          // User cancelled — keep all received messages and add system message
-          wasCancelledRef.current = true;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `system-${Date.now()}`,
-              role: "system",
-              content: "User cancelled the conversation",
-              timestamp: new Date(),
-            },
-          ]);
-        } else {
+        } catch (err) {
           const errorMessage =
             err instanceof Error ? err.message : "Failed to send message";
           setError(errorMessage);
-          // Remove the user message on error
           setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+          setIsSending(false);
+          return;
         }
-      } finally {
-        abortControllerRef.current = null;
-        setIsSending(false);
       }
+
+      startChatStream(threadId, (signal) =>
+        chatApi.sendMessageStream(resolvedId, threadId, messageContent, signal),
+      );
     },
     [
       inputValue,
@@ -495,8 +569,9 @@ export default function AgentChatPage() {
 
   // Stop an in-progress generation
   const handleStopGeneration = useCallback(async () => {
-    abortControllerRef.current?.abort();
-    if (resolvedId && currentThreadId) {
+    if (!currentThreadId) return;
+    cancelChatStream(currentThreadId);
+    if (resolvedId) {
       try {
         await chatApi.cancelGeneration(resolvedId, currentThreadId);
       } catch {
