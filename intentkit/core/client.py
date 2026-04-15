@@ -39,7 +39,7 @@ async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:
         response = await client.post(
             url,
             json=message.model_dump(mode="json"),
-            timeout=300,
+            timeout=1800,
         )
     response.raise_for_status()
     json_data = response.json()
