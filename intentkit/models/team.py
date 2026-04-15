@@ -18,6 +18,7 @@ from pydantic import (
 )
 from sqlalchemy import DateTime, Index, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -326,7 +327,13 @@ class TeamCreate(BaseModel):
             )
             db.add(member_record)
 
-            await db.commit()
+            try:
+                await db.commit()
+            except IntegrityError as e:
+                # Concurrent request with the same team_id committed first; map
+                # to the same validation error so the endpoint returns 400 instead
+                # of leaking a 500.
+                raise ValueError("Team ID is already taken") from e
             await db.refresh(team_record)
             return Team.model_validate(team_record)
 

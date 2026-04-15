@@ -4,18 +4,18 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Body, Depends, Path, Response
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Path, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
+    backfill_agent_avatar,
     create_agent,
     get_agent_by_id_or_slug,
     patch_agent,
 )
-from intentkit.core.avatar import generate_avatar
 from intentkit.core.lead import invalidate_lead_cache
 from intentkit.core.team.membership import check_permission
 from intentkit.core.template import render_agent
@@ -130,6 +130,7 @@ async def get_agent_unified(
     summary="Create Agent (Team)",
 )
 async def create_agent_endpoint(
+    background_tasks: BackgroundTasks,
     agent: AgentUpdate = Body(AgentUpdate, description="Agent configuration"),
     auth: tuple[str, str] = Depends(verify_team_member),
 ) -> Response:
@@ -139,16 +140,11 @@ async def create_agent_endpoint(
     new_agent.owner = user_id
     new_agent.team_id = team_id
 
-    if not new_agent.picture:
-        try:
-            generated_avatar = await generate_avatar(new_agent.id, new_agent)
-            if generated_avatar:
-                new_agent.picture = generated_avatar
-        except Exception as e:
-            logger.error("Failed to auto-generate avatar: %s", e)
-
     latest_agent, agent_data = await create_agent(new_agent)
     invalidate_lead_cache(team_id)
+
+    if not latest_agent.picture:
+        background_tasks.add_task(backfill_agent_avatar, latest_agent.id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
     return Response(
@@ -252,6 +248,7 @@ async def get_agent_editable(
     summary="Patch Agent (Team)",
 )
 async def patch_agent_endpoint(
+    background_tasks: BackgroundTasks,
     agent_id: str = Path(..., description="Agent ID"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent patch configuration"),
     auth: tuple[str, str] = Depends(verify_team_member),
@@ -261,21 +258,17 @@ async def patch_agent_endpoint(
     existing_agent = await get_team_agent(agent_id, team_id)
 
     update_fields = agent.model_dump(exclude_unset=True)
-    picture_explicitly_set = "picture" in update_fields and update_fields["picture"]
-    if not picture_explicitly_set:
-        if not existing_agent.picture:
-            try:
-                generated_avatar = await generate_avatar(agent_id, agent)
-                if generated_avatar:
-                    agent.picture = generated_avatar
-            except Exception as e:
-                logger.error("Failed to auto-generate avatar: %s", e)
+    picture_explicitly_set = "picture" in update_fields
+    should_backfill_avatar = not picture_explicitly_set and not existing_agent.picture
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
     # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
     if "purpose" in update_fields:
         invalidate_lead_cache(team_id)
+
+    if should_backfill_avatar:
+        background_tasks.add_task(backfill_agent_avatar, agent_id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
     return Response(

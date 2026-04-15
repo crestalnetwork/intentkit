@@ -6,6 +6,7 @@ from typing import TypedDict
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Body,
     Depends,
     File,
@@ -22,6 +23,7 @@ from yaml import safe_load
 from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
+    backfill_agent_avatar,
     create_agent,
     deploy_agent,
     get_agent_by_id_or_slug,
@@ -31,7 +33,6 @@ from intentkit.core.agent import (
 from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
-from intentkit.core.avatar import generate_avatar
 from intentkit.core.lead import invalidate_lead_cache
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
@@ -62,6 +63,7 @@ logger = logging.getLogger(__name__)
     summary="Create Agent",
 )
 async def create_agent_endpoint(
+    background_tasks: BackgroundTasks,
     agent: AgentUpdate = Body(AgentUpdate, description="Agent user input"),
 ) -> Response:
     """Create a new agent.
@@ -81,15 +83,11 @@ async def create_agent_endpoint(
     new_agent.owner = "system"
     new_agent.team_id = "system"
 
-    if not new_agent.picture:
-        try:
-            generated_avatar = await generate_avatar(new_agent.id, new_agent)
-            if generated_avatar:
-                new_agent.picture = generated_avatar
-        except Exception as e:
-            logger.error("Failed to auto-generate avatar: %s", e)
     latest_agent, agent_data = await create_agent(new_agent)
     invalidate_lead_cache(new_agent.team_id or "system")
+
+    if not latest_agent.picture:
+        background_tasks.add_task(backfill_agent_avatar, latest_agent.id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -110,6 +108,7 @@ async def create_agent_endpoint(
     summary="Override Agent",
 )
 async def override_agent_endpoint(
+    background_tasks: BackgroundTasks,
     agent_id: str = Path(..., description="ID of the agent to update"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent update configuration"),
 ) -> Response:
@@ -132,15 +131,12 @@ async def override_agent_endpoint(
         - 404: Agent not found
         - 500: Database error
     """
-    if not agent.picture:
-        try:
-            generated_avatar = await generate_avatar(agent_id, agent)
-            if generated_avatar:
-                agent.picture = generated_avatar
-        except Exception as e:
-            logger.error("Failed to auto-generate avatar: %s", e)
+    picture_provided = "picture" in agent.model_fields_set
 
     latest_agent, agent_data = await override_agent(agent_id, agent)
+
+    if not picture_provided:
+        background_tasks.add_task(backfill_agent_avatar, agent_id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 
@@ -160,6 +156,7 @@ async def override_agent_endpoint(
     summary="Patch Agent",
 )
 async def patch_agent_endpoint(
+    background_tasks: BackgroundTasks,
     agent_id: str = Path(..., description="ID of the agent to patch"),
     agent: AgentUpdate = Body(AgentUpdate, description="Agent patch configuration"),
 ) -> Response:
@@ -183,26 +180,20 @@ async def patch_agent_endpoint(
         - 404: Agent not found
         - 500: Database error
     """
-    # Check if we should auto-generate an avatar
-    # Generate if picture is not being explicitly set to a truthy value
-    # AND the existing agent has no picture
     update_fields = agent.model_dump(exclude_unset=True)
-    picture_explicitly_set = "picture" in update_fields and update_fields["picture"]
-    if not picture_explicitly_set:
-        existing_agent = await get_agent_by_id(agent_id)
-        if existing_agent and not existing_agent.picture:
-            try:
-                generated_avatar = await generate_avatar(agent_id, agent)
-                if generated_avatar:
-                    agent.picture = generated_avatar
-            except Exception as e:
-                logger.error("Failed to auto-generate avatar: %s", e)
+    picture_explicitly_set = "picture" in update_fields
 
     latest_agent, agent_data = await patch_agent(agent_id, agent)
 
     # Invalidate lead cache when purpose changes, so lead agent rebuilds sub-agents list
     if "purpose" in update_fields:
         invalidate_lead_cache(latest_agent.team_id or "system")
+
+    # backfill_agent_avatar re-reads the row and short-circuits if picture is
+    # already set, so we can schedule unconditionally whenever the caller
+    # didn't hand us one and skip a hot-path DB round-trip here.
+    if not picture_explicitly_set:
+        background_tasks.add_task(backfill_agent_avatar, agent_id)
 
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
 

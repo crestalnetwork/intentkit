@@ -614,3 +614,101 @@ class TestCheckPermission:
         assert await check_permission("my-team", "user-1", TeamRole.MEMBER) is True
         # Verify it cached the result
         mock_redis.set.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# backfill_team_avatar  (async, runs as BackgroundTask)
+# ---------------------------------------------------------------------------
+
+
+class TestBackfillTeamAvatar:
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.get_session")
+    async def test_noop_when_team_missing(self, mock_get_session):
+        from intentkit.core.team.membership import backfill_team_avatar
+
+        mock_session = MagicMock()
+        mock_session.get = AsyncMock(return_value=None)
+        mock_session.execute = AsyncMock()
+        mock_get_session.return_value = _mock_session_ctx(mock_session)
+
+        await backfill_team_avatar("ghost-team")
+        mock_session.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.get_session")
+    async def test_noop_when_avatar_already_set(self, mock_get_session):
+        from intentkit.core.team.membership import backfill_team_avatar
+
+        mock_team_row = MagicMock()
+        mock_team_row.avatar = "already-here.png"
+        mock_team_row.name = "My Team"
+        mock_session = MagicMock()
+        mock_session.get = AsyncMock(return_value=mock_team_row)
+        mock_session.execute = AsyncMock()
+        mock_get_session.return_value = _mock_session_ctx(mock_session)
+
+        await backfill_team_avatar("my-team")
+        mock_session.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.get_redis")
+    @patch(f"{MODULE}.generate_team_avatar", new_callable=AsyncMock)
+    @patch(f"{MODULE}.get_session")
+    async def test_happy_path_writes_and_invalidates_cache(
+        self, mock_get_session, mock_generate, mock_get_redis
+    ):
+        from intentkit.core.team.membership import backfill_team_avatar
+
+        # First session: read team row
+        read_session = MagicMock()
+        team_row = MagicMock()
+        team_row.avatar = None
+        team_row.name = "Team X"
+        read_session.get = AsyncMock(return_value=team_row)
+        # Second session: write avatar
+        write_session = MagicMock()
+        write_session.execute = AsyncMock()
+        write_session.commit = AsyncMock()
+
+        mock_get_session.side_effect = [
+            _mock_session_ctx(read_session),
+            _mock_session_ctx(write_session),
+        ]
+
+        mock_generate.return_value = "avatars/team/team-x/abc.png"
+        mock_redis = AsyncMock()
+        mock_redis.delete = AsyncMock()
+        mock_get_redis.return_value = mock_redis
+
+        await backfill_team_avatar("team-x")
+
+        mock_generate.assert_awaited_once_with("team-x", "Team X")
+        write_session.execute.assert_awaited_once()
+        write_session.commit.assert_awaited_once()
+        mock_redis.delete.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.generate_team_avatar", new_callable=AsyncMock)
+    @patch(f"{MODULE}.get_session")
+    async def test_swallows_generate_failure(self, mock_get_session, mock_generate):
+        from intentkit.core.team.membership import backfill_team_avatar
+
+        read_session = MagicMock()
+        team_row = MagicMock()
+        team_row.avatar = None
+        team_row.name = "Team X"
+        read_session.get = AsyncMock(return_value=team_row)
+        write_session = MagicMock()
+        write_session.execute = AsyncMock()
+
+        mock_get_session.side_effect = [
+            _mock_session_ctx(read_session),
+            _mock_session_ctx(write_session),
+        ]
+
+        mock_generate.side_effect = RuntimeError("model down")
+
+        # Should not raise.
+        await backfill_team_avatar("team-x")
+        write_session.execute.assert_not_called()

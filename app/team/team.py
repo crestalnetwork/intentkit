@@ -4,7 +4,16 @@ import json
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Body, Depends, File, Path, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    File,
+    Path,
+    Response,
+    UploadFile,
+)
 from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy import update as sa_update
 
@@ -13,6 +22,7 @@ from intentkit.clients.supabase import get_user_identities, parse_linked_provide
 from intentkit.config.db import get_session
 from intentkit.core.team.channel import get_default_channel, set_default_channel
 from intentkit.core.team.membership import (
+    backfill_team_avatar,
     check_permission,
     create_invite,
     create_team,
@@ -50,6 +60,7 @@ class CreateInviteRequest(BaseModel):
 
 @team_management_router.post("/teams", status_code=201)
 async def create_team_endpoint(
+    background_tasks: BackgroundTasks,
     body: CreateTeamRequest = Body(...),
     user_id: str = Depends(get_current_user),
 ) -> Response:
@@ -74,6 +85,8 @@ async def create_team_endpoint(
             )
             await db.commit()
         team = team.model_copy(update={"plan": plan})
+
+    background_tasks.add_task(backfill_team_avatar, team.id)
 
     return Response(
         content=team.model_dump_json(),

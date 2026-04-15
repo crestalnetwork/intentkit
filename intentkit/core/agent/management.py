@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -318,6 +318,50 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
             )
 
     return latest_agent, agent_data
+
+
+async def backfill_agent_avatar(agent_id: str) -> None:
+    """Generate an avatar for an agent and write it back if still empty.
+
+    Intended to be scheduled as a background task after agent create/override/
+    patch. No-ops (and swallows all errors) if the agent is gone, already has a
+    picture, or the generation/upload fails.
+    """
+    # Deferred import: intentkit.core.avatar pulls in heavy optional deps
+    # (PIL, google.genai, openai) that would otherwise load on every cold
+    # start of any service importing core.agent.
+    from intentkit.core.avatar import generate_avatar
+
+    async with get_session() as db:
+        db_agent = await db.get(AgentTable, agent_id)
+        if not db_agent or db_agent.picture:
+            return
+        agent_snapshot = Agent.model_validate(db_agent)
+
+    try:
+        avatar_path = await generate_avatar(agent_id, agent_snapshot)
+    except Exception as e:
+        logger.warning("Agent avatar backfill generate failed for %s: %s", agent_id, e)
+        return
+    if not avatar_path:
+        return
+
+    try:
+        async with get_session() as db:
+            # Match both NULL and empty-string so a prior PATCH that cleared the
+            # column to "" still gets backfilled; the scheduling sites treat
+            # empty string as missing, and the write must agree.
+            await db.execute(
+                update(AgentTable)
+                .where(
+                    AgentTable.id == agent_id,
+                    or_(AgentTable.picture.is_(None), AgentTable.picture == ""),
+                )
+                .values(picture=avatar_path)
+            )
+            await db.commit()
+    except Exception as e:
+        logger.warning("Agent avatar backfill write failed for %s: %s", agent_id, e)
 
 
 async def deploy_agent(

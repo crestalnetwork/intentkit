@@ -7,6 +7,8 @@ import re
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from sqlalchemy import or_, update
+
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
 from intentkit.models.team import (
@@ -137,7 +139,12 @@ async def generate_team_avatar(team_id: str, team_name: str) -> str | None:
 
 
 async def create_team(team_id: str, name: str, creator_user_id: str) -> Team:
-    """Create a new team with avatar generation.
+    """Create a new team without avatar.
+
+    Avatar generation is deferred to a background task triggered by the
+    caller (see `backfill_team_avatar`), since generating a team picture
+    involves slow LLM + image-gen + S3 I/O that should not block the
+    creation response or widen the window for concurrent-create races.
 
     Raises:
         ValueError: If team ID format is invalid or already taken.
@@ -146,21 +153,56 @@ async def create_team(team_id: str, name: str, creator_user_id: str) -> Team:
     if not validation["valid"]:
         raise ValueError(str(validation["reason"]))
 
-    # Generate avatar (failure does not block creation)
-    avatar: str | None = None
-    try:
-        avatar = await generate_team_avatar(team_id, name)
-    except Exception as e:
-        logger.warning("Avatar generation failed for team %s: %s", team_id, e)
-
     team_create = TeamCreate(
         id=team_id,
         name=name,
-        avatar=avatar,
+        avatar=None,
         default_channel=None,
         default_channel_chat_id=None,
     )
     return await team_create.save(creator_user_id)
+
+
+async def backfill_team_avatar(team_id: str) -> None:
+    """Generate an avatar for a team and write it back if still empty.
+
+    Intended to be scheduled as a background task after team creation.
+    No-ops (and swallows all errors) if the team is gone, already has an
+    avatar, or the generation/upload fails.
+    """
+    async with get_session() as db:
+        team_row = await db.get(TeamTable, team_id)
+        if not team_row or team_row.avatar:
+            return
+        team_name = team_row.name
+
+    try:
+        avatar_path = await generate_team_avatar(team_id, team_name)
+    except Exception as e:
+        logger.warning("Team avatar backfill generate failed for %s: %s", team_id, e)
+        return
+    if not avatar_path:
+        return
+
+    try:
+        async with get_session() as db:
+            # Match both NULL and empty-string so a prior PATCH that cleared
+            # the column to "" still gets backfilled; the scheduling site
+            # treats empty string as missing, and the write must agree.
+            await db.execute(
+                update(TeamTable)
+                .where(
+                    TeamTable.id == team_id,
+                    or_(TeamTable.avatar.is_(None), TeamTable.avatar == ""),
+                )
+                .values(avatar=avatar_path)
+            )
+            await db.commit()
+    except Exception as e:
+        logger.warning("Team avatar backfill write failed for %s: %s", team_id, e)
+        return
+
+    await _invalidate_team_cache(team_id)
 
 
 async def get_team(team_id: str) -> Team | None:
@@ -199,8 +241,6 @@ async def update_team(
     if name is None and avatar is None:
         raise ValueError("No updates provided")
 
-    from sqlalchemy import update
-
     async with get_session() as db:
         values: dict[str, str] = {}
         if name is not None:
@@ -214,12 +254,7 @@ async def update_team(
             raise ValueError(f"Team {team_id} not found")
         await db.commit()
 
-    # Invalidate cache
-    try:
-        redis = get_redis()
-        await redis.delete(f"{_CACHE_TEAM_PREFIX}{team_id}")
-    except Exception as e:
-        logger.warning("Failed to invalidate team cache for %s: %s", team_id, e)
+    await _invalidate_team_cache(team_id)
 
     team = await Team.get(team_id)
     if not team:
@@ -382,6 +417,15 @@ async def _invalidate_role_cache(team_id: str, user_id: str) -> None:
         logger.warning(
             "Failed to invalidate role cache for %s:%s: %s", team_id, user_id, e
         )
+
+
+async def _invalidate_team_cache(team_id: str) -> None:
+    """Delete cached team entry from Redis."""
+    try:
+        redis = get_redis()
+        await redis.delete(f"{_CACHE_TEAM_PREFIX}{team_id}")
+    except Exception as e:
+        logger.warning("Failed to invalidate team cache for %s: %s", team_id, e)
 
 
 async def change_member_role(team_id: str, user_id: str, new_role: TeamRole) -> None:

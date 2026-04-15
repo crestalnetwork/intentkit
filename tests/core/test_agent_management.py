@@ -434,3 +434,104 @@ class TestDeployAgent:
         with pytest.raises(IntentKitAPIError) as exc_info:
             await deploy_agent("agent-1", agent_update, "owner-1")
         assert exc_info.value.status_code == 403
+
+
+# ===========================================================================
+# backfill_agent_avatar (runs as BackgroundTask after create/patch/override)
+# ===========================================================================
+
+
+class TestBackfillAgentAvatar:
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.get_session")
+    async def test_noop_when_agent_missing(self, mock_get_session):
+        from intentkit.core.agent.management import backfill_agent_avatar
+
+        mock_session = MagicMock()
+        mock_session.get = AsyncMock(return_value=None)
+        mock_session.execute = AsyncMock()
+        ctx, _ = _make_session_mock()
+        ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_get_session.return_value = ctx
+
+        await backfill_agent_avatar("ghost")
+        mock_session.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch(f"{MODULE}.get_session")
+    async def test_noop_when_picture_already_set(self, mock_get_session):
+        from intentkit.core.agent.management import backfill_agent_avatar
+
+        row = MagicMock()
+        row.picture = "existing.png"
+        mock_session = MagicMock()
+        mock_session.get = AsyncMock(return_value=row)
+        mock_session.execute = AsyncMock()
+        ctx, _ = _make_session_mock()
+        ctx.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_get_session.return_value = ctx
+
+        await backfill_agent_avatar("agent-1")
+        mock_session.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("intentkit.core.avatar.generate_avatar", new_callable=AsyncMock)
+    @patch("intentkit.models.agent.Agent.model_validate")
+    @patch(f"{MODULE}.get_session")
+    async def test_happy_path_writes_new_picture(
+        self, mock_get_session, mock_validate, mock_generate
+    ):
+        from intentkit.core.agent.management import backfill_agent_avatar
+
+        # Read: agent row with no picture.
+        read_session = MagicMock()
+        agent_row = MagicMock()
+        agent_row.picture = None
+        read_session.get = AsyncMock(return_value=agent_row)
+        # Write: update DB with new picture.
+        write_session = MagicMock()
+        write_session.execute = AsyncMock()
+        write_session.commit = AsyncMock()
+
+        read_ctx = MagicMock()
+        read_ctx.__aenter__ = AsyncMock(return_value=read_session)
+        read_ctx.__aexit__ = AsyncMock(return_value=None)
+        write_ctx = MagicMock()
+        write_ctx.__aenter__ = AsyncMock(return_value=write_session)
+        write_ctx.__aexit__ = AsyncMock(return_value=None)
+        mock_get_session.side_effect = [read_ctx, write_ctx]
+
+        agent_snapshot = MagicMock()
+        mock_validate.return_value = agent_snapshot
+        mock_generate.return_value = "avatars/agent-1/abc.png"
+
+        await backfill_agent_avatar("agent-1")
+
+        mock_generate.assert_awaited_once_with("agent-1", agent_snapshot)
+        write_session.execute.assert_awaited_once()
+        write_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    @patch("intentkit.core.avatar.generate_avatar", new_callable=AsyncMock)
+    @patch("intentkit.models.agent.Agent.model_validate")
+    @patch(f"{MODULE}.get_session")
+    async def test_swallows_generate_failure(
+        self, mock_get_session, mock_validate, mock_generate
+    ):
+        from intentkit.core.agent.management import backfill_agent_avatar
+
+        read_session = MagicMock()
+        agent_row = MagicMock()
+        agent_row.picture = None
+        read_session.get = AsyncMock(return_value=agent_row)
+
+        read_ctx = MagicMock()
+        read_ctx.__aenter__ = AsyncMock(return_value=read_session)
+        read_ctx.__aexit__ = AsyncMock(return_value=None)
+        mock_get_session.side_effect = [read_ctx]
+
+        mock_validate.return_value = MagicMock()
+        mock_generate.side_effect = RuntimeError("model down")
+
+        # Must not raise (runs in BackgroundTasks, errors would surface to user).
+        await backfill_agent_avatar("agent-1")

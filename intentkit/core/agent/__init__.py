@@ -5,7 +5,13 @@ from .analytics import (
     update_agents_assets,
     update_agents_statistics,
 )
-from .management import create_agent, deploy_agent, override_agent, patch_agent
+from .management import (
+    backfill_agent_avatar,
+    create_agent,
+    deploy_agent,
+    override_agent,
+    patch_agent,
+)
 from .notifications import send_agent_notification
 from .public_info import override_public_info, update_public_info
 from .queries import get_agent, get_agent_by_id_or_slug, iterate_agent_id_batches
@@ -21,6 +27,7 @@ __all__ = [
     "override_agent",
     "patch_agent",
     "create_agent",
+    "backfill_agent_avatar",
     "deploy_agent",
     "agent_action_cost",
     "update_agent_action_cost",
