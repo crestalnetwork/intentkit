@@ -1,7 +1,7 @@
-# Release v0.17.45
+# Release v0.17.46
 
-## Bug Fixes
+## Improvements
 
-- Fixed a critical issue where autonomous (scheduled) tasks failed to run when payment was enabled — autonomous triggers now correctly bill the agent's team, matching the behavior of other platform channels.
+- Chat conversations now continue running on the server when you navigate to other pages — only the explicit Cancel button stops generation. Returning to the thread shows the latest messages, including ones produced while you were away.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.44...v0.17.45
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.45...v0.17.46
