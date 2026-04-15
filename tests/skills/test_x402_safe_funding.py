@@ -2,6 +2,7 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from web3.exceptions import TimeExhausted, Web3RPCError
 
 from intentkit.skills.x402.pay import X402Pay
 
@@ -111,3 +112,82 @@ async def test_safe_funding_skips_when_balance_sufficient():
         )
 
     mock_transfer.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_x402_pay_returns_tool_error_when_prefund_fails():
+    skill = X402Pay()
+
+    with patch.object(
+        skill,
+        "_prefund_safe_wallet",
+        new=AsyncMock(side_effect=RuntimeError("insufficient gas for transfer")),
+    ):
+        result = await skill.arun(
+            {
+                "method": "GET",
+                "url": "https://example.com/pay",
+                "max_value": 1,
+            }
+        )
+
+    assert result.startswith("tool error:")
+    assert "insufficient gas for transfer" in result
+
+
+@pytest.mark.asyncio
+async def test_x402_pay_returns_timeout_tool_error_when_prefund_receipt_times_out():
+    skill = X402Pay()
+
+    with patch.object(
+        skill,
+        "_prefund_safe_wallet",
+        new=AsyncMock(
+            side_effect=TimeExhausted(
+                "Transaction HexBytes('0xabc') is not in the chain after 120 seconds"
+            )
+        ),
+    ):
+        result = await skill.arun(
+            {
+                "method": "GET",
+                "url": "https://example.com/pay",
+                "max_value": 1,
+            }
+        )
+
+    assert result.startswith("tool error:")
+    assert "not confirmed before timeout" in result
+
+
+@pytest.mark.asyncio
+async def test_x402_pay_returns_gas_tool_error_when_prefund_rpc_has_insufficient_funds():
+    skill = X402Pay()
+
+    with (
+        patch.object(
+            skill,
+            "_prefund_safe_wallet",
+            new=AsyncMock(
+                side_effect=Web3RPCError(
+                    "insufficient funds for gas * price + value: have 177004000000000 "
+                    "want 55000000000000000"
+                )
+            ),
+        ),
+        patch(
+            "intentkit.skills.x402.base.send_alert",
+        ) as mock_send_alert,
+    ):
+        result = await skill.arun(
+            {
+                "method": "GET",
+                "url": "https://example.com/pay",
+                "max_value": 1,
+            }
+        )
+
+    assert result.startswith("tool error:")
+    assert "temporarily unavailable" in result
+    mock_send_alert.assert_called_once()
+    assert "paymaster gas shortage" in mock_send_alert.call_args.kwargs["message"]

@@ -14,12 +14,14 @@ import httpx
 from eth_abi.abi import encode
 from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
+from web3.exceptions import TimeExhausted, Web3RPCError
 from x402.schemas import PaymentRequired, PaymentRequiredV1
 
 from intentkit.config.config import config
 from intentkit.models.agent_data import AgentData
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.skills.onchain import IntentKitOnChainSkill
+from intentkit.utils.alert import send_alert
 from intentkit.wallets.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 
 logger = logging.getLogger(__name__)
@@ -120,6 +122,30 @@ def decode_payment_signature_header(
         return json.loads(base64.b64decode(payment_signature_header))
     except (json.JSONDecodeError, ValueError):
         return None
+
+
+def format_prefund_web3_error(exc: Exception) -> str | None:
+    """Convert known web3 prefund failures into user-facing tool errors."""
+    if isinstance(exc, TimeExhausted):
+        return (
+            "Safe wallet prefund transaction was not confirmed before timeout. "
+            "The funding transaction may still be pending on-chain; please check "
+            "the wallet status and try again."
+        )
+
+    if isinstance(exc, Web3RPCError):
+        error_payload = exc.args[0] if exc.args else None
+        if isinstance(error_payload, dict):
+            error_message = str(error_payload.get("message") or exc)
+        else:
+            error_message = str(exc)
+
+        if "insufficient funds for gas" in error_message.lower():
+            return "Safe wallet prefund is temporarily unavailable. Please try again later."
+
+        return f"Safe wallet prefund RPC error: {error_message}"
+
+    return None
 
 
 def normalize_payment_required_payload(
@@ -241,6 +267,63 @@ class X402BaseSkill(IntentKitOnChainSkill):
         # Validate wallet provider before getting signer
         self._validate_wallet_provider()
         return await self.get_wallet_signer()
+
+    def alert_prefund_paymaster_gas_shortage(
+        self,
+        *,
+        skill_name: str,
+        method: str,
+        url: str,
+        exc: Web3RPCError,
+    ) -> None:
+        """Alert admins when Safe wallet prefund fails due to paymaster gas shortage."""
+        error_message = str(exc)
+        if "insufficient funds for gas" not in error_message.lower():
+            return
+
+        try:
+            context = self.get_context()
+            agent = context.agent
+            agent_id = context.agent_id
+            network_id = agent.network_id if agent else None
+            wallet_provider = agent.wallet_provider if agent else None
+        except (AttributeError, ValueError):
+            agent_id = "unknown"
+            network_id = None
+            wallet_provider = None
+
+        try:
+            send_alert(
+                message="<!channel> X402 paymaster gas shortage detected",
+                attachments=[
+                    {
+                        "color": "danger",
+                        "title": "Safe wallet prefund failed due to paymaster gas shortage",
+                        "fields": [
+                            {"title": "Agent ID", "short": True, "value": agent_id},
+                            {"title": "Skill", "short": True, "value": skill_name},
+                            {"title": "Method", "short": True, "value": method},
+                            {
+                                "title": "Wallet Provider",
+                                "short": True,
+                                "value": wallet_provider or "unknown",
+                            },
+                            {
+                                "title": "Network",
+                                "short": True,
+                                "value": network_id or "unknown",
+                            },
+                            {"title": "URL", "value": url},
+                            {"title": "Error", "value": error_message},
+                        ],
+                    }
+                ],
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send x402 paymaster gas shortage alert for agent %s",
+                agent_id,
+            )
 
     async def _get_payment_requirement(
         self,

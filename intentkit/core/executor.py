@@ -17,8 +17,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from langchain_core.tools import BaseTool
+from langchain_core.tools.base import ToolException
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
+from pydantic import ValidationError
+from pydantic.v1 import ValidationError as ValidationErrorV1
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
@@ -47,6 +50,11 @@ _build_locks: dict[str, asyncio.Lock] = {}
 _global_lock = asyncio.Lock()
 
 _EXECUTOR_CACHE_TTL = timedelta(hours=1)
+
+
+def _should_retry_tool_failure(exc: Exception) -> bool:
+    """Retry transient tool failures, but not user-facing tool/validation errors."""
+    return not isinstance(exc, (ToolException, ValidationError, ValidationErrorV1))
 
 
 async def build_executor(
@@ -242,7 +250,7 @@ async def build_executor(
         DynamicPromptMiddleware(agent, agent_data),
         EmptyContentSafetyMiddleware(),
         StepTrackingMiddleware(),
-        ToolRetryMiddleware(),
+        ToolRetryMiddleware(retry_on=_should_retry_tool_failure),
         ModelRetryMiddleware(),
     ]
 

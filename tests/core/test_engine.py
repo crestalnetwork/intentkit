@@ -2,7 +2,9 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain.agents.middleware import ToolRetryMiddleware
 from langchain_core.messages import AIMessage
+from langchain_core.tools.base import ToolException
 
 from intentkit.core.engine import stream_agent
 from intentkit.core.executor import (
@@ -75,6 +77,11 @@ async def test_build_executor(mock_agent, mock_agent_data):
             presence_penalty=0.0,
         )
         mock_create_lc_agent.assert_called_once()
+        middleware = mock_create_lc_agent.call_args.kwargs["middleware"]
+        tool_retry = next(m for m in middleware if isinstance(m, ToolRetryMiddleware))
+        assert callable(tool_retry.retry_on)
+        assert tool_retry.retry_on(ToolException("boom")) is False
+        assert tool_retry.retry_on(RuntimeError("boom")) is True
         assert executor == mock_create_lc_agent.return_value
 
 

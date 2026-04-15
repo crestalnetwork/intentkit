@@ -13,8 +13,9 @@ import httpx
 from epyxid import XID
 from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
+from web3.exceptions import TimeExhausted, Web3RPCError
 
-from intentkit.skills.x402.base import X402BaseSkill
+from intentkit.skills.x402.base import X402BaseSkill, format_prefund_web3_error
 from intentkit.skills.x402.httpx_compat import PaymentError, X402HttpxCompatClient
 from intentkit.utils.error import IntentKitAPIError
 
@@ -166,6 +167,18 @@ class X402Pay(X402BaseSkill):
             raise ToolException(
                 f"Network error while connecting to {url} or RPC: {str(exc)}"
             ) from exc
+        except (TimeExhausted, Web3RPCError) as exc:
+            if isinstance(exc, Web3RPCError):
+                self.alert_prefund_paymaster_gas_shortage(
+                    skill_name=self.name,
+                    method=method_upper,
+                    url=url,
+                    exc=exc,
+                )
+            error_message = format_prefund_web3_error(exc)
+            if error_message:
+                raise ToolException(error_message) from exc
+            raise ToolException(str(exc)) from exc
         except IntentKitAPIError as exc:
             raise ToolException(str(exc)) from exc
         except ToolException:
