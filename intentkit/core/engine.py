@@ -660,7 +660,8 @@ async def stream_agent_raw(
 
     # Determine payer team (needed for credit event recording regardless of payment_enabled)
     # Normal user conversations: user's team pays
-    # Platform channels (Telegram/Discord/Twitter/API/X402): agent's team pays
+    # Platform channels (Telegram/Discord/Twitter/API/X402) and autonomous triggers:
+    # agent's team pays
     payer = message.team_id
     if user_message.author_type in [
         AuthorType.TELEGRAM,
@@ -668,6 +669,7 @@ async def stream_agent_raw(
         AuthorType.TWITTER,
         AuthorType.API,
         AuthorType.X402,
+        AuthorType.TRIGGER,
     ]:
         payer = agent.team_id
 
