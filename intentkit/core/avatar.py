@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 import httpx
+import openrouter
 from google import genai
 from google.genai import types
 from openai import AsyncOpenAI
@@ -13,6 +14,8 @@ from intentkit.clients.s3 import store_image_bytes
 from intentkit.config.config import config
 
 logger = logging.getLogger(__name__)
+
+OPENROUTER_IMAGE_MODEL = "bytedance-seed/seedream-4.5"
 
 # Prompt fields to extract from agent objects for avatar generation.
 # These are (field_name, display_label) pairs.
@@ -81,24 +84,72 @@ async def _download_image(url: str) -> bytes:
 
 
 async def generate_image_openrouter(prompt: str) -> bytes | None:
-    """Generate image using OpenRouter with bytedance-seed/seedream-4.5."""
+    """Generate image using OpenRouter (bytedance-seed/seedream-4.5).
+
+    OpenRouter does not expose an OpenAI-compatible `/images/generations`
+    endpoint; image generation routes through chat completions with the
+    `modalities` parameter. Image-only models reject `["image", "text"]`,
+    so we ask for `["image"]` which is accepted by all image-output models.
+    """
     try:
-        client = AsyncOpenAI(
+        client = openrouter.OpenRouter(
             api_key=config.openrouter_api_key,
-            base_url="https://openrouter.ai/api/v1",
+            http_referer="https://github.com/crestalnetwork/intentkit",
+            x_open_router_title="IntentKit",
+            x_open_router_categories="cloud-agent",
+            timeout_ms=120_000,
         )
-        response = await client.images.generate(
-            model="bytedance-seed/seedream-4.5",
-            prompt=prompt,
-            size="1024x1024",
-            n=1,
+        response = await client.chat.send_async(
+            model=OPENROUTER_IMAGE_MODEL,
+            modalities=["image"],
+            messages=[{"role": "user", "content": prompt}],
         )
-        if response.data and response.data[0].b64_json:
-            return base64.b64decode(response.data[0].b64_json)
-        if response.data and response.data[0].url:
-            return await _download_image(response.data[0].url)
+        url = _extract_openrouter_image_url(response)
+        if not url:
+            logger.error("OpenRouter image generation returned no image url")
+            return None
+        if url.startswith("data:"):
+            return base64.b64decode(url.split(",", 1)[1])
+        return await _download_image(url)
     except Exception as e:
         logger.error("OpenRouter image generation failed: %s", e)
+    return None
+
+
+def _extract_openrouter_image_url(response: Any) -> str | None:
+    """Pull the first image URL from an OpenRouter chat-completions response.
+
+    Different image models put the result in different places: most use
+    ``message.images[0].image_url.url``, a few return it as an ``image_url``
+    content part. Check both so avatar and skill callers stay consistent.
+    """
+    try:
+        message = response.choices[0].message
+    except (AttributeError, IndexError):
+        return None
+
+    images = getattr(message, "images", None) or []
+    if images:
+        url = getattr(getattr(images[0], "image_url", None), "url", None)
+        if url:
+            return url
+
+    content = getattr(message, "content", None)
+    if isinstance(content, list):
+        for part in content:
+            part_type = getattr(part, "type", None) or (
+                part.get("type") if isinstance(part, dict) else None
+            )
+            if part_type != "image_url":
+                continue
+            image_url = getattr(part, "image_url", None) or (
+                part.get("image_url") if isinstance(part, dict) else None
+            )
+            url = getattr(image_url, "url", None) or (
+                image_url.get("url") if isinstance(image_url, dict) else None
+            )
+            if url:
+                return url
     return None
 
 

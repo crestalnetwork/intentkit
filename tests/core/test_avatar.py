@@ -1,10 +1,15 @@
+import base64
 import io
+from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from PIL import Image
 
 from intentkit.core.avatar import (
+    OPENROUTER_IMAGE_MODEL,
+    _extract_openrouter_image_url,
     _normalize_avatar,
     build_agent_profile,
     generate_avatar,
@@ -14,6 +19,34 @@ from intentkit.core.avatar import (
     generate_image_xai,
     select_model_and_generate,
 )
+
+
+def _make_openrouter_response(
+    *,
+    images: list[str] | None = None,
+    content_parts: list[dict] | None = None,
+    content: str | None = None,
+) -> SimpleNamespace:
+    """Build an SDK-shaped ChatResult stand-in for tests."""
+    message_kwargs: dict = {"role": "assistant"}
+    if images is not None:
+        message_kwargs["images"] = [
+            SimpleNamespace(image_url=SimpleNamespace(url=url)) for url in images
+        ]
+    if content_parts is not None:
+        message_kwargs["content"] = [
+            SimpleNamespace(
+                type=part["type"],
+                image_url=SimpleNamespace(url=part["image_url"]["url"])
+                if part.get("image_url")
+                else None,
+            )
+            for part in content_parts
+        ]
+    elif content is not None:
+        message_kwargs["content"] = content
+    message = SimpleNamespace(**message_kwargs)
+    return SimpleNamespace(choices=[SimpleNamespace(message=message)])
 
 
 def _make_png(width: int, height: int) -> bytes:
@@ -308,76 +341,138 @@ class TestGenerateAvatar:
             assert path is None
 
 
+class TestExtractOpenrouterImageUrl:
+    def test_returns_url_from_images_field(self):
+        resp = _make_openrouter_response(images=["data:image/png;base64,xyz"])
+        assert _extract_openrouter_image_url(resp) == "data:image/png;base64,xyz"
+
+    def test_returns_url_from_content_part(self):
+        resp = _make_openrouter_response(
+            content_parts=[
+                {"type": "image_url", "image_url": {"url": "http://x/y.png"}}
+            ]
+        )
+        assert _extract_openrouter_image_url(resp) == "http://x/y.png"
+
+    def test_returns_none_when_no_choices(self):
+        assert _extract_openrouter_image_url(SimpleNamespace(choices=[])) is None
+        assert _extract_openrouter_image_url(SimpleNamespace()) is None
+
+    def test_returns_none_when_no_images_or_content(self):
+        resp = _make_openrouter_response()
+        assert _extract_openrouter_image_url(resp) is None
+
+    def test_returns_none_when_content_is_string(self):
+        resp = _make_openrouter_response(content="just a string")
+        assert _extract_openrouter_image_url(resp) is None
+
+
 class TestProviderFunctions:
+    @staticmethod
+    def _patch_openrouter_sdk(
+        response: Any | None = None,
+        *,
+        send_side_effect: BaseException | None = None,
+    ) -> tuple[Any, AsyncMock]:
+        """Patch ``openrouter.OpenRouter`` as seen by intentkit.core.avatar.
+
+        Returns ``(patch_ctx, mock_send)``. The mock client returned by the
+        patched constructor has ``.chat.send_async`` set to ``mock_send``.
+        """
+        mock_send = AsyncMock()
+        if send_side_effect is not None:
+            mock_send.side_effect = send_side_effect
+        else:
+            mock_send.return_value = response
+
+        mock_chat = MagicMock()
+        mock_chat.send_async = mock_send
+        mock_client = MagicMock(chat=mock_chat)
+
+        patch_ctx = patch(
+            "intentkit.core.avatar.openrouter.OpenRouter", return_value=mock_client
+        )
+        return patch_ctx, mock_send
+
     @pytest.mark.asyncio
-    async def test_openrouter_with_b64_response(self):
-        import base64
-
+    async def test_openrouter_with_data_url_response(self):
         fake_b64 = base64.b64encode(b"image-data").decode()
-        mock_data = MagicMock()
-        mock_data.b64_json = fake_b64
-        mock_data.url = None
-
-        mock_response = MagicMock()
-        mock_response.data = [mock_data]
+        response = _make_openrouter_response(
+            images=[f"data:image/png;base64,{fake_b64}"]
+        )
+        patch_ctx, mock_send = self._patch_openrouter_sdk(response)
 
         with patch("intentkit.core.avatar.config") as mock_config:
             mock_config.openrouter_api_key = "test-key"
-            with patch("intentkit.core.avatar.AsyncOpenAI") as mock_openai_cls:
-                mock_client = AsyncMock()
-                mock_openai_cls.return_value = mock_client
-                mock_client.images.generate.return_value = mock_response
-
+            with patch_ctx:
                 result = await generate_image_openrouter("test prompt")
 
                 assert result == b"image-data"
-                mock_openai_cls.assert_called_once_with(
-                    api_key="test-key",
-                    base_url="https://openrouter.ai/api/v1",
-                )
-                mock_client.images.generate.assert_called_once_with(
-                    model="bytedance-seed/seedream-4.5",
-                    prompt="test prompt",
-                    size="1024x1024",
-                    n=1,
-                )
+                mock_send.assert_called_once()
+                call_kwargs = mock_send.call_args.kwargs
+                assert call_kwargs["model"] == OPENROUTER_IMAGE_MODEL
+                assert call_kwargs["modalities"] == ["image"]
+                assert call_kwargs["messages"][0]["content"] == "test prompt"
 
     @pytest.mark.asyncio
-    async def test_openrouter_with_url_response(self):
-        mock_data = MagicMock()
-        mock_data.b64_json = None
-        mock_data.url = "https://example.com/image.png"
-
-        mock_response = MagicMock()
-        mock_response.data = [mock_data]
+    async def test_openrouter_with_plain_url_response(self):
+        response = _make_openrouter_response(images=["https://example.com/image.png"])
+        patch_ctx, _ = self._patch_openrouter_sdk(response)
 
         with patch("intentkit.core.avatar.config") as mock_config:
             mock_config.openrouter_api_key = "test-key"
             with (
-                patch("intentkit.core.avatar.AsyncOpenAI") as mock_openai_cls,
+                patch_ctx,
                 patch(
                     "intentkit.core.avatar._download_image",
                     new_callable=AsyncMock,
                     return_value=b"downloaded-image",
                 ) as mock_download,
             ):
-                mock_client = AsyncMock()
-                mock_openai_cls.return_value = mock_client
-                mock_client.images.generate.return_value = mock_response
-
                 result = await generate_image_openrouter("test prompt")
+
                 assert result == b"downloaded-image"
                 mock_download.assert_called_once_with("https://example.com/image.png")
 
     @pytest.mark.asyncio
-    async def test_openrouter_returns_none_on_error(self):
+    async def test_openrouter_returns_none_when_no_images(self):
+        response = _make_openrouter_response(images=[])
+        patch_ctx, _ = self._patch_openrouter_sdk(response)
+
         with patch("intentkit.core.avatar.config") as mock_config:
             mock_config.openrouter_api_key = "test-key"
-            with patch("intentkit.core.avatar.AsyncOpenAI") as mock_openai_cls:
-                mock_client = AsyncMock()
-                mock_openai_cls.return_value = mock_client
-                mock_client.images.generate.side_effect = Exception("API error")
+            with patch_ctx:
+                result = await generate_image_openrouter("test prompt")
+                assert result is None
 
+    @pytest.mark.asyncio
+    async def test_openrouter_falls_back_to_content_part(self):
+        """Some OpenRouter models return the image as an `image_url` content
+        part instead of `message.images`; the extractor must handle both."""
+        fake_b64 = base64.b64encode(b"content-part-image").decode()
+        response = _make_openrouter_response(
+            content_parts=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{fake_b64}"},
+                }
+            ]
+        )
+        patch_ctx, _ = self._patch_openrouter_sdk(response)
+
+        with patch("intentkit.core.avatar.config") as mock_config:
+            mock_config.openrouter_api_key = "test-key"
+            with patch_ctx:
+                result = await generate_image_openrouter("test prompt")
+                assert result == b"content-part-image"
+
+    @pytest.mark.asyncio
+    async def test_openrouter_returns_none_on_sdk_error(self):
+        patch_ctx, _ = self._patch_openrouter_sdk(send_side_effect=RuntimeError("boom"))
+
+        with patch("intentkit.core.avatar.config") as mock_config:
+            mock_config.openrouter_api_key = "test-key"
+            with patch_ctx:
                 result = await generate_image_openrouter("test prompt")
                 assert result is None
 

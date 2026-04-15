@@ -834,6 +834,11 @@ class OpenRouterLLM(LLMModel):
             "api_key": config.openrouter_api_key,
             "timeout": info.timeout * 1000,
             "max_retries": 3,
+            # Attribution headers so OpenRouter dashboard credits IntentKit
+            # instead of the LangChain defaults baked into langchain-openrouter.
+            "app_url": "https://github.com/crestalnetwork/intentkit",
+            "app_title": "IntentKit",
+            "app_categories": ["cloud-agent"],
         }
 
         # Add optional parameters based on model support
@@ -855,48 +860,44 @@ class OpenRouterLLM(LLMModel):
         return _create_openrouter_with_server_tools(**kwargs)
 
 
-_openrouter_sdk_patched = False
+_openrouter_usage_cost_fields_injected = False
 
 
-def _patch_openrouter_sdk() -> None:
-    """Patch the OpenRouter SDK to accept server tools.
+def _inject_cost_fields_into_chat_usage() -> None:
+    """Add ``cost`` / ``cost_details`` to the SDK's ``ChatUsage`` schema.
 
-    The SDK's ``ToolDefinitionJSON`` model requires ``type="function"`` and
-    a mandatory ``function`` field. OpenRouter server tools like
-    ``openrouter:web_search`` use different types and have no ``function``
-    field. This patch broadens ``ToolDefinitionJSON`` to accept any ``type``
-    string and makes ``function`` optional, so server-tool dicts pass through
-    the SDK's validation and are serialised as-is.
+    OpenRouter's ``/chat/completions`` response includes ``cost`` inside the
+    ``usage`` object, but ``openrouter`` SDK's generated ``ChatUsage`` model
+    (v0.9.1) does not declare those fields, so Pydantic validation drops them
+    and ``langchain-openrouter`` never surfaces them in ``response_metadata``.
+
+    Injecting the fields lets cost round-trip without a fork. Remove this
+    helper once the SDK adds the fields natively.
     """
-    global _openrouter_sdk_patched  # noqa: PLW0603
-    if _openrouter_sdk_patched:
+    global _openrouter_usage_cost_fields_injected  # noqa: PLW0603
+    if _openrouter_usage_cost_fields_injected:
         return
     try:
-        from openrouter.components import (
-            ToolDefinitionJSON,  # type: ignore[import-untyped]
-        )
+        from openrouter.components import ChatUsage  # type: ignore[import-untyped]
+        from pydantic.fields import FieldInfo
 
-        tool_model: Any = ToolDefinitionJSON
-        type_field = tool_model.model_fields.get("type")
-        func_field = tool_model.model_fields.get("function")
-        if type_field is None or func_field is None:
-            logger.warning(
-                "OpenRouter SDK ToolDefinitionJSON schema changed — "
-                "server tools patch skipped; update the integration"
-            )
+        if "cost" in ChatUsage.model_fields:
+            _openrouter_usage_cost_fields_injected = True
             return
-        # Broaden type from Literal["function"] to str
-        type_field.annotation = str
-        tool_model.__annotations__["type"] = str
-        # Make function optional (server tools don't have it)
-        orig = func_field.annotation
-        func_field.annotation = orig | None
-        func_field.default = None
-        tool_model.__annotations__["function"] = orig | None
-        tool_model.model_rebuild(force=True)
-        _openrouter_sdk_patched = True
+        cost_type: Any = float | None
+        cost_details_type: Any = dict[str, Any] | None
+        ChatUsage.__annotations__["cost"] = cost_type
+        ChatUsage.__annotations__["cost_details"] = cost_details_type
+        ChatUsage.model_fields["cost"] = FieldInfo(annotation=cost_type, default=None)
+        ChatUsage.model_fields["cost_details"] = FieldInfo(
+            annotation=cost_details_type, default=None
+        )
+        ChatUsage.model_rebuild(force=True)
+        _openrouter_usage_cost_fields_injected = True
     except Exception:
-        logger.warning("Failed to patch OpenRouter SDK for server tools", exc_info=True)
+        logger.warning(
+            "Failed to inject cost fields into OpenRouter ChatUsage", exc_info=True
+        )
 
 
 def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
@@ -904,17 +905,18 @@ def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
 
     OpenRouter server tools (e.g. ``{"type": "openrouter:web_search"}``) are
     not recognised by ``convert_to_openai_tool`` used inside the upstream
-    ``ChatOpenRouter.bind_tools``.  This subclass overrides ``bind_tools``
-    to pull server-tool dicts out, delegate the rest to the parent, and
-    re-inject the server tools into the bound kwargs so they are sent as-is
-    in the API request.
+    ``ChatOpenRouter.bind_tools``. This subclass overrides ``bind_tools`` to
+    pull server-tool dicts out, delegate the rest to the parent, and re-inject
+    the server tools into the bound kwargs so they are sent as-is in the API
+    request.
 
-    Additionally, the OpenRouter Python SDK's request model is patched once to
-    accept non-function tool types in the request body.
+    The underlying ``openrouter`` SDK (>=0.8.0) exposes ``ChatFunctionTool`` as
+    a discriminated union that natively accepts the ``openrouter:`` server-tool
+    types we use, so no SDK-level patch is required for tool types.
     """
     from langchain_openrouter import ChatOpenRouter
 
-    _patch_openrouter_sdk()
+    _inject_cost_fields_into_chat_usage()
 
     class _WithServerTools(ChatOpenRouter):
         @override

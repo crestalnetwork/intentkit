@@ -378,6 +378,15 @@ async def _handle_model_chunk(
                 user_id=user_message.user_id,
             )
             logger.info("[%s] expense message: %s", user_message.agent_id, amount)
+            # Reconciliation: log OpenRouter-reported cost alongside our
+            # token-based calculation so discrepancies can be audited.
+            or_cost = (getattr(msg, "response_metadata", None) or {}).get("cost")
+            if or_cost is not None:
+                logger.info(
+                    "[%s] openrouter reported cost: %s",
+                    user_message.agent_id,
+                    or_cost,
+                )
             chat_message_create.credit_event_id = credit_event.id
             chat_message_create.credit_cost = credit_event.total_amount
             chat_message = await chat_message_create.save_in_session(session)

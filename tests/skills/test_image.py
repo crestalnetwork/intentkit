@@ -1,7 +1,9 @@
 """Tests for image generation skills."""
 
+import base64
 from decimal import Decimal
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -158,3 +160,42 @@ def test_native_key_checks():
     # OpenRouter-only skills always return False
     assert FluxPro().has_native_key() is False
     assert Riverflow().has_native_key() is False
+
+
+@pytest.mark.asyncio
+async def test_openrouter_payload_uses_image_only_modalities():
+    """Regression: image-only OpenRouter models (flux/riverflow/seedream) reject
+    modalities=["image","text"] with "No endpoints found". The SDK call from
+    _generate_via_openrouter must request modalities=["image"] only.
+    """
+    fake_b64 = base64.b64encode(b"png-data").decode()
+    response = SimpleNamespace(
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(
+                    images=[
+                        SimpleNamespace(
+                            image_url=SimpleNamespace(
+                                url=f"data:image/png;base64,{fake_b64}"
+                            )
+                        )
+                    ],
+                )
+            )
+        ]
+    )
+    mock_send = AsyncMock(return_value=response)
+    mock_client = MagicMock(chat=MagicMock(send_async=mock_send))
+
+    with patch("intentkit.skills.image.base.config") as mock_config:
+        mock_config.openrouter_api_key = "test-key"
+        with patch(
+            "intentkit.skills.image.base.openrouter.OpenRouter",
+            return_value=mock_client,
+        ):
+            result = await FluxPro()._generate_via_openrouter("a cat", None)
+
+            assert result == b"png-data"
+            call_kwargs = mock_send.call_args.kwargs
+            assert call_kwargs["modalities"] == ["image"]
+            assert call_kwargs["model"] == "black-forest-labs/flux.2-pro"

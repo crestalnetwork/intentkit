@@ -7,6 +7,7 @@ from typing import Any, Literal, override
 
 import filetype
 import httpx
+import openrouter
 from epyxid import XID
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
@@ -75,15 +76,17 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
     async def _generate_via_openrouter(
         self, prompt: str, images: list[bytes] | None
     ) -> bytes:
-        """Generate image via OpenRouter chat completions API."""
+        """Generate image via the OpenRouter chat completions API.
+
+        Uses the ``openrouter`` Python SDK so attribution headers and retry
+        config stay consistent with the rest of the integration.
+        """
         key = config.openrouter_api_key
         if not key:
             raise ToolException("OpenRouter API key is not configured")
 
-        # Build message content
-        content: list[dict[str, Any]]
+        content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         if images:
-            content = [{"type": "text", "text": prompt}]
             for img in images:
                 b64 = base64.b64encode(img).decode()
                 content.append(
@@ -92,58 +95,66 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
                         "image_url": {"url": f"data:image/png;base64,{b64}"},
                     }
                 )
-        else:
-            content = [{"type": "text", "text": prompt}]
 
-        payload = {
-            "model": self.openrouter_model,
-            "messages": [{"role": "user", "content": content}],
-            "modalities": ["image", "text"],
-        }
-
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                json=payload,
-                headers={"Authorization": f"Bearer {key}"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-
-        # Extract image from response
         try:
-            message = data["choices"][0]["message"]
-            # OpenRouter returns images in message.images array
-            if "images" in message and message["images"]:
-                image_url = message["images"][0]["image_url"]["url"]
-                # data:image/png;base64,...
-                if image_url.startswith("data:"):
-                    b64_data = image_url.split(",", 1)[1]
-                    return base64.b64decode(b64_data)
-                # Direct URL - download it
-                async with httpx.AsyncClient(timeout=30) as client:
-                    img_resp = await client.get(image_url, follow_redirects=True)
-                    img_resp.raise_for_status()
-                    return img_resp.content
+            client = openrouter.OpenRouter(
+                api_key=key,
+                http_referer="https://github.com/crestalnetwork/intentkit",
+                x_open_router_title="IntentKit",
+                x_open_router_categories="cloud-agent",
+                timeout_ms=120_000,
+            )
+            # Image-only OpenRouter models (seedream/flux/riverflow) reject
+            # ["image", "text"] with "No endpoints found that support the
+            # requested output modalities". ["image"] works universally.
+            response = await client.chat.send_async(
+                model=self.openrouter_model,
+                modalities=["image"],
+                messages=[{"role": "user", "content": content}],  # pyright: ignore[reportArgumentType]
+            )
+        except Exception as e:
+            raise ToolException(f"OpenRouter request failed: {e}")
 
-            # Fallback: check content parts for image data
-            if "content" in message:
-                for part in (
-                    message["content"] if isinstance(message["content"], list) else []
-                ):
-                    if isinstance(part, dict) and part.get("type") == "image_url":
-                        url = part["image_url"]["url"]
-                        if url.startswith("data:"):
-                            b64_data = url.split(",", 1)[1]
-                            return base64.b64decode(b64_data)
-                        async with httpx.AsyncClient(timeout=30) as client:
-                            img_resp = await client.get(url, follow_redirects=True)
-                            img_resp.raise_for_status()
-                            return img_resp.content
-        except (KeyError, IndexError) as e:
-            raise ToolException(f"Failed to parse OpenRouter image response: {e}")
+        image_bytes = await _extract_openrouter_image_bytes(response)
+        if image_bytes is None:
+            raise ToolException("No image found in OpenRouter response")
+        return image_bytes
 
-        raise ToolException("No image found in OpenRouter response")
+    @override
+    async def _arun(
+        self,
+        prompt: str,
+        images: list[str] | None = None,
+        **kwargs: Any,
+    ) -> tuple[str, list[ChatMessageAttachment]]:
+        """Orchestrate image generation: key check -> generate -> upload -> return."""
+        context = self.get_context()
+
+        try:
+            input_images: list[bytes] | None = None
+            if images:
+                input_images = await self._download_images(images)
+
+            if self.has_native_key():
+                image_bytes = await self._generate_native(prompt, input_images)
+            elif config.openrouter_api_key and self.openrouter_model:
+                image_bytes = await self._generate_via_openrouter(prompt, input_images)
+            else:
+                raise ToolException(
+                    f"No API key configured for {self.name}. "
+                    "Need native provider key or OpenRouter key."
+                )
+
+            return await self._upload_and_return(image_bytes, context, self.name)
+
+        except ToolException:
+            raise
+        except httpx.HTTPStatusError as e:
+            raise ToolException(
+                f"API request failed: {e.response.status_code} {e.response.text[:200]}"
+            )
+        except Exception as e:
+            raise ToolException(f"Error generating image with {self.name}: {e}")
 
     async def _upload_and_return(
         self, image_bytes: bytes, context: Any, skill_name: str
@@ -173,40 +184,50 @@ class ImageBaseTool(IntentKitSkill, metaclass=ABCMeta):
             "Do not include the image URL in your response unless the user explicitly asks for it."
         ), [attachment]
 
-    @override
-    async def _arun(
-        self,
-        prompt: str,
-        images: list[str] | None = None,
-        **kwargs: Any,
-    ) -> tuple[str, list[ChatMessageAttachment]]:
-        """Orchestrate image generation: key check -> generate -> upload -> return."""
-        context = self.get_context()
 
-        try:
-            # Download input images if provided
-            input_images: list[bytes] | None = None
-            if images:
-                input_images = await self._download_images(images)
+async def _extract_openrouter_image_bytes(response: Any) -> bytes | None:
+    """Return the first generated image from an OpenRouter chat-completion.
 
-            # Try native API first, fall back to OpenRouter
-            if self.has_native_key():
-                image_bytes = await self._generate_native(prompt, input_images)
-            elif config.openrouter_api_key and self.openrouter_model:
-                image_bytes = await self._generate_via_openrouter(prompt, input_images)
-            else:
-                raise ToolException(
-                    f"No API key configured for {self.name}. "
-                    "Need native provider key or OpenRouter key."
-                )
+    Different models emit the image either on ``message.images`` or as an
+    ``image_url`` entry in ``message.content``. Data URLs are decoded in-
+    process; plain URLs are fetched.
+    """
+    try:
+        message = response.choices[0].message
+    except (AttributeError, IndexError):
+        return None
 
-            return await self._upload_and_return(image_bytes, context, self.name)
+    for url in _iter_openrouter_image_urls(message):
+        if url.startswith("data:"):
+            return base64.b64decode(url.split(",", 1)[1])
+        async with httpx.AsyncClient(timeout=30) as client:
+            img_resp = await client.get(url, follow_redirects=True)
+            img_resp.raise_for_status()
+            return img_resp.content
+    return None
 
-        except ToolException:
-            raise
-        except httpx.HTTPStatusError as e:
-            raise ToolException(
-                f"API request failed: {e.response.status_code} {e.response.text[:200]}"
-            )
-        except Exception as e:
-            raise ToolException(f"Error generating image with {self.name}: {e}")
+
+def _iter_openrouter_image_urls(message: Any):
+    """Yield candidate image URLs from an OpenRouter assistant message."""
+    for image in getattr(message, "images", None) or []:
+        url = getattr(getattr(image, "image_url", None), "url", None)
+        if url:
+            yield url
+
+    content = getattr(message, "content", None)
+    if not isinstance(content, list):
+        return
+    for part in content:
+        part_type = getattr(part, "type", None) or (
+            part.get("type") if isinstance(part, dict) else None
+        )
+        if part_type != "image_url":
+            continue
+        image_url = getattr(part, "image_url", None) or (
+            part.get("image_url") if isinstance(part, dict) else None
+        )
+        url = getattr(image_url, "url", None) or (
+            image_url.get("url") if isinstance(image_url, dict) else None
+        )
+        if url:
+            yield url
