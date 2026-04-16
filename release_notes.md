@@ -1,13 +1,15 @@
-# Release v0.17.48
+# Release v0.17.49
 
 ## New Features
 
-- **WeChat image support**: Agents can now receive and process images sent by users through WeChat. Images are extracted from incoming messages and passed to the agent's model for understanding.
+- **Media input support for LLM models**: Added audio, video, and file input support fields to model configuration, enabling richer media input options when selecting models.
 
-## Improvements
+## Bug Fixes
 
-- Improved error handling when users send images to agents using models that don't support image input — a clear message is now returned instead of a silent failure.
-- Simplified image capability detection for agents by removing the deprecated image parser skill fallback.
-- Optimized agent delegation to avoid unnecessary database queries when forwarding attachments between agents.
+- Fixed markdown rendering on post pages — headings and other typography styles were not displaying correctly.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.47...v0.17.48
+## Other
+
+- Updated dependencies.
+
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.48...v0.17.49
