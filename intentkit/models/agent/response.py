@@ -190,13 +190,8 @@ class AgentResponse(Agent):
                 linked_telegram_username = agent_data.telegram_username
                 linked_telegram_name = agent_data.telegram_name
 
-        accept_image_input = (
-            await agent.is_model_support_image() or agent.has_image_parser_skill()
-        )
-        accept_image_input_private = (
-            await agent.is_model_support_image()
-            or agent.has_image_parser_skill(is_private=True)
-        )
+        accept_image_input = await agent.is_model_support_image()
+        accept_image_input_private = accept_image_input
 
         # Create AgentResponse instance directly from agent with additional fields
         return cls(

@@ -42,6 +42,7 @@ def mock_runtime():
     mock_context.chat_id = "chat_1"
     mock_context.user_id = "user_1"
     mock_context.entrypoint = "web"
+    mock_context.start_message_attachments = None
     mock_context.agent = MagicMock()
     mock_context.agent.sub_agents = None
 
@@ -213,6 +214,48 @@ async def test_call_agent_success_with_attachments(mock_runtime):
     assert "[card]" in content
     assert 'title="Status"' in content
     assert returned_attachments == attachments
+
+
+@pytest.mark.asyncio
+async def test_call_agent_forwards_start_message_attachments(mock_runtime):
+    """Delegation preserves inbound attachments from the current conversation."""
+    _, mock_context = mock_runtime
+
+    start_attachments: list[ChatMessageAttachment] = [
+        {
+            "type": ChatMessageAttachmentType.IMAGE,
+            "lead_text": "User sent an image.",
+            "url": "https://example.com/input.png",
+            "json": None,
+        }
+    ]
+    mock_context.start_message_attachments = start_attachments
+
+    mock_resolved = MagicMock()
+    mock_resolved.id = "target_id"
+    mock_resolved.slug = "target_slug"
+
+    mock_msg = MagicMock()
+    mock_msg.author_type = AuthorType.AGENT
+    mock_msg.message = "Done"
+    mock_msg.attachments = []
+
+    skill = CallAgentSkill()
+    with (
+        patch(
+            "intentkit.core.agent.get_agent_by_id_or_slug",
+            new=AsyncMock(return_value=mock_resolved),
+        ),
+        patch(
+            "intentkit.core.engine.execute_agent",
+            new=AsyncMock(return_value=[mock_msg]),
+        ) as mock_execute_agent,
+    ):
+        await skill._arun(agent_id="target_id", message="hello")  # pyright: ignore[reportPrivateUsage]
+
+    assert mock_execute_agent.await_args is not None
+    forwarded = mock_execute_agent.await_args.args[0]
+    assert forwarded.attachments == start_attachments
 
 
 def test_render_attachments_awareness_empty():

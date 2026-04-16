@@ -49,6 +49,7 @@ from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
     ChatMessage,
+    ChatMessageAttachmentType,
     ChatMessageCreate,
     ChatMessageSkillCall,
 )
@@ -711,10 +712,17 @@ async def stream_agent_raw(
             str(att["url"])
             for att in user_message.attachments
             if "type" in att
-            and att["type"] == "image"
+            and att["type"] == ChatMessageAttachmentType.IMAGE
             and "url" in att
             and att["url"] is not None
         ]
+    if image_urls and not model.supports_image_input:
+        yield await _create_system_error_response(
+            SystemMessageType.IMAGE_INPUT_NOT_SUPPORTED,
+            user_message,
+            time.perf_counter() - start,
+        )
+        return
 
     input_message = user_message.message
 
@@ -727,27 +735,15 @@ async def stream_agent_raw(
     messages = [
         HumanMessage(content=input_message),
     ]
-    # if the model doesn't natively support image parsing, add the image URLs to the message
     if image_urls:
-        if (
-            agent.has_image_parser_skill(is_private=is_private)
-            and not model.supports_image_input
-        ):
-            image_urls_text = "\n".join(image_urls)
-            input_message += f"\n\nImages:\n{image_urls_text}"
-            messages = [
-                HumanMessage(content=input_message),
+        messages.extend(
+            [
+                HumanMessage(
+                    content=[{"type": "image_url", "image_url": {"url": image_url}}]
+                )
+                for image_url in image_urls
             ]
-        else:
-            # anyway, pass it directly to LLM
-            messages.extend(
-                [
-                    HumanMessage(
-                        content=[{"type": "image_url", "image_url": {"url": image_url}}]
-                    )
-                    for image_url in image_urls
-                ]
-            )
+        )
 
     # stream config
     thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
@@ -772,6 +768,7 @@ async def stream_agent_raw(
         is_private=is_private,
         payer=payer if payment_enabled else None,
         start_message_id=user_message.id,
+        start_message_attachments=user_message.attachments,
         call_depth=message.call_depth,
     )
 

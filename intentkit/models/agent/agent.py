@@ -94,25 +94,6 @@ class Agent(AgentCreate, AgentPublicInfo):
         ),
     ]
 
-    def has_image_parser_skill(self, is_private: bool = False) -> bool:
-        if self.skills:
-            for skill, skill_config in self.skills.items():
-                if skill == "openai" and skill_config.get("enabled"):
-                    states = skill_config.get("states", {})
-                    if is_private:
-                        # Include both private and public when is_private=True
-                        if states.get("image_to_text") in ["private", "public"]:
-                            return True
-                        if states.get("gpt_image_to_image") in ["private", "public"]:
-                            return True
-                    else:
-                        # Only public when is_private=False
-                        if states.get("image_to_text") in ["public"]:
-                            return True
-                        if states.get("gpt_image_to_image") in ["public"]:
-                            return True
-        return False
-
     async def is_model_support_image(self) -> bool:
         try:
             model = await LLMModelInfo.get(self.model)

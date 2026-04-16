@@ -15,7 +15,7 @@ from intentkit.core.executor import (
 )
 from intentkit.models.agent import Agent, AgentData
 from intentkit.models.agent.core import AgentVisibility
-from intentkit.models.chat import AuthorType, ChatMessage
+from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageAttachmentType
 
 # Mock AgentState and AgentContext if needed by type checks
 # But since we use mocks for everything, strict types might be bypassed or we mock them.
@@ -245,3 +245,97 @@ async def test_stream_agent_flow(mock_agent):
                 assert results[0] is not None
                 assert results[0] is not None
                 # assert mock_save_in_session.called
+
+
+@pytest.mark.asyncio
+async def test_stream_agent_rejects_unsupported_image_input(mock_agent):
+    """Image attachments are rejected before model execution when unsupported."""
+    first_msg = ChatMessage(
+        id="msg_1",
+        chat_id="chat_1",
+        agent_id="agent-123",
+        user_id="user_1",
+        author_id="user_1",
+        author_type=AuthorType.WEB,
+        thread_type=AuthorType.WEB,
+        message="Please describe this image",
+        attachments=[
+            {
+                "type": ChatMessageAttachmentType.IMAGE,
+                "lead_text": "User sent an image.",
+                "url": "https://example.com/input.png",
+                "json": None,
+            }
+        ],
+        created_at=datetime.now(),
+    )
+
+    mock_executor_instance = MagicMock()
+
+    async def mock_astream(*args, **kwargs):
+        raise AssertionError(
+            "LLM execution should not start for unsupported image input"
+        )
+
+    mock_executor_instance.astream = mock_astream
+
+    mock_saved_msg = MagicMock()
+    mock_saved_msg.id = "msg_1"
+    mock_saved_msg.agent_id = mock_agent.id
+    mock_saved_msg.chat_id = "chat_1"
+    mock_saved_msg.user_id = "user_1"
+    mock_saved_msg.message = "Please describe this image"
+    mock_saved_msg.author_type = AuthorType.WEB
+    mock_saved_msg.attachments = first_msg.attachments
+    mock_saved_msg.team_id = None
+    mock_saved_msg.app_id = None
+
+    system_response = MagicMock()
+    system_response.author_type = AuthorType.SYSTEM
+    system_response.message = (
+        "This agent's current model does not support image input. "
+        "Please switch to an image-capable model or send text instead."
+    )
+
+    budget_status = MagicMock()
+    budget_status.exceeded = False
+
+    with (
+        patch(
+            "intentkit.core.engine.get_agent", new_callable=AsyncMock
+        ) as mock_get_agent,
+        patch(
+            "intentkit.core.engine.agent_executor", new_callable=AsyncMock
+        ) as mock_executor_func,
+        patch(
+            "intentkit.models.chat.ChatMessageCreate.save",
+            new_callable=AsyncMock,
+            side_effect=[mock_saved_msg, system_response],
+        ),
+        patch(
+            "intentkit.models.llm.LLMModelInfo.get", new_callable=AsyncMock
+        ) as mock_get_model,
+        patch(
+            "intentkit.core.engine.check_hourly_budget_exceeded",
+            new_callable=AsyncMock,
+            return_value=budget_status,
+        ),
+        patch("intentkit.core.engine.clear_thread_memory", new_callable=AsyncMock),
+        patch(
+            "intentkit.models.app_setting.AppSetting.error_message",
+            new_callable=AsyncMock,
+            return_value="This agent's current model does not support image input.",
+        ),
+    ):
+        mock_get_agent.return_value = mock_agent
+        mock_executor_func.return_value = (mock_executor_instance, 0.1)
+        mock_get_model.return_value = MagicMock(supports_image_input=False)
+
+        with patch("intentkit.core.engine.config") as mock_config:
+            mock_config.payment_enabled = False
+            results = []
+            async for res in stream_agent(first_msg):
+                results.append(res)
+
+    assert len(results) == 1
+    assert results[0] is system_response

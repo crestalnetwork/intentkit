@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -263,17 +264,38 @@ func getStringFromConfig(config map[string]interface{}, key string) string {
 }
 
 func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, teamID string) {
-	// Extract text from item_list
 	text := ""
+	attachments := make([]types.ChatMessageAttach, 0)
 	for _, item := range msg.ItemList {
-		if item.Type == 1 && item.TextItem != nil {
+		if item.Type == ilink.ItemTypeText && item.TextItem != nil {
 			text = item.TextItem.Text
-			break
+			continue
+		}
+		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
+			imageURL := ilink.MediaDownloadURL(item.ImageItem.Media)
+			if imageURL == "" {
+				continue
+			}
+			leadText := "User sent an image."
+			attachments = append(attachments, types.ChatMessageAttach{
+				Type:     types.AttachImage,
+				LeadText: &leadText,
+				URL:      &imageURL,
+			})
 		}
 	}
 
-	if text == "" || msg.FromUserID == "" {
+	if msg.FromUserID == "" || (text == "" && len(attachments) == 0) {
 		return
+	}
+
+	rawText := text
+	if len(attachments) > 0 && rawText == "" {
+		if len(attachments) == 1 {
+			text = "User sent an image."
+		} else {
+			text = fmt.Sprintf("User sent %d images.", len(attachments))
+		}
 	}
 
 	slog.Info("Received wechat message", "team_id", teamID, "from", msg.FromUserID)
@@ -285,7 +307,7 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 	}
 
 	// Intercept /default command — set this chat as the push channel
-	if text == "/default" {
+	if rawText == "/default" {
 		if err := m.apiClient.SetPushChannel(context.Background(), teamID, "wechat", msg.FromUserID, false); err != nil {
 			slog.Error("Failed to set push channel", "team_id", teamID, "error", err)
 			_ = entry.client.SendMessage(context.Background(), msg.FromUserID, msg.ContextToken, "Failed to set push channel.")
@@ -331,6 +353,9 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 		"channel_user_id": msg.FromUserID,
 		"chat_id":         msg.FromUserID,
 		"message":         text,
+	}
+	if len(attachments) > 0 {
+		payload["attachments"] = attachments
 	}
 
 	sender := NewWechatSender(entry.client, msg.FromUserID, msg.ContextToken)

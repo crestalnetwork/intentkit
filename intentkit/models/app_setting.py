@@ -25,6 +25,7 @@ class SystemMessageType(str, Enum):
     HOURLY_BUDGET_EXCEEDED = "hourly_budget_exceeded"
     RECURSION_LIMIT_EXCEEDED = "recursion_limit_exceeded"
     TIMEOUT_ERROR = "timeout_error"
+    IMAGE_INPUT_NOT_SUPPORTED = "image_input_not_supported"
 
 
 # Default system messages
@@ -38,6 +39,7 @@ DEFAULT_SYSTEM_MESSAGES = {
     "hourly_budget_exceeded": "Hourly budget exceeded. Please try again later.",
     "recursion_limit_exceeded": "The agent reached the maximum recursion limit. Please type 'continue' to resume execution.",
     "timeout_error": "Network request timed out or the LLM is overloaded. Please try again.",
+    "image_input_not_supported": "This agent's current model does not support image input. Please switch to an image-capable model or send text instead.",
 }
 
 # In-memory cache for app settings

@@ -22,7 +22,12 @@ from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.core.lead.engine import stream_lead
 from intentkit.core.lead.service import verify_team_membership
 from intentkit.core.team.channel import set_push_channel, set_push_channel_if_empty
-from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessage,
+    ChatMessageAttachment,
+    ChatMessageCreate,
+)
 from intentkit.models.user import User, UserUpdate
 from intentkit.utils.error import IntentKitAPIError
 
@@ -85,6 +90,7 @@ class LeadExecuteRequest(BaseModel):
     channel_user_id: str  # channel-specific user identifier
     chat_id: str
     message: str
+    attachments: list[ChatMessageAttachment] | None = None
 
 
 # Per-channel config: (user_lookup, bind_field, author_type, chat_id_prefix)
@@ -134,6 +140,7 @@ async def _resolve_lead(
         author_type=author_type,
         thread_type=author_type,
         message=request.message,
+        attachments=request.attachments,
     )
     return user_id, chat_msg
 

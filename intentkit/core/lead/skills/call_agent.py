@@ -15,6 +15,7 @@ from intentkit.core.lead.skills.base import LeadSkill
 from intentkit.core.system_skills.call_agent import (
     CALL_AGENT_TIMEOUT,
     MAX_CALL_DEPTH,
+    get_start_message_attachments,
     render_attachments_awareness,
 )
 from intentkit.models.chat import (
@@ -59,6 +60,7 @@ class LeadCallAgent(LeadSkill):
                     f"Maximum call_agent recursion depth ({MAX_CALL_DEPTH}) exceeded. "
                     "Cannot call another agent from this depth."
                 )
+            attachments = await get_start_message_attachments(context)
 
             from intentkit.core.lead.sub_agents import (
                 SUB_AGENT_REGISTRY,
@@ -69,9 +71,15 @@ class LeadCallAgent(LeadSkill):
                 raise ToolException("No team_id in context")
 
             if agent_id in SUB_AGENT_REGISTRY:
-                return await self._call_sub_agent(context, agent_id, message, team_id)
+                return await self._call_sub_agent(
+                    context,
+                    agent_id,
+                    message,
+                    team_id,
+                    attachments,
+                )
 
-            return await self._call_db_agent(context, agent_id, message)
+            return await self._call_db_agent(context, agent_id, message, attachments)
 
         except TimeoutError as e:
             self.logger.error(
@@ -95,6 +103,7 @@ class LeadCallAgent(LeadSkill):
         slug: str,
         message: str,
         team_id: str,
+        attachments: list[ChatMessageAttachment] | None,
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Call an in-memory sub-agent via stream_agent_raw."""
         from intentkit.core.engine import stream_agent_raw
@@ -102,7 +111,13 @@ class LeadCallAgent(LeadSkill):
 
         executor, sub_agent = await get_sub_agent_executor(team_id, slug)
 
-        chat_message = self._build_chat_message(context, sub_agent.id, team_id, message)
+        chat_message = self._build_chat_message(
+            context,
+            sub_agent.id,
+            team_id,
+            message,
+            attachments,
+        )
 
         all_attachments: list[ChatMessageAttachment] = []
         last_message = None
@@ -120,6 +135,7 @@ class LeadCallAgent(LeadSkill):
         context: AgentContext,
         agent_id: str,
         message: str,
+        attachments: list[ChatMessageAttachment] | None,
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Call a database agent, scoped to the same team."""
         from intentkit.core.agent import get_agent_by_id_or_slug
@@ -133,7 +149,7 @@ class LeadCallAgent(LeadSkill):
             raise ToolException(f"Agent '{agent_id}' does not belong to this team")
 
         chat_message = self._build_chat_message(
-            context, resolved_agent.id, context.team_id, message
+            context, resolved_agent.id, context.team_id, message, attachments
         )
 
         async with asyncio.timeout(CALL_AGENT_TIMEOUT):
@@ -155,6 +171,7 @@ class LeadCallAgent(LeadSkill):
         target_agent_id: str,
         team_id: str | None,
         message: str,
+        attachments: list[ChatMessageAttachment] | None,
     ) -> ChatMessageCreate:
         """Build a ChatMessageCreate for calling a sub-agent."""
         return ChatMessageCreate(
@@ -167,6 +184,7 @@ class LeadCallAgent(LeadSkill):
             thread_type=context.entrypoint,
             team_id=team_id,
             message=message,
+            attachments=attachments,
             call_depth=context.call_depth + 1,
         )
 

@@ -8,6 +8,7 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.abstracts.graph import AgentContext
 from intentkit.core.system_skills.base import SystemSkill
 from intentkit.models.chat import (
     AuthorType,
@@ -121,6 +122,13 @@ def render_attachments_awareness(
     return "\n".join(lines)
 
 
+async def get_start_message_attachments(
+    context: AgentContext,
+) -> list[ChatMessageAttachment] | None:
+    """Return the current conversation's inbound attachments for delegation."""
+    return context.start_message_attachments
+
+
 class CallAgentInput(BaseModel):
     """Input schema for calling another agent."""
 
@@ -173,6 +181,7 @@ class CallAgentSkill(SystemSkill):
                     f"Maximum call_agent recursion depth ({MAX_CALL_DEPTH}) exceeded. "
                     "Cannot call another agent from this depth."
                 )
+            attachments = await get_start_message_attachments(context)
 
             # Resolve agent_id (could be a slug)
             resolved_agent = await get_agent_by_id_or_slug(agent_id)
@@ -204,6 +213,7 @@ class CallAgentSkill(SystemSkill):
                 author_type=AuthorType.INTERNAL,
                 thread_type=context.entrypoint,
                 message=message,
+                attachments=attachments,
                 call_depth=context.call_depth + 1,
             )
 

@@ -6,7 +6,7 @@ from langchain.agents import AgentState as BaseAgentState
 from pydantic import BaseModel
 
 from intentkit.models.agent import Agent
-from intentkit.models.chat import AuthorType
+from intentkit.models.chat import AuthorType, ChatMessageAttachment
 
 
 class AgentError(str, Enum):
@@ -40,6 +40,7 @@ class AgentContext(BaseModel):
     thinking: bool = False
     payer: str | None = None
     start_message_id: str = ""
+    start_message_attachments: list[ChatMessageAttachment] | None = None
     call_depth: int = 0
 
     @property

@@ -56,11 +56,11 @@ type GetUpdatesRequest struct {
 
 // GetUpdatesResponse is the response from the getupdates endpoint.
 type GetUpdatesResponse struct {
-	Ret               int             `json:"ret"`
-	ErrMsg            string          `json:"errmsg,omitempty"`
-	Msgs              []WeixinMessage `json:"msgs"`
-	GetUpdatesBuf     string          `json:"get_updates_buf"`
-	LongpollingTimeout int            `json:"longpolling_timeout_ms"`
+	Ret                int             `json:"ret"`
+	ErrMsg             string          `json:"errmsg,omitempty"`
+	Msgs               []WeixinMessage `json:"msgs"`
+	GetUpdatesBuf      string          `json:"get_updates_buf"`
+	LongpollingTimeout int             `json:"longpolling_timeout_ms"`
 }
 
 // WeixinMessage represents an incoming WeChat message.
@@ -148,6 +148,7 @@ type GetConfigResponse struct {
 
 // CDNMedia references an encrypted file on WeChat's CDN.
 type CDNMedia struct {
+	URL               string `json:"url,omitempty"`
 	EncryptQueryParam string `json:"encrypt_query_param"`
 	AESKey            string `json:"aes_key"`
 	EncryptType       int    `json:"encrypt_type"`
