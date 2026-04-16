@@ -129,11 +129,48 @@ async def get_start_message_attachments(
     return context.start_message_attachments
 
 
+ForwardableAttachmentType = Literal["image", "video", "file"]
+
+_ATTACHMENT_TYPE_MAP: dict[str, ChatMessageAttachmentType] = {
+    "image": ChatMessageAttachmentType.IMAGE,
+    "video": ChatMessageAttachmentType.VIDEO,
+    "file": ChatMessageAttachmentType.FILE,
+}
+
+
+class AttachmentRef(BaseModel):
+    """Reference to an attachment for forwarding to another agent."""
+
+    type: ForwardableAttachmentType = Field(
+        ..., description="Attachment type: image, video, or file"
+    )
+    url: str = Field(..., description="URL of the attachment")
+
+
+def build_attachments_from_refs(
+    refs: list[AttachmentRef],
+) -> list[ChatMessageAttachment]:
+    """Build ChatMessageAttachment dicts from AttachmentRef objects."""
+    return [
+        {
+            "type": _ATTACHMENT_TYPE_MAP[ref.type],
+            "lead_text": None,
+            "url": ref.url,
+            "json": None,
+        }
+        for ref in refs
+    ]
+
+
 class CallAgentInput(BaseModel):
     """Input schema for calling another agent."""
 
     agent_id: str = Field(..., description="Target agent ID or slug")
     message: str = Field(..., description="Message to send")
+    attachments: list[AttachmentRef] | None = Field(
+        None,
+        description="Optional attachments (images, videos, files) to forward to the target agent. Use when delegating tasks that need media from previous messages.",
+    )
 
 
 class CallAgentSkill(SystemSkill):
@@ -153,12 +190,14 @@ class CallAgentSkill(SystemSkill):
         self,
         agent_id: str,
         message: str,
+        attachments: list[AttachmentRef] | None = None,
     ) -> tuple[str, list[ChatMessageAttachment]]:
         """Call another agent and return its response.
 
         Args:
             agent_id: The ID of the agent to call.
             message: The message to send to the agent.
+            attachments: Optional attachments to forward.
 
         Returns:
             The response message from the called agent.
@@ -181,7 +220,10 @@ class CallAgentSkill(SystemSkill):
                     f"Maximum call_agent recursion depth ({MAX_CALL_DEPTH}) exceeded. "
                     "Cannot call another agent from this depth."
                 )
-            attachments = await get_start_message_attachments(context)
+            if attachments is not None:
+                resolved_attachments = build_attachments_from_refs(attachments)
+            else:
+                resolved_attachments = await get_start_message_attachments(context)
 
             # Resolve agent_id (could be a slug)
             resolved_agent = await get_agent_by_id_or_slug(agent_id)
@@ -213,7 +255,7 @@ class CallAgentSkill(SystemSkill):
                 author_type=AuthorType.INTERNAL,
                 thread_type=context.entrypoint,
                 message=message,
-                attachments=attachments,
+                attachments=resolved_attachments,
                 call_depth=context.call_depth + 1,
             )
 

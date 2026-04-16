@@ -61,6 +61,15 @@ from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
+# Attachment types that carry a URL worth forwarding to sub-agents.
+_FORWARDABLE_TYPES = frozenset(
+    {
+        ChatMessageAttachmentType.IMAGE,
+        ChatMessageAttachmentType.VIDEO,
+        ChatMessageAttachmentType.FILE,
+    }
+)
+
 # Cap raw_chunks to prevent unbounded memory growth in super_mode
 _MAX_RAW_CHUNKS = 200
 
@@ -725,6 +734,27 @@ async def stream_agent_raw(
         return
 
     input_message = user_message.message
+
+    # Append media attachment URLs as text so the LLM can reference them
+    # across turns (e.g. when delegating to sub-agents later).
+    if user_message.attachments:
+        url_lines = []
+        for att in user_message.attachments:
+            att_type = att.get("type")
+            att_url = att.get("url")
+            if att_type in _FORWARDABLE_TYPES and att_url:
+                type_label = (
+                    att_type.value
+                    if isinstance(att_type, ChatMessageAttachmentType)
+                    else att_type
+                )
+                url_lines.append(f"- [{type_label}] {att_url}")
+        if url_lines:
+            input_message += (
+                "\n\n[Attachments in this message"
+                " - use these URLs when delegating to other agents]\n"
+                + "\n".join(url_lines)
+            )
 
     # super mode — determined by agent config
     recursion_limit = config.recursion_limit

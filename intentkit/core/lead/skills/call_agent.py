@@ -15,6 +15,8 @@ from intentkit.core.lead.skills.base import LeadSkill
 from intentkit.core.system_skills.call_agent import (
     CALL_AGENT_TIMEOUT,
     MAX_CALL_DEPTH,
+    AttachmentRef,
+    build_attachments_from_refs,
     get_start_message_attachments,
     render_attachments_awareness,
 )
@@ -31,6 +33,10 @@ class LeadCallAgentInput(BaseModel):
 
     agent_id: str = Field(..., description="Target agent ID or slug")
     message: str = Field(..., description="Message to send")
+    attachments: list[AttachmentRef] | None = Field(
+        None,
+        description="Optional attachments (images, videos, files) to forward to the sub-agent. Use when delegating tasks that need media from previous messages.",
+    )
 
 
 class LeadCallAgent(LeadSkill):
@@ -51,6 +57,7 @@ class LeadCallAgent(LeadSkill):
         self,
         agent_id: str,
         message: str,
+        attachments: list[AttachmentRef] | None = None,
     ) -> tuple[str, list[ChatMessageAttachment]]:
         try:
             context = self.get_context()
@@ -60,7 +67,10 @@ class LeadCallAgent(LeadSkill):
                     f"Maximum call_agent recursion depth ({MAX_CALL_DEPTH}) exceeded. "
                     "Cannot call another agent from this depth."
                 )
-            attachments = await get_start_message_attachments(context)
+            if attachments is not None:
+                resolved_attachments = build_attachments_from_refs(attachments)
+            else:
+                resolved_attachments = await get_start_message_attachments(context)
 
             from intentkit.core.lead.sub_agents import (
                 SUB_AGENT_REGISTRY,
@@ -76,10 +86,12 @@ class LeadCallAgent(LeadSkill):
                     agent_id,
                     message,
                     team_id,
-                    attachments,
+                    resolved_attachments,
                 )
 
-            return await self._call_db_agent(context, agent_id, message, attachments)
+            return await self._call_db_agent(
+                context, agent_id, message, resolved_attachments
+            )
 
         except TimeoutError as e:
             self.logger.error(
