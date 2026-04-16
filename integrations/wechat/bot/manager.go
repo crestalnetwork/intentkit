@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/crestalnetwork/intentkit/integrations/wechat/config"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/ilink"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/store"
+	"github.com/rs/xid"
 	"gorm.io/gorm"
 )
 
@@ -28,6 +30,7 @@ type Manager struct {
 	db          *gorm.DB
 	cfg         *config.Config
 	apiClient   *api.Client
+	storage     *shared.S3Storage
 	bots        map[string]*botEntry
 	cancelFuncs map[string]context.CancelFunc
 	tokenHashes map[string]string
@@ -35,11 +38,12 @@ type Manager struct {
 	stopCh      chan struct{}
 }
 
-func NewManager(db *gorm.DB, cfg *config.Config, apiClient *api.Client) *Manager {
+func NewManager(db *gorm.DB, cfg *config.Config, apiClient *api.Client, storage *shared.S3Storage) *Manager {
 	return &Manager{
 		db:          db,
 		cfg:         cfg,
 		apiClient:   apiClient,
+		storage:     storage,
 		bots:        make(map[string]*botEntry),
 		cancelFuncs: make(map[string]context.CancelFunc),
 		tokenHashes: make(map[string]string),
@@ -272,9 +276,29 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 			continue
 		}
 		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
-			imageURL := ilink.MediaDownloadURL(item.ImageItem.Media)
-			if imageURL == "" {
-				continue
+			var imageURL string
+			if m.storage != nil {
+				imageBytes, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
+				if err != nil {
+					slog.Warn("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
+					continue
+				}
+				contentType := http.DetectContentType(imageBytes)
+				ext := shared.ExtensionForContentType(contentType)
+				if ext == "" {
+					ext = "jpg"
+				}
+				key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
+				imageURL, err = m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
+				if err != nil {
+					slog.Warn("Failed to upload wechat image to S3", "team_id", teamID, "error", err)
+					continue
+				}
+			} else {
+				imageURL = ilink.MediaDownloadURL(item.ImageItem.Media)
+				if imageURL == "" {
+					continue
+				}
 			}
 			leadText := "User sent an image."
 			attachments = append(attachments, types.ChatMessageAttach{

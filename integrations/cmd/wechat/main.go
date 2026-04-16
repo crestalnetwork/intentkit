@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/crestalnetwork/intentkit/integrations/shared"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/api"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/bot"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/config"
@@ -44,7 +45,9 @@ func main() {
 
 	apiClient := api.NewClient(cfg.InternalBaseURL)
 
-	manager := bot.NewManager(db, cfg, apiClient)
+	storage := shared.NewS3StorageFromEnv()
+
+	manager := bot.NewManager(db, cfg, apiClient, storage)
 
 	go manager.Start()
 	slog.Info("WeChat Integration Started")

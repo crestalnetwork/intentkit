@@ -65,14 +65,16 @@ func EnsureFileExtension(name string, data []byte) string {
 		return name
 	}
 	ct := http.DetectContentType(data)
-	ext := extensionForContentType(ct)
+	ext := ExtensionForContentType(ct)
 	if ext != "" {
 		return name + "." + ext
 	}
 	return name
 }
 
-func extensionForContentType(ct string) string {
+// ExtensionForContentType returns a file extension for the given content type.
+// Returns "" if the content type is not recognized.
+func ExtensionForContentType(ct string) string {
 	switch {
 	case strings.HasPrefix(ct, "image/jpeg"):
 		return "jpg"
