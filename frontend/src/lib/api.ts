@@ -197,6 +197,9 @@ export interface LLMModelInfo {
   intelligence: number;
   speed: number;
   supports_image_input: boolean;
+  supports_audio_input: boolean;
+  supports_video_input: boolean;
+  supports_file_input: boolean;
 }
 
 /**

@@ -66,11 +66,28 @@ function InfoPanel({ model }: { model: LLMModelInfo }) {
         </div>
       </div>
 
-      {model.supports_image_input && (
+      {(model.supports_image_input || model.supports_audio_input || model.supports_video_input || model.supports_file_input) && (
         <div className="flex gap-1.5 flex-wrap">
-          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
-            Image
-          </span>
+          {model.supports_image_input && (
+            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
+              Image
+            </span>
+          )}
+          {model.supports_audio_input && (
+            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
+              Audio
+            </span>
+          )}
+          {model.supports_video_input && (
+            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
+              Video
+            </span>
+          )}
+          {model.supports_file_input && (
+            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium">
+              File
+            </span>
+          )}
         </div>
       )}
     </div>

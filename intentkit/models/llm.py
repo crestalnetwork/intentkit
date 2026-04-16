@@ -103,6 +103,13 @@ def load_default_llm_models() -> dict[str, "LLMModelInfo"]:
                     "supports_image_input": _parse_bool(
                         row.get("supports_image_input")
                     ),
+                    "supports_audio_input": _parse_bool(
+                        row.get("supports_audio_input")
+                    ),
+                    "supports_video_input": _parse_bool(
+                        row.get("supports_video_input")
+                    ),
+                    "supports_file_input": _parse_bool(row.get("supports_file_input")),
                     "reasoning_effort": row.get("reasoning_effort", "").strip() or None,
                     "supports_temperature": _parse_bool(
                         row.get("supports_temperature")
@@ -311,6 +318,15 @@ class LLMModelInfoTable(Base):
     supports_image_input: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+    supports_audio_input: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    supports_video_input: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    supports_file_input: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     reasoning_effort: Mapped[str | None] = mapped_column(String, nullable=True)
     supports_temperature: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True
@@ -358,7 +374,10 @@ class LLMModelInfo(BaseModel):
     output_length: int  # Maximum output length in tokens
     intelligence: int = Field(ge=1, le=5)  # Intelligence rating from 1-5
     speed: int = Field(ge=1, le=5)  # Speed rating from 1-5
-    supports_image_input: bool = False  # Whether the model supports image inputs
+    supports_image_input: bool = False
+    supports_audio_input: bool = False
+    supports_video_input: bool = False
+    supports_file_input: bool = False
     reasoning_effort: str | None = (
         None  # Reasoning effort level: "xhigh", "high", "medium", "low", "minimal", "none", or None
     )
