@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -286,12 +287,23 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 			if ext == "" {
 				ext = "jpg"
 			}
+			magic := ""
+			if len(imageBytes) >= 8 {
+				magic = hex.EncodeToString(imageBytes[:8])
+			}
+			slog.Info("Decrypted wechat image",
+				"team_id", teamID,
+				"size", len(imageBytes),
+				"content_type", contentType,
+				"magic_hex", magic,
+			)
 			key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
 			imageURL, err := m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
 			if err != nil {
 				slog.Error("Failed to upload wechat image to S3", "team_id", teamID, "error", err)
 				continue
 			}
+			slog.Info("Uploaded wechat image to S3", "team_id", teamID, "url", imageURL)
 			leadText := "User sent an image."
 			attachments = append(attachments, types.ChatMessageAttach{
 				Type:     types.AttachImage,
