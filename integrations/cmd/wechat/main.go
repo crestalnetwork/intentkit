@@ -46,12 +46,18 @@ func main() {
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseDSN()), &gorm.Config{})
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
+		alertShutdown()
 		os.Exit(1)
 	}
 
 	apiClient := api.NewClient(cfg.InternalBaseURL)
 
-	storage := shared.NewS3StorageFromEnv()
+	storage, err := shared.NewS3StorageFromEnv()
+	if err != nil {
+		slog.Error("Failed to initialize S3 storage", "error", err)
+		alertShutdown()
+		os.Exit(1)
+	}
 
 	manager := bot.NewManager(db, cfg, apiClient, storage)
 

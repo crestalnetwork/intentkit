@@ -55,6 +55,7 @@ func main() {
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseDSN()), &gorm.Config{})
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
+		alertShutdown()
 		os.Exit(1)
 	}
 

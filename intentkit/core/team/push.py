@@ -81,7 +81,10 @@ async def _send_wechat(
         )
         resp.raise_for_status()
         data = resp.json()
-        if data.get("ret") != 0:
+        logger.debug("iLink sendmessage response: %s", data)
+        # iLink only includes `ret` on failure; a missing or zero ret means success
+        # (matches the Go integration, which relies on int's zero-value default).
+        if data.get("ret", 0) != 0:
             raise RuntimeError(
                 f"iLink API error: ret={data.get('ret')} errmsg={data.get('errmsg')}"
             )

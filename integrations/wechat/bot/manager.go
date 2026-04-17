@@ -276,29 +276,21 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 			continue
 		}
 		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
-			var imageURL string
-			if m.storage != nil {
-				imageBytes, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
-				if err != nil {
-					slog.Warn("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
-					continue
-				}
-				contentType := http.DetectContentType(imageBytes)
-				ext := shared.ExtensionForContentType(contentType)
-				if ext == "" {
-					ext = "jpg"
-				}
-				key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
-				imageURL, err = m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
-				if err != nil {
-					slog.Warn("Failed to upload wechat image to S3", "team_id", teamID, "error", err)
-					continue
-				}
-			} else {
-				imageURL = ilink.MediaDownloadURL(item.ImageItem.Media)
-				if imageURL == "" {
-					continue
-				}
+			imageBytes, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
+			if err != nil {
+				slog.Error("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
+				continue
+			}
+			contentType := http.DetectContentType(imageBytes)
+			ext := shared.ExtensionForContentType(contentType)
+			if ext == "" {
+				ext = "jpg"
+			}
+			key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
+			imageURL, err := m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
+			if err != nil {
+				slog.Error("Failed to upload wechat image to S3", "team_id", teamID, "error", err)
+				continue
 			}
 			leadText := "User sent an image."
 			attachments = append(attachments, types.ChatMessageAttach{

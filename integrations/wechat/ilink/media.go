@@ -14,6 +14,12 @@ import (
 // DownloadAndDecryptMedia downloads encrypted media from WeChat CDN and decrypts it.
 // Returns the decrypted plaintext bytes.
 func DownloadAndDecryptMedia(ctx context.Context, media CDNMedia) ([]byte, error) {
+	slog.Debug("DownloadAndDecryptMedia input",
+		"url", media.URL,
+		"encrypt_query_param", media.EncryptQueryParam,
+		"encrypt_type", media.EncryptType,
+		"aes_key_len", len(media.AESKey),
+	)
 	downloadURL := MediaDownloadURL(media)
 	if downloadURL == "" {
 		return nil, fmt.Errorf("empty media download URL")
@@ -21,7 +27,7 @@ func DownloadAndDecryptMedia(ctx context.Context, media CDNMedia) ([]byte, error
 
 	ciphertext, err := shared.DownloadFromURL(ctx, downloadURL)
 	if err != nil {
-		return nil, fmt.Errorf("download media: %w", err)
+		return nil, fmt.Errorf("download media %q: %w", downloadURL, err)
 	}
 
 	// If no encryption, return as-is

@@ -3,6 +3,7 @@ package shared
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -25,14 +26,12 @@ type S3Storage struct {
 }
 
 // NewS3StorageFromEnv creates an S3Storage from standard environment variables.
-// Returns nil if AWS_S3_BUCKET is not set (graceful degradation).
 // Reads: AWS_S3_BUCKET, AWS_S3_ENDPOINT_URL, AWS_S3_REGION_NAME,
 // AWS_S3_ACCESS_KEY_ID, AWS_S3_SECRET_ACCESS_KEY, AWS_S3_CDN_URL, ENV.
-func NewS3StorageFromEnv() *S3Storage {
+func NewS3StorageFromEnv() (*S3Storage, error) {
 	bucket := os.Getenv("AWS_S3_BUCKET")
 	if bucket == "" {
-		slog.Warn("AWS_S3_BUCKET not set, S3 storage disabled")
-		return nil
+		return nil, errors.New("AWS_S3_BUCKET not set")
 	}
 
 	region := os.Getenv("AWS_S3_REGION_NAME")
@@ -45,8 +44,7 @@ func NewS3StorageFromEnv() *S3Storage {
 	endpointURL := os.Getenv("AWS_S3_ENDPOINT_URL")
 	cdnURL := strings.TrimRight(os.Getenv("AWS_S3_CDN_URL"), "/")
 	if cdnURL == "" {
-		slog.Warn("AWS_S3_CDN_URL not set, S3 storage disabled")
-		return nil
+		return nil, errors.New("AWS_S3_CDN_URL not set")
 	}
 	env := os.Getenv("ENV")
 	if env == "" {
@@ -60,8 +58,7 @@ func NewS3StorageFromEnv() *S3Storage {
 		),
 	)
 	if err != nil {
-		slog.Error("Failed to load AWS config", "error", err)
-		return nil
+		return nil, fmt.Errorf("load aws config: %w", err)
 	}
 
 	var client *s3.Client
@@ -80,7 +77,7 @@ func NewS3StorageFromEnv() *S3Storage {
 		bucket: bucket,
 		cdnURL: cdnURL,
 		env:    env,
-	}
+	}, nil
 }
 
 // StoreMedia uploads media bytes to S3 and returns the CDN URL.

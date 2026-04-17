@@ -263,23 +263,22 @@ const cdnBaseURL = "https://novac2c.cdn.weixin.qq.com/c2c/upload"
 const cdnDownloadURL = "https://novac2c.cdn.weixin.qq.com/c2c/download"
 
 // MediaDownloadURL builds a public download URL for inbound WeChat media.
-// EncryptQueryParam is a pre-formatted query string fragment from the WeChat API
-// (e.g. "encrypted_query_param=xxx"), appended directly to the URL.
+// iLink returns EncryptQueryParam as the raw value only, so we wrap it in the
+// "encrypted_query_param" key that the CDN expects (same key name as uploads).
 func MediaDownloadURL(media CDNMedia) string {
-	if media.URL != "" {
-		if media.EncryptQueryParam == "" {
-			return media.URL
-		}
-		sep := "?"
-		if strings.Contains(media.URL, "?") {
-			sep = "&"
-		}
-		return media.URL + sep + media.EncryptQueryParam
-	}
 	if media.EncryptQueryParam == "" {
-		return ""
+		return media.URL
 	}
-	return cdnDownloadURL + "?" + media.EncryptQueryParam
+	baseURL := media.URL
+	if baseURL == "" {
+		baseURL = cdnDownloadURL
+	}
+	sep := "?"
+	if strings.Contains(baseURL, "?") {
+		sep = "&"
+	}
+	q := url.Values{"encrypted_query_param": {media.EncryptQueryParam}}
+	return baseURL + sep + q.Encode()
 }
 
 // UploadMedia handles the full media upload flow for WeChat CDN:
