@@ -766,6 +766,13 @@ async def stream_agent_raw(
         HumanMessage(content=input_message),
     ]
     if image_urls:
+        logger.info(
+            "Passing %d image url(s) to LLM for agent=%s chat=%s: %s",
+            len(image_urls),
+            user_message.agent_id,
+            user_message.chat_id,
+            image_urls,
+        )
         messages.extend(
             [
                 HumanMessage(
