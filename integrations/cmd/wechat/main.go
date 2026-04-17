@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/crestalnetwork/intentkit/integrations/shared"
+	"github.com/crestalnetwork/intentkit/integrations/shared/alert"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/api"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/bot"
 	"github.com/crestalnetwork/intentkit/integrations/wechat/config"
@@ -21,8 +22,8 @@ func main() {
 	if os.Getenv("DEBUG") == "true" {
 		logLevel = slog.LevelDebug
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
-	slog.SetDefault(logger)
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
+	slog.SetDefault(slog.New(jsonHandler))
 
 	_ = godotenv.Load()
 
@@ -31,7 +32,12 @@ func main() {
 		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
-	logger = logger.With("env", cfg.Env)
+
+	redisClient := shared.NewRedisClient(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB)
+
+	alertHandler, alertShutdown := alert.Wrap(jsonHandler, &cfg.Alert, redisClient)
+	defer alertShutdown()
+	logger := slog.New(alertHandler).With("env", cfg.Env)
 	if cfg.Release != "" {
 		logger = logger.With("release", cfg.Release)
 	}

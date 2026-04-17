@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/hack-fan/config"
+
+	"github.com/crestalnetwork/intentkit/integrations/shared/alert"
 )
 
 type Config struct {
@@ -29,6 +31,9 @@ type Config struct {
 
 	// Telegram
 	TgNewAgentPollInterval int `env:"TG_NEW_AGENT_POLL_INTERVAL" default:"10"`
+
+	// Alert (forwards Error+ slog records to Telegram/Slack)
+	Alert alert.Config
 }
 
 func Load() (*Config, error) {
