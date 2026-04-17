@@ -1,13 +1,11 @@
-# Release v0.17.50
+# Release v0.17.51
 
-## New Features
+## Bug Fixes
 
-- **WeChat image storage**: Images received from WeChat are now downloaded, decrypted, and stored on S3, providing stable URLs that the AI model can reliably access. Previously, WeChat's temporary CDN links could expire before the model processed them.
-
-- **Cross-turn media forwarding**: The lead agent can now forward images, videos, and files to sub-agents even when the media was received in a previous message. Attachment URLs are made visible to the lead so it can reference them across conversation turns.
+- Fixed an issue where error-level events were not being forwarded to the configured alert channel (Telegram/Slack). Operators will once again receive automatic notifications when errors occur.
 
 ## Other
 
 - Updated dependencies.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.49...v0.17.50
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.50...v0.17.51
