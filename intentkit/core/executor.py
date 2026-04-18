@@ -258,7 +258,7 @@ async def build_executor(
         middleware.append(TodoListMiddleware())
 
     # Auto-enable LLM tool selector when there are many tools
-    if len(private_tools) > 15:
+    if len(private_tools) > 20:
         selector_model_name = pick_tool_selector_model()
         if selector_model_name:
             selector_llm = await create_llm_model(model_name=selector_model_name)
