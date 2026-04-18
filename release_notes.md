@@ -1,7 +1,8 @@
-# Release v0.17.55
+# Release v0.17.56
 
 ## Improvements
 
-- Added diagnostic logging that records which image URLs are forwarded to the model, making it easier to investigate image-processing errors in production.
+- Tuned the threshold at which the automatic tool-selection layer activates, so agents with mid-sized skill sets now run without the extra selection step and only agents with larger skill catalogs trigger it.
+- Routine dependency updates.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.54...v0.17.55
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.55...v0.17.56
