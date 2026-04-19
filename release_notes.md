@@ -1,12 +1,8 @@
-# Release v0.17.57
-
-## New Features
-
-- Added time-limited **share links** for chats and posts. Team members can now generate a public URL that lets anyone — including recipients without an account — view a chat transcript or post for three days.
-- When posts are delivered to WeChat or Telegram, the push message now contains a share link instead of a login-gated URL, so off-platform recipients can open the content directly.
+# Release v0.17.58
 
 ## Improvements
 
-- Each public view increments a view counter on the share link, and creator metadata (user and team) is retained for future reporting.
+- Improved reliability for agents with large skill catalogs. Built-in capabilities — current time, long-term memory, posts, activities, and sub-agent calls — now remain available even when the automatic tool-selection layer narrows the active tool set. Previously these core tools could be filtered out, causing agents to repeatedly attempt the same failed call without recovering.
+- Raised the threshold at which the automatic tool-selection layer activates and refined the counting logic so built-in provider tools no longer push borderline agents into the selection path prematurely.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.56...v0.17.57
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.57...v0.17.58
