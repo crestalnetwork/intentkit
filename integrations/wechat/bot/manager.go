@@ -2,11 +2,10 @@ package bot
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -277,26 +276,20 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 			continue
 		}
 		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
-			imageBytes, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
+			imageBytes, contentType, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
 			if err != nil {
 				slog.Error("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
 				continue
 			}
-			contentType := http.DetectContentType(imageBytes)
 			ext := shared.ExtensionForContentType(contentType)
-			if ext == "" {
-				ext = "jpg"
+			// Downstream forwards type=image attachments to Gemini vision, which
+			// only accepts a small set of formats. Drop anything that isn't one
+			// of the image MIMEs shared.ExtensionForContentType knows about.
+			if ext == "" || !strings.HasPrefix(contentType, "image/") {
+				slog.Warn("wechat image: unsupported mime, skipping",
+					"team_id", teamID, "mime", contentType)
+				continue
 			}
-			magic := ""
-			if len(imageBytes) >= 8 {
-				magic = hex.EncodeToString(imageBytes[:8])
-			}
-			slog.Info("Decrypted wechat image",
-				"team_id", teamID,
-				"size", len(imageBytes),
-				"content_type", contentType,
-				"magic_hex", magic,
-			)
 			key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
 			imageURL, err := m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
 			if err != nil {
