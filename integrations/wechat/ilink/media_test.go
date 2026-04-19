@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestIsRecognizedMime(t *testing.T) {
+func TestIsRecognizedImageMime(t *testing.T) {
 	cases := []struct {
 		ct   string
 		want bool
@@ -18,18 +18,75 @@ func TestIsRecognizedMime(t *testing.T) {
 		{"image/gif", true},
 		{"image/webp", true},
 		{"image/bmp", true},
-		{"video/mp4", true},
-		{"audio/mpeg", true},
+		{"video/mp4", false},
+		{"audio/mpeg", false},
 		{"application/octet-stream", false},
 		{"text/plain; charset=utf-8", false},
-		{"text/html; charset=utf-8", false},
 		{"", false},
 	}
 	for _, c := range cases {
-		if got := isRecognizedMime(c.ct); got != c.want {
-			t.Errorf("isRecognizedMime(%q) = %v, want %v", c.ct, got, c.want)
+		if got := isRecognizedImageMime(c.ct); got != c.want {
+			t.Errorf("isRecognizedImageMime(%q) = %v, want %v", c.ct, got, c.want)
 		}
 	}
+}
+
+func TestAcceptAnyMime(t *testing.T) {
+	for _, ct := range []string{
+		"application/pdf",
+		"audio/silk",
+		"audio/amr",
+		"video/mp4",
+		"image/jpeg",
+		"application/octet-stream",
+	} {
+		if !acceptAnyMime(ct) {
+			t.Errorf("acceptAnyMime(%q) = false, want true", ct)
+		}
+	}
+}
+
+func TestResolveMediaKey(t *testing.T) {
+	media := CDNMedia{AESKey: "server-value", EncryptQueryParam: "q"}
+
+	t.Run("no_item_aeskey_keeps_media_key", func(t *testing.T) {
+		got, src, err := resolveMediaKey(media, "", "voice_item")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.AESKey != "server-value" {
+			t.Errorf("AESKey = %q, want server-value", got.AESKey)
+		}
+		if src != "media.aes_key" {
+			t.Errorf("src = %q, want media.aes_key", src)
+		}
+	})
+
+	t.Run("item_aeskey_takes_precedence", func(t *testing.T) {
+		hexKey := "00112233445566778899aabbccddeeff"
+		got, src, err := resolveMediaKey(media, hexKey, "voice_item")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.AESKey != hexKey {
+			t.Errorf("AESKey = %q, want %q", got.AESKey, hexKey)
+		}
+		if src != "voice_item.aeskey" {
+			t.Errorf("src = %q, want voice_item.aeskey", src)
+		}
+	})
+
+	t.Run("invalid_hex_errors", func(t *testing.T) {
+		if _, _, err := resolveMediaKey(media, "not-hex-at-all-xxxx", "file_item"); err == nil {
+			t.Error("expected error for invalid hex, got nil")
+		}
+	})
+
+	t.Run("wrong_length_errors", func(t *testing.T) {
+		if _, _, err := resolveMediaKey(media, "00112233", "file_item"); err == nil {
+			t.Error("expected error for short hex, got nil")
+		}
+	})
 }
 
 func TestHeadHex(t *testing.T) {

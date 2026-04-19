@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -270,53 +271,36 @@ func getStringFromConfig(config map[string]interface{}, key string) string {
 func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, teamID string) {
 	text := ""
 	attachments := make([]types.ChatMessageAttach, 0)
+	// Voice attachments ride on types.AttachFile (no dedicated audio type),
+	// so we track their lead texts separately to preserve the "this is a
+	// voice message" hint. The core engine drops attachment.lead_text when
+	// forwarding to the LLM, so we inline voiceNotes into the user text.
+	var voiceNotes []string
+	voiceCount := 0
 	for _, item := range msg.ItemList {
-		if item.Type == ilink.ItemTypeText && item.TextItem != nil {
+		switch {
+		case item.Type == ilink.ItemTypeText && item.TextItem != nil:
 			text = item.TextItem.Text
-			continue
-		}
-		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
-			img := *item.ImageItem
-			slog.Info("wechat image: received",
-				"team_id", teamID,
-				"from", msg.FromUserID,
-				"media_url", img.Media.URL,
-				"encrypt_query_param_len", len(img.Media.EncryptQueryParam),
-				"has_media_aes_key", img.Media.AESKey != "",
-				"media_aes_key_len", len(img.Media.AESKey),
-				"encrypt_type", img.Media.EncryptType,
-				"has_image_item_aeskey", img.AESKeyHex != "",
-				"image_item_aeskey_len", len(img.AESKeyHex),
-				"image_item_url", img.URL,
-				"mid_size", img.MidSize,
-			)
-			imageBytes, contentType, err := ilink.DownloadAndDecryptImage(context.Background(), img)
-			if err != nil {
-				slog.Error("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
-				continue
+		case item.Type == ilink.ItemTypeImage && item.ImageItem != nil:
+			if att, ok := m.handleInboundImage(teamID, msg.FromUserID, *item.ImageItem); ok {
+				attachments = append(attachments, att)
 			}
-			ext := shared.ExtensionForContentType(contentType)
-			// Downstream forwards type=image attachments to Gemini vision, which
-			// only accepts a small set of formats. Drop anything that isn't one
-			// of the image MIMEs shared.ExtensionForContentType knows about.
-			if ext == "" || !strings.HasPrefix(contentType, "image/") {
-				slog.Warn("wechat image: unsupported mime, skipping",
-					"team_id", teamID, "mime", contentType)
-				continue
+		case item.Type == ilink.ItemTypeVoice && item.VoiceItem != nil:
+			if att, ok := m.handleInboundVoice(teamID, msg.FromUserID, *item.VoiceItem); ok {
+				attachments = append(attachments, att)
+				voiceCount++
+				if att.LeadText != nil {
+					voiceNotes = append(voiceNotes, *att.LeadText)
+				}
 			}
-			key := fmt.Sprintf("wechat/%s/%d_%s.%s", teamID, time.Now().UnixMilli(), xid.New().String(), ext)
-			imageURL, err := m.storage.StoreMedia(context.Background(), imageBytes, key, contentType)
-			if err != nil {
-				slog.Error("Failed to upload wechat image to S3", "team_id", teamID, "error", err)
-				continue
+		case item.Type == ilink.ItemTypeVideo && item.VideoItem != nil:
+			if att, ok := m.handleInboundVideo(teamID, msg.FromUserID, *item.VideoItem); ok {
+				attachments = append(attachments, att)
 			}
-			slog.Info("Uploaded wechat image to S3", "team_id", teamID, "url", imageURL)
-			leadText := "User sent an image."
-			attachments = append(attachments, types.ChatMessageAttach{
-				Type:     types.AttachImage,
-				LeadText: &leadText,
-				URL:      &imageURL,
-			})
+		case item.Type == ilink.ItemTypeFile && item.FileItem != nil:
+			if att, ok := m.handleInboundFile(teamID, msg.FromUserID, *item.FileItem); ok {
+				attachments = append(attachments, att)
+			}
 		}
 	}
 
@@ -326,11 +310,9 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 
 	rawText := text
 	if len(attachments) > 0 && rawText == "" {
-		if len(attachments) == 1 {
-			text = "User sent an image."
-		} else {
-			text = fmt.Sprintf("User sent %d images.", len(attachments))
-		}
+		text = summarizeAttachments(attachments, voiceCount)
+	} else if len(voiceNotes) > 0 {
+		text = strings.TrimSpace(text + "\n\n" + strings.Join(voiceNotes, " "))
 	}
 
 	slog.Info("Received wechat message", "team_id", teamID, "from", msg.FromUserID)
@@ -407,4 +389,269 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 		}
 		return
 	}
+}
+
+// Media kind labels used in log fields and S3 key paths.
+const (
+	mediaKindImage = "image"
+	mediaKindVoice = "voice"
+	mediaKindVideo = "video"
+	mediaKindFile  = "file"
+)
+
+// mediaSpec describes how to turn one decrypted inbound media payload into a
+// ChatMessageAttach: which attachment type, what lead text, what extension/
+// content-type to use when the sniffed MIME is unknown, and an optional
+// validator for acceptance rules not expressible as a MIME predicate.
+type mediaSpec struct {
+	kind        string
+	attachType  string
+	defaultExt  string
+	defaultMime string
+	leadText    string
+	// validate runs after download+decrypt succeeds. Returning a non-empty
+	// reason drops the attachment with a warning log. Used by the image path
+	// to reject MIMEs that survive isRecognizedImageMime but have no mapping
+	// in shared.ExtensionForContentType.
+	validate func(ext, contentType string) (reason string)
+	// overrideExt, when non-empty, wins over the sniffed extension. Used for
+	// files where the user-provided filename extension is more reliable.
+	overrideExt string
+}
+
+// handleInboundImage downloads, decrypts, and uploads an inbound image to
+// S3, returning an attachment ready to forward to the LLM. Returns ok=false
+// on any failure; errors are logged and the item is dropped rather than
+// aborting the whole message.
+func (m *Manager) handleInboundImage(teamID, fromUserID string, img ilink.ImageItem) (types.ChatMessageAttach, bool) {
+	slog.Info("wechat image: received",
+		"team_id", teamID,
+		"from", fromUserID,
+		"media_url", img.Media.URL,
+		"encrypt_query_param_len", len(img.Media.EncryptQueryParam),
+		"has_media_aes_key", img.Media.AESKey != "",
+		"media_aes_key_len", len(img.Media.AESKey),
+		"encrypt_type", img.Media.EncryptType,
+		"has_image_item_aeskey", img.AESKeyHex != "",
+		"image_item_aeskey_len", len(img.AESKeyHex),
+		"image_item_url", img.URL,
+		"mid_size", img.MidSize,
+	)
+	spec := mediaSpec{
+		kind:       mediaKindImage,
+		attachType: types.AttachImage,
+		leadText:   "User sent an image.",
+		// Downstream forwards type=image attachments to Gemini vision, which
+		// only accepts a small set of formats. ilink's strict image MIME
+		// policy already ensures contentType starts with "image/"; this
+		// rejects exotic image subtypes (HEIC, etc.) with no extension map.
+		validate: func(ext, _ string) string {
+			if ext == "" {
+				return "no extension for content type"
+			}
+			return ""
+		},
+	}
+	return m.finalizeInboundMedia(teamID, fromUserID, spec, func() ([]byte, string, error) {
+		return ilink.DownloadAndDecryptImage(context.Background(), img)
+	})
+}
+
+// handleInboundVoice downloads, decrypts, and uploads an inbound voice
+// message. No AttachVoice type exists, so it's forwarded as a file
+// attachment; LLMs that support audio input can consume the URL, others
+// will surface an "unsupported" error at the engine layer.
+func (m *Manager) handleInboundVoice(teamID, fromUserID string, vi ilink.VoiceItem) (types.ChatMessageAttach, bool) {
+	slog.Info("wechat voice: received",
+		"team_id", teamID,
+		"from", fromUserID,
+		"media_url", vi.Media.URL,
+		"has_voice_item_aeskey", vi.AESKeyHex != "",
+		"duration", vi.Duration,
+	)
+	leadText := "User sent a voice message."
+	if vi.Duration > 0 {
+		leadText = fmt.Sprintf("User sent a voice message (%d seconds).", vi.Duration)
+	}
+	// WeChat voice is typically SILK-v3, which Go can't sniff.
+	spec := mediaSpec{
+		kind:        mediaKindVoice,
+		attachType:  types.AttachFile,
+		defaultExt:  "silk",
+		defaultMime: "audio/silk",
+		leadText:    leadText,
+	}
+	return m.finalizeInboundMedia(teamID, fromUserID, spec, func() ([]byte, string, error) {
+		return ilink.DownloadAndDecryptVoice(context.Background(), vi)
+	})
+}
+
+// handleInboundVideo downloads, decrypts, and uploads an inbound video.
+func (m *Manager) handleInboundVideo(teamID, fromUserID string, vi ilink.VideoItem) (types.ChatMessageAttach, bool) {
+	slog.Info("wechat video: received",
+		"team_id", teamID,
+		"from", fromUserID,
+		"media_url", vi.Media.URL,
+		"has_video_item_aeskey", vi.AESKeyHex != "",
+		"duration", vi.Duration,
+	)
+	leadText := "User sent a video."
+	if vi.Duration > 0 {
+		leadText = fmt.Sprintf("User sent a video (%d seconds).", vi.Duration)
+	}
+	spec := mediaSpec{
+		kind:        mediaKindVideo,
+		attachType:  types.AttachVideo,
+		defaultExt:  "mp4",
+		defaultMime: "video/mp4",
+		leadText:    leadText,
+	}
+	return m.finalizeInboundMedia(teamID, fromUserID, spec, func() ([]byte, string, error) {
+		return ilink.DownloadAndDecryptVideo(context.Background(), vi)
+	})
+}
+
+// handleInboundFile downloads, decrypts, and uploads an inbound file. The
+// user-provided filename extension is preferred over sniffed MIME because
+// it survives round-trips through tools that rewrite Content-Type.
+func (m *Manager) handleInboundFile(teamID, fromUserID string, fi ilink.FileItem) (types.ChatMessageAttach, bool) {
+	slog.Info("wechat file: received",
+		"team_id", teamID,
+		"from", fromUserID,
+		"media_url", fi.Media.URL,
+		"has_file_item_aeskey", fi.AESKeyHex != "",
+		"file_name", fi.FileName,
+		"file_size", fi.FileSize,
+	)
+	leadText := "User sent a file."
+	if fi.FileName != "" {
+		leadText = fmt.Sprintf("User sent a file: %s", fi.FileName)
+	}
+	spec := mediaSpec{
+		kind:        mediaKindFile,
+		attachType:  types.AttachFile,
+		defaultExt:  "bin",
+		defaultMime: "application/octet-stream",
+		leadText:    leadText,
+		overrideExt: extensionFromFilename(fi.FileName),
+	}
+	return m.finalizeInboundMedia(teamID, fromUserID, spec, func() ([]byte, string, error) {
+		return ilink.DownloadAndDecryptFile(context.Background(), fi)
+	})
+}
+
+// finalizeInboundMedia drives the shared "download → resolve ext → validate
+// → upload → build attach" flow; per-kind specifics come in via spec and
+// the download closure.
+func (m *Manager) finalizeInboundMedia(
+	teamID, fromUserID string,
+	spec mediaSpec,
+	download func() ([]byte, string, error),
+) (types.ChatMessageAttach, bool) {
+	data, contentType, err := download()
+	if err != nil {
+		slog.Error("Failed to download/decrypt wechat media",
+			"team_id", teamID, "from", fromUserID, "kind", spec.kind, "error", err)
+		return types.ChatMessageAttach{}, false
+	}
+
+	ext := spec.overrideExt
+	if ext == "" {
+		ext = shared.ExtensionForContentType(contentType)
+	}
+	if ext == "" && spec.defaultExt != "" {
+		ext = spec.defaultExt
+		contentType = spec.defaultMime
+	}
+
+	if spec.validate != nil {
+		if reason := spec.validate(ext, contentType); reason != "" {
+			slog.Warn("wechat media: dropping attachment",
+				"team_id", teamID, "from", fromUserID,
+				"kind", spec.kind, "mime", contentType, "reason", reason)
+			return types.ChatMessageAttach{}, false
+		}
+	}
+
+	url, err := m.uploadMedia(teamID, spec.kind, ext, data, contentType)
+	if err != nil {
+		slog.Error("Failed to upload wechat media to S3",
+			"team_id", teamID, "from", fromUserID, "kind", spec.kind, "error", err)
+		return types.ChatMessageAttach{}, false
+	}
+
+	leadText := spec.leadText
+	return types.ChatMessageAttach{
+		Type:     spec.attachType,
+		LeadText: &leadText,
+		URL:      &url,
+	}, true
+}
+
+// uploadMedia builds an S3 key scoped by team and media kind and uploads
+// the bytes, returning the public URL.
+func (m *Manager) uploadMedia(teamID, kind, ext string, data []byte, contentType string) (string, error) {
+	key := fmt.Sprintf("wechat/%s/%s/%d_%s.%s", teamID, kind, time.Now().UnixMilli(), xid.New().String(), ext)
+	url, err := m.storage.StoreMedia(context.Background(), data, key, contentType)
+	if err != nil {
+		return "", err
+	}
+	slog.Info("Uploaded wechat media to S3", "team_id", teamID, "kind", kind, "url", url)
+	return url, nil
+}
+
+// extensionFromFilename returns the lowercased extension (without the dot)
+// from a filename, or "" if none is present. Uses path.Ext (always
+// forward-slash) rather than filepath.Ext (OS-specific separator).
+func extensionFromFilename(name string) string {
+	ext := path.Ext(name)
+	if len(ext) <= 1 {
+		return ""
+	}
+	return strings.ToLower(ext[1:])
+}
+
+// summarizeAttachments builds a short placeholder message when the user
+// sent only media (no caption text). voiceCount is the number of AttachFile
+// entries that originated from WeChat voice items — they're counted as
+// "voice message" rather than generic "file" so LLMs can distinguish.
+func summarizeAttachments(attachments []types.ChatMessageAttach, voiceCount int) string {
+	var images, videos, files int
+	for _, att := range attachments {
+		switch att.Type {
+		case types.AttachImage:
+			images++
+		case types.AttachVideo:
+			videos++
+		case types.AttachFile:
+			files++
+		}
+	}
+	// Voice items ride on AttachFile — subtract them from the file bucket.
+	files -= voiceCount
+	if files < 0 {
+		files = 0
+	}
+
+	parts := []string{}
+	parts = appendNounPhrase(parts, images, "an image", "images")
+	parts = appendNounPhrase(parts, voiceCount, "a voice message", "voice messages")
+	parts = appendNounPhrase(parts, videos, "a video", "videos")
+	parts = appendNounPhrase(parts, files, "a file", "files")
+	if len(parts) == 0 {
+		return "User sent an attachment."
+	}
+	return "User sent " + strings.Join(parts, ", ") + "."
+}
+
+// appendNounPhrase adds a count-aware phrase ("a video" / "3 videos") to
+// parts when count > 0.
+func appendNounPhrase(parts []string, count int, singular, plural string) []string {
+	if count == 1 {
+		return append(parts, singular)
+	}
+	if count > 1 {
+		return append(parts, fmt.Sprintf("%d %s", count, plural))
+	}
+	return parts
 }

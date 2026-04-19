@@ -13,32 +13,98 @@ import (
 	"github.com/crestalnetwork/intentkit/integrations/shared"
 )
 
+// mediaPolicy controls how downloadAndDecryptMedia treats raw CDN output.
+//
+// accept gates BOTH the raw-plaintext fast path AND the decrypted-output
+// validation. allowRawFastPath permits skipping AES decrypt when the raw
+// download's sniffed MIME already satisfies accept — only safe for media
+// whose MIME Go can reliably identify (e.g. images). For SILK/AMR/arbitrary
+// binaries, the sniff is unreliable, so the fast path must stay disabled
+// and integrity is guaranteed by AES + PKCS7 alone.
+type mediaPolicy struct {
+	accept           func(string) bool
+	allowRawFastPath bool
+}
+
+var (
+	imagePolicy = mediaPolicy{accept: isRecognizedImageMime, allowRawFastPath: true}
+	permissive  = mediaPolicy{accept: acceptAnyMime, allowRawFastPath: false}
+)
+
 // DownloadAndDecryptImage fetches an inbound WeChat image from the CDN and
 // returns plaintext bytes plus detected MIME. Per the iLink protocol, inbound
 // images carry the AES key as hex in the top-level ImageItem.aeskey field; if
 // present it takes precedence over media.aes_key (which uses a different
 // base64-of-hex encoding from outbound media).
 func DownloadAndDecryptImage(ctx context.Context, img ImageItem) ([]byte, string, error) {
-	media := img.Media
-	keySource := "media.aes_key"
-	if img.AESKeyHex != "" {
-		keySource = "image_item.aeskey"
-		rawKey, err := hex.DecodeString(img.AESKeyHex)
-		if err != nil || len(rawKey) != 16 {
-			return nil, "", fmt.Errorf(
-				"invalid image_item.aeskey hex (len=%d): %w",
-				len(img.AESKeyHex), err,
-			)
-		}
-		media.AESKey = img.AESKeyHex
+	// Images don't have a top-level URL fallback (historically the aeskey and
+	// encrypted_query_param sit on media directly).
+	return decryptInboundMedia(ctx, img.Media, img.AESKeyHex, "", "image_item", imagePolicy)
+}
+
+// DownloadAndDecryptVoice fetches an inbound WeChat voice message (typically
+// SILK-v3) from the CDN. Go's http.DetectContentType cannot identify SILK or
+// AMR, so MIME validation is intentionally permissive — we rely on successful
+// AES-128-ECB + PKCS7 decryption as the integrity signal.
+func DownloadAndDecryptVoice(ctx context.Context, vi VoiceItem) ([]byte, string, error) {
+	return decryptInboundMedia(ctx, vi.Media, vi.AESKeyHex, vi.URL, "voice_item", permissive)
+}
+
+// DownloadAndDecryptVideo fetches an inbound WeChat video from the CDN.
+func DownloadAndDecryptVideo(ctx context.Context, vi VideoItem) ([]byte, string, error) {
+	return decryptInboundMedia(ctx, vi.Media, vi.AESKeyHex, vi.URL, "video_item", permissive)
+}
+
+// DownloadAndDecryptFile fetches an inbound WeChat file from the CDN. Files
+// may be arbitrary binaries (PDFs, docs, zip, etc.) whose MIME is not known
+// in advance, so acceptance is permissive.
+func DownloadAndDecryptFile(ctx context.Context, fi FileItem) ([]byte, string, error) {
+	return decryptInboundMedia(ctx, fi.Media, fi.AESKeyHex, fi.URL, "file_item", permissive)
+}
+
+// decryptInboundMedia is the shared "resolve key → apply URL fallback →
+// download+decrypt" flow for inbound iLink media items. Per the iLink
+// protocol, the top-level item aeskey hex (when present) overrides
+// media.aes_key, and some item types carry the CDN URL at the item level
+// rather than on the nested media.
+func decryptInboundMedia(
+	ctx context.Context,
+	media CDNMedia,
+	itemAESKeyHex, itemURL, itemKind string,
+	policy mediaPolicy,
+) ([]byte, string, error) {
+	media, keySource, err := resolveMediaKey(media, itemAESKeyHex, itemKind)
+	if err != nil {
+		return nil, "", err
 	}
-	return downloadAndDecryptMedia(ctx, media, keySource)
+	if media.URL == "" {
+		media.URL = itemURL
+	}
+	return downloadAndDecryptMedia(ctx, media, keySource, policy)
+}
+
+// resolveMediaKey applies the "top-level aeskey takes precedence" rule used
+// across inbound iLink media items. When itemAESKeyHex is set it must be a
+// 32-char hex string (16 raw bytes) and is promoted into media.AESKey.
+func resolveMediaKey(media CDNMedia, itemAESKeyHex, itemKind string) (CDNMedia, string, error) {
+	if itemAESKeyHex == "" {
+		return media, "media.aes_key", nil
+	}
+	rawKey, err := hex.DecodeString(itemAESKeyHex)
+	if err != nil || len(rawKey) != 16 {
+		return CDNMedia{}, "", fmt.Errorf(
+			"invalid %s.aeskey hex (len=%d): %w",
+			itemKind, len(itemAESKeyHex), err,
+		)
+	}
+	media.AESKey = itemAESKeyHex
+	return media, itemKind + ".aeskey", nil
 }
 
 // downloadAndDecryptMedia is the low-level worker: download → try raw → try
 // AES decrypt → validate MIME. Diagnostic fields are logged at each step so a
 // single failed attempt in production gives enough signal for post-mortem.
-func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource string) ([]byte, string, error) {
+func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource string, policy mediaPolicy) ([]byte, string, error) {
 	downloadURL := MediaDownloadURL(media)
 	if downloadURL == "" {
 		return nil, "", fmt.Errorf("empty media download URL")
@@ -62,20 +128,33 @@ func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource stri
 		"raw_tail", tailHex(raw, 16),
 	)
 
-	if mime := http.DetectContentType(raw); isRecognizedMime(mime) {
+	rawMime := http.DetectContentType(raw)
+	if policy.allowRawFastPath && policy.accept(rawMime) {
 		slog.Info("wechat media: ready",
 			"path", "raw",
 			"size", len(raw),
-			"mime", mime,
+			"mime", rawMime,
 		)
-		return raw, mime, nil
+		return raw, rawMime, nil
 	}
 
 	if media.AESKey == "" {
+		// Without an AES key and no decrypt step, only the strict raw-
+		// fast-path policy should ever return bytes: under a permissive
+		// policy (acceptAnyMime) every download would pass MIME validation,
+		// so ciphertext from a protocol bug could be forwarded as plaintext.
+		if policy.allowRawFastPath && policy.accept(rawMime) {
+			slog.Info("wechat media: ready",
+				"path", "raw",
+				"size", len(raw),
+				"mime", rawMime,
+			)
+			return raw, rawMime, nil
+		}
 		return nil, "", fmt.Errorf(
-			"raw download not recognized media and no aes key available "+
-				"(encrypt_type=%d size=%d raw_head=%s)",
-			media.EncryptType, len(raw), headHex(raw, 32),
+			"no aes key available and raw download not in fast-path "+
+				"(encrypt_type=%d size=%d mime=%s raw_head=%s)",
+			media.EncryptType, len(raw), rawMime, headHex(raw, 32),
 		)
 	}
 
@@ -101,12 +180,15 @@ func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource stri
 	}
 
 	mime := http.DetectContentType(plain)
-	if !isRecognizedMime(mime) {
+	if !policy.accept(mime) {
+		// Intentionally omit plain_head: if decryption succeeded on a user
+		// document with sensitive content (passwords, PII), the first bytes
+		// would leak into logs.
 		return nil, "", fmt.Errorf(
-			"decrypted bytes not recognized media "+
-				"(encrypt_type=%d key_source=%s plain_size=%d plain_head=%s raw_head=%s)",
+			"decrypted bytes not accepted "+
+				"(encrypt_type=%d key_source=%s plain_size=%d plain_mime=%s raw_head=%s)",
 			media.EncryptType, keySource,
-			len(plain), headHex(plain, 32), headHex(raw, 32),
+			len(plain), mime, headHex(raw, 32),
 		)
 	}
 
@@ -119,12 +201,18 @@ func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource stri
 	return plain, mime, nil
 }
 
-// isRecognizedMime reports whether ct is an image/video/audio MIME type.
-func isRecognizedMime(ct string) bool {
-	return strings.HasPrefix(ct, "image/") ||
-		strings.HasPrefix(ct, "video/") ||
-		strings.HasPrefix(ct, "audio/")
+// isRecognizedImageMime accepts image/* only. Downstream (Gemini vision)
+// only handles images, and CDN-served raw bytes must be verifiable as an
+// image before we skip the decrypt step.
+func isRecognizedImageMime(ct string) bool {
+	return strings.HasPrefix(ct, "image/")
 }
+
+// acceptAnyMime permits any content type. Used by permissive policy for
+// voice/video/file where http.DetectContentType can't reliably identify
+// valid plaintext (SILK/AMR/arbitrary binaries) and integrity is guaranteed
+// by AES + PKCS7 alone.
+func acceptAnyMime(string) bool { return true }
 
 // headHex hex-encodes up to the first n bytes of b for diagnostic logs.
 func headHex(b []byte, n int) string {

@@ -86,8 +86,20 @@ func ExtensionForContentType(ct string) string {
 		return "webp"
 	case strings.HasPrefix(ct, "video/mp4"):
 		return "mp4"
+	case strings.HasPrefix(ct, "video/quicktime"):
+		return "mov"
+	case strings.HasPrefix(ct, "video/webm"):
+		return "webm"
 	case strings.HasPrefix(ct, "audio/mpeg"):
 		return "mp3"
+	case strings.HasPrefix(ct, "audio/mp4"):
+		return "m4a"
+	case strings.HasPrefix(ct, "audio/amr"):
+		return "amr"
+	case strings.HasPrefix(ct, "audio/wav"), strings.HasPrefix(ct, "audio/x-wav"):
+		return "wav"
+	case strings.HasPrefix(ct, "audio/ogg"):
+		return "ogg"
 	default:
 		return ""
 	}

@@ -78,6 +78,7 @@ type ItemObj struct {
 	Type      int        `json:"type"`
 	TextItem  *TextItem  `json:"text_item,omitempty"`
 	ImageItem *ImageItem `json:"image_item,omitempty"`
+	VoiceItem *VoiceItem `json:"voice_item,omitempty"`
 	VideoItem *VideoItem `json:"video_item,omitempty"`
 	FileItem  *FileItem  `json:"file_item,omitempty"`
 }
@@ -167,16 +168,40 @@ type ImageItem struct {
 	MidSize   int      `json:"mid_size"`
 }
 
+// VoiceItem holds voice/audio content for a message item.
+//
+// WeChat voice messages are typically SILK-v3 encoded. Like inbound images,
+// the top-level `aeskey` field (hex) may carry the AES key. If present it
+// takes precedence over `media.aes_key`.
+type VoiceItem struct {
+	Media     CDNMedia `json:"media"`
+	AESKeyHex string   `json:"aeskey,omitempty"`
+	URL       string   `json:"url,omitempty"`
+	Duration  int      `json:"duration,omitempty"`
+	EndFlag   int      `json:"end_flag,omitempty"`
+}
+
 // VideoItem holds video content for a message item.
+//
+// Like inbound images, the top-level `aeskey` field (hex) may carry the AES
+// key. If present it takes precedence over `media.aes_key`.
 type VideoItem struct {
-	Media CDNMedia `json:"media"`
+	Media     CDNMedia `json:"media"`
+	AESKeyHex string   `json:"aeskey,omitempty"`
+	URL       string   `json:"url,omitempty"`
+	Duration  int      `json:"duration,omitempty"`
 }
 
 // FileItem holds file content for a message item.
+//
+// Like inbound images, the top-level `aeskey` field (hex) may carry the AES
+// key. If present it takes precedence over `media.aes_key`.
 type FileItem struct {
-	Media    CDNMedia `json:"media"`
-	FileName string   `json:"file_name"`
-	FileSize int      `json:"file_size"`
+	Media     CDNMedia `json:"media"`
+	AESKeyHex string   `json:"aeskey,omitempty"`
+	URL       string   `json:"url,omitempty"`
+	FileName  string   `json:"file_name"`
+	FileSize  int      `json:"file_size"`
 }
 
 // --- GetUploadURL ---
