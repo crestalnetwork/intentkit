@@ -197,7 +197,8 @@ class TestGetPushChannel:
 
 
 class TestFormatActivityPush:
-    def test_basic_format(self):
+    @pytest.mark.asyncio
+    async def test_basic_format(self):
         from intentkit.core.agent_activity import _format_activity_push
 
         activity = MagicMock()
@@ -207,10 +208,11 @@ class TestFormatActivityPush:
         activity.link = None
         activity.post_id = None
 
-        result = _format_activity_push(activity)
+        result = await _format_activity_push(activity)
         assert result == "[TestBot] Hello world"
 
-    def test_with_link(self):
+    @pytest.mark.asyncio
+    async def test_with_link(self):
         from intentkit.core.agent_activity import _format_activity_push
 
         activity = MagicMock()
@@ -220,10 +222,11 @@ class TestFormatActivityPush:
         activity.link = "https://example.com"
         activity.post_id = None
 
-        result = _format_activity_push(activity)
+        result = await _format_activity_push(activity)
         assert result == "[TestBot] Check this out\nhttps://example.com"
 
-    def test_fallback_to_agent_id(self):
+    @pytest.mark.asyncio
+    async def test_fallback_to_agent_id(self):
         from intentkit.core.agent_activity import _format_activity_push
 
         activity = MagicMock()
@@ -233,12 +236,31 @@ class TestFormatActivityPush:
         activity.link = None
         activity.post_id = None
 
-        result = _format_activity_push(activity)
+        result = await _format_activity_push(activity)
         assert result == "[bot1] Hello"
 
-    def test_with_post_id(self):
+    @pytest.mark.asyncio
+    async def test_with_post_id(self, monkeypatch):
+        from datetime import datetime
+
+        import intentkit.core.agent_activity as agent_activity_module
         from intentkit.config.config import config
         from intentkit.core.agent_activity import _format_activity_push
+        from intentkit.models.share_link import ShareLink, ShareLinkTargetType
+
+        async def fake_create_share_link(target_type, target_id, agent_id, **_kwargs):
+            return ShareLink(
+                id="sl-abc",
+                target_type=target_type,
+                target_id=target_id,
+                agent_id=agent_id,
+                expires_at=datetime.now(),
+                created_at=datetime.now(),
+            )
+
+        monkeypatch.setattr(
+            agent_activity_module, "create_share_link", fake_create_share_link
+        )
 
         activity = MagicMock()
         activity.agent_name = "TestBot"
@@ -247,5 +269,6 @@ class TestFormatActivityPush:
         activity.link = None
         activity.post_id = "post123"
 
-        result = _format_activity_push(activity)
-        assert result == f"[TestBot] Hello\n{config.app_base_url}/post/post123"
+        result = await _format_activity_push(activity)
+        assert result == f"[TestBot] Hello\n{config.app_base_url}/share/sl-abc"
+        _ = ShareLinkTargetType  # keep import used

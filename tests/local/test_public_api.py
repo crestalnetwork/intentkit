@@ -265,3 +265,59 @@ async def test_public_timeline_with_cursor(router):
         await timeline_fn(limit=50, cursor="2026-03-30T00:00:00|act-1")
 
     mock_query.assert_called_once_with("public", 50, "2026-03-30T00:00:00|act-1")
+
+
+# ---- /public/share-links/{id} tests ----
+
+
+@pytest.mark.asyncio
+async def test_get_share_link_returns_view_and_increments_counter(router):
+    """Public share endpoint returns the view and bumps the view counter."""
+    from intentkit.models.share_link import ShareLinkTargetType, ShareLinkView
+
+    get_fn = _get_endpoint(router, "/public/share-links/{share_link_id}")
+
+    expected_view = ShareLinkView(
+        id="sl-1",
+        target_type=ShareLinkTargetType.POST,
+        expires_at=datetime.now(),
+    )
+    with (
+        patch(
+            "intentkit.core.public_api.get_shared_view", new_callable=AsyncMock
+        ) as mock_get,
+        patch(
+            "intentkit.core.public_api.increment_share_link_view_count",
+            new_callable=AsyncMock,
+        ) as mock_inc,
+    ):
+        mock_get.return_value = expected_view
+        result = await get_fn(share_link_id="sl-1")
+
+    assert result is expected_view
+    mock_get.assert_awaited_once_with("sl-1")
+    mock_inc.assert_awaited_once_with("sl-1")
+
+
+@pytest.mark.asyncio
+async def test_get_share_link_404_skips_counter(router):
+    """404 path must not bump the view counter."""
+    from intentkit.utils.error import IntentKitAPIError
+
+    get_fn = _get_endpoint(router, "/public/share-links/{share_link_id}")
+
+    with (
+        patch(
+            "intentkit.core.public_api.get_shared_view", new_callable=AsyncMock
+        ) as mock_get,
+        patch(
+            "intentkit.core.public_api.increment_share_link_view_count",
+            new_callable=AsyncMock,
+        ) as mock_inc,
+    ):
+        mock_get.return_value = None
+        with pytest.raises(IntentKitAPIError) as exc:
+            await get_fn(share_link_id="sl-gone")
+
+    assert exc.value.status_code == 404
+    mock_inc.assert_not_awaited()

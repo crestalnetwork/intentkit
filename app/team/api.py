@@ -39,6 +39,7 @@ from app.team import (
     team_lead_router,
     team_management_router,
     team_public_router,
+    team_share_router,
     team_usage_router,
     team_user_router,
     team_wechat_router,
@@ -129,6 +130,7 @@ _ = app.include_router(team_management_router)
 _ = app.include_router(team_usage_router)
 _ = app.include_router(team_user_router)
 _ = app.include_router(team_public_router)
+_ = app.include_router(team_share_router)
 _ = app.include_router(team_wechat_router)
 
 

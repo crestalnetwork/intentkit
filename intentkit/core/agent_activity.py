@@ -7,11 +7,13 @@ from sqlalchemy import desc, select
 from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
+from intentkit.core.share_link import create_share_link
 from intentkit.models.agent_activity import (
     AgentActivity,
     AgentActivityCreate,
     AgentActivityTable,
 )
+from intentkit.models.share_link import ShareLinkTargetType
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ async def _push_activity_to_teams(activity: AgentActivity, team_ids: list[str]) 
     try:
         from intentkit.core.team.push import push_to_team
 
-        push_text = _format_activity_push(activity)
+        push_text = await _format_activity_push(activity)
         targets = [tid for tid in team_ids if tid != "public"]
         if not targets:
             return
@@ -62,14 +64,31 @@ async def _push_activity_to_teams(activity: AgentActivity, team_ids: list[str]) 
         logger.exception("Failed to push activity %s", activity.id)
 
 
-def _format_activity_push(activity: AgentActivity) -> str:
-    """Format an activity as a push notification message."""
+async def _format_activity_push(activity: AgentActivity) -> str:
+    """Format an activity as a push notification message.
+
+    For messages pushed to WeChat/Telegram (off-platform channels), a linked post is
+    rewritten as a public share link so recipients without an account can view it.
+    """
     name = activity.agent_name or activity.agent_id
     text = f"[{name}] {activity.text}"
     if activity.link:
         text += f"\n{activity.link}"
     if activity.post_id:
-        text += f"\n{config.app_base_url}/post/{activity.post_id}"
+        post_url = f"{config.app_base_url}/post/{activity.post_id}"
+        try:
+            link = await create_share_link(
+                ShareLinkTargetType.POST,
+                activity.post_id,
+                activity.agent_id,
+            )
+            post_url = f"{config.app_base_url}/share/{link.id}"
+        except Exception:
+            logger.exception(
+                "Failed to create share link for post %s; falling back to direct URL",
+                activity.post_id,
+            )
+        text += f"\n{post_url}"
     return text
 
 

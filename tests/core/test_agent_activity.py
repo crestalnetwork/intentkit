@@ -291,23 +291,67 @@ def _make_activity(**overrides) -> AgentActivity:
     return AgentActivity.model_validate(base)
 
 
-def test_format_activity_push_plain():
+@pytest.mark.asyncio
+async def test_format_activity_push_plain():
     activity = _make_activity()
-    assert _format_activity_push(activity) == "[Alice] hello world"
+    assert await _format_activity_push(activity) == "[Alice] hello world"
 
 
-def test_format_activity_push_with_link():
+@pytest.mark.asyncio
+async def test_format_activity_push_with_link():
     activity = _make_activity(link="https://example.com/x")
-    assert _format_activity_push(activity) == (
+    assert await _format_activity_push(activity) == (
         "[Alice] hello world\nhttps://example.com/x"
     )
 
 
-def test_format_activity_push_with_post_id(monkeypatch):
+@pytest.mark.asyncio
+async def test_format_activity_push_with_post_id(monkeypatch):
+    from intentkit.config.config import config
+    from intentkit.models.share_link import ShareLink, ShareLinkTargetType
+
+    monkeypatch.setattr(config, "app_base_url", "https://app.example.com")
+
+    async def fake_create_share_link(target_type, target_id, agent_id, **kwargs):
+        assert target_type == ShareLinkTargetType.POST
+        assert target_id == "post-42"
+        assert agent_id == "agent-1"
+        # Agent-initiated pushes must not carry a user or team
+        assert kwargs.get("user_id") is None
+        assert kwargs.get("team_id") is None
+        return ShareLink(
+            id="share-xid",
+            target_type=target_type,
+            target_id=target_id,
+            agent_id=agent_id,
+            expires_at=datetime.now(),
+            created_at=datetime.now(),
+        )
+
+    monkeypatch.setattr(
+        agent_activity_module, "create_share_link", fake_create_share_link
+    )
+
+    activity = _make_activity(text="Published a new post: hi", post_id="post-42")
+    assert await _format_activity_push(activity) == (
+        "[Alice] Published a new post: hi\nhttps://app.example.com/share/share-xid"
+    )
+
+
+@pytest.mark.asyncio
+async def test_format_activity_push_post_fallback_on_error(monkeypatch):
     from intentkit.config.config import config
 
     monkeypatch.setattr(config, "app_base_url", "https://app.example.com")
+
+    async def broken_create_share_link(*_args, **_kwargs):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(
+        agent_activity_module, "create_share_link", broken_create_share_link
+    )
+
     activity = _make_activity(text="Published a new post: hi", post_id="post-42")
-    assert _format_activity_push(activity) == (
+    assert await _format_activity_push(activity) == (
         "[Alice] Published a new post: hi\nhttps://app.example.com/post/post-42"
     )

@@ -5,12 +5,17 @@ from sqlalchemy import select
 
 from intentkit.config.db import get_session
 from intentkit.core.agent_post import get_agent_post
+from intentkit.core.share_link import (
+    get_shared_view,
+    increment_share_link_view_count,
+)
 from intentkit.core.team.feed import query_activity_feed, query_post_feed
 from intentkit.models.agent import Agent, AgentResponse
 from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent_activity import AgentActivity
 from intentkit.models.agent_post import AgentPost, AgentPostBrief
+from intentkit.models.share_link import ShareLinkView
 from intentkit.models.team_feed import TeamFeedPage
 from intentkit.utils.error import IntentKitAPIError
 
@@ -76,5 +81,23 @@ def create_public_router() -> APIRouter:
             ):
                 raise IntentKitAPIError(404, "NotFound", "Post not found")
         return post
+
+    @router.get(
+        "/share-links/{share_link_id}",
+        operation_id="public_get_share_link",
+    )
+    async def public_get_share_link(
+        share_link_id: str = Path(...),
+    ) -> ShareLinkView:
+        """Resolve a share link to its hydrated post or chat view.
+
+        No authentication. Returns 404 if the link does not exist or has expired.
+        Every successful call increments the link's view counter.
+        """
+        view = await get_shared_view(share_link_id)
+        if view is None:
+            raise IntentKitAPIError(404, "NotFound", "Share link not found or expired")
+        await increment_share_link_view_count(share_link_id)
+        return view
 
     return router
