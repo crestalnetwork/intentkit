@@ -1,8 +1,7 @@
-# Release v0.17.58
+# Release v0.17.59
 
-## Improvements
+## Bug Fixes
 
-- Improved reliability for agents with large skill catalogs. Built-in capabilities — current time, long-term memory, posts, activities, and sub-agent calls — now remain available even when the automatic tool-selection layer narrows the active tool set. Previously these core tools could be filtered out, causing agents to repeatedly attempt the same failed call without recovering.
-- Raised the threshold at which the automatic tool-selection layer activates and refined the counting logic so built-in provider tools no longer push borderline agents into the selection path prematurely.
+- Fixed an issue where images sent through WeChat could be stored incorrectly and cause the AI to reject them, with the error then blocking any further messages in the same conversation. Inbound images are now validated before being forwarded to the AI, and unrecognized or unsupported formats are dropped cleanly instead of poisoning the conversation.
 
-**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.57...v0.17.58
+**Full Changelog**: https://github.com/crestalnetwork/intentkit/compare/v0.17.58...v0.17.59
