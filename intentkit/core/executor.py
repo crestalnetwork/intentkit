@@ -27,6 +27,7 @@ from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
 from intentkit.config.db import get_checkpointer
 from intentkit.core.agent import get_agent
+from intentkit.core.system_skills import SystemSkill
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.llm import LLMProvider, create_llm_model
@@ -83,7 +84,6 @@ async def build_executor(
     from langchain.agents.middleware import (
         ClearToolUsesEdit,
         ContextEditingMiddleware,
-        LLMToolSelectorMiddleware,
         ModelRetryMiddleware,
         TodoListMiddleware,
         ToolRetryMiddleware,
@@ -92,6 +92,7 @@ async def build_executor(
     from intentkit.core.middleware import (
         DynamicPromptMiddleware,
         EmptyContentSafetyMiddleware,
+        SafeLLMToolSelectorMiddleware,
         StepTrackingMiddleware,
         SummarizationMiddleware,
         ToolBindingMiddleware,
@@ -257,13 +258,30 @@ async def build_executor(
     if agent.enable_todo:
         middleware.append(TodoListMiddleware())
 
-    # Auto-enable LLM tool selector when there are many tools
-    if len(private_tools) > 20:
+    # Auto-enable LLM tool selector when there are many selectable tools.
+    # Only BaseTool instances count toward the threshold since the upstream
+    # selector ignores dict-typed provider server tools (e.g. {"type":
+    # "web_search"}) — it never filters them, so they shouldn't push a
+    # borderline agent into the selector path.
+    #
+    # SystemSkill instances are pinned via `always_include` so core
+    # capabilities (time, memory, posts, activities, sub-agent calls) stay
+    # reachable even when the selector picks a small subset.
+    selectable_tool_count = sum(1 for t in private_tools if isinstance(t, BaseTool))
+    if selectable_tool_count > 30:
         selector_model_name = pick_tool_selector_model()
         if selector_model_name:
             selector_llm = await create_llm_model(model_name=selector_model_name)
             selector_model = await selector_llm.create_instance()
-            middleware.append(LLMToolSelectorMiddleware(model=selector_model))
+            always_include = [
+                t.name for t in private_tools if isinstance(t, SystemSkill)
+            ]
+            middleware.append(
+                SafeLLMToolSelectorMiddleware(
+                    model=selector_model,
+                    always_include=always_include,
+                )
+            )
 
     # Context editing clears old tool results at 40% context to free space.
     # Note: ContextEditingMiddleware uses wrap_model_call while SummarizationMiddleware

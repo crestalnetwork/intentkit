@@ -4,7 +4,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, override
 
-from langchain.agents.middleware import AgentMiddleware
+from langchain.agents.middleware import AgentMiddleware, LLMToolSelectorMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool
@@ -141,9 +141,41 @@ class EmptyContentSafetyMiddleware(AgentMiddleware[AgentState, AgentContext]):
         return await handler(request)
 
 
+class SafeLLMToolSelectorMiddleware(LLMToolSelectorMiddleware):
+    """`LLMToolSelectorMiddleware` that silently drops `always_include` names
+    missing from the current request's tool list.
+
+    Upstream raises `ValueError` when any name in `always_include` isn't
+    present in `request.tools`. In IntentKit, `ToolBindingMiddleware` swaps
+    the tool list to public or private per-request, so a name pinned from
+    `private_tools` (e.g. `update_memory`, `call_agent`) may legitimately be
+    absent on a public-context request. Filter to what's actually available
+    rather than crashing.
+    """
+
+    @override
+    def _prepare_selection_request(self, request):  # type: ignore[override]
+        if not self.always_include:
+            return super()._prepare_selection_request(request)
+        available = {t.name for t in request.tools if not isinstance(t, dict)}
+        effective = [name for name in self.always_include if name in available]
+        if len(effective) == len(self.always_include):
+            return super()._prepare_selection_request(request)
+        # Temporarily swap `always_include` for this call. Safe because
+        # `_prepare_selection_request` is sync with no awaits, so asyncio tasks
+        # cannot interleave inside the try/finally block.
+        original = self.always_include
+        self.always_include = effective
+        try:
+            return super()._prepare_selection_request(request)
+        finally:
+            self.always_include = original
+
+
 __all__ = [
     "DynamicPromptMiddleware",
     "EmptyContentSafetyMiddleware",
+    "SafeLLMToolSelectorMiddleware",
     "StepTrackingMiddleware",
     "SummarizationMiddleware",
     "ToolBindingMiddleware",
