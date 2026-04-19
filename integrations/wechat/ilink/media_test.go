@@ -3,6 +3,7 @@ package ilink
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -97,6 +98,34 @@ func TestDecodeAESKey(t *testing.T) {
 			t.Error("expected error for garbage input, got nil")
 		}
 	})
+}
+
+func TestImageItemUnmarshalTopLevelAESKey(t *testing.T) {
+	const payload = `{
+		"media": {
+			"encrypt_query_param": "opaque",
+			"aes_key": "",
+			"encrypt_type": 0
+		},
+		"aeskey": "00112233445566778899aabbccddeeff",
+		"url": "https://novac2c.cdn.weixin.qq.com/c2c/download",
+		"mid_size": 135248
+	}`
+
+	var item ImageItem
+	if err := json.Unmarshal([]byte(payload), &item); err != nil {
+		t.Fatalf("unmarshal image item: %v", err)
+	}
+
+	if got := item.AESKeyHex; got != "00112233445566778899aabbccddeeff" {
+		t.Fatalf("AESKeyHex = %q, want top-level aeskey", got)
+	}
+	if got := item.URL; got != "https://novac2c.cdn.weixin.qq.com/c2c/download" {
+		t.Fatalf("URL = %q, want image-item url", got)
+	}
+	if got := item.Media.EncryptQueryParam; got != "opaque" {
+		t.Fatalf("EncryptQueryParam = %q, want opaque", got)
+	}
 }
 
 func TestAesECBDecrypt(t *testing.T) {

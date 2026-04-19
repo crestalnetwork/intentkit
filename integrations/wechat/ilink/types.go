@@ -155,9 +155,16 @@ type CDNMedia struct {
 }
 
 // ImageItem holds image content for a message item.
+//
+// Inbound images carry the AES key as a hex string in the top-level `aeskey`
+// field (NOT `media.aes_key`). The hex key decodes to 16 raw bytes. Outbound
+// media uses `media.aes_key` which is base64(hex_string). When both are
+// present, the top-level hex `aeskey` takes precedence for inbound decryption.
 type ImageItem struct {
-	Media   CDNMedia `json:"media"`
-	MidSize int      `json:"mid_size"`
+	Media     CDNMedia `json:"media"`
+	AESKeyHex string   `json:"aeskey,omitempty"`
+	URL       string   `json:"url,omitempty"`
+	MidSize   int      `json:"mid_size"`
 }
 
 // VideoItem holds video content for a message item.

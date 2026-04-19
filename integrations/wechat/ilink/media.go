@@ -13,60 +13,100 @@ import (
 	"github.com/crestalnetwork/intentkit/integrations/shared"
 )
 
-// DownloadAndDecryptMedia fetches WeChat CDN media and returns the plaintext
-// bytes plus the detected MIME type. It tries the raw response first (the CDN
-// sometimes returns plaintext already) and falls back to AES-128-ECB+PKCS7 if
-// EncryptType != 0 and AESKey is set. Errors if neither path yields a
-// recognizable image/video/audio payload.
-func DownloadAndDecryptMedia(ctx context.Context, media CDNMedia) ([]byte, string, error) {
+// DownloadAndDecryptImage fetches an inbound WeChat image from the CDN and
+// returns plaintext bytes plus detected MIME. Per the iLink protocol, inbound
+// images carry the AES key as hex in the top-level ImageItem.aeskey field; if
+// present it takes precedence over media.aes_key (which uses a different
+// base64-of-hex encoding from outbound media).
+func DownloadAndDecryptImage(ctx context.Context, img ImageItem) ([]byte, string, error) {
+	media := img.Media
+	keySource := "media.aes_key"
+	if img.AESKeyHex != "" {
+		keySource = "image_item.aeskey"
+		rawKey, err := hex.DecodeString(img.AESKeyHex)
+		if err != nil || len(rawKey) != 16 {
+			return nil, "", fmt.Errorf(
+				"invalid image_item.aeskey hex (len=%d): %w",
+				len(img.AESKeyHex), err,
+			)
+		}
+		media.AESKey = img.AESKeyHex
+	}
+	return downloadAndDecryptMedia(ctx, media, keySource)
+}
+
+// downloadAndDecryptMedia is the low-level worker: download → try raw → try
+// AES decrypt → validate MIME. Diagnostic fields are logged at each step so a
+// single failed attempt in production gives enough signal for post-mortem.
+func downloadAndDecryptMedia(ctx context.Context, media CDNMedia, keySource string) ([]byte, string, error) {
 	downloadURL := MediaDownloadURL(media)
 	if downloadURL == "" {
 		return nil, "", fmt.Errorf("empty media download URL")
 	}
+
+	slog.Info("wechat media: downloading",
+		"url", downloadURL,
+		"encrypt_type", media.EncryptType,
+		"key_source", keySource,
+		"aes_key_len", len(media.AESKey),
+	)
 
 	raw, err := shared.DownloadFromURL(ctx, downloadURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("download media %q: %w", downloadURL, err)
 	}
 
+	slog.Info("wechat media: downloaded",
+		"size", len(raw),
+		"raw_head", headHex(raw, 32),
+		"raw_tail", tailHex(raw, 16),
+	)
+
 	if mime := http.DetectContentType(raw); isRecognizedMime(mime) {
 		slog.Info("wechat media: ready",
 			"path", "raw",
 			"size", len(raw),
 			"mime", mime,
-			"encrypt_type", media.EncryptType,
 		)
 		return raw, mime, nil
 	}
 
-	if media.EncryptType == 0 || media.AESKey == "" {
+	if media.AESKey == "" {
 		return nil, "", fmt.Errorf(
-			"download is not recognized media and no aes key provided "+
-				"(size=%d head=%s)",
-			len(raw), headHex(raw, 16),
+			"raw download not recognized media and no aes key available "+
+				"(encrypt_type=%d size=%d raw_head=%s)",
+			media.EncryptType, len(raw), headHex(raw, 32),
 		)
 	}
 
 	aesKey, err := decodeAESKey(media.AESKey)
 	if err != nil {
-		return nil, "", fmt.Errorf("decode aes key (len=%d): %w", len(media.AESKey), err)
+		return nil, "", fmt.Errorf(
+			"decode aes key (source=%s len=%d): %w",
+			keySource, len(media.AESKey), err,
+		)
 	}
+
+	slog.Info("wechat media: decoded aes key",
+		"key_source", keySource,
+		"key_head", headHex(aesKey, 4),
+	)
 
 	plain, err := aesECBDecrypt(aesKey, raw)
 	if err != nil {
 		return nil, "", fmt.Errorf(
-			"decrypt media (size=%d raw_head=%s aes_key_len=%d): %w",
-			len(raw), headHex(raw, 16), len(media.AESKey), err,
+			"decrypt media (encrypt_type=%d size=%d raw_head=%s key_source=%s): %w",
+			media.EncryptType, len(raw), headHex(raw, 32), keySource, err,
 		)
 	}
 
 	mime := http.DetectContentType(plain)
 	if !isRecognizedMime(mime) {
 		return nil, "", fmt.Errorf(
-			"decrypted bytes are not recognized media "+
-				"(plain_size=%d plain_head=%s raw_head=%s encrypt_type=%d aes_key_len=%d)",
-			len(plain), headHex(plain, 16),
-			headHex(raw, 16), media.EncryptType, len(media.AESKey),
+			"decrypted bytes not recognized media "+
+				"(encrypt_type=%d key_source=%s plain_size=%d plain_head=%s raw_head=%s)",
+			media.EncryptType, keySource,
+			len(plain), headHex(plain, 32), headHex(raw, 32),
 		)
 	}
 
@@ -74,6 +114,7 @@ func DownloadAndDecryptMedia(ctx context.Context, media CDNMedia) ([]byte, strin
 		"path", "decrypted",
 		"size", len(plain),
 		"mime", mime,
+		"key_source", keySource,
 	)
 	return plain, mime, nil
 }
@@ -91,6 +132,15 @@ func headHex(b []byte, n int) string {
 		n = len(b)
 	}
 	return hex.EncodeToString(b[:n])
+}
+
+// tailHex hex-encodes up to the last n bytes of b for diagnostic logs
+// (useful for spotting PKCS7 padding shape in ciphertext).
+func tailHex(b []byte, n int) string {
+	if n > len(b) {
+		n = len(b)
+	}
+	return hex.EncodeToString(b[len(b)-n:])
 }
 
 // aesECBDecrypt decrypts AES-128-ECB ciphertext and strips PKCS7 padding.

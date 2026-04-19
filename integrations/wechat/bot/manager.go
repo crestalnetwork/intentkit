@@ -276,7 +276,21 @@ func (m *Manager) handleTeamMessage(entry *botEntry, msg ilink.WeixinMessage, te
 			continue
 		}
 		if item.Type == ilink.ItemTypeImage && item.ImageItem != nil {
-			imageBytes, contentType, err := ilink.DownloadAndDecryptMedia(context.Background(), item.ImageItem.Media)
+			img := *item.ImageItem
+			slog.Info("wechat image: received",
+				"team_id", teamID,
+				"from", msg.FromUserID,
+				"media_url", img.Media.URL,
+				"encrypt_query_param_len", len(img.Media.EncryptQueryParam),
+				"has_media_aes_key", img.Media.AESKey != "",
+				"media_aes_key_len", len(img.Media.AESKey),
+				"encrypt_type", img.Media.EncryptType,
+				"has_image_item_aeskey", img.AESKeyHex != "",
+				"image_item_aeskey_len", len(img.AESKeyHex),
+				"image_item_url", img.URL,
+				"mid_size", img.MidSize,
+			)
+			imageBytes, contentType, err := ilink.DownloadAndDecryptImage(context.Background(), img)
 			if err != nil {
 				slog.Error("Failed to download/decrypt wechat image", "team_id", teamID, "error", err)
 				continue
