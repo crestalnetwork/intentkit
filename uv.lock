@@ -380,7 +380,7 @@ wheels = [
 
 [[package]]
 name = "cdp-sdk"
-version = "1.42.0"
+version = "1.44.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -395,9 +395,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "web3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/20/8a/637772741fd4f358fe58b93434100f76b0599af3b058a8f5eddb5a1e4628/cdp_sdk-1.42.0.tar.gz", hash = "sha256:e93adb1a6e4a886f5e63cb842fcd3695ea8d0b717f731b84104c2e300801306f", size = 374956, upload-time = "2026-04-15T18:06:27.683Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/23/68cd0604cefa157f0013e4ebce17f5096fe701a010a8c7292c8f8f19d108/cdp_sdk-1.44.0.tar.gz", hash = "sha256:c2613e8792567fd1a5ca7b26b492e5011febd0c01c6505bc29fb4c7916977bdd", size = 399347, upload-time = "2026-04-23T15:09:13.083Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/79/c41dac4f3074d9e2e7338c2714a0f4ea0b87df1568f8431369b1a27beb41/cdp_sdk-1.42.0-py3-none-any.whl", hash = "sha256:b4bbb1f4de789bd14d2eecbb50a256ea8938dd7f5d7156fddc1516d8d8038eba", size = 971594, upload-time = "2026-04-15T18:06:25.62Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/7f/755dd61a28a9e561c5134edc08a7e03700282b4dd33d1842f177f1107000/cdp_sdk-1.44.0-py3-none-any.whl", hash = "sha256:f11d4ba7d9461a27dfb71ca58aca78f25fa48d875a8aefe4a7213b49ca5c7814", size = 1032598, upload-time = "2026-04-23T15:09:10.853Z" },
 ]
 
 [[package]]
@@ -3284,7 +3284,7 @@ wheels = [
 
 [[package]]
 name = "web3"
-version = "7.10.0"
+version = "7.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -3302,9 +3302,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/19/c1e213dd87ead2ace55ff1dd179df6050bcf5d9006440c9153969c7d6863/web3-7.10.0.tar.gz", hash = "sha256:0cace05ea14f800a4497649ecd99332ca4e85c8a90ea577e05ae909cb08902b9", size = 2193725, upload-time = "2025-03-27T17:02:27.919Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/84/1516ee335e89e4d7d0837895d21091244ee3189d1ffe76fa435d2bd15f4e/web3-7.15.0.tar.gz", hash = "sha256:2a2bcbab8fcf120c2256ddbdc88fcc80a47c100ad758659a980e9fab66609171", size = 2211838, upload-time = "2026-04-02T18:20:40.355Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/c5/a8e25e3ff51c7cd6d2bdecf75da2afb2923b29eba28e5dfe4fde72ad2322/web3-7.10.0-py3-none-any.whl", hash = "sha256:06fcab920554450e9f7d108da5e6b9d29c0d1a981a59a5551cc82d2cb2233b34", size = 1365880, upload-time = "2025-03-27T17:02:25.04Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/f0/ef9b82557b22b1cdb95ec7863d1d9897ed3b9e096a1af5e046fb892efdc0/web3-7.15.0-py3-none-any.whl", hash = "sha256:bbeba510aaa4eb3c99662d911db9d2a648ab40f608cf0269065f7db1d1d0b0c0", size = 1373052, upload-time = "2026-04-02T18:20:36.757Z" },
 ]
 
 [[package]]
