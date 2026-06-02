@@ -2,6 +2,7 @@ id,name,provider,enabled,input_price,cached_input_price,output_price,price_level
 google/gemma-4-31b-it:free,Gemma 4 31B (Free),openrouter,TRUE,0,,0,1,262144,32768,3,4,TRUE,FALSE,TRUE,FALSE,high,TRUE,TRUE,TRUE,300
 openrouter/free,OpenRouter Free,openrouter,TRUE,0,,0,1,200000,20000,2,2,FALSE,FALSE,FALSE,FALSE,high,TRUE,TRUE,TRUE,300
 qwen/qwen3.6-plus,Qwen3.6 Plus,openrouter,TRUE,0.325,,1.95,2,1000000,65536,4,4,TRUE,FALSE,TRUE,FALSE,high,TRUE,TRUE,TRUE,300
+minimax/minimax-m3,MiniMax M3,openrouter,TRUE,0.3,0.03,1.2,2,1048576,131072,5,3,TRUE,FALSE,TRUE,FALSE,high,TRUE,TRUE,TRUE,300
 minimax/minimax-m2.7,MiniMax M2.7,openrouter,TRUE,0.3,0.03,1.2,2,204800,131072,5,3,FALSE,FALSE,FALSE,FALSE,high,TRUE,TRUE,TRUE,300
 minimax/minimax-m2-her,Minimax M2 Her,openrouter,TRUE,0.3,0.03,1.2,2,65536,2048,3,3,FALSE,FALSE,FALSE,FALSE,none,TRUE,TRUE,TRUE,300
 xiaomi/mimo-v2-pro,MiMo V2 Pro,openrouter,TRUE,1,,3,3,1048576,131072,5,2,FALSE,FALSE,FALSE,FALSE,high,TRUE,TRUE,TRUE,300
@@ -36,4 +37,5 @@ grok-4-1-fast-non-reasoning,Grok 4.1 Fast,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3
 x-ai/grok-4.1-fast,Grok 4.1 Fast,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,FALSE,FALSE,TRUE,none,TRUE,TRUE,TRUE,180
 grok-4-1-fast-reasoning,Grok 4.1 Fast Reasoning,xai,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,FALSE,FALSE,TRUE,high,TRUE,FALSE,FALSE,180
 x-ai/grok-4.1-fast-reasoning,Grok 4.1 Fast Reasoning,openrouter,TRUE,0.2,0.05,0.5,2,2000000,4096,3,4,TRUE,FALSE,FALSE,TRUE,high,TRUE,TRUE,TRUE,180
+MiniMax-M3,MiniMax M3,minimax,TRUE,0.6,0.12,2.4,2,1048576,131072,5,3,TRUE,FALSE,FALSE,FALSE,high,TRUE,TRUE,TRUE,300
 MiniMax-M2.7,MiniMax M2.7,minimax,TRUE,0.1,0.01,0.4,1,204800,131072,5,3,FALSE,FALSE,FALSE,FALSE,high,TRUE,TRUE,TRUE,300
