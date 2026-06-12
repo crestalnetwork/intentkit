@@ -1,8 +1,10 @@
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 from typing import cast, override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
+from web3 import Web3
 from web3.exceptions import ContractLogicError
 
 from intentkit.models.chat import ChatMessageAttachment, ChatMessageAttachmentType
@@ -21,6 +23,25 @@ class TransferInput(BaseModel):
     token_contract_address: str | None = Field(
         default=None, description="ERC20 contract address (empty for ETH)"
     )
+
+
+def _parse_token_amount(amount: str, decimals: int) -> int:
+    """Convert a human-readable token amount to base units exactly."""
+    try:
+        decimal_amount = Decimal(amount)
+    except InvalidOperation:
+        raise ToolException("Amount must be a valid decimal number")
+
+    if not decimal_amount.is_finite() or decimal_amount <= 0:
+        raise ToolException("Amount must be a positive finite number")
+
+    base_units = decimal_amount * (Decimal(10) ** decimals)
+    if base_units != base_units.to_integral_value(rounding=ROUND_DOWN):
+        raise ToolException(
+            f"Amount has more decimal places than supported by token decimals ({decimals})"
+        )
+
+    return int(base_units)
 
 
 class XmtpTransfer(XmtpBaseTool):
@@ -126,7 +147,7 @@ class XmtpTransfer(XmtpBaseTool):
                 )
 
         # Calculate amount in smallest unit (wei for ETH, token units for ERC20)
-        amount_int = int(float(amount) * (10**decimals))
+        amount_int = _parse_token_amount(amount, decimals)
 
         if token_contract_address:
             # ERC20 Token Transfer
@@ -139,7 +160,7 @@ class XmtpTransfer(XmtpBaseTool):
             method_id = "0xa9059cbb"  # transfer(address,uint256) method ID
 
             # Encode to_address (32 bytes, left-padded)
-            to_address_clean = to_address.replace("0x", "")
+            to_address_clean = Web3.to_checksum_address(to_address).replace("0x", "")
             to_address_padded = to_address_clean.zfill(64)
 
             # Encode amount (32 bytes, left-padded)
