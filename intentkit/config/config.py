@@ -228,6 +228,10 @@ class Config:
         self.jina_api_key: str | None = self.load("JINA_API_KEY")
         self.cookiefun_api_key: str | None = self.load("COOKIEFUN_API_KEY")
         self.firecrawl_api_key: str | None = self.load("FIRECRAWL_API_KEY")
+        # fastCRW (Firecrawl-compatible web scraper; single binary, self-host or
+        # cloud). CRW_API_URL overrides the base for self-hosted deployments.
+        self.crw_api_key: str | None = self.load("CRW_API_KEY")
+        self.crw_api_url: str = self.load("CRW_API_URL", "https://fastcrw.com/api")
         self.cryptopanic_api_key: str | None = self.load("CRYPTOPANIC_API_KEY")
         self.unrealspeech_api_key: str | None = self.load("UNREALSPEECH_API_KEY")
         self.dune_api_key: str | None = self.load("DUNE_API_KEY")
