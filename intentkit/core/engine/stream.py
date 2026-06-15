@@ -45,6 +45,7 @@ from intentkit.core.engine.recovery import (
 )
 from intentkit.core.executor import agent_executor
 from intentkit.models.agent import Agent
+from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
@@ -152,46 +153,100 @@ async def _validate_payment(
     return None
 
 
+async def _resolve_team_names(*team_ids: str | None) -> dict[str, str]:
+    """Resolve team id → display name via the cached team-info store.
+
+    Best effort: tracing enrichment must never break an agent run, so a cache
+    failure degrades to ids-only rather than raising.
+    """
+    wanted = {tid for tid in team_ids if tid}
+    if not wanted:
+        return {}
+    try:
+        from intentkit.core.team import get_team_infos
+
+        infos = await get_team_infos(wanted)
+        return {tid: info.name for tid, info in infos.items() if info.name}
+    except Exception:
+        logger.warning("Failed to resolve team names for tracing", exc_info=True)
+        return {}
+
+
 def build_stream_config(
     user_message: ChatMessage,
     agent: Agent,
     team_id: str | None,
     thread_id: str,
+    team_names: dict[str, str] | None = None,
 ) -> RunnableConfig:
     """Build the LangGraph run config for a chat stream.
 
-    The metadata block is attached by the active tracing backend (LangSmith or
-    Langfuse) to every run, so a shared tracing project can be filtered by
-    environment, agent, team, channel, etc.
+    Sets a human-readable ``run_name`` — the active tracing backend uses it as
+    the trace name, instead of the raw agent id the compiled graph is otherwise
+    named with — plus a metadata block (env, agent, team, channel, …) that the
+    backend (LangSmith or Langfuse) attaches to every run for filtering.
+    ``team_names`` maps team ids to display names (resolved by the caller via the
+    cached team-info store) so traces show team names, not ids.
     """
+    team_names = team_names or {}
     # super mode — determined by agent config
     recursion_limit = config.recursion_limit
     if agent.super_mode:
         recursion_limit = max(config.super_recursion_limit, 1000)
+
+    agent_name = agent.name or user_message.agent_id
+    owner_team_name = team_names.get(agent.team_id) if agent.team_id else None
+    caller_team_name = team_names.get(team_id) if team_id else None
+    # A public agent run triggered by a team other than the one that owns it.
+    external_caller = bool(team_id and agent.team_id and team_id != agent.team_id)
+    is_public = (
+        agent.visibility is not None and agent.visibility >= AgentVisibility.PUBLIC
+    )
+
     metadata: dict[str, Any] = {
         "env": config.env,
         "agent_id": user_message.agent_id,
+        "agent_name": agent_name,
         "chat_id": user_message.chat_id,
         "thread_id": thread_id,
         # author_type is already a plain string here (use_enum_values)
         "channel": user_message.author_type,
         "model": agent.model,
+        "visibility": "public" if is_public else "private",
     }
     if user_message.user_id:
         metadata["user_id"] = user_message.user_id
     if team_id:
         metadata["team_id"] = team_id
+    if caller_team_name:
+        metadata["team_name"] = caller_team_name
     if agent.team_id:
         metadata["agent_team_id"] = agent.team_id
+    if owner_team_name:
+        metadata["agent_team_name"] = owner_team_name
+    if external_caller:
+        metadata["external_caller"] = True
     if user_message.app_id:
         metadata["app_id"] = user_message.app_id
-    # Langfuse groups traces by these reserved metadata keys (LangSmith ignores
-    # them). Only set when Langfuse is the active backend.
+    # Langfuse groups traces by these reserved metadata keys and offers tags as
+    # first-class filter chips (LangSmith ignores both). Only set when active.
     if config.langfuse_tracing:
         metadata["langfuse_session_id"] = thread_id
         if user_message.user_id:
             metadata["langfuse_user_id"] = user_message.user_id
+        tags = [
+            config.env,
+            user_message.author_type,
+            "public" if is_public else "private",
+        ]
+        if external_caller:
+            tags.append("external-caller")
+        metadata["langfuse_tags"] = tags
+
+    run_name = f"{agent_name} ({owner_team_name})" if owner_team_name else agent_name
+
     return {
+        "run_name": run_name,
         "configurable": {
             "thread_id": thread_id,
         },
@@ -392,7 +447,10 @@ async def stream_agent_raw(
 
     # stream config
     thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
-    stream_config = build_stream_config(user_message, agent, message.team_id, thread_id)
+    team_names = await _resolve_team_names(message.team_id, agent.team_id)
+    stream_config = build_stream_config(
+        user_message, agent, message.team_id, thread_id, team_names
+    )
 
     def get_agent_for_context() -> Agent:
         return agent

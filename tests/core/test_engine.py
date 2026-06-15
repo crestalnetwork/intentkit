@@ -504,10 +504,13 @@ def test_build_stream_config_metadata(mock_agent):
 
     assert stream_config.get("configurable") == {"thread_id": "agent-123-chat-456"}
     assert stream_config.get("recursion_limit") == config.recursion_limit
+    # Trace name is the human-readable agent name, not the raw agent id.
+    assert stream_config.get("run_name") == "Test Agent"
     metadata = stream_config.get("metadata")
     assert metadata is not None
     assert metadata["env"] == config.env
     assert metadata["agent_id"] == "agent-123"
+    assert metadata["agent_name"] == "Test Agent"
     assert metadata["chat_id"] == "chat-456"
     assert metadata["thread_id"] == "agent-123-chat-456"
     assert metadata["channel"] == "web"
@@ -515,8 +518,12 @@ def test_build_stream_config_metadata(mock_agent):
     assert metadata["user_id"] == "user-789"
     assert metadata["team_id"] == "team-1"
     assert metadata["app_id"] == "app-1"
-    # mock_agent has no owning team
+    assert metadata["visibility"] == "private"
+    # mock_agent has no owning team; no team names resolved here
     assert "agent_team_id" not in metadata
+    assert "agent_team_name" not in metadata
+    assert "team_name" not in metadata
+    assert "external_caller" not in metadata
 
 
 def test_build_stream_config_omits_missing_optional_fields(mock_agent):
@@ -530,6 +537,8 @@ def test_build_stream_config_omits_missing_optional_fields(mock_agent):
     assert stream_config.get("recursion_limit") == max(
         config.super_recursion_limit, 1000
     )
+    # Owning team present but no caller team => not an external call.
+    assert stream_config.get("run_name") == "Test Agent"
     metadata = stream_config.get("metadata")
     assert metadata is not None
     assert metadata["channel"] == "trigger"
@@ -537,6 +546,39 @@ def test_build_stream_config_omits_missing_optional_fields(mock_agent):
     assert "user_id" not in metadata
     assert "team_id" not in metadata
     assert "app_id" not in metadata
+    assert "external_caller" not in metadata
+
+
+def test_build_stream_config_team_names_and_external_caller(mock_agent, monkeypatch):
+    from intentkit.config.config import config
+    from intentkit.core.engine.stream import build_stream_config
+
+    monkeypatch.setattr(config, "langfuse_tracing", True)
+    agent = mock_agent.model_copy(
+        update={"team_id": "owner-team", "visibility": AgentVisibility.PUBLIC}
+    )
+    user_message = _make_user_message()
+    team_names = {"owner-team": "Acme", "caller-team": "Beta"}
+    stream_config = build_stream_config(
+        user_message, agent, "caller-team", "agent-123-chat-456", team_names
+    )
+
+    # Trace name carries the owning team; metadata distinguishes caller vs owner.
+    assert stream_config.get("run_name") == "Test Agent (Acme)"
+    metadata = stream_config["metadata"]
+    assert metadata["agent_name"] == "Test Agent"
+    assert metadata["agent_team_name"] == "Acme"
+    assert metadata["team_name"] == "Beta"
+    assert metadata["external_caller"] is True
+    assert metadata["visibility"] == "public"
+    # Langfuse tags are first-class filter chips.
+    assert metadata["langfuse_tags"] == [
+        config.env,
+        "web",
+        "public",
+        "external-caller",
+    ]
+    assert metadata["langfuse_session_id"] == "agent-123-chat-456"
 
 
 @pytest.mark.asyncio
