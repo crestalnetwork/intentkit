@@ -49,7 +49,7 @@ func (s *telegramSender) Send(ctx context.Context, message string) error {
 	if err != nil {
 		return err
 	}
-	if resp.IsError() {
+	if resp.IsStatusFailure() {
 		return fmt.Errorf("telegram alert failed: %s", resp.Status())
 	}
 	return nil
@@ -67,7 +67,7 @@ func newSlackSender(token, channel string) *slackSender {
 
 // slackResponse mirrors the envelope chat.postMessage returns. Slack
 // indicates failure via {"ok": false, "error": "..."} on an HTTP 200, so
-// we have to inspect the body — IsError() alone misses bad tokens, wrong
+// we have to inspect the body — IsStatusFailure() alone misses bad tokens, wrong
 // channels, and most other API rejections.
 type slackResponse struct {
 	OK    bool   `json:"ok"`
@@ -88,7 +88,7 @@ func (s *slackSender) Send(ctx context.Context, message string) error {
 	if err != nil {
 		return err
 	}
-	if resp.IsError() {
+	if resp.IsStatusFailure() {
 		return fmt.Errorf("slack alert failed: %s", resp.Status())
 	}
 	if !body.OK {

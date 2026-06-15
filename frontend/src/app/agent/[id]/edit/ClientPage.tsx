@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -129,16 +129,21 @@ export default function EditAgentPage() {
     // Initialize formData from agent data, filtered by schema
     const [formData, setFormData] = useState<Record<string, unknown>>({});
     
-    // Update formData when agent data and schema are loaded
-    React.useEffect(() => {
+    // Populate formData once agent data and schema have loaded (and again if
+    // either reloads). Syncing during render — guarded by the last applied
+    // source — avoids an effect's extra commit + cascading render.
+    const [loadedSource, setLoadedSource] = useState<{
+        agent: unknown;
+        schema: unknown;
+    }>({ agent: undefined, schema: undefined });
+    if (loadedSource.agent !== agent || loadedSource.schema !== schema) {
+        setLoadedSource({ agent, schema });
         if (agent && schema) {
-            const filteredData = filterBySchema(
-                agent as unknown as Record<string, unknown>,
-                schema
+            setFormData(
+                filterBySchema(agent as unknown as Record<string, unknown>, schema)
             );
-            setFormData(filteredData);
         }
-    }, [agent, schema]);
+    }
 
     const uiSchema = useMemo(() => generateUiSchema(schema, agent as Record<string, unknown> | null | undefined), [schema, agent]);
 

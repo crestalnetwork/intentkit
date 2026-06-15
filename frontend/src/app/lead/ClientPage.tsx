@@ -210,6 +210,11 @@ export default function LeadChatPage() {
 
     if (searchParams.get("new") === "true") {
       if (!isNewThread) {
+        // Mirrors the URL/thread-list into local selection state — a navigation
+        // sync with external state, guarded so each setState only fires on a
+        // real change (no cascade). A derive-during-render rewrite would mean
+        // restructuring the whole chat-init flow, so keep the guarded effect.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsNewThread(true);
         setCurrentThreadId(null);
         setMessages([]);
@@ -270,6 +275,10 @@ export default function LeadChatPage() {
     }
 
     if (!currentThreadId || isNewThread) {
+      // This effect loads thread history from the API (a valid external-data
+      // sync); clearing stale messages first is part of that load, not a render
+      // cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([]);
       return;
     }

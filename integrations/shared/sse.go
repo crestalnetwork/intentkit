@@ -32,7 +32,7 @@ func StreamRequest(ctx context.Context, baseURL, path string, payload interface{
 	// Channel to signal stream completion
 	doneCh := make(chan error, 1)
 
-	es := resty.NewEventSource().
+	es := resty.NewSSESource().
 		SetURL(url).
 		SetMethod(resty.MethodPost).
 		SetBody(bytes.NewReader(body)).
@@ -40,7 +40,7 @@ func StreamRequest(ctx context.Context, baseURL, path string, payload interface{
 		SetRetryCount(0) // one-shot stream, no retries
 
 	es.OnMessage(func(e any) {
-		event, ok := e.(*resty.Event)
+		event, ok := e.(*resty.SSE)
 		if !ok {
 			return
 		}

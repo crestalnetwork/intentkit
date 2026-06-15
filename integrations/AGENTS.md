@@ -15,7 +15,7 @@ IntentKit's Core API.
 - **Language**: Go 1.26+ (module at `integrations/go.mod` covers both channels)
 - **HTTP client**: [resty v3](https://resty.dev/) — use it for **all** HTTP
   clients. Retries, timeouts, body-size limits, and SSE are all first-class;
-  do **not** hand-roll `net/http` clients. Use `resty.NewEventSource()` for
+  do **not** hand-roll `net/http` clients. Use `resty.NewSSESource()` for
   SSE streams (see `shared/sse.go`).
 - **Database**: [GORM](https://gorm.io/) on PostgreSQL (same DB as the Python
   side; no `ForeignKey` constraints by convention).
@@ -34,7 +34,7 @@ integrations/
 ├── shared/               # cross-channel helpers
 │   ├── dispatcher.go      # MessageSender interface, dispatch logic
 │   ├── media.go           # DownloadFromURL (resty + SetResponseBodyLimit)
-│   └── sse.go             # SSE streaming via resty.EventSource
+│   └── sse.go             # SSE streaming via resty.SSESource
 ├── types/                # shared DTOs (ChatMessage, etc.)
 ├── telegram/             # channel code — see telegram/AGENTS.md
 └── wechat/               # channel code — see wechat/AGENTS.md
@@ -63,7 +63,7 @@ Every channel uses the same skeleton:
 - **HTTP**: always resty. Configure `SetRetryCount` / `SetRetryWaitTime` /
   `SetRetryMaxWaitTime` on the client; never write retry loops by hand. For
   non-idempotent POSTs that are safe to replay, call
-  `SetAllowNonIdempotentRetry(true)`. Bound response bodies with
+  `SetRetryAllowNonIdempotent(true)`. Bound response bodies with
   `SetResponseBodyLimit` instead of `io.LimitReader`.
 - **Context**: every outbound call must pass `ctx` via `SetContext(ctx)`.
   Long-running goroutines take `context.WithCancel(context.Background())`

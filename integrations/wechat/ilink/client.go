@@ -52,7 +52,7 @@ func NewClient(baseURL, botToken, botID string) *Client {
 		SetRetryCount(2).
 		SetRetryWaitTime(500 * time.Millisecond).
 		SetRetryMaxWaitTime(3 * time.Second).
-		SetAllowNonIdempotentRetry(true).
+		SetRetryAllowNonIdempotent(true).
 		AddRetryHooks(func(resp *resty.Response, err error) {
 			attrs := []any{}
 			if resp != nil {

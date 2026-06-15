@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface ToolStateOption {
@@ -35,11 +35,14 @@ export function ToolsetCard({
     defaultExpanded = false,
 }: ToolsetCardProps) {
     const [isExpanded, setIsExpanded] = useState(enabled || defaultExpanded);
+    const [prevEnabled, setPrevEnabled] = useState(enabled);
 
-    // Auto-expand when enabled, auto-collapse when disabled
-    useEffect(() => {
+    // Auto-expand when enabled, auto-collapse when disabled. Adjusting during
+    // render (instead of in an effect) avoids an extra commit + cascading render.
+    if (enabled !== prevEnabled) {
+        setPrevEnabled(enabled);
         setIsExpanded(enabled);
-    }, [enabled]);
+    }
 
     // Count active tools (those not set to "disabled")
     const activeToolsCount = toolStates.filter(

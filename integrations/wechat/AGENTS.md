@@ -32,5 +32,5 @@ WX_NEW_CHANNEL_POLL_INTERVAL=10
 - `X-WECHAT-UIN` header is a random `uint32` encoded as base64, regenerated
   per request.
 - **CDN uploads** (`ilink.UploadMedia`) use a dedicated resty client with
-  `SetAllowNonIdempotentRetry(true)` — POST isn't idempotent in general, but
+  `SetRetryAllowNonIdempotent(true)` — POST isn't idempotent in general, but
   the `filekey` is random per call, so replaying is safe.
