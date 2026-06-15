@@ -1,5 +1,9 @@
-# Release v2.6.3
+# Release v2.6.4
 
 ## Improvements
 
-- Observability traces (Langfuse) now record a more accurate per-request cost: when the provider reports the actual charge (e.g. OpenRouter) it is used directly, otherwise the cost is computed from the model catalog — and cached input tokens are now priced at their discounted rate instead of being undercounted. No user-facing changes.
+- Observability traces (Langfuse) now show a readable name — the agent's name and its owning team — instead of the raw agent id, and carry richer filterable details: agent and team display names, the caller's team for public agents (with an external-caller flag), visibility, and tags. No user-facing changes.
+
+## Bug Fixes
+
+- Fixed the test suite still sending traces to the observability backend (Langfuse): the earlier fix was undone by environment reloading, so test/local data kept appearing. Tests now reliably emit nothing.
