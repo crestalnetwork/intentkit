@@ -8,6 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException
 
 from intentkit.core.engine import stream_agent
+from intentkit.core.engine.stream import _resolve_payer
 from intentkit.core.executor import (
     agent_executor,
     agents,
@@ -17,7 +18,12 @@ from intentkit.core.executor import (
 from intentkit.core.middleware import ToolBindingMiddleware
 from intentkit.models.agent import Agent, AgentData
 from intentkit.models.agent.core import AgentVisibility
-from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageAttachmentType
+from intentkit.models.chat import (
+    AuthorType,
+    ChatMessage,
+    ChatMessageAttachmentType,
+    ChatMessageCreate,
+)
 
 # Mock AgentState and AgentContext if needed by type checks
 # But since we use mocks for everything, strict types might be bypassed or we mock them.
@@ -40,6 +46,57 @@ def mock_agent():
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=datetime.now(),
     )
+
+
+def _payer_message(
+    author_type: AuthorType,
+    team_id: str | None = None,
+    payer: str | None = None,
+) -> ChatMessageCreate:
+    return ChatMessageCreate(
+        id="msg_1",
+        agent_id="agent-123",
+        chat_id="chat_1",
+        user_id="user_1",
+        author_id="user_1",
+        author_type=author_type,
+        message="hello",
+        team_id=team_id,
+        payer=payer,
+    )
+
+
+def test_resolve_payer_honors_explicit_payer(mock_agent):
+    """An internal sub-agent call's explicit payer wins over channel resolution."""
+    agent = mock_agent.model_copy(update={"team_id": "agent-team"})
+    # Even though author_type would otherwise route to the agent's team, the
+    # explicit payer (forwarded by call_agent) is billed instead.
+    message = _payer_message(
+        AuthorType.TELEGRAM, team_id="user-team", payer="caller-team"
+    )
+    assert _resolve_payer(message, agent) == "caller-team"
+
+
+def test_resolve_payer_user_conversation_bills_user_team(mock_agent):
+    """A normal user conversation bills the message's team."""
+    agent = mock_agent.model_copy(update={"team_id": "agent-team"})
+    message = _payer_message(AuthorType.WEB, team_id="user-team")
+    assert _resolve_payer(message, agent) == "user-team"
+
+
+def test_resolve_payer_platform_channel_bills_agent_team(mock_agent):
+    """Platform channels and triggers bill the agent's own team."""
+    agent = mock_agent.model_copy(update={"team_id": "agent-team"})
+    for channel in (
+        AuthorType.TELEGRAM,
+        AuthorType.DISCORD,
+        AuthorType.TWITTER,
+        AuthorType.API,
+        AuthorType.X402,
+        AuthorType.TRIGGER,
+    ):
+        message = _payer_message(channel, team_id="user-team")
+        assert _resolve_payer(message, agent) == "agent-team"
 
 
 @pytest.fixture

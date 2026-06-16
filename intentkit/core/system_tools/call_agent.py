@@ -246,13 +246,21 @@ class CallAgentTool(SystemTool):
                         f"Agent '{agent_id}' is not in the allowed sub-agents list"
                     )
 
-            # Create a chat message for the called agent
-            # Inherit context from the current tool execution
+            # Create a chat message for the called agent, inheriting context
+            # from the current tool execution. Forward the billing account
+            # (payer) so the sub-agent's LLM/tool cost is charged to the same
+            # account that pays for this conversation, instead of being lost.
+            # This is kept separate from team_id on purpose: team_id drives the
+            # sub-agent's team access context (is_private), which delegation
+            # must not change — only billing flows through. Prefer the resolved
+            # payer, falling back to team_id when payment is disabled (payer is
+            # None) so the cost still lands on a real team.
             chat_message = ChatMessageCreate(
                 id=str(XID()),
                 agent_id=actual_agent_id,
                 chat_id=f"call-{XID()}",
                 user_id=context.user_id,
+                payer=context.payer or context.team_id,
                 author_id=context.agent_id,
                 author_type=AuthorType.INTERNAL,
                 thread_type=context.entrypoint,

@@ -153,6 +153,34 @@ async def _validate_payment(
     return None
 
 
+# Channels where the agent's own team pays (the requester isn't a billable team).
+_AGENT_PAYS_CHANNELS = frozenset(
+    {
+        AuthorType.TELEGRAM,
+        AuthorType.DISCORD,
+        AuthorType.TWITTER,
+        AuthorType.API,
+        AuthorType.X402,
+        AuthorType.TRIGGER,
+    }
+)
+
+
+def _resolve_payer(message: ChatMessageCreate, agent: Agent) -> str | None:
+    """Resolve the team account billed for this run.
+
+    - Internal sub-agent calls (call_agent) carry an explicit ``payer`` so their
+      cost flows back to the original caller's billing account; honor it.
+    - Platform channels and autonomous triggers bill the agent's own team.
+    - Normal user conversations bill the user's team (``message.team_id``).
+    """
+    if message.payer is not None:
+        return message.payer
+    if message.author_type in _AGENT_PAYS_CHANNELS:
+        return agent.team_id
+    return message.team_id
+
+
 async def _resolve_team_names(*team_ids: str | None) -> dict[str, str]:
     """Resolve team id → display name via the cached team-info store.
 
@@ -301,20 +329,9 @@ async def stream_agent_raw(
 
     payment_enabled = config.payment_enabled
 
-    # Determine payer team (needed for credit event recording regardless of payment_enabled)
-    # Normal user conversations: user's team pays
-    # Platform channels (Telegram/Discord/Twitter/API/X402) and autonomous triggers:
-    # agent's team pays
-    payer = message.team_id
-    if user_message.author_type in [
-        AuthorType.TELEGRAM,
-        AuthorType.DISCORD,
-        AuthorType.TWITTER,
-        AuthorType.API,
-        AuthorType.X402,
-        AuthorType.TRIGGER,
-    ]:
-        payer = agent.team_id
+    # Determine payer team (needed for credit event recording regardless of
+    # payment_enabled). Resolution lives in _resolve_payer for unit testing.
+    payer = _resolve_payer(message, agent)
 
     budget_status = await check_hourly_budget_exceeded(f"base_llm:{payer}")
     if budget_status.exceeded:

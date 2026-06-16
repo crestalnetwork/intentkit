@@ -336,6 +336,20 @@ class ChatMessageCreate(BaseModel):
             exclude=True,
         ),
     ] = None
+    payer: Annotated[
+        str | None,
+        Field(
+            None,
+            description=(
+                "Billing account override for internal sub-agent (call_agent) "
+                "runs, so the cost is charged to the original caller's team "
+                "rather than resolved from this message's channel. Kept "
+                "separate from team_id so delegation does not change the "
+                "sub-agent's access context (not persisted to DB)"
+            ),
+            exclude=True,
+        ),
+    ] = None
     call_depth: Annotated[
         int,
         Field(

@@ -44,6 +44,8 @@ def mock_runtime():
     mock_context.call_depth = 0
     mock_context.chat_id = "chat_1"
     mock_context.user_id = "user_1"
+    mock_context.team_id = "team_1"
+    mock_context.payer = "team_1"
     mock_context.entrypoint = "web"
     mock_context.start_message_attachments = None
     mock_context.agent = MagicMock()
@@ -294,6 +296,60 @@ async def test_call_agent_forwards_start_message_attachments(mock_runtime):
     assert mock_execute_agent.await_args is not None
     forwarded = mock_execute_agent.await_args.args[0]
     assert forwarded.attachments == start_attachments
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payer, team_id, expected",
+    [
+        # Payer resolved (payment enabled): bill the resolved payer, which can
+        # differ from team_id on platform channels (payer = agent's team).
+        ("payer_team", "ctx_team", "payer_team"),
+        # No payer (payment disabled): fall back to the conversation's team_id.
+        (None, "ctx_team", "ctx_team"),
+    ],
+)
+async def test_call_agent_forwards_billing_payer(
+    mock_runtime, payer, team_id, expected
+):
+    """The sub-agent inherits the caller's billing account via ``payer``.
+
+    The cost is forwarded through the dedicated ``payer`` field, not ``team_id``,
+    so delegation does not change the sub-agent's team access context. Prefer the
+    resolved payer, falling back to team_id when payment is disabled.
+    """
+    _, mock_context = mock_runtime
+    mock_context.payer = payer
+    mock_context.team_id = team_id
+
+    mock_resolved = MagicMock()
+    mock_resolved.id = "target_id"
+    mock_resolved.slug = "target_slug"
+
+    mock_msg = MagicMock()
+    mock_msg.author_type = AuthorType.AGENT
+    mock_msg.message = "Done"
+    mock_msg.attachments = []
+
+    tool = CallAgentTool()
+    with (
+        patch(
+            "intentkit.core.agent.get_agent_by_id_or_slug",
+            new=AsyncMock(return_value=mock_resolved),
+        ),
+        patch(
+            "intentkit.core.engine.execute_agent",
+            new=AsyncMock(return_value=[mock_msg]),
+        ) as mock_execute_agent,
+    ):
+        await tool._arun(agent_id="target_id", message="hello")
+
+    assert mock_execute_agent.await_args is not None
+    forwarded = mock_execute_agent.await_args.args[0]
+    assert forwarded.payer == expected
+    # team_id is intentionally left untouched so the sub-agent's access context
+    # (is_private) is unaffected by delegation.
+    assert forwarded.team_id is None
 
 
 def test_render_attachments_awareness_empty():
