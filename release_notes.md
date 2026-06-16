@@ -1,5 +1,5 @@
-# Release v2.6.5
+# Release v2.6.6
 
-## Improvements
+## Bug Fixes
 
-- Maintenance release: refreshed dependencies across the whole platform — the Python backend, the Go channel integrations, and the web frontend — to their latest compatible versions, with the internal code adjustments needed to stay current with those libraries. No user-facing changes.
+- Fixed a billing issue in agent-to-agent delegation: when an agent handed a task off to another agent, the cost of that delegated work was not charged back to the team paying for the conversation (and, with billing enabled, could even prevent the delegated task from running). Delegated work is now correctly billed to the caller's account.
