@@ -13,6 +13,8 @@ import { ThinkingBlock } from "@/components/features/ThinkingBlock";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { ImageAttachment } from "@/components/features/ImageAttachment";
 import { VideoAttachment } from "@/components/features/VideoAttachment";
+import { ChatTimeSeparator } from "@/components/features/ChatTimeSeparator";
+import { formatExactTime, shouldShowTimeSeparator } from "@/lib/chatTime";
 import { isUserAuthoredMessage } from "@/types/chat";
 import type {
   UIMessage,
@@ -296,7 +298,10 @@ export default function DefaultChannelPage() {
                 </p>
               </div>
             ) : (
-              messages.map((msg) =>
+              messages.flatMap((msg, index) => {
+                const previousMessage =
+                  index > 0 ? messages[index - 1] : undefined;
+                const messageContent =
                 msg.role === "system" ? (
                   <div key={msg.id} className="flex justify-center w-full">
                     <span
@@ -362,11 +367,17 @@ export default function DefaultChannelPage() {
                       )}
                     >
                       {msg.role === "agent" ? (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-primary text-primary-foreground">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-primary text-primary-foreground"
+                          title={formatExactTime(msg.timestamp)}
+                        >
                           <Bot className="h-4 w-4" />
                         </div>
                       ) : (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted"
+                          title={formatExactTime(msg.timestamp)}
+                        >
                           <User className="h-4 w-4" />
                         </div>
                       )}
@@ -423,8 +434,20 @@ export default function DefaultChannelPage() {
                       </div>
                     </div>
                   </React.Fragment>
-                ),
-              )
+                );
+                return shouldShowTimeSeparator(
+                  previousMessage?.timestamp,
+                  msg.timestamp,
+                )
+                  ? [
+                      <ChatTimeSeparator
+                        key={`time-${msg.id}`}
+                        date={msg.timestamp}
+                      />,
+                      messageContent,
+                    ]
+                  : messageContent;
+              })
             )}
           </CardContent>
 

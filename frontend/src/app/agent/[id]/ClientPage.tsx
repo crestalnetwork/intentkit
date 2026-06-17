@@ -64,6 +64,8 @@ import {
   subscribeToChatStream,
 } from "@/lib/chatStreamStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChatTimeSeparator } from "@/components/features/ChatTimeSeparator";
+import { formatExactTime, shouldShowTimeSeparator } from "@/lib/chatTime";
 
 // Tailwind prose classes for markdown rendering in chat bubbles
 const markdownProseClass =
@@ -930,7 +932,10 @@ export default function AgentChatPage() {
                 </p>
               </div>
             ) : (
-              messages.map((msg) =>
+              messages.flatMap((msg, index) => {
+                const previousMessage =
+                  index > 0 ? messages[index - 1] : undefined;
+                const messageContent =
                 msg.role === "system" ? (
                   <div
                     key={msg.id}
@@ -1008,7 +1013,10 @@ export default function AgentChatPage() {
                     )}
                   >
                     {msg.role === "agent" ? (
-                      <Avatar className="h-8 w-8 border">
+                      <Avatar
+                        className="h-8 w-8 border"
+                        title={formatExactTime(msg.timestamp)}
+                      >
                         {cachedAvatar ? (
                           <AvatarImage src={cachedAvatar} alt={displayName} />
                         ) : null}
@@ -1017,7 +1025,10 @@ export default function AgentChatPage() {
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted">
+                      <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-muted"
+                        title={formatExactTime(msg.timestamp)}
+                      >
                         <User className="h-4 w-4" />
                       </div>
                     )}
@@ -1082,7 +1093,20 @@ export default function AgentChatPage() {
                     </div>
                   </div>
                 </React.Fragment>
-                ))
+                );
+                return shouldShowTimeSeparator(
+                  previousMessage?.timestamp,
+                  msg.timestamp,
+                )
+                  ? [
+                      <ChatTimeSeparator
+                        key={`time-${msg.id}`}
+                        date={msg.timestamp}
+                      />,
+                      messageContent,
+                    ]
+                  : messageContent;
+              })
             )}
             {isSending && (
               <div className="flex w-full gap-2 max-w-[85%]">
