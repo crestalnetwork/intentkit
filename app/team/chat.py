@@ -17,10 +17,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.config.db import get_db, get_session
+from intentkit.config.db import get_db
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
-from intentkit.core.team.membership import check_permission
 from intentkit.models.app_setting import SystemMessageType
 from intentkit.models.chat import (
     AuthorType,
@@ -31,7 +30,6 @@ from intentkit.models.chat import (
     ChatMessageTable,
     ChatTable,
 )
-from intentkit.models.team import TeamMemberTable, TeamRole
 from intentkit.utils.error import IntentKitAPIError
 
 from app.common.chat import (
@@ -68,21 +66,14 @@ async def list_chats(
     aid: str = Path(..., description="Agent ID"),
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
-    """Get all chat threads for a team agent (all team members see all chats)."""
-    _user_id, team_id = auth
+    """Get the current member's own chat threads for a team agent.
+
+    Threads are scoped to team + user: each member only sees their own
+    conversations, not those of other team members.
+    """
+    user_id, team_id = auth
     agent = await get_accessible_agent(aid, team_id)
-    async with get_session() as db:
-        results = await db.scalars(
-            select(ChatTable)
-            .join(TeamMemberTable, ChatTable.user_id == TeamMemberTable.user_id)
-            .where(
-                ChatTable.agent_id == agent.id,
-                TeamMemberTable.team_id == team_id,
-            )
-            .order_by(desc(ChatTable.updated_at))
-            .limit(10)
-        )
-        return [Chat.model_validate(chat) for chat in results]
+    return await Chat.get_by_agent_user(agent.id, user_id)
 
 
 @team_chat_router.post(
@@ -131,14 +122,11 @@ async def update_chat_thread(
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
     """Update a chat thread for a team agent."""
-    _user_id, team_id = auth
+    user_id, team_id = auth
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     updated_chat = await chat.update_summary(request.summary)
@@ -158,14 +146,11 @@ async def delete_chat_thread(
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
     """Delete a chat thread for a team agent."""
-    _user_id, team_id = auth
+    user_id, team_id = auth
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     await chat.delete()
@@ -195,14 +180,11 @@ async def list_messages(
     ),
 ) -> ChatMessagesResponse:
     """Get message history for a team agent chat thread."""
-    _user_id, team_id = auth
+    user_id, team_id = auth
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     stmt = (
@@ -245,10 +227,7 @@ async def send_message(
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     should_schedule_summary = await should_schedule_chat_summary(
@@ -325,14 +304,11 @@ async def cancel_generation(
     auth: tuple[str, str] = Depends(verify_team_member),
 ):
     """Cancel an in-progress generation for a team agent."""
-    _user_id, team_id = auth
+    user_id, team_id = auth
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     cancelled = cancel_task(aid, chat_id)
@@ -357,10 +333,7 @@ async def retry_message(
     await get_accessible_agent(aid, team_id)
 
     chat = await Chat.get(chat_id)
-    if not chat or chat.agent_id != aid:
-        raise _chat_not_found()
-
-    if not await check_permission(team_id, chat.user_id, TeamRole.MEMBER):
+    if not chat or chat.agent_id != aid or chat.user_id != user_id:
         raise _chat_not_found()
 
     last = await db.scalar(
@@ -468,18 +441,21 @@ async def get_tool_history(
     db: AsyncSession = Depends(get_db),
     auth: tuple[str, str] = Depends(verify_team_member),
 ) -> list[ChatMessage]:
-    """Get last 50 tool messages for a team agent."""
-    _user_id, team_id = auth
+    """Get the current member's last 50 tool messages for a team agent.
+
+    Scoped to team + user: tool history from other team members' private
+    threads is not returned.
+    """
+    user_id, team_id = auth
     await get_accessible_agent(aid, team_id)
 
     result = await db.scalars(
         select(ChatMessageTable)
         .join(ChatTable, ChatMessageTable.chat_id == ChatTable.id)
-        .join(TeamMemberTable, ChatTable.user_id == TeamMemberTable.user_id)
         .where(
             ChatMessageTable.agent_id == aid,
             ChatMessageTable.author_type == AuthorType.TOOL,
-            TeamMemberTable.team_id == team_id,
+            ChatTable.user_id == user_id,
         )
         .order_by(desc(ChatMessageTable.created_at))
         .limit(50)
