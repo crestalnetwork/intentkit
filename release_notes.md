@@ -1,5 +1,5 @@
-# Release v2.6.7
+# Release v2.6.8
 
-## New Features
+## Improvements
 
-- Chat conversations now show friendly time markers between messages: a small timestamp appears after a pause or when the day changes (for example "Yesterday 15:12"), and hovering over a message's avatar reveals its exact time.
+- Streamlined observability: agent run tracing now relies on a single platform (Langfuse). Support for the alternative tracing backend was removed to simplify configuration and reduce ongoing maintenance. No user-facing changes.
