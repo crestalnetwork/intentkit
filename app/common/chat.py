@@ -210,7 +210,7 @@ async def _generate_summary_title(agent_id: str, chat_id: str, prompt_text: str)
         ],
         config={
             "run_name": "chat_summary_title",
-            # keep these traces filterable in the shared LangSmith project
+            # keep these traces filterable in Langfuse
             "metadata": {
                 "env": config.env,
                 "agent_id": agent_id,

@@ -1,14 +1,12 @@
 """Langfuse tracing setup.
 
-LangSmith attaches to every LangChain run through global env vars (handled in
-``config.py``). Langfuse instead needs a callback handler, so we register that
-handler through LangChain's global configure-hook — the same mechanism the
-LangSmith SDK uses internally. Once registered, the handler is added to every
-run's callback manager automatically, with no per-invocation wiring.
+Langfuse needs a callback handler, so we register that handler through
+LangChain's global configure-hook — the same mechanism LangChain's own tracer
+uses internally. Once registered, the handler is added to every run's callback
+manager automatically, with no per-invocation wiring.
 
-Only one tracing backend is active at a time; ``config.py`` gives Langfuse
-precedence and disables LangSmith when Langfuse keys are present, so a single
-deployment can A/B the two backends by swapping env vars.
+Tracing is enabled only when both Langfuse keys are configured (see
+``config.py``); otherwise agents run without it.
 """
 
 import logging

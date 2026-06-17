@@ -209,12 +209,12 @@ def build_stream_config(
 ) -> RunnableConfig:
     """Build the LangGraph run config for a chat stream.
 
-    Sets a human-readable ``run_name`` — the active tracing backend uses it as
-    the trace name, instead of the raw agent id the compiled graph is otherwise
-    named with — plus a metadata block (env, agent, team, channel, …) that the
-    backend (LangSmith or Langfuse) attaches to every run for filtering.
-    ``team_names`` maps team ids to display names (resolved by the caller via the
-    cached team-info store) so traces show team names, not ids.
+    Sets a human-readable ``run_name`` — Langfuse uses it as the trace name,
+    instead of the raw agent id the compiled graph is otherwise named with —
+    plus a metadata block (env, agent, team, channel, …) that Langfuse attaches
+    to every run for filtering. ``team_names`` maps team ids to display names
+    (resolved by the caller via the cached team-info store) so traces show team
+    names, not ids.
     """
     team_names = team_names or {}
     # super mode — determined by agent config
@@ -257,7 +257,7 @@ def build_stream_config(
     if user_message.app_id:
         metadata["app_id"] = user_message.app_id
     # Langfuse groups traces by these reserved metadata keys and offers tags as
-    # first-class filter chips (LangSmith ignores both). Only set when active.
+    # first-class filter chips. Only set when Langfuse tracing is active.
     if config.langfuse_tracing:
         metadata["langfuse_session_id"] = thread_id
         if user_message.user_id:

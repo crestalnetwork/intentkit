@@ -1,38 +1,10 @@
 # Tracing & Observability
 
-IntentKit can send a full trace of every agent run to an external observability platform. A trace captures each step the agent took — the prompts sent to the model, the model's replies, every tool call and its result, token usage, latency and errors. It is the fastest way to understand *why* an agent behaved the way it did, to debug failures, and to monitor cost and performance in production.
+IntentKit can send a full trace of every agent run to [Langfuse](https://langfuse.com), an external observability platform. A trace captures each step the agent took — the prompts sent to the model, the model's replies, every tool call and its result, token usage, latency and errors. It is the fastest way to understand *why* an agent behaved the way it did, to debug failures, and to monitor cost and performance in production.
 
-Two platforms are supported: **LangSmith** and **Langfuse**. They do the same job, so you only configure **one** of them. Tracing is entirely optional — if neither is configured, agents run normally without it.
+Tracing is entirely optional — if Langfuse is not configured, agents run normally without it.
 
-## Choosing a backend
-
-Only one backend is active at a time. The choice is made automatically from environment variables:
-
-- If Langfuse keys are set, **Langfuse** is used (and LangSmith is turned off, even if LangSmith variables are also present).
-- Otherwise, if LangSmith is configured, **LangSmith** is used.
-- If neither is set, tracing is disabled.
-
-This makes it easy to compare the two: configure one, look at its traces, then switch by changing environment variables and restarting. No code changes are required. To move from Langfuse back to LangSmith, remove the Langfuse keys.
-
-## LangSmith
-
-[LangSmith](https://www.langchain.com/langsmith) is LangChain's hosted tracing and evaluation platform.
-
-### Register
-
-1. Sign up at [smith.langchain.com](https://smith.langchain.com).
-2. Open **Settings → API Keys** and create an API key.
-
-### Configure
-
-```bash
-LANGSMITH_TRACING=true
-LANGSMITH_API_KEY=lsv2_...        # your API key
-LANGSMITH_PROJECT=intentkit       # optional, defaults to "intentkit"
-# LANGSMITH_ENDPOINT=             # optional, only for self-hosted or non-default region
-```
-
-Tracing turns on only when `LANGSMITH_TRACING=true` **and** an API key is set. Traces appear in your LangSmith project, grouped by the project name.
+> **Note:** LangChain ships a built-in LangSmith tracer that activates on the `LANGSMITH_TRACING` / `LANGCHAIN_TRACING_V2` environment variables, independent of IntentKit. IntentKit no longer integrates with LangSmith, so leave those variables unset (or `false`) — otherwise LangChain will keep sending traces to LangSmith alongside Langfuse.
 
 ## Langfuse
 
@@ -60,4 +32,4 @@ These values are loaded like every other IntentKit setting — from environment 
 
 ## Verifying
 
-Start the API server, send a message to an agent, then open your LangSmith project or Langfuse dashboard — the run should appear within a few seconds. On startup the logs also confirm when Langfuse is active (a line reading `Langfuse tracing enabled`).
+Start the API server, send a message to an agent, then open your Langfuse dashboard — the run should appear within a few seconds. On startup the logs also confirm when Langfuse is active (a line reading `Langfuse tracing enabled`).

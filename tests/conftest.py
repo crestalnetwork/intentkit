@@ -2,10 +2,10 @@ import os
 import sys
 from pathlib import Path
 
-# Tests must never send traces to LangSmith, even if the developer's shell or
-# .env enables tracing. All four env var spellings the langsmith SDK accepts
-# must be pinned before any intentkit import: the SDK caches env reads, so a
-# value seen at import time would stick.
+# Tests must never emit traces. LangChain ships a built-in LangSmith tracer
+# that activates purely on these env vars, so pin every spelling to "false"
+# before any intentkit import, even if the developer's shell or .env enables
+# tracing: the tracer caches env reads, so a value seen at import time sticks.
 os.environ["LANGSMITH_TRACING"] = "false"
 os.environ["LANGSMITH_TRACING_V2"] = "false"
 os.environ["LANGCHAIN_TRACING"] = "false"
