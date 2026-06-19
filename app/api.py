@@ -138,17 +138,18 @@ _ = app.add_middleware(
 )
 
 
-# NOTE: Local/core routes are intentionally unauthenticated.
-# They are designed for local development and debugging only.
-# In production, these should not be exposed to the public internet.
-_ = app.include_router(agent_router)
-_ = app.include_router(autonomous_router)
-_ = app.include_router(chat_router)
-_ = app.include_router(lead_router)
-_ = app.include_router(content_router)
-_ = app.include_router(metadata_router)
-_ = app.include_router(schema_router)
-_ = app.include_router(wechat_router)
+# Local/core routes are unauthenticated — for local development only.
+# Guard them behind the ENV setting so they are never registered in production.
+_LOCAL_ENVS = {"local", "development", "dev", "test", "testing"}
+if config.env.lower() in _LOCAL_ENVS:
+    _ = app.include_router(agent_router)
+    _ = app.include_router(autonomous_router)
+    _ = app.include_router(chat_router)
+    _ = app.include_router(lead_router)
+    _ = app.include_router(content_router)
+    _ = app.include_router(metadata_router)
+    _ = app.include_router(schema_router)
+    _ = app.include_router(wechat_router)
 _ = app.include_router(core_router)
 _ = app.include_router(twitter_callback_router, include_in_schema=False)
 _ = app.include_router(twitter_oauth2_router)
