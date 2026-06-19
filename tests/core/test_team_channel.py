@@ -86,6 +86,27 @@ class TestValidateChannelConfig:
         with pytest.raises(ValidationError):
             _validate_channel_config("wechat", {"bot_token": "tok"})
 
+    def test_valid_lark_config(self):
+        _validate_channel_config(
+            "lark",
+            {"app_id": "cli_x", "app_secret": "sec", "domain": "feishu"},
+        )
+
+    def test_valid_lark_config_default_domain(self):
+        # domain is optional and defaults to feishu.
+        _validate_channel_config("lark", {"app_id": "cli_x", "app_secret": "sec"})
+
+    def test_invalid_lark_config_missing_secret(self):
+        with pytest.raises(ValidationError):
+            _validate_channel_config("lark", {"app_id": "cli_x"})
+
+    def test_invalid_lark_config_bad_domain(self):
+        with pytest.raises(ValidationError):
+            _validate_channel_config(
+                "lark",
+                {"app_id": "cli_x", "app_secret": "sec", "domain": "slack"},
+            )
+
     def test_unknown_channel_type_raises_value_error(self):
         with pytest.raises(ValueError, match="Unknown channel type"):
             _validate_channel_config("slack", {"key": "val"})

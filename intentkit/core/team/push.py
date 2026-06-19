@@ -5,16 +5,19 @@ and record them in the chat message system.
 """
 
 import base64
+import json
 import logging
 import random
+import time
 
 import httpx
 from epyxid import XID
 
 from intentkit.config.config import config
-from intentkit.core.team.channel import get_push_channel
+from intentkit.core.team.channel import build_channel_chat_id, get_push_channel
 from intentkit.models.chat import AuthorType
 from intentkit.models.team_channel import (
+    LarkChannelConfig,
     TeamChannel,
     TeamChannelData,
     TelegramChannelConfig,
@@ -117,6 +120,95 @@ async def _send_wechat(
             )
 
 
+# Open-platform hosts for the two Lark/Feishu environments. Keep in sync with
+# the Go integration's larkclient.ResolveBaseURL, which mirrors them for inbound.
+_LARK_BASE_URLS = {
+    "feishu": "https://open.feishu.cn",
+    "lark": "https://open.larksuite.com",
+}
+
+# Cache of tenant_access_tokens keyed by app_id. Lark tokens are valid ~2h and
+# their generation is rate-limited, so reusing them across pushes matters (the
+# Go bot path relies on the SDK's own cache for the same reason). A benign race
+# — two coroutines refreshing at once — just costs one extra fetch.
+_lark_token_cache: dict[str, tuple[str, float]] = {}
+# Refresh a little before the real expiry so we never present a just-expired token.
+_LARK_TOKEN_EXPIRY_SKEW = 300.0  # seconds
+
+
+async def _lark_tenant_token(
+    client: httpx.AsyncClient, base_url: str, app_id: str, app_secret: str
+) -> str:
+    """Return a (possibly cached) tenant_access_token for the app."""
+    cached = _lark_token_cache.get(app_id)
+    if cached and cached[1] > time.monotonic():
+        return cached[0]
+
+    resp = await client.post(
+        f"{base_url}/open-apis/auth/v3/tenant_access_token/internal",
+        json={"app_id": app_id, "app_secret": app_secret},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("code") != 0:
+        raise RuntimeError(
+            f"Lark token error: code={data.get('code')} msg={data.get('msg')}"
+        )
+    token = data["tenant_access_token"]
+    expire = float(data.get("expire", 7200))
+    _lark_token_cache[app_id] = (
+        token,
+        time.monotonic() + max(0.0, expire - _LARK_TOKEN_EXPIRY_SKEW),
+    )
+    return token
+
+
+async def _send_lark(
+    app_id: str,
+    app_secret: str,
+    domain: str,
+    chat_id: str,
+    text: str,
+) -> None:
+    """Send a text message via the Lark/Feishu Bot API.
+
+    Uses a cached tenant_access_token (exchanged from the app credentials), then
+    posts a text message to the target chat. ``domain`` selects the Feishu
+    (China) or Lark (international) open-platform host.
+    """
+    base_url = _LARK_BASE_URLS.get(domain, _LARK_BASE_URLS["feishu"])
+    async with httpx.AsyncClient(timeout=30) as client:
+        token = await _lark_tenant_token(client, base_url, app_id, app_secret)
+        msg_resp = await client.post(
+            f"{base_url}/open-apis/im/v1/messages",
+            params={"receive_id_type": "chat_id"},
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "receive_id": chat_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": text}),
+            },
+        )
+        msg_resp.raise_for_status()
+        msg_data = msg_resp.json()
+        if msg_data.get("code") != 0:
+            # Drop a possibly-stale cached token so the next push re-fetches
+            # (e.g. after a secret rotation invalidates it server-side).
+            _lark_token_cache.pop(app_id, None)
+            raise RuntimeError(
+                f"Lark API error: code={msg_data.get('code')} msg={msg_data.get('msg')}"
+            )
+
+
+# Maps a channel_type to the AuthorType used when recording a pushed message in
+# chat history. Kept in sync with the send-dispatch branches in push_to_team.
+_PUSH_THREAD_TYPES = {
+    "telegram": AuthorType.TELEGRAM,
+    "wechat": AuthorType.WECHAT,
+    "lark": AuthorType.LARK,
+}
+
+
 async def push_to_team(team_id: str, text: str) -> bool:
     """Push a message to the team's default push channel.
 
@@ -177,6 +269,21 @@ async def push_to_team(team_id: str, text: str) -> bool:
                 wx_data.context_token,
                 _rewrite_for_wechat(text),
             )
+
+        elif channel_type == "lark":
+            try:
+                lark_config = LarkChannelConfig.model_validate(channel.config)
+            except Exception:
+                logger.warning("Invalid Lark config for team %s", team_id)
+                return False
+
+            await _send_lark(
+                lark_config.app_id,
+                lark_config.app_secret,
+                lark_config.domain,
+                raw_chat_id,
+                text,
+            )
         else:
             logger.warning("Unknown channel type %s for team %s", channel_type, team_id)
             return False
@@ -185,12 +292,8 @@ async def push_to_team(team_id: str, text: str) -> bool:
         try:
             from intentkit.core.chat import append_agent_message
 
-            if channel_type == "telegram":
-                lead_chat_id = f"tg_team:{team_id}:{raw_chat_id}"
-                thread_type = AuthorType.TELEGRAM
-            else:
-                lead_chat_id = f"wx_team:{team_id}:{raw_chat_id}"
-                thread_type = AuthorType.WECHAT
+            lead_chat_id = build_channel_chat_id(channel_type, team_id, raw_chat_id)
+            thread_type = _PUSH_THREAD_TYPES[channel_type]
 
             await append_agent_message(
                 agent_id=f"team-{team_id}",

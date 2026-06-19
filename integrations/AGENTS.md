@@ -9,6 +9,7 @@ IntentKit's Core API.
 |---------|-------|------|
 | Telegram | Individual agents + team channels | [telegram/AGENTS.md](./telegram/AGENTS.md) |
 | WeChat | Team channels only (lead agent) | [wechat/AGENTS.md](./wechat/AGENTS.md) |
+| Lark / Feishu | Team channels only (lead agent) | [lark/AGENTS.md](./lark/AGENTS.md) |
 
 ## Tech Stack
 
@@ -30,19 +31,21 @@ integrations/
 ├── AGENTS.md             (this file)
 ├── cmd/
 │   ├── telegram/main.go   # entrypoint
-│   └── wechat/main.go     # entrypoint
+│   ├── wechat/main.go     # entrypoint
+│   └── lark/main.go       # entrypoint
 ├── shared/               # cross-channel helpers
 │   ├── dispatcher.go      # MessageSender interface, dispatch logic
 │   ├── media.go           # DownloadFromURL (resty + SetResponseBodyLimit)
 │   └── sse.go             # SSE streaming via resty.SSESource
 ├── types/                # shared DTOs (ChatMessage, etc.)
 ├── telegram/             # channel code — see telegram/AGENTS.md
-└── wechat/               # channel code — see wechat/AGENTS.md
+├── wechat/               # channel code — see wechat/AGENTS.md
+└── lark/                 # channel code — see lark/AGENTS.md
 ```
 
 Each channel directory follows the same shape: `api/` (Core API client),
 `bot/` (manager + handler + sender), `config/` (env), `store/` (GORM models),
-plus any channel-specific subpackage (e.g. `wechat/ilink/`).
+plus any channel-specific subpackage (e.g. `wechat/ilink/`, `lark/larkclient/`).
 
 ## Architecture Pattern
 
@@ -103,8 +106,10 @@ Channel-specific env vars live in each channel's `AGENTS.md`.
 # Directly
 go run ./integrations/cmd/telegram
 go run ./integrations/cmd/wechat
+go run ./integrations/cmd/lark
 
 # Via Docker
 docker build -f integrations/Dockerfile.telegram -t intent-telegram integrations/
 docker build -f integrations/Dockerfile.wechat   -t intent-wechat   integrations/
+docker build -f integrations/Dockerfile.lark     -t intent-lark     integrations/
 ```

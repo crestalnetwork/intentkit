@@ -66,6 +66,7 @@ class UserTable(Base):
         Index("ix_users_telegram_username", "telegram_username"),
         Index("ix_users_telegram_id", "telegram_id"),
         Index("ix_users_wechat_id", "wechat_id"),
+        Index("ix_users_lark_id", "lark_id"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -106,6 +107,10 @@ class UserTable(Base):
         nullable=True,
     )
     wechat_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    lark_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
@@ -187,6 +192,10 @@ class UserUpdate(BaseModel):
     ]
     wechat_id: Annotated[
         str | None, Field(None, description="User's WeChat ID (e.g. xxxxx@im.wechat)")
+    ]
+    lark_id: Annotated[
+        str | None,
+        Field(None, description="User's Lark/Feishu open_id (e.g. ou_xxxxx)"),
     ]
     timezone: Annotated[
         str | None,
@@ -473,6 +482,30 @@ class User(UserUpdate):
         async with get_session() as session:
             result = await session.execute(
                 select(user_table_class).where(user_table_class.wechat_id == wechat_id)
+            )
+            user = result.scalars().first()
+            if user is None:
+                return None
+            return cast(Any, user_model_class.model_validate(user))
+
+    @classmethod
+    async def get_by_lark_id(cls, lark_id: str) -> "User | None":
+        """Get a user by Lark/Feishu open_id.
+
+        Args:
+            lark_id: Lark/Feishu open_id (e.g. ou_xxxxx)
+
+        Returns:
+            User model or None if not found
+        """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(user_table_class.lark_id == lark_id)
             )
             user = result.scalars().first()
             if user is None:

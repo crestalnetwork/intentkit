@@ -135,6 +135,7 @@ _CHANNEL_CONFIG: dict[
 ] = {
     "telegram": ("get_by_telegram_id", "telegram_id", AuthorType.TELEGRAM, "tg_team"),
     "wechat": ("get_by_wechat_id", "wechat_id", AuthorType.WECHAT, "wx_team"),
+    "lark": ("get_by_lark_id", "lark_id", AuthorType.LARK, "lk_team"),
 }
 
 

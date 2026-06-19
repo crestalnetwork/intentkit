@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.3
 	github.com/hack-fan/config v0.0.0-20200528030741-0a9be90586b6
 	github.com/joho/godotenv v1.5.1
+	github.com/larksuite/oapi-sdk-go/v3 v3.9.6
 	github.com/mymmrac/telego v1.10.0
 	github.com/redis/go-redis/v9 v9.20.1
 	github.com/rs/xid v1.6.0
@@ -42,7 +43,9 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/go-sql-driver/mysql v1.10.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grbit/go-json v0.11.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

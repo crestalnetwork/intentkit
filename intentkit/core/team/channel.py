@@ -10,6 +10,7 @@ from sqlalchemy import delete, select
 from intentkit.config.db import get_session
 from intentkit.models.team import TeamTable
 from intentkit.models.team_channel import (
+    LarkChannelConfig,
     TeamChannel,
     TeamChannelDataTable,
     TeamChannelTable,
@@ -26,6 +27,8 @@ def _validate_channel_config(channel_type: str, config: dict[str, object]) -> No
         TelegramChannelConfig.model_validate(config)
     elif channel_type == "wechat":
         WechatChannelConfig.model_validate(config)
+    elif channel_type == "lark":
+        LarkChannelConfig.model_validate(config)
     else:
         raise ValueError(f"Unknown channel type: {channel_type}")
 
@@ -217,6 +220,7 @@ async def set_push_channel_if_empty(
 CHANNEL_CHAT_ID_PREFIXES: dict[str, str] = {
     "telegram": "tg_team",
     "wechat": "wx_team",
+    "lark": "lk_team",
 }
 
 

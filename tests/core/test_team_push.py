@@ -1,12 +1,17 @@
 """Tests for team push error handling (intentkit/core/team/push.py)."""
 
 import logging
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from intentkit.core.team.push import (
+    _LARK_BASE_URLS,
     WechatPushWindowClosedError,
+    _lark_tenant_token,
+    _lark_token_cache,
+    _send_lark,
     _send_wechat,
     push_to_team,
 )
@@ -63,6 +68,66 @@ class TestSendWechat:
             ctx = _mock_httpx_client(payload)
             with patch(f"{MODULE_PUSH}.httpx.AsyncClient", return_value=ctx):
                 await _send_wechat(**_send_wechat_args())
+
+
+def _resp(payload):
+    r = MagicMock()
+    r.raise_for_status = MagicMock()
+    r.json = MagicMock(return_value=payload)
+    return r
+
+
+class TestLarkToken:
+    @pytest.mark.asyncio
+    async def test_token_is_cached_per_app(self):
+        _lark_token_cache.clear()
+        client = AsyncMock()
+        client.post = AsyncMock(
+            return_value=_resp(
+                {"code": 0, "tenant_access_token": "t-abc", "expire": 7200}
+            )
+        )
+        base = _LARK_BASE_URLS["feishu"]
+
+        t1 = await _lark_tenant_token(client, base, "cli_x", "sec")
+        t2 = await _lark_tenant_token(client, base, "cli_x", "sec")
+
+        assert t1 == t2 == "t-abc"
+        # Second call is served from cache — only one network fetch.
+        assert client.post.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_send_lark_success_fetches_then_sends(self):
+        _lark_token_cache.clear()
+        client = AsyncMock()
+        client.post = AsyncMock(
+            side_effect=[
+                _resp({"code": 0, "tenant_access_token": "t", "expire": 7200}),
+                _resp({"code": 0}),
+            ]
+        )
+        ctx = MagicMock()
+        ctx.__aenter__ = AsyncMock(return_value=client)
+        ctx.__aexit__ = AsyncMock(return_value=None)
+        with patch(f"{MODULE_PUSH}.httpx.AsyncClient", return_value=ctx):
+            await _send_lark("cli_y", "sec", "feishu", "oc_1", "hi")
+        assert client.post.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_send_lark_evicts_cached_token_on_api_error(self):
+        _lark_token_cache.clear()
+        # Warm cache so the message send (which errors) is the only call.
+        _lark_token_cache["cli_x"] = ("t-old", time.monotonic() + 9999)
+        client = AsyncMock()
+        client.post = AsyncMock(return_value=_resp({"code": 230002, "msg": "bad"}))
+        ctx = MagicMock()
+        ctx.__aenter__ = AsyncMock(return_value=client)
+        ctx.__aexit__ = AsyncMock(return_value=None)
+        with patch(f"{MODULE_PUSH}.httpx.AsyncClient", return_value=ctx):
+            with pytest.raises(RuntimeError, match="Lark API error"):
+                await _send_lark("cli_x", "sec", "feishu", "oc_1", "hi")
+        # A failed send drops the (possibly stale) token so the next push refetches.
+        assert "cli_x" not in _lark_token_cache
 
 
 class TestPushToTeamWindowClosed:

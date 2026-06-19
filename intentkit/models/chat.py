@@ -58,6 +58,7 @@ class AuthorType(str, Enum):
     WEB = "web"
     API = "api"
     WECHAT = "wechat"
+    LARK = "lark"
     XMTP = "xmtp"
     X402 = "x402"
     INTERNAL = "internal"  # agent call agent

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from sqlalchemy import Boolean, DateTime, String, func, select
@@ -117,6 +117,21 @@ class WechatChannelData(BaseModel):
     bot_name: str | None = None
     typing_ticket: str | None = None
     context_token: str | None = None
+
+
+class LarkChannelConfig(BaseModel):
+    """Validation model for Lark / Feishu channel config.
+
+    A single ``lark`` channel type serves both Feishu (China, open.feishu.cn)
+    and Lark (international, open.larksuite.com); ``domain`` selects which.
+    The credentials are a custom app's App ID / App Secret — the Go integration
+    uses them to open a WebSocket long connection, so no public callback URL or
+    encrypt key is required.
+    """
+
+    app_id: str
+    app_secret: str
+    domain: Literal["feishu", "lark"] = "feishu"
 
 
 class TeamChannel(BaseModel):
