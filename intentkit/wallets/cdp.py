@@ -11,6 +11,7 @@ from intentkit.config.config import config
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.models.agent_data import AgentData
+from intentkit.utils.chain import SupportedNetwork, resolve_supported_network
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.web3 import get_async_web3_client
 
@@ -190,6 +191,17 @@ async def get_evm_account(agent: Agent) -> EvmServerAccount:
     return account
 
 
+_SUPPORTED_NETWORK_TO_CDP: dict[SupportedNetwork, str] = {
+    SupportedNetwork.EthereumMainnet: "ethereum",
+    SupportedNetwork.BaseMainnet: "base",
+    SupportedNetwork.ArbitrumMainnet: "arbitrum",
+    SupportedNetwork.OptimismMainnet: "optimism",
+    SupportedNetwork.PolygonMainnet: "polygon",
+    SupportedNetwork.BaseSepolia: "base-sepolia",
+    SupportedNetwork.BnbMainnet: "bsc",
+}
+
+
 def get_cdp_network(agent: Agent) -> str:
     if not agent.network_id:
         raise IntentKitAPIError(
@@ -197,20 +209,17 @@ def get_cdp_network(agent: Agent) -> str:
             "BadNetworkID",
             "Your agent network ID is not set. Please set it in the agent config.",
         )
-    mapping = {
-        "ethereum-mainnet": "ethereum",
-        "base-mainnet": "base",
-        "arbitrum-mainnet": "arbitrum",
-        "optimism-mainnet": "optimism",
-        "polygon-mainnet": "polygon",
-        "base-sepolia": "base-sepolia",
-        "bnb-mainnet": "bsc",
-    }
     if agent.network_id == "solana":
         raise IntentKitAPIError(
             400, "BadNetworkID", "Solana is not supported by CDP EVM."
         )
-    cdp_network = mapping.get(agent.network_id)
+    try:
+        supported_network = resolve_supported_network(agent.network_id)
+    except ValueError:
+        raise IntentKitAPIError(
+            400, "BadNetworkID", f"Unsupported network ID: {agent.network_id}"
+        )
+    cdp_network = _SUPPORTED_NETWORK_TO_CDP.get(supported_network)
     if not cdp_network:
         raise IntentKitAPIError(
             400, "BadNetworkID", f"Unsupported network ID: {agent.network_id}"
