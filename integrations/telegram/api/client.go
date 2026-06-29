@@ -43,6 +43,35 @@ func (c *Client) StreamTeamLead(ctx context.Context, payload map[string]interfac
 	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/stream", payload, cb)
 }
 
+// BindChannelChat binds a chat to the team that owns bindToken and returns the
+// resolved team_id. An empty string (no error) means the token didn't match an
+// enabled centralized channel (treat as "not bound").
+func (c *Client) BindChannelChat(ctx context.Context, channelType, chatID, chatName, bindToken string) (string, error) {
+	var out struct {
+		TeamID string `json:"team_id"`
+	}
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(map[string]interface{}{
+			"channel_type": channelType,
+			"chat_id":      chatID,
+			"chat_name":    chatName,
+			"bind_token":   bindToken,
+		}).
+		SetResult(&out).
+		Post(c.baseURL + "/core/lead/channel-bind")
+	if err != nil {
+		return "", fmt.Errorf("channel bind: %w", err)
+	}
+	if resp.StatusCode() == 404 {
+		return "", nil
+	}
+	if resp.StatusCode() != 200 {
+		return "", fmt.Errorf("channel bind: status %d", resp.StatusCode())
+	}
+	return out.TeamID, nil
+}
+
 // SetPushChannel sets (or conditionally sets) the push channel for a team.
 func (c *Client) SetPushChannel(ctx context.Context, teamID, channelType, chatID string, ifEmpty bool) error {
 	resp, err := c.client.R().

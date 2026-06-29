@@ -67,6 +67,7 @@ class UserTable(Base):
         Index("ix_users_telegram_id", "telegram_id"),
         Index("ix_users_wechat_id", "wechat_id"),
         Index("ix_users_lark_id", "lark_id"),
+        Index("ix_users_slack_id", "slack_id"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -111,6 +112,10 @@ class UserTable(Base):
         nullable=True,
     )
     lark_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    slack_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )
@@ -196,6 +201,10 @@ class UserUpdate(BaseModel):
     lark_id: Annotated[
         str | None,
         Field(None, description="User's Lark/Feishu open_id (e.g. ou_xxxxx)"),
+    ]
+    slack_id: Annotated[
+        str | None,
+        Field(None, description="User's Slack user ID (e.g. U0XXXXXXX)"),
     ]
     timezone: Annotated[
         str | None,
@@ -506,6 +515,30 @@ class User(UserUpdate):
         async with get_session() as session:
             result = await session.execute(
                 select(user_table_class).where(user_table_class.lark_id == lark_id)
+            )
+            user = result.scalars().first()
+            if user is None:
+                return None
+            return cast(Any, user_model_class.model_validate(user))
+
+    @classmethod
+    async def get_by_slack_id(cls, slack_id: str) -> "User | None":
+        """Get a user by Slack user ID.
+
+        Args:
+            slack_id: Slack user ID (e.g. U0XXXXXXX)
+
+        Returns:
+            User model or None if not found
+        """
+        user_model_class = user_model_registry.get_user_model_class()
+        assert issubclass(user_model_class, User)
+        user_table_class = user_model_registry.get_user_table_class()
+        assert issubclass(user_table_class, UserTable)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(user_table_class).where(user_table_class.slack_id == slack_id)
             )
             user = result.scalars().first()
             if user is None:

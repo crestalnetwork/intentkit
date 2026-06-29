@@ -19,16 +19,25 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from intentkit.config.config import config
 from intentkit.config.db import get_db
 from intentkit.core.lead import get_lead_agent, stream_lead
 from intentkit.core.task_registry import cancel_task, register_task, unregister_task
 from intentkit.core.team.channel import (
     build_channel_chat_id,
+    ensure_team_channel_bind_token,
     get_default_channel,
     get_team_channels,
     remove_team_channel,
     set_default_channel,
     set_team_channel,
+)
+from intentkit.core.team.oauth import (
+    OAuthForbiddenError,
+    OAuthStateError,
+    complete_oauth,
+    lark_install_url,
+    slack_install_url,
 )
 from intentkit.models.agent import Agent
 from intentkit.models.chat import (
@@ -42,6 +51,7 @@ from intentkit.models.chat import (
 from intentkit.models.team import TeamTable
 from intentkit.models.team_channel import (
     TeamChannel,
+    TeamChannelChat,
     TeamChannelData,
     TelegramStatus,
 )
@@ -57,7 +67,7 @@ from app.common.chat import (
     should_summarize_first_message,
     update_chat_summary_from_first_message,
 )
-from app.team.auth import verify_team_admin, verify_team_member
+from app.team.auth import get_current_user, verify_team_admin, verify_team_member
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +407,175 @@ async def delete_lead_channel(
     _user_id, team_id = auth
     await remove_team_channel(team_id, channel_type)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+class TelegramConnectResponse(BaseModel):
+    """Bind link info for the shared official Telegram bot."""
+
+    bind_token: str
+    bot_username: str | None = None
+    deep_link: str | None = None
+
+
+@team_lead_router.post(
+    "/teams/{team_id}/lead/channels/telegram/connect",
+    response_model=TelegramConnectResponse,
+    operation_id="team_connect_telegram_channel",
+    summary="Enable the shared Telegram bot and get its bind link (Team)",
+    tags=["Lead"],
+)
+async def connect_telegram_channel(
+    auth: tuple[str, str] = Depends(verify_team_admin),
+):
+    """Enable the centralized Telegram channel and return the deep link a member
+    follows to bind a group to this team (one shared official bot serves all
+    teams, routed by chat→team binding)."""
+    user_id, team_id = auth
+    token = await ensure_team_channel_bind_token(
+        team_id, "telegram", created_by=user_id
+    )
+    username = config.telegram_team_bot_username
+    deep_link = f"https://t.me/{username}?startgroup={token}" if username else None
+    return TelegramConnectResponse(
+        bind_token=token, bot_username=username, deep_link=deep_link
+    )
+
+
+@team_lead_router.get(
+    "/teams/{team_id}/lead/channels/{channel_type}/chats",
+    response_model=list[TeamChannelChat],
+    operation_id="team_list_lead_channel_chats",
+    summary="List chats bound to a team for a centralized channel (Team)",
+    tags=["Lead"],
+)
+async def list_lead_channel_chats(
+    channel_type: str = Path(..., description="Channel type"),
+    auth: tuple[str, str] = Depends(verify_team_member),
+):
+    """List the chats bound to this team for a centralized channel."""
+    _user_id, team_id = auth
+    return await TeamChannelChat.list_for_team(team_id, channel_type)
+
+
+@team_lead_router.delete(
+    "/teams/{team_id}/lead/channels/{channel_type}/chats/{chat_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="team_unbind_lead_channel_chat",
+    summary="Unbind a chat from a centralized channel (Team)",
+    tags=["Lead"],
+)
+async def unbind_lead_channel_chat(
+    channel_type: str = Path(..., description="Channel type"),
+    chat_id: str = Path(..., description="External chat id"),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+):
+    """Remove a chat binding (only chats owned by this team)."""
+    _user_id, team_id = auth
+    if await TeamChannelChat.get_team(channel_type, chat_id) == team_id:
+        await TeamChannelChat.unbind(channel_type, chat_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+class ChannelInstallResponse(BaseModel):
+    """An OAuth install URL the team admin follows to authorize the app."""
+
+    url: str
+
+
+@team_lead_router.get(
+    "/teams/{team_id}/lead/channels/slack/install",
+    response_model=ChannelInstallResponse,
+    operation_id="team_slack_install_url",
+    summary="Get the Slack install (Add to Slack) URL (Team)",
+    tags=["Lead"],
+)
+async def slack_install(
+    auth: tuple[str, str] = Depends(verify_team_admin),
+):
+    """Return the 'Add to Slack' URL the admin opens to authorize the app for
+    their workspace."""
+    user_id, team_id = auth
+    try:
+        return ChannelInstallResponse(url=slack_install_url(team_id, user_id))
+    except RuntimeError as e:
+        raise IntentKitAPIError(
+            status_code=400, key="SlackNotConfigured", message=str(e)
+        )
+
+
+@team_lead_router.get(
+    "/teams/{team_id}/lead/channels/lark/install",
+    response_model=ChannelInstallResponse,
+    operation_id="team_lark_install_url",
+    summary="Get the Lark/Feishu authorization URL (Team)",
+    tags=["Lead"],
+)
+async def lark_install(
+    auth: tuple[str, str] = Depends(verify_team_admin),
+):
+    """Return the Lark authorization URL the admin opens to authorize the ISV
+    app for their enterprise."""
+    user_id, team_id = auth
+    try:
+        return ChannelInstallResponse(url=lark_install_url(team_id, user_id))
+    except RuntimeError as e:
+        raise IntentKitAPIError(
+            status_code=400, key="LarkNotConfigured", message=str(e)
+        )
+
+
+class ChannelOAuthCompleteRequest(BaseModel):
+    """The provider redirect's ``code`` + ``state``, relayed by the SPA's OAuth
+    landing page on behalf of the authenticated admin."""
+
+    code: str
+    state: str
+
+
+class ChannelOAuthCompleteResponse(BaseModel):
+    """Which team/channel the completed install bound, so the SPA can route back."""
+
+    team_id: str
+    channel: str
+
+
+# Not team-scoped: the team + channel are read from the signed ``state``, so the
+# SPA landing page (which doesn't know them) just relays code + state. The
+# session-binding (state.user_id == caller) + admin check happen in complete_oauth.
+@team_lead_router.post(
+    "/lead/oauth/complete",
+    response_model=ChannelOAuthCompleteResponse,
+    operation_id="team_oauth_complete",
+    summary="Complete a Slack/Lark OAuth install (Team)",
+    tags=["Lead"],
+)
+async def oauth_complete(
+    body: ChannelOAuthCompleteRequest = Body(...),
+    user_id: str = Depends(get_current_user),
+):
+    """Finish a Slack/Lark install for the signed-in admin.
+
+    The admin-bound ``state`` is what makes the install session-bound: a phished
+    link can't bind a victim's workspace to the attacker's team, because
+    completion requires a state whose ``user_id`` matches the caller's JWT and
+    the caller must be an admin of the state's team.
+    """
+    try:
+        team_id, channel = await complete_oauth(user_id, body.code, body.state)
+    except OAuthStateError as e:
+        raise IntentKitAPIError(
+            status_code=400, key="InvalidOAuthState", message=str(e)
+        )
+    except OAuthForbiddenError as e:
+        raise IntentKitAPIError(status_code=403, key="NotTeamAdmin", message=str(e))
+    except Exception:
+        logger.exception("OAuth completion failed")
+        raise IntentKitAPIError(
+            status_code=400,
+            key="OAuthFailed",
+            message="Could not complete the connection. Please try again.",
+        )
+    return ChannelOAuthCompleteResponse(team_id=team_id, channel=channel)
 
 
 @team_lead_router.get(

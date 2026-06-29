@@ -1,0 +1,18 @@
+FROM golang:1.26-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache git
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o intent-slack ./cmd/slack
+
+FROM alpine:latest
+ARG RELEASE=local
+ENV RELEASE=${RELEASE}
+WORKDIR /app
+RUN apk --no-cache add ca-certificates tzdata
+COPY --from=builder /app/intent-slack .
+# Public Slack Events API / interactions webhook (put behind the ingress / TLS).
+ENV SLACK_LISTEN_ADDR=:8083
+EXPOSE 8083
+CMD ["./intent-slack"]

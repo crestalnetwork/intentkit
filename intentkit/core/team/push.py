@@ -1,14 +1,12 @@
 """Team channel push functions.
 
-Send proactive messages to a team's default push channel (Telegram or WeChat)
-and record them in the chat message system.
+Send proactive messages to a team's default push channel (Telegram, WeChat,
+Lark, or Slack) and record them in the chat message system.
 """
 
 import base64
-import json
 import logging
 import random
-import time
 
 import httpx
 from epyxid import XID
@@ -18,6 +16,7 @@ from intentkit.core.team.channel import build_channel_chat_id, get_push_channel
 from intentkit.models.chat import AuthorType
 from intentkit.models.team_channel import (
     LarkChannelConfig,
+    SlackChannelConfig,
     TeamChannel,
     TeamChannelData,
     TelegramChannelConfig,
@@ -120,84 +119,45 @@ async def _send_wechat(
             )
 
 
-# Open-platform hosts for the two Lark/Feishu environments. Keep in sync with
-# the Go integration's larkclient.ResolveBaseURL, which mirrors them for inbound.
-_LARK_BASE_URLS = {
-    "feishu": "https://open.feishu.cn",
-    "lark": "https://open.larksuite.com",
-}
+async def _send_lark(tenant_key: str, chat_id: str, text: str) -> bool:
+    """Push text to a Lark chat via the Go webhook service.
 
-# Cache of tenant_access_tokens keyed by app_id. Lark tokens are valid ~2h and
-# their generation is rate-limited, so reusing them across pushes matters (the
-# Go bot path relies on the SDK's own cache for the same reason). A benign race
-# — two coroutines refreshing at once — just costs one extra fetch.
-_lark_token_cache: dict[str, tuple[str, float]] = {}
-# Refresh a little before the real expiry so we never present a just-expired token.
-_LARK_TOKEN_EXPIRY_SKEW = 300.0  # seconds
-
-
-async def _lark_tenant_token(
-    client: httpx.AsyncClient, base_url: str, app_id: str, app_secret: str
-) -> str:
-    """Return a (possibly cached) tenant_access_token for the app."""
-    cached = _lark_token_cache.get(app_id)
-    if cached and cached[1] > time.monotonic():
-        return cached[0]
-
-    resp = await client.post(
-        f"{base_url}/open-apis/auth/v3/tenant_access_token/internal",
-        json={"app_id": app_id, "app_secret": app_secret},
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    if data.get("code") != 0:
-        raise RuntimeError(
-            f"Lark token error: code={data.get('code')} msg={data.get('msg')}"
-        )
-    token = data["tenant_access_token"]
-    expire = float(data.get("expire", 7200))
-    _lark_token_cache[app_id] = (
-        token,
-        time.monotonic() + max(0.0, expire - _LARK_TOKEN_EXPIRY_SKEW),
-    )
-    return token
-
-
-async def _send_lark(
-    app_id: str,
-    app_secret: str,
-    domain: str,
-    chat_id: str,
-    text: str,
-) -> None:
-    """Send a text message via the Lark/Feishu Bot API.
-
-    Uses a cached tenant_access_token (exchanged from the app credentials), then
-    posts a text message to the target chat. ``domain`` selects the Feishu
-    (China) or Lark (international) open-platform host.
+    Lark is an ISV app, so replies need the app_ticket -> tenant-token chain that
+    only lives in the Go process; we POST to its internal ``/lark/push`` route
+    (gated by the shared secret) rather than minting a token here. Returns False
+    (no raise) when the reverse channel isn't configured, so push degrades
+    gracefully; a configured-but-failing send raises so the caller logs it.
     """
-    base_url = _LARK_BASE_URLS.get(domain, _LARK_BASE_URLS["feishu"])
+    if not config.lark_service_url or not config.lark_internal_secret:
+        logger.warning("Lark service URL/secret not configured; cannot push")
+        return False
     async with httpx.AsyncClient(timeout=30) as client:
-        token = await _lark_tenant_token(client, base_url, app_id, app_secret)
-        msg_resp = await client.post(
-            f"{base_url}/open-apis/im/v1/messages",
-            params={"receive_id_type": "chat_id"},
-            headers={"Authorization": f"Bearer {token}"},
-            json={
-                "receive_id": chat_id,
-                "msg_type": "text",
-                "content": json.dumps({"text": text}),
-            },
+        resp = await client.post(
+            f"{config.lark_service_url.rstrip('/')}/lark/push",
+            json={"tenant_key": tenant_key, "chat_id": chat_id, "text": text},
+            headers={"X-Internal-Secret": config.lark_internal_secret},
         )
-        msg_resp.raise_for_status()
-        msg_data = msg_resp.json()
-        if msg_data.get("code") != 0:
-            # Drop a possibly-stale cached token so the next push re-fetches
-            # (e.g. after a secret rotation invalidates it server-side).
-            _lark_token_cache.pop(app_id, None)
-            raise RuntimeError(
-                f"Lark API error: code={msg_data.get('code')} msg={msg_data.get('msg')}"
-            )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Lark push failed: status {resp.status_code}")
+    return True
+
+
+async def _send_slack(bot_token: str, chat_id: str, text: str) -> None:
+    """Send a text message via the Slack Web API (chat.postMessage).
+
+    The bot token authenticates the call directly — unlike Lark, Slack needs no
+    token exchange.
+    """
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={"Authorization": f"Bearer {bot_token}"},
+            json={"channel": chat_id, "text": text},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if not data.get("ok"):
+            raise RuntimeError(f"Slack API error: {data.get('error')}")
 
 
 # Maps a channel_type to the AuthorType used when recording a pushed message in
@@ -206,6 +166,7 @@ _PUSH_THREAD_TYPES = {
     "telegram": AuthorType.TELEGRAM,
     "wechat": AuthorType.WECHAT,
     "lark": AuthorType.LARK,
+    "slack": AuthorType.SLACK,
 }
 
 
@@ -276,11 +237,18 @@ async def push_to_team(team_id: str, text: str) -> bool:
             except Exception:
                 logger.warning("Invalid Lark config for team %s", team_id)
                 return False
+            if not await _send_lark(lark_config.tenant_key, raw_chat_id, text):
+                return False
 
-            await _send_lark(
-                lark_config.app_id,
-                lark_config.app_secret,
-                lark_config.domain,
+        elif channel_type == "slack":
+            try:
+                slack_config = SlackChannelConfig.model_validate(channel.config)
+            except Exception:
+                logger.warning("Invalid Slack config for team %s", team_id)
+                return False
+
+            await _send_slack(
+                slack_config.bot_token,
                 raw_chat_id,
                 text,
             )

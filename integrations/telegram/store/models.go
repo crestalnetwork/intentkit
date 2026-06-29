@@ -59,3 +59,17 @@ type TeamChannelData struct {
 func (TeamChannelData) TableName() string {
 	return "team_channel_data"
 }
+
+// TeamChannelChat binds an external chat to a team for the shared official bot.
+// The bot resolves the owning team by querying this by (channel_type, chat_id).
+type TeamChannelChat struct {
+	ChannelType string `gorm:"primaryKey"`
+	ChatID      string `gorm:"primaryKey"`
+	TeamID      string
+	ChatName    *string
+}
+
+// TableName overrides the table name for TeamChannelChat
+func (TeamChannelChat) TableName() string {
+	return "team_channel_chats"
+}

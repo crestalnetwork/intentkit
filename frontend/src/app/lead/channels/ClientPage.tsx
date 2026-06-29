@@ -83,7 +83,6 @@ export default function ChannelsPage() {
 
   const telegramChannel = channels.find((c) => c.channel_type === "telegram");
   const wechatChannel = channels.find((c) => c.channel_type === "wechat");
-  const larkChannel = channels.find((c) => c.channel_type === "lark");
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
@@ -116,7 +115,6 @@ export default function ChannelsPage() {
             <>
               <TelegramCard channel={telegramChannel} />
               <WechatCard channel={wechatChannel} />
-              <LarkCard channel={larkChannel} />
             </>
           )}
         </div>
@@ -517,110 +515,3 @@ function WechatCard({ channel }: { channel?: TeamChannel }) {
   );
 }
 
-// =============================================================================
-// Lark / Feishu Card
-// =============================================================================
-
-const LARK_SELECT_CLASS =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
-
-function LarkCard({ channel }: { channel?: TeamChannel }) {
-  const queryClient = useQueryClient();
-  const [appId, setAppId] = useState("");
-  const [appSecret, setAppSecret] = useState("");
-  const [domain, setDomain] = useState("feishu");
-  const [isSaving, setIsSaving] = useState(false);
-
-  const isConnected = !!channel && channel.enabled;
-  const connectedDomain = channel?.config?.domain === "lark" ? "Lark" : "Feishu";
-
-  const handleSave = async () => {
-    if (!appId.trim() || !appSecret.trim()) return;
-    setIsSaving(true);
-    try {
-      await channelApi.setChannel("lark", {
-        app_id: appId.trim(),
-        app_secret: appSecret.trim(),
-        domain,
-      });
-      setAppId("");
-      setAppSecret("");
-      await queryClient.invalidateQueries({ queryKey: ["lead-channels"] });
-    } catch {
-      // error handled by query
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await channelApi.deleteChannel("lark");
-      await queryClient.invalidateQueries({ queryKey: ["lead-channels"] });
-    } catch {
-      // error handled by query
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-indigo-500" />
-          <h3 className="font-semibold">Lark / Feishu</h3>
-        </div>
-        <Badge variant={isConnected ? "default" : "secondary"}>
-          {isConnected ? "Connected" : "Disconnected"}
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {isConnected ? (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {connectedDomain} app connected
-            </p>
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-1" />
-              Disconnect
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <select
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              className={LARK_SELECT_CLASS}
-            >
-              <option value="feishu">Feishu · open.feishu.cn (China)</option>
-              <option value="lark">Lark · open.larksuite.com (International)</option>
-            </select>
-            <Input
-              placeholder="App ID (cli_...)"
-              value={appId}
-              onChange={(e) => setAppId(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="App Secret"
-              value={appSecret}
-              onChange={(e) => setAppSecret(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSave();
-              }}
-            />
-            <Button
-              onClick={handleSave}
-              disabled={!appId.trim() || !appSecret.trim() || isSaving}
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Connect"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Create a custom app with Long Connection mode enabled, then paste
-              its App ID and App Secret.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}

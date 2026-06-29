@@ -29,24 +29,14 @@ type Config struct {
 	RedisPassword string `env:"REDIS_PASSWORD"`
 	RedisDB       int    `env:"REDIS_DB" default:"0"`
 
-	// HTTP listen address for the public Lark event-subscription webhook +
-	// OAuth callback. Lark pushes events here, so this must be reachable over
-	// public HTTPS (put it behind the swarm's ingress / TLS terminator).
-	ListenAddr string `env:"LARK_LISTEN_ADDR" default:":8084"`
+	// HTTP listen address for the public Slack Events API / interactions webhook.
+	// Slack pushes events here, so this must be reachable over public HTTPS (put
+	// it behind the swarm's ingress / TLS terminator).
+	ListenAddr string `env:"SLACK_LISTEN_ADDR" default:":8083"`
 
-	// ISV (store) app credentials. The SDK manages the app_access_token /
-	// tenant_access_token chain from the app_ticket pushed to the webhook.
-	LarkAppID             string `env:"LARK_APP_ID"`
-	LarkAppSecret         string `env:"LARK_APP_SECRET"`
-	LarkEncryptKey        string `env:"LARK_ENCRYPT_KEY"`        // AES key to decrypt events
-	LarkVerificationToken string `env:"LARK_VERIFICATION_TOKEN"` // verifies events are from Lark
-	LarkDomain            string `env:"LARK_DOMAIN" default:"feishu"`
-
-	// Shared secret gating the internal-only reverse endpoints the Python API
-	// calls on this service: /lark/exchange (ISV code->tenant_key) and
-	// /lark/push (proactive send). The listen port is public (Lark posts events
-	// to it), so these must present the secret; unset fails them closed.
-	LarkInternalSecret string `env:"LARK_INTERNAL_SECRET"`
+	// Signing secret of the distributed Slack app — used to verify that inbound
+	// webhook requests genuinely came from Slack (HMAC over timestamp+body).
+	SlackSigningSecret string `env:"SLACK_SIGNING_SECRET"`
 
 	// Alert (forwards Error+ slog records to Telegram/Slack)
 	Alert alert.Config

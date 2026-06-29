@@ -12,5 +12,7 @@ ENV RELEASE=${RELEASE}
 WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata
 COPY --from=builder /app/intent-lark .
-ENV LK_NEW_CHANNEL_POLL_INTERVAL=10
+# Public Lark event-subscription webhook + OAuth callback (behind ingress / TLS).
+ENV LARK_LISTEN_ADDR=:8084
+EXPOSE 8084
 CMD ["./intent-lark"]

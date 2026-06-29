@@ -31,6 +31,10 @@ type Config struct {
 
 	// Telegram
 	TgNewAgentPollInterval int `env:"TG_NEW_AGENT_POLL_INTERVAL" default:"10"`
+	// TelegramTeamBotToken, when set, switches the team-channel path to a single
+	// shared official bot serving all teams (routed by chat→team binding). When
+	// empty, team channels run per-team token bots (local deployment).
+	TelegramTeamBotToken string `env:"TELEGRAM_TEAM_BOT_TOKEN"`
 
 	// Alert (forwards Error+ slog records to Telegram/Slack)
 	Alert alert.Config

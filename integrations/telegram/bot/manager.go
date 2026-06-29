@@ -115,34 +115,14 @@ func (m *Manager) syncBots() {
 		m.ensureBotRunning(&agent)
 	}
 
-	// Sync team channel bots
-	var teamChannels []store.TeamChannel
-	if err := m.db.Where("channel_type = ? AND enabled = ?", "telegram", true).Find(&teamChannels).Error; err != nil {
-		slog.Error("Failed to fetch team channels", "error", err)
+	// Team channel bots. With a global official bot token configured, one shared
+	// bot serves all teams (routed by chat→team binding); otherwise per-team
+	// token bots run (local deployment, with the verification-code flow).
+	if m.cfg.TelegramTeamBotToken != "" {
+		activeIDs[officialTeamKey] = true
+		m.ensureOfficialTeamBot()
 	} else {
-		// First pass: ensure all bots are running (may write new codes to DB)
-		for _, tc := range teamChannels {
-			key := "team:" + tc.TeamID
-			activeIDs[key] = true
-			m.ensureTeamBotRunning(&tc)
-		}
-
-		// Second pass: batch-load fresh data from DB (after any writes from ensureTeamBotRunning)
-		// and sync whitelist into memory (handles removals from frontend)
-		var allChannelData []store.TeamChannelData
-		if err := m.db.Where("channel_type = ?", "telegram").Find(&allChannelData).Error; err != nil {
-			slog.Error("Failed to fetch team channel data", "error", err)
-		} else {
-			dataByTeam := make(map[string]*store.TeamChannelData, len(allChannelData))
-			for i := range allChannelData {
-				dataByTeam[allChannelData[i].TeamID] = &allChannelData[i]
-			}
-			for _, tc := range teamChannels {
-				if data, ok := dataByTeam[tc.TeamID]; ok {
-					m.syncWhitelistFromData(tc.TeamID, data)
-				}
-			}
-		}
+		m.syncLocalTeamBots(activeIDs)
 	}
 
 	// Stop bots for disabled/removed agents and team channels
@@ -326,6 +306,88 @@ func (m *Manager) ensureTeamBotRunning(tc *store.TeamChannel) {
 	m.mu.Unlock()
 
 	slog.Info("Started bot for team channel", "team_id", tc.TeamID)
+}
+
+// officialTeamKey is the bots/cancelFuncs map key for the single shared bot.
+const officialTeamKey = "official-team"
+
+// syncLocalTeamBots runs one bot per enabled team channel using the team's own
+// token (local deployment), and re-syncs each team's whitelist from the DB.
+func (m *Manager) syncLocalTeamBots(activeIDs map[string]bool) {
+	var teamChannels []store.TeamChannel
+	if err := m.db.Where("channel_type = ? AND enabled = ?", "telegram", true).Find(&teamChannels).Error; err != nil {
+		slog.Error("Failed to fetch team channels", "error", err)
+		return
+	}
+	for i := range teamChannels {
+		tc := &teamChannels[i]
+		activeIDs["team:"+tc.TeamID] = true
+		m.ensureTeamBotRunning(tc)
+	}
+
+	// Re-sync whitelists from DB (handles removals made via the frontend).
+	var allChannelData []store.TeamChannelData
+	if err := m.db.Where("channel_type = ?", "telegram").Find(&allChannelData).Error; err != nil {
+		slog.Error("Failed to fetch team channel data", "error", err)
+		return
+	}
+	dataByTeam := make(map[string]*store.TeamChannelData, len(allChannelData))
+	for i := range allChannelData {
+		dataByTeam[allChannelData[i].TeamID] = &allChannelData[i]
+	}
+	for i := range teamChannels {
+		if data, ok := dataByTeam[teamChannels[i].TeamID]; ok {
+			m.syncWhitelistFromData(teamChannels[i].TeamID, data)
+		}
+	}
+}
+
+// ensureOfficialTeamBot starts the single shared official team bot (once). It
+// serves every team, resolving the owning team from the chat→team binding.
+func (m *Manager) ensureOfficialTeamBot() {
+	m.mu.RLock()
+	_, exists := m.bots[officialTeamKey]
+	m.mu.RUnlock()
+	if exists {
+		return
+	}
+
+	bot, err := telego.NewBot(
+		m.cfg.TelegramTeamBotToken,
+		telego.WithLogger(slogTelegoLogger{botID: officialTeamKey}),
+	)
+	if err != nil {
+		slog.Error("Failed to create official team bot", "error", err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go m.pollUpdates(ctx, bot, officialTeamKey, func(update telego.Update) {
+		if update.Message != nil {
+			m.handleOfficialTeamMessage(bot, *update.Message)
+		}
+		if update.CallbackQuery != nil {
+			m.handleOfficialTeamCallback(bot, *update.CallbackQuery)
+		}
+	})
+
+	m.mu.Lock()
+	m.bots[officialTeamKey] = bot
+	m.cancelFuncs[officialTeamKey] = cancel
+	m.mu.Unlock()
+
+	slog.Info("Started official team bot")
+}
+
+// resolveTeamByChat returns the team that owns a chat (via the binding table),
+// or "" if the chat isn't bound to any team yet.
+func (m *Manager) resolveTeamByChat(chatID string) string {
+	var binding store.TeamChannelChat
+	if err := m.db.Where("channel_type = ? AND chat_id = ?", "telegram", chatID).
+		First(&binding).Error; err != nil {
+		return ""
+	}
+	return binding.TeamID
 }
 
 // initTeamChannelData loads existing data, sets status to listening,

@@ -26,27 +26,6 @@ func (c *Client) StreamTeamLead(ctx context.Context, payload map[string]interfac
 	return shared.StreamRequest(ctx, c.baseURL, "/core/lead/stream", payload, cb)
 }
 
-// SetChannelConfig upserts a team channel's config (the OAuth install result).
-// createdBy attributes the install to the team admin who authorized it.
-func (c *Client) SetChannelConfig(ctx context.Context, teamID, channelType string, config map[string]any, createdBy string) error {
-	resp, err := c.client.R().
-		SetContext(ctx).
-		SetBody(map[string]interface{}{
-			"team_id":      teamID,
-			"channel_type": channelType,
-			"config":       config,
-			"created_by":   createdBy,
-		}).
-		Post(c.baseURL + "/core/lead/set-channel-config")
-	if err != nil {
-		return fmt.Errorf("set channel config: %w", err)
-	}
-	if resp.StatusCode() != 200 {
-		return fmt.Errorf("set channel config: status %d", resp.StatusCode())
-	}
-	return nil
-}
-
 // SetPushChannel sets (or conditionally sets) the push channel for a team.
 func (c *Client) SetPushChannel(ctx context.Context, teamID, channelType, chatID string, ifEmpty bool) error {
 	resp, err := c.client.R().

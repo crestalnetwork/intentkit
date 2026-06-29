@@ -10,6 +10,7 @@ IntentKit's Core API.
 | Telegram | Individual agents + team channels | [telegram/AGENTS.md](./telegram/AGENTS.md) |
 | WeChat | Team channels only (lead agent) | [wechat/AGENTS.md](./wechat/AGENTS.md) |
 | Lark / Feishu | Team channels only (lead agent) | [lark/AGENTS.md](./lark/AGENTS.md) |
+| Slack | Team channels only (lead agent) | [slack/AGENTS.md](./slack/AGENTS.md) |
 
 ## Tech Stack
 
@@ -32,7 +33,8 @@ integrations/
 ├── cmd/
 │   ├── telegram/main.go   # entrypoint
 │   ├── wechat/main.go     # entrypoint
-│   └── lark/main.go       # entrypoint
+│   ├── lark/main.go       # entrypoint
+│   └── slack/main.go      # entrypoint
 ├── shared/               # cross-channel helpers
 │   ├── dispatcher.go      # MessageSender interface, dispatch logic
 │   ├── media.go           # DownloadFromURL (resty + SetResponseBodyLimit)
@@ -40,12 +42,14 @@ integrations/
 ├── types/                # shared DTOs (ChatMessage, etc.)
 ├── telegram/             # channel code — see telegram/AGENTS.md
 ├── wechat/               # channel code — see wechat/AGENTS.md
-└── lark/                 # channel code — see lark/AGENTS.md
+├── lark/                 # channel code — see lark/AGENTS.md
+└── slack/                # channel code — see slack/AGENTS.md
 ```
 
 Each channel directory follows the same shape: `api/` (Core API client),
 `bot/` (manager + handler + sender), `config/` (env), `store/` (GORM models),
-plus any channel-specific subpackage (e.g. `wechat/ilink/`, `lark/larkclient/`).
+plus any channel-specific subpackage (e.g. `wechat/ilink/`, `lark/larkclient/`,
+`slack/slackclient/`).
 
 ## Architecture Pattern
 
@@ -107,9 +111,11 @@ Channel-specific env vars live in each channel's `AGENTS.md`.
 go run ./integrations/cmd/telegram
 go run ./integrations/cmd/wechat
 go run ./integrations/cmd/lark
+go run ./integrations/cmd/slack
 
 # Via Docker
 docker build -f integrations/Dockerfile.telegram -t intent-telegram integrations/
 docker build -f integrations/Dockerfile.wechat   -t intent-wechat   integrations/
 docker build -f integrations/Dockerfile.lark     -t intent-lark     integrations/
+docker build -f integrations/Dockerfile.slack    -t intent-slack    integrations/
 ```

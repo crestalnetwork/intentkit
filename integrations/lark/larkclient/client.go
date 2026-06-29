@@ -42,12 +42,7 @@ const (
 )
 
 // ResolveBaseURL maps a channel domain ("feishu" | "lark") to its open-platform
-// host. Unknown/empty values fall back to Feishu. The same base URL feeds both
-// the REST client and the WebSocket long-connection client.
-//
-// Keep the host values in sync with the Python push path
-// (intentkit/core/team/push.py::_LARK_BASE_URLS), which mirrors them for
-// proactive sends.
+// host. Unknown/empty values fall back to Feishu.
 func ResolveBaseURL(domain string) string {
 	switch domain {
 	case "lark":
@@ -57,33 +52,35 @@ func ResolveBaseURL(domain string) string {
 	}
 }
 
-// Client is a thin wrapper over *lark.Client bound to one app + domain.
+// Client is a per-tenant wrapper over a shared marketplace (ISV) *lark.Client.
+// One marketplace client serves every tenant; each Client binds a tenant_key
+// that's attached to every request, so the SDK uses that tenant's access token.
 type Client struct {
-	lark    *lark.Client
-	baseURL string
+	lark      *lark.Client
+	tenantKey string
 }
 
-// NewClient builds a REST client for the given app credentials and domain.
-// debug raises the SDK's own log level; otherwise SDK chatter is kept to errors
-// so it doesn't drown the integration's structured logs.
-func NewClient(appID, appSecret, domain string, debug bool) *Client {
-	baseURL := ResolveBaseURL(domain)
+// NewMarketplaceClient builds the single shared ISV (marketplace) SDK client.
+// It auto-manages the app_access_token / tenant_access_token chain once the SDK
+// event dispatcher has captured the app_ticket Lark pushes to the webhook.
+// debug raises the SDK's own log level.
+func NewMarketplaceClient(appID, appSecret, domain string, debug bool) *lark.Client {
 	logLevel := larkcore.LogLevelError
 	if debug {
 		logLevel = larkcore.LogLevelDebug
 	}
-	return &Client{
-		lark: lark.NewClient(appID, appSecret,
-			lark.WithOpenBaseUrl(baseURL),
-			lark.WithLogLevel(logLevel),
-			lark.WithReqTimeout(2*time.Minute),
-		),
-		baseURL: baseURL,
-	}
+	return lark.NewClient(appID, appSecret,
+		lark.WithMarketplaceApp(),
+		lark.WithOpenBaseUrl(ResolveBaseURL(domain)),
+		lark.WithLogLevel(logLevel),
+		lark.WithReqTimeout(2*time.Minute),
+	)
 }
 
-// BaseURL returns the resolved open-platform host (e.g. https://open.feishu.cn).
-func (c *Client) BaseURL() string { return c.baseURL }
+// ForTenant binds the shared marketplace client to one tenant_key.
+func ForTenant(shared *lark.Client, tenantKey string) *Client {
+	return &Client{lark: shared, tenantKey: tenantKey}
+}
 
 // sendMessage posts one message of the given type to a chat (receive_id_type =
 // chat_id). content is the API-specific JSON payload string.
@@ -95,7 +92,7 @@ func (c *Client) sendMessage(ctx context.Context, chatID, msgType, content strin
 			MsgType(msgType).
 			Content(content).
 			Build()).
-		Build())
+		Build(), larkcore.WithTenantKey(c.tenantKey))
 	if err != nil {
 		return fmt.Errorf("send %s: %w", msgType, err)
 	}
@@ -152,7 +149,7 @@ func (c *Client) UploadImage(ctx context.Context, data []byte) (string, error) {
 			ImageType(imageTypeMessage).
 			Image(bytes.NewReader(data)).
 			Build()).
-		Build())
+		Build(), larkcore.WithTenantKey(c.tenantKey))
 	if err != nil {
 		return "", fmt.Errorf("upload image: %w", err)
 	}
@@ -174,7 +171,7 @@ func (c *Client) UploadFile(ctx context.Context, fileType, fileName string, data
 			FileName(fileName).
 			File(bytes.NewReader(data)).
 			Build()).
-		Build())
+		Build(), larkcore.WithTenantKey(c.tenantKey))
 	if err != nil {
 		return "", fmt.Errorf("upload file: %w", err)
 	}
@@ -194,7 +191,7 @@ func (c *Client) DownloadResource(ctx context.Context, messageID, fileKey, resTy
 		MessageId(messageID).
 		FileKey(fileKey).
 		Type(resType).
-		Build())
+		Build(), larkcore.WithTenantKey(c.tenantKey))
 	if err != nil {
 		return nil, fmt.Errorf("download resource: %w", err)
 	}

@@ -200,6 +200,38 @@ class Config:
         self.wechat_system_prompt: str | None = self.load("WECHAT_SYSTEM_PROMPT")
         # Telegram server settings
         self.tg_system_prompt: str | None = self.load("TG_SYSTEM_PROMPT")
+        # Username of the shared official team bot (team deployment), used to
+        # build the t.me deep link the frontend shows for chat→team binding.
+        self.telegram_team_bot_username: str | None = self.load(
+            "TELEGRAM_TEAM_BOT_USERNAME"
+        )
+        # Shared secret used to HMAC-sign OAuth `state` so install callbacks
+        # (Slack / Lark) can't be forged into binding a chat to another team.
+        self.oauth_state_secret: str | None = self.load("OAUTH_STATE_SECRET")
+        # Slack and Lark both redirect to the SPA's channel-agnostic OAuth landing
+        # page (it relays code + state to /lead/oauth/complete). Derived from
+        # app_base_url, so there's one host to configure, not a per-channel URI.
+        self.oauth_redirect_uri: str = f"{self.app_base_url.rstrip('/')}/oauth/callback"
+        # Slack distributed app — OAuth install ("Add to Slack").
+        self.slack_client_id: str | None = self.load("SLACK_CLIENT_ID")
+        self.slack_client_secret: str | None = self.load("SLACK_CLIENT_SECRET")
+        self.slack_oauth_scopes: str = (
+            self.load("SLACK_OAUTH_SCOPES")
+            or "chat:write,channels:history,groups:history,im:history,"
+            "app_mentions:read,files:read,files:write,users:read"
+        )
+        # Lark / Feishu ISV store app — install/authorization.
+        self.lark_app_id: str | None = self.load("LARK_APP_ID")
+        self.lark_app_secret: str | None = self.load("LARK_APP_SECRET")
+        # feishu (open.feishu.cn) | lark (open.larksuite.com)
+        self.lark_domain: str = self.load("LARK_DOMAIN") or "feishu"
+        # Reverse (Python -> Go) channel to the Lark webhook service. The ISV
+        # code->tenant_key exchange and proactive push both need the SDK token
+        # chain that only lives in that process, so we call it over the internal
+        # network. Both routes are gated by LARK_INTERNAL_SECRET (shared secret),
+        # since the Lark service port is public (Lark posts events to it).
+        self.lark_service_url: str | None = self.load("LARK_SERVICE_URL")
+        self.lark_internal_secret: str | None = self.load("LARK_INTERNAL_SECRET")
         # Twitter
         self.twitter_oauth2_client_id: str | None = self.load(
             "TWITTER_OAUTH2_CLIENT_ID"

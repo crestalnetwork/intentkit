@@ -19,25 +19,13 @@ GO_HANDLER = REPO_ROOT / "integrations" / "lark" / "bot" / "handler.go"
 
 
 class TestLarkChannelConfig:
-    def test_defaults_to_feishu_domain(self):
-        cfg = LarkChannelConfig.model_validate({"app_id": "cli_x", "app_secret": "s"})
-        assert cfg.domain == "feishu"
+    def test_accepts_tenant_key(self):
+        cfg = LarkChannelConfig.model_validate({"tenant_key": "tk_1"})
+        assert cfg.tenant_key == "tk_1"
 
-    def test_accepts_lark_domain(self):
-        cfg = LarkChannelConfig.model_validate(
-            {"app_id": "cli_x", "app_secret": "s", "domain": "lark"}
-        )
-        assert cfg.domain == "lark"
-
-    def test_rejects_unknown_domain(self):
+    def test_requires_tenant_key(self):
         with pytest.raises(ValidationError):
-            LarkChannelConfig.model_validate(
-                {"app_id": "cli_x", "app_secret": "s", "domain": "wecom"}
-            )
-
-    def test_requires_credentials(self):
-        with pytest.raises(ValidationError):
-            LarkChannelConfig.model_validate({"app_id": "cli_x"})
+            LarkChannelConfig.model_validate({})
 
 
 class TestLarkChatId:

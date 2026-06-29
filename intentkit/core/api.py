@@ -14,14 +14,19 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 
 from epyxid import XID
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import AfterValidator, BaseModel
 
 from intentkit.core.engine import execute_agent, stream_agent
 from intentkit.core.lead.engine import execute_lead, stream_lead
 from intentkit.core.lead.service import verify_team_membership
-from intentkit.core.team.channel import set_push_channel, set_push_channel_if_empty
+from intentkit.core.team.channel import (
+    bind_channel_chat,
+    set_push_channel,
+    set_push_channel_if_empty,
+    upsert_channel_config,
+)
 from intentkit.core.team.wechat_session_notice import (
     WECHAT_SESSION_EXPIRING,
     build_expiring_prompt,
@@ -136,6 +141,7 @@ _CHANNEL_CONFIG: dict[
     "telegram": ("get_by_telegram_id", "telegram_id", AuthorType.TELEGRAM, "tg_team"),
     "wechat": ("get_by_wechat_id", "wechat_id", AuthorType.WECHAT, "wx_team"),
     "lark": ("get_by_lark_id", "lark_id", AuthorType.LARK, "lk_team"),
+    "slack": ("get_by_slack_id", "slack_id", AuthorType.SLACK, "sl_team"),
 }
 
 
@@ -243,3 +249,54 @@ async def set_push_channel_endpoint(
     else:
         await set_push_channel(request.team_id, request.channel_type, request.chat_id)
         return {"ok": True}
+
+
+class ChannelBindRequest(BaseModel):
+    """Request body for binding a chat to a team via a one-time bind token."""
+
+    channel_type: str
+    chat_id: str
+    chat_name: str | None = None
+    bind_token: str
+
+
+# ⚠️ INTERNAL USE ONLY - bypasses auth for internal microservice calls.
+@core_router.post("/lead/channel-bind")
+async def channel_bind_endpoint(request: ChannelBindRequest = Body(...)):
+    """Bind a chat to the team that owns the bind token. Called by shared bots.
+
+    Returns the resolved team_id so the bot can route this chat immediately;
+    404 if the token doesn't match an enabled centralized channel.
+    """
+    team_id = await bind_channel_chat(
+        request.channel_type,
+        request.chat_id,
+        request.chat_name,
+        request.bind_token,
+    )
+    if team_id is None:
+        raise HTTPException(status_code=404, detail="Invalid or unknown bind token")
+    return {"ok": True, "team_id": team_id}
+
+
+class SetChannelConfigRequest(BaseModel):
+    """Request body for storing a channel's OAuth install config."""
+
+    team_id: str
+    channel_type: str
+    config: dict[str, object]
+    created_by: str
+
+
+# ⚠️ INTERNAL USE ONLY - bypasses auth for internal microservice calls.
+@core_router.post("/lead/set-channel-config")
+async def set_channel_config_endpoint(request: SetChannelConfigRequest = Body(...)):
+    """Upsert a team channel's config (the OAuth install result). Called by the
+    Lark webhook service after a tenant authorizes the app."""
+    await upsert_channel_config(
+        request.team_id,
+        request.channel_type,
+        request.config,
+        created_by=request.created_by,
+    )
+    return {"ok": True}

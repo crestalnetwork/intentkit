@@ -29,5 +29,4 @@ export function buildExtraNavLinks(
 export const CHANNEL_DISPLAY_NAMES: Record<string, string> = {
   telegram: "Telegram",
   wechat: "WeChat",
-  lark: "Lark / Feishu",
 };

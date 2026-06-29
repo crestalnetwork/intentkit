@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
-from sqlalchemy import Boolean, DateTime, String, func, select
+from sqlalchemy import Boolean, DateTime, Index, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Mapped, mapped_column
 
 from intentkit.config.base import Base
@@ -48,6 +49,31 @@ class TeamChannelDataTable(Base):
     team_id: Mapped[str] = mapped_column(String, primary_key=True)
     channel_type: Mapped[str] = mapped_column(String, primary_key=True)
     data: Mapped[dict[str, object] | None] = mapped_column(JSONB(), nullable=True)
+
+
+class TeamChannelChatTable(Base):
+    """Binding of an external chat to a team for a centralized (shared) bot.
+
+    When one official bot serves many teams (the team-side telegram/lark/slack
+    channels), inbound events carry only the chat id — not the team. The bot
+    resolves the owning team via this table. PK (channel_type, chat_id) backs
+    that lookup; the secondary index lists a team's bound chats.
+    """
+
+    __tablename__: str = "team_channel_chats"
+    __table_args__: Any = (
+        Index("ix_team_channel_chats_team", "team_id", "channel_type"),
+    )
+
+    channel_type: Mapped[str] = mapped_column(String, primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String, primary_key=True)
+    team_id: Mapped[str] = mapped_column(String, nullable=False)
+    chat_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
 
 
 class TelegramChannelConfig(BaseModel):
@@ -120,18 +146,31 @@ class WechatChannelData(BaseModel):
 
 
 class LarkChannelConfig(BaseModel):
-    """Validation model for Lark / Feishu channel config.
+    """Per-team Lark/Feishu install state, written by the OAuth callback.
 
-    A single ``lark`` channel type serves both Feishu (China, open.feishu.cn)
-    and Lark (international, open.larksuite.com); ``domain`` selects which.
-    The credentials are a custom app's App ID / App Secret — the Go integration
-    uses them to open a WebSocket long connection, so no public callback URL or
-    encrypt key is required.
+    The team authorizes the single ISV (store) app for its own enterprise; the
+    callback stores the enterprise's ``tenant_key`` here. Inbound events are
+    routed to the team by ``tenant_key``; replies use the app's per-tenant
+    access token (managed by the Go webhook service).
     """
 
-    app_id: str
-    app_secret: str
-    domain: Literal["feishu", "lark"] = "feishu"
+    tenant_key: str
+    tenant_name: str | None = None
+
+
+class SlackChannelConfig(BaseModel):
+    """Per-team Slack install state, written by the OAuth callback.
+
+    The team installs the single distributed Slack app into its own workspace
+    ("Add to Slack"); the callback stores the workspace id and that workspace's
+    bot token here. Inbound events are routed to the team by ``workspace_id``;
+    replies use ``bot_token``.
+    """
+
+    workspace_id: str
+    bot_token: str
+    workspace_name: str | None = None
+    bot_user_id: str | None = None
 
 
 class TeamChannel(BaseModel):
@@ -236,3 +275,80 @@ class TeamChannelData(BaseModel):
                 record = TeamChannelDataTable(**self.model_dump())
                 db.add(record)
             await db.commit()
+
+
+class TeamChannelChat(BaseModel):
+    """Read model + helpers for chat→team bindings used by centralized bots."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
+
+    channel_type: Annotated[str, Field(description="Channel type")]
+    chat_id: Annotated[str, Field(description="External chat id")]
+    team_id: Annotated[str, Field(description="Owning team id")]
+    chat_name: Annotated[str | None, Field(default=None, description="Chat title")] = (
+        None
+    )
+
+    @classmethod
+    async def get_team(cls, channel_type: str, chat_id: str) -> str | None:
+        """Return the team_id that owns this chat, or None if unbound."""
+        async with get_session() as db:
+            item = await db.get(
+                TeamChannelChatTable,
+                {"channel_type": channel_type, "chat_id": chat_id},
+            )
+            return item.team_id if item else None
+
+    @classmethod
+    async def bind(
+        cls,
+        channel_type: str,
+        chat_id: str,
+        team_id: str,
+        chat_name: str | None = None,
+    ) -> None:
+        """Bind (or rebind) a chat to a team. Atomic upsert, so two concurrent
+        binds of the same chat can't race into a primary-key conflict."""
+        stmt = (
+            pg_insert(TeamChannelChatTable)
+            .values(
+                channel_type=channel_type,
+                chat_id=chat_id,
+                team_id=team_id,
+                chat_name=chat_name,
+            )
+            .on_conflict_do_update(
+                index_elements=["channel_type", "chat_id"],
+                set_={"team_id": team_id, "chat_name": chat_name},
+            )
+        )
+        async with get_session() as db:
+            await db.execute(stmt)
+            await db.commit()
+
+    @classmethod
+    async def list_for_team(
+        cls, team_id: str, channel_type: str
+    ) -> list[TeamChannelChat]:
+        """List all chats bound to a team for a channel."""
+        async with get_session() as db:
+            stmt = select(TeamChannelChatTable).where(
+                TeamChannelChatTable.team_id == team_id,
+                TeamChannelChatTable.channel_type == channel_type,
+            )
+            result = await db.scalars(stmt)
+            return [cls.model_validate(row) for row in result]
+
+    @classmethod
+    async def unbind(cls, channel_type: str, chat_id: str) -> bool:
+        """Remove a chat binding. Returns True if a row was deleted."""
+        async with get_session() as db:
+            item = await db.get(
+                TeamChannelChatTable,
+                {"channel_type": channel_type, "chat_id": chat_id},
+            )
+            if item:
+                await db.delete(item)
+                await db.commit()
+                return True
+            return False
