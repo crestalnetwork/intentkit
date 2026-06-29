@@ -177,6 +177,60 @@ jobs:
           cache-from: type=gha,scope=intentkit-wechat
           cache-to: type=gha,mode=max,scope=intentkit-wechat
 
+      - name: Docker meta for Lark Integration
+        id: meta-lark
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-lark
+          tags: |
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.event_name == 'release' && github.event.action == 'prereleased' }}
+            type=raw,value=prod,enable=${{ github.event_name == 'release' && github.event.action == 'released' }}
+
+      - name: Build and push Lark Integration
+        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        with:
+          context: ./integrations
+          file: ./integrations/Dockerfile.lark
+          build-args: |
+            RELEASE=${{ github.event.release.tag_name || 'latest'}}
+          push: true
+          tags: ${{ steps.meta-lark.outputs.tags }}
+          labels: ${{ steps.meta-lark.outputs.labels }}
+          cache-from: type=gha,scope=intentkit-lark
+          cache-to: type=gha,mode=max,scope=intentkit-lark
+
+      - name: Docker meta for Slack Integration
+        id: meta-slack
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-slack
+          tags: |
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.event_name == 'release' && github.event.action == 'prereleased' }}
+            type=raw,value=prod,enable=${{ github.event_name == 'release' && github.event.action == 'released' }}
+
+      - name: Build and push Slack Integration
+        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        with:
+          context: ./integrations
+          file: ./integrations/Dockerfile.slack
+          build-args: |
+            RELEASE=${{ github.event.release.tag_name || 'latest'}}
+          push: true
+          tags: ${{ steps.meta-slack.outputs.tags }}
+          labels: ${{ steps.meta-slack.outputs.labels }}
+          cache-from: type=gha,scope=intentkit-slack
+          cache-to: type=gha,mode=max,scope=intentkit-slack
+
       - name: Build Success Notification
         if: ${{ success() }}
         uses: appleboy/telegram-action@master
