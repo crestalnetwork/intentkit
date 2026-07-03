@@ -43,33 +43,44 @@ _CLIENT_INFO = Implementation(name="claude-code", version="1.0.12")
 
 
 @asynccontextmanager
+async def _session_from_streams(
+    transport_streams: tuple[Any, ...],
+) -> AsyncGenerator[ClientSession]:
+    read_stream, write_stream = transport_streams[0], transport_streams[1]
+    async with ClientSession(
+        read_stream, write_stream, client_info=_CLIENT_INFO
+    ) as session:
+        yield session
+
+
+@asynccontextmanager
 async def _connect(
-    server_def: McpServerDef, headers: dict[str, str]
+    url: str, transport: str, headers: dict[str, str]
 ) -> AsyncGenerator[ClientSession]:
     """Connect to an MCP server and yield an initialized session."""
-    if server_def.transport == "sse":
-        cm = sse_client(server_def.url, headers=headers)
-    elif server_def.transport == "streamable_http":
-        http_client = httpx.AsyncClient(headers=headers, timeout=60)
-        cm = streamable_http_client(server_def.url, http_client=http_client)
+    if transport == "sse":
+        async with sse_client(url, headers=headers) as transport_streams:
+            async with _session_from_streams(transport_streams) as session:
+                yield session
+    elif transport == "streamable_http":
+        # streamable_http_client only manages the lifecycle of a client it
+        # creates itself; a caller-provided one (needed for headers) must be
+        # closed by us or its connection pool leaks on every call.
+        async with httpx.AsyncClient(headers=headers, timeout=60) as http_client:
+            async with streamable_http_client(
+                url, http_client=http_client
+            ) as transport_streams:
+                async with _session_from_streams(transport_streams) as session:
+                    yield session
     else:
-        raise ValueError(f"Unknown transport: {server_def.transport}")
-
-    async with cm as transport:
-        read_stream, write_stream = transport[0], transport[1]
-        async with ClientSession(
-            read_stream, write_stream, client_info=_CLIENT_INFO
-        ) as session:
-            yield session
+        raise ValueError(f"Unknown transport: {transport}")
 
 
-async def list_mcp_tools(
-    server_def: McpServerDef, api_key: str | None
+async def list_mcp_tools_at(
+    url: str, transport: str, headers: dict[str, str]
 ) -> list[McpToolInfo]:
-    """Connect to an MCP server and list available tools."""
-    headers = _build_headers(server_def, api_key)
-
-    async with _connect(server_def, headers) as session:
+    """Connect to an MCP endpoint by URL and list available tools."""
+    async with _connect(url, transport, headers) as session:
         await session.initialize()
         result = await session.list_tools()
         return [
@@ -82,16 +93,23 @@ async def list_mcp_tools(
         ]
 
 
-async def call_mcp_tool(
-    server_def: McpServerDef,
-    api_key: str | None,
+async def list_mcp_tools(
+    server_def: McpServerDef, api_key: str | None
+) -> list[McpToolInfo]:
+    """Connect to a registry-defined MCP server and list available tools."""
+    headers = _build_headers(server_def, api_key)
+    return await list_mcp_tools_at(server_def.url, server_def.transport, headers)
+
+
+async def call_mcp_tool_at(
+    url: str,
+    transport: str,
+    headers: dict[str, str],
     tool_name: str,
     arguments: dict[str, Any],
 ) -> str:
-    """Connect to an MCP server and invoke a tool."""
-    headers = _build_headers(server_def, api_key)
-
-    async with _connect(server_def, headers) as session:
+    """Connect to an MCP endpoint by URL and invoke a tool."""
+    async with _connect(url, transport, headers) as session:
         await session.initialize()
         result = await session.call_tool(tool_name, arguments)
 
@@ -110,6 +128,19 @@ async def call_mcp_tool(
             else:
                 parts.append(str(content))
         return "\n".join(parts)
+
+
+async def call_mcp_tool(
+    server_def: McpServerDef,
+    api_key: str | None,
+    tool_name: str,
+    arguments: dict[str, Any],
+) -> str:
+    """Connect to a registry-defined MCP server and invoke a tool."""
+    headers = _build_headers(server_def, api_key)
+    return await call_mcp_tool_at(
+        server_def.url, server_def.transport, headers, tool_name, arguments
+    )
 
 
 class McpToolError(Exception):

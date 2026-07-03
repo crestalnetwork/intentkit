@@ -82,6 +82,17 @@ export function TopNav() {
         >
           Discover
         </Link>
+        <Link
+          href="/links"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname.startsWith("/links")
+              ? "text-foreground font-bold"
+              : "text-foreground/60"
+          )}
+        >
+          Links
+        </Link>
       </nav>
     </div>
   );

@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator
 from datetime import datetime, timezone
 from typing import Any
 
+from langchain_core.tools import BaseTool
 from langgraph.graph.state import CompiledStateGraph
 
 from intentkit.abstracts.graph import AgentContext, AgentState
@@ -33,6 +34,11 @@ from intentkit.core.lead.tools import (
     list_team_agents_tool,
 )
 from intentkit.core.lead.tools.call_agent import lead_call_agent_tool
+from intentkit.core.team.link import (
+    build_lead_link_tools,
+    build_links_section,
+    get_active_links,
+)
 from intentkit.models.agent import Agent
 from intentkit.models.agent_data import AgentData
 from intentkit.models.chat import ChatMessage, ChatMessageCreate
@@ -171,10 +177,11 @@ async def _build_lead_agent(team_id: str) -> Agent:
     )
 
     # Parallelize independent DB lookups
-    owner, lead_config, followed_agents = await asyncio.gather(
+    owner, lead_config, followed_agents, active_links = await asyncio.gather(
         Team.get_owner(team_id),
         Team.get_lead_agent_config(team_id),
         get_followed_external_agents(team_id),
+        get_active_links(team_id),
     )
     if not owner:
         raise IntentKitAPIError(
@@ -185,6 +192,10 @@ async def _build_lead_agent(team_id: str) -> Agent:
     # Inject the public agents this team follows so the lead can delegate to
     # them just like its own team agents.
     prompt += _build_followed_agents_section(followed_agents)
+
+    # Inject the Links section: which external apps can be linked, how to
+    # guide users to link them, and which accounts are currently linked.
+    prompt += build_links_section(team_id, active_links)
 
     agent_data = {
         "id": "team-" + team_id,
@@ -250,17 +261,26 @@ async def _get_lead_executor(
         # The executor needs a real AgentData so DynamicPromptMiddleware can
         # render long_term_memory into the system prompt. When both the agent
         # and executor are cold, fetch agent_data in parallel with the build.
+        # The Composio MCP tools for the team's linked accounts ([] when the
+        # team has none) also load here, in the same gather — they hit the
+        # network, and this is the cold-start path. They are rebuilt per
+        # executor build so the toolset follows link changes (the link APIs
+        # invalidate this cache).
         if not executor:
             if not lead_agent:
-                lead_agent, agent_data = await asyncio.gather(
+                lead_agent, agent_data, link_tools = await asyncio.gather(
                     _build_lead_agent(team_id),
                     AgentData.get(f"team-{team_id}"),
+                    build_lead_link_tools(team_id),
                 )
                 lead_agents[team_id] = lead_agent
             else:
-                agent_data = await AgentData.get(lead_agent.id)
+                agent_data, link_tools = await asyncio.gather(
+                    AgentData.get(lead_agent.id),
+                    build_lead_link_tools(team_id),
+                )
 
-            custom_tools = [
+            custom_tools: list[BaseTool] = [
                 lead_call_agent_tool,
                 get_team_info_tool,
                 list_team_agents_tool,
@@ -268,6 +288,7 @@ async def _get_lead_executor(
                 lead_follow_agent_tool,
                 lead_unfollow_agent_tool,
             ]
+            custom_tools.extend(link_tools)
             executor = await build_executor(
                 lead_agent,
                 agent_data,
