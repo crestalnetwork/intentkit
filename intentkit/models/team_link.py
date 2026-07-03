@@ -61,6 +61,12 @@ LINK_APPS: dict[str, LinkAppDef] = {
             description="Read, search, and send email with the linked Gmail account",
             toolkit="gmail",
         ),
+        LinkAppDef(
+            app="supabase",
+            name="Supabase",
+            description="Manage projects, run SQL, and deploy functions in the linked Supabase account",
+            toolkit="supabase",
+        ),
     )
 }
 

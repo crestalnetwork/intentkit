@@ -71,8 +71,8 @@ def configured():
 
 
 class TestWhitelist:
-    def test_first_batch_apps(self):
-        assert set(LINK_APPS) == {"twitter", "notion", "gmail"}
+    def test_whitelisted_apps(self):
+        assert set(LINK_APPS) == {"twitter", "notion", "gmail", "supabase"}
 
     def test_defs_are_complete(self):
         for app_def in LINK_APPS.values():
@@ -400,7 +400,7 @@ class TestListTeamLinks:
 
         assert result.enabled is True
         by_app = {a.app: a for a in result.apps}
-        assert set(by_app) == {"twitter", "notion", "gmail"}
+        assert set(by_app) == set(LINK_APPS)
         assert [link.id for link in by_app["gmail"].links] == ["l1"]
         assert by_app["twitter"].links == []
 

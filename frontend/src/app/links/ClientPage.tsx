@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AtSign,
+  Database,
   FileText,
   Loader2,
   Mail,
@@ -32,6 +33,7 @@ const APP_ICONS: Record<string, LucideIcon> = {
   twitter: AtSign,
   notion: FileText,
   gmail: Mail,
+  supabase: Database,
 };
 
 function LinkRow({

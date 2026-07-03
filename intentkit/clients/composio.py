@@ -56,11 +56,11 @@ class ComposioNotConfiguredError(ComposioError):
 
 
 class ComposioNoAuthConfigError(ComposioError):
-    """The toolkit has no auth config and Composio-managed auth is unavailable.
+    """No usable OAuth2 auth config exists for the toolkit.
 
-    Raised for toolkits (e.g. Twitter) that require operator-supplied OAuth
-    credentials: the operator must create an auth config for the toolkit in
-    the Composio dashboard first.
+    Raised for toolkits (e.g. Twitter) without Composio-managed OAuth2: the
+    operator must create an OAuth2 auth config for the toolkit in the
+    Composio dashboard first (e.g. with their own OAuth app credentials).
     """
 
 
@@ -118,12 +118,18 @@ class ComposioClient:
         return resp.json()
 
     async def get_or_create_auth_config(self, toolkit: str) -> str:
-        """Return an auth config id for the toolkit (cached per process),
-        creating a Composio-managed one if none exists yet.
+        """Return an OAuth2 auth config id for the toolkit (cached per
+        process), creating a Composio-managed one if none exists yet.
 
-        Raises ComposioNoAuthConfigError when the toolkit has no auth config
-        and managed auth is unavailable (the operator must create one in the
-        Composio dashboard, e.g. for Twitter).
+        OAuth2-only by policy: users authorize on the provider's consent
+        page and never type API keys, even for toolkits that also support a
+        key scheme. The managed-auth API cannot request a specific scheme, so
+        the toolkit's managed schemes are checked first and a created config
+        is verified (and discarded) if it didn't come out as OAuth2.
+
+        Raises ComposioNoAuthConfigError when no OAuth2 path exists — the
+        operator must create an OAuth2 auth config in the Composio dashboard
+        (e.g. with their own OAuth app credentials, as Twitter requires).
         """
         cached = _auth_config_cache.get(toolkit)
         if cached:
@@ -132,9 +138,21 @@ class ComposioClient:
             "GET", "/auth_configs", params={"toolkit_slug": toolkit}
         )
         for item in data.get("items", []):
-            if item.get("status", "ENABLED") == "ENABLED":
+            if (
+                item.get("status", "ENABLED") == "ENABLED"
+                and item.get("auth_scheme") == "OAUTH2"
+            ):
                 _auth_config_cache[toolkit] = item["id"]
                 return item["id"]
+
+        toolkit_info = await self._request("GET", f"/toolkits/{toolkit}")
+        managed_schemes = toolkit_info.get("composio_managed_auth_schemes") or []
+        if "OAUTH2" not in managed_schemes:
+            raise ComposioNoAuthConfigError(
+                f"Toolkit '{toolkit}' has no OAuth2 auth config and Composio "
+                f"does not offer managed OAuth2 for it; create an OAuth2 auth "
+                f"config for it in the Composio dashboard."
+            )
 
         try:
             created = await self._request(
@@ -150,11 +168,29 @@ class ComposioClient:
             )
         except ComposioError as e:
             raise ComposioNoAuthConfigError(
-                f"Toolkit '{toolkit}' has no auth config and Composio-managed "
-                f"auth could not be created; create an auth config for it in "
-                f"the Composio dashboard. ({e})"
+                f"Toolkit '{toolkit}' has no OAuth2 auth config and Composio-"
+                f"managed auth could not be created; create an OAuth2 auth "
+                f"config for it in the Composio dashboard. ({e})"
             ) from e
-        auth_config_id = created["auth_config"]["id"]
+        auth_config = created["auth_config"]
+        created_scheme = auth_config.get("auth_scheme")
+        if created_scheme and created_scheme != "OAUTH2":
+            # Managed auth resolved to a non-OAuth scheme despite the toolkit
+            # advertising managed OAuth2 — never expose a type-your-key flow;
+            # drop the config and ask the operator to set one up explicitly.
+            try:
+                await self._request("DELETE", f"/auth_configs/{auth_config['id']}")
+            except ComposioError:
+                logger.warning(
+                    "Failed to delete non-OAuth2 managed auth config %s",
+                    auth_config["id"],
+                )
+            raise ComposioNoAuthConfigError(
+                f"Composio-managed auth for toolkit '{toolkit}' uses "
+                f"{created_scheme}, not OAuth2; create an OAuth2 auth config "
+                f"for it in the Composio dashboard."
+            )
+        auth_config_id = auth_config["id"]
         _auth_config_cache[toolkit] = auth_config_id
         return auth_config_id
 

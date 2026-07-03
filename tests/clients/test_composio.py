@@ -69,7 +69,7 @@ class TestRequestBasics:
 
 class TestAuthConfigs:
     @pytest.mark.asyncio
-    async def test_existing_enabled_config_reused(self, client_factory):
+    async def test_existing_oauth2_config_preferred(self, client_factory):
         def handler(request: httpx.Request) -> httpx.Response:
             assert request.method == "GET"
             assert request.url.params["toolkit_slug"] == "gmail"
@@ -77,31 +77,43 @@ class TestAuthConfigs:
                 200,
                 json={
                     "items": [
-                        {"id": "ac_old", "status": "DISABLED"},
-                        {"id": "ac_good", "status": "ENABLED"},
+                        {"id": "ac_old", "status": "DISABLED", "auth_scheme": "OAUTH2"},
+                        {"id": "ac_key", "status": "ENABLED", "auth_scheme": "API_KEY"},
+                        {"id": "ac_good", "status": "ENABLED", "auth_scheme": "OAUTH2"},
                     ]
                 },
             )
 
         client = client_factory(handler)
+        # The enabled API_KEY config is skipped: OAuth2-only policy.
         assert await client.get_or_create_auth_config("gmail") == "ac_good"
 
     @pytest.mark.asyncio
-    async def test_creates_managed_config_when_missing(self, client_factory):
+    async def test_creates_managed_oauth2_config_when_missing(self, client_factory):
         calls = []
 
         def handler(request: httpx.Request) -> httpx.Response:
-            calls.append(request.method)
-            if request.method == "GET":
+            calls.append((request.method, request.url.path))
+            if request.url.path == "/api/v3.1/auth_configs" and request.method == "GET":
                 return httpx.Response(200, json={"items": []})
+            if request.url.path == "/api/v3.1/toolkits/notion":
+                return httpx.Response(
+                    200,
+                    json={
+                        "slug": "notion",
+                        "composio_managed_auth_schemes": ["OAUTH2"],
+                    },
+                )
             body = json.loads(request.content)
             assert body["toolkit"] == {"slug": "notion"}
             assert body["auth_config"]["type"] == "use_composio_managed_auth"
-            return httpx.Response(200, json={"auth_config": {"id": "ac_new"}})
+            return httpx.Response(
+                200, json={"auth_config": {"id": "ac_new", "auth_scheme": "OAUTH2"}}
+            )
 
         client = client_factory(handler)
         assert await client.get_or_create_auth_config("notion") == "ac_new"
-        assert calls == ["GET", "POST"]
+        assert [m for m, _ in calls] == ["GET", "GET", "POST"]
 
     @pytest.mark.asyncio
     async def test_id_cached_until_evicted(self, client_factory):
@@ -110,7 +122,12 @@ class TestAuthConfigs:
         def handler(request: httpx.Request) -> httpx.Response:
             calls.append(request.method)
             return httpx.Response(
-                200, json={"items": [{"id": "ac_1", "status": "ENABLED"}]}
+                200,
+                json={
+                    "items": [
+                        {"id": "ac_1", "status": "ENABLED", "auth_scheme": "OAUTH2"}
+                    ]
+                },
             )
 
         client = client_factory(handler)
@@ -123,15 +140,53 @@ class TestAuthConfigs:
         assert calls == ["GET", "GET"]
 
     @pytest.mark.asyncio
-    async def test_unmanaged_toolkit_raises_helpful_error(self, client_factory):
+    async def test_no_managed_oauth2_raises_without_creating(self, client_factory):
+        posts = []
+
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.method == "GET":
-                return httpx.Response(200, json={"items": []})
-            return httpx.Response(400, json={"error": "no managed auth"})
+            if request.method == "POST":
+                posts.append(request.url.path)
+            if request.url.path == "/api/v3.1/toolkits/twitter":
+                return httpx.Response(
+                    200,
+                    json={"slug": "twitter", "composio_managed_auth_schemes": []},
+                )
+            return httpx.Response(200, json={"items": []})
 
         client = client_factory(handler)
         with pytest.raises(ComposioNoAuthConfigError, match="twitter"):
             await client.get_or_create_auth_config("twitter")
+        assert posts == []  # never creates a non-OAuth2 fallback config
+
+    @pytest.mark.asyncio
+    async def test_non_oauth2_managed_result_discarded(self, client_factory):
+        """If managed creation resolves to a key scheme anyway, the config is
+        deleted and the operator is pointed at the dashboard."""
+        deletes = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/api/v3.1/toolkits/supabase":
+                return httpx.Response(
+                    200,
+                    json={
+                        "slug": "supabase",
+                        "composio_managed_auth_schemes": ["OAUTH2", "API_KEY"],
+                    },
+                )
+            if request.method == "POST":
+                return httpx.Response(
+                    200,
+                    json={"auth_config": {"id": "ac_bad", "auth_scheme": "API_KEY"}},
+                )
+            if request.method == "DELETE":
+                deletes.append(request.url.path)
+                return httpx.Response(200, json={})
+            return httpx.Response(200, json={"items": []})
+
+        client = client_factory(handler)
+        with pytest.raises(ComposioNoAuthConfigError, match="API_KEY"):
+            await client.get_or_create_auth_config("supabase")
+        assert deletes == ["/api/v3.1/auth_configs/ac_bad"]
 
 
 class TestLinkFlow:
