@@ -13,6 +13,7 @@ import logging
 import re
 import time
 import traceback
+from contextlib import nullcontext
 from typing import Any
 
 import httpcore
@@ -26,6 +27,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from intentkit.abstracts.graph import AgentContext, AgentState
 from intentkit.config.config import config
+from intentkit.config.tracing import (
+    propagate_trace_attributes,
+    record_conversation_cache_hit_rate,
+)
 from intentkit.core.agent import get_agent
 from intentkit.core.budget import check_hourly_budget_exceeded
 from intentkit.core.chat import clear_thread_memory
@@ -52,6 +57,7 @@ from intentkit.models.chat import (
     ChatMessage,
     ChatMessageAttachmentType,
     ChatMessageCreate,
+    sum_thread_token_usage,
 )
 from intentkit.models.credit import CreditAccount, OwnerType
 from intentkit.models.llm import LLMModelInfo
@@ -487,70 +493,80 @@ async def stream_agent_raw(
         call_depth=message.call_depth,
     )
 
+    # Observation-level session/user attribution. Top-level runs only: nested
+    # sub-agent runs execute inside the caller's context and inherit its
+    # attributes, keeping the whole trace attributed to one conversation.
+    trace_ctx = (
+        propagate_trace_attributes(session_id=thread_id, user_id=user_message.user_id)
+        if message.call_depth == 0
+        else nullcontext()
+    )
+
     # run
     yielded_any = False
     raw_chunks: list[Any] = []
     cached_tool_step = None
     in_tools_phase = False
     try:
-        async for chunk in executor.astream(
-            {"messages": messages},
-            context=context,
-            config=stream_config,
-            stream_mode=["updates", "custom"],
-            durability="exit",
-        ):
-            this_time = time.perf_counter()
-            logger.debug("stream chunk: %s", chunk, extra={"thread_id": thread_id})
-            if len(raw_chunks) < _MAX_RAW_CHUNKS:
-                raw_chunks.append(chunk)
+        with trace_ctx:
+            async for chunk in executor.astream(
+                {"messages": messages},
+                context=context,
+                config=stream_config,
+                stream_mode=["updates", "custom"],
+                durability="exit",
+            ):
+                this_time = time.perf_counter()
+                logger.debug("stream chunk: %s", chunk, extra={"thread_id": thread_id})
+                if len(raw_chunks) < _MAX_RAW_CHUNKS:
+                    raw_chunks.append(chunk)
 
-            if isinstance(chunk, tuple) and len(chunk) == 2:
-                _, payload = chunk
-                chunk = payload
+                if isinstance(chunk, tuple) and len(chunk) == 2:
+                    _, payload = chunk
+                    chunk = payload
 
-            if not isinstance(chunk, dict):
-                continue
+                if not isinstance(chunk, dict):
+                    continue
 
-            if "model" in chunk and "messages" in chunk["model"]:
-                (
-                    model_msgs,
-                    last,
-                    cached_tool_step,
-                    in_tools_phase,
-                ) = await handle_model_chunk(
-                    chunk,
-                    user_message,
-                    agent,
-                    model,
-                    payer,
-                    this_time,
-                    last,
-                    thread_id,
-                    cached_tool_step,
-                    in_tools_phase,
-                )
-                for m in model_msgs:
-                    yielded_any = True
-                    yield m
-            elif "tools" in chunk and "messages" in chunk["tools"]:
-                in_tools_phase = False
-                tools_msgs, last = await handle_tools_chunk(
-                    chunk,
-                    user_message,
-                    agent,
-                    model,
-                    payer,
-                    this_time,
-                    last,
-                    thread_id,
-                    cached_tool_step,
-                )
-                for m in tools_msgs:
-                    yielded_any = True
-                    yield m
-            else:
-                pass
+                if "model" in chunk and "messages" in chunk["model"]:
+                    (
+                        model_msgs,
+                        last,
+                        cached_tool_step,
+                        in_tools_phase,
+                    ) = await handle_model_chunk(
+                        chunk,
+                        user_message,
+                        agent,
+                        model,
+                        payer,
+                        this_time,
+                        last,
+                        thread_id,
+                        cached_tool_step,
+                        in_tools_phase,
+                    )
+                    for m in model_msgs:
+                        yielded_any = True
+                        yield m
+                elif "tools" in chunk and "messages" in chunk["tools"]:
+                    in_tools_phase = False
+                    tools_msgs, last = await handle_tools_chunk(
+                        chunk,
+                        user_message,
+                        agent,
+                        model,
+                        payer,
+                        this_time,
+                        last,
+                        thread_id,
+                        cached_tool_step,
+                    )
+                    for m in tools_msgs:
+                        yielded_any = True
+                        yield m
+                else:
+                    pass
     except asyncio.CancelledError:
         logger.info(
             f"Agent execution cancelled for {user_message.agent_id}",
@@ -652,6 +668,30 @@ async def stream_agent_raw(
             user_message,
             time.perf_counter() - start,
         )
+        return
+
+    # Conversation-level cache hit rate: cumulative over the whole thread, as
+    # a session score in Langfuse (the per-turn score lives on the trace).
+    # Unlike the turn score — which covers every LLM call in the trace,
+    # nested sub-agents included — this sums only this thread's own messages;
+    # sub-agent calls live in their own threads.
+    if config.langfuse_tracing and message.call_depth == 0:
+        try:
+            total_input, total_cached = await sum_thread_token_usage(
+                user_message.agent_id, user_message.chat_id
+            )
+        except Exception:
+            logger.warning(
+                "Failed to sum thread token usage for tracing",
+                extra={"thread_id": thread_id},
+                exc_info=True,
+            )
+        else:
+            record_conversation_cache_hit_rate(
+                session_id=thread_id,
+                input_tokens=total_input,
+                cached_tokens=total_cached,
+            )
 
 
 async def execute_agent(message: ChatMessageCreate) -> list[ChatMessage]:

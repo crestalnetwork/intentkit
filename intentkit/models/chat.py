@@ -529,6 +529,23 @@ class ChatMessage(ChatMessageCreate):
             return None
 
 
+async def sum_thread_token_usage(agent_id: str, chat_id: str) -> tuple[int, int]:
+    """Sum ``(input_tokens, cached_input_tokens)`` over a thread's messages."""
+    async with get_session() as db:
+        row = (
+            await db.execute(
+                select(
+                    func.coalesce(func.sum(ChatMessageTable.input_tokens), 0),
+                    func.coalesce(func.sum(ChatMessageTable.cached_input_tokens), 0),
+                ).where(
+                    ChatMessageTable.agent_id == agent_id,
+                    ChatMessageTable.chat_id == chat_id,
+                )
+            )
+        ).one()
+        return int(row[0]), int(row[1])
+
+
 class ChatTable(Base):
     """Chat database table model."""
 
