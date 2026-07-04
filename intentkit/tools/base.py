@@ -12,7 +12,7 @@ from typing import (
 )
 
 from langchain_core.tools import BaseTool
-from langchain_core.tools.base import ToolException
+from langchain_core.tools.base import ToolException, ToolExceptionHandlerOutput
 from langgraph.runtime import get_runtime
 from pydantic import (
     BaseModel,
@@ -70,9 +70,9 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
     """
 
     # overwrite the value of BaseTool
-    handle_tool_error: bool | str | Callable[[ToolException], str] | None = lambda e: (
-        f"tool error: {e}"
-    )
+    handle_tool_error: (
+        bool | str | Callable[[ToolException], ToolExceptionHandlerOutput] | None
+    ) = lambda e: f"tool error: {e}"
     """Handle the content of the ToolException thrown."""
 
     # overwrite the value of BaseTool

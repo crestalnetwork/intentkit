@@ -19,7 +19,7 @@ BASE = "https://backend.composio.dev"
 
 
 @pytest.fixture(autouse=True)
-def _clean_module_state(monkeypatch):
+def clean_module_state(monkeypatch):
     """Isolate the module's shared HTTP client and auth-config cache."""
     monkeypatch.setattr(composio_module, "_http_client", None)
     monkeypatch.setattr(composio_module, "_auth_config_cache", {})

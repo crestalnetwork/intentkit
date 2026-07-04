@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any, cast, override
 
 from langchain_core.tools import BaseTool
-from langchain_core.tools.base import ToolException
+from langchain_core.tools.base import ToolException, ToolExceptionHandlerOutput
 from langgraph.runtime import get_runtime
 from pydantic import ValidationError
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -24,9 +24,9 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
     """
 
     # Ensure ToolException is caught and returned as a message to the LLM
-    handle_tool_error: bool | str | Callable[[ToolException], str] | None = lambda e: (
-        f"tool error: {e}"
-    )
+    handle_tool_error: (
+        bool | str | Callable[[ToolException], ToolExceptionHandlerOutput] | None
+    ) = lambda e: f"tool error: {e}"
     """Handle the content of the ToolException thrown."""
 
     # Ensure ValidationError is caught and returned as a message to the LLM

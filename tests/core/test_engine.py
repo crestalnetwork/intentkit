@@ -622,7 +622,8 @@ def test_build_stream_config_team_names_and_external_caller(mock_agent, monkeypa
 
     # Trace name carries the owning team; metadata distinguishes caller vs owner.
     assert stream_config.get("run_name") == "Test Agent (Acme)"
-    metadata = stream_config["metadata"]
+    metadata = stream_config.get("metadata")
+    assert metadata is not None
     assert metadata["agent_name"] == "Test Agent"
     assert metadata["agent_team_name"] == "Acme"
     assert metadata["team_name"] == "Beta"

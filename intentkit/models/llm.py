@@ -723,46 +723,6 @@ class OpenRouterLLM(LLMModel):
         return _create_openrouter_with_server_tools(**kwargs)
 
 
-_openrouter_usage_cost_fields_injected = False
-
-
-def _inject_cost_fields_into_chat_usage() -> None:
-    """Add ``cost`` / ``cost_details`` to the SDK's ``ChatUsage`` schema.
-
-    OpenRouter's ``/chat/completions`` response includes ``cost`` inside the
-    ``usage`` object, but ``openrouter`` SDK's generated ``ChatUsage`` model
-    (v0.9.1) does not declare those fields, so Pydantic validation drops them
-    and ``langchain-openrouter`` never surfaces them in ``response_metadata``.
-
-    Injecting the fields lets cost round-trip without a fork. Remove this
-    helper once the SDK adds the fields natively.
-    """
-    global _openrouter_usage_cost_fields_injected  # noqa: PLW0603
-    if _openrouter_usage_cost_fields_injected:
-        return
-    try:
-        from openrouter.components import ChatUsage  # type: ignore[import-untyped]
-        from pydantic.fields import FieldInfo
-
-        if "cost" in ChatUsage.model_fields:
-            _openrouter_usage_cost_fields_injected = True
-            return
-        cost_type: Any = float | None
-        cost_details_type: Any = dict[str, Any] | None
-        ChatUsage.__annotations__["cost"] = cost_type
-        ChatUsage.__annotations__["cost_details"] = cost_details_type
-        ChatUsage.model_fields["cost"] = FieldInfo(annotation=cost_type, default=None)
-        ChatUsage.model_fields["cost_details"] = FieldInfo(
-            annotation=cost_details_type, default=None
-        )
-        ChatUsage.model_rebuild(force=True)
-        _openrouter_usage_cost_fields_injected = True
-    except Exception:
-        logger.warning(
-            "Failed to inject cost fields into OpenRouter ChatUsage", exc_info=True
-        )
-
-
 def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
     """Create a ChatOpenRouter subclass that supports server tools.
 
@@ -778,8 +738,6 @@ def _create_openrouter_with_server_tools(**kwargs: Any) -> BaseChatModel:
     types we use, so no SDK-level patch is required for tool types.
     """
     from langchain_openrouter import ChatOpenRouter
-
-    _inject_cost_fields_into_chat_usage()
 
     class _WithServerTools(ChatOpenRouter):
         @override

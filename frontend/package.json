@@ -11,23 +11,23 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@radix-ui/react-alert-dialog": "^1.1.16",
-    "@radix-ui/react-avatar": "^1.1.12",
-    "@radix-ui/react-dropdown-menu": "^2.1.17",
+    "@radix-ui/react-alert-dialog": "^1.1.18",
+    "@radix-ui/react-avatar": "^1.2.1",
+    "@radix-ui/react-dropdown-menu": "^2.1.19",
     "@radix-ui/react-slot": "^1.2.5",
-    "@radix-ui/react-tabs": "^1.1.14",
-    "@radix-ui/react-toast": "^1.2.16",
-    "@rjsf/core": "^6.6.1",
-    "@rjsf/utils": "^6.6.1",
-    "@rjsf/validator-ajv8": "^6.6.1",
-    "@tailwindcss/typography": "^0.5.19",
-    "@tanstack/react-query": "^5.101.0",
-    "class-variance-authority": "^0.7.0",
+    "@radix-ui/react-tabs": "^1.1.16",
+    "@radix-ui/react-toast": "^1.2.18",
+    "@rjsf/core": "^6.6.2",
+    "@rjsf/utils": "^6.6.2",
+    "@rjsf/validator-ajv8": "^6.6.2",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tanstack/react-query": "^5.101.2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cronstrue": "^3.14.0",
+    "cronstrue": "^3.24.0",
     "date-fns": "^4.4.0",
-    "lucide-react": "^1.17.0",
-    "next": "^16.2.7",
+    "lucide-react": "^1.23.0",
+    "next": "^16.2.10",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -39,18 +39,18 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
-    "@types/node": "^24.0.3",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.1.6",
-    "eslint": "^9.39.2",
-    "eslint-config-next": "^16.2.7",
-    "postcss": "^8.5.15",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.10",
+    "postcss": "^8.5.16",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "overrides": {
-    "postcss": "^8.5.15"
+    "postcss": "$postcss"
   }
 }

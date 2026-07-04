@@ -12,7 +12,7 @@ MODULE = "intentkit.tools.mcp.composio"
 
 
 @pytest.fixture(autouse=True)
-def _configured():
+def configured():
     with patch("intentkit.clients.composio.config.composio_api_key", "test-key"):
         yield
 
