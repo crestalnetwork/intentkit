@@ -83,6 +83,7 @@ async def test_recursion_error_handling(mock_agent):
         mock_saved_msg.user_id = "user_1"
         mock_saved_msg.message = "Hello"
         mock_saved_msg.author_type = AuthorType.WEB
+        mock_saved_msg.thread_entrypoint = AuthorType.WEB
         mock_saved_msg.attachments = []
         mock_saved_msg.app_id = None
         mock_save.return_value = mock_saved_msg

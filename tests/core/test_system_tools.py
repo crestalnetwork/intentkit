@@ -352,6 +352,44 @@ async def test_call_agent_forwards_billing_payer(
     assert forwarded.team_id is None
 
 
+@pytest.mark.asyncio
+async def test_call_agent_inherits_entrypoint(mock_runtime):
+    """The sub-agent message carries the original entrypoint in thread_type."""
+    _, mock_context = mock_runtime
+    mock_context.entrypoint = AuthorType.TELEGRAM
+    mock_context.call_depth = 2
+
+    mock_resolved = MagicMock()
+    mock_resolved.id = "target_id"
+    mock_resolved.slug = "target_slug"
+
+    mock_msg = MagicMock()
+    mock_msg.author_type = AuthorType.AGENT
+    mock_msg.message = "Done"
+    mock_msg.attachments = []
+
+    tool = CallAgentTool()
+    with (
+        patch(
+            "intentkit.core.agent.get_agent_by_id_or_slug",
+            new=AsyncMock(return_value=mock_resolved),
+        ),
+        patch(
+            "intentkit.core.engine.execute_agent",
+            new=AsyncMock(return_value=[mock_msg]),
+        ) as mock_execute_agent,
+    ):
+        await tool._arun(agent_id="target_id", message="hello")
+
+    assert mock_execute_agent.await_args is not None
+    forwarded = mock_execute_agent.await_args.args[0]
+    assert forwarded.author_type == AuthorType.INTERNAL.value
+    assert forwarded.thread_type == AuthorType.TELEGRAM.value
+    assert forwarded.call_depth == 3
+    # The next hop's context rebuilds the same entrypoint from this message.
+    assert forwarded.thread_entrypoint == AuthorType.TELEGRAM.value
+
+
 def test_render_attachments_awareness_empty():
     """Empty attachment list yields an empty string."""
     assert render_attachments_awareness([]) == ""

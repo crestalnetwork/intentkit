@@ -77,7 +77,7 @@ async def append_agent_message(
     agent_id: str,
     chat_id: str,
     text: str,
-    thread_type: AuthorType = AuthorType.INTERNAL,
+    thread_type: AuthorType,
 ) -> ChatMessage:
     """Append an agent message to both chat_messages and LangGraph checkpoint.
 

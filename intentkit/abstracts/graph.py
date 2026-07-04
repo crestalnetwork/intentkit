@@ -91,6 +91,8 @@ class AgentContext(BaseModel):
     user_id: str | None = None
     team_id: str | None = None
     app_id: str | None = None
+    # Original user entry channel (web/telegram/trigger/...), inherited across
+    # call_agent chains. Never INTERNAL — use is_subagent to detect delegation.
     entrypoint: AuthorType
     is_private: bool
     thinking: bool = False
@@ -102,6 +104,11 @@ class AgentContext(BaseModel):
     @property
     def agent(self) -> Agent:
         return self.get_agent()
+
+    @property
+    def is_subagent(self) -> bool:
+        """True when this run was invoked by another agent via call_agent."""
+        return self.call_depth > 0
 
     @property
     def thread_id(self) -> str:

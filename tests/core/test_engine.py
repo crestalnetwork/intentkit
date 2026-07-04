@@ -367,6 +367,7 @@ async def test_stream_agent_flow(mock_agent):
             mock_saved_msg.user_id = "user_1"
             mock_saved_msg.message = "Hello"
             mock_saved_msg.author_type = AuthorType.WEB
+            mock_saved_msg.thread_entrypoint = AuthorType.WEB
             mock_saved_msg.attachments = []
             mock_saved_msg.team_id = None
             mock_saved_msg.app_id = None
@@ -433,6 +434,7 @@ async def test_stream_agent_rejects_unsupported_image_input(mock_agent):
     mock_saved_msg.user_id = "user_1"
     mock_saved_msg.message = "Please describe this image"
     mock_saved_msg.author_type = AuthorType.WEB
+    mock_saved_msg.thread_entrypoint = AuthorType.WEB
     mock_saved_msg.attachments = first_msg.attachments
     mock_saved_msg.team_id = None
     mock_saved_msg.app_id = None

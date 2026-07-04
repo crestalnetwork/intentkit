@@ -290,6 +290,15 @@ async def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> 
     from intentkit.core.autonomous import get_autonomous_task
     from intentkit.utils.error import IntentKitAPIError
 
+    if context.is_subagent:
+        # Delegated from an autonomous run: chat_id is a throwaway call-xxx id
+        # with no task record behind it, so skip the lookup. The Sub-agent Mode
+        # section already explains the delegation itself.
+        return (
+            "You are part of an autonomous task execution. You cannot ask the "
+            "user for clarification or input; make all decisions on your own. "
+        )
+
     task_id = context.chat_id.removeprefix("autonomous-")
 
     # Look up the team-owned autonomous task by id.
@@ -425,6 +434,14 @@ async def build_system_prompt(
     if entrypoint_prompt:
         final_system_prompt = (
             f"{final_system_prompt}## Entrypoint rules{entrypoint_prompt}\n\n"
+        )
+
+    if context.is_subagent:
+        final_system_prompt = (
+            f"{final_system_prompt}## Sub-agent Mode\n\n"
+            "You are running as a sub-agent: another agent invoked you via "
+            "call_agent to delegate a task. Your final reply is returned to "
+            "the calling agent, not shown directly to the user.\n\n"
         )
 
     # Skip user info section for autonomous tasks

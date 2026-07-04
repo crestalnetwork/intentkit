@@ -114,7 +114,7 @@ async def _create_system_error_response(
         chat_id=user_message.chat_id,
         user_id=user_message.user_id or "",
         author_id=user_message.agent_id,
-        thread_type=user_message.author_type,
+        thread_type=user_message.thread_entrypoint,
         reply_to=user_message.id,
         time_cost=time_cost,
     )
@@ -207,7 +207,7 @@ async def _resolve_team_names(*team_ids: str | None) -> dict[str, str]:
 
 
 def build_stream_config(
-    user_message: ChatMessage,
+    message: ChatMessageCreate,
     agent: Agent,
     team_id: str | None,
     thread_id: str,
@@ -221,6 +221,10 @@ def build_stream_config(
     to every run for filtering. ``team_names`` maps team ids to display names
     (resolved by the caller via the cached team-info store) so traces show team
     names, not ids.
+
+    ``message`` must be the pre-save message: ``call_depth`` is transient
+    (not persisted), so a message re-validated from the DB would always report
+    a depth of 0.
     """
     team_names = team_names or {}
     # super mode — determined by agent config
@@ -228,7 +232,7 @@ def build_stream_config(
     if agent.super_mode:
         recursion_limit = max(config.super_recursion_limit, 1000)
 
-    agent_name = agent.name or user_message.agent_id
+    agent_name = agent.name or message.agent_id
     owner_team_name = team_names.get(agent.team_id) if agent.team_id else None
     caller_team_name = team_names.get(team_id) if team_id else None
     # A public agent run triggered by a team other than the one that owns it.
@@ -237,19 +241,26 @@ def build_stream_config(
         agent.visibility is not None and agent.visibility >= AgentVisibility.PUBLIC
     )
 
+    # A sub-agent run delegated via call_agent; the original user entry
+    # channel is inherited through thread_entrypoint. Same definition as
+    # AgentContext.is_subagent.
+    is_subagent = message.call_depth > 0
+
     metadata: dict[str, Any] = {
         "env": config.env,
-        "agent_id": user_message.agent_id,
+        "agent_id": message.agent_id,
         "agent_name": agent_name,
-        "chat_id": user_message.chat_id,
+        "chat_id": message.chat_id,
         "thread_id": thread_id,
-        # author_type is already a plain string here (use_enum_values)
-        "channel": user_message.author_type,
+        # author_type/thread_type are already plain strings here (use_enum_values)
+        "channel": message.thread_entrypoint,
         "model": agent.model,
         "visibility": "public" if is_public else "private",
     }
-    if user_message.user_id:
-        metadata["user_id"] = user_message.user_id
+    if is_subagent:
+        metadata["is_subagent"] = True
+    if message.user_id:
+        metadata["user_id"] = message.user_id
     if team_id:
         metadata["team_id"] = team_id
     if caller_team_name:
@@ -260,19 +271,21 @@ def build_stream_config(
         metadata["agent_team_name"] = owner_team_name
     if external_caller:
         metadata["external_caller"] = True
-    if user_message.app_id:
-        metadata["app_id"] = user_message.app_id
+    if message.app_id:
+        metadata["app_id"] = message.app_id
     # Langfuse groups traces by these reserved metadata keys and offers tags as
     # first-class filter chips. Only set when Langfuse tracing is active.
     if config.langfuse_tracing:
         metadata["langfuse_session_id"] = thread_id
-        if user_message.user_id:
-            metadata["langfuse_user_id"] = user_message.user_id
+        if message.user_id:
+            metadata["langfuse_user_id"] = message.user_id
         tags = [
             config.env,
-            user_message.author_type,
+            message.thread_entrypoint,
             "public" if is_public else "private",
         ]
+        if is_subagent:
+            tags.append("subagent")
         if external_caller:
             tags.append("external-caller")
         metadata["langfuse_tags"] = tags
@@ -322,7 +335,7 @@ async def stream_agent_raw(
             author_id=user_message.agent_id,
             author_type=AuthorType.AGENT,
             model=agent.model,
-            thread_type=user_message.author_type,
+            thread_type=user_message.thread_entrypoint,
             reply_to=user_message.id,
             message="Memory in context has been cleared.",
             time_cost=time.perf_counter() - start,
@@ -468,11 +481,11 @@ async def stream_agent_raw(
             for atype, fetched in zip(fetch_meta, fetched_media, strict=True)
         )
 
-    # stream config
+    # stream config — pass the pre-save message so call_depth is populated
     thread_id = f"{user_message.agent_id}-{user_message.chat_id}"
     team_names = await _resolve_team_names(message.team_id, agent.team_id)
     stream_config = build_stream_config(
-        user_message, agent, message.team_id, thread_id, team_names
+        message, agent, message.team_id, thread_id, team_names
     )
 
     def get_agent_for_context() -> Agent:
@@ -485,7 +498,7 @@ async def stream_agent_raw(
         user_id=user_message.user_id,
         team_id=message.team_id,
         app_id=user_message.app_id,
-        entrypoint=user_message.author_type,
+        entrypoint=user_message.thread_entrypoint,
         is_private=is_private,
         payer=payer if payment_enabled else None,
         start_message_id=user_message.id,

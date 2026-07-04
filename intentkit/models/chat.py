@@ -62,7 +62,9 @@ class AuthorType(str, Enum):
     SLACK = "slack"
     XMTP = "xmtp"
     X402 = "x402"
-    INTERNAL = "internal"  # agent call agent
+    # Authored by another agent (call_agent); the real entry channel lives in
+    # thread_type — see ChatMessageCreate.thread_entrypoint.
+    INTERNAL = "internal"
 
 
 class ChatMessageAttachment(TypedDict):
@@ -360,6 +362,17 @@ class ChatMessageCreate(BaseModel):
             exclude=True,
         ),
     ] = 0
+
+    @property
+    def thread_entrypoint(self) -> AuthorType:
+        """Entry channel of this message's thread.
+
+        ``thread_type`` carries the original user entry channel (web, telegram,
+        trigger, ...) and is inherited across call_agent chains, so it wins over
+        ``author_type`` (which is INTERNAL for sub-agent input messages). Falls
+        back to ``author_type`` for messages without a thread_type.
+        """
+        return self.thread_type or self.author_type
 
     async def save_in_session(self, db: AsyncSession) -> "ChatMessage":
         """Save the chat message to the database.
