@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -10,7 +11,7 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from intentkit.config.db_mig import safe_migrate
+from intentkit.config.migration import run_migrations
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,20 @@ async def init_db(
         pool_size: Database connection pool size (default: 3)
     """
     global engine, connection_pool, _checkpointer
+    # Upgrade the schema to head before anything touches the database. Runs on
+    # every start; a Postgres advisory lock inside alembic/env.py serializes
+    # concurrent starters, and an already-current schema is a fast no-op. The
+    # in-memory sqlite fallback (no host) has no migration story — it exists
+    # only so the package imports without a database.
+    if host and auto_migrate:
+        username_str = username or ""
+        password_str = quote_plus(password) if password else ""
+        auth = (
+            f"{username_str}:{password_str}@" if (username_str or password_str) else ""
+        )
+        await asyncio.to_thread(
+            run_migrations, f"postgresql+psycopg://{auth}{host}:{port}/{dbname}"
+        )
     # Initialize psycopg pool and AsyncPostgresSaver if not already initialized
     if connection_pool is None:
         if host:
@@ -155,8 +170,6 @@ async def init_db(
                 "sqlite+aiosqlite:///:memory:",
                 connect_args={"check_same_thread": False},
             )
-        if auto_migrate:
-            await safe_migrate(engine)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

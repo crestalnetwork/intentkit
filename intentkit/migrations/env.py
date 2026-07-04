@@ -21,10 +21,10 @@ import pkgutil
 from logging.config import fileConfig
 from urllib.parse import quote_plus
 
+from alembic import context
 from sqlalchemy import create_engine
 
 import intentkit.models as _models_pkg
-from alembic import context
 from intentkit.config.base import Base
 from intentkit.config.config import config as app_config
 
@@ -50,7 +50,16 @@ _MIGRATION_MANAGED_INDEXES = {
 
 
 def _database_url() -> str:
-    """Sync (psycopg) URL for migrations, overridable via ALEMBIC_DATABASE_URL."""
+    """Sync (psycopg) URL for migrations.
+
+    Precedence: the ``database_url`` config attribute (set by the startup
+    runner, ``intentkit.config.migration``), then ``ALEMBIC_DATABASE_URL``
+    (used to point autogenerate / verification at a throwaway database), then
+    the app's own DB config (CLI usage from a dev checkout).
+    """
+    from_runner = config.attributes.get("database_url")
+    if from_runner:
+        return from_runner
     override = os.environ.get("ALEMBIC_DATABASE_URL")
     if override:
         return override
@@ -77,6 +86,15 @@ def include_object(obj, name, type_, reflected, compare_to) -> bool:
     return True
 
 
+# Library-owned version table. Downstream applications build their own models
+# (and their own Alembic chain, default table "alembic_version") on top of the
+# intentkit library; the dedicated name keeps the two chains fully independent
+# in one database. Concurrency control (advisory lock) lives in the startup
+# runner, intentkit/config/migration.py, which wraps stamp + upgrade in one
+# critical section.
+_VERSION_TABLE = "alembic_version_intentkit"
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=_database_url(),
@@ -85,6 +103,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         include_object=include_object,
         compare_type=True,
+        version_table=_VERSION_TABLE,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -92,16 +111,20 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     engine = create_engine(_database_url(), future=True)
-    with engine.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_object=include_object,
-            compare_type=True,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
-    engine.dispose()
+    try:
+        with engine.connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                include_object=include_object,
+                compare_type=True,
+                version_table=_VERSION_TABLE,
+            )
+            with context.begin_transaction():
+                context.run_migrations()
+    finally:
+        # Also on failure — connections must not outlive the run.
+        engine.dispose()
 
 
 if context.is_offline_mode():

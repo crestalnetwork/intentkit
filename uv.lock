@@ -1223,6 +1223,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiosqlite" },
     { name = "akshare" },
+    { name = "alembic" },
     { name = "apscheduler" },
     { name = "asyncpg" },
     { name = "aws-secretsmanager-caching" },
@@ -1306,7 +1307,6 @@ app = [
     { name = "weasyprint" },
 ]
 dev = [
-    { name = "alembic" },
     { name = "basedpyright" },
     { name = "deptry" },
     { name = "gunicorn" },
@@ -1332,6 +1332,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.14.0" },
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "akshare", specifier = ">=1.16.0" },
+    { name = "alembic", specifier = ">=1.14.0" },
     { name = "apscheduler", specifier = ">=3.11.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "aws-secretsmanager-caching", specifier = ">=1.1.3" },
@@ -1410,7 +1411,6 @@ app = [
     { name = "weasyprint", specifier = ">=63.0" },
 ]
 dev = [
-    { name = "alembic", specifier = ">=1.14.0" },
     { name = "basedpyright", specifier = ">=1.39.7" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
