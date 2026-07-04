@@ -20,7 +20,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from yaml import safe_load
 
-from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
     backfill_agent_avatar,
@@ -496,41 +495,6 @@ async def import_agent(
     _ = await deploy_agent(agent_id, agent, "admin")
 
     return "Agent import successful"
-
-
-@agent_router.put(
-    "/agents/{agent_id}/twitter/unlink",
-    tags=["OAuth"],
-    operation_id="unlink_twitter",
-    response_class=Response,
-)
-async def unlink_twitter_endpoint(
-    agent_id: str = Path(..., description="ID of the agent to unlink from X"),
-) -> Response:
-    """Unlink X from an agent.
-
-    **Path Parameters:**
-    * `agent_id` - ID of the agent to unlink from X
-
-    **Raises:**
-    * `IntentKitAPIError`:
-        - 404: Agent not found
-    """
-    # Check if agent exists
-    agent = await get_agent_by_id(agent_id)
-    if not agent:
-        raise IntentKitAPIError(404, "NotFound", "Agent not found")
-
-    # Call the unlink_twitter function from clients.twitter
-    agent_data = await unlink_twitter(agent_id)
-
-    agent_response = await AgentResponse.from_agent(agent, agent_data)
-
-    return Response(
-        content=agent_response.model_dump_json(),
-        media_type="application/json",
-        headers={"ETag": agent_response.etag()},
-    )
 
 
 @agent_router.post(

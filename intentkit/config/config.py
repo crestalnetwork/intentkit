@@ -232,16 +232,6 @@ class Config:
         # since the Lark service port is public (Lark posts events to it).
         self.lark_service_url: str | None = self.load("LARK_SERVICE_URL")
         self.lark_internal_secret: str | None = self.load("LARK_INTERNAL_SECRET")
-        # Twitter
-        self.twitter_oauth2_client_id: str | None = self.load(
-            "TWITTER_OAUTH2_CLIENT_ID"
-        )
-        self.twitter_oauth2_client_secret: str | None = self.load(
-            "TWITTER_OAUTH2_CLIENT_SECRET"
-        )
-        self.twitter_oauth2_redirect_uri: str | None = self.load(
-            "TWITTER_OAUTH2_REDIRECT_URI"
-        )
         # Slack Alert
         self.slack_alert_token: str | None = self.load("SLACK_ALERT_TOKEN")
         self.slack_alert_channel: str | None = self.load("SLACK_ALERT_CHANNEL")
@@ -252,7 +242,6 @@ class Config:
         self.allora_api_key: str | None = self.load("ALLORA_API_KEY")
         self.carv_api_key: str | None = self.load("CARV_API_KEY")
         self.elfa_api_key: str | None = self.load("ELFA_API_KEY")
-        self.heurist_api_key: str | None = self.load("HEURIST_API_KEY")
         self.enso_api_token: str | None = self.load("ENSO_API_TOKEN")
         self.dapplooker_api_key: str | None = self.load("DAPPLOOKER_API_KEY")
         self.moralis_api_key: str | None = self.load("MORALIS_API_KEY")
@@ -261,7 +250,6 @@ class Config:
         self.cookiefun_api_key: str | None = self.load("COOKIEFUN_API_KEY")
         self.firecrawl_api_key: str | None = self.load("FIRECRAWL_API_KEY")
         self.cryptopanic_api_key: str | None = self.load("CRYPTOPANIC_API_KEY")
-        self.unrealspeech_api_key: str | None = self.load("UNREALSPEECH_API_KEY")
         self.dune_api_key: str | None = self.load("DUNE_API_KEY")
         self.aixbt_api_key: str | None = self.load("AIXBT_API_KEY")
         self.cryptocompare_api_key: str | None = self.load("CRYPTOCOMPARE_API_KEY")

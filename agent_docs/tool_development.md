@@ -16,7 +16,7 @@ To avoid circular dependencies, Tools can only depend on the contents of models,
 
 ## Tool Category Structure
 
-The necessary elements in a tool category folder are as follows. For the paradigm of each element, you can refer to existing tools, such as `tools/twitter`:
+The necessary elements in a tool category folder are as follows. For the paradigm of each element, you can refer to existing tools, such as `tools/firecrawl`:
 
 ### 1. Base Class (`base.py`)
 
@@ -28,7 +28,7 @@ Each tool should have its own file, with the same name as the tool. Key points:
 
 - **Class Inheritance**: The tool class inherit BaseClass created in `base.py`
 
-- **Name Attribute**: The `name` attribute needs a same prefix as the category name, such as `twitter_`, for uniqueness in the system.
+- **Name Attribute**: The `name` attribute needs a same prefix as the category name, such as `firecrawl_`, for uniqueness in the system.
 
 - **Description Attribute**: The `description` attribute is the description of the tool, which will be used in LLM to select the tool.
 

@@ -57,11 +57,6 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
                         "value": agent.network_id or "Not Set",
                     },
                     {
-                        "title": "X Username",
-                        "short": True,
-                        "value": agent_data.twitter_username,
-                    },
-                    {
                         "title": "Telegram Enabled",
                         "short": True,
                         "value": str(agent.telegram_entrypoint_enabled),

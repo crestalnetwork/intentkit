@@ -121,30 +121,6 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
 
     social_parts = []
 
-    # Twitter info - only include if twitter tool is enabled
-    twitter_enabled = (
-        agent.tools
-        and "twitter" in agent.tools
-        and agent.tools["twitter"].get("enabled") is True
-    )
-
-    if twitter_enabled and agent_data.twitter_id:
-        social_parts.append(
-            f"Your twitter id is {agent_data.twitter_id}, never reply or retweet yourself."
-        )
-        if agent_data.twitter_username:
-            social_parts.append(
-                f"Your twitter username is {agent_data.twitter_username}."
-            )
-        if agent_data.twitter_name:
-            social_parts.append(f"Your twitter name is {agent_data.twitter_name}.")
-
-        # Twitter verification status
-        if agent_data.twitter_is_verified:
-            social_parts.append("Your twitter account is verified.")
-        else:
-            social_parts.append("Your twitter account is not verified.")
-
     # Telegram info
     if agent.telegram_entrypoint_enabled:
         if agent_data.telegram_id:
@@ -248,7 +224,7 @@ def build_agent_prompt(
     This function orchestrates the building of different prompt sections:
     - System header and base prompt
     - Agent identity (name, ticker)
-    - Social accounts (Twitter, Telegram)
+    - Social accounts (Telegram)
     - Wallet information
     - Agent characteristics (purpose, personality, principles)
     - Tools-specific guides

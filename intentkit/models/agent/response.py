@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
-from datetime import UTC, datetime
 from typing import Annotated, Any, ClassVar, Literal, override
 
 from pydantic import ConfigDict
@@ -60,34 +59,6 @@ class AgentResponse(Agent):
         PydanticField(
             default=None,
             description="Solana wallet address of the agent",
-        ),
-    ]
-    has_twitter_linked: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description="Whether the agent has Twitter linked",
-        ),
-    ]
-    linked_twitter_username: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Linked Twitter username",
-        ),
-    ]
-    linked_twitter_name: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Linked Twitter display name",
-        ),
-    ]
-    has_twitter_self_key: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description="Whether the agent has Twitter self key",
         ),
     ]
     has_telegram_self_key: Annotated[
@@ -159,25 +130,6 @@ class AgentResponse(Agent):
         evm_wallet_address = agent_data.evm_wallet_address if agent_data else None
         solana_wallet_address = agent_data.solana_wallet_address if agent_data else None
 
-        # Process Twitter linked status
-        has_twitter_linked = False
-        linked_twitter_username = None
-        linked_twitter_name = None
-        if agent_data and agent_data.twitter_access_token:
-            linked_twitter_username = agent_data.twitter_username
-            linked_twitter_name = agent_data.twitter_name
-            if agent_data.twitter_access_token_expires_at:
-                has_twitter_linked = (
-                    agent_data.twitter_access_token_expires_at > datetime.now(UTC)
-                )
-            else:
-                has_twitter_linked = True
-
-        # Process Twitter self-key status
-        has_twitter_self_key = bool(
-            agent_data and agent_data.twitter_self_key_refreshed_at
-        )
-
         # Process Telegram self-key status
         linked_telegram_username = None
         linked_telegram_name = None
@@ -201,10 +153,6 @@ class AgentResponse(Agent):
             cdp_wallet_address=cdp_wallet_address,
             evm_wallet_address=evm_wallet_address,
             solana_wallet_address=solana_wallet_address,
-            has_twitter_linked=has_twitter_linked,
-            linked_twitter_username=linked_twitter_username,
-            linked_twitter_name=linked_twitter_name,
-            has_twitter_self_key=has_twitter_self_key,
             has_telegram_self_key=has_telegram_self_key,
             linked_telegram_username=linked_telegram_username,
             linked_telegram_name=linked_telegram_name,

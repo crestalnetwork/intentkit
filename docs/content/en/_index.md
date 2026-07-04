@@ -12,7 +12,7 @@ IntentKit is an open-source, self-hosted cloud agent cluster that manages a coll
 
 IntentKit lets you create, configure, and run multiple AI agents that work together as a team. Each agent can:
 
-- Interact with users through social platforms such as Twitter and Telegram
+- Interact with users through chat channels such as Telegram, Slack, and Lark
 - Execute tasks autonomously on a schedule
 - Call other agents for collaboration
 - Use an extensible tool system to perform actions — from web searches to on-chain transactions
@@ -24,7 +24,7 @@ All of this runs as a set of standard containerized services (API server, autono
 - **Cloud-Native** — Designed for container orchestration. Runs efficiently with minimal resources.
 - **Collaborative Agents** — Agents can invoke each other, enabling multi-agent workflows.
 - **Extensible Tool System** — Add new capabilities by writing tool plugins without modifying the core.
-- **Platform Integrations** — Built-in support for Twitter, Telegram, and more.
+- **Platform Integrations** — Built-in support for Telegram, Slack, Lark, and more.
 - **Crypto-Friendly** — Optional Web3 and blockchain integrations for on-chain operations.
 - **API-First** — Every agent exposes its own API for external integration.
 

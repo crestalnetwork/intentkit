@@ -8,7 +8,7 @@ IntentKit is a powerful intent-based AI agent platform that enables developers t
 - **Blockchain Integration**: Native support for multiple blockchain networks
 - **Cryptocurrency Operations**: Built-in tools for DeFi, trading, and token operations
 - **Extensible Tools System**: Modular tool system with 30+ pre-built tools
-- **Multi-platform Support**: Telegram, Twitter, Slack, and API integrations
+- **Multi-platform Support**: Telegram, Slack, Lark, and API integrations
 - **Advanced AI Capabilities**: Powered by LangChain and LangGraph
 
 ## Installation
@@ -66,9 +66,8 @@ IntentKit comes with 30+ pre-built tools including:
 
 - **DeFi**: Uniswap, 1inch, Enso, LiFi
 - **Data**: DexScreener, CoinGecko, DefiLlama, CryptoCompare
-- **Social**: Twitter, Telegram, Slack
 - **Blockchain**: CDP, Moralis, various wallet integrations
-- **AI**: OpenAI, Heurist, Venice AI
+- **AI**: OpenAI, Venice AI
 - **And many more...**
 
 ## Documentation

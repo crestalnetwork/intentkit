@@ -108,11 +108,9 @@ class TestBuildSystemPromptMemory:
 
         agent_data = MagicMock()
         agent_data.long_term_memory = "### Facts\n\nUser likes Python."
-        agent_data.twitter_id = None
         agent_data.telegram_id = None
         agent_data.evm_wallet_address = None
         agent_data.solana_wallet_address = None
-        agent_data.twitter_is_verified = False
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -156,11 +154,9 @@ class TestBuildSystemPromptMemory:
 
         agent_data = MagicMock()
         agent_data.long_term_memory = None
-        agent_data.twitter_id = None
         agent_data.telegram_id = None
         agent_data.evm_wallet_address = None
         agent_data.solana_wallet_address = None
-        agent_data.twitter_is_verified = False
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -203,11 +199,9 @@ class TestBuildSystemPromptMemory:
 
         agent_data = MagicMock()
         agent_data.long_term_memory = "some memory"
-        agent_data.twitter_id = None
         agent_data.telegram_id = None
         agent_data.evm_wallet_address = None
         agent_data.solana_wallet_address = None
-        agent_data.twitter_is_verified = False
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -372,11 +366,9 @@ class TestSubAgentsPromptSection:
 
         agent_data = MagicMock()
         agent_data.long_term_memory = None
-        agent_data.twitter_id = None
         agent_data.telegram_id = None
         agent_data.evm_wallet_address = None
         agent_data.solana_wallet_address = None
-        agent_data.twitter_is_verified = False
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True

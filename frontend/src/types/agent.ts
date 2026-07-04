@@ -43,9 +43,7 @@ export interface Agent {
   visibility: number | null;
 
   // Flattened AgentResponse fields
-  linked_twitter_username: string | null;
   linked_telegram_username: string | null;
-  linked_twitter_name: string | null;
   linked_telegram_name: string | null;
   discord_username?: string | null; // Keeping as optional if needed by UI
 }

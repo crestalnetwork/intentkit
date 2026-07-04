@@ -17,8 +17,8 @@ Test coverage gaps and CI pipeline improvements.
 ## 6.2 ~90% of Tools Untested
 
 **Location:** `tests/tools/` — only 5 test files for 45+ tool directories
-**Issue:** Tested: `create_post`, `pancakeswap`, `ui`, `update_memory`, `x402_safe_funding`. Untested: `cdp`, `erc20`, `erc721`, `twitter`, `slack`, `github`, `jupiter`, `lifi`, `morpho`, `superfluid`, `firecrawl`, `dune_analytics`, `enso`, `http`, and many more. These include DeFi tools that handle real funds.
-**Fix:** Prioritize tests for financial tools (DeFi, credit) and security-critical tools (HTTP, Slack).
+**Issue:** Tested: `create_post`, `pancakeswap`, `ui`, `update_memory`, `x402_safe_funding`. Untested: `cdp`, `erc20`, `erc721`, `github`, `jupiter`, `lifi`, `morpho`, `superfluid`, `firecrawl`, `dune_analytics`, `enso`, `http`, and many more. These include DeFi tools that handle real funds.
+**Fix:** Prioritize tests for financial tools (DeFi, credit) and security-critical tools (HTTP).
 
 > **User notes:**
 

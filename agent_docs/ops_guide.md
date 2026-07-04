@@ -19,7 +19,7 @@ When you generate git commit message, always start with one of `feat/fix/chore/d
 - Only one-line needed, do not generate commit message body
 
 **Examples**:
-- `feat: add new twitter tool`
+- `feat: add new firecrawl tool`
 - `fix: resolve circular dependency in models`
 - `chore: update dependencies`
 

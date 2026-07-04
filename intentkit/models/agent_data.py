@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 from pydantic import Field as PydanticField
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     DateTime,
     Numeric,
     String,
@@ -48,37 +47,6 @@ class AgentDataTable(Base):
     )
     native_wallet_data: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Native wallet data (encrypted private key)"
-    )
-    twitter_id: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Twitter user ID"
-    )
-    twitter_username: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Twitter username"
-    )
-    twitter_name: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Twitter display name"
-    )
-    twitter_access_token: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Twitter access token"
-    )
-    twitter_access_token_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="Twitter access token expiration time",
-    )
-    twitter_refresh_token: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Twitter refresh token"
-    )
-    twitter_self_key_refreshed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="Twitter self-key userinfo last refresh time",
-    )
-    twitter_is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        comment="Whether the Twitter account is verified",
     )
     telegram_id: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Telegram user ID"
@@ -165,62 +133,6 @@ class AgentData(BaseModel):
             description="Native wallet data (encrypted private key)",
         ),
     ] = None
-    twitter_id: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Twitter user ID",
-        ),
-    ] = None
-    twitter_username: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Twitter username",
-        ),
-    ] = None
-    twitter_name: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Twitter display name",
-        ),
-    ] = None
-    twitter_access_token: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Twitter access token",
-        ),
-    ] = None
-    twitter_access_token_expires_at: Annotated[
-        datetime | None,
-        PydanticField(
-            default=None,
-            description="Twitter access token expiration time",
-        ),
-    ] = None
-    twitter_refresh_token: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Twitter refresh token",
-        ),
-    ] = None
-    twitter_self_key_refreshed_at: Annotated[
-        datetime | None,
-        PydanticField(
-            default=None,
-            description="Twitter self-key userinfo last refresh time",
-        ),
-    ] = None
-    twitter_is_verified: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description="Whether the Twitter account is verified",
-        ),
-    ] = False
     telegram_id: Annotated[
         str | None,
         PydanticField(
@@ -381,15 +293,6 @@ class AgentQuotaTable(Base):
     last_autonomous_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), default=None, nullable=True
     )
-    twitter_count_total: Mapped[int] = mapped_column(BigInteger, default=0)
-    twitter_limit_total: Mapped[int] = mapped_column(BigInteger, default=99999999)
-    twitter_count_monthly: Mapped[int] = mapped_column(BigInteger, default=0)
-    twitter_limit_monthly: Mapped[int] = mapped_column(BigInteger, default=99999999)
-    twitter_count_daily: Mapped[int] = mapped_column(BigInteger, default=0)
-    twitter_limit_daily: Mapped[int] = mapped_column(BigInteger, default=99999999)
-    last_twitter_time: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None, nullable=True
-    )
     free_income_daily: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
     avg_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
     min_action_cost: Mapped[Decimal] = mapped_column(Numeric(22, 4), default=0)
@@ -473,31 +376,6 @@ class AgentQuota(BaseModel):
     last_autonomous_time: Annotated[
         datetime | None,
         PydanticField(default=None, description="Last autonomous operation timestamp"),
-    ]
-    twitter_count_total: Annotated[
-        int, PydanticField(default=0, description="Total Twitter operations count")
-    ]
-    twitter_limit_total: Annotated[
-        int,
-        PydanticField(default=99999999, description="Total Twitter operations limit"),
-    ]
-    twitter_count_monthly: Annotated[
-        int, PydanticField(default=0, description="Monthly Twitter operations count")
-    ]
-    twitter_limit_monthly: Annotated[
-        int,
-        PydanticField(default=99999999, description="Monthly Twitter operations limit"),
-    ]
-    twitter_count_daily: Annotated[
-        int, PydanticField(default=0, description="Daily Twitter operations count")
-    ]
-    twitter_limit_daily: Annotated[
-        int,
-        PydanticField(default=99999999, description="Daily Twitter operations limit"),
-    ]
-    last_twitter_time: Annotated[
-        datetime | None,
-        PydanticField(default=None, description="Last Twitter operation timestamp"),
     ]
     free_income_daily: Annotated[
         Decimal,
@@ -599,20 +477,6 @@ class AgentQuota(BaseModel):
             return False
         return True
 
-    def has_twitter_quota(self) -> bool:
-        """Check if the agent has twitter quota.
-
-        Returns:
-            bool: True if the agent has quota, False otherwise
-        """
-        # Check total limit
-        if self.twitter_count_total >= self.twitter_limit_total:
-            return False
-        # Check daily limit
-        if self.twitter_count_daily >= self.twitter_limit_daily:
-            return False
-        return True
-
     @staticmethod
     async def add_free_income_in_session(
         session: AsyncSession, id: str, amount: Decimal
@@ -703,42 +567,14 @@ class AgentQuota(BaseModel):
                 self.last_autonomous_time = quota_record.last_autonomous_time
                 self.updated_at = quota_record.updated_at
 
-    async def add_twitter_message(self) -> None:
-        """Add a twitter message to the agent's twitter count.
-
-        Raises:
-            HTTPException: If there are database errors
-        """
-        async with get_session() as db:
-            # Use server-side SQL expressions to avoid read-modify-write race conditions
-            stmt = (
-                update(AgentQuotaTable)
-                .where(AgentQuotaTable.id == self.id)
-                .values(
-                    twitter_count_total=AgentQuotaTable.twitter_count_total + 1,
-                    twitter_count_daily=AgentQuotaTable.twitter_count_daily + 1,
-                    last_twitter_time=func.now(),
-                )
-            )
-            await db.execute(stmt)
-            await db.commit()
-
-            quota_record = await db.get(AgentQuotaTable, self.id)
-            if quota_record:
-                self.twitter_count_total = quota_record.twitter_count_total
-                self.twitter_count_daily = quota_record.twitter_count_daily
-                self.last_twitter_time = quota_record.last_twitter_time
-                self.updated_at = quota_record.updated_at
-
     @staticmethod
     async def reset_daily_quotas():
         """Reset daily quotas for all agents at UTC 00:00.
-        Resets message_count_daily and twitter_count_daily to 0.
+        Resets message_count_daily to 0.
         """
         async with get_session() as session:
             stmt = update(AgentQuotaTable).values(
                 message_count_daily=0,
-                twitter_count_daily=0,
                 free_income_daily=0,
             )
             _ = await session.execute(stmt)

@@ -117,11 +117,11 @@ def build_agent_manager(team_id: str) -> Agent:
         "  }\n"
         "}\n"
         "```\n\n"
-        "Example — enable two image tools and one twitter tool:\n"
+        "Example — enable two image tools and one firecrawl tool:\n"
         "```json\n"
         "{\n"
         '  "image": {"enabled": true, "states": {"image_gpt": "public", "image_gemini_flash": "public"}},\n'
-        '  "twitter": {"enabled": true, "states": {"post_tweet": "public"}}\n'
+        '  "firecrawl": {"enabled": true, "states": {"firecrawl_scrape": "public"}}\n'
         "}\n"
         "```\n\n"
         "Rules:\n"

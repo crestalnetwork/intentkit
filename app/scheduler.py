@@ -21,8 +21,6 @@ from intentkit.core.credit.plan_credit import issue_all_plan_credits
 from intentkit.core.scheduler import create_scheduler
 from intentkit.utils.alert import cleanup_alert
 
-from app.services.twitter.oauth2_refresh import refresh_expiring_tokens
-
 logger = logging.getLogger(__name__)
 
 if config.sentry_dsn:
@@ -91,14 +89,6 @@ if __name__ == "__main__":
         logger.info("scheduler using in-memory job store")
 
         scheduler = create_scheduler(jobstores=jobstores)
-
-        _ = scheduler.add_job(
-            refresh_expiring_tokens,
-            trigger=CronTrigger(minute="*/5", timezone="UTC"),
-            id="refresh_twitter_tokens",
-            name="Refresh expiring Twitter tokens",
-            replace_existing=True,
-        )
 
         _ = scheduler.add_job(
             issue_all_plan_credits,

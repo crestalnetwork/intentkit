@@ -8,7 +8,6 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, Path, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from intentkit.clients.twitter import unlink_twitter
 from intentkit.config.db import get_db, get_session
 from intentkit.core.agent import (
     backfill_agent_avatar,
@@ -392,28 +391,6 @@ async def unpublish_agent_endpoint(
     latest_agent = await unpublish_agent(agent_id=agent.id)
     agent_data = await AgentData.get(latest_agent.id)
     agent_response = await AgentResponse.from_agent(latest_agent, agent_data)
-    return Response(
-        content=agent_response.model_dump_json(),
-        media_type="application/json",
-        headers={"ETag": agent_response.etag()},
-    )
-
-
-@team_agent_router.put(
-    "/teams/{team_id}/agents/{agent_id}/twitter/unlink",
-    tags=["OAuth"],
-    operation_id="team_unlink_twitter",
-    summary="Unlink Twitter (Team)",
-)
-async def unlink_twitter_endpoint(
-    agent_id: str = Path(..., description="Agent ID"),
-    auth: tuple[str, str] = Depends(verify_team_member),
-) -> Response:
-    """Unlink Twitter/X from an agent within the team."""
-    _user_id, team_id = auth
-    agent = await get_team_agent(agent_id, team_id)
-    agent_data = await unlink_twitter(agent.id)
-    agent_response = await AgentResponse.from_agent(agent, agent_data)
     return Response(
         content=agent_response.model_dump_json(),
         media_type="application/json",

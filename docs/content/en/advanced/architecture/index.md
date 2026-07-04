@@ -14,7 +14,7 @@ IntentKit is built with a modular architecture that separates concerns into dist
 ## Components
 
 ### Entrypoint Layer
-The entrypoint layer serves as the interface between the outside world and the Agent. It provides various integration points including Twitter and Telegram, along with autonomous execution capabilities. This layer includes adapters to handle input/output transformations, rate limiting, and modifications to ensure smooth communication between external services and the internal system.
+The entrypoint layer serves as the interface between the outside world and the Agent. It provides various integration points including Telegram, Slack, and Lark, along with autonomous execution capabilities. This layer includes adapters to handle input/output transformations, rate limiting, and modifications to ensure smooth communication between external services and the internal system.
 
 ### LangGraph Layer
 At the heart of IntentKit lies the LangGraph layer, which orchestrates the AI processing pipeline. It manages the language model interactions, prompt engineering, and tool execution flow. The layer maintains both thread-specific memory for ongoing conversations and a broader agent memory system, enabling contextual awareness and persistent knowledge across interactions.
