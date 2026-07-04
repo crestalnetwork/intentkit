@@ -18,10 +18,10 @@ from web3.exceptions import TimeExhausted, Web3RPCError
 from x402.schemas import PaymentRequired, PaymentRequiredV1
 
 from intentkit.config.config import config
-from intentkit.models.agent_data import AgentData
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.tools.onchain import IntentKitOnChainTool
 from intentkit.utils.alert import send_alert
+from intentkit.wallets import get_agent_wallet
 from intentkit.wallets.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 
 logger = logging.getLogger(__name__)
@@ -230,16 +230,16 @@ class X402BaseTool(IntentKitOnChainTool):
     category: str = "x402"
     description: str = ""
 
-    def _validate_wallet_provider(self) -> None:
+    async def _validate_wallet_provider(self) -> None:
         """Validate that the wallet provider supports x402 operations.
 
         Raises:
             ValueError: If wallet provider is not supported for x402.
         """
-        agent = self.get_context().agent
-        if agent and agent.wallet_provider not in SUPPORTED_WALLET_PROVIDERS:
+        wallet_provider = await self.get_agent_wallet_provider_type()
+        if wallet_provider not in SUPPORTED_WALLET_PROVIDERS:
             raise ValueError(
-                "x402 operations require wallet_provider to be 'cdp', 'native', 'safe', or 'privy'."
+                "x402 operations require the agent's wallet to be 'cdp', 'native', 'safe', or 'privy'."
             )
 
     async def get_signer(self) -> Any:
@@ -265,7 +265,7 @@ class X402BaseTool(IntentKitOnChainTool):
             ValueError: If wallet provider is unsupported.
         """
         # Validate wallet provider before getting signer
-        self._validate_wallet_provider()
+        await self._validate_wallet_provider()
         return await self.get_wallet_signer()
 
     def alert_prefund_paymaster_gas_shortage(
@@ -286,7 +286,7 @@ class X402BaseTool(IntentKitOnChainTool):
             agent = context.agent
             agent_id = context.agent_id
             network_id = agent.network_id if agent else None
-            wallet_provider = agent.wallet_provider if agent else None
+            wallet_provider = "safe"
         except (AttributeError, ValueError):
             agent_id = "unknown"
             network_id = None
@@ -455,20 +455,17 @@ class X402BaseTool(IntentKitOnChainTool):
         network: str | None = None,
     ) -> None:
         agent = self.get_context().agent
-        if not agent or agent.wallet_provider != "safe":
+        wallet = await get_agent_wallet(agent) if agent else None
+        if not wallet or wallet.wallet_provider != "safe":
             return
         if amount <= 0:
             return
         if max_value is not None and amount > max_value:
             raise ValueError(f"Payment amount {amount} exceeds max_value {max_value}.")
 
-        agent_data = await AgentData.get(agent.id)
-        if not agent_data.privy_wallet_data:
+        privy_wallet_data = wallet.wallet_data_json()
+        if not privy_wallet_data:
             raise ValueError("Privy wallet data missing for Safe wallet funding.")
-        try:
-            privy_wallet_data = json.loads(agent_data.privy_wallet_data)
-        except json.JSONDecodeError as exc:
-            raise ValueError("Privy wallet data is corrupted.") from exc
 
         try:
             privy_wallet_id = privy_wallet_data["privy_wallet_id"]
@@ -521,7 +518,8 @@ class X402BaseTool(IntentKitOnChainTool):
         max_value: int | None = None,
     ) -> None:
         agent = self.get_context().agent
-        if not agent or agent.wallet_provider != "safe":
+        wallet = await get_agent_wallet(agent) if agent else None
+        if not wallet or wallet.wallet_provider != "safe":
             return
         payment_response = await self._get_payment_requirement(
             method=method,

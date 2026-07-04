@@ -14,8 +14,8 @@ from intentkit.models.template import Template, TemplateTable
 
 
 @pytest.mark.asyncio
-@patch("intentkit.core.agent.process_agent_wallet", new_callable=AsyncMock)
-async def test_create_agent_from_template(mock_process_agent_wallet):
+@patch("intentkit.core.agent.validate_wallet_binding", new_callable=AsyncMock)
+async def test_create_agent_from_template(mock_validate_wallet_binding):
     """Test creating an agent from a template."""
 
     # 1. Setup Data
@@ -103,13 +103,13 @@ async def test_create_agent_from_template(mock_process_agent_wallet):
         # Verify returned agent match
         assert agent.id == added_agent.id
 
-        # Verify wallet processing
-        mock_process_agent_wallet.assert_called_once_with(agent)
+        # Verify wallet binding validation (no wallet bound, team provided)
+        mock_validate_wallet_binding.assert_awaited_once_with(None, "team_1")
 
 
 @pytest.mark.asyncio
-@patch("intentkit.core.agent.process_agent_wallet", new_callable=AsyncMock)
-async def test_create_agent_from_template_without_team(mock_process_agent_wallet):
+@patch("intentkit.core.agent.validate_wallet_binding", new_callable=AsyncMock)
+async def test_create_agent_from_template_without_team(mock_validate_wallet_binding):
     """Test creating an agent from a template without team_id (PRIVATE visibility)."""
 
     # 1. Setup Data
@@ -132,8 +132,7 @@ async def test_create_agent_from_template_without_team(mock_process_agent_wallet
         name="Private Agent",
         picture="private_pic.png",
         description="Created without team",
-        readonly_wallet_address="0x1234567890abcdef",
-        weekly_spending_limit=100.0,
+        wallet_id="wallet-1",
         extra_prompt="Additional task instructions",
     )
 
@@ -176,13 +175,12 @@ async def test_create_agent_from_template_without_team(mock_process_agent_wallet
         # Verify visibility is set to PRIVATE when team_id is None
         assert added_agent.visibility == AgentVisibility.PRIVATE
 
-        # Verify new optional fields are correctly passed through
-        assert added_agent.readonly_wallet_address == "0x1234567890abcdef"
-        assert added_agent.weekly_spending_limit == 100.0
+        # Verify optional fields are correctly passed through
+        assert added_agent.wallet_id == "wallet-1"
         assert added_agent.extra_prompt == "Additional task instructions"
 
-        # Verify wallet processing
-        mock_process_agent_wallet.assert_called_once()
+        # Verify wallet binding validation (no team, wallet must be a system wallet)
+        mock_validate_wallet_binding.assert_awaited_once_with("wallet-1", None)
 
 
 @pytest.mark.asyncio

@@ -21,11 +21,11 @@ NONCE_LOCK_TTL = 30  # Lock expires after 30 seconds (prevents deadlocks)
 NONCE_KEY_TTL = 3600  # Nonce cache expires after 1 hour
 
 
-class MasterWalletNonceManager:
-    """Distributed nonce manager using Redis for cross-process coordination.
+class WalletNonceManager:
+    """Distributed per-address nonce manager using Redis.
 
-    This prevents nonce collisions when multiple workers/container replicas
-    use the same master wallet to pay for gas on Safe deployments.
+    Prevents nonce collisions when several workers/container replicas — or,
+    for team wallets, several agents — send from the same EOA concurrently.
 
     Uses Redis for:
     - nonce storage (shared across all processes)
@@ -33,13 +33,17 @@ class MasterWalletNonceManager:
     """
 
     address: str
+    network_id: str
     _nonce_key: str
     _lock_key: str
 
-    def __init__(self, address: str):
+    def __init__(self, address: str, network_id: str):
+        # Nonces are tracked independently per chain, so the same address on
+        # two networks must never share a counter.
         self.address = to_checksum_address(address)
-        self._nonce_key = f"intentkit:master_wallet:nonce:{address.lower()}"
-        self._lock_key = f"intentkit:master_wallet:lock:{address.lower()}"
+        self.network_id = network_id
+        self._nonce_key = f"intentkit:wallet:nonce:{network_id}:{address.lower()}"
+        self._lock_key = f"intentkit:wallet:lock:{network_id}:{address.lower()}"
 
     async def acquire_lock(self, timeout: float = 10.0) -> bool:
         """Acquire distributed lock with timeout.
@@ -106,21 +110,28 @@ class MasterWalletNonceManager:
             to_checksum_address(self.address), "pending"
         )
         await redis.set(self._nonce_key, str(blockchain_nonce), ex=NONCE_KEY_TTL)
-        logger.info("Reset master wallet nonce to %s", blockchain_nonce)
+        logger.info("Reset wallet %s nonce to %s", self.address, blockchain_nonce)
 
 
-# Module-level nonce manager instance (lazy init)
-_nonce_manager: MasterWalletNonceManager | None = None
+# Per-address manager instances; state lives in Redis, these are just handles.
+_nonce_managers: dict[str, WalletNonceManager] = {}
 
 
-def get_nonce_manager() -> MasterWalletNonceManager:
-    """Get or create the nonce manager singleton for the master wallet."""
-    global _nonce_manager
-    if _nonce_manager is None:
-        if not config.master_wallet_private_key:
-            raise IntentKitAPIError(
-                500, "ConfigError", "MASTER_WALLET_PRIVATE_KEY not configured"
-            )
-        master_account = Account.from_key(config.master_wallet_private_key)
-        _nonce_manager = MasterWalletNonceManager(str(master_account.address))
-    return _nonce_manager
+def get_wallet_nonce_manager(address: str, network_id: str) -> WalletNonceManager:
+    """Get or create the nonce manager for a wallet address on a network."""
+    key = f"{network_id}:{address.lower()}"
+    manager = _nonce_managers.get(key)
+    if manager is None:
+        manager = WalletNonceManager(address, network_id)
+        _nonce_managers[key] = manager
+    return manager
+
+
+def get_nonce_manager(network_id: str) -> WalletNonceManager:
+    """Get or create the nonce manager for the master wallet on a network."""
+    if not config.master_wallet_private_key:
+        raise IntentKitAPIError(
+            500, "ConfigError", "MASTER_WALLET_PRIVATE_KEY not configured"
+        )
+    master_account = Account.from_key(config.master_wallet_private_key)
+    return get_wallet_nonce_manager(str(master_account.address), network_id)

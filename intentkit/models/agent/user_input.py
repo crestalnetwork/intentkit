@@ -31,21 +31,12 @@ class AgentUserInput(AgentCore):
             pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$",
         ),
     ] = None
-    # only when wallet privder is readonly
-    readonly_wallet_address: Annotated[
+    # Wallets belong to the team; this only authorizes the agent to use one.
+    wallet_id: Annotated[
         str | None,
         PydanticField(
             default=None,
-            description="Address of the agent's wallet, only used when wallet_provider is readonly. Agent will not be able to sign transactions.",
-        ),
-    ] = None
-    # only when wallet provider is privy
-    weekly_spending_limit: Annotated[
-        float | None,
-        PydanticField(
-            default=None,
-            description="Weekly spending limit in USDC when wallet_provider is safe. This limits how much USDC the agent can spend per week.",
-            ge=0.0,
+            description="ID of the team wallet this agent is authorized to use.",
         ),
     ] = None
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked

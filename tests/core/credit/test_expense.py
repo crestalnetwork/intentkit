@@ -119,7 +119,7 @@ async def test_expense_tool_creates_transactions():
             new_callable=AsyncMock,
         ) as mock_add_free,
         patch(
-            "intentkit.models.agent_data.AgentData.get",
+            "intentkit.core.credit.expense.get_agent_wallet_address",
             new_callable=AsyncMock,
             return_value=None,
         ),
@@ -204,7 +204,7 @@ async def test_expense_summarize_with_payment_enabled_creates_transactions():
             return_value=mock_income_account,
         ),
         patch(
-            "intentkit.models.agent_data.AgentData.get",
+            "intentkit.core.credit.expense.get_agent_wallet_address",
             new_callable=AsyncMock,
             return_value=None,
         ),

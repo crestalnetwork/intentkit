@@ -98,6 +98,7 @@ class TestBuildSystemPromptMemory:
         agent.is_post_enabled = True
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
+        agent.wallet_id = None
         agent.purpose = None
         agent.personality = None
         agent.principles = None
@@ -109,8 +110,6 @@ class TestBuildSystemPromptMemory:
         agent_data = MagicMock()
         agent_data.long_term_memory = "### Facts\n\nUser likes Python."
         agent_data.telegram_id = None
-        agent_data.evm_wallet_address = None
-        agent_data.solana_wallet_address = None
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -144,6 +143,7 @@ class TestBuildSystemPromptMemory:
         agent.is_post_enabled = True
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
+        agent.wallet_id = None
         agent.purpose = None
         agent.personality = None
         agent.principles = None
@@ -155,8 +155,6 @@ class TestBuildSystemPromptMemory:
         agent_data = MagicMock()
         agent_data.long_term_memory = None
         agent_data.telegram_id = None
-        agent_data.evm_wallet_address = None
-        agent_data.solana_wallet_address = None
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -189,6 +187,7 @@ class TestBuildSystemPromptMemory:
         agent.is_post_enabled = True
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
+        agent.wallet_id = None
         agent.purpose = None
         agent.personality = None
         agent.principles = None
@@ -200,8 +199,6 @@ class TestBuildSystemPromptMemory:
         agent_data = MagicMock()
         agent_data.long_term_memory = "some memory"
         agent_data.telegram_id = None
-        agent_data.evm_wallet_address = None
-        agent_data.solana_wallet_address = None
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True
@@ -355,6 +352,7 @@ class TestSubAgentsPromptSection:
         agent.is_post_enabled = True
         agent.tools = None
         agent.telegram_entrypoint_enabled = False
+        agent.wallet_id = None
         agent.purpose = None
         agent.personality = None
         agent.principles = None
@@ -367,8 +365,6 @@ class TestSubAgentsPromptSection:
         agent_data = MagicMock()
         agent_data.long_term_memory = None
         agent_data.telegram_id = None
-        agent_data.evm_wallet_address = None
-        agent_data.solana_wallet_address = None
 
         context = MagicMock(spec=AgentContext)
         context.is_private = True

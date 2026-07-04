@@ -40,13 +40,6 @@ class AgentResponse(Agent):
     wechat_entrypoint_prompt: SkipJsonSchema[str | None] = None
 
     # Additional fields specific to AgentResponse
-    cdp_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="CDP wallet address of the agent",
-        ),
-    ]
     evm_wallet_address: Annotated[
         str | None,
         PydanticField(
@@ -125,10 +118,12 @@ class AgentResponse(Agent):
         Returns:
             AgentResponse: Response model with additional processed data
         """
-        # Process CDP wallet address
-        cdp_wallet_address = agent_data.evm_wallet_address if agent_data else None
-        evm_wallet_address = agent_data.evm_wallet_address if agent_data else None
-        solana_wallet_address = agent_data.solana_wallet_address if agent_data else None
+        # Resolve wallet addresses from the bound team wallet
+        from intentkit.models.wallet import TeamWallet
+
+        wallet = await TeamWallet.get_for_team(agent.wallet_id, agent.team_id)
+        evm_wallet_address = wallet.evm_wallet_address if wallet else None
+        solana_wallet_address = wallet.solana_wallet_address if wallet else None
 
         # Process Telegram self-key status
         linked_telegram_username = None
@@ -150,7 +145,6 @@ class AgentResponse(Agent):
             # Copy all fields from agent
             **agent.model_dump(),
             # Add computed fields
-            cdp_wallet_address=cdp_wallet_address,
             evm_wallet_address=evm_wallet_address,
             solana_wallet_address=solana_wallet_address,
             has_telegram_self_key=has_telegram_self_key,

@@ -1307,3 +1307,54 @@ export const autonomousApi = {
     }
   },
 };
+
+// ---------------------------------------------------------------------------
+// Crypto Wallets (owned by the local system team)
+// ---------------------------------------------------------------------------
+
+export interface TeamWallet {
+  id: string;
+  team_id: string;
+  name: string;
+  wallet_provider: string; // cdp | native | readonly | safe | privy
+  network_id: string | null;
+  evm_wallet_address: string | null;
+  solana_wallet_address: string | null;
+  weekly_spending_limit: number | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WalletCreateRequest {
+  name: string;
+  wallet_provider: string;
+  network_id?: string | null;
+  readonly_address?: string | null;
+  weekly_spending_limit?: number | null;
+}
+
+export const walletApi = {
+  async listWallets(): Promise<TeamWallet[]> {
+    const response = await fetch(`${API_BASE}/wallets`);
+    if (!response.ok) {
+      throw new Error(`Failed to list wallets: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async createWallet(body: WalletCreateRequest): Promise<TeamWallet> {
+    const response = await fetch(`${API_BASE}/wallets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Failed to create wallet: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+};

@@ -1,5 +1,5 @@
 from intentkit.wallets.privy_client import PrivyClient
-from intentkit.wallets.privy_nonce import MasterWalletNonceManager, get_nonce_manager
+from intentkit.wallets.privy_nonce import WalletNonceManager, get_nonce_manager
 from intentkit.wallets.privy_safe import (
     SafeClient,
     SafeWalletProvider,
@@ -53,7 +53,7 @@ __all__ = [
     "SAFE_SINGLETON_L2_CANONICAL",
     "SAFE_SINGLETON_L2_EIP155",
     "ChainConfig",
-    "MasterWalletNonceManager",
+    "WalletNonceManager",
     "PrivyClient",
     "PrivyWallet",
     "PrivyWalletSigner",

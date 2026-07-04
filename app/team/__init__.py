@@ -13,6 +13,7 @@ from app.team.share import team_share_router
 from app.team.team import team_management_router
 from app.team.usage import team_usage_router
 from app.team.user import team_user_router
+from app.team.wallet import team_wallet_router
 from app.team.wechat import team_wechat_router
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "team_share_router",
     "team_usage_router",
     "team_user_router",
+    "team_wallet_router",
     "team_wechat_router",
 ]

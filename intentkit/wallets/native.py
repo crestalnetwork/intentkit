@@ -15,7 +15,7 @@ from eth_account.messages import SignableMessage
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import AsyncWeb3
-from web3.types import TxParams, Wei
+from web3.types import Nonce, TxParams, Wei
 
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.web3 import get_async_web3_client
@@ -35,9 +35,9 @@ class TransactionResult:
 class NativeWalletProvider:
     """Native wallet provider using locally stored private keys.
 
-        This provider generates wallets directly using eth_account and stores
-    the encrypted private key in the agent_data table. It uses web3 for all
-        on-chain operations.
+    This provider generates wallets directly using eth_account; the private
+    key lives in the team wallet's wallet_data payload. It uses web3 for all
+    on-chain operations.
     """
 
     _address: ChecksumAddress
@@ -96,12 +96,21 @@ class NativeWalletProvider:
         Returns:
             TransactionResult with success status and tx hash.
         """
+        from intentkit.wallets.privy_nonce import get_wallet_nonce_manager
+
+        # Team wallets can be shared by several agents and processes;
+        # serialize nonce allocation per address through Redis.
+        nonce_manager = get_wallet_nonce_manager(str(self._address), self._network_id)
+        if not await nonce_manager.acquire_lock():
+            return TransactionResult(
+                success=False, error="Failed to acquire wallet nonce lock"
+            )
         try:
-            nonce = await self._w3.eth.get_transaction_count(self._address)
+            nonce = await nonce_manager.get_and_increment_nonce(self._w3)
             current_chain_id = await self._w3.eth.chain_id
 
             tx_params: TxParams = {
-                "nonce": nonce,
+                "nonce": Nonce(nonce),
                 "to": AsyncWeb3.to_checksum_address(to),
                 "value": Wei(value),
                 "data": HexBytes(data) if data else b"",
@@ -134,7 +143,14 @@ class NativeWalletProvider:
 
         except Exception as e:
             logger.error("Transaction execution failed: %s", e)
+            # The allocated nonce may be burned or skipped; resync from chain.
+            try:
+                await nonce_manager.reset_from_blockchain(self._w3)
+            except Exception as reset_err:
+                logger.warning("Failed to reset wallet nonce: %s", reset_err)
             return TransactionResult(success=False, error=str(e))
+        finally:
+            await nonce_manager.release_lock()
 
     async def transfer_erc20(
         self,
@@ -173,16 +189,17 @@ class NativeWalletProvider:
                 abi=erc20_abi,
             )
 
-            nonce = await self._w3.eth.get_transaction_count(self._address)
             current_chain_id = await self._w3.eth.chain_id
 
+            # Only the calldata is used; the real nonce is allocated inside
+            # execute_transaction under the distributed lock.
             data = await contract.functions.transfer(
                 AsyncWeb3.to_checksum_address(to),
                 amount,
             ).build_transaction(
                 {
                     "from": self._address,
-                    "nonce": nonce,
+                    "nonce": Nonce(0),
                     "chainId": chain_id or current_chain_id,
                 }
             )

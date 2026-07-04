@@ -36,7 +36,7 @@ class CDPGetWalletDetails(CDPBaseTool):
         """
         try:
             # Ensure the wallet provider is CDP
-            self.ensure_cdp_provider()
+            await self.ensure_cdp_provider()
 
             # Get the unified wallet
             wallet = await self.get_unified_wallet()
@@ -66,7 +66,7 @@ class CDPGetWalletDetails(CDPBaseTool):
             network_display = info["display"]
 
             # Determine provider type
-            provider_type = self.get_agent_wallet_provider_type()
+            provider_type = await self.get_agent_wallet_provider_type()
             if provider_type == "cdp":
                 provider_name = "CDP (Coinbase Developer Platform)"
             elif provider_type == "privy":

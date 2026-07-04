@@ -99,11 +99,6 @@ class TemplateTable(Base):
         default=0.0,
         comment="The presence penalty (-2.0~2.0)",
     )
-    wallet_provider: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Provider of the template's wallet",
-    )
     network_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

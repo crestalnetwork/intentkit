@@ -78,23 +78,11 @@ class AgentUserInputColumns:
         comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
     )
 
-    # Wallet and network configuration fields from AgentCore
-    wallet_provider: Mapped[str | None] = mapped_column(
+    # Wallet and network configuration fields
+    wallet_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
-        comment="Provider of the agent's wallet",
-    )
-    readonly_wallet_address: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Readonly wallet address of the agent",
-    )
-    # Note: Float is used here for historical reasons. Consider migrating to
-    # Numeric(22, 4) for better precision if a schema migration is planned.
-    weekly_spending_limit: Mapped[float | None] = mapped_column(
-        Float,
-        nullable=True,
-        comment="Weekly spending limit in USDC when wallet_provider is safe",
+        comment="Team wallet this agent is authorized to use",
     )
     network_id: Mapped[str | None] = mapped_column(
         String,

@@ -26,7 +26,6 @@ def _mock_context(network_id: str = "base-mainnet") -> MagicMock:
     mock_agent = MagicMock()
     mock_agent.network_id = network_id
     mock_agent.id = "test-agent"
-    mock_agent.wallet_provider = "cdp"
     ctx = MagicMock()
     ctx.agent = mock_agent
     return ctx

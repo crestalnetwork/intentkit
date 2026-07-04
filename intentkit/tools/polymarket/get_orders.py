@@ -39,7 +39,7 @@ class GetOrders(PolymarketBaseTool):
         market: str | None = None,
         **kwargs: Any,
     ) -> str:
-        self._require_wallet("view orders")
+        await self._require_wallet("view orders")
 
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 

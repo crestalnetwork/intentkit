@@ -8,13 +8,14 @@ from web3 import AsyncWeb3
 from web3.types import TxParams, Wei
 
 from intentkit.config.config import config
-from intentkit.config.db import get_session
-from intentkit.models.agent import Agent, AgentTable
-from intentkit.models.agent_data import AgentData
+from intentkit.models.wallet import TeamWallet
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.web3 import get_async_web3_client
 
-_wallet_providers: dict[str, tuple[str, str, "CdpWalletProvider"]] = {}
+# Keyed by (wallet id, network, address): wallets are shared across agents
+# and networks, and the address guard drops stale entries if a wallet row is
+# ever re-pointed at a different account.
+_wallet_providers: dict[tuple[str, str, str], "CdpWalletProvider"] = {}
 _cdp_client: CdpClient | None = None
 
 logger = logging.getLogger(__name__)
@@ -144,54 +145,29 @@ def get_cdp_client() -> CdpClient:
     return _cdp_client
 
 
-def _assert_cdp_wallet_provider(agent: Agent) -> None:
-    if agent.wallet_provider != "cdp":
+def _assert_cdp_wallet(wallet: TeamWallet) -> None:
+    if wallet.wallet_provider != "cdp":
         raise IntentKitAPIError(
             400,
             "BadWalletProvider",
-            "Your agent wallet provider is not cdp but you selected a tool that requires a cdp wallet.",
+            "The bound wallet is not a CDP wallet but you selected a tool that requires one.",
         )
 
 
-async def _ensure_evm_account(
-    agent: Agent, agent_data: AgentData | None = None
-) -> tuple[EvmServerAccount, AgentData]:
+async def get_evm_account(wallet: TeamWallet) -> EvmServerAccount:
+    _assert_cdp_wallet(wallet)
+    if not wallet.evm_wallet_address:
+        raise IntentKitAPIError(
+            400,
+            "CdpWalletNotInitialized",
+            f"CDP wallet {wallet.id} has no address.",
+        )
     cdp_client = get_cdp_client()
-    agent_data = agent_data or await AgentData.get(agent.id)
-    address = agent_data.evm_wallet_address
-    account: EvmServerAccount | None = None
-
-    if not address:
-        logger.info("Creating new wallet...")
-        account = await cdp_client.evm.create_account(
-            name=agent.id,
-        )
-        address = account.address
-        logger.info("Created new wallet: %s", address)
-
-    agent_data.evm_wallet_address = address
-    await agent_data.save()
-    if not agent.slug:
-        async with get_session() as db:
-            db_agent = await db.get(AgentTable, agent.id)
-            if db_agent and not db_agent.slug:
-                db_agent.slug = agent_data.evm_wallet_address
-                await db.commit()
-
-    if account is None:
-        account = await cdp_client.evm.get_account(address=address)
-
-    return account, agent_data
+    return await cdp_client.evm.get_account(address=wallet.evm_wallet_address)
 
 
-async def get_evm_account(agent: Agent) -> EvmServerAccount:
-    _assert_cdp_wallet_provider(agent)
-    account, _ = await _ensure_evm_account(agent)
-    return account
-
-
-def get_cdp_network(agent: Agent) -> str:
-    if not agent.network_id:
+def get_cdp_network(network_id: str | None) -> str:
+    if not network_id:
         raise IntentKitAPIError(
             400,
             "BadNetworkID",
@@ -206,53 +182,43 @@ def get_cdp_network(agent: Agent) -> str:
         "base-sepolia": "base-sepolia",
         "bnb-mainnet": "bsc",
     }
-    if agent.network_id == "solana":
+    if network_id == "solana":
         raise IntentKitAPIError(
             400, "BadNetworkID", "Solana is not supported by CDP EVM."
         )
-    cdp_network = mapping.get(agent.network_id)
+    cdp_network = mapping.get(network_id)
     if not cdp_network:
         raise IntentKitAPIError(
-            400, "BadNetworkID", f"Unsupported network ID: {agent.network_id}"
+            400, "BadNetworkID", f"Unsupported network ID: {network_id}"
         )
     return cdp_network
 
 
-async def get_wallet_provider(agent: Agent) -> CdpWalletProvider:
-    _assert_cdp_wallet_provider(agent)
-    if not agent.network_id:
+async def get_wallet_provider(
+    wallet: TeamWallet, network_id: str | None
+) -> CdpWalletProvider:
+    _assert_cdp_wallet(wallet)
+    if not network_id:
         raise IntentKitAPIError(
             400,
             "BadNetworkID",
             "Your agent network ID is not set. Please set it in the agent config.",
         )
 
-    agent_data = await AgentData.get(agent.id)
-    address = agent_data.evm_wallet_address
+    cache_key = (wallet.id, network_id, wallet.evm_wallet_address or "")
+    cached = _wallet_providers.get(cache_key)
+    if cached:
+        return cached
 
-    cache_entry = _wallet_providers.get(agent.id)
-    if cache_entry:
-        cached_network_id, cached_address, provider = cache_entry
-        if cached_network_id == agent.network_id:
-            if not address:
-                address = cached_address or provider.get_address()
-            if cached_address == address:
-                return provider
-
-    account, agent_data = await _ensure_evm_account(agent, agent_data)
-    address = account.address
-
-    cdp_client = get_cdp_client()
-    cdp_network = get_cdp_network(agent)
-    network_id = agent.network_id
+    account = await get_evm_account(wallet)
 
     wallet_provider = CdpWalletProvider(
-        cdp_client=cdp_client,
+        cdp_client=get_cdp_client(),
         account=account,
-        network=cdp_network,
+        network=get_cdp_network(network_id),
         web3_client=get_async_web3_client(network_id),
     )
-    _wallet_providers[agent.id] = (network_id, address, wallet_provider)
+    _wallet_providers[cache_key] = wallet_provider
     return wallet_provider
 
 

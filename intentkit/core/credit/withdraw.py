@@ -7,7 +7,6 @@ from epyxid import XID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.core.agent import get_agent
-from intentkit.models.agent_data import AgentData
 from intentkit.models.credit import (
     DEFAULT_PLATFORM_ACCOUNT_WITHDRAW,
     CreditAccount,
@@ -24,6 +23,7 @@ from intentkit.models.credit import (
 )
 from intentkit.utils.alert import send_alert
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets import get_agent_wallet_address
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +69,7 @@ async def withdraw(
         )
 
     # Get agent wallet address
-    agent_data = await AgentData.get(agent.id)
-    agent_wallet_address = agent_data.evm_wallet_address if agent_data else None
+    agent_wallet_address = await get_agent_wallet_address(agent)
 
     user_id = agent.owner
 

@@ -65,7 +65,7 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            if not self.is_onchain_capable():
+            if not await self.is_onchain_capable():
                 raise ToolException(
                     "This agent does not have an on-chain wallet configured"
                 )

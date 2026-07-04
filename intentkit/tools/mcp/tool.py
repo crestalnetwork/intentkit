@@ -80,17 +80,7 @@ class McpToolTool(IntentKitTool):
     """Original tool name on the MCP server."""
 
     def _resolve_api_key(self, server_def: McpServerDef) -> str | None:
-        """Resolve API key: agent tool config > system config."""
-        try:
-            context = self.get_context()
-            tool_config = context.agent.tool_config(self.category)
-            agent_key = tool_config.get("api_key") if tool_config else None
-            if agent_key:
-                return agent_key
-        except (ValueError, RuntimeError):
-            # No AgentContext / runnable context available
-            # (e.g. schema generation or direct invocation)
-            pass
+        """Resolve the platform-level API key for the server, if any."""
         if server_def.api_key_config_attr:
             return getattr(system_config, server_def.api_key_config_attr, None)
         return None

@@ -23,12 +23,6 @@ COMMON_TOKENS = {
 class JupiterBaseTool(IntentKitTool):
     """Base class for Jupiter tools."""
 
-    api_key: str | None = None
-
-    def __init__(self, api_key: str | None = None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.api_key = api_key
-
     category: str = "jupiter"
 
     async def _make_request(
@@ -53,8 +47,6 @@ class JupiterBaseTool(IntentKitTool):
         url = f"{base_url}{endpoint}"
 
         headers = {}
-        if self.api_key:
-            headers["x-api-key"] = self.api_key
 
         async with httpx.AsyncClient() as client:
             try:

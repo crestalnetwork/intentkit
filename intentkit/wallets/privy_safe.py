@@ -1178,7 +1178,7 @@ async def deploy_safe(
 
     try:
         # Use distributed nonce manager with lock
-        nonce_manager = get_nonce_manager()
+        nonce_manager = get_nonce_manager(network_id)
         if not await nonce_manager.acquire_lock():
             raise IntentKitAPIError(
                 500, "LockTimeout", "Failed to acquire nonce lock for Safe deployment"
@@ -1526,7 +1526,7 @@ async def send_transaction_with_master_wallet(
 
     try:
         # Use distributed nonce manager with lock
-        nonce_manager = get_nonce_manager()
+        nonce_manager = get_nonce_manager(network_id)
         if not await nonce_manager.acquire_lock():
             raise IntentKitAPIError(
                 500, "LockTimeout", "Failed to acquire nonce lock for transaction"

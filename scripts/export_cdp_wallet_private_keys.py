@@ -28,13 +28,13 @@ def normalize_private_key(private_key: str) -> str:
 
 
 def make_output_entry(
-    agent_id: str,
+    wallet_id: str,
     wallet_address: str,
     private_key: str,
     network_id: str | None,
 ) -> dict[str, Any]:
     return {
-        "agent_id": agent_id,
+        "wallet_id": wallet_id,
         "wallet_address": wallet_address,
         "private_key": private_key,
         "network_id": network_id,
@@ -48,8 +48,7 @@ async def export_wallet_private_key(cdp_client: Any, address: str) -> str:
 async def main() -> None:
     from intentkit.config.config import config
     from intentkit.config.db import get_session, init_db
-    from intentkit.models.agent.db import AgentTable
-    from intentkit.models.agent_data import AgentDataTable
+    from intentkit.models.wallet import TeamWalletTable
     from intentkit.wallets.cdp import get_cdp_client
 
     await init_db(**config.db)
@@ -57,32 +56,30 @@ async def main() -> None:
 
     async with get_session() as session:
         result = await session.execute(
-            select(AgentTable, AgentDataTable)
-            .outerjoin(AgentDataTable, AgentDataTable.id == AgentTable.id)
-            .where(AgentTable.wallet_provider == "cdp")
+            select(TeamWalletTable).where(TeamWalletTable.wallet_provider == "cdp")
         )
-        rows = result.all()
+        wallets = result.scalars().all()
 
     exported: list[dict[str, Any]] = []
-    for agent_row, agent_data in rows:
-        if not agent_data or not agent_data.evm_wallet_address:
-            logger.info("%s None export skip:no_wallet", agent_row.id)
+    for wallet in wallets:
+        if not wallet.evm_wallet_address:
+            logger.info("%s None export skip:no_wallet", wallet.id)
             continue
-        wallet_address = agent_data.evm_wallet_address
+        wallet_address = wallet.evm_wallet_address
         try:
             private_key = await export_wallet_private_key(cdp_client, wallet_address)
         except Exception as exc:
-            logger.info("%s %s export error:%s", agent_row.id, wallet_address, str(exc))
+            logger.info("%s %s export error:%s", wallet.id, wallet_address, str(exc))
             continue
         exported.append(
             make_output_entry(
-                agent_id=agent_row.id,
+                wallet_id=wallet.id,
                 wallet_address=wallet_address,
                 private_key=normalize_private_key(private_key),
-                network_id=agent_row.network_id,
+                network_id=wallet.network_id,
             )
         )
-        logger.info("%s %s export ok", agent_row.id, wallet_address)
+        logger.info("%s %s export ok", wallet.id, wallet_address)
 
     OUTPUT_PATH.write_text(json.dumps(exported, indent=2), encoding="utf-8")
     logger.info("saved %s", OUTPUT_PATH)

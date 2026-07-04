@@ -71,7 +71,7 @@ class PlaceOrder(PolymarketBaseTool):
         neg_risk: bool = False,
         **kwargs: Any,
     ) -> str:
-        self._require_wallet("place orders")
+        await self._require_wallet("place orders")
 
         await self.user_rate_limit_by_tool(limit=10, seconds=60)
 

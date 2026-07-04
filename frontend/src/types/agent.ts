@@ -17,8 +17,7 @@ export interface Agent {
   temperature: number | null;
   frequency_penalty: number | null;
   presence_penalty: number | null;
-  wallet_provider: "cdp" | "native" | "readonly" | "safe" | "privy" | "none" | null;
-  readonly_wallet_address: string | null;
+  wallet_id: string | null;
   network_id: string | null;
   tools: Record<string, unknown> | null;
   version: string | null;

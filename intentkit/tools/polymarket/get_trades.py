@@ -46,7 +46,7 @@ class GetTrades(PolymarketBaseTool):
         limit: int = 20,
         **kwargs: Any,
     ) -> str:
-        self._require_wallet("view trades")
+        await self._require_wallet("view trades")
 
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 

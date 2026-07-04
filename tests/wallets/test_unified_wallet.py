@@ -2,16 +2,61 @@
 Tests for unified wallet provider functionality.
 
 These tests verify that the unified wallet provider and signer
-interfaces work correctly for both CDP and Privy providers.
+interfaces resolve the agent's bound TeamWallet and dispatch to the
+correct provider implementation (CDP, native, Safe/Privy, readonly).
 """
 
+import json
+from datetime import datetime
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from intentkit.models.wallet import TeamWallet
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets import get_wallet_provider, get_wallet_signer
 from intentkit.wallets.signer import ThreadSafeEvmWalletSigner
+
+TEAM_ID = "team-1"
+WALLET_ID = "wallet-1"
+
+
+def _team_wallet(
+    wallet_provider: str, wallet_data: dict[str, Any] | None = None
+) -> TeamWallet:
+    """Build a TeamWallet directly, bypassing the database."""
+    now = datetime.now()
+    return TeamWallet(
+        id=WALLET_ID,
+        team_id=TEAM_ID,
+        name="main",
+        wallet_provider=wallet_provider,
+        network_id="base-mainnet",
+        evm_wallet_address="0x1234567890abcdef1234567890abcdef12345678",
+        wallet_data=json.dumps(wallet_data) if wallet_data is not None else None,
+        created_by="user-1",
+        created_at=now,
+        updated_at=now,
+    )
+
+
+def _agent(wallet_id: str | None = WALLET_ID) -> MagicMock:
+    """Build a fake agent bound to the team wallet."""
+    agent = MagicMock()
+    agent.id = "test-agent"
+    agent.team_id = TEAM_ID
+    agent.wallet_id = wallet_id
+    agent.network_id = "base-mainnet"
+    return agent
+
+
+def _patch_wallet_get(wallet: TeamWallet | None):
+    """Patch TeamWallet.get so the agent resolves to the given wallet."""
+    return patch(
+        "intentkit.models.wallet.TeamWallet.get",
+        new=AsyncMock(return_value=wallet),
+    )
 
 
 class TestGetWalletProvider:
@@ -19,72 +64,69 @@ class TestGetWalletProvider:
 
     @pytest.mark.asyncio
     async def test_cdp_provider(self):
-        """Test getting wallet provider for CDP agent."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "cdp"
-        mock_agent.id = "test-agent"
-        mock_agent.network_id = "base-mainnet"
+        """Test getting wallet provider for an agent bound to a CDP wallet."""
+        mock_agent = _agent()
+        wallet = _team_wallet("cdp")
 
         mock_cdp_provider = MagicMock()
 
-        with patch(
-            "intentkit.wallets.get_cdp_wallet_provider",
-            new_callable=AsyncMock,
-            return_value=mock_cdp_provider,
-        ) as mock_get_cdp:
+        with (
+            _patch_wallet_get(wallet),
+            patch(
+                "intentkit.wallets.get_cdp_wallet_provider",
+                new_callable=AsyncMock,
+                return_value=mock_cdp_provider,
+            ) as mock_get_cdp,
+        ):
             provider = await get_wallet_provider(mock_agent)
 
-            mock_get_cdp.assert_called_once_with(mock_agent)
+            mock_get_cdp.assert_called_once_with(wallet, mock_agent.network_id)
             assert provider == mock_cdp_provider
 
     @pytest.mark.asyncio
     async def test_safe_provider(self):
-        """Test getting wallet provider for Safe agent."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "safe"
-        mock_agent.id = "test-agent"
-        mock_agent.network_id = "base-mainnet"
-
-        mock_agent_data = MagicMock()
-        mock_agent_data.privy_wallet_data = (
-            '{"privy_wallet_id": "test-id", '
-            '"privy_wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21", '
-            '"smart_wallet_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", '
-            '"network_id": "base-mainnet"}'
+        """Test getting wallet provider for an agent bound to a Safe wallet."""
+        mock_agent = _agent()
+        wallet = _team_wallet(
+            "safe",
+            wallet_data={
+                "privy_wallet_id": "test-id",
+                "privy_wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21",
+                "smart_wallet_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+                "network_id": "base-mainnet",
+            },
         )
 
         mock_privy_provider = MagicMock()
 
-        with patch(
-            "intentkit.models.agent_data.AgentData.get",
-            new_callable=AsyncMock,
-            return_value=mock_agent_data,
-        ):
-            with patch(
-                "intentkit.wallets.privy.get_wallet_provider",
+        with (
+            _patch_wallet_get(wallet),
+            patch(
+                "intentkit.wallets.get_privy_provider",
                 return_value=mock_privy_provider,
-            ):
-                provider = await get_wallet_provider(mock_agent)
-                assert provider is not None
+            ) as mock_get_privy,
+        ):
+            provider = await get_wallet_provider(mock_agent)
+
+            mock_get_privy.assert_called_once_with(wallet.wallet_data_json())
+            assert provider == mock_privy_provider
 
     @pytest.mark.asyncio
     async def test_readonly_provider_raises(self):
         """Test that readonly wallet provider raises error."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "readonly"
-        mock_agent.id = "test-agent"
+        mock_agent = _agent()
+        wallet = _team_wallet("readonly")
 
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await get_wallet_provider(mock_agent)
+        with _patch_wallet_get(wallet):
+            with pytest.raises(IntentKitAPIError) as exc_info:
+                await get_wallet_provider(mock_agent)
 
         assert exc_info.value.key == "ReadonlyWalletNotSupported"
 
     @pytest.mark.asyncio
-    async def test_none_provider_raises(self):
-        """Test that no wallet provider raises error."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = None
-        mock_agent.id = "test-agent"
+    async def test_unbound_agent_raises(self):
+        """Test that an agent without a bound wallet raises error."""
+        mock_agent = _agent(wallet_id=None)
 
         with pytest.raises(IntentKitAPIError) as exc_info:
             await get_wallet_provider(mock_agent)
@@ -94,12 +136,12 @@ class TestGetWalletProvider:
     @pytest.mark.asyncio
     async def test_unsupported_provider_raises(self):
         """Test that unsupported wallet provider raises error."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "unknown"
-        mock_agent.id = "test-agent"
+        mock_agent = _agent()
+        wallet = _team_wallet("unknown")
 
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await get_wallet_provider(mock_agent)
+        with _patch_wallet_get(wallet):
+            with pytest.raises(IntentKitAPIError) as exc_info:
+                await get_wallet_provider(mock_agent)
 
         assert exc_info.value.key == "UnsupportedWalletProvider"
 
@@ -112,9 +154,7 @@ class TestEvmWallet:
         """Test that create prefetches address and chain ID."""
         from intentkit.wallets.evm_wallet import EvmWallet
 
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "cdp"
-        mock_agent.network_id = "base-mainnet"
+        mock_agent = _agent()
 
         mock_provider = MagicMock()
         mock_provider.get_address.return_value = "0x123"
@@ -148,11 +188,9 @@ class TestGetWalletSigner:
 
     @pytest.mark.asyncio
     async def test_cdp_signer(self):
-        """Test getting wallet signer for CDP agent."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "cdp"
-        mock_agent.id = "test-agent"
-        mock_agent.network_id = "base-mainnet"
+        """Test getting wallet signer for an agent bound to a CDP wallet."""
+        mock_agent = _agent()
+        wallet = _team_wallet("cdp")
 
         mock_account = MagicMock()
         mock_account.address = "0x1234567890abcdef1234567890abcdef12345678"
@@ -162,11 +200,12 @@ class TestGetWalletSigner:
         # the credentials as strings, which a bare MagicMock cannot satisfy. We
         # only want to verify get_wallet_signer's cdp routing, not the SDK.
         with (
+            _patch_wallet_get(wallet),
             patch(
                 "intentkit.wallets.get_evm_account",
                 new_callable=AsyncMock,
                 return_value=mock_account,
-            ),
+            ) as mock_get_account,
             patch("cdp.EvmLocalAccount") as mock_local_account_class,
         ):
             mock_signer = MagicMock()
@@ -175,6 +214,7 @@ class TestGetWalletSigner:
 
             signer = await get_wallet_signer(mock_agent)
 
+            mock_get_account.assert_called_once_with(wallet)
             mock_local_account_class.assert_called_once_with(mock_account)
             assert signer is not None
             assert signer.address == mock_account.address
@@ -182,12 +222,12 @@ class TestGetWalletSigner:
     @pytest.mark.asyncio
     async def test_readonly_signer_raises(self):
         """Test that readonly wallet signer raises error."""
-        mock_agent = MagicMock()
-        mock_agent.wallet_provider = "readonly"
-        mock_agent.id = "test-agent"
+        mock_agent = _agent()
+        wallet = _team_wallet("readonly")
 
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await get_wallet_signer(mock_agent)
+        with _patch_wallet_get(wallet):
+            with pytest.raises(IntentKitAPIError) as exc_info:
+                await get_wallet_signer(mock_agent)
 
         assert exc_info.value.key == "ReadonlyWalletNotSupported"
 

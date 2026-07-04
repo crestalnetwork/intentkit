@@ -76,16 +76,6 @@
                 }
             }
         ],
-        "./intentkit/core/agent/wallet.py": [
-            {
-                "code": "reportRedeclaration",
-                "range": {
-                    "startColumn": 24,
-                    "endColumn": 31,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./intentkit/core/agent_activity.py": [
             {
                 "code": "reportImportCycles",

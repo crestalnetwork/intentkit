@@ -15,12 +15,6 @@
       "description": "Whether this tool is enabled",
       "default": false
     },
-    "api_key": {
-      "type": "string",
-      "title": "API Key",
-      "description": "Jupiter API Key (required for higher rate limits or if public API is restricted)",
-      "default": ""
-    },
     "states": {
       "type": "object",
       "properties": {

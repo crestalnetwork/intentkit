@@ -1,4 +1,4 @@
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from langchain_core.tools import BaseTool
 
@@ -16,7 +16,6 @@ class Config(ToolsetConfig):
     """Configuration for Jupiter tools."""
 
     states: ToolStates
-    api_key: NotRequired[str | None]
 
 
 _TOOL_CLASSES: dict[str, type[BaseTool]] = {
@@ -30,9 +29,8 @@ async def get_tools(
     is_private: bool,
     **_,
 ) -> list[BaseTool]:
-    api_key = config.get("api_key")
     return [
-        _TOOL_CLASSES[name](api_key=api_key)
+        _TOOL_CLASSES[name]()
         for name in filter_enabled_tool_names(config.get("states", {}), is_private)
         if name in _TOOL_CLASSES
     ]

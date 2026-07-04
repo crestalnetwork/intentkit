@@ -14,7 +14,7 @@ from .info import invalidate_agent_info
 from .notifications import send_agent_notification
 from .queries import get_agent, get_agent_by_id_or_slug
 from .tool_registry import sanitize_tools, validate_tools
-from .wallet import process_agent_wallet
+from .wallet import validate_wallet_binding
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,9 @@ async def override_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
+    # Wallets are team property; validate the binding before persisting
+    _ = await validate_wallet_binding(agent.wallet_id, existing_agent.team_id)
+
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
         if not db_agent:
@@ -122,11 +125,7 @@ async def override_agent(
         latest_agent = Agent.model_validate(db_agent)
 
     await invalidate_agent_info(agent_id)
-    agent_data = await process_agent_wallet(
-        latest_agent,
-        existing_agent.wallet_provider,
-        existing_agent.weekly_spending_limit,
-    )
+    agent_data = await AgentData.get(agent_id)
     send_agent_notification(latest_agent, agent_data, "Agent Overridden Deployed")
 
     return latest_agent, agent_data
@@ -177,6 +176,12 @@ async def patch_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
+    # Wallets are team property; validate the binding before persisting
+    if "wallet_id" in update_fields:
+        _ = await validate_wallet_binding(
+            update_fields["wallet_id"], existing_agent.team_id
+        )
+
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
         if not db_agent:
@@ -204,11 +209,7 @@ async def patch_agent(
         latest_agent = Agent.model_validate(db_agent)
 
     await invalidate_agent_info(agent_id)
-    agent_data = await process_agent_wallet(
-        latest_agent,
-        existing_agent.wallet_provider,
-        existing_agent.weekly_spending_limit,
-    )
+    agent_data = await AgentData.get(agent_id)
     send_agent_notification(latest_agent, agent_data, "Agent Patched")
 
     return latest_agent, agent_data
@@ -254,6 +255,9 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     if agent.tools:
         validate_tools(agent.tools)
 
+    # Wallets are team property; validate the binding before persisting
+    _ = await validate_wallet_binding(agent.wallet_id, agent.team_id)
+
     async with get_session() as db:
         try:
             # Slug uniqueness check
@@ -278,7 +282,7 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
 
     # A lookup before creation may have negative-cached this id.
     await invalidate_agent_info(latest_agent.id)
-    agent_data = await process_agent_wallet(latest_agent)
+    agent_data = await AgentData.get(latest_agent.id)
     send_agent_notification(latest_agent, agent_data, "Agent Deployed")
 
     if latest_agent.team_id:

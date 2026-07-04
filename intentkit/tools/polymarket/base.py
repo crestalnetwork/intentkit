@@ -210,12 +210,12 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
     category: str = "polymarket"
 
-    def _require_wallet(self, action: str = "perform this action") -> None:
+    async def _require_wallet(self, action: str = "perform this action") -> None:
         """Validate the agent has a signing-capable wallet.
 
         Raises ToolException if not.
         """
-        if not self.is_onchain_capable():
+        if not await self.is_onchain_capable():
             raise ToolException(
                 f"Agent wallet is not configured to {action}. "
                 "Configure a CDP, Native, Safe, or Privy wallet."
@@ -237,6 +237,22 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
     # --- L1 Auth: derive API credentials via EIP-712 ---
 
+    async def _current_signer_address(self) -> str | None:
+        """Signing address of the bound wallet, without network calls.
+
+        Cached CLOB creds are derived from the wallet's signer; when the
+        agent is rebound to a different team wallet the cache must be
+        invalidated, so compare against this address.
+        """
+        from intentkit.wallets import get_agent_wallet
+
+        wallet = await get_agent_wallet(self.get_context().agent)
+        if wallet is None:
+            return None
+        if wallet.wallet_provider in ("safe", "privy"):
+            return wallet.wallet_data_json().get("privy_wallet_address")
+        return wallet.evm_wallet_address
+
     async def _ensure_api_creds(self) -> dict[str, str]:
         """Ensure API credentials exist, derive them if not.
 
@@ -247,7 +263,10 @@ class PolymarketBaseTool(IntentKitOnChainTool):
             k in cached
             for k in ("api_key", "api_secret", "api_passphrase", "wallet_address")
         ):
-            return cached
+            expected = await self._current_signer_address()
+            if expected and cached["wallet_address"].lower() == expected.lower():
+                return cached
+            # Wallet changed since the creds were derived; drop and re-derive.
 
         signer = await self.get_wallet_signer()
         wallet_address = signer.address
@@ -362,7 +381,7 @@ class PolymarketBaseTool(IntentKitOnChainTool):
         signer_address = signer.address
 
         # For Safe/Privy wallets, maker (funds holder) differs from signer (EOA)
-        wallet_provider = self.get_agent_wallet_provider_type()
+        wallet_provider = await self.get_agent_wallet_provider_type()
         if wallet_provider in ("safe", "privy"):
             provider = await self.get_wallet_provider()
             maker_address = provider.get_address()

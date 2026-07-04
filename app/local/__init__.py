@@ -12,6 +12,7 @@ from app.local.link import link_router
 from app.local.metadata import metadata_router
 from app.local.public import public_router
 from app.local.schema import schema_router
+from app.local.wallet import wallet_router
 from app.local.wechat import wechat_router
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "link_router",
     "public_router",
     "schema_router",
+    "wallet_router",
     "metadata_router",
     "wechat_router",
 ]

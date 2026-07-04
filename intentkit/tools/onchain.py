@@ -14,6 +14,7 @@ from langchain_core.tools.base import ToolException
 from web3 import AsyncWeb3
 
 from intentkit.tools.base import IntentKitTool
+from intentkit.wallets import get_agent_wallet, require_agent_wallet
 from intentkit.wallets import get_cdp_network as resolve_cdp_network
 from intentkit.wallets import get_evm_account as fetch_evm_account
 from intentkit.wallets import get_wallet_provider as unified_get_wallet_provider
@@ -31,7 +32,7 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
 
     This base class provides unified access to wallet providers and signers,
     automatically selecting the appropriate implementation based on the
-    agent's wallet_provider configuration (CDP or Privy).
+    provider of the agent's bound team wallet.
     """
 
     def web3_client(self) -> AsyncWeb3:
@@ -53,7 +54,7 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
 
     async def get_evm_account(self) -> EvmServerAccount:
         """
-        Fetch the EVM account associated with the active agent.
+        Fetch the EVM account associated with the active agent's wallet.
 
         Note: This method is CDP-specific. For a provider-agnostic approach,
         use get_wallet_provider() instead.
@@ -62,11 +63,11 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
             The CDP EVM server account.
 
         Raises:
-            IntentKitAPIError: If the agent is not using CDP wallet provider.
+            IntentKitAPIError: If the agent's wallet is not a CDP wallet.
         """
         context = self.get_context()
-        agent = context.agent
-        return await fetch_evm_account(agent)
+        wallet = await require_agent_wallet(context.agent)
+        return await fetch_evm_account(wallet)
 
     def get_cdp_network(self) -> str:
         """
@@ -78,8 +79,7 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
             The CDP network identifier (e.g., 'base', 'ethereum').
         """
         context = self.get_context()
-        agent = context.agent
-        return resolve_cdp_network(agent)
+        return resolve_cdp_network(context.agent.network_id)
 
     # =========================================================================
     # Unified Wallet Methods (Support both CDP and Privy)
@@ -117,9 +117,9 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
         Get the wallet provider for the active agent.
 
         This method automatically selects the appropriate wallet provider
-        based on the agent's wallet_provider configuration:
-        - 'cdp': Returns CdpEvmWalletProvider
-        - 'privy': Returns SafeWalletProvider
+        based on the provider of the agent's bound team wallet:
+        - 'cdp': Returns CdpWalletProvider
+        - 'safe'/'privy': Returns SafeWalletProvider
 
         Returns:
             The wallet provider instance.
@@ -187,26 +187,27 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
         provider = await self.get_wallet_provider()
         return provider.get_address()
 
-    def get_agent_wallet_provider_type(self) -> str | None:
+    async def get_agent_wallet_provider_type(self) -> str | None:
         """
-        Get the wallet provider type for the active agent.
+        Get the wallet provider type of the active agent's wallet.
 
         Returns:
-            The wallet provider type ('cdp', 'privy', 'readonly', 'none')
-            or None if not set.
+            The wallet provider type ('cdp', 'native', 'readonly', 'safe',
+            'privy') or None when the agent has no wallet bound.
         """
         context = self.get_context()
-        return context.agent.wallet_provider
+        wallet = await get_agent_wallet(context.agent)
+        return wallet.wallet_provider if wallet else None
 
-    def is_onchain_capable(self) -> bool:
+    async def is_onchain_capable(self) -> bool:
         """
         Check if the agent can perform on-chain operations.
 
         Returns:
-            True if the agent has a wallet provider that supports
-            on-chain operations (CDP, native, Safe, or Privy).
+            True if the agent's wallet supports signing
+            (CDP, native, Safe, or Privy).
         """
-        wallet_provider = self.get_agent_wallet_provider_type()
+        wallet_provider = await self.get_agent_wallet_provider_type()
         return wallet_provider in ("cdp", "native", "safe", "privy")
 
     def get_agent_network_id(self) -> str | None:

@@ -36,7 +36,7 @@ class CDPGetBalance(CDPBaseTool):
         """
         try:
             # Ensure the wallet provider is CDP
-            self.ensure_cdp_provider()
+            await self.ensure_cdp_provider()
 
             # Get the unified wallet
             wallet = await self.get_unified_wallet()

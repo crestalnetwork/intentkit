@@ -28,10 +28,9 @@ def _resolve_system_api_key(server_def: McpServerDef) -> str | None:
 
 async def _get_mcp_tool_instances(
     server_def: McpServerDef,
-    api_key_override: str | None = None,
 ) -> dict[str, McpToolTool]:
     """Get pre-built tool instances for an MCP server, with caching."""
-    api_key = api_key_override or _resolve_system_api_key(server_def)
+    api_key = _resolve_system_api_key(server_def)
     cache_key = (server_def.name, api_key)
 
     now = time.time()
@@ -97,18 +96,13 @@ class McpCategoryModule:
         if not is_tool_visible(visibility, is_private):
             return []
 
-        # Use per-agent API key for discovery if system key is not set
-        agent_api_key = config.get("api_key")
-        instances = await _get_mcp_tool_instances(
-            self._server_def, api_key_override=agent_api_key
-        )
+        instances = await _get_mcp_tool_instances(self._server_def)
         return list(instances.values())
 
     def available(self) -> bool:
         """Check if this MCP server is available.
 
         Returns True if no API key is required, or if a system-level key is configured.
-        Per-agent keys are checked at get_tools time, not here.
         """
         if self._server_def.api_key_config_attr:
             return bool(_resolve_system_api_key(self._server_def))

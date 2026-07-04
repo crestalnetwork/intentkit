@@ -1,0 +1,253 @@
+"""Tests for team wallets: model CRUD, provisioning rules, agent binding."""
+
+import json
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+import pytest_asyncio
+
+from intentkit.config.base import Base
+from intentkit.core.agent.wallet import validate_wallet_binding
+from intentkit.core.team.wallet import (
+    create_team_wallet,
+    set_wallet_safe_token_spending_limit,
+)
+from intentkit.models.agent import Agent, AgentVisibility
+from intentkit.models.team import Team
+from intentkit.models.wallet import TeamWallet, TeamWalletTable
+from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets import get_agent_wallet
+
+
+@pytest_asyncio.fixture()
+async def wallet_tables(db_engine):
+    async with db_engine.begin() as conn:
+        await conn.run_sync(
+            Base.metadata.create_all, tables=[TeamWalletTable.__table__]
+        )
+    yield
+
+
+def _build_agent(wallet_id: str | None, team_id: str | None = "team-1") -> Agent:
+    now = datetime.now()
+    return Agent(
+        id="agent-1",
+        name="Test Agent",
+        description="A test agent",
+        model="gpt-4o",
+        deployed_at=now,
+        updated_at=now,
+        created_at=now,
+        owner="user-1",
+        team_id=team_id,
+        tools={},
+        prompt="You are a helper.",
+        temperature=0.7,
+        visibility=AgentVisibility.PRIVATE,
+        public_info_updated_at=now,
+        wallet_id=wallet_id,
+        network_id="base-mainnet",
+    )
+
+
+class TestTeamWalletModel:
+    @pytest.mark.asyncio
+    async def test_create_and_list(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="main",
+            wallet_provider="readonly",
+            evm_wallet_address="0xabc",
+            created_by="user-1",
+        )
+        assert wallet.team_id == "team-1"
+        assert wallet.wallet_provider == "readonly"
+
+        wallets = await TeamWallet.list_for_team("team-1")
+        assert [w.id for w in wallets] == [wallet.id]
+        assert await TeamWallet.list_for_team("team-2") == []
+
+    @pytest.mark.asyncio
+    async def test_wallet_data_excluded_from_serialization(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="secret",
+            wallet_provider="native",
+            wallet_data=json.dumps({"private_key": "0xdead"}),
+            created_by="user-1",
+        )
+        dumped = wallet.model_dump()
+        assert "wallet_data" not in dumped
+        assert wallet.wallet_data_json()["private_key"] == "0xdead"
+
+
+class TestCreateTeamWallet:
+    @pytest.mark.asyncio
+    async def test_readonly_requires_address(self, wallet_tables):
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await create_team_wallet(
+                team_id="team-1",
+                name="watch",
+                wallet_provider="readonly",
+                created_by="user-1",
+            )
+        assert exc_info.value.key == "ReadonlyAddressRequired"
+
+    @pytest.mark.asyncio
+    async def test_readonly_wallet(self, wallet_tables):
+        wallet = await create_team_wallet(
+            team_id="team-1",
+            name="watch",
+            wallet_provider="readonly",
+            created_by="user-1",
+            readonly_address="0xwatch",
+        )
+        assert wallet.evm_wallet_address == "0xwatch"
+
+    @pytest.mark.asyncio
+    async def test_native_wallet(self, wallet_tables):
+        wallet = await create_team_wallet(
+            team_id="team-1",
+            name="hot",
+            wallet_provider="native",
+            created_by="user-1",
+        )
+        assert wallet.evm_wallet_address
+        data = wallet.wallet_data_json()
+        assert data["address"] == wallet.evm_wallet_address
+        # 32-byte hex key, with or without 0x prefix
+        assert int(data["private_key"], 16)
+        assert len(data["private_key"].removeprefix("0x")) == 64
+
+    @pytest.mark.asyncio
+    async def test_unsupported_provider(self, wallet_tables):
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await create_team_wallet(
+                team_id="team-1",
+                name="bad",
+                wallet_provider="none",
+                created_by="user-1",
+            )
+        assert exc_info.value.key == "UnsupportedWalletProvider"
+
+    @pytest.mark.asyncio
+    async def test_privy_requires_privy_user(self, wallet_tables, monkeypatch):
+        monkeypatch.setattr(Team, "get_owner", AsyncMock(return_value="user-plain"))
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await create_team_wallet(
+                team_id="team-1",
+                name="privy",
+                wallet_provider="privy",
+                created_by="user-plain",
+            )
+        assert exc_info.value.key == "PrivyUserIdMissing"
+
+
+class TestWalletBinding:
+    @pytest.mark.asyncio
+    async def test_unbound_agent(self, wallet_tables):
+        assert await validate_wallet_binding(None, "team-1") is None
+        assert await get_agent_wallet(_build_agent(None)) is None
+
+    @pytest.mark.asyncio
+    async def test_missing_wallet_rejected(self, wallet_tables):
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await validate_wallet_binding("nope", "team-1")
+        assert exc_info.value.key == "WalletNotFound"
+
+    @pytest.mark.asyncio
+    async def test_other_team_wallet_rejected(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-2",
+            name="other",
+            wallet_provider="readonly",
+            evm_wallet_address="0xother",
+            created_by="user-2",
+        )
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await validate_wallet_binding(wallet.id, "team-1")
+        assert exc_info.value.key == "WalletNotOwnedByTeam"
+
+        # Runtime resolution refuses instead of raising
+        assert await get_agent_wallet(_build_agent(wallet.id, "team-1")) is None
+
+    @pytest.mark.asyncio
+    async def test_own_team_wallet_resolves(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="mine",
+            wallet_provider="readonly",
+            evm_wallet_address="0xmine",
+            created_by="user-1",
+        )
+        bound = await validate_wallet_binding(wallet.id, "team-1")
+        assert bound is not None and bound.id == wallet.id
+        resolved = await get_agent_wallet(_build_agent(wallet.id, "team-1"))
+        assert resolved is not None and resolved.id == wallet.id
+
+    @pytest.mark.asyncio
+    async def test_teamless_agent_uses_system_wallets(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="system",
+            name="fallback",
+            wallet_provider="readonly",
+            evm_wallet_address="0xsys",
+            created_by="system",
+        )
+        resolved = await get_agent_wallet(_build_agent(wallet.id, None))
+        assert resolved is not None and resolved.id == wallet.id
+
+
+class TestSafeSpendingLimit:
+    @pytest.mark.asyncio
+    async def test_requires_safe_wallet(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="not-safe",
+            wallet_provider="readonly",
+            evm_wallet_address="0xw",
+            created_by="user-1",
+        )
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await set_wallet_safe_token_spending_limit(wallet.id, "0xtoken", 10.0)
+        assert exc_info.value.key == "SafeWalletRequired"
+
+    @pytest.mark.asyncio
+    async def test_success(self, wallet_tables, monkeypatch):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="safe",
+            wallet_provider="safe",
+            evm_wallet_address="0xsafe",
+            wallet_data=json.dumps(
+                {
+                    "privy_wallet_id": "privy-wallet-1",
+                    "privy_wallet_address": "0xprivy",
+                    "smart_wallet_address": "0xsafe",
+                    "network_id": "base-mainnet",
+                    "rpc_url": "http://rpc.url",
+                }
+            ),
+            created_by="user-1",
+        )
+        monkeypatch.setattr("intentkit.wallets.privy.PrivyClient", MagicMock())
+        set_limit_mock = AsyncMock(return_value={"next_nonce": 1})
+        monkeypatch.setattr(
+            "intentkit.wallets.privy.set_safe_token_spending_limit",
+            set_limit_mock,
+        )
+
+        result = await set_wallet_safe_token_spending_limit(
+            wallet.id, "0x1111111111111111111111111111111111111111", 123.45
+        )
+
+        set_limit_mock.assert_awaited_once()
+        assert set_limit_mock.await_args is not None
+        kwargs = set_limit_mock.await_args.kwargs
+        assert kwargs["privy_wallet_id"] == "privy-wallet-1"
+        assert kwargs["safe_address"] == "0xsafe"
+        assert kwargs["spending_limit"] == 123.45
+        assert kwargs["network_id"] == "base-mainnet"
+        assert kwargs["rpc_url"] == "http://rpc.url"
+        assert result == {"next_nonce": 1}

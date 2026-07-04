@@ -42,6 +42,7 @@ from app.local import (
     metadata_router,
     public_router,
     schema_router,
+    wallet_router,
     wechat_router,
 )
 
@@ -148,6 +149,7 @@ _ = app.include_router(link_router)
 _ = app.include_router(content_router)
 _ = app.include_router(metadata_router)
 _ = app.include_router(schema_router)
+_ = app.include_router(wallet_router)
 _ = app.include_router(wechat_router)
 _ = app.include_router(core_router)
 _ = app.include_router(public_router)

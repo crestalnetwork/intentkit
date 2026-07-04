@@ -44,7 +44,7 @@ class CancelOrder(PolymarketBaseTool):
         cancel_all: bool = False,
         **kwargs: Any,
     ) -> str:
-        self._require_wallet("cancel orders")
+        await self._require_wallet("cancel orders")
 
         await self.user_rate_limit_by_tool(limit=20, seconds=60)
 

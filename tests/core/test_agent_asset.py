@@ -64,13 +64,13 @@ async def test_agent_asset_no_wallet(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    class DummyAgentData:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return SimpleNamespace(evm_wallet_address=None)
+    async def mock_get_agent_wallet_address(agent_obj):
+        return None
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    monkeypatch.setattr(
+        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+    )
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
     mock_redis = AsyncMock()
     mock_redis.get.return_value = None
@@ -93,12 +93,10 @@ async def test_agent_asset_success(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    class DummyAgentData:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return SimpleNamespace(evm_wallet_address="0x123")
+    async def mock_get_agent_wallet_address(agent_obj):
+        return "0x123"
 
-    async def mockbuild_assets_list(agent_obj, agent_data_obj, web3_client):
+    async def mockbuild_assets_list(agent_obj, wallet_address, web3_client):
         return [Asset(symbol="ETH", balance=Decimal("1"))]
 
     async def mock_get_wallet_net_worth(wallet, network_id):
@@ -106,7 +104,9 @@ async def test_agent_asset_success(monkeypatch):
         return "123.45"
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    monkeypatch.setattr(
+        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+    )
     monkeypatch.setattr(
         asset_module, "get_async_web3_client", lambda network: MagicMock()
     )
@@ -136,13 +136,13 @@ async def test_agent_asset_missing_network(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    class DummyAgentData:
-        @classmethod
-        async def get(cls, agent_id: str):
-            return SimpleNamespace(evm_wallet_address="0x123")
+    async def mock_get_agent_wallet_address(agent_obj):
+        return "0x123"
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
-    monkeypatch.setattr(asset_module, "AgentData", DummyAgentData)
+    monkeypatch.setattr(
+        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+    )
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
     mock_redis = AsyncMock()
     mock_redis.get.return_value = None

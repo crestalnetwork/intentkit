@@ -1,7 +1,7 @@
-import json
 import logging
 from typing import TYPE_CHECKING, Any, TypeAlias
 
+from intentkit.models.wallet import TeamWallet
 from intentkit.utils.error import IntentKitAPIError
 from intentkit.wallets.cdp import (
     get_cdp_client,
@@ -40,110 +40,109 @@ WalletSignerType = (
 )
 
 
-async def _get_agent_wallet_data(agent: "Agent", wallet_type: str) -> dict[str, Any]:
-    from intentkit.models.agent_data import AgentData
+async def get_agent_wallet(agent: "Agent") -> TeamWallet | None:
+    """Resolve the team wallet an agent is authorized to use, if any.
 
-    agent_data = await AgentData.get(agent.id)
-    if wallet_type == "native":
-        data_field = agent_data.native_wallet_data
-        not_initialized_error = "NativeWalletNotInitialized"
-        corrupted_error = "NativeWalletDataCorrupted"
-        data_label = "native wallet data"
-    else:
-        data_field = agent_data.privy_wallet_data
-        not_initialized_error = "PrivyWalletNotInitialized"
-        corrupted_error = "PrivyWalletDataCorrupted"
-        data_label = "wallet data"
+    Wallets are team property: the lookup only succeeds for wallets owned by
+    the agent's own team (``TeamWallet.get_for_team``).
+    """
+    if not agent.wallet_id:
+        return None
+    wallet = await TeamWallet.get_for_team(agent.wallet_id, agent.team_id)
+    if wallet is None:
+        logger.warning(
+            "Agent %s references missing or foreign wallet %s",
+            agent.id,
+            agent.wallet_id,
+        )
+    return wallet
 
-    if not data_field:
+
+async def require_agent_wallet(agent: "Agent") -> TeamWallet:
+    """Like :func:`get_agent_wallet`, raising when the agent has no wallet."""
+    wallet = await get_agent_wallet(agent)
+    if wallet is None:
         raise IntentKitAPIError(
             400,
-            not_initialized_error,
-            "Wallet has not been initialized for this agent. "
-            f"Please ensure the agent was created with wallet_provider='{agent.wallet_provider}'.",
+            "NoWalletConfigured",
+            "This agent is not authorized to use a wallet. "
+            "Create a wallet for the team and set the agent's wallet_id.",
         )
+    return wallet
 
-    try:
-        return json.loads(data_field)
-    except json.JSONDecodeError as e:
+
+async def get_agent_wallet_address(agent: "Agent") -> str | None:
+    """EVM address of the agent's wallet, or None when unbound."""
+    wallet = await get_agent_wallet(agent)
+    return wallet.evm_wallet_address if wallet else None
+
+
+def _wallet_payload(wallet: TeamWallet, error_prefix: str) -> dict[str, Any]:
+    data = wallet.wallet_data_json()
+    if not data:
         raise IntentKitAPIError(
-            500,
-            corrupted_error,
-            f"Failed to parse {data_label}: {e}",
-        ) from e
+            400,
+            f"{error_prefix}NotInitialized",
+            f"Wallet {wallet.id} has no provider data.",
+        )
+    return data
 
 
 async def get_wallet_provider(agent: "Agent") -> WalletProviderType:
-    if agent.wallet_provider == "cdp":
-        return await get_cdp_wallet_provider(agent)
+    wallet = await require_agent_wallet(agent)
 
-    elif agent.wallet_provider == "native":
-        native_data = await _get_agent_wallet_data(agent, "native")
-        return get_native_wallet_provider(native_data)
+    if wallet.wallet_provider == "cdp":
+        return await get_cdp_wallet_provider(wallet, agent.network_id)
 
-    elif agent.wallet_provider in ("safe", "privy"):
-        privy_data = await _get_agent_wallet_data(agent, "privy")
-        return get_privy_provider(privy_data)
+    elif wallet.wallet_provider == "native":
+        return get_native_wallet_provider(_wallet_payload(wallet, "NativeWallet"))
 
-    elif agent.wallet_provider == "readonly":
+    elif wallet.wallet_provider in ("safe", "privy"):
+        return get_privy_provider(_wallet_payload(wallet, "PrivyWallet"))
+
+    elif wallet.wallet_provider == "readonly":
         raise IntentKitAPIError(
             400,
             "ReadonlyWalletNotSupported",
             "Readonly wallets cannot perform on-chain operations that require signing.",
         )
 
-    elif agent.wallet_provider == "none" or agent.wallet_provider is None:
-        raise IntentKitAPIError(
-            400,
-            "NoWalletConfigured",
-            "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp', 'native', 'safe', or 'privy' in the agent configuration.",
-        )
-
     else:
         raise IntentKitAPIError(
             400,
             "UnsupportedWalletProvider",
-            f"Wallet provider '{agent.wallet_provider}' is not supported for on-chain operations. "
+            f"Wallet provider '{wallet.wallet_provider}' is not supported for on-chain operations. "
             "Supported providers are: 'cdp', 'native', 'safe', 'privy'.",
         )
 
 
 async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
-    if agent.wallet_provider == "cdp":
+    wallet = await require_agent_wallet(agent)
+
+    if wallet.wallet_provider == "cdp":
         from cdp import EvmLocalAccount
 
-        account = await get_evm_account(agent)
+        account = await get_evm_account(wallet)
         return EvmLocalAccount(account)
 
-    elif agent.wallet_provider == "native":
-        native_data = await _get_agent_wallet_data(agent, "native")
-        return get_native_signer(native_data)
+    elif wallet.wallet_provider == "native":
+        return get_native_signer(_wallet_payload(wallet, "NativeWallet"))
 
-    elif agent.wallet_provider in ("safe", "privy"):
-        privy_data = await _get_agent_wallet_data(agent, "privy")
-        return get_privy_signer(privy_data)
+    elif wallet.wallet_provider in ("safe", "privy"):
+        return get_privy_signer(_wallet_payload(wallet, "PrivyWallet"))
 
-    elif agent.wallet_provider == "readonly":
+    elif wallet.wallet_provider == "readonly":
         raise IntentKitAPIError(
             400,
             "ReadonlyWalletNotSupported",
             "Readonly wallets cannot perform signing operations.",
         )
 
-    elif agent.wallet_provider == "none" or agent.wallet_provider is None:
-        raise IntentKitAPIError(
-            400,
-            "NoWalletConfigured",
-            "This agent does not have a wallet configured. "
-            "Please set wallet_provider to 'cdp', 'native', 'safe', or 'privy' in the agent configuration.",
-        )
-
     else:
         raise IntentKitAPIError(
             400,
             "UnsupportedWalletProvider",
-            f"Wallet provider '{agent.wallet_provider}' is not supported for signing. "
+            f"Wallet provider '{wallet.wallet_provider}' is not supported for signing. "
             "Supported providers are: 'cdp', 'native', 'safe', 'privy'.",
         )
 
@@ -151,9 +150,12 @@ async def get_wallet_signer(agent: "Agent") -> WalletSignerType:
 __all__ = [
     "WalletProviderType",
     "WalletSignerType",
+    "get_agent_wallet",
+    "get_agent_wallet_address",
     "get_cdp_client",
     "get_cdp_network",
     "get_evm_account",
     "get_wallet_provider",
     "get_wallet_signer",
+    "require_agent_wallet",
 ]

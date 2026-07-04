@@ -137,20 +137,25 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
     return "\n".join(social_parts) + ("\n" if social_parts else "")
 
 
-def _build_wallet_section(agent: Agent, agent_data: AgentData) -> str:
-    """Build wallet information section."""
+async def _build_wallet_section(agent: Agent) -> str:
+    """Build wallet information section from the agent's team wallet."""
+    from intentkit.models.wallet import TeamWallet
+
+    wallet = await TeamWallet.get_for_team(agent.wallet_id, agent.team_id)
+    if not wallet:
+        return ""
 
     wallet_parts = []
     network_id = agent.network_id
 
-    if agent_data.evm_wallet_address and network_id != "solana":
+    if wallet.evm_wallet_address and network_id != "solana":
         wallet_parts.append(
-            f"Your EVM wallet address is {agent_data.evm_wallet_address}."
+            f"Your EVM wallet address is {wallet.evm_wallet_address}."
             f"You are now in {network_id} network."
         )
-    if agent_data.solana_wallet_address and network_id == "solana":
+    if wallet.solana_wallet_address and network_id == "solana":
         wallet_parts.append(
-            f"Your Solana wallet address is {agent_data.solana_wallet_address}."
+            f"Your Solana wallet address is {wallet.solana_wallet_address}."
             f"You are now in {network_id} network."
         )
 
@@ -215,7 +220,7 @@ async def _build_user_info_section(context: AgentContext) -> str:
     return ""
 
 
-def build_agent_prompt(
+async def build_agent_prompt(
     agent: Agent, agent_data: AgentData, context: AgentContext
 ) -> str:
     """
@@ -243,7 +248,7 @@ def build_agent_prompt(
         _build_agent_identity_section(agent),
         _build_agent_characteristics_section(agent),
         _build_social_accounts_section(agent, agent_data),
-        _build_wallet_section(agent, agent_data),
+        await _build_wallet_section(agent),
         "\n",  # Add spacing before characteristics
     ]
 
@@ -399,7 +404,7 @@ async def build_system_prompt(
 ) -> str:
     """Construct the final system prompt for an agent run."""
 
-    base_prompt = build_agent_prompt(agent, agent_data, context)
+    base_prompt = await build_agent_prompt(agent, agent_data, context)
     final_system_prompt = base_prompt
 
     sub_agents_section = await build_sub_agents_section(agent, context)

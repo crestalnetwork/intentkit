@@ -34,12 +34,6 @@
           "default": "disabled"
         }
       }
-    },
-    "api_key": {
-      "type": "string",
-      "title": "API Key (optional, overrides system key)",
-      "x-sensitive": true,
-      "description": "Your own API key for CoinGecko. Leave empty to use the system key."
     }
   },
   "required": [

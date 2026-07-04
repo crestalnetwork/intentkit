@@ -131,11 +131,9 @@ class AgentCreationFromTemplate(BaseModel):
     description: str | None = PydanticField(
         default=None, description="Description of the agent"
     )
-    readonly_wallet_address: str | None = PydanticField(
-        default=None, description="Read-only wallet address for the agent"
-    )
-    weekly_spending_limit: float | None = PydanticField(
-        default=None, description="Weekly spending limit for the agent"
+    wallet_id: str | None = PydanticField(
+        default=None,
+        description="ID of the team wallet the agent is authorized to use",
     )
     extra_prompt: str | None = PydanticField(
         default=None,
@@ -169,6 +167,11 @@ async def create_agent_from_template(
         # Set visibility based on team_id
         visibility = AgentVisibility.TEAM if team_id else AgentVisibility.PRIVATE
 
+        # Wallets are team property; validate the binding before persisting
+        from intentkit.core.agent import validate_wallet_binding
+
+        _ = await validate_wallet_binding(data.wallet_id, team_id)
+
         # Create new agent with only user-provided fields
         # Template's AgentCore fields will be applied dynamically via render_agent
         db_agent = AgentTable(
@@ -180,8 +183,7 @@ async def create_agent_from_template(
             picture=data.picture,
             description=data.description,
             model=template_row.model,
-            readonly_wallet_address=data.readonly_wallet_address,
-            weekly_spending_limit=data.weekly_spending_limit,
+            wallet_id=data.wallet_id,
             extra_prompt=data.extra_prompt,
             visibility=visibility,
         )
@@ -190,10 +192,5 @@ async def create_agent_from_template(
         await db.refresh(db_agent)
         agent = Agent.model_validate(db_agent)
         agent = await render_agent(agent)
-
-        # Process agent wallet
-        from intentkit.core.agent import process_agent_wallet
-
-        _ = await process_agent_wallet(agent)
 
         return agent

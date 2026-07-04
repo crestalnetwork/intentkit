@@ -16,8 +16,8 @@ from intentkit.config.db import get_session
 from intentkit.config.redis import get_redis
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentTable
-from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
+from intentkit.wallets import get_agent_wallet_address
 from intentkit.wallets.web3 import get_async_web3_client
 
 logger = logging.getLogger(__name__)
@@ -146,15 +146,10 @@ async def _get_wallet_net_worth(wallet_address: str, network_id: str | None) -> 
 
 
 async def build_assets_list(
-    agent: Agent, agent_data: AgentData, web3_client: AsyncWeb3
+    agent: Agent, wallet_address: str, web3_client: AsyncWeb3
 ) -> list[Asset]:
     """Build the assets list based on network conditions and agent configuration."""
     assets: list[Asset] = []
-
-    if not agent_data or not agent_data.evm_wallet_address:
-        return assets
-
-    wallet_address = agent_data.evm_wallet_address
     network_id: str | None = agent.network_id
 
     # ETH is always included
@@ -205,17 +200,17 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         cached_assets = AgentAssets.model_validate(cached_data)
         return cached_assets
 
-    agent_data = await AgentData.get(agent_id)
-    if not agent_data or not agent_data.evm_wallet_address:
+    wallet_address = await get_agent_wallet_address(agent)
+    if not wallet_address:
         assets_result = AgentAssets(net_worth="0", tokens=[])
     elif not agent.network_id:
         assets_result = AgentAssets(net_worth="0", tokens=[])
     else:
         try:
             web3_client = get_async_web3_client(str(agent.network_id))
-            tokens = await build_assets_list(agent, agent_data, web3_client)
+            tokens = await build_assets_list(agent, wallet_address, web3_client)
             net_worth = await _get_wallet_net_worth(
-                agent_data.evm_wallet_address, str(agent.network_id)
+                wallet_address, str(agent.network_id)
             )
             assets_result = AgentAssets(net_worth=net_worth, tokens=tokens)
         except IntentKitAPIError:

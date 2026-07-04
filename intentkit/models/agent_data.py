@@ -33,21 +33,6 @@ class AgentDataTable(Base):
     id: Mapped[str] = mapped_column(
         String, primary_key=True, comment="Same as Agent.id"
     )
-    evm_wallet_address: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="EVM wallet address"
-    )
-    solana_wallet_address: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Solana wallet address"
-    )
-    cdp_wallet_data: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="CDP wallet data"
-    )
-    privy_wallet_data: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Privy wallet data"
-    )
-    native_wallet_data: Mapped[str | None] = mapped_column(
-        String, nullable=True, comment="Native wallet data (encrypted private key)"
-    )
     telegram_id: Mapped[str | None] = mapped_column(
         String, nullable=True, comment="Telegram user ID"
     )
@@ -98,41 +83,6 @@ class AgentData(BaseModel):
             description="Same as Agent.id",
         ),
     ]
-    evm_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="EVM wallet address",
-        ),
-    ] = None
-    solana_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Solana wallet address",
-        ),
-    ] = None
-    cdp_wallet_data: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="CDP wallet data",
-        ),
-    ] = None
-    privy_wallet_data: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Privy wallet data",
-        ),
-    ] = None
-    native_wallet_data: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Native wallet data (encrypted private key)",
-        ),
-    ] = None
     telegram_id: Annotated[
         str | None,
         PydanticField(

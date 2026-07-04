@@ -64,46 +64,38 @@ async def get_balances(
 async def main() -> None:
     from intentkit.config.config import config
     from intentkit.config.db import get_session, init_db
-    from intentkit.models.agent.db import AgentTable
-    from intentkit.models.agent_data import AgentDataTable
+    from intentkit.models.wallet import TeamWalletTable
 
     await init_db(**config.db)
 
     print(
-        f"{'Agent ID':<22} | {'Owner ID':<15} | {'Wallet Address':<42} | {'ETH':<10} | {'USDC':<10}"
+        f"{'Wallet ID':<22} | {'Team ID':<15} | {'Wallet Address':<42} | {'ETH':<10} | {'USDC':<10}"
     )
     print("-" * 110)
 
     async with get_session() as session:
         result = await session.execute(
-            select(AgentTable, AgentDataTable)
-            .outerjoin(AgentDataTable, AgentDataTable.id == AgentTable.id)
-            .where(AgentTable.wallet_provider == "cdp")
+            select(TeamWalletTable).where(TeamWalletTable.wallet_provider == "cdp")
         )
-        rows = result.all()
+        wallets = result.scalars().all()
 
     found_count = 0
-    for agent_row, agent_data in rows:
-        # Pydantic validation (optional, stripped for speed)
-        agent_id = agent_row.id
-        owner_id = agent_row.owner
-        network_id = str(agent_row.network_id)
-
-        wallet_addr = agent_data.evm_wallet_address if agent_data else None
-
+    for wallet in wallets:
+        wallet_addr = wallet.evm_wallet_address
         if not wallet_addr:
             continue
+        network_id = str(wallet.network_id or "base-mainnet")
 
         eth, usdc = await get_balances(wallet_addr, network_id)
 
         if eth > 0 or usdc > 0:
             found_count += 1
             print(
-                f"{agent_id:<22} | {str(owner_id):<15} | {wallet_addr:<42} | {format_token_amount(eth, 6):<10} | {format_token_amount(usdc, 2):<10}"
+                f"{wallet.id:<22} | {wallet.team_id:<15} | {wallet_addr:<42} | {format_token_amount(eth, 6):<10} | {format_token_amount(usdc, 2):<10}"
             )
 
     print("-" * 110)
-    print(f"Total agents with > 0 balance: {found_count}")
+    print(f"Total wallets with > 0 balance: {found_count}")
 
 
 if __name__ == "__main__":

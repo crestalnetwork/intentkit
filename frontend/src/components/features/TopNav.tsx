@@ -93,6 +93,17 @@ export function TopNav() {
         >
           Links
         </Link>
+        <Link
+          href="/wallets"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname.startsWith("/wallets")
+              ? "text-foreground font-bold"
+              : "text-foreground/60"
+          )}
+        >
+          Wallets
+        </Link>
       </nav>
     </div>
   );

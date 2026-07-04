@@ -32,7 +32,7 @@ class GetPositions(PolymarketBaseTool):
     price: Decimal = Decimal("5")
 
     async def _arun(self, **kwargs: Any) -> str:
-        self._require_wallet("view positions")
+        await self._require_wallet("view positions")
 
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 
