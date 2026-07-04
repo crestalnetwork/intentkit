@@ -1,5 +1,6 @@
-# Release v2.7.1
+# Release v2.7.2
 
 ## Improvements
 
-- Database schema upgrades now run automatically when services start — deploying a new version no longer requires any manual migration step. Existing databases are adopted in place on their first start after this release, several services starting at the same time coordinate safely, and a service will refuse to start on a database it could not upgrade rather than run with a mismatched schema.
+- Updated third-party dependencies across the whole platform — backend, web console, and channel integrations — including fixes for two security advisories in underlying libraries.
+- Picked up upstream AI framework updates that improve tool-calling reliability across model providers and make conversation state handling more robust.
