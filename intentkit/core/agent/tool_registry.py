@@ -49,16 +49,10 @@ def _load_tool_schema(schema_path: Path) -> dict[str, object]:
     return schema_copy
 
 
-def _get_states_properties(tool_schema: dict[str, object]) -> dict[str, Any] | None:
-    """Extract states.properties from a tool schema, or None if invalid."""
-    properties = tool_schema.get("properties", {})
-    if not isinstance(properties, dict):
-        return None
-    states = properties.get("states", {})
-    if not isinstance(states, dict):
-        return None
-    state_props = states.get("properties", {})
-    return cast(dict[str, Any], state_props) if isinstance(state_props, dict) else None
+def _get_tools_map(tool_schema: dict[str, object]) -> dict[str, Any] | None:
+    """Extract the ``tools`` catalog map from a toolset schema, or None."""
+    tools = tool_schema.get("tools", {})
+    return cast(dict[str, Any], tools) if isinstance(tools, dict) else None
 
 
 def _iter_tool_schemas(
@@ -124,15 +118,15 @@ def get_valid_tools_registry() -> dict[str, dict[str, str]]:
     registry: dict[str, dict[str, str]] = {}
     try:
         for category, _module, tool_schema in _iter_tool_schemas():
-            state_props = _get_states_properties(tool_schema)
-            if not state_props:
+            tools_map = _get_tools_map(tool_schema)
+            if not tools_map:
                 continue
 
             tools: dict[str, str] = {}
-            for tool_name, tool_def in state_props.items():
+            for tool_name, tool_def in tools_map.items():
                 if isinstance(tool_def, dict):
                     description = tool_def.get("description", "")
-                    if isinstance(description, str) and description:
+                    if isinstance(description, str):
                         tools[tool_name] = description
 
             if tools:
@@ -144,92 +138,86 @@ def get_valid_tools_registry() -> dict[str, dict[str, str]]:
     return registry
 
 
-_VALID_TOOL_STATES = {"disabled", "public", "private"}
+def get_tool_category_index() -> dict[str, str]:
+    """Map every known tool name to its category.
+
+    Derived from the cached registry on every call (cheap dict build), so it
+    can never go stale relative to ``get_valid_tools_registry``.
+    """
+    index: dict[str, str] = {}
+    for category, tools in get_valid_tools_registry().items():
+        for tool_name in tools:
+            existing = index.get(tool_name)
+            if existing is not None:
+                logger.warning(
+                    "Tool name '%s' defined by both '%s' and '%s'; using '%s'",
+                    tool_name,
+                    existing,
+                    category,
+                    category,
+                )
+            index[tool_name] = category
+    return index
 
 
-def validate_tools(tools: dict[str, Any] | None) -> None:
-    """Validate tools config. Raises IntentKitAPIError(400) on invalid entries."""
+def group_tool_names_by_category(tool_names: list[str]) -> dict[str, list[str]]:
+    """Group requested tool names by their toolset category.
+
+    Unknown names are skipped with a warning: stale entries (e.g. a tool
+    removed from the codebase) must never break agent startup.
+    """
+    index = get_tool_category_index()
+    grouped: dict[str, list[str]] = {}
+    for name in tool_names:
+        category = index.get(name)
+        if category is None:
+            logger.warning("Skipping unknown tool '%s' in agent config", name)
+            continue
+        grouped.setdefault(category, []).append(name)
+    return grouped
+
+
+def validate_tools(tools: Any) -> None:
+    """Validate a tools name list. Raises IntentKitAPIError(400) on invalid entries."""
     if not tools:
         return
 
-    registry = get_valid_tools_registry()
-    valid_categories = sorted(registry.keys())
+    if not isinstance(tools, list):
+        raise IntentKitAPIError(
+            400,
+            "InvalidToolFormat",
+            f"'tools' must be a list of tool names, got {type(tools).__name__}",
+        )
 
-    for category, config in tools.items():
-        if category not in registry:
-            raise IntentKitAPIError(
-                400,
-                "InvalidToolset",
-                f"Unknown toolset '{category}'. Valid categories: {valid_categories}",
-            )
-
-        if not isinstance(config, dict):
-            raise IntentKitAPIError(
-                400,
-                "InvalidToolFormat",
-                f"Toolset '{category}' config must be a dict, got {type(config).__name__}",
-            )
-
-        states = config.get("states")
-        if states is not None and not isinstance(states, dict):
+    index = get_tool_category_index()
+    for name in tools:
+        if not isinstance(name, str):
             raise IntentKitAPIError(
                 400,
                 "InvalidToolFormat",
-                f"'states' in category '{category}' must be a dict, got {type(states).__name__}",
+                f"Tool names must be strings, got {type(name).__name__}",
+            )
+        if name not in index:
+            raise IntentKitAPIError(
+                400,
+                "InvalidToolName",
+                f"Unknown tool '{name}'. Use the tool catalog to list valid names.",
             )
 
-        if not isinstance(states, dict):
-            states = {}
-        valid_tool_names = sorted(registry[category].keys())
 
-        for tool_name, state_value in states.items():
-            if tool_name not in registry[category]:
-                raise IntentKitAPIError(
-                    400,
-                    "InvalidToolName",
-                    f"Unknown tool '{tool_name}' in category '{category}'. Valid tools: {valid_tool_names}",
-                )
-            if state_value not in _VALID_TOOL_STATES:
-                raise IntentKitAPIError(
-                    400,
-                    "InvalidToolState",
-                    f"Invalid state '{state_value}' for tool '{tool_name}'. Valid states: {sorted(_VALID_TOOL_STATES)}",
-                )
-
-
-def sanitize_tools(tools: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Remove tools/categories not in schema. Returns cleaned dict or None if empty."""
+def sanitize_tools(tools: list[str] | None) -> list[str] | None:
+    """Drop unknown/duplicate tool names. Returns the cleaned list or None if empty."""
     if not tools:
         return None
 
-    registry = get_valid_tools_registry()
-    cleaned: dict[str, Any] = {}
-
-    for category, config in tools.items():
-        if category not in registry:
+    index = get_tool_category_index()
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for name in tools:
+        if not isinstance(name, str) or name in seen or name not in index:
             continue
-
-        # Preserve non-dict configs as-is (don't silently drop)
-        if not isinstance(config, dict):
-            cleaned[category] = config
-            continue
-
-        states = config.get("states")
-        # Preserve non-dict states as-is
-        if not isinstance(states, dict):
-            cleaned[category] = config
-            continue
-
-        cleaned_states = {
-            tool_name: state_value
-            for tool_name, state_value in states.items()
-            if tool_name in registry[category]
-        }
-
-        if cleaned_states:
-            cleaned_config = dict(config)
-            cleaned_config["states"] = cleaned_states
-            cleaned[category] = cleaned_config
+        seen.add(name)
+        cleaned.append(name)
 
     return cleaned if cleaned else None
 
@@ -255,9 +243,9 @@ def get_tools_hierarchical_text() -> str:
             primary_category = tool_tags[0] if tool_tags else "Other"
 
             individual_tools: list[dict[str, str]] = []
-            states_props = _get_states_properties(tool_schema)
-            if states_props:
-                for ind_name, ind_def in states_props.items():
+            tools_map = _get_tools_map(tool_schema)
+            if tools_map:
+                for ind_name, ind_def in tools_map.items():
                     if not is_individual_tool_available(module, category, ind_name):
                         continue
                     ind_desc = (
@@ -269,7 +257,7 @@ def get_tools_hierarchical_text() -> str:
 
             # Drop the category entirely if every tool was filtered;
             # surfacing an empty group would just be noise to the LLM.
-            if states_props and not individual_tools:
+            if tools_map and not individual_tools:
                 continue
 
             if primary_category not in categories:

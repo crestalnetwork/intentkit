@@ -11,6 +11,7 @@ from intentkit.clients.s3 import get_cdn_url, store_image_bytes
 
 # Import the generic base
 from intentkit.tools.venice_image.base import VeniceImageBaseTool
+from intentkit.tools.venice_image.config import VeniceImageConfig
 from intentkit.tools.venice_image.image_generation.image_generation_input import (
     VeniceImageGenerationInput,
 )
@@ -55,10 +56,10 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
     ) -> dict[str, Any]:
         try:
             context = self.get_context()
-            toolConfig = self.getToolsetConfig(context)
-            await self.apply_venice_rate_limit(context)
+            # Per-agent overrides were removed; use the built-in defaults.
+            settings = VeniceImageConfig()
 
-            final_negative_prompt = negative_prompt or toolConfig.negative_prompt
+            final_negative_prompt = negative_prompt or settings.negative_prompt
 
             payload = {
                 "model": self.model_id,
@@ -68,9 +69,9 @@ class VeniceImageGenerationBaseTool(VeniceImageBaseTool):
                 "seed": seed,
                 "format": format,
                 "steps": 30,
-                "safe_mode": toolConfig.safe_mode,
-                "hide_watermark": toolConfig.hide_watermark,
-                "embed_exif_metadata": toolConfig.embed_exif_metadata,
+                "safe_mode": settings.safe_mode,
+                "hide_watermark": settings.hide_watermark,
+                "embed_exif_metadata": settings.embed_exif_metadata,
                 "cfg_scale": cfg_scale or 7.0,
                 "style_preset": style_preset,
                 "negative_prompt": final_negative_prompt,

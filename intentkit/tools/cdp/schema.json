@@ -1,78 +1,23 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Wallet Operations",
   "description": "Basic wallet operations including balance checking, wallet details, and native token transfers. Works with any EVM-compatible wallet.",
-  "x-icon": "/tools/cdp/cdp.png",
   "x-tags": [
     "Crypto",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/cdp/cdp.png",
+  "tools": {
+    "cdp_get_balance": {
+      "title": "Get Balance",
+      "description": "Get the native token balance (ETH, MATIC, etc.) of the wallet"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "cdp_get_balance": {
-          "type": "string",
-          "title": "Get Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the native token balance (ETH, MATIC, etc.) of the wallet",
-          "default": "disabled"
-        },
-        "cdp_get_wallet_details": {
-          "type": "string",
-          "title": "Get Wallet Details",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get wallet details including address, network, and balance",
-          "default": "disabled"
-        },
-        "cdp_native_transfer": {
-          "type": "string",
-          "title": "Native Transfer",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Transfer native tokens (ETH, MATIC, etc.) to another address",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each wallet tool (disabled, public, or private)"
+    "cdp_get_wallet_details": {
+      "title": "Get Wallet Details",
+      "description": "Get wallet details including address, network, and balance"
+    },
+    "cdp_native_transfer": {
+      "title": "Native Transfer",
+      "description": "Transfer native tokens (ETH, MATIC, etc.) to another address"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

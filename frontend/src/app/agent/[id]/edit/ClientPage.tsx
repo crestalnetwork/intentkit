@@ -147,87 +147,42 @@ export default function EditAgentPage() {
 
     const uiSchema = useMemo(() => generateUiSchema(schema, agent as Record<string, unknown> | null | undefined), [schema, agent]);
 
-    // Clean up tools data before submission:
-    // - Remove toolsets where enabled=false
-    // - Remove tool states that are 'disabled'
-    // - Remove tools that are not defined in the schema (handles renamed tools)
+    // Clean up the tools name list before submission:
+    // - Deduplicate names
+    // - Remove names not present in the schema catalog (renamed/removed tools)
     const cleanToolsData = (data: Record<string, unknown>, schemaData: Record<string, unknown> | undefined): Record<string, unknown> => {
-        const tools = data.tools as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
-        if (!tools) return data;
-
-        // Extract valid tool keys from the schema for each toolset
-        const getValidToolsForToolset = (categoryKey: string): Set<string> | null => {
-            if (!schemaData?.properties) return null;
-            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
-            const toolsSchema = schemaProperties.tools;
-            if (!toolsSchema?.properties) return null;
-            const toolsetsSchema = toolsSchema.properties as Record<string, Record<string, unknown>>;
-            const categorySchema = toolsetsSchema[categoryKey];
-            if (!categorySchema?.properties) return null;
-            const categoryProperties = categorySchema.properties as Record<string, Record<string, unknown>>;
-            const statesSchema = categoryProperties.states;
-            if (!statesSchema?.properties) return null;
-            const statesProperties = statesSchema.properties as Record<string, unknown>;
-            return new Set(Object.keys(statesProperties));
-        };
-
-        // Extract valid toolset keys from the schema
-        const getValidCategories = (): Set<string> | null => {
-            if (!schemaData?.properties) return null;
-            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
-            const toolsSchema = schemaProperties.tools;
-            if (!toolsSchema?.properties) return null;
-            const toolsetsSchema = toolsSchema.properties as Record<string, unknown>;
-            return new Set(Object.keys(toolsetsSchema));
-        };
-
-        const validCategories = getValidCategories();
-        const cleanedTools: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
-        for (const [categoryKey, categoryData] of Object.entries(tools)) {
-            // Skip toolsets that are explicitly disabled
-            if (categoryData.enabled === false) continue;
-
-            // Skip toolsets not in schema (removed toolsets)
-            if (validCategories && !validCategories.has(categoryKey)) {
-                console.log(`[cleanToolsData] Removing toolset not in schema: ${categoryKey}`);
-                continue;
-            }
-
-            // Get valid tools for this toolset
-            const validTools = getValidToolsForToolset(categoryKey);
-
-            // Clean up states - only keep non-disabled tools that exist in schema
-            const states = categoryData.states || {};
-            const cleanedStates: Record<string, string> = {};
-            for (const [toolKey, toolValue] of Object.entries(states)) {
-                // Skip disabled tools
-                if (toolValue === 'disabled') continue;
-
-                // Skip tools not in schema (old/renamed tools)
-                if (validTools && !validTools.has(toolKey)) {
-                    console.log(`[cleanToolsData] Removing tool not in schema: ${categoryKey}.${toolKey}`);
-                    continue;
-                }
-
-                cleanedStates[toolKey] = toolValue;
-            }
-
-            // Only include toolset if it's enabled
-            if (categoryData.enabled === true) {
-                cleanedTools[categoryKey] = {
-                    enabled: true,
-                    states: Object.keys(cleanedStates).length > 0 ? cleanedStates : undefined,
-                };
-            }
-        }
-
+        const tools = data.tools as string[] | undefined;
         const restData = { ...data };
         if ("autonomous" in restData) {
             delete (restData as Record<string, unknown>).autonomous;
         }
+        if (!tools) return restData;
+
+        const getValidToolNames = (): Set<string> | null => {
+            if (!schemaData?.properties) return null;
+            const schemaProperties = schemaData.properties as Record<string, Record<string, unknown>>;
+            const toolsSchema = schemaProperties.tools;
+            const catalog = toolsSchema?.["x-catalog"] as
+                | Record<string, { tools?: Record<string, unknown> }>
+                | undefined;
+            if (!catalog) return null;
+            const names = new Set<string>();
+            for (const entry of Object.values(catalog)) {
+                for (const name of Object.keys(entry.tools || {})) {
+                    names.add(name);
+                }
+            }
+            return names;
+        };
+
+        const validTools = getValidToolNames();
+        const cleaned = Array.from(new Set(tools)).filter(
+            (name) => !validTools || validTools.has(name),
+        );
+
         return {
             ...restData,
-            tools: Object.keys(cleanedTools).length > 0 ? cleanedTools : undefined,
+            tools: cleaned.length > 0 ? cleaned : undefined,
         };
     };
 

@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "GitHub",
   "description": "Search capabilities for GitHub repositories, users, and code",
   "x-icon": "/tools/github/github.jpg",
@@ -8,39 +6,10 @@
     "Developer Tools",
     "Search"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "github_search": {
-          "type": "string",
-          "title": "GitHub Search",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Search GitHub for repositories, users, and code",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each GitHub search tool (disabled, public, or private)"
+  "tools": {
+    "github_search": {
+      "title": "GitHub Search",
+      "description": "Search GitHub for repositories, users, and code"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

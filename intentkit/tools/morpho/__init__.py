@@ -1,8 +1,5 @@
 """Morpho lending protocol tools."""
 
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.morpho.base import MorphoBaseTool
 from intentkit.tools.morpho.borrow import MorphoBorrow
 from intentkit.tools.morpho.deposit import MorphoDeposit
@@ -12,24 +9,6 @@ from intentkit.tools.morpho.repay import MorphoRepay
 from intentkit.tools.morpho.supply_collateral import MorphoSupplyCollateral
 from intentkit.tools.morpho.withdraw import MorphoWithdraw
 from intentkit.tools.morpho.withdraw_collateral import MorphoWithdrawCollateral
-
-
-class ToolStates(TypedDict):
-    morpho_deposit: ToolState
-    morpho_withdraw: ToolState
-    morpho_get_vault_data: ToolState
-    morpho_supply_collateral: ToolState
-    morpho_withdraw_collateral: ToolState
-    morpho_borrow: ToolState
-    morpho_repay: ToolState
-    morpho_get_position: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for Morpho tools."""
-
-    states: ToolStates
-
 
 # Cache for tool instances
 _cache: dict[str, MorphoBaseTool] = {
@@ -44,31 +23,9 @@ _cache: dict[str, MorphoBaseTool] = {
 }
 
 
-async def get_tools(
-    config: Config,
-    is_private: bool,
-    **_,
-) -> list[MorphoBaseTool]:
-    """Get all enabled Morpho tools.
-
-    Args:
-        config: The configuration for Morpho tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled Morpho tools.
-    """
-    tools: list[MorphoBaseTool] = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
-
-    return tools
+async def get_tools(tool_names: list[str], **_) -> list[MorphoBaseTool]:
+    """Get the requested Morpho tools; unknown names are skipped."""
+    return [_cache[name] for name in tool_names if name in _cache]
 
 
 def available() -> bool:

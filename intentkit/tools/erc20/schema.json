@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "ERC20",
   "description": "ERC20 token balance, transfer, and lookup actions",
   "x-icon": "/tools/erc20/erc20.svg",
@@ -8,71 +6,18 @@
     "Crypto",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "erc20_get_balance": {
+      "title": "Get ERC20 Balance",
+      "description": "Get the balance of an ERC20 token for a given address"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "erc20_get_balance": {
-          "type": "string",
-          "title": "Get ERC20 Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the balance of an ERC20 token for a given address",
-          "default": "disabled"
-        },
-        "erc20_transfer": {
-          "type": "string",
-          "title": "Transfer ERC20",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Transfer ERC20 tokens to another address",
-          "default": "disabled"
-        },
-        "erc20_get_token_address": {
-          "type": "string",
-          "title": "Get Token Address",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the contract address for a token symbol on the current network",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each ERC20 tool (disabled, public, or private)"
+    "erc20_transfer": {
+      "title": "Transfer ERC20",
+      "description": "Transfer ERC20 tokens to another address"
+    },
+    "erc20_get_token_address": {
+      "title": "Get Token Address",
+      "description": "Get the contract address for a token symbol on the current network"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

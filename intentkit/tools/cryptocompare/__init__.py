@@ -1,10 +1,9 @@
 """CryptoCompare tools."""
 
 import logging
-from typing import TypedDict
+from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.cryptocompare.base import CryptoCompareBaseTool
 from intentkit.tools.cryptocompare.fetch_news import CryptoCompareFetchNews
 from intentkit.tools.cryptocompare.fetch_price import CryptoCompareFetchPrice
@@ -24,93 +23,30 @@ _cache: dict[str, CryptoCompareBaseTool] = {}
 
 logger = logging.getLogger(__name__)
 
-
-class ToolStates(TypedDict):
-    fetch_news: ToolState
-    fetch_price: ToolState
-    fetch_trading_signals: ToolState
-    fetch_top_market_cap: ToolState
-    fetch_top_exchanges: ToolState
-    fetch_top_volume: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for CryptoCompare tools."""
-
-    states: ToolStates
+_TOOL_CLASSES: dict[str, Callable[[], CryptoCompareBaseTool]] = {
+    "cryptocompare_fetch_news": CryptoCompareFetchNews,
+    "cryptocompare_fetch_price": CryptoCompareFetchPrice,
+    "cryptocompare_fetch_trading_signals": CryptoCompareFetchTradingSignals,
+    "cryptocompare_fetch_top_market_cap": CryptoCompareFetchTopMarketCap,
+    "cryptocompare_fetch_top_exchanges": CryptoCompareFetchTopExchanges,
+    "cryptocompare_fetch_top_volume": CryptoCompareFetchTopVolume,
+}
 
 
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[CryptoCompareBaseTool]:
-    """Get all CryptoCompare tools.
-
-    Args:
-        config: The configuration for CryptoCompare tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of CryptoCompare tools.
-    """
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    result = []
-    for name in available_tools:
-        tool = get_cryptocompare_tool(name)
-        if tool:
-            result.append(tool)
-    return result
+async def get_tools(tool_names: list[str], **_) -> list[CryptoCompareBaseTool]:
+    """Get the requested CryptoCompare tools."""
+    return [tool for name in tool_names if (tool := get_cryptocompare_tool(name))]
 
 
-def get_cryptocompare_tool(
-    name: str,
-) -> CryptoCompareBaseTool | None:
-    """Get a CryptoCompare tool by name.
-
-    Args:
-        name: The name of the tool to get
-
-    Returns:
-        The requested CryptoCompare tool
-    """
-
-    if name == "fetch_news":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchNews()
-        return _cache[name]
-    elif name == "fetch_price":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchPrice()
-        return _cache[name]
-    elif name == "fetch_trading_signals":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchTradingSignals()
-        return _cache[name]
-    elif name == "fetch_top_market_cap":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopMarketCap()
-        return _cache[name]
-    elif name == "fetch_top_exchanges":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopExchanges()
-        return _cache[name]
-    elif name == "fetch_top_volume":
-        if name not in _cache:
-            _cache[name] = CryptoCompareFetchTopVolume()
-        return _cache[name]
-    else:
-        logger.warning("Unknown CryptoCompare tool: %s", name)
-        return None
+def get_cryptocompare_tool(tool_name: str) -> CryptoCompareBaseTool | None:
+    """Get a CryptoCompare tool by name."""
+    if tool_name not in _cache:
+        tool_class = _TOOL_CLASSES.get(tool_name)
+        if tool_class is None:
+            logger.warning("Unknown CryptoCompare tool: %s", tool_name)
+            return None
+        _cache[tool_name] = tool_class()
+    return _cache[tool_name]
 
 
 def available() -> bool:

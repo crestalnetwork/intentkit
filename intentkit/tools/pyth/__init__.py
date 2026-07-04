@@ -1,23 +1,8 @@
 """Pyth price oracle tools."""
 
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.pyth.base import PythBaseTool
 from intentkit.tools.pyth.fetch_price import PythFetchPrice
 from intentkit.tools.pyth.fetch_price_feed import PythFetchPriceFeed
-
-
-class ToolStates(TypedDict):
-    pyth_fetch_price: ToolState
-    pyth_fetch_price_feed: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for Pyth tools."""
-
-    states: ToolStates
-
 
 # Cache for stateless tools
 _cache: dict[str, PythBaseTool] = {
@@ -26,31 +11,17 @@ _cache: dict[str, PythBaseTool] = {
 }
 
 
-async def get_tools(
-    config: Config,
-    is_private: bool,
-    **_,
-) -> list[PythBaseTool]:
-    """Get all enabled Pyth tools.
+async def get_tools(tool_names: list[str], **_) -> list[PythBaseTool]:
+    """Return Pyth tool instances for the requested names.
 
-    Args:
-        config: The configuration for Pyth tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled Pyth tools.
+    Unknown names are skipped silently.
     """
-    tools: list[PythBaseTool] = []
+    return [_cache[name] for name in tool_names if name in _cache]
 
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
 
-    return tools
+def get_pyth_tool(tool_name: str) -> PythBaseTool | None:
+    """Get a Pyth tool by name."""
+    return _cache.get(tool_name)
 
 
 def available() -> bool:

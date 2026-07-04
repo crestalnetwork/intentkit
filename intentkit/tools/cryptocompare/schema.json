@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "CryptoCompare",
   "description": "Integration with CryptoCompare API providing cryptocurrency market data, price information, and crypto news with rate limiting capabilities",
   "x-icon": "/tools/cryptocompare/cryptocompare.png",
@@ -8,119 +6,30 @@
     "Analytics",
     "Crypto"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "cryptocompare_fetch_news": {
+      "title": "Fetch News",
+      "description": "This tool fetches the latest cryptocurrency news articles for a specific token.\nYou can optionally specify a timestamp to get historical news, otherwise it uses the current time.\nReturns articles in English with details like title, body, source, and publish time."
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "fetch_news": {
-          "type": "string",
-          "title": "Fetch News",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "This tool fetches the latest cryptocurrency news articles for a specific token.\nYou can optionally specify a timestamp to get historical news, otherwise it uses the current time.\nReturns articles in English with details like title, body, source, and publish time.",
-          "default": "disabled"
-        },
-        "fetch_price": {
-          "type": "string",
-          "title": "Fetch Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Provides real-time cryptocurrency pricing with multi-exchange aggregation and historical comparisons",
-          "default": "disabled"
-        },
-        "fetch_trading_signals": {
-          "type": "string",
-          "title": "Fetch Trading Signals",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generates technical analysis signals using indicators like RSI, MACD, and Bollinger Bands",
-          "default": "disabled"
-        },
-        "fetch_top_market_cap": {
-          "type": "string",
-          "title": "Fetch Top Market Cap",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Tracks top cryptocurrencies by market capitalization with sector breakdowns",
-          "default": "disabled"
-        },
-        "fetch_top_exchanges": {
-          "type": "string",
-          "title": "Fetch Top Exchanges",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Ranks cryptocurrency exchanges by liquidity and trading volume with market pair analysis",
-          "default": "disabled"
-        },
-        "fetch_top_volume": {
-          "type": "string",
-          "title": "Fetch Top Volume",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Analyzes 24h trading volume trends across exchanges and currency pairs",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each CryptoCompare tool (disabled, public, or private)"
+    "cryptocompare_fetch_price": {
+      "title": "Fetch Price",
+      "description": "Provides real-time cryptocurrency pricing with multi-exchange aggregation and historical comparisons"
+    },
+    "cryptocompare_fetch_trading_signals": {
+      "title": "Fetch Trading Signals",
+      "description": "Generates technical analysis signals using indicators like RSI, MACD, and Bollinger Bands"
+    },
+    "cryptocompare_fetch_top_market_cap": {
+      "title": "Fetch Top Market Cap",
+      "description": "Tracks top cryptocurrencies by market capitalization with sector breakdowns"
+    },
+    "cryptocompare_fetch_top_exchanges": {
+      "title": "Fetch Top Exchanges",
+      "description": "Ranks cryptocurrency exchanges by liquidity and trading volume with market pair analysis"
+    },
+    "cryptocompare_fetch_top_volume": {
+      "title": "Fetch Top Volume",
+      "description": "Analyzes 24h trading volume trends across exchanges and currency pairs"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

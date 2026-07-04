@@ -1,46 +1,15 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Allora",
   "description": "Integration with Allora API for blockchain-based price predictions and market forecasting services via Upshot's prediction markets",
-  "x-icon": "/tools/allora/allora.jpeg",
   "x-tags": [
     "Analytics",
     "Crypto"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "get_price_prediction": {
-          "type": "string",
-          "title": "Get Price Prediction",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generates 6-hour price forecasts using ensemble ML models analyzing on-chain liquidity and market sentiment",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Allora tool (disabled, public, or private)"
+  "x-icon": "/tools/allora/allora.jpeg",
+  "tools": {
+    "allora_get_price_prediction": {
+      "title": "Get Price Prediction",
+      "description": "Generates 6-hour price forecasts using ensemble ML models analyzing on-chain liquidity and market sentiment"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

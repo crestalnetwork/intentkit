@@ -1,191 +1,52 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Portfolio Analysis",
   "description": "Access blockchain wallet data and analytics through Moralis APIs for portfolio tracking, token balances, and investment performance",
-  "x-icon": "/tools/portfolio/moralis.png",
   "x-tags": [
     "Analytics",
     "Crypto",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/portfolio/moralis.png",
+  "tools": {
+    "portfolio_wallet_history": {
+      "title": "Wallet Transaction History",
+      "description": "Retrieve the full transaction history of a specified wallet address"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "wallet_history": {
-          "type": "string",
-          "title": "Wallet Transaction History",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve the full transaction history of a specified wallet address",
-          "default": "disabled"
-        },
-        "token_balances": {
-          "type": "string",
-          "title": "Token Balances",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get token balances for a specific wallet address and their token prices in USD",
-          "default": "disabled"
-        },
-        "wallet_approvals": {
-          "type": "string",
-          "title": "Wallet Approvals",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve active ERC20 token approvals for a specified wallet address",
-          "default": "disabled"
-        },
-        "wallet_swaps": {
-          "type": "string",
-          "title": "Wallet Swaps",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get all swap-related transactions (buy, sell) for a wallet address",
-          "default": "disabled"
-        },
-        "wallet_net_worth": {
-          "type": "string",
-          "title": "Wallet Net Worth",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the net worth of a wallet in USD across multiple chains",
-          "default": "disabled"
-        },
-        "wallet_profitability_summary": {
-          "type": "string",
-          "title": "Wallet Profitability Summary",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve a summary of wallet profitability",
-          "default": "disabled"
-        },
-        "wallet_profitability": {
-          "type": "string",
-          "title": "Wallet Profitability Breakdown",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve detailed profitability breakdown for a wallet",
-          "default": "disabled"
-        },
-        "wallet_stats": {
-          "type": "string",
-          "title": "Wallet Stats",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get statistical information about a wallet",
-          "default": "disabled"
-        },
-        "wallet_defi_positions": {
-          "type": "string",
-          "title": "Wallet DeFi Positions",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the positions summary of a wallet address",
-          "default": "disabled"
-        },
-        "wallet_nfts": {
-          "type": "string",
-          "title": "Wallet NFTs",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get NFTs owned by a given wallet address",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each portfolio blockchain analysis tool (disabled, public, or private)"
+    "portfolio_token_balances": {
+      "title": "Token Balances",
+      "description": "Get token balances for a specific wallet address and their token prices in USD"
+    },
+    "portfolio_wallet_approvals": {
+      "title": "Wallet Approvals",
+      "description": "Retrieve active ERC20 token approvals for a specified wallet address"
+    },
+    "portfolio_wallet_swaps": {
+      "title": "Wallet Swaps",
+      "description": "Get all swap-related transactions (buy, sell) for a wallet address"
+    },
+    "portfolio_wallet_net_worth": {
+      "title": "Wallet Net Worth",
+      "description": "Get the net worth of a wallet in USD across multiple chains"
+    },
+    "portfolio_wallet_profitability_summary": {
+      "title": "Wallet Profitability Summary",
+      "description": "Retrieve a summary of wallet profitability"
+    },
+    "portfolio_wallet_profitability": {
+      "title": "Wallet Profitability Breakdown",
+      "description": "Retrieve detailed profitability breakdown for a wallet"
+    },
+    "portfolio_wallet_stats": {
+      "title": "Wallet Stats",
+      "description": "Get statistical information about a wallet"
+    },
+    "portfolio_wallet_defi_positions": {
+      "title": "Wallet DeFi Positions",
+      "description": "Get the positions summary of a wallet address"
+    },
+    "portfolio_wallet_nfts": {
+      "title": "Wallet NFTs",
+      "description": "Get NFTs owned by a given wallet address"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

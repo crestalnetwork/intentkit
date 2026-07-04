@@ -126,16 +126,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
             str: Formatted crawled content from all pages.
         """
         context = self.get_context()
-        tool_config = context.agent.tool_config(self.category)
         logger.debug("firecrawl_crawl: Running crawl with context %s", context)
-
-        if tool_config.get("rate_limit_number") and tool_config.get(
-            "rate_limit_minutes"
-        ):
-            await self.user_rate_limit_by_category(
-                tool_config["rate_limit_number"],
-                tool_config["rate_limit_minutes"] * 60,
-            )
 
         # Get the API key from the agent's configuration
         api_key = self.get_api_key()

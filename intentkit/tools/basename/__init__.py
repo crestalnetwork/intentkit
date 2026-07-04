@@ -1,22 +1,10 @@
 """Basename tools for ENS-style domain registration on Base."""
 
-from typing import TypedDict
+from typing import Any
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.basename.base import BasenameBaseTool
 from intentkit.tools.basename.register import BasenameRegister
-
-
-class ToolStates(TypedDict):
-    basename_register_basename: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for Basename tools."""
-
-    states: ToolStates
-
 
 # Cache for tool instances
 _cache: dict[str, BasenameBaseTool] = {
@@ -24,31 +12,9 @@ _cache: dict[str, BasenameBaseTool] = {
 }
 
 
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[BasenameBaseTool]:
-    """Get all enabled Basename tools.
-
-    Args:
-        config: The configuration for Basename tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled Basename tools.
-    """
-    tools: list[BasenameBaseTool] = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
-
-    return tools
+async def get_tools(tool_names: list[str], **_: Any) -> list[BasenameBaseTool]:
+    """Return Basename tool instances for the requested names."""
+    return [_cache[name] for name in tool_names if name in _cache]
 
 
 def available() -> bool:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict
 from pydantic import Field as PydanticField
@@ -105,10 +105,10 @@ class TemplateTable(Base):
         default="base-mainnet",
         comment="Network identifier",
     )
-    tools: Mapped[dict[str, Any] | None] = mapped_column(
+    tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),
         nullable=True,
-        comment="Dict of tools and their corresponding configurations",
+        comment="List of enabled tool names",
     )
     search_internet: Mapped[bool | None] = mapped_column(
         Boolean, nullable=True, comment="Enable LLM native internet search"

@@ -1,46 +1,15 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Basename",
   "description": "Basename ENS-style name registration on Base network",
-  "x-icon": "/tools/basename/basename.svg",
   "x-tags": [
     "Crypto",
     "Identity"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "basename_register_basename": {
-          "type": "string",
-          "title": "Register Basename",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Register a Basename ENS-style domain for the agent",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Basename tool (disabled, public, or private)"
+  "x-icon": "/tools/basename/basename.svg",
+  "tools": {
+    "basename_register_basename": {
+      "title": "Register Basename",
+      "description": "Register a Basename ENS-style domain for the agent"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

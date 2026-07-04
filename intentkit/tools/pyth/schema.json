@@ -1,63 +1,20 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Pyth",
   "description": "Pyth oracle price data for crypto, equities, forex, and metals",
-  "x-icon": "/tools/pyth/pyth.svg",
   "x-tags": [
     "Analytics",
     "Crypto",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/pyth/pyth.svg",
+  "tools": {
+    "pyth_fetch_price": {
+      "title": "Fetch Price",
+      "description": "Fetch the current price from a Pyth price feed"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "pyth_fetch_price": {
-          "type": "string",
-          "title": "Fetch Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch the current price from a Pyth price feed",
-          "default": "disabled"
-        },
-        "pyth_fetch_price_feed": {
-          "type": "string",
-          "title": "Fetch Price Feed",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Find the Pyth price feed ID for a given asset symbol",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Pyth tool (disabled, public, or private)"
+    "pyth_fetch_price_feed": {
+      "title": "Fetch Price Feed",
+      "description": "Find the Pyth price feed ID for a given asset symbol"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

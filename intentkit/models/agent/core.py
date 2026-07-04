@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from enum import IntEnum
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import Field as PydanticField
@@ -146,10 +146,10 @@ class AgentCore(BaseModel):
         ),
     ] = "base-mainnet"
     tools: Annotated[
-        dict[str, Any] | None,
+        list[str] | None,
         PydanticField(
             default=None,
-            description="Dict of tools and their corresponding configurations",
+            description="List of enabled tool names",
         ),
     ] = None
     search_internet: Annotated[

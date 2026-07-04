@@ -1,88 +1,27 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "x402",
   "description": "Interact with other IntentKit agents through the x402 payment protocol.",
-  "x-icon": "/tools/x402/x402.webp",
   "x-tags": [
     "Communication",
     "Infrastructure"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this toolset is enabled.",
-      "default": false
+  "x-icon": "/tools/x402/x402.webp",
+  "tools": {
+    "x402_http_request": {
+      "title": "HTTP Request",
+      "description": "Perform a signed HTTP GET or POST request via the x402 payment protocol."
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "x402_http_request": {
-          "type": "string",
-          "title": "HTTP Request",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Perform a signed HTTP GET or POST request via the x402 payment protocol.",
-          "default": "disabled"
-        },
-        "x402_check_price": {
-          "type": "string",
-          "title": "Check Price",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Check the price of a 402-protected resource without making a payment.",
-          "default": "disabled"
-        },
-        "x402_pay": {
-          "type": "string",
-          "title": "Pay Request",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Perform a paid HTTP request with a maximum payment limit via the x402 payment protocol.",
-          "default": "disabled"
-        },
-        "x402_get_orders": {
-          "type": "string",
-          "title": "Get Orders",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve recent x402 payment orders made by this agent.",
-          "default": "disabled"
-        }
-      }
+    "x402_check_price": {
+      "title": "Check Price",
+      "description": "Check the price of a 402-protected resource without making a payment."
+    },
+    "x402_pay": {
+      "title": "Pay Request",
+      "description": "Perform a paid HTTP request with a maximum payment limit via the x402 payment protocol."
+    },
+    "x402_get_orders": {
+      "title": "Get Orders",
+      "description": "Retrieve recent x402 payment orders made by this agent."
     }
   }
 }

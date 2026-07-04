@@ -123,28 +123,22 @@ async def build_executor(
     private_tools: list[BaseTool | dict[str, Any]] = []
 
     if agent.tools:
-        for k, v in agent.tools.items():
-            if not v.get("enabled", False):
-                continue
+        from intentkit.core.agent.tool_registry import group_tool_names_by_category
+
+        for category, names in group_tool_names_by_category(agent.tools).items():
             try:
-                tool_module = importlib.import_module(f"intentkit.tools.{k}")
+                tool_module = importlib.import_module(f"intentkit.tools.{category}")
                 if hasattr(tool_module, "get_tools"):
-                    # all
                     tool_tools = await tool_module.get_tools(
-                        v, False, agent_id=agent.id, agent=agent
+                        names, agent_id=agent.id, agent=agent
                     )
                     if tool_tools and len(tool_tools) > 0:
                         tools.extend(tool_tools)
-                    # private
-                    tool_private_tools = await tool_module.get_tools(
-                        v, True, agent_id=agent.id, agent=agent
-                    )
-                    if tool_private_tools and len(tool_private_tools) > 0:
-                        private_tools.extend(tool_private_tools)
+                        private_tools.extend(tool_tools)
                 else:
-                    logger.error("Tool %s does not have get_tools function", k)
+                    logger.error("Tool %s does not have get_tools function", category)
             except ImportError as e:
-                logger.error("Could not import tool module: %s (%s)", k, e)
+                logger.error("Could not import tool module: %s (%s)", category, e)
 
     # add custom tools to private tools
     if custom_tools and len(custom_tools) > 0:

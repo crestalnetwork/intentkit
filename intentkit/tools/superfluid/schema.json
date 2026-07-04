@@ -1,77 +1,22 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Superfluid",
   "description": "Superfluid streaming payment actions for continuous real-time token transfers",
-  "x-icon": "/tools/superfluid/superfluid.svg",
   "x-tags": [
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/superfluid/superfluid.svg",
+  "tools": {
+    "superfluid_create_flow": {
+      "title": "Create Flow",
+      "description": "Create a new money stream to a recipient"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "superfluid_create_flow": {
-          "type": "string",
-          "title": "Create Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Create a new money stream to a recipient",
-          "default": "disabled"
-        },
-        "superfluid_update_flow": {
-          "type": "string",
-          "title": "Update Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Update the flow rate of an existing stream",
-          "default": "disabled"
-        },
-        "superfluid_delete_flow": {
-          "type": "string",
-          "title": "Delete Flow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Stop and delete an existing stream",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Superfluid tool (disabled, public, or private)"
+    "superfluid_update_flow": {
+      "title": "Update Flow",
+      "description": "Update the flow rate of an existing stream"
+    },
+    "superfluid_delete_flow": {
+      "title": "Delete Flow",
+      "description": "Stop and delete an existing stream"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

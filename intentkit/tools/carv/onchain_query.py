@@ -57,8 +57,6 @@ class OnchainQueryTool(CarvBaseTool):
         """
         context = self.get_context()
 
-        await self.apply_rate_limit(context)
-
         payload = {"question": question}
 
         result = await self._call_carv_api(

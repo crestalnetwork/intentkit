@@ -92,10 +92,10 @@ class AgentUserInputColumns:
     )
 
     # Tools configuration from AgentCore
-    tools: Mapped[dict[str, Any] | None] = mapped_column(
+    tools: Mapped[list[str] | None] = mapped_column(
         JSONB(),
         nullable=True,
-        comment="Dict of tools and their corresponding configurations",
+        comment="List of enabled tool names",
     )
 
     search_internet: Mapped[bool | None] = mapped_column(

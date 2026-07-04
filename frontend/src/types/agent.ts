@@ -19,7 +19,7 @@ export interface Agent {
   presence_penalty: number | null;
   wallet_id: string | null;
   network_id: string | null;
-  tools: Record<string, unknown> | null;
+  tools: string[] | null;
   version: string | null;
   statistics: Record<string, unknown> | null;
   assets: Record<string, unknown> | null;

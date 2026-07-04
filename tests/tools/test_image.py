@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from intentkit.tools.image import Config, ToolStates, available, get_tools
+from intentkit.tools.image import available, get_tools
 from intentkit.tools.image.base import ImageGenerationInput
 from intentkit.tools.image.gemini import GeminiImageFlash, GeminiImagePro
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
@@ -93,37 +93,13 @@ def test_available_with_no_keys():
 
 
 @pytest.mark.asyncio
-async def test_get_tools_filters_by_state():
-    """Test get_tools returns only enabled tools."""
-    config: Config = {
-        "enabled": True,
-        "states": ToolStates(
-            image_gpt="public",
-            image_gpt_mini="disabled",
-            image_gemini_pro="private",
-            image_gemini_flash="disabled",
-            image_grok="disabled",
-            image_flux_pro="public",
-            image_riverflow="disabled",
-            image_minimax="disabled",
-        ),
-    }
+async def test_get_tools_selects_by_name():
+    """get_tools returns exactly the requested tools; unknown names are skipped."""
+    tools = await get_tools(["image_gpt", "image_gemini_pro", "image_bogus"])
+    names = [t.name for t in tools]
+    assert names == ["image_gpt", "image_gemini_pro"]
 
-    # Public only
-    tools = await get_tools(config, is_private=False)
-    names = {s.name for s in tools}
-    assert "image_gpt" in names
-    assert "image_flux_pro" in names
-    assert "image_gpt_mini" not in names
-    assert "image_gemini_pro" not in names  # private, not included
-
-    # With private
-    tools = await get_tools(config, is_private=True)
-    names = {s.name for s in tools}
-    assert "image_gpt" in names
-    assert "image_gemini_pro" in names
-    assert "image_flux_pro" in names
-    assert "image_gpt_mini" not in names  # disabled
+    assert await get_tools([]) == []
 
 
 def test_native_key_checks():

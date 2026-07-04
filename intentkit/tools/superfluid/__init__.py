@@ -1,25 +1,9 @@
 """Superfluid streaming payment tools."""
 
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.superfluid.base import SuperfluidBaseTool
 from intentkit.tools.superfluid.create_flow import SuperfluidCreateFlow
 from intentkit.tools.superfluid.delete_flow import SuperfluidDeleteFlow
 from intentkit.tools.superfluid.update_flow import SuperfluidUpdateFlow
-
-
-class ToolStates(TypedDict):
-    superfluid_create_flow: ToolState
-    superfluid_update_flow: ToolState
-    superfluid_delete_flow: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for Superfluid tools."""
-
-    states: ToolStates
-
 
 # Cache for tool instances
 _cache: dict[str, SuperfluidBaseTool] = {
@@ -29,31 +13,17 @@ _cache: dict[str, SuperfluidBaseTool] = {
 }
 
 
-async def get_tools(
-    config: Config,
-    is_private: bool,
-    **_,
-) -> list[SuperfluidBaseTool]:
-    """Get all enabled Superfluid tools.
+async def get_tools(tool_names: list[str], **_) -> list[SuperfluidBaseTool]:
+    """Return Superfluid tool instances for the requested names.
 
-    Args:
-        config: The configuration for Superfluid tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled Superfluid tools.
+    Unknown names are skipped silently.
     """
-    tools: list[SuperfluidBaseTool] = []
+    return [_cache[name] for name in tool_names if name in _cache]
 
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
 
-    return tools
+def get_superfluid_tool(tool_name: str) -> SuperfluidBaseTool | None:
+    """Get a Superfluid tool by name."""
+    return _cache.get(tool_name)
 
 
 def available() -> bool:

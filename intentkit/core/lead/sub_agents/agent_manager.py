@@ -105,31 +105,17 @@ def build_agent_manager(team_id: str) -> Agent:
         + "### Tool Configuration (IMPORTANT)\n\n"
         "You MUST call `lead_list_available_tools` before configuring tools. "
         "Only use tool names from that list.\n\n"
-        "Format:\n"
+        "`tools` is a flat list of tool names:\n"
         "```json\n"
-        "{\n"
-        '  "category_name": {\n'
-        '    "enabled": true,\n'
-        '    "states": {\n'
-        '      "tool_name_1": "public",\n'
-        '      "tool_name_2": "public"\n'
-        "    }\n"
-        "  }\n"
-        "}\n"
+        '["tool_name_1", "tool_name_2"]\n'
         "```\n\n"
         "Example — enable two image tools and one firecrawl tool:\n"
         "```json\n"
-        "{\n"
-        '  "image": {"enabled": true, "states": {"image_gpt": "public", "image_gemini_flash": "public"}},\n'
-        '  "firecrawl": {"enabled": true, "states": {"firecrawl_scrape": "public"}}\n'
-        "}\n"
+        '["image_gpt", "image_gemini_flash", "firecrawl_scrape"]\n'
         "```\n\n"
         "Rules:\n"
-        "- `enabled`: category-level toggle (must be `true` to activate)\n"
-        "- `states`: map of individual tool names to their access level\n"
-        "- Access levels: `public` (all users), `private` (owner only)\n"
         "- Only include tools you want to enable — omitted tools stay disabled\n"
-        "- The backend will reject unknown categories or tool names with an error\n\n"
+        "- The backend will reject unknown tool names with an error\n\n"
         "### Internet Search\n\n"
         "To give an agent web search ability, set the agent field "
         "`search_internet` to `true`. That switch enables the LLM provider's "
@@ -181,15 +167,7 @@ def build_agent_manager(team_id: str) -> Agent:
         "enable_post": False,
         "enable_long_term_memory": False,
         "sub_agents": None,
-        "tools": {
-            "ui": {
-                "enabled": True,
-                "states": {
-                    "ui_show_card": "private",
-                    "ui_ask_user": "private",
-                },
-            },
-        },
+        "tools": ["ui_show_card", "ui_ask_user"],
         "created_at": now,
         "updated_at": now,
     }

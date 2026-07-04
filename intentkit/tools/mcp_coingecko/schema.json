@@ -1,45 +1,15 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "CoinGecko",
   "description": "Crypto market data, prices, trends, and analytics via CoinGecko API",
   "x-tags": [
     "Crypto",
     "Market Data"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "title": "Tools",
-      "properties": {
-        "mcp_coingecko": {
-          "type": "string",
-          "title": "All CoinGecko Tools",
-          "description": "Expose every tool offered by the CoinGecko MCP server. The exact tools are discovered live from the server at runtime.",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "default": "disabled"
-        }
-      }
+  "tools": {
+    "mcp_coingecko": {
+      "title": "All CoinGecko Tools",
+      "description": "Expose every tool offered by the CoinGecko MCP server. The exact tools are discovered live from the server at runtime."
     }
   },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true,
   "x-icon": "/tools/mcp_coingecko/coingecko.svg"
 }

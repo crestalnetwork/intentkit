@@ -1,9 +1,8 @@
 """DeFi Llama tools."""
 
 import logging
-from typing import TypedDict
+from collections.abc import Callable
 
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.defillama.base import DefiLlamaBaseTool
 from intentkit.tools.defillama.coins.fetch_batch_historical_prices import (
     DefiLlamaFetchBatchHistoricalPrices,
@@ -76,201 +75,56 @@ _cache: dict[str, DefiLlamaBaseTool] = {}
 
 logger = logging.getLogger(__name__)
 
-
-class ToolStates(TypedDict):
+# Each tool maps to a specific DeFi Llama API endpoint. Some tools handle both
+# base and chain-specific endpoints through optional parameters rather than
+# separate implementations.
+_TOOL_CLASSES: dict[str, Callable[[], DefiLlamaBaseTool]] = {
     # TVL Tools
-    fetch_protocols: ToolState
-    fetch_protocol: ToolState
-    fetch_historical_tvl: ToolState
-    fetch_chain_historical_tvl: ToolState
-    fetch_protocol_current_tvl: ToolState
-    fetch_chains: ToolState
-
+    "defillama_fetch_protocols": DefiLlamaFetchProtocols,
+    "defillama_fetch_protocol": DefiLlamaFetchProtocol,
+    "defillama_fetch_total_historical_tvl": DefiLlamaFetchHistoricalTvl,
+    "defillama_fetch_chain_historical_tvl": DefiLlamaFetchChainHistoricalTvl,
+    "defillama_fetch_protocol_tvl": DefiLlamaFetchProtocolCurrentTvl,
+    "defillama_fetch_chains": DefiLlamaFetchChains,
     # Coins Tools
-    fetch_current_prices: ToolState
-    fetch_historical_prices: ToolState
-    fetch_batch_historical_prices: ToolState
-    fetch_price_chart: ToolState
-    fetch_price_percentage: ToolState
-    fetch_first_price: ToolState
-    fetch_block: ToolState
-
+    "defillama_fetch_current_prices": DefiLlamaFetchCurrentPrices,
+    "defillama_fetch_historical_prices": DefiLlamaFetchHistoricalPrices,
+    "defillama_fetch_batch_historical_prices": DefiLlamaFetchBatchHistoricalPrices,
+    "defillama_fetch_price_chart": DefiLlamaFetchPriceChart,
+    "defillama_fetch_price_percentage": DefiLlamaFetchPricePercentage,
+    "defillama_fetch_first_price": DefiLlamaFetchFirstPrice,
+    "defillama_fetch_block": DefiLlamaFetchBlock,
     # Stablecoins Tools
-    fetch_stablecoins: ToolState
-    fetch_stablecoin_charts: ToolState
-    fetch_stablecoin_chains: ToolState
-    fetch_stablecoin_prices: ToolState
-
+    "defillama_fetch_stablecoins": DefiLlamaFetchStablecoins,
+    "defillama_fetch_stablecoin_charts": DefiLlamaFetchStablecoinCharts,
+    "defillama_fetch_stablecoin_chains": DefiLlamaFetchStablecoinChains,
+    "defillama_fetch_stablecoin_prices": DefiLlamaFetchStablecoinPrices,
     # Yields Tools
-    fetch_pools: ToolState
-    fetch_pool_chart: ToolState
-
+    "defillama_fetch_pools": DefiLlamaFetchPools,
+    "defillama_fetch_pool_chart": DefiLlamaFetchPoolChart,
     # Volumes Tools
-    fetch_dex_overview: ToolState
-    fetch_dex_summary: ToolState
-    fetch_options_overview: ToolState
-
+    "defillama_fetch_dex_overview": DefiLlamaFetchDexOverview,
+    "defillama_fetch_dex_summary": DefiLlamaFetchDexSummary,
+    "defillama_fetch_options_overview": DefiLlamaFetchOptionsOverview,
     # Fees Tools
-    fetch_fees_overview: ToolState
+    "defillama_fetch_fees_overview": DefiLlamaFetchFeesOverview,
+}
 
 
-class Config(ToolsetConfig):
-    """Configuration for DeFi Llama tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[DefiLlamaBaseTool]:
-    """Get all DeFi Llama tools."""
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    result = []
-    for name in available_tools:
-        tool = get_defillama_tool(name)
-        if tool:
-            result.append(tool)
-    return result
+async def get_tools(tool_names: list[str], **_) -> list[DefiLlamaBaseTool]:
+    """Get the requested DeFi Llama tools."""
+    return [tool for name in tool_names if (tool := get_defillama_tool(name))]
 
 
-def get_defillama_tool(
-    name: str,
-) -> DefiLlamaBaseTool | None:
-    """Get a DeFi Llama tool by name.
-
-    Args:
-        name: The name of the tool to get
-
-    Returns:
-        The requested DeFi Llama tool
-
-    Notes:
-        Each tool maps to a specific DeFi Llama API endpoint. Some tools handle both
-        base and chain-specific endpoints through optional parameters rather than
-        separate implementations.
-    """
-    # TVL Tools
-    if name == "fetch_protocols":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocols()
-        return _cache[name]
-    elif name == "fetch_protocol":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocol()
-        return _cache[name]
-    elif name == "fetch_historical_tvl":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchHistoricalTvl()
-        return _cache[name]
-    elif name == "fetch_chain_historical_tvl":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchChainHistoricalTvl()
-        return _cache[name]
-    elif name == "fetch_protocol_current_tvl":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchProtocolCurrentTvl()
-        return _cache[name]
-    elif name == "fetch_chains":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchChains()
-        return _cache[name]
-
-    # Coins Tools
-    elif name == "fetch_current_prices":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchCurrentPrices()
-        return _cache[name]
-    elif name == "fetch_historical_prices":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchHistoricalPrices()
-        return _cache[name]
-    elif name == "fetch_batch_historical_prices":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchBatchHistoricalPrices()
-        return _cache[name]
-    elif name == "fetch_price_chart":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchPriceChart()
-        return _cache[name]
-    elif name == "fetch_price_percentage":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchPricePercentage()
-        return _cache[name]
-    elif name == "fetch_first_price":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchFirstPrice()
-        return _cache[name]
-    elif name == "fetch_block":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchBlock()
-        return _cache[name]
-
-    # Stablecoins Tools
-    elif name == "fetch_stablecoins":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoins()
-        return _cache[name]
-    elif name == "fetch_stablecoin_charts":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinCharts()
-        return _cache[name]
-    elif name == "fetch_stablecoin_chains":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinChains()
-        return _cache[name]
-    elif name == "fetch_stablecoin_prices":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchStablecoinPrices()
-        return _cache[name]
-
-    # Yields Tools
-    elif name == "fetch_pools":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchPools()
-        return _cache[name]
-    elif name == "fetch_pool_chart":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchPoolChart()
-        return _cache[name]
-
-    # Volumes Tools
-    elif name == "fetch_dex_overview":  # Handles both base and chain-specific overviews
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchDexOverview()
-        return _cache[name]
-    elif name == "fetch_dex_summary":
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchDexSummary()
-        return _cache[name]
-    elif (
-        name == "fetch_options_overview"
-    ):  # Handles both base and chain-specific overviews
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchOptionsOverview()
-        return _cache[name]
-
-    # Fees Tools
-    elif (
-        name == "fetch_fees_overview"
-    ):  # Handles both base and chain-specific overviews
-        if name not in _cache:
-            _cache[name] = DefiLlamaFetchFeesOverview()
-        return _cache[name]
-
-    else:
-        logger.warning("Unknown DeFi Llama tool: %s", name)
-        return None
+def get_defillama_tool(tool_name: str) -> DefiLlamaBaseTool | None:
+    """Get a DeFi Llama tool by name."""
+    if tool_name not in _cache:
+        tool_class = _TOOL_CLASSES.get(tool_name)
+        if tool_class is None:
+            logger.warning("Unknown DeFi Llama tool: %s", tool_name)
+            return None
+        _cache[tool_name] = tool_class()
+    return _cache[tool_name]
 
 
 def available() -> bool:

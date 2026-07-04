@@ -1,225 +1,51 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Venice Image",
   "description": "Tools for generating images using the Venice AI API.",
-  "x-icon": "/tools/venice_image/venice_image.jpg",
   "x-tags": [
     "AI",
     "Image"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this toolset is enabled",
-      "default": false
+  "x-icon": "/tools/venice_image/venice_image.jpg",
+  "tools": {
+    "venice_image_vision": {
+      "title": "Image Vision",
+      "description": "Describes an image provided via URL using the Venice AI API. Ideal for understanding the content of an existing image"
     },
-    "states": {
-      "type": "object",
-      "title": "Tool States",
-      "description": "States for each Venice Image tool (disabled, public, or private)",
-      "properties": {
-        "image_vision": {
-          "type": "string",
-          "title": "Image Vision",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Describes an image provided via URL using the Venice AI API. Ideal for understanding the content of an existing image",
-          "default": "disabled"
-        },
-        "image_enhance": {
-          "type": "string",
-          "title": "Image Enhance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Tool for **Enhance** (modifying specific areas of) an existing image using a selected image model via Venice AI",
-          "default": "disabled"
-        },
-        "image_upscale": {
-          "type": "string",
-          "title": "Image Upscale",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Upscale an existing image by 2x or 4x using Venice AI.",
-          "default": "disabled"
-        },
-        "image_generation_flux_dev": {
-          "type": "string",
-          "title": "Image Generation (Flux-Dev)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Venice AI's Flux Dev model (research, art workflows).",
-          "default": "disabled"
-        },
-        "image_generation_flux_dev_uncensored": {
-          "type": "string",
-          "title": "Image Generation (Flux-Dev-Uncensored)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using the uncensored Flux Dev model (unrestricted, NSFW).",
-          "default": "disabled"
-        },
-        "image_generation_venice_sd35": {
-          "type": "string",
-          "title": "Image Generation (Venice SD3.5)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Stability AI's SD 3.5 Large (art, design).",
-          "default": "disabled"
-        },
-        "image_generation_fluently_xl": {
-          "type": "string",
-          "title": "Image Generation (Fluently-XL)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Fluently-XL (aesthetics, lighting, realism).",
-          "default": "disabled"
-        },
-        "image_generation_lustify_sdxl": {
-          "type": "string",
-          "title": "Image Generation (Lustify-SDXL)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Lustify SDXL (photorealistic, focus on NSFW).",
-          "default": "disabled"
-        },
-        "image_generation_pony_realism": {
-          "type": "string",
-          "title": "Image Generation (Pony-Realism)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Pony Realism (high-detail, realistic, anime/characters).",
-          "default": "disabled"
-        },
-        "image_generation_stable_diffusion_3_5": {
-          "type": "string",
-          "title": "Image Generation (Stable Diffusion 3.5 - Alt ID)",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generate images using Stability AI's SD 3.5 Large (alternative API ID).",
-          "default": "disabled"
-        }
-      }
+    "venice_image_enhance": {
+      "title": "Image Enhance",
+      "description": "Tool for **Enhance** (modifying specific areas of) an existing image using a selected image model via Venice AI"
     },
-    "safe_mode": {
-      "type": "boolean",
-      "title": "Safe Mode",
-      "description": "Whether to use safe mode. If enabled, this will blur images that are classified as having adult content",
-      "default": true
+    "venice_image_upscale": {
+      "title": "Image Upscale",
+      "description": "Upscale an existing image by 2x or 4x using Venice AI."
     },
-    "embed_exif_metadata": {
-      "type": "boolean",
-      "title": "Embed Exif Metadata",
-      "description": "Embed prompt generation information into the image's EXIF metadata",
-      "default": false
+    "venice_image_generation_flux_dev": {
+      "title": "Image Generation (Flux-Dev)",
+      "description": "Generate images using Venice AI's Flux Dev model (research, art workflows)."
     },
-    "hide_watermark": {
-      "type": "boolean",
-      "title": "Hide Watermark",
-      "description": "Whether to hide the Venice watermark. Venice may ignore this parameter for certain generated content.",
-      "default": true
+    "venice_image_generation_flux_dev_uncensored": {
+      "title": "Image Generation (Flux-Dev-Uncensored)",
+      "description": "Generate images using the uncensored Flux Dev model (unrestricted, NSFW)."
     },
-    "negative_prompt": {
-      "type": "string",
-      "title": "Default Negative Prompt",
-      "description": "Default negative prompt to use if none is provided in the tool call.",
-      "default": "(worst quality: 1.4), bad quality, nsfw"
+    "venice_image_generation_venice_sd35": {
+      "title": "Image Generation (Venice SD3.5)",
+      "description": "Generate images using Stability AI's SD 3.5 Large (art, design)."
     },
-    "rate_limit_number": {
-      "type": "integer",
-      "title": "Rate Limit Number",
-      "description": "Number of requests allowed per time window."
+    "venice_image_generation_fluently_xl": {
+      "title": "Image Generation (Fluently-XL)",
+      "description": "Generate images using Fluently-XL (aesthetics, lighting, realism)."
     },
-    "rate_limit_minutes": {
-      "type": "integer",
-      "title": "Rate Limit Minutes",
-      "description": "Time window in minutes for rate limiting."
+    "venice_image_generation_lustify_sdxl": {
+      "title": "Image Generation (Lustify-SDXL)",
+      "description": "Generate images using Lustify SDXL (photorealistic, focus on NSFW)."
+    },
+    "venice_image_generation_pony_realism": {
+      "title": "Image Generation (Pony-Realism)",
+      "description": "Generate images using Pony Realism (high-detail, realistic, anime/characters)."
+    },
+    "venice_image_generation_stable_diffusion_3_5": {
+      "title": "Image Generation (Stable Diffusion 3.5 - Alt ID)",
+      "description": "Generate images using Stability AI's SD 3.5 Large (alternative API ID)."
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

@@ -59,17 +59,7 @@ class AIXBTProjects(AIXBTBaseTool):
         """
         # Get context from the config
         context = self.get_context()
-        tool_config = context.agent.tool_config(self.category)
         logger.debug("aixbt_projects.py: Running search with context %s", context)
-
-        # Check for rate limiting if configured
-        if tool_config.get("rate_limit_number") and tool_config.get(
-            "rate_limit_minutes"
-        ):
-            await self.user_rate_limit_by_category(
-                tool_config["rate_limit_number"],
-                tool_config["rate_limit_minutes"] * 60,
-            )
 
         # Get the API key from platform config
         api_key = self.get_api_key()

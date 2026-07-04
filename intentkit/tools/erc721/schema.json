@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "ERC721",
   "description": "ERC721 NFT management actions including balance checking, minting, and transfers",
   "x-icon": "/tools/erc721/erc721.svg",
@@ -8,71 +6,18 @@
     "Crypto",
     "NFT"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "erc721_get_balance": {
+      "title": "Get NFT Balance",
+      "description": "Get the NFT balance for an address from an ERC721 contract"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "erc721_get_balance": {
-          "type": "string",
-          "title": "Get NFT Balance",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get the NFT balance for an address from an ERC721 contract",
-          "default": "disabled"
-        },
-        "erc721_mint": {
-          "type": "string",
-          "title": "Mint NFT",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Mint an NFT to a specified destination address",
-          "default": "disabled"
-        },
-        "erc721_transfer": {
-          "type": "string",
-          "title": "Transfer NFT",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Transfer an NFT to another address",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each ERC721 tool (disabled, public, or private)"
+    "erc721_mint": {
+      "title": "Mint NFT",
+      "description": "Mint an NFT to a specified destination address"
+    },
+    "erc721_transfer": {
+      "title": "Transfer NFT",
+      "description": "Transfer an NFT to another address"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

@@ -1,109 +1,26 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Firecrawl Web Scraping and Crawling",
   "description": "AI-powered web scraping and crawling capabilities using Firecrawl",
   "x-icon": "/tools/firecrawl/firecrawl.png",
   "x-tags": [
     "Knowledge Base"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "firecrawl_scrape": {
+      "title": "Firecrawl Scrape",
+      "description": "Scrape single web pages and REPLACE any existing indexed content for that URL. Unlike regular scrape, this prevents duplicate content when re-scraping the same page. Use this to refresh/update content from a previously scraped URL."
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "firecrawl_scrape": {
-          "type": "string",
-          "title": "Firecrawl Scrape",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Scrape single web pages and REPLACE any existing indexed content for that URL. Unlike regular scrape, this prevents duplicate content when re-scraping the same page. Use this to refresh/update content from a previously scraped URL.",
-          "default": "disabled"
-        },
-        "firecrawl_crawl": {
-          "type": "string",
-          "title": "Firecrawl Crawl",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Crawl entire websites and extract content from multiple pages. Can follow links, handle JavaScript-rendered content, and extract structured data from entire websites.",
-          "default": "disabled"
-        },
-        "firecrawl_query_indexed_content": {
-          "type": "string",
-          "title": "Query Indexed Content",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Query previously indexed Firecrawl content to find relevant information and answer questions. Use this to search through content that was scraped and indexed using Firecrawl tools.",
-          "default": "disabled"
-        },
-        "firecrawl_clear_indexed_content": {
-          "type": "string",
-          "title": "Clear Indexed Content",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Clear all previously indexed Firecrawl content from the vector store. This will permanently delete all indexed content and cannot be undone. Use this tool when you want to start fresh with new content.",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Firecrawl tool (disabled, public, or private)"
+    "firecrawl_crawl": {
+      "title": "Firecrawl Crawl",
+      "description": "Crawl entire websites and extract content from multiple pages. Can follow links, handle JavaScript-rendered content, and extract structured data from entire websites."
     },
-    "rate_limit_number": {
-      "type": "integer",
-      "title": "Rate Limit Number",
-      "description": "Number of requests allowed per time window",
-      "minimum": 1,
-      "maximum": 1000,
-      "default": 100
+    "firecrawl_query_indexed_content": {
+      "title": "Query Indexed Content",
+      "description": "Query previously indexed Firecrawl content to find relevant information and answer questions. Use this to search through content that was scraped and indexed using Firecrawl tools."
     },
-    "rate_limit_minutes": {
-      "type": "integer",
-      "title": "Rate Limit Minutes",
-      "description": "Time window in minutes for rate limiting",
-      "minimum": 1,
-      "maximum": 1440,
-      "default": 60
+    "firecrawl_clear_indexed_content": {
+      "title": "Clear Indexed Content",
+      "description": "Clear all previously indexed Firecrawl content from the vector store. This will permanently delete all indexed content and cannot be undone. Use this tool when you want to start fresh with new content."
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

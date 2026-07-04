@@ -39,8 +39,6 @@ class ImageVision(VeniceImageVisionBaseTool):
         try:
             context = self.get_context()
 
-            await self.apply_venice_rate_limit(context)
-
             image_base64 = await fetch_image_as_base64(image_url)
             if not image_base64:
                 error_msg = f"Failed to fetch or validate image from URL: {image_url}"

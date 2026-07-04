@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "China A-Share",
   "description": "Real-time and historical market data for Chinese A-shares (Shanghai/Shenzhen/Beijing) backed by the akshare library — quotes, K-lines, indices, boards, capital flow, news, announcements, financials, and trading-day calendar.",
   "x-tags": [
@@ -8,95 +6,42 @@
     "Stocks",
     "China"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "cn_stock_get_quote": {
+      "title": "Get Quote",
+      "description": "Real-time spot quote (price, change, volume, P/E, P/B, market cap) for one or more A-shares."
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "get_quote": {
-          "type": "string",
-          "title": "Get Quote",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Real-time spot quote (price, change, volume, P/E, P/B, market cap) for one or more A-shares.",
-          "default": "disabled"
-        },
-        "get_kline": {
-          "type": "string",
-          "title": "Get K-Line",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Daily/weekly/monthly OHLCV bars for a single A-share, with forward/back adjustment.",
-          "default": "disabled"
-        },
-        "get_index": {
-          "type": "string",
-          "title": "Get Index",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Spot value (and optional 30-day history) for major Chinese stock indices.",
-          "default": "disabled"
-        },
-        "get_board": {
-          "type": "string",
-          "title": "Get Board",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Industry / concept board snapshot ranked by intraday percentage change.",
-          "default": "disabled"
-        },
-        "get_capital_flow": {
-          "type": "string",
-          "title": "Get Capital Flow",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Net capital inflow/outflow for an individual stock or the whole market.",
-          "default": "disabled"
-        },
-        "get_news": {
-          "type": "string",
-          "title": "Get News",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Recent news for a specific A-share or top macro financial headlines.",
-          "default": "disabled"
-        },
-        "get_announcement": {
-          "type": "string",
-          "title": "Get Announcement",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Listed-company announcements (公告) for a given date.",
-          "default": "disabled"
-        },
-        "get_financials": {
-          "type": "string",
-          "title": "Get Financials",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Key financial metrics (EPS, ROE, profit, revenue, margins) by reporting period.",
-          "default": "disabled"
-        },
-        "is_trading_day": {
-          "type": "string",
-          "title": "Is Trading Day",
-          "enum": ["disabled", "public", "private"],
-          "x-enum-title": ["Disabled", "Agent Owner + All Users", "Agent Owner Only"],
-          "description": "Check whether a given date is an A-share trading day. Use at the top of every scheduled task to skip holidays.",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each cn_stock tool (disabled, public, or private)"
+    "cn_stock_get_kline": {
+      "title": "Get K-Line",
+      "description": "Daily/weekly/monthly OHLCV bars for a single A-share, with forward/back adjustment."
+    },
+    "cn_stock_get_index": {
+      "title": "Get Index",
+      "description": "Spot value (and optional 30-day history) for major Chinese stock indices."
+    },
+    "cn_stock_get_board": {
+      "title": "Get Board",
+      "description": "Industry / concept board snapshot ranked by intraday percentage change."
+    },
+    "cn_stock_get_capital_flow": {
+      "title": "Get Capital Flow",
+      "description": "Net capital inflow/outflow for an individual stock or the whole market."
+    },
+    "cn_stock_get_news": {
+      "title": "Get News",
+      "description": "Recent news for a specific A-share or top macro financial headlines."
+    },
+    "cn_stock_get_announcement": {
+      "title": "Get Announcement",
+      "description": "Listed-company announcements (公告) for a given date."
+    },
+    "cn_stock_get_financials": {
+      "title": "Get Financials",
+      "description": "Key financial metrics (EPS, ROE, profit, revenue, margins) by reporting period."
+    },
+    "cn_stock_is_trading_day": {
+      "title": "Is Trading Day",
+      "description": "Check whether a given date is an A-share trading day. Use at the top of every scheduled task to skip holidays."
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

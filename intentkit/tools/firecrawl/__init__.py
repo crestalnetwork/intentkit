@@ -1,10 +1,8 @@
 """Firecrawl tools for web scraping and crawling."""
 
-import logging
-from typing import NotRequired, TypedDict
+from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.firecrawl.base import FirecrawlBaseTool
 from intentkit.tools.firecrawl.clear import FirecrawlClearIndexedContent
 from intentkit.tools.firecrawl.crawl import FirecrawlCrawl
@@ -14,74 +12,28 @@ from intentkit.tools.firecrawl.scrape import FirecrawlScrape
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, FirecrawlBaseTool] = {}
 
-logger = logging.getLogger(__name__)
+_TOOL_CLASSES: dict[str, Callable[[], FirecrawlBaseTool]] = {
+    "firecrawl_scrape": FirecrawlScrape,
+    "firecrawl_crawl": FirecrawlCrawl,
+    "firecrawl_query_indexed_content": FirecrawlQueryIndexedContent,
+    "firecrawl_clear_indexed_content": FirecrawlClearIndexedContent,
+}
 
 
-class ToolStates(TypedDict):
-    firecrawl_scrape: ToolState
-    firecrawl_crawl: ToolState
-    firecrawl_query_indexed_content: ToolState
-    firecrawl_clear_indexed_content: ToolState
+async def get_tools(tool_names: list[str], **_) -> list[FirecrawlBaseTool]:
+    """Get the requested Firecrawl tools; unknown names are skipped."""
+    return [tool for name in tool_names if (tool := get_firecrawl_tool(name))]
 
 
-class Config(ToolsetConfig):
-    """Configuration for Firecrawl tools."""
-
-    states: ToolStates
-    rate_limit_number: NotRequired[int]
-    rate_limit_minutes: NotRequired[int]
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[FirecrawlBaseTool]:
-    """Get all Firecrawl tools.
-
-    Args:
-        config: The configuration for Firecrawl tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of Firecrawl tools.
-    """
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    return [s for name in available_tools if (s := get_firecrawl_tool(name))]
-
-
-def get_firecrawl_tool(
-    name: str,
-) -> FirecrawlBaseTool | None:
-    """Get a Firecrawl tool by name."""
-    if name == "firecrawl_scrape":
-        if name not in _cache:
-            _cache[name] = FirecrawlScrape()
-        return _cache[name]
-    elif name == "firecrawl_crawl":
-        if name not in _cache:
-            _cache[name] = FirecrawlCrawl()
-        return _cache[name]
-    elif name == "firecrawl_query_indexed_content":
-        if name not in _cache:
-            _cache[name] = FirecrawlQueryIndexedContent()
-        return _cache[name]
-    elif name == "firecrawl_clear_indexed_content":
-        if name not in _cache:
-            _cache[name] = FirecrawlClearIndexedContent()
-        return _cache[name]
-    else:
-        logger.warning("Unknown Firecrawl tool: %s", name)
+def get_firecrawl_tool(tool_name: str) -> FirecrawlBaseTool | None:
+    """Get a Firecrawl tool by name, using the instance cache."""
+    if tool_name in _cache:
+        return _cache[tool_name]
+    cls = _TOOL_CLASSES.get(tool_name)
+    if cls is None:
         return None
+    _cache[tool_name] = cls()
+    return _cache[tool_name]
 
 
 def available() -> bool:

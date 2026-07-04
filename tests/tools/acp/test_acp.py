@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from intentkit.tools.acp import Config, ToolStates, available, get_tools
+from intentkit.tools.acp import available, get_tools
 from intentkit.tools.acp.cancel_checkout import (
     AcpCancelCheckout,
     AcpCancelCheckoutInput,
@@ -44,65 +44,27 @@ def test_available():
 
 
 @pytest.mark.asyncio
-async def test_get_tools_all_public():
-    config: Config = {
-        "enabled": True,
-        "states": ToolStates(
-            acp_list_products="public",
-            acp_create_checkout="public",
-            acp_get_checkout="public",
-            acp_complete_checkout="public",
-            acp_cancel_checkout="public",
-        ),
-    }
-    tools = await get_tools(config, is_private=False)
-    assert len(tools) == 5
-    names = {s.name for s in tools}
-    assert names == {
+async def test_get_tools_all_names():
+    names = [
         "acp_list_products",
         "acp_create_checkout",
         "acp_get_checkout",
         "acp_complete_checkout",
         "acp_cancel_checkout",
-    }
+    ]
+    tools = await get_tools(names)
+    assert [t.name for t in tools] == names
 
 
 @pytest.mark.asyncio
-async def test_get_tools_disabled():
-    config: Config = {
-        "enabled": True,
-        "states": ToolStates(
-            acp_list_products="disabled",
-            acp_create_checkout="disabled",
-            acp_get_checkout="disabled",
-            acp_complete_checkout="disabled",
-            acp_cancel_checkout="disabled",
-        ),
-    }
-    tools = await get_tools(config, is_private=False)
-    assert len(tools) == 0
+async def test_get_tools_empty_selection():
+    assert await get_tools([]) == []
 
 
 @pytest.mark.asyncio
-async def test_get_tools_private_only():
-    config: Config = {
-        "enabled": True,
-        "states": ToolStates(
-            acp_list_products="private",
-            acp_create_checkout="public",
-            acp_get_checkout="disabled",
-            acp_complete_checkout="private",
-            acp_cancel_checkout="disabled",
-        ),
-    }
-    # Non-private context
-    tools = await get_tools(config, is_private=False)
-    assert len(tools) == 1
-    assert tools[0].name == "acp_create_checkout"
-
-    # Private context
-    tools = await get_tools(config, is_private=True)
-    assert len(tools) == 3
+async def test_get_tools_skips_unknown_names():
+    tools = await get_tools(["acp_list_products", "acp_bogus"])
+    assert [t.name for t in tools] == ["acp_list_products"]
 
 
 # --- Input validation tests ---

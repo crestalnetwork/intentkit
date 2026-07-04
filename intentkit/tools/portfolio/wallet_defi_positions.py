@@ -48,15 +48,11 @@ class WalletDefiPositions(PortfolioBaseTool):
             Dict containing DeFi positions data
         """
         context = self.get_context()
-        tool_config = context.agent.tool_config(self.category)
         logger.debug(
             f"wallet_defi_positions.py: Fetching wallet DeFi positions with context {context}"
         )
 
-        # Get the API key from the agent's configuration
-        api_key = tool_config.get("api_key")
-        if not api_key:
-            return {"error": "No Moralis API key provided in the configuration."}
+        api_key = self.get_api_key()
 
         # Build query parameters
         params = {"chain": chain}

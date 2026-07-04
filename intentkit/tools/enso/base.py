@@ -31,9 +31,7 @@ class EnsoBaseTool(IntentKitOnChainTool):
     """
 
     def get_main_tokens(self, context: AgentContext) -> list[str]:
-        tool_config = context.agent.tool_config(self.category)
-        if "main_tokens" in tool_config and tool_config["main_tokens"]:
-            return tool_config["main_tokens"]
+        """Per-agent main token configuration was removed; default to no extra tokens."""
         return []
 
     def get_api_token(self, context: AgentContext) -> str:

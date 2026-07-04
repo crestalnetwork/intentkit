@@ -44,8 +44,6 @@ class FetchNewsTool(CarvBaseTool):
         """
         context = self.get_context()
 
-        await self.apply_rate_limit(context)
-
         result = await self._call_carv_api(
             context=context,
             endpoint="/ai-agent-backend/news",

@@ -1,8 +1,6 @@
 import asyncio
-import importlib
 import logging
 from datetime import UTC, datetime
-from typing import TypedDict
 
 from fastapi import (
     APIRouter,
@@ -42,7 +40,6 @@ from intentkit.models.agent import (
     AgentUpdate,
 )
 from intentkit.models.agent_data import AgentData, AgentDataTable
-from intentkit.tools import __all__ as toolsets
 from intentkit.utils.error import IntentKitAPIError
 
 from app.common.upload import validate_and_store_image
@@ -353,84 +350,6 @@ async def export_agent(
         raise IntentKitAPIError(
             status_code=404, key="NotFound", message="Agent not found"
         )
-    # Ensure agent.tools is initialized
-    if agent.tools is None:
-        agent.tools = {}
-
-    # fill all toolsets
-    for category in toolsets:
-        try:
-            # Dynamically import the tool module
-            tool_module = importlib.import_module(f"intentkit.tools.{category}")
-
-            # Check if the module has a Config class and get_tools function
-            if hasattr(tool_module, "Config") and hasattr(tool_module, "get_tools"):
-                # Get or create the config for this category
-                category_config = agent.tools.get(category, {})
-
-                # Ensure 'enabled' field exists (required by ToolsetConfig)
-                if "enabled" not in category_config:
-                    category_config["enabled"] = False
-
-                # Ensure states dict exists
-                if "states" not in category_config:
-                    category_config["states"] = {}
-
-                # Get all available tool states from the module
-                available_tools = []
-                if hasattr(tool_module, "ToolStates") and hasattr(
-                    tool_module.ToolStates, "__annotations__"
-                ):
-                    available_tools = list(
-                        tool_module.ToolStates.__annotations__.keys()
-                    )
-                # Add missing tools with disabled state
-                for tool_name in available_tools:
-                    if tool_name not in category_config["states"]:
-                        category_config["states"][tool_name] = "disabled"
-
-                # Get all required fields from Config class and its base classes
-                config_class = tool_module.Config
-                # Get all base classes of Config
-                all_bases = [config_class]
-                for base in config_class.__mro__[1:]:
-                    if base is TypedDict or base is dict or base is object:
-                        continue
-                    all_bases.append(base)
-
-                # Collect all required fields from Config and its base classes
-                for base in all_bases:
-                    if hasattr(base, "__annotations__"):
-                        for field_name, field_type in base.__annotations__.items():
-                            # Skip fields already set or marked as NotRequired
-                            if field_name in category_config or "NotRequired" in str(
-                                field_type
-                            ):
-                                continue
-                            # Add default value based on type
-                            if field_name != "states":  # states already handled above
-                                if "str" in str(field_type):
-                                    category_config[field_name] = ""
-                                elif "bool" in str(field_type):
-                                    category_config[field_name] = False
-                                elif "int" in str(field_type):
-                                    category_config[field_name] = 0
-                                elif "float" in str(field_type):
-                                    category_config[field_name] = 0.0
-                                elif "list" in str(field_type) or "List" in str(
-                                    field_type
-                                ):
-                                    category_config[field_name] = []
-                                elif "dict" in str(field_type) or "Dict" in str(
-                                    field_type
-                                ):
-                                    category_config[field_name] = {}
-
-                # Update the agent's tools config
-                agent.tools[category] = category_config
-        except (ImportError, AttributeError):
-            # Skip if module import fails or doesn't have required components
-            pass
     yaml_content = agent.to_yaml()
     return Response(
         content=yaml_content,

@@ -264,9 +264,6 @@ class Agent(AgentCreate, AgentPublicInfo):
                 return None
             return cls.model_validate(item)
 
-    def tool_config(self, category: str) -> dict[str, Any]:
-        return self.tools.get(category, {}) if self.tools else {}
-
     @classmethod
     async def get_json_schema(cls) -> dict[str, Any]:
         """Get the JSON schema for Agent model with all $ref references resolved.
@@ -312,13 +309,14 @@ class Agent(AgentCreate, AgentPublicInfo):
                         else:
                             model_property["default"] = new_enum[0]
 
-            # Process tools property by scanning schema.json files directly
+            # Attach the toolset catalog (categories with their tool names and
+            # descriptions) so UIs can render a picker; the config value
+            # itself is just a flat list of tool names.
             tools_property = schema.get("properties", {}).get("tools", {})
 
-            tools_properties = {}
+            tools_catalog = {}
             tools_dir = Path(__file__).parent.parent.parent / "tools"
 
-            # Iterate over all toolset directories with schema.json
             if tools_dir.exists():
                 for category_dir in sorted(tools_dir.iterdir()):
                     if not category_dir.is_dir():
@@ -330,17 +328,9 @@ class Agent(AgentCreate, AgentPublicInfo):
                     try:
                         with open(tool_schema_path) as f:
                             tool_schema = json.load(f)
-
-                        # Load and embed the full tool schema directly
-                        base_uri = f"file://{tool_schema_path}"
-                        with open(tool_schema_path) as f:
-                            embedded_tool_schema: dict[str, Any] = jsonref.load(  # pyright: ignore[reportAssignmentType]
-                                f, base_uri=base_uri, proxies=False, lazy_load=False
-                            )
-
-                        tools_properties[category] = {
+                        tools_catalog[category] = {
                             "title": tool_schema.get("title", category.title()),
-                            **embedded_tool_schema,
+                            **tool_schema,
                         }
                     except (FileNotFoundError, json.JSONDecodeError) as e:
                         logger.warning(
@@ -348,9 +338,8 @@ class Agent(AgentCreate, AgentPublicInfo):
                         )
                         continue
 
-            # Update the tools property in the schema
             if tools_property:
-                tools_property["properties"] = tools_properties
+                tools_property["x-catalog"] = tools_catalog
 
             # Log the changes for debugging
             logger.debug("Schema processed with merged LLM/tool defaults")

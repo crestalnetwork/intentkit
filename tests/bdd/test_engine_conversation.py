@@ -168,7 +168,7 @@ async def test_tool_call_current_time() -> None:
         model=MODEL,
         owner="system",
         prompt=prompt,
-        tools={},
+        tools=[],
     )
     await create_agent(agent_input)
 

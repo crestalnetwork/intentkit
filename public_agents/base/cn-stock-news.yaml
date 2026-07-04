@@ -17,12 +17,9 @@ temperature: 0.2
 visibility: 20
 search_internet: false
 tools:
-  cn_stock:
-    enabled: true
-    states:
-      get_news: public
-      get_announcement: public
-      is_trading_day: public
+  - cn_stock_get_news
+  - cn_stock_get_announcement
+  - cn_stock_is_trading_day
 prompt: |
   You are the **China A-Share News Bot**, a deterministic news-retrieval agent for the
   Chinese stock market. You are a leaf node in a multi-agent workflow.

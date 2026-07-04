@@ -1,62 +1,19 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "WETH",
   "description": "Wrap and unwrap ETH to/from WETH (Wrapped ETH)",
-  "x-icon": "/tools/weth/weth.svg",
   "x-tags": [
     "Crypto",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/weth/weth.svg",
+  "tools": {
+    "weth_wrap_eth": {
+      "title": "Wrap ETH",
+      "description": "Wrap native ETH to WETH (ERC20 token)"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "weth_wrap_eth": {
-          "type": "string",
-          "title": "Wrap ETH",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Wrap native ETH to WETH (ERC20 token)",
-          "default": "disabled"
-        },
-        "weth_unwrap_eth": {
-          "type": "string",
-          "title": "Unwrap WETH",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Unwrap WETH back to native ETH",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each WETH tool (disabled, public, or private)"
+    "weth_unwrap_eth": {
+      "title": "Unwrap WETH",
+      "description": "Unwrap WETH back to native ETH"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

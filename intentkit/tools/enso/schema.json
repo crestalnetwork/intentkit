@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Enso Finance",
   "description": "Integration with Enso Finance API providing DeFi trading and portfolio management capabilities across multiple blockchain networks",
   "x-icon": "/tools/enso/enso.jpg",
@@ -8,164 +6,38 @@
     "Analytics",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "enso_get_networks": {
+      "title": "Get Networks",
+      "description": "Retrieve networks supported by the Enso API"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "get_networks": {
-          "type": "string",
-          "title": "Get Networks",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve networks supported by the Enso API",
-          "default": "disabled"
-        },
-        "get_tokens": {
-          "type": "string",
-          "title": "Get Tokens",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Enso Finance Token Information Tool: Retrieves detailed token information from the Enso Finance API, including APY, symbol, address, protocol slug, token type, and underlying tokens.",
-          "default": "disabled"
-        },
-        "get_prices": {
-          "type": "string",
-          "title": "Get Prices",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve the price of a token by chain ID and contract address",
-          "default": "disabled"
-        },
-        "get_wallet_approvals": {
-          "type": "string",
-          "title": "Get Wallet Approvals",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve token spend approvals for a wallet on a specified blockchain network.",
-          "default": "disabled"
-        },
-        "get_wallet_balances": {
-          "type": "string",
-          "title": "Get Wallet Balances",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve token balances of a wallet on a specified blockchain network.",
-          "default": "disabled"
-        },
-        "wallet_approve": {
-          "type": "string",
-          "title": "Wallet Approve",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "This tool is used specifically for broadcasting a ERC20 token spending approval transaction to the network. It should only be used when the user explicitly requests to broadcast an approval transaction with a specific amount for a certain token.",
-          "default": "disabled"
-        },
-        "route_shortcut": {
-          "type": "string",
-          "title": "Route Shortcut",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId.",
-          "default": "disabled"
-        },
-        "get_best_yield": {
-          "type": "string",
-          "title": "Get Best Yield",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Find the best yield options for a specific token (default: USDC) across all protocols on a blockchain network (default: Base). Results are sorted by APY in descending order.",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Enso tool (disabled, public, or private)"
+    "enso_get_tokens": {
+      "title": "Get Tokens",
+      "description": "Enso Finance Token Information Tool: Retrieves detailed token information from the Enso Finance API, including APY, symbol, address, protocol slug, token type, and underlying tokens."
     },
-    "main_tokens": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of main tokens to use",
-      "default": [
-        "ETH",
-        "UDSC",
-        "USDT"
-      ]
+    "enso_get_prices": {
+      "title": "Get Prices",
+      "description": "Retrieve the price of a token by chain ID and contract address"
+    },
+    "enso_get_wallet_approvals": {
+      "title": "Get Wallet Approvals",
+      "description": "Retrieve token spend approvals for a wallet on a specified blockchain network."
+    },
+    "enso_get_wallet_balances": {
+      "title": "Get Wallet Balances",
+      "description": "Retrieve token balances of a wallet on a specified blockchain network."
+    },
+    "enso_wallet_approve": {
+      "title": "Wallet Approve",
+      "description": "This tool is used specifically for broadcasting a ERC20 token spending approval transaction to the network. It should only be used when the user explicitly requests to broadcast an approval transaction with a specific amount for a certain token."
+    },
+    "enso_route_shortcut": {
+      "title": "Route Shortcut",
+      "description": "This tool is used specifically for broadcasting a route transaction calldata to the network. It should only be used when the user explicitly requests to broadcast a route transaction with routeId."
+    },
+    "enso_get_best_yield": {
+      "title": "Get Best Yield",
+      "description": "Find the best yield options for a specific token (default: USDC) across all protocols on a blockchain network (default: Base). Results are sorted by APY in descending order."
     }
-  },
-  "required": [
-    "states",
-    "main_tokens",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

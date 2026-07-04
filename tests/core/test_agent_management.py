@@ -59,6 +59,7 @@ def _make_agent_update(**overrides):
     dump = {
         "slug": "my-slug",
         "sub_agents": None,
+        "tools": None,
     }
     dump.update(overrides)
     agent.model_dump = MagicMock(return_value=dict(dump))
@@ -71,6 +72,7 @@ def _make_agent_update(**overrides):
     agent.hash = MagicMock(return_value="abc123")
     agent.slug = dump.get("slug")
     agent.sub_agents = dump.get("sub_agents")
+    agent.tools = dump.get("tools")
     agent.wallet_id = dump.get("wallet_id")
     return agent
 

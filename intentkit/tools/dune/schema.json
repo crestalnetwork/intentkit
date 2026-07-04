@@ -2,77 +2,23 @@
   "title": "Dune",
   "description": "Dune tools for querying blockchain analytics data via the Dune API.",
   "x-icon": "/tools/dune/dune.png",
-  "type": "object",
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "title": "Tool States",
-      "type": "object",
-      "properties": {
-        "dune_execute_query": {
-          "type": "string",
-          "title": "Execute Query",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Execute a saved Dune query by ID and return fresh results.",
-          "default": "disabled"
-        },
-        "dune_get_query_results": {
-          "type": "string",
-          "title": "Get Query Results",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get cached results for a Dune query without executing it.",
-          "default": "disabled"
-        },
-        "dune_run_sql": {
-          "type": "string",
-          "title": "Run SQL",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Execute a raw DuneSQL query against blockchain data.",
-          "default": "disabled"
-        }
-      }
-    }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true,
   "x-tags": [
     "Analytics",
     "Crypto",
     "Knowledge Base"
-  ]
+  ],
+  "tools": {
+    "dune_execute_query": {
+      "title": "Execute Query",
+      "description": "Execute a saved Dune query by ID and return fresh results."
+    },
+    "dune_get_query_results": {
+      "title": "Get Query Results",
+      "description": "Get cached results for a Dune query without executing it."
+    },
+    "dune_run_sql": {
+      "title": "Run SQL",
+      "description": "Execute a raw DuneSQL query against blockchain data."
+    }
+  }
 }

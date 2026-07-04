@@ -1,34 +1,15 @@
 """x402 toolset."""
 
-import logging
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.x402.base import X402BaseTool
 from intentkit.tools.x402.check_price import X402CheckPrice
 from intentkit.tools.x402.get_orders import X402GetOrders
 from intentkit.tools.x402.http_request import X402HttpRequest
 from intentkit.tools.x402.pay import X402Pay
 
-logger = logging.getLogger(__name__)
-
+# Cache tools at the module level, because they are stateless
 _cache: dict[str, X402BaseTool] = {}
 
-
-class ToolStates(TypedDict):
-    x402_http_request: ToolState
-    x402_check_price: ToolState
-    x402_pay: ToolState
-    x402_get_orders: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for x402 tools."""
-
-    states: ToolStates
-
-
-_TOOL_BUILDERS: dict[str, type[X402BaseTool]] = {
+_TOOL_NAME_TO_CLASS_MAP: dict[str, type[X402BaseTool]] = {
     "x402_http_request": X402HttpRequest,
     "x402_check_price": X402CheckPrice,
     "x402_pay": X402Pay,
@@ -36,35 +17,30 @@ _TOOL_BUILDERS: dict[str, type[X402BaseTool]] = {
 }
 
 
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[X402BaseTool]:
-    """Return enabled x402 tools for the agent."""
-    enabled_tools = []
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            enabled_tools.append(tool_name)
+async def get_tools(tool_names: list[str], **_) -> list[X402BaseTool]:
+    """Return x402 tool instances for the requested names.
 
-    result: list[X402BaseTool] = []
-    for name in enabled_tools:
-        tool = _get_tool(name)
+    Unknown names are skipped silently.
+    """
+    tools: list[X402BaseTool] = []
+    for name in tool_names:
+        tool = get_x402_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def _get_tool(name: str) -> X402BaseTool | None:
-    builder = _TOOL_BUILDERS.get(name)
-    if builder:
-        if name not in _cache:
-            _cache[name] = builder()
-        return _cache[name]
-    logger.warning("Unknown x402 tool requested: %s", name)
-    return None
+def get_x402_tool(tool_name: str) -> X402BaseTool | None:
+    """Get an x402 tool by name, with caching."""
+    if tool_name in _cache:
+        return _cache[tool_name]
+
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
+    if not tool_class:
+        return None
+
+    _cache[tool_name] = tool_class()
+    return _cache[tool_name]
 
 
 def available() -> bool:

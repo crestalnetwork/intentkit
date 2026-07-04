@@ -1,23 +1,8 @@
 """WETH wrapping/unwrapping tools."""
 
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.weth.base import WethBaseTool
 from intentkit.tools.weth.unwrap_eth import WETHUnwrapEth
 from intentkit.tools.weth.wrap_eth import WETHWrapEth
-
-
-class ToolStates(TypedDict):
-    weth_wrap_eth: ToolState
-    weth_unwrap_eth: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for WETH tools."""
-
-    states: ToolStates
-
 
 # Cache for tool instances
 _cache: dict[str, WethBaseTool] = {
@@ -26,31 +11,17 @@ _cache: dict[str, WethBaseTool] = {
 }
 
 
-async def get_tools(
-    config: Config,
-    is_private: bool,
-    **_,
-) -> list[WethBaseTool]:
-    """Get all enabled WETH tools.
+async def get_tools(tool_names: list[str], **_) -> list[WethBaseTool]:
+    """Return WETH tool instances for the requested names.
 
-    Args:
-        config: The configuration for WETH tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled WETH tools.
+    Unknown names are skipped silently.
     """
-    tools: list[WethBaseTool] = []
+    return [_cache[name] for name in tool_names if name in _cache]
 
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
 
-    return tools
+def get_weth_tool(tool_name: str) -> WethBaseTool | None:
+    """Get a WETH tool by name."""
+    return _cache.get(tool_name)
 
 
 def available() -> bool:

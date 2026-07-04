@@ -2,10 +2,8 @@
 
 import logging
 from collections.abc import Callable
-from typing import TypedDict
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.dune.base import DuneBaseTool
 from intentkit.tools.dune.execute_query import DuneExecuteQuery
 from intentkit.tools.dune.get_query_results import DuneGetQueryResults
@@ -22,52 +20,23 @@ _TOOL_NAME_TO_CLASS: dict[str, Callable[[], DuneBaseTool]] = {
 }
 
 
-class ToolStates(TypedDict):
-    dune_execute_query: ToolState
-    dune_get_query_results: ToolState
-    dune_run_sql: ToolState
+async def get_tools(tool_names: list[str], **_) -> list[DuneBaseTool]:
+    """Get the requested Dune tools."""
+    return [tool for name in tool_names if (tool := get_dune_tool(name))]
 
 
-class Config(ToolsetConfig):
-    """Configuration for Dune tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[DuneBaseTool]:
-    """Get all enabled Dune tools."""
-    available_tools = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    result = []
-    for name in available_tools:
-        tool = get_dune_tool(name)
-        if tool:
-            result.append(tool)
-    return result
-
-
-def get_dune_tool(name: str) -> DuneBaseTool | None:
+def get_dune_tool(tool_name: str) -> DuneBaseTool | None:
     """Get a Dune tool by name with caching."""
-    if name in _cache:
-        return _cache[name]
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    cls = _TOOL_NAME_TO_CLASS.get(name)
+    cls = _TOOL_NAME_TO_CLASS.get(tool_name)
     if cls is None:
-        logger.warning("Unknown dune tool: %s", name)
+        logger.warning("Unknown dune tool: %s", tool_name)
         return None
 
-    _cache[name] = cls()
-    return _cache[name]
+    _cache[tool_name] = cls()
+    return _cache[tool_name]
 
 
 def available() -> bool:

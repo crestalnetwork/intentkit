@@ -25,64 +25,26 @@ TOOLS_DIR = Path(__file__).parent.parent / "intentkit" / "tools"
 def generate_schema(server_def: McpServerDef) -> dict:
     """Generate schema.json content for an MCP server tool category.
 
-    The schema is a fixed, coarse shape: one visibility toggle for the whole
-    server (keyed by the server name), not a per-tool snapshot. The remote
-    server's actual tools are discovered live at runtime, so the schema never
+    The catalog is a fixed, coarse shape: one entry for the whole server
+    (keyed by the server name), not a per-tool snapshot. The remote server's
+    actual tools are discovered live at runtime, so the catalog never
     enumerates them and therefore never goes stale when the server changes.
     """
-    states_properties: dict[str, object] = {
-        server_def.name: {
-            "type": "string",
-            "title": f"All {server_def.display_name} Tools",
-            "description": (
-                f"Expose every tool offered by the {server_def.display_name} "
-                "MCP server. The exact tools are discovered live from the "
-                "server at runtime."
-            ),
-            "enum": ["disabled", "public", "private"],
-            "x-enum-title": [
-                "Disabled",
-                "Agent Owner + All Users",
-                "Agent Owner Only",
-            ],
-            "default": "disabled",
-        }
-    }
-
-    schema: dict[str, object] = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
+    return {
         "title": server_def.display_name,
         "description": server_def.description,
         "x-tags": server_def.tags,
-        "properties": {
-            "enabled": {
-                "type": "boolean",
-                "title": "Enabled",
-                "default": False,
-            },
-            "states": {
-                "type": "object",
-                "title": "Tools",
-                "properties": states_properties,
-            },
+        "tools": {
+            server_def.name: {
+                "title": f"All {server_def.display_name} Tools",
+                "description": (
+                    f"Expose every tool offered by the {server_def.display_name} "
+                    "MCP server. The exact tools are discovered live from the "
+                    "server at runtime."
+                ),
+            }
         },
-        "required": ["states", "enabled"],
-        "additionalProperties": True,
     }
-
-    # Add optional api_key field for per-agent key override
-    if server_def.api_key_config_attr:
-        props = schema["properties"]
-        assert isinstance(props, dict)
-        props["api_key"] = {
-            "type": "string",
-            "title": "API Key (optional, overrides system key)",
-            "x-sensitive": True,
-            "description": f"Your own API key for {server_def.display_name}. Leave empty to use the system key.",
-        }
-
-    return schema
 
 
 def generate_init_py(server_name: str) -> str:
@@ -95,7 +57,6 @@ _module = create_mcp_category("{server_name}")
 
 get_tools = _module.get_tools
 available = _module.available
-Config = _module.Config
 '''
 
 

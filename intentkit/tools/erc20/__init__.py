@@ -1,25 +1,9 @@
 """ERC20 token tools."""
 
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.erc20.base import ERC20BaseTool
 from intentkit.tools.erc20.get_balance import ERC20GetBalance
 from intentkit.tools.erc20.get_token_address import ERC20GetTokenAddress
 from intentkit.tools.erc20.transfer import ERC20Transfer
-
-
-class ToolStates(TypedDict):
-    erc20_get_balance: ToolState
-    erc20_transfer: ToolState
-    erc20_get_token_address: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for ERC20 tools."""
-
-    states: ToolStates
-
 
 # Cache for tool instances
 _cache: dict[str, ERC20BaseTool] = {
@@ -29,31 +13,9 @@ _cache: dict[str, ERC20BaseTool] = {
 }
 
 
-async def get_tools(
-    config: Config,
-    is_private: bool,
-    **_,
-) -> list[ERC20BaseTool]:
-    """Get all enabled ERC20 tools.
-
-    Args:
-        config: The configuration for ERC20 tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of enabled ERC20 tools.
-    """
-    tools: list[ERC20BaseTool] = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        if state == "public" or (state == "private" and is_private):
-            # Check cache first
-            if tool_name in _cache:
-                tools.append(_cache[tool_name])
-
-    return tools
+async def get_tools(tool_names: list[str], **_) -> list[ERC20BaseTool]:
+    """Get the requested ERC20 tools."""
+    return [_cache[name] for name in tool_names if name in _cache]
 
 
 def available() -> bool:

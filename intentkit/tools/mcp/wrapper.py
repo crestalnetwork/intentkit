@@ -7,7 +7,6 @@ from typing import Any
 from intentkit.clients.mcp.client import list_mcp_tools
 from intentkit.clients.mcp.registry import MCP_SERVERS, McpServerDef
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, is_tool_visible
 from intentkit.tools.mcp.tool import McpToolTool, create_mcp_tool
 
 logger = logging.getLogger(__name__)
@@ -72,28 +71,24 @@ class McpCategoryModule:
     server_name: str
     _server_def: McpServerDef
 
-    Config: type[ToolsetConfig] = ToolsetConfig
-
     def __init__(self, server_name: str):
         self.server_name = server_name
         self._server_def = MCP_SERVERS[server_name]
 
     async def get_tools(
         self,
-        config: dict[str, Any],
-        is_private: bool,
+        tool_names: list[str],
         **_: Any,
     ) -> list[McpToolTool]:
-        """Expose the server's tools, gated by one coarse visibility setting.
+        """Expose the server's tools when the server name is enabled.
 
         Remote MCP servers own their (changing) tool list, so we never
-        snapshot or toggle individual tools. The agent config carries a single
-        visibility state for the whole server, keyed by the server name; when
-        it permits the current caller, every tool discovered live from the
-        server is exposed. This can't drift when the server changes its tools.
+        snapshot or toggle individual tools. The agent's tools list carries a
+        single entry for the whole server, keyed by the server name; when
+        present, every tool discovered live from the server is exposed. This
+        can't drift when the server changes its tools.
         """
-        visibility = config.get("states", {}).get(self._server_def.name)
-        if not is_tool_visible(visibility, is_private):
+        if self._server_def.name not in tool_names:
             return []
 
         instances = await _get_mcp_tool_instances(self._server_def)

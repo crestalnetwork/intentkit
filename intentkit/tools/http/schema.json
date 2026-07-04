@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "HTTP Client",
   "description": "HTTP client tools for making web requests",
   "x-icon": "/tools/http/http.svg",
@@ -9,71 +7,18 @@
     "Infrastructure",
     "Knowledge Base"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "http_get": {
+      "title": "HTTP GET",
+      "description": "Make HTTP GET requests to fetch data from web APIs and websites"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "http_get": {
-          "type": "string",
-          "title": "HTTP GET",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Make HTTP GET requests to fetch data from web APIs and websites",
-          "default": "disabled"
-        },
-        "http_post": {
-          "type": "string",
-          "title": "HTTP POST",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Make HTTP POST requests to send data to web APIs and submit forms",
-          "default": "disabled"
-        },
-        "http_put": {
-          "type": "string",
-          "title": "HTTP PUT",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Make HTTP PUT requests to update or replace data on web APIs",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each HTTP client tool (disabled, public, or private)"
+    "http_post": {
+      "title": "HTTP POST",
+      "description": "Make HTTP POST requests to send data to web APIs and submit forms"
+    },
+    "http_put": {
+      "title": "HTTP PUT",
+      "description": "Make HTTP PUT requests to update or replace data on web APIs"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

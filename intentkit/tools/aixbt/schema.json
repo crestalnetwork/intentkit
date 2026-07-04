@@ -1,57 +1,16 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "AIXBT API",
   "description": "Cryptocurrency project data and analytics through the AIXBT API",
-  "x-icon": "/tools/aixbt/aixbt.jpg",
   "x-tags": [
     "Analytics",
     "Crypto",
     "Knowledge Base"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "aixbt_projects": {
-          "type": "string",
-          "title": "AIXBT Projects",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Search for cryptocurrency projects and retrieve detailed information using AIXBT",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each AIXBT API tool (disabled, public, or private)"
-    },
-    "rate_limit_number": {
-      "type": "integer",
-      "title": "Rate Limit Number",
-      "description": "Number of requests allowed per time window"
-    },
-    "rate_limit_minutes": {
-      "type": "integer",
-      "title": "Rate Limit Minutes",
-      "description": "Time window in minutes for rate limiting"
+  "x-icon": "/tools/aixbt/aixbt.jpg",
+  "tools": {
+    "aixbt_projects": {
+      "title": "AIXBT Projects",
+      "description": "Search for cryptocurrency projects and retrieve detailed information using AIXBT"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

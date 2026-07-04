@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "DappLooker",
   "description": "Retrieve comprehensive market data and analytics for AI agent tokens using DappLooker. This API specializes in AI-focused crypto projects and may not provide data for general cryptocurrencies like BTC or ETH.",
   "x-icon": "/tools/dapplooker/dapplooker.jpg",
@@ -8,39 +6,10 @@
     "Analytics",
     "Crypto"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "dapplooker_token_data": {
-          "type": "string",
-          "title": "AI Token Data",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieve detailed market data and analytics for AI-focused tokens by ticker or address",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each DappLooker tool (disabled, public, or private)"
+  "tools": {
+    "dapplooker_token_data": {
+      "title": "AI Token Data",
+      "description": "Retrieve detailed market data and analytics for AI-focused tokens by ticker or address"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

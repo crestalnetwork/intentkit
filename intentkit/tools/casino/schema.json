@@ -1,77 +1,22 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Casino",
   "description": "Casino gaming tools including card decks and quantum dice rolling for interactive games with users",
-  "x-icon": "/tools/casino/casino.png",
   "x-tags": [
     "Entertainment"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "x-icon": "/tools/casino/casino.png",
+  "tools": {
+    "casino_deck_shuffle": {
+      "title": "Shuffle Card Deck",
+      "description": "Create and shuffle new card decks with customizable options"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "deck_shuffle": {
-          "type": "string",
-          "title": "Shuffle Card Deck",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Create and shuffle new card decks with customizable options",
-          "default": "disabled"
-        },
-        "deck_draw": {
-          "type": "string",
-          "title": "Draw Cards",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Draw cards from the current deck with detailed card information and images",
-          "default": "disabled"
-        },
-        "dice_roll": {
-          "type": "string",
-          "title": "Roll Quantum Dice",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Roll dice using quantum random number generation for true randomness",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Casino tool"
+    "casino_deck_draw": {
+      "title": "Draw Cards",
+      "description": "Draw cards from the current deck with detailed card information and images"
+    },
+    "casino_dice_roll": {
+      "title": "Roll Quantum Dice",
+      "description": "Roll dice using quantum random number generation for true randomness"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

@@ -1,157 +1,42 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Morpho",
   "description": "Morpho protocol actions for vaults (deposit/withdraw) and Morpho Blue markets (collateral, borrow, repay)",
   "x-icon": "/tools/morpho/morpho.svg",
   "x-tags": [
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "morpho_deposit": {
+      "title": "Vault Deposit",
+      "description": "Deposit assets into a MetaMorpho Vault"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "morpho_deposit": {
-          "type": "string",
-          "title": "Vault Deposit",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Deposit assets into a MetaMorpho Vault",
-          "default": "disabled"
-        },
-        "morpho_withdraw": {
-          "type": "string",
-          "title": "Vault Withdraw",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Withdraw assets from a MetaMorpho Vault",
-          "default": "disabled"
-        },
-        "morpho_get_vault_data": {
-          "type": "string",
-          "title": "Vault Data",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get MetaMorpho Vault info (total assets, share price, underlying token)",
-          "default": "disabled"
-        },
-        "morpho_supply_collateral": {
-          "type": "string",
-          "title": "Supply Collateral",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Supply collateral to a Morpho Blue market",
-          "default": "disabled"
-        },
-        "morpho_withdraw_collateral": {
-          "type": "string",
-          "title": "Withdraw Collateral",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Withdraw collateral from a Morpho Blue market",
-          "default": "disabled"
-        },
-        "morpho_borrow": {
-          "type": "string",
-          "title": "Borrow",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Borrow assets from a Morpho Blue market",
-          "default": "disabled"
-        },
-        "morpho_repay": {
-          "type": "string",
-          "title": "Repay",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Repay borrowed assets in a Morpho Blue market",
-          "default": "disabled"
-        },
-        "morpho_get_position": {
-          "type": "string",
-          "title": "Get Position",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Get user position in a Morpho Blue market",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Morpho tool (disabled, public, or private)"
+    "morpho_withdraw": {
+      "title": "Vault Withdraw",
+      "description": "Withdraw assets from a MetaMorpho Vault"
+    },
+    "morpho_get_vault_data": {
+      "title": "Vault Data",
+      "description": "Get MetaMorpho Vault info (total assets, share price, underlying token)"
+    },
+    "morpho_supply_collateral": {
+      "title": "Supply Collateral",
+      "description": "Supply collateral to a Morpho Blue market"
+    },
+    "morpho_withdraw_collateral": {
+      "title": "Withdraw Collateral",
+      "description": "Withdraw collateral from a Morpho Blue market"
+    },
+    "morpho_borrow": {
+      "title": "Borrow",
+      "description": "Borrow assets from a Morpho Blue market"
+    },
+    "morpho_repay": {
+      "title": "Repay",
+      "description": "Repay borrowed assets in a Morpho Blue market"
+    },
+    "morpho_get_position": {
+      "title": "Get Position",
+      "description": "Get user position in a Morpho Blue market"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

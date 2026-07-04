@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class VeniceImageConfig(BaseModel):
-    """Tool Config for Venice Image."""
+    """Default settings for Venice Image tools."""
 
     safe_mode: bool = Field(
         default=True,
@@ -18,12 +18,4 @@ class VeniceImageConfig(BaseModel):
     negative_prompt: str = Field(
         default="(worst quality: 1.4), bad quality, nsfw",
         description="Default negative prompt.",
-    )
-    rate_limit_number: int | None = Field(
-        default=None,
-        description="Max calls within the time window.",
-    )
-    rate_limit_minutes: int | None = Field(
-        default=None,
-        description="Time window in minutes for rate limiting.",
     )

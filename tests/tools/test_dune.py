@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from intentkit.tools.dune import Config, ToolStates, available, get_tools
+from intentkit.tools.dune import available, get_tools
 from intentkit.tools.dune.execute_query import DuneExecuteQuery, DuneExecuteQueryInput
 from intentkit.tools.dune.get_query_results import (
     DuneGetQueryResults,
@@ -153,26 +153,10 @@ def test_available_without_key():
 
 
 @pytest.mark.asyncio
-async def test_get_tools_filters_by_state():
-    """Test get_tools respects state configuration."""
-    config: Config = {
-        "enabled": True,
-        "states": ToolStates(
-            dune_execute_query="public",
-            dune_get_query_results="disabled",
-            dune_run_sql="private",
-        ),
-    }
-    # Public context: should get execute_query only (run_sql is private)
-    tools = await get_tools(config, is_private=False)
-    names = [s.name for s in tools]
-    assert "dune_execute_query" in names
-    assert "dune_get_query_results" not in names
-    assert "dune_run_sql" not in names
+async def test_get_tools_selects_by_name():
+    """get_tools returns exactly the requested tools; unknown names are skipped."""
+    tools = await get_tools(["dune_execute_query", "dune_run_sql", "dune_bogus"])
+    names = [t.name for t in tools]
+    assert names == ["dune_execute_query", "dune_run_sql"]
 
-    # Private context: should get execute_query and run_sql
-    tools = await get_tools(config, is_private=True)
-    names = [s.name for s in tools]
-    assert "dune_execute_query" in names
-    assert "dune_get_query_results" not in names
-    assert "dune_run_sql" in names
+    assert await get_tools([]) == []

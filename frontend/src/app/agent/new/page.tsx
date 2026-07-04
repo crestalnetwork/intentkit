@@ -103,39 +103,14 @@ export default function NewAgentPage() {
 
     const uiSchema = useMemo(() => generateUiSchema(schema), [schema]);
 
-    // Clean up tools data before submission:
-    // - Remove toolsets where enabled=false
-    // - Remove tool states that are 'disabled'
+    // Clean up the tools name list before submission (dedupe, drop empties).
     const cleanToolsData = (data: Record<string, unknown>): Record<string, unknown> => {
-        const tools = data.tools as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
+        const tools = data.tools as string[] | undefined;
         if (!tools) return data;
-
-        const cleanedTools: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
-        for (const [categoryKey, categoryData] of Object.entries(tools)) {
-            // Skip toolsets that are explicitly disabled
-            if (categoryData.enabled === false) continue;
-
-            // Clean up states - only keep non-disabled tools
-            const states = categoryData.states || {};
-            const cleanedStates: Record<string, string> = {};
-            for (const [toolKey, toolValue] of Object.entries(states)) {
-                if (toolValue !== 'disabled') {
-                    cleanedStates[toolKey] = toolValue;
-                }
-            }
-
-            // Only include toolset if it's enabled
-            if (categoryData.enabled === true) {
-                cleanedTools[categoryKey] = {
-                    enabled: true,
-                    states: Object.keys(cleanedStates).length > 0 ? cleanedStates : undefined,
-                };
-            }
-        }
-
+        const cleaned = Array.from(new Set(tools));
         return {
             ...data,
-            tools: Object.keys(cleanedTools).length > 0 ? cleanedTools : undefined,
+            tools: cleaned.length > 0 ? cleaned : undefined,
         };
     };
 

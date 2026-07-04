@@ -18,13 +18,10 @@ temperature: 0.3
 visibility: 20
 search_internet: false
 tools:
-  cn_stock:
-    enabled: true
-    states:
-      get_index: public
-      get_board: public
-      get_capital_flow: public
-      is_trading_day: public
+  - cn_stock_get_index
+  - cn_stock_get_board
+  - cn_stock_get_capital_flow
+  - cn_stock_is_trading_day
 prompt: |
   You are the **China Market Overview Bot**, a leaf agent that surfaces market-wide
   signals for Chinese A-shares.

@@ -18,11 +18,8 @@ temperature: 0.3
 visibility: 20
 search_internet: false
 tools:
-  cn_stock:
-    enabled: true
-    states:
-      get_financials: public
-      get_quote: public
+  - cn_stock_get_financials
+  - cn_stock_get_quote
 prompt: |
   You are the **China A-Share Fundamentals Bot**, a leaf agent that returns structured
   financial metrics for Chinese listed companies.

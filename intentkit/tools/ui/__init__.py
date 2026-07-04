@@ -1,9 +1,5 @@
 """UI tools."""
 
-import logging
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.ui.ask_user import UIAskUser
 from intentkit.tools.ui.base import UIBaseTool
 from intentkit.tools.ui.show_card import UIShowCard
@@ -11,74 +7,36 @@ from intentkit.tools.ui.show_card import UIShowCard
 # Cache tools at the module level, because they are stateless
 _cache: dict[str, UIBaseTool] = {}
 
-logger = logging.getLogger(__name__)
+_TOOL_NAME_TO_CLASS_MAP: dict[str, type[UIBaseTool]] = {
+    "ui_show_card": UIShowCard,
+    "ui_ask_user": UIAskUser,
+}
 
 
-class ToolStates(TypedDict):
-    ui_show_card: ToolState
-    ui_ask_user: ToolState
+async def get_tools(tool_names: list[str], **_) -> list[UIBaseTool]:
+    """Return UI tool instances for the requested names.
 
-
-class Config(ToolsetConfig):
-    """Configuration for UI tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[UIBaseTool]:
-    """Get all UI tools.
-
-    Args:
-        config: The configuration for UI tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of UI tools.
+    Unknown names are skipped silently.
     """
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    result = []
-    for name in available_tools:
+    tools: list[UIBaseTool] = []
+    for name in tool_names:
         tool = get_ui_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def get_ui_tool(
-    name: str,
-) -> UIBaseTool | None:
-    """Get a UI tool by name.
+def get_ui_tool(tool_name: str) -> UIBaseTool | None:
+    """Get a UI tool by name, with caching."""
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    Args:
-        name: The name of the tool to get
-
-    Returns:
-        The requested UI tool
-    """
-    if name == "ui_show_card":
-        if name not in _cache:
-            _cache[name] = UIShowCard()
-        return _cache[name]
-    elif name == "ui_ask_user":
-        if name not in _cache:
-            _cache[name] = UIAskUser()
-        return _cache[name]
-    else:
-        logger.warning("Unknown UI tool: %s", name)
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
+    if not tool_class:
         return None
+
+    _cache[tool_name] = tool_class()  # pyright: ignore[reportCallIssue]
+    return _cache[tool_name]
 
 
 def available() -> bool:

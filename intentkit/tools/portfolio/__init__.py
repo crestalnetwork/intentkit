@@ -1,10 +1,6 @@
 """Portfolio tools for blockchain wallet analysis."""
 
-import logging
-from typing import TypedDict
-
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.portfolio.base import PortfolioBaseTool
 from intentkit.tools.portfolio.token_balances import TokenBalances
 from intentkit.tools.portfolio.wallet_approvals import WalletApprovals
@@ -22,109 +18,44 @@ from intentkit.tools.portfolio.wallet_swaps import WalletSwaps
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, PortfolioBaseTool] = {}
 
-logger = logging.getLogger(__name__)
+_TOOL_NAME_TO_CLASS_MAP: dict[str, type[PortfolioBaseTool]] = {
+    "portfolio_wallet_history": WalletHistory,
+    "portfolio_token_balances": TokenBalances,
+    "portfolio_wallet_approvals": WalletApprovals,
+    "portfolio_wallet_swaps": WalletSwaps,
+    "portfolio_wallet_net_worth": WalletNetWorth,
+    "portfolio_wallet_profitability_summary": WalletProfitabilitySummary,
+    "portfolio_wallet_profitability": WalletProfitability,
+    "portfolio_wallet_stats": WalletStats,
+    "portfolio_wallet_defi_positions": WalletDefiPositions,
+    "portfolio_wallet_nfts": WalletNFTs,
+}
 
 
-class ToolStates(TypedDict):
-    """State configurations for Portfolio tools."""
+async def get_tools(tool_names: list[str], **_) -> list[PortfolioBaseTool]:
+    """Return Portfolio tool instances for the requested names.
 
-    wallet_history: ToolState
-    token_balances: ToolState
-    wallet_approvals: ToolState
-    wallet_swaps: ToolState
-    wallet_net_worth: ToolState
-    wallet_profitability_summary: ToolState
-    wallet_profitability: ToolState
-    wallet_stats: ToolState
-    wallet_defi_positions: ToolState
-    wallet_nfts: ToolState
-
-
-class Config(ToolsetConfig):
-    """Configuration for Portfolio blockchain analysis tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[PortfolioBaseTool]:
-    """Get all Portfolio blockchain analysis tools.
-
-    Args:
-        config: The configuration for Portfolio tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of Portfolio blockchain analysis tools.
+    Unknown names are skipped silently.
     """
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    result = []
-    for name in available_tools:
+    tools: list[PortfolioBaseTool] = []
+    for name in tool_names:
         tool = get_portfolio_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def get_portfolio_tool(
-    name: str,
-) -> PortfolioBaseTool | None:
-    """Get a portfolio tool by name."""
-    if name == "wallet_history":
-        if name not in _cache:
-            _cache[name] = WalletHistory()
-        return _cache[name]
-    elif name == "token_balances":
-        if name not in _cache:
-            _cache[name] = TokenBalances()
-        return _cache[name]
-    elif name == "wallet_approvals":
-        if name not in _cache:
-            _cache[name] = WalletApprovals()
-        return _cache[name]
-    elif name == "wallet_swaps":
-        if name not in _cache:
-            _cache[name] = WalletSwaps()
-        return _cache[name]
-    elif name == "wallet_net_worth":
-        if name not in _cache:
-            _cache[name] = WalletNetWorth()
-        return _cache[name]
-    elif name == "wallet_profitability_summary":
-        if name not in _cache:
-            _cache[name] = WalletProfitabilitySummary()
-        return _cache[name]
-    elif name == "wallet_profitability":
-        if name not in _cache:
-            _cache[name] = WalletProfitability()
-        return _cache[name]
-    elif name == "wallet_stats":
-        if name not in _cache:
-            _cache[name] = WalletStats()
-        return _cache[name]
-    elif name == "wallet_defi_positions":
-        if name not in _cache:
-            _cache[name] = WalletDefiPositions()
-        return _cache[name]
-    elif name == "wallet_nfts":
-        if name not in _cache:
-            _cache[name] = WalletNFTs()
-        return _cache[name]
-    else:
-        logger.warning("Unknown portfolio tool: %s", name)
+def get_portfolio_tool(tool_name: str) -> PortfolioBaseTool | None:
+    """Get a portfolio tool by name, with caching."""
+    if tool_name in _cache:
+        return _cache[tool_name]
+
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
+    if not tool_class:
         return None
+
+    _cache[tool_name] = tool_class()  # pyright: ignore[reportCallIssue]
+    return _cache[tool_name]
 
 
 def available() -> bool:

@@ -21,11 +21,7 @@ export function AgentCard({ agent }: AgentCardProps) {
   const resolvedImage = getImageUrl(agent.picture);
 
   // Extract active toolsets
-  const activeTools = agent.tools
-    ? Object.entries(agent.tools)
-      .filter(([, config]) => (config as { enabled: boolean }).enabled)
-      .map(([category]) => category)
-    : [];
+  const activeTools = agent.tools ?? [];
 
   const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
     if (!resolvedImage) return;

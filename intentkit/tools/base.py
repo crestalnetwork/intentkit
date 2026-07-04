@@ -2,14 +2,9 @@
 
 import logging
 from abc import ABCMeta
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from decimal import Decimal
-from typing import (
-    Any,
-    Literal,
-    NotRequired,
-    TypedDict,
-)
+from typing import Any
 
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import ToolException, ToolExceptionHandlerOutput
@@ -30,38 +25,9 @@ from intentkit.models.tool import (
 )
 from intentkit.utils.error import RateLimitExceeded
 
-ToolState = Literal["disabled", "public", "private"]
-ToolOwnerState = Literal["disabled", "private"]
-
 
 class NoArgsSchema(BaseModel):
     """Empty schema for tools without arguments."""
-
-
-class ToolsetConfig(TypedDict):
-    """Abstract base class for tool configuration."""
-
-    enabled: bool
-    states: Any
-    __extra__: NotRequired[dict[str, Any]]
-
-
-def is_tool_visible(state: object, is_private: bool) -> bool:
-    """Whether a tool/toolset with this visibility state is exposed here.
-
-    "public" is always visible; "private" only to the agent owner/team;
-    "disabled" (or anything unset) never.
-    """
-    return state == "public" or (state == "private" and is_private)
-
-
-def filter_enabled_tool_names(
-    states: Mapping[str, object], is_private: bool
-) -> list[str]:
-    """Tool names whose configured state allows them in this context."""
-    return [
-        name for name, state in states.items() if is_tool_visible(state, is_private)
-    ]
 
 
 class IntentKitTool(BaseTool, metaclass=ABCMeta):

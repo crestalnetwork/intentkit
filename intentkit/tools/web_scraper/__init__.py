@@ -1,10 +1,6 @@
 """Web scraper tools for content indexing and retrieval."""
 
-import logging
-from typing import TypedDict
-
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolOwnerState, ToolsetConfig, ToolState
 from intentkit.tools.web_scraper.base import WebScraperBaseTool
 from intentkit.tools.web_scraper.document_indexer import DocumentIndexer
 from intentkit.tools.web_scraper.scrape_and_index import (
@@ -16,84 +12,38 @@ from intentkit.tools.web_scraper.website_indexer import WebsiteIndexer
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, WebScraperBaseTool] = {}
 
-logger = logging.getLogger(__name__)
+_TOOL_NAME_TO_CLASS_MAP: dict[str, type[WebScraperBaseTool]] = {
+    "web_scraper_scrape_and_index": ScrapeAndIndex,
+    "web_scraper_query_indexed_content": QueryIndexedContent,
+    "web_scraper_website_indexer": WebsiteIndexer,
+    "web_scraper_document_indexer": DocumentIndexer,
+}
 
 
-class ToolStates(TypedDict):
-    scrape_and_index: ToolOwnerState
-    query_indexed_content: ToolState
-    website_indexer: ToolOwnerState
-    document_indexer: ToolOwnerState
+async def get_tools(tool_names: list[str], **_) -> list[WebScraperBaseTool]:
+    """Return web scraper tool instances for the requested names.
 
-
-class Config(ToolsetConfig):
-    """Configuration for web scraper tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[WebScraperBaseTool]:
-    """Get all web scraper tools.
-
-    Args:
-        config: The configuration for web scraper tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of web scraper tools.
+    Unknown names are skipped silently.
     """
-    available_tools = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    # Get each tool using the cached getter
-    result = []
-    for name in available_tools:
+    tools: list[WebScraperBaseTool] = []
+    for name in tool_names:
         tool = get_web_scraper_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def get_web_scraper_tool(
-    name: str,
-) -> WebScraperBaseTool | None:
-    """Get a web scraper tool by name.
+def get_web_scraper_tool(tool_name: str) -> WebScraperBaseTool | None:
+    """Get a web scraper tool by name, with caching."""
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    Args:
-        name: The name of the tool to get
-
-    Returns:
-        The requested web scraper tool
-    """
-    if name == "scrape_and_index":
-        if name not in _cache:
-            _cache[name] = ScrapeAndIndex()
-        return _cache[name]
-    elif name == "query_indexed_content":
-        if name not in _cache:
-            _cache[name] = QueryIndexedContent()
-        return _cache[name]
-    elif name == "website_indexer":
-        if name not in _cache:
-            _cache[name] = WebsiteIndexer()
-        return _cache[name]
-    elif name == "document_indexer":
-        if name not in _cache:
-            _cache[name] = DocumentIndexer()
-        return _cache[name]
-    else:
-        logger.warning("Unknown web scraper tool: %s", name)
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
+    if not tool_class:
         return None
+
+    _cache[tool_name] = tool_class()  # pyright: ignore[reportCallIssue]
+    return _cache[tool_name]
 
 
 def available() -> bool:

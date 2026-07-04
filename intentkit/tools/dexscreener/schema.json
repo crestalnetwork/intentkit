@@ -1,91 +1,27 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Dexscreener",
   "description": "Integration with DexScreener API, enabling crypto token pair information",
-  "type": "object",
   "x-icon": "/tools/dexscreener/dexscreener.png",
   "x-tags": [
     "Analytics",
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Enable or disable the Dexscreener tool.",
-      "default": false
+  "tools": {
+    "dexscreener_search_token": {
+      "title": "Search Token",
+      "description": "Searches on DexScreener for token pairs matching a query (symbol, name, address). Returns up to 25 pairs sorted by 'liquidity' or 'volume' with timeframe options, including price, volume, etc. Use this tool to find token information based on user queries."
     },
-    "states": {
-      "type": "object",
-      "title": "Tool States",
-      "description": "Enable/disable specific tools. Only enable one if you want a consistent characteristic for your agent",
-      "properties": {
-        "search_token": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Searches on DexScreener for token pairs matching a query (symbol, name, address). Returns up to 25 pairs sorted by 'liquidity' or 'volume' with timeframe options, including price, volume, etc. Use this tool to find token information based on user queries.",
-          "default": "disabled"
-        },
-        "get_pair_info": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieves detailed information about a specific trading pair using chain ID and pair address. Returns comprehensive data including current price, volume, liquidity, price changes, market cap, FDV, transaction counts, and social links.",
-          "default": "disabled"
-        },
-        "get_token_pairs": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Finds all trading pairs for a specific token using chain ID and token address. Returns a list of all pools/pairs where this token is traded, including pair addresses, DEX information, liquidity, volume, and pricing data for each pair.",
-          "default": "disabled"
-        },
-        "get_tokens_info": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieves detailed trading pair information for multiple tokens (up to 30) using chain ID and a list of token addresses. More efficient than making individual calls when you need info for multiple tokens. Use for portfolio analysis or comparing multiple tokens at once.",
-          "default": "disabled"
-        }
-      }
+    "dexscreener_get_pair_info": {
+      "title": "Get Pair Info",
+      "description": "Retrieves detailed information about a specific trading pair using chain ID and pair address. Returns comprehensive data including current price, volume, liquidity, price changes, market cap, FDV, transaction counts, and social links."
+    },
+    "dexscreener_get_token_pairs": {
+      "title": "Get Token Pairs",
+      "description": "Finds all trading pairs for a specific token using chain ID and token address. Returns a list of all pools/pairs where this token is traded, including pair addresses, DEX information, liquidity, volume, and pricing data for each pair."
+    },
+    "dexscreener_get_tokens_info": {
+      "title": "Get Tokens Info",
+      "description": "Retrieves detailed trading pair information for multiple tokens (up to 30) using chain ID and a list of token addresses. More efficient than making individual calls when you need info for multiple tokens. Use for portfolio analysis or comparing multiple tokens at once."
     }
-  },
-  "required": [
-    "enabled",
-    "states"
-  ],
-  "additionalProperties": true
+  }
 }

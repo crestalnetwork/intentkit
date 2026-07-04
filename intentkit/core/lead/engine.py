@@ -223,15 +223,7 @@ async def _build_lead_agent(team_id: str) -> Agent:
         "enable_post": False,
         "enable_long_term_memory": True,
         "sub_agents": None,
-        "tools": {
-            "ui": {
-                "enabled": True,
-                "states": {
-                    "ui_show_card": "private",
-                    "ui_ask_user": "private",
-                },
-            },
-        },
+        "tools": ["ui_show_card", "ui_ask_user"],
         "created_at": now,
         "updated_at": now,
     }

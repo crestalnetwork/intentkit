@@ -32,7 +32,7 @@ def _agent() -> Agent:
         updated_at=now,
         created_at=now,
         owner="user_1",
-        tools={},
+        tools=None,
         prompt="You are a helper.",
         temperature=0.7,
         visibility=AgentVisibility.PRIVATE,

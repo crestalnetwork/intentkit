@@ -1,6 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "CryptoPanic",
   "description": "CryptoPanic is a news aggregator platform indicating impact on price and market for traders and cryptocurrency enthusiasts.",
   "x-icon": "/tools/cryptopanic/cryptopanic.png",
@@ -9,55 +7,14 @@
     "Crypto",
     "Knowledge Base"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "fetch_crypto_sentiment": {
+      "title": "Fetch Crypto Sentiment",
+      "description": "Fetches recent CryptoPanic posts and defines market sentiment via LLM analysis."
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "fetch_crypto_sentiment": {
-          "type": "string",
-          "title": "Fetch Crypto Sentiment",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "default": "disabled",
-          "description": "Fetches recent CryptoPanic posts and defines market sentiment via LLM analysis."
-        },
-        "fetch_crypto_news": {
-          "type": "string",
-          "title": "Fetch Crypto News",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "default": "disabled",
-          "description": "Fetches latest crypto market news from CryptoPanic across all filters."
-        }
-      },
-      "description": "States for each CryptoPanic tool (disabled, public, or private)"
+    "fetch_crypto_news": {
+      "title": "Fetch Crypto News",
+      "description": "Fetches latest crypto market news from CryptoPanic across all filters."
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

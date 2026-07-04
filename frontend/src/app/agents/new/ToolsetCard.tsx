@@ -2,26 +2,19 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
-interface ToolStateOption {
-    value: string;
-    label: string;
-}
-
-interface ToolStateConfig {
+interface ToolToggleConfig {
     title: string;
     description?: string;
-    value: string;
-    options: ToolStateOption[];
-    onChange: (value: string) => void;
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
 }
 
 interface ToolsetCardProps {
     title: string;
     description?: string;
     iconUrl?: string;
-    enabled: boolean;
-    onEnabledChange: (enabled: boolean) => void;
-    toolStates: ToolStateConfig[];
+    tools: ToolToggleConfig[];
+    onClear: () => void;
     defaultExpanded?: boolean;
 }
 
@@ -29,25 +22,14 @@ export function ToolsetCard({
     title,
     description,
     iconUrl,
-    enabled,
-    onEnabledChange,
-    toolStates,
+    tools,
+    onClear,
     defaultExpanded = false,
 }: ToolsetCardProps) {
-    const [isExpanded, setIsExpanded] = useState(enabled || defaultExpanded);
-    const [prevEnabled, setPrevEnabled] = useState(enabled);
-
-    // Auto-expand when enabled, auto-collapse when disabled. Adjusting during
-    // render (instead of in an effect) avoids an extra commit + cascading render.
-    if (enabled !== prevEnabled) {
-        setPrevEnabled(enabled);
-        setIsExpanded(enabled);
-    }
-
-    // Count active tools (those not set to "disabled")
-    const activeToolsCount = toolStates.filter(
-        (tool) => tool.value !== "disabled"
-    ).length;
+    const activeToolsCount = tools.filter((tool) => tool.enabled).length;
+    const [isExpanded, setIsExpanded] = useState(
+        activeToolsCount > 0 || defaultExpanded
+    );
 
     return (
         <div className="border rounded-lg bg-card shadow-xs overflow-hidden">
@@ -85,36 +67,36 @@ export function ToolsetCard({
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    {enabled && activeToolsCount > 0 && (
+                    {activeToolsCount > 0 && (
                         <span className="text-xs text-muted-foreground">
                             {activeToolsCount} active
                         </span>
                     )}
-                    <label
-                        className="relative inline-flex items-center cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={enabled}
-                            onChange={(e) => onEnabledChange(e.target.checked)}
-                        />
-                        <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                    </label>
+                    {activeToolsCount > 0 && (
+                        <button
+                            type="button"
+                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClear();
+                            }}
+                        >
+                            Clear
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Expanded Content */}
-            {isExpanded && enabled && toolStates.length > 0 && (
+            {isExpanded && tools.length > 0 && (
                 <div className="px-4 pb-4 pt-2 border-t bg-muted/30">
                     <div className="grid gap-3">
-                        {toolStates.map((tool, index) => (
+                        {tools.map((tool, index) => (
                             <div
                                 key={index}
                                 className="flex items-center justify-between gap-4"
                             >
-                            <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
                                     <label className="text-xs font-semibold">
                                         {tool.title}
                                     </label>
@@ -124,30 +106,18 @@ export function ToolsetCard({
                                         </p>
                                     )}
                                 </div>
-                                {/* Checkbox: checked = private/public, unchecked = disabled */}
-                                <label
-                                    className="relative inline-flex items-center cursor-pointer"
-                                >
+                                <label className="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
                                         className="sr-only peer"
-                                        checked={tool.value === "private" || tool.value === "public"}
-                                        onChange={(e) => tool.onChange(e.target.checked ? "private" : "disabled")}
+                                        checked={tool.enabled}
+                                        onChange={(e) => tool.onToggle(e.target.checked)}
                                     />
                                     <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                                 </label>
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {/* Collapsed hint when disabled */}
-            {isExpanded && !enabled && (
-                <div className="px-4 pb-4 pt-2 border-t bg-muted/30">
-                    <p className="text-xs text-muted-foreground italic">
-                        Enable this toolset to configure individual tools.
-                    </p>
                 </div>
             )}
         </div>

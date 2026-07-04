@@ -22,14 +22,6 @@ class CarvBaseTool(IntentKitTool):
             raise ToolException("CARV API key is not configured")
         return config.carv_api_key
 
-    async def apply_rate_limit(self, context) -> None:
-        """Apply rate limiting if configured in the agent's tool_config."""
-        tool_config = context.agent.tool_config(self.category)
-        limit_num = tool_config.get("rate_limit_number")
-        limit_min = tool_config.get("rate_limit_minutes")
-        if limit_num and limit_min:
-            await self.user_rate_limit_by_category(limit_num, limit_min * 60)
-
     async def _call_carv_api(
         self,
         context,

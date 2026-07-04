@@ -1,98 +1,18 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "LiFi Token Transfer",
   "description": "Cross-chain token transfer and swap capabilities using the LiFi protocol",
   "x-icon": "/tools/lifi/lifi.png",
   "x-tags": [
     "DeFi"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
+  "tools": {
+    "lifi_token_quote": {
+      "title": "Token Quote",
+      "description": "Get token transfer quotes without executing transactions"
     },
-    "states": {
-      "type": "object",
-      "properties": {
-        "token_quote": {
-          "type": "string",
-          "title": "Token Quote",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "default": "disabled",
-          "description": "Get token transfer quotes without executing transactions"
-        },
-        "token_execute": {
-          "type": "string",
-          "title": "Token Execute",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "default": "disabled",
-          "description": "Execute token transfers (requires CDP wallet and cdp tools enabled)"
-        }
-      },
-      "required": [
-        "token_quote",
-        "token_execute"
-      ],
-      "description": "States for each LiFi tool"
-    },
-    "default_slippage": {
-      "type": "number",
-      "title": "Default Slippage",
-      "description": "Default slippage tolerance for token transfers (e.g., 0.03 for 3%)",
-      "default": 0.03,
-      "minimum": 0.001,
-      "maximum": 0.5,
-      "x-step": 0.001
-    },
-    "allowed_chains": {
-      "type": "array",
-      "title": "Allowed Chains",
-      "description": "List of blockchain networks that can be used (if empty, all supported chains are allowed)",
-      "items": {
-        "type": "string",
-        "examples": [
-          "ETH",
-          "POL",
-          "ARB",
-          "OPT",
-          "DAI"
-        ]
-      },
-      "uniqueItems": true
-    },
-    "max_execution_time": {
-      "type": "integer",
-      "title": "Maximum Execution Time",
-      "description": "Maximum time (in seconds) to wait for transaction confirmation for token_execute",
-      "default": 300,
-      "minimum": 60,
-      "maximum": 1800
+    "lifi_token_execute": {
+      "title": "Token Execute",
+      "description": "Execute token transfers (requires CDP wallet and cdp tools enabled)"
     }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
-  "additionalProperties": true
+  }
 }

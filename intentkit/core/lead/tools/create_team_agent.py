@@ -29,8 +29,8 @@ class CreateTeamAgentInput(BaseModel):
         default=None, description="Additional system prompt"
     )
     temperature: float | None = Field(default=None, description="Temperature (0.0~2.0)")
-    tools: dict[str, Any] | None = Field(
-        default=None, description="Tool configurations"
+    tools: list[str] | None = Field(
+        default=None, description="List of enabled tool names"
     )
     search_internet: bool | None = Field(
         default=None, description="Enable internet search"
@@ -82,7 +82,7 @@ class CreateTeamAgent(LeadTool):
         prompt: str | None = None,
         prompt_append: str | None = None,
         temperature: float | None = None,
-        tools: dict[str, Any] | None = None,
+        tools: list[str] | None = None,
         search_internet: bool | None = None,
         super_mode: bool | None = None,
         enable_todo: bool | None = None,

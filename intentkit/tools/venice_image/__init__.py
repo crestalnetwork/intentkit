@@ -1,8 +1,6 @@
-import logging
-from typing import NotRequired, TypedDict
+"""Venice Image generation and analysis tools."""
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 
 # Import the base tool and all specific model tool classes
 from intentkit.tools.venice_image.base import VeniceImageBaseTool
@@ -31,116 +29,47 @@ from intentkit.tools.venice_image.image_generation.image_generation_venice_sd35 
 from intentkit.tools.venice_image.image_upscale.image_upscale import ImageUpscale
 from intentkit.tools.venice_image.image_vision.image_vision import ImageVision
 
-# Cache tools at the system level, because they are stateless and only depend on the store
+# Cache tools at the system level, because they are stateless
 _cache: dict[str, VeniceImageBaseTool] = {}
 
-logger = logging.getLogger(__name__)
-
-
-# Define the expected structure for the 'states' dictionary in the config
-class ToolStates(TypedDict):
-    image_upscale: ToolState
-    image_enhance: ToolState
-    image_vision: ToolState
-    image_generation_flux_dev: ToolState
-    image_generation_flux_dev_uncensored: ToolState
-    image_generation_venice_sd35: ToolState
-    image_generation_fluently_xl: ToolState
-    image_generation_lustify_sdxl: ToolState
-    image_generation_pony_realism: ToolState
-    image_generation_stable_diffusion_3_5: ToolState
-    # Add new tool names here if more models are added
-
-
-# Define the overall configuration structure for the venice_image category
-class Config(ToolsetConfig):
-    """Configuration for Venice Image tools."""
-
-    enabled: bool  # Keep standard enabled flag
-    states: ToolStates
-    safe_mode: NotRequired[bool]  # Defaults handled in base or usage
-    hide_watermark: NotRequired[bool]  # Defaults handled in base or usage
-    negative_prompt: NotRequired[str]  # Defaults handled in base or usage
-    rate_limit_number: NotRequired[int | None]  # Explicitly Optional
-    rate_limit_minutes: NotRequired[int | None]  # Explicitly Optional
-
-
 _TOOL_NAME_TO_CLASS_MAP: dict[str, type[VeniceImageBaseTool]] = {
-    "image_upscale": ImageUpscale,
-    "image_enhance": ImageEnhance,
-    "image_vision": ImageVision,
-    "image_generation_flux_dev": ImageGenerationFluxDev,
-    "image_generation_flux_dev_uncensored": ImageGenerationFluxDevUncensored,
-    "image_generation_venice_sd35": ImageGenerationVeniceSD35,
-    "image_generation_fluently_xl": ImageGenerationFluentlyXL,
-    "image_generation_lustify_sdxl": ImageGenerationLustifySDXL,
-    "image_generation_pony_realism": ImageGenerationPonyRealism,
-    "image_generation_stable_diffusion_3_5": ImageGenerationStableDiffusion35,
+    "venice_image_upscale": ImageUpscale,
+    "venice_image_enhance": ImageEnhance,
+    "venice_image_vision": ImageVision,
+    "venice_image_generation_flux_dev": ImageGenerationFluxDev,
+    "venice_image_generation_flux_dev_uncensored": ImageGenerationFluxDevUncensored,
+    "venice_image_generation_venice_sd35": ImageGenerationVeniceSD35,
+    "venice_image_generation_fluently_xl": ImageGenerationFluentlyXL,
+    "venice_image_generation_lustify_sdxl": ImageGenerationLustifySDXL,
+    "venice_image_generation_pony_realism": ImageGenerationPonyRealism,
+    "venice_image_generation_stable_diffusion_3_5": ImageGenerationStableDiffusion35,
 }
 
 
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,  # Allow for extra arguments if the loader passes them
-) -> list[VeniceImageBaseTool]:
-    """Get all enabled Venice Image tools based on configuration and privacy level.
+async def get_tools(tool_names: list[str], **_) -> list[VeniceImageBaseTool]:
+    """Return Venice Image tool instances for the requested names.
 
-    Args:
-        config: The configuration for Venice Image tools.
-        is_private: Whether the context is private (e.g., agent owner).
-
-    Returns:
-        A list of instantiated and enabled Venice Image tool objects.
+    Unknown names are skipped silently.
     """
-    # Check if the entire category is disabled first
-    if not config.get("enabled", False):
-        return []
-
-    available_tool_names: list[str] = []
-
-    # Include tools based on their state
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tool_names.append(tool_name)
-
-    # Get each tool using the cached getter
-    result: list[VeniceImageBaseTool] = []
-    for name in available_tool_names:
-        tool = get_venice_image_tool(name, config)
+    tools: list[VeniceImageBaseTool] = []
+    for name in tool_names:
+        tool = get_venice_image_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def get_venice_image_tool(
-    name: str,
-    config: "Config",
-) -> VeniceImageBaseTool | None:
-    """
-    Factory function to get a cached Venice Image tool instance by name.
+def get_venice_image_tool(tool_name: str) -> VeniceImageBaseTool | None:
+    """Get a Venice Image tool by name, with caching."""
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    Args:
-        name: The name of the tool to get (must match keys in _TOOL_NAME_TO_CLASS_MAP).
-
-    Returns:
-        The requested Venice Image tool instance, or None if the name is unknown.
-    """
-
-    # Return from cache immediately if already exists
-    if name in _cache:
-        return _cache[name]
-
-    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(name)
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
     if not tool_class:
-        logger.warning("Unknown Venice tool: %s", name)
         return None
 
-    # Cache and return the newly created instance
-    _cache[name] = tool_class()  # pyright: ignore[reportCallIssue]
-    return _cache[name]
+    _cache[tool_name] = tool_class()  # pyright: ignore[reportCallIssue]
+    return _cache[tool_name]
 
 
 def available() -> bool:

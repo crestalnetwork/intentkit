@@ -6,4 +6,3 @@ _module = create_mcp_category("mcp_coingecko")
 
 get_tools = _module.get_tools
 available = _module.available
-Config = _module.Config

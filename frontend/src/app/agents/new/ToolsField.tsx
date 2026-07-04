@@ -4,95 +4,56 @@ import { FieldProps } from "@rjsf/utils";
 import { ToolsetCard } from "./ToolsetCard";
 import { config } from "@/lib/config";
 
-interface ToolsetSchema {
+interface ToolInfo {
+    title?: string;
+    description?: string;
+}
+
+interface ToolsetCatalogEntry {
     title?: string;
     description?: string;
     "x-icon"?: string;
-    properties?: {
-        enabled?: {
-            default?: boolean;
-        };
-        states?: {
-            properties?: Record<string, {
-                title?: string;
-                description?: string;
-                enum?: string[];
-                "x-enum-title"?: string[];
-                default?: string;
-            }>;
-        };
-    };
-}
-
-interface ToolsFormData {
-    [toolset: string]: {
-        enabled?: boolean;
-        states?: Record<string, string>;
-    };
+    tools?: Record<string, ToolInfo>;
 }
 
 /**
- * Custom field for rendering the entire tools object.
- * Each toolset is rendered as a collapsible card.
+ * Custom field for the agent tools list.
+ *
+ * The form value is a flat list of enabled tool names; the toolset catalog
+ * (categories with their tools) comes from the schema's `x-catalog`.
  */
-export function ToolsField(props: FieldProps<ToolsFormData>) {
+export function ToolsField(props: FieldProps<string[]>) {
     const { schema, formData, onChange, idSchema, fieldPathId } = props;
 
-    const toolsets = (schema.properties || {}) as Record<string, ToolsetSchema>;
-    const currentFormData = (formData || {}) as ToolsFormData;
+    const catalog = ((schema as Record<string, unknown>)["x-catalog"] ||
+        {}) as Record<string, ToolsetCatalogEntry>;
+    const selected = new Set(formData || []);
 
-    const handleCategoryEnabledChange = (categoryKey: string, enabled: boolean) => {
-        const newFormData = {
-            ...currentFormData,
-            [categoryKey]: {
-                ...currentFormData[categoryKey],
-                enabled,
-            },
-        };
-        onChange(newFormData, fieldPathId.path);
+    const setSelected = (next: Set<string>) => {
+        onChange(Array.from(next), fieldPathId.path);
     };
 
-    const handleToolStateChange = (
-        categoryKey: string,
-        toolKey: string,
-        value: string
-    ) => {
-        const categoryData = currentFormData[categoryKey] || {};
-        const currentStates = categoryData.states || {};
-
-        if (value === "disabled") {
-            // When disabling, remove the tool from states using object filter
-            const restStates = Object.fromEntries(
-                Object.entries(currentStates).filter(([key]) => key !== toolKey)
-            );
-            const newFormData = {
-                ...currentFormData,
-                [categoryKey]: {
-                    ...categoryData,
-                    states: restStates,
-                },
-            };
-            // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
-            onChange(newFormData, fieldPathId.path);
+    const handleToolToggle = (toolKey: string, enabled: boolean) => {
+        const next = new Set(selected);
+        if (enabled) {
+            next.add(toolKey);
         } else {
-            // When enabling (private), add the tool to states
-            const newFormData = {
-                ...currentFormData,
-                [categoryKey]: {
-                    ...categoryData,
-                    states: {
-                        ...currentStates,
-                        [toolKey]: value,
-                    },
-                },
-            };
-            // RJSF v6 onChange signature: (newValue, path, errorSchema?, id?)
-            onChange(newFormData, fieldPathId.path);
+            next.delete(toolKey);
         }
+        setSelected(next);
+    };
+
+    const handleCategoryClear = (categoryKey: string) => {
+        const tools = catalog[categoryKey]?.tools || {};
+        const next = new Set(selected);
+        for (const toolKey of Object.keys(tools)) {
+            next.delete(toolKey);
+        }
+        setSelected(next);
     };
 
     // Sort toolsets alphabetically by title
-    const sortedCategories = Object.entries(toolsets).sort(([, a], [, b]) => {
+    const sortedCategories = Object.entries(catalog).sort(([, a], [, b]) => {
         const titleA = a.title || "";
         const titleB = b.title || "";
         return titleA.localeCompare(titleB);
@@ -110,28 +71,15 @@ export function ToolsField(props: FieldProps<ToolsFormData>) {
                 )}
             </div>
             {sortedCategories.map(([categoryKey, categorySchema]) => {
-                const categoryData = currentFormData[categoryKey] || {};
-                const enabled = categoryData.enabled ?? (categorySchema.properties?.enabled?.default || false);
-                const statesSchema = categorySchema.properties?.states?.properties || {};
-                const statesData = categoryData.states || {};
-
-                // Build tool state configs from schema
-                const toolStates = Object.entries(statesSchema).map(([toolKey, toolSchema]) => {
-                    const enumValues = toolSchema.enum || ["disabled", "public", "private"];
-                    const enumTitles = toolSchema["x-enum-title"] || enumValues;
-
-                    return {
-                        title: toolSchema.title || toolKey,
-                        description: toolSchema.description,
-                        value: statesData[toolKey] ?? (toolSchema.default || "disabled"),
-                        options: enumValues.map((val, idx) => ({
-                            value: val,
-                            label: enumTitles[idx] || val,
-                        })),
-                        onChange: (value: string) =>
-                            handleToolStateChange(categoryKey, toolKey, value),
-                    };
-                });
+                const tools = Object.entries(categorySchema.tools || {}).map(
+                    ([toolKey, toolInfo]) => ({
+                        title: toolInfo.title || toolKey,
+                        description: toolInfo.description,
+                        enabled: selected.has(toolKey),
+                        onToggle: (enabled: boolean) =>
+                            handleToolToggle(toolKey, enabled),
+                    })
+                );
 
                 // Build icon URL: relative paths get API base prefix, absolute URLs pass through
                 const rawIcon = categorySchema["x-icon"];
@@ -147,9 +95,8 @@ export function ToolsField(props: FieldProps<ToolsFormData>) {
                         title={categorySchema.title || categoryKey}
                         description={categorySchema.description}
                         iconUrl={iconUrl}
-                        enabled={enabled}
-                        onEnabledChange={(e) => handleCategoryEnabledChange(categoryKey, e)}
-                        toolStates={toolStates}
+                        tools={tools}
+                        onClear={() => handleCategoryClear(categoryKey)}
                     />
                 );
             })}

@@ -1,45 +1,15 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "Chainlist Tools",
   "description": "Access blockchain RPC endpoints and network information from chainlist.org. Enable this tool to look up EVM-compatible networks by name, symbol, or chain ID and get their RPC endpoints, native currencies, and explorer links.",
-  "x-icon": "/tools/chainlist/chainlist.png",
   "x-tags": [
     "Crypto",
     "Infrastructure"
   ],
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "chain_lookup": {
-          "type": "string",
-          "title": "Chain Lookup",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Enables looking up blockchain RPC endpoints and network information. When public, available to all users; when private, only to authenticated users.",
-          "default": "disabled"
-        }
-      },
-      "description": "Configure visibility for chainlist tools (disabled: unavailable, public: available to all, private: available only to authenticated users)"
+  "x-icon": "/tools/chainlist/chainlist.png",
+  "tools": {
+    "chain_lookup": {
+      "title": "Chain Lookup",
+      "description": "Enables looking up blockchain RPC endpoints and network information."
     }
-  },
-  "required": [
-    "enabled",
-    "states"
-  ],
-  "additionalProperties": true
+  }
 }

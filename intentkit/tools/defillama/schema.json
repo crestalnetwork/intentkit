@@ -1,375 +1,103 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "title": "DeFiLlama",
-  "x-icon": "/tools/defillama/defillama.jpeg",
   "description": "Integration with DeFi Llama API providing comprehensive decentralized finance data including token prices, protocol TVL, DEX volumes, and stablecoin metrics",
-  "properties": {
-    "enabled": {
-      "type": "boolean",
-      "title": "Enabled",
-      "description": "Whether this tool is enabled",
-      "default": false
-    },
-    "states": {
-      "type": "object",
-      "properties": {
-        "fetch_batch_historical_prices": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch batch historical prices",
-          "default": "disabled"
-        },
-        "fetch_block": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch block",
-          "default": "disabled"
-        },
-        "fetch_current_prices": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch current prices",
-          "default": "disabled"
-        },
-        "fetch_first_price": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieves inaugural trading price data for assets with historical context",
-          "default": "disabled"
-        },
-        "fetch_historical_prices": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch historical prices",
-          "default": "disabled"
-        },
-        "fetch_price_chart": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch price chart",
-          "default": "disabled"
-        },
-        "fetch_price_percentage": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch price percentage",
-          "default": "disabled"
-        },
-        "fetch_fees_overview": {
-          "type": "string",
-          "title": "Fetch Fees Overview",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Provides aggregated fee statistics across DEXs, lending protocols, and other fee-generating DeFi primitives",
-          "default": "disabled"
-        },
-        "fetch_stablecoin_chains": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Shows blockchain distribution of stablecoin supply with chain-specific circulation metrics",
-          "default": "disabled"
-        },
-        "fetch_stablecoin_charts": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Generates historical charts for stablecoin market cap, supply changes, and chain dominance",
-          "default": "disabled"
-        },
-        "fetch_stablecoin_prices": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch stablecoin prices",
-          "default": "disabled"
-        },
-        "fetch_stablecoins": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch stablecoins",
-          "default": "disabled"
-        },
-        "fetch_chain_historical_tvl": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieves historical TVL data for specific blockchain chains with daily granularity",
-          "default": "disabled"
-        },
-        "fetch_chains": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch chains",
-          "default": "disabled"
-        },
-        "fetch_historical_tvl": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Provides historical TVL trends for the entire DeFi ecosystem or specific protocol categories",
-          "default": "disabled"
-        },
-        "fetch_protocol": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch protocol",
-          "default": "disabled"
-        },
-        "fetch_protocol_current_tvl": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch protocol current TVL",
-          "default": "disabled"
-        },
-        "fetch_protocols": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Retrieves comprehensive list of all tracked DeFi protocols with their category, chain, and TVL data",
-          "default": "disabled"
-        },
-        "fetch_dex_overview": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Provides aggregated DEX metrics including total volume, top trading pairs, and liquidity distribution",
-          "default": "disabled"
-        },
-        "fetch_dex_summary": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch dex summary",
-          "default": "disabled"
-        },
-        "fetch_options_overview": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch options overview",
-          "default": "disabled"
-        },
-        "fetch_pool_chart": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch pool chart",
-          "default": "disabled"
-        },
-        "fetch_pools": {
-          "type": "string",
-          "enum": [
-            "disabled",
-            "public",
-            "private"
-          ],
-          "x-enum-title": [
-            "Disabled",
-            "Agent Owner + All Users",
-            "Agent Owner Only"
-          ],
-          "description": "Fetch pools",
-          "default": "disabled"
-        }
-      },
-      "description": "States for each Defillama tool (disabled, public, or private)"
-    }
-  },
-  "required": [
-    "states",
-    "enabled"
-  ],
+  "x-icon": "/tools/defillama/defillama.jpeg",
   "x-tags": [
     "Analytics",
     "DeFi"
-  ]
+  ],
+  "tools": {
+    "defillama_fetch_batch_historical_prices": {
+      "title": "Fetch Batch Historical Prices",
+      "description": "Fetch batch historical prices"
+    },
+    "defillama_fetch_block": {
+      "title": "Fetch Block",
+      "description": "Fetch block"
+    },
+    "defillama_fetch_current_prices": {
+      "title": "Fetch Current Prices",
+      "description": "Fetch current prices"
+    },
+    "defillama_fetch_first_price": {
+      "title": "Fetch First Price",
+      "description": "Retrieves inaugural trading price data for assets with historical context"
+    },
+    "defillama_fetch_historical_prices": {
+      "title": "Fetch Historical Prices",
+      "description": "Fetch historical prices"
+    },
+    "defillama_fetch_price_chart": {
+      "title": "Fetch Price Chart",
+      "description": "Fetch price chart"
+    },
+    "defillama_fetch_price_percentage": {
+      "title": "Fetch Price Percentage",
+      "description": "Fetch price percentage"
+    },
+    "defillama_fetch_fees_overview": {
+      "title": "Fetch Fees Overview",
+      "description": "Provides aggregated fee statistics across DEXs, lending protocols, and other fee-generating DeFi primitives"
+    },
+    "defillama_fetch_stablecoin_chains": {
+      "title": "Fetch Stablecoin Chains",
+      "description": "Shows blockchain distribution of stablecoin supply with chain-specific circulation metrics"
+    },
+    "defillama_fetch_stablecoin_charts": {
+      "title": "Fetch Stablecoin Charts",
+      "description": "Generates historical charts for stablecoin market cap, supply changes, and chain dominance"
+    },
+    "defillama_fetch_stablecoin_prices": {
+      "title": "Fetch Stablecoin Prices",
+      "description": "Fetch stablecoin prices"
+    },
+    "defillama_fetch_stablecoins": {
+      "title": "Fetch Stablecoins",
+      "description": "Fetch stablecoins"
+    },
+    "defillama_fetch_chain_historical_tvl": {
+      "title": "Fetch Chain Historical TVL",
+      "description": "Retrieves historical TVL data for specific blockchain chains with daily granularity"
+    },
+    "defillama_fetch_chains": {
+      "title": "Fetch Chains",
+      "description": "Fetch chains"
+    },
+    "defillama_fetch_total_historical_tvl": {
+      "title": "Fetch Historical TVL",
+      "description": "Provides historical TVL trends for the entire DeFi ecosystem or specific protocol categories"
+    },
+    "defillama_fetch_protocol": {
+      "title": "Fetch Protocol",
+      "description": "Fetch protocol"
+    },
+    "defillama_fetch_protocol_tvl": {
+      "title": "Fetch Protocol Current TVL",
+      "description": "Fetch protocol current TVL"
+    },
+    "defillama_fetch_protocols": {
+      "title": "Fetch Protocols",
+      "description": "Retrieves comprehensive list of all tracked DeFi protocols with their category, chain, and TVL data"
+    },
+    "defillama_fetch_dex_overview": {
+      "title": "Fetch DEX Overview",
+      "description": "Provides aggregated DEX metrics including total volume, top trading pairs, and liquidity distribution"
+    },
+    "defillama_fetch_dex_summary": {
+      "title": "Fetch DEX Summary",
+      "description": "Fetch dex summary"
+    },
+    "defillama_fetch_options_overview": {
+      "title": "Fetch Options Overview",
+      "description": "Fetch options overview"
+    },
+    "defillama_fetch_pool_chart": {
+      "title": "Fetch Pool Chart",
+      "description": "Fetch pool chart"
+    },
+    "defillama_fetch_pools": {
+      "title": "Fetch Pools",
+      "description": "Fetch pools"
+    }
+  }
 }

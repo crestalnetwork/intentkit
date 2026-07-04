@@ -91,26 +91,17 @@ def is_individual_tool_available(
         return False
 
 
-def filter_unavailable_states(
-    module: ModuleType, category: str, states_schema: dict[str, Any]
+def filter_unavailable_tools(
+    module: ModuleType, category: str, tools_map: dict[str, Any]
 ) -> dict[str, Any]:
-    """Drop unavailable individual tools from a JSON-schema ``states`` block.
+    """Drop unavailable individual tools from a schema ``tools`` catalog map.
 
-    Returns a new dict with ``properties`` (and ``required``, if present)
-    pruned. The input is not mutated.
+    Returns a new dict; the input is not mutated.
     """
-    properties = states_schema.get("properties")
-    if not isinstance(properties, dict):
-        return states_schema
-
-    filtered_properties: dict[str, Any] = {}
-    for tool_name, tool_schema in properties.items():
+    filtered: dict[str, Any] = {}
+    for tool_name, tool_schema in tools_map.items():
         if not is_individual_tool_available(module, category, tool_name):
             logger.info("Filtered out tool '%s/%s': not available", category, tool_name)
             continue
-        filtered_properties[tool_name] = tool_schema
-
-    result = {**states_schema, "properties": filtered_properties}
-    if "required" in result and isinstance(result["required"], list):
-        result["required"] = [r for r in result["required"] if r in filtered_properties]
-    return result
+        filtered[tool_name] = tool_schema
+    return filtered

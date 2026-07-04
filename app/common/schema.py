@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from intentkit.models.agent import AGENT_TAG_CATEGORIES, Agent, AgentPublicInfo
 from intentkit.tools.availability import (
-    filter_unavailable_states,
+    filter_unavailable_tools,
     import_toolset,
     is_toolset_available,
 )
@@ -31,31 +31,19 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
 def _simplify_tool_schema(tool_schema: dict[str, Any]) -> dict[str, Any]:
-    """Simplify tool schema to only keep enabled and states fields.
+    """Reduce a toolset catalog entry to what pickers need.
 
-    Args:
-        tool_schema: The original tool schema
-
-    Returns:
-        Simplified schema with only enabled, states, title, description, and type
+    Keeps the category metadata plus the ``tools`` name → info map.
     """
     simplified: dict[str, Any] = {}
 
-    # Keep basic metadata
-    for key in ["title", "description", "type", "x-icon"]:
+    for key in ["title", "description", "x-icon", "x-tags"]:
         if key in tool_schema:
             simplified[key] = tool_schema[key]
 
-    # Keep only enabled and states in properties
-    original_properties = tool_schema.get("properties", {})
-    if original_properties:
-        simplified_properties: dict[str, Any] = {}
-        if "enabled" in original_properties:
-            simplified_properties["enabled"] = original_properties["enabled"]
-        if "states" in original_properties:
-            simplified_properties["states"] = original_properties["states"]
-        if simplified_properties:
-            simplified["properties"] = simplified_properties
+    tools = tool_schema.get("tools", {})
+    if isinstance(tools, dict):
+        simplified["tools"] = tools
 
     return simplified
 
@@ -67,7 +55,7 @@ async def get_agent_schema() -> JSONResponse:
     This function applies additional adaptations:
     - Populates the model enum from the in-memory LLM catalog (enabled models only)
     - Filters out toolsets where available() returns False
-    - Simplifies tool schemas to only keep enabled and states fields
+    - Reduces each toolset catalog entry to picker metadata + tool list
     - Removes telegram-related fields
 
     **Returns:**
@@ -81,13 +69,13 @@ async def get_agent_schema() -> JSONResponse:
     properties.pop("telegram_entrypoint_prompt", None)
     properties.pop("telegram_config", None)
 
-    # Filter and simplify tools
+    # Filter and simplify the toolset catalog
     tools_property = properties.get("tools", {})
-    if tools_property and "properties" in tools_property:
-        original_tools = tools_property["properties"]
-        filtered_tools: dict[str, Any] = {}
+    if tools_property and "x-catalog" in tools_property:
+        original_catalog = tools_property["x-catalog"]
+        filtered_catalog: dict[str, Any] = {}
 
-        for category, tool_schema in original_tools.items():
+        for category, tool_schema in original_catalog.items():
             module = import_toolset(category)
             if module is None or not is_toolset_available(module):
                 logger.info(
@@ -98,15 +86,17 @@ async def get_agent_schema() -> JSONResponse:
 
             simplified = _simplify_tool_schema(tool_schema)
 
-            states = simplified.get("properties", {}).get("states")
-            if states:
-                simplified["properties"]["states"] = filter_unavailable_states(
-                    module, category, states
+            tools_map = simplified.get("tools")
+            if tools_map:
+                simplified["tools"] = filter_unavailable_tools(
+                    module, category, tools_map
                 )
+                if not simplified["tools"]:
+                    continue
 
-            filtered_tools[category] = simplified
+            filtered_catalog[category] = simplified
 
-        tools_property["properties"] = filtered_tools
+        tools_property["x-catalog"] = filtered_catalog
 
     return JSONResponse(
         content=schema,

@@ -63,7 +63,11 @@ export function generateUiSchema(
                 uiProperty["ui:widget"] = "textarea";
             }
 
-            if (property.type === "array" && (property.items as Record<string, unknown>)?.type === "string") {
+            if (
+                key !== "tools" &&
+                property.type === "array" &&
+                (property.items as Record<string, unknown>)?.type === "string"
+            ) {
                 uiProperty["ui:widget"] = "StringArrayWidget";
             }
 
@@ -106,47 +110,27 @@ export function createTransformErrors(
 }
 
 /**
- * Clean up tools data before submission.
- * - Removes toolsets where enabled=false
- * - Removes tool states that are 'disabled'
- * - Optionally filters out tools/toolsets not in schema (for edit mode)
+ * Clean up the tools name list before submission.
+ * - Deduplicates names
+ * - Optionally filters out names not in the schema catalog (for edit mode)
  */
 export function cleanToolsData(
     data: Record<string, unknown>,
     schema?: Record<string, unknown>,
 ): Record<string, unknown> {
-    const tools = data.tools as Record<string, { enabled?: boolean; states?: Record<string, string> }> | undefined;
-    if (!tools) return data;
-
-    const validCategories = getValidCategories(schema);
-
-    const cleanedTools: Record<string, { enabled?: boolean; states?: Record<string, string> }> = {};
-    for (const [categoryKey, categoryData] of Object.entries(tools)) {
-        if (categoryData.enabled === false) continue;
-        if (validCategories && !validCategories.has(categoryKey)) continue;
-
-        const validTools = getValidToolsForToolset(schema, categoryKey);
-        const states = categoryData.states || {};
-        const cleanedStates: Record<string, string> = {};
-        for (const [toolKey, toolValue] of Object.entries(states)) {
-            if (toolValue === "disabled") continue;
-            if (validTools && !validTools.has(toolKey)) continue;
-            cleanedStates[toolKey] = toolValue;
-        }
-
-        if (categoryData.enabled === true) {
-            cleanedTools[categoryKey] = {
-                enabled: true,
-                states: Object.keys(cleanedStates).length > 0 ? cleanedStates : undefined,
-            };
-        }
-    }
-
+    const tools = data.tools as string[] | undefined;
     const restData = { ...data };
     delete (restData as Record<string, unknown>).autonomous;
+    if (!tools) return restData;
+
+    const validTools = getValidToolNames(schema);
+    const cleaned = Array.from(new Set(tools)).filter(
+        (name) => !validTools || validTools.has(name),
+    );
+
     return {
         ...restData,
-        tools: Object.keys(cleanedTools).length > 0 ? cleanedTools : undefined,
+        tools: cleaned.length > 0 ? cleaned : undefined,
     };
 }
 
@@ -174,24 +158,19 @@ export function filterBySchema(
 
 // --- Internal helpers ---
 
-function getValidCategories(schema?: Record<string, unknown>): Set<string> | null {
+function getValidToolNames(schema?: Record<string, unknown>): Set<string> | null {
     if (!schema?.properties) return null;
     const schemaProperties = schema.properties as Record<string, Record<string, unknown>>;
     const toolsSchema = schemaProperties.tools;
-    if (!toolsSchema?.properties) return null;
-    return new Set(Object.keys(toolsSchema.properties as Record<string, unknown>));
-}
-
-function getValidToolsForToolset(schema: Record<string, unknown> | undefined, categoryKey: string): Set<string> | null {
-    if (!schema?.properties) return null;
-    const schemaProperties = schema.properties as Record<string, Record<string, unknown>>;
-    const toolsSchema = schemaProperties.tools;
-    if (!toolsSchema?.properties) return null;
-    const toolsetsSchema = toolsSchema.properties as Record<string, Record<string, unknown>>;
-    const categorySchema = toolsetsSchema[categoryKey];
-    if (!categorySchema?.properties) return null;
-    const categoryProperties = categorySchema.properties as Record<string, Record<string, unknown>>;
-    const statesSchema = categoryProperties.states;
-    if (!statesSchema?.properties) return null;
-    return new Set(Object.keys(statesSchema.properties as Record<string, unknown>));
+    const catalog = toolsSchema?.["x-catalog"] as
+        | Record<string, { tools?: Record<string, unknown> }>
+        | undefined;
+    if (!catalog) return null;
+    const names = new Set<string>();
+    for (const entry of Object.values(catalog)) {
+        for (const name of Object.keys(entry.tools || {})) {
+            names.add(name);
+        }
+    }
+    return names;
 }

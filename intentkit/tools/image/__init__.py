@@ -1,11 +1,8 @@
 """Image generation tools across multiple providers."""
 
-import logging
 from collections.abc import Callable
-from typing import TypedDict
 
 from intentkit.config.config import config as system_config
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.image.base import ImageBaseTool
 from intentkit.tools.image.gemini import GeminiImageFlash, GeminiImagePro
 from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
@@ -15,8 +12,6 @@ from intentkit.tools.image.openrouter import FluxPro, Riverflow
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, ImageBaseTool] = {}
-
-logger = logging.getLogger(__name__)
 
 _TOOL_NAME_TO_CLASS: dict[str, Callable[[], ImageBaseTool]] = {
     "image_gpt": GPTImageFlagship,
@@ -30,65 +25,22 @@ _TOOL_NAME_TO_CLASS: dict[str, Callable[[], ImageBaseTool]] = {
 }
 
 
-class ToolStates(TypedDict):
-    image_gpt: ToolState
-    image_gpt_mini: ToolState
-    image_gemini_pro: ToolState
-    image_gemini_flash: ToolState
-    image_grok: ToolState
-    image_flux_pro: ToolState
-    image_riverflow: ToolState
-    image_minimax: ToolState
+async def get_tools(tool_names: list[str], **_) -> list[ImageBaseTool]:
+    """Get the requested image generation tools; unknown names are skipped."""
+    return [tool for name in tool_names if (tool := get_image_tool(name))]
 
 
-class Config(ToolsetConfig):
-    """Configuration for image generation tools."""
-
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[ImageBaseTool]:
-    """Get all image generation tools.
-
-    Args:
-        config: The configuration for image tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of image generation tools.
-    """
-    available_tools = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    result = []
-    for name in available_tools:
-        tool = get_image_tool(name)
-        if tool:
-            result.append(tool)
-    return result
-
-
-def get_image_tool(name: str) -> ImageBaseTool | None:
+def get_image_tool(tool_name: str) -> ImageBaseTool | None:
     """Get an image tool by name with caching."""
-    if name in _cache:
-        return _cache[name]
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    cls = _TOOL_NAME_TO_CLASS.get(name)
+    cls = _TOOL_NAME_TO_CLASS.get(tool_name)
     if cls is None:
-        logger.warning("Unknown image tool: %s", name)
         return None
 
-    _cache[name] = cls()
-    return _cache[name]
+    _cache[tool_name] = cls()
+    return _cache[tool_name]
 
 
 def available() -> bool:

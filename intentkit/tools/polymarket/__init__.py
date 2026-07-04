@@ -1,9 +1,5 @@
 """Polymarket prediction market tools."""
 
-import logging
-from typing import TypedDict
-
-from intentkit.tools.base import ToolsetConfig, ToolState
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 from intentkit.tools.polymarket.cancel_order import CancelOrder
 from intentkit.tools.polymarket.get_market import GetMarket
@@ -18,85 +14,43 @@ from intentkit.tools.polymarket.search_markets import SearchMarkets
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, PolymarketBaseTool] = {}
 
-logger = logging.getLogger(__name__)
-
-
-class ToolStates(TypedDict):
-    search_markets: ToolState
-    get_market: ToolState
-    get_orderbook: ToolState
-    get_price_history: ToolState
-    place_order: ToolState
-    cancel_order: ToolState
-    get_positions: ToolState
-    get_orders: ToolState
-    get_trades: ToolState
-
-
 _TOOL_NAME_TO_CLASS_MAP: dict[str, type[PolymarketBaseTool]] = {
-    "search_markets": SearchMarkets,
-    "get_market": GetMarket,
-    "get_orderbook": GetOrderbook,
-    "get_price_history": GetPriceHistory,
-    "place_order": PlaceOrder,
-    "cancel_order": CancelOrder,
-    "get_positions": GetPositions,
-    "get_orders": GetOrders,
-    "get_trades": GetTrades,
+    "polymarket_search_markets": SearchMarkets,
+    "polymarket_get_market": GetMarket,
+    "polymarket_get_orderbook": GetOrderbook,
+    "polymarket_get_price_history": GetPriceHistory,
+    "polymarket_place_order": PlaceOrder,
+    "polymarket_cancel_order": CancelOrder,
+    "polymarket_get_positions": GetPositions,
+    "polymarket_get_orders": GetOrders,
+    "polymarket_get_trades": GetTrades,
 }
 
 
-class Config(ToolsetConfig):
-    """Configuration for Polymarket tools."""
+async def get_tools(tool_names: list[str], **_) -> list[PolymarketBaseTool]:
+    """Return Polymarket tool instances for the requested names.
 
-    enabled: bool
-    states: ToolStates
-
-
-async def get_tools(
-    config: "Config",
-    is_private: bool,
-    **_,
-) -> list[PolymarketBaseTool]:
-    """Get all Polymarket tools based on config.
-
-    Args:
-        config: The configuration for Polymarket tools.
-        is_private: Whether to include private tools.
-
-    Returns:
-        A list of Polymarket tools.
+    Unknown names are skipped silently.
     """
-    available_tools = []
-
-    for tool_name, state in config["states"].items():
-        if state == "disabled":
-            continue
-        elif state == "public" or (state == "private" and is_private):
-            available_tools.append(tool_name)
-
-    logger.debug("Available Polymarket tools: %s", available_tools)
-
-    result = []
-    for name in available_tools:
-        tool = _get_tool(name)
+    tools: list[PolymarketBaseTool] = []
+    for name in tool_names:
+        tool = get_polymarket_tool(name)
         if tool:
-            result.append(tool)
-    return result
+            tools.append(tool)
+    return tools
 
 
-def _get_tool(name: str) -> PolymarketBaseTool | None:
+def get_polymarket_tool(tool_name: str) -> PolymarketBaseTool | None:
     """Get a Polymarket tool by name, with caching."""
-    if name in _cache:
-        return _cache[name]
+    if tool_name in _cache:
+        return _cache[tool_name]
 
-    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(name)
+    tool_class = _TOOL_NAME_TO_CLASS_MAP.get(tool_name)
     if not tool_class:
-        logger.warning("Unknown Polymarket tool: %s", name)
         return None
 
-    _cache[name] = tool_class()  # pyright: ignore[reportCallIssue]
-    return _cache[name]
+    _cache[tool_name] = tool_class()  # pyright: ignore[reportCallIssue]
+    return _cache[tool_name]
 
 
 def available() -> bool:
