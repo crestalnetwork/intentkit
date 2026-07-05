@@ -2,17 +2,17 @@
 
 A toolset exposes a module-level ``available()`` callable that checks
 its system config (API keys, env vars, etc.). Individual tools inside a
-category may also expose ``available()`` on the instance for finer-grained
-gating (e.g. wallet/scope checks). These helpers wrap both layers so the
-catalog rendering in ``intentkit/core/agent/tool_registry.py`` can drop
-everything that wouldn't actually run.
+category may also override ``available()`` on the tool class for
+finer-grained gating (e.g. a per-tool API key). These helpers wrap both
+layers so the catalog rendering in ``intentkit/core/agent/tool_registry.py``
+can drop everything that wouldn't actually run; per-tool checks resolve
+through the class registry, so they work uniformly in every category.
 """
 
 from __future__ import annotations
 
 import logging
 from types import ModuleType
-from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -35,44 +35,22 @@ def is_toolset_available(module: ModuleType) -> bool:
         return False
 
 
-def find_tool_getter(module: ModuleType, category: str) -> Callable[..., Any] | None:
-    """Locate the ``get_<name>_tool`` accessor for a category module.
-
-    Convention is ``get_{category}_tool``; falls back to any ``get_*_tool``
-    attribute (e.g. ``moralis`` exposes ``get_wallet_tool``).
-    """
-    getter = getattr(module, f"get_{category}_tool", None)
-    if getter is not None:
-        return getter
-    for attr_name in dir(module):
-        if attr_name.startswith("get_") and attr_name.endswith("_tool"):
-            return getattr(module, attr_name)
-    return None
-
-
-def is_individual_tool_available(
-    module: ModuleType, category: str, tool_name: str
-) -> bool:
+def is_individual_tool_available(category: str, tool_name: str) -> bool:
     """Whether a specific tool within a category reports itself available.
 
-    Defaults to True when the module has no getter, the getter raises, the
-    tool instance is None, or the tool exposes no ``available()``.
+    Resolves the tool through the class registry's singleton (every getter
+    the toolsets used to expose was an identical cache lookup, so one
+    resolution path serves all categories). Defaults to True when the tool
+    is unknown so a listing never breaks on a missing class (e.g. MCP
+    catalogs have no backing classes).
     """
-    getter = find_tool_getter(module, category)
-    if getter is None:
-        return True
-    try:
-        tool = getter(tool_name)
-    except Exception as exc:
-        logger.debug("Tool getter raised for '%s/%s': %s", category, tool_name, exc)
-        return True
+    from intentkit.tools.base import get_tool_instance
+
+    tool = get_tool_instance(tool_name)
     if tool is None:
         return True
-    available_fn = getattr(tool, "available", None)
-    if available_fn is None:
-        return True
     try:
-        return bool(available_fn())
+        return bool(tool.available())
     except Exception as exc:
         logger.debug(
             "available() raised for tool '%s/%s': %s", category, tool_name, exc

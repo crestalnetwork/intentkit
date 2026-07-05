@@ -152,7 +152,7 @@ def get_tool_catalog(*, available_only: bool = False) -> dict[str, dict[str, Any
             tools = {
                 name: tool
                 for name, tool in tools.items()
-                if is_individual_tool_available(entry.module, category, name)
+                if is_individual_tool_available(category, name)
             }
             if not tools:
                 continue

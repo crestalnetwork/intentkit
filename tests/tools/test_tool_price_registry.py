@@ -22,6 +22,9 @@ def _rebuild_registry() -> None:
     """Force a clean rebuild of the global price registry."""
     tool_base._TOOL_PRICES.clear()
     tool_base._registry_built = False
+    # The class map is cached per process; test-only classes defined above
+    # must become visible to this rebuild.
+    tool_base.tool_classes_by_name.cache_clear()
     build_tool_prices()
 
 

@@ -4,6 +4,7 @@ import logging
 from abc import ABCMeta
 from collections.abc import Callable
 from decimal import Decimal
+from functools import lru_cache
 from typing import Any
 
 from langchain_core.tools import BaseTool
@@ -332,6 +333,53 @@ def collect_tool_classes() -> list[type["IntentKitTool"]]:
     return _collect_subclasses(IntentKitTool)
 
 
+@lru_cache(maxsize=1)
+def tool_classes_by_name() -> dict[str, type["IntentKitTool"]]:
+    """Concrete tool classes keyed by their ``name`` default.
+
+    Abstract bases (no concrete name) are skipped. Treat as read-only.
+    """
+    classes: dict[str, type[IntentKitTool]] = {}
+    for cls in collect_tool_classes():
+        cls_name = tool_field_default(cls, "name")
+        if isinstance(cls_name, str) and cls_name:
+            classes[cls_name] = cls
+    return classes
+
+
+# Lazy singleton instances by tool name, for callers that need an instance
+# outside a toolset module's own cache (e.g. per-tool availability checks).
+# Tool classes are default-constructible — the eager toolsets build
+# import-time instance caches the same way.
+_TOOL_INSTANCES: dict[str, "IntentKitTool"] = {}
+
+
+def get_tool_instance(name: str) -> "IntentKitTool | None":
+    """A singleton instance of the named tool, or None if unknown.
+
+    Instantiation failures are logged and reported as None so a broken tool
+    never takes down a listing.
+    """
+    cached = _TOOL_INSTANCES.get(name)
+    if cached is not None:
+        return cached
+
+    cls = tool_classes_by_name().get(name)
+    if cls is None:
+        return None
+    try:
+        # Concrete tool classes declare all fields with defaults; only the
+        # abstract bases (never in the name map) have required fields.
+        instance = cls()  # pyright: ignore[reportCallIssue]
+    except Exception:
+        logging.getLogger(__name__).warning(
+            "Failed to instantiate tool %s", name, exc_info=True
+        )
+        return None
+    _TOOL_INSTANCES[name] = instance
+    return instance
+
+
 def tool_field_default(cls: type, field: str) -> Any:
     """Class-level default of a pydantic field, or None when it has none.
 
@@ -353,11 +401,7 @@ def build_tool_prices() -> None:
     if _registry_built:
         return
 
-    for cls in collect_tool_classes():
-        name = tool_field_default(cls, "name")
-        # Skip abstract classes without a concrete name default
-        if not isinstance(name, str) or not name:
-            continue
+    for name, cls in tool_classes_by_name().items():
         price = tool_field_default(cls, "price")
         if isinstance(price, Decimal):
             _TOOL_PRICES[name] = price
