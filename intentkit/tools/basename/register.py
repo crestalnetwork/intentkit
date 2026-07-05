@@ -44,6 +44,7 @@ class BasenameRegister(BasenameBaseTool):
 
     name: str = "basename_register_basename"
     title: str = "Register Basename"
+    team_only: bool = True
     description: str = (
         "Register a Basename ENS-style domain on Base network. "
         "Use .base.eth suffix for base-mainnet and .basetest.eth for base-sepolia. "

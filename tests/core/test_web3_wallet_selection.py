@@ -111,16 +111,50 @@ class TestSigningGuard:
             await tool.get_unified_wallet("0xhot")
 
 
+def _prompt_context(is_own_team: bool = True) -> MagicMock:
+    context = MagicMock()
+    context.is_own_team = is_own_team
+    return context
+
+
 class TestPromptWalletSection:
     @pytest.mark.asyncio
     async def test_no_web3_tools_no_section(self, wallet_tables):
         agent = _build_agent(tools=["http_get"])
-        assert await _build_wallet_section(agent) == ""
+        assert await _build_wallet_section(agent, _prompt_context()) == ""
 
     @pytest.mark.asyncio
     async def test_no_wallets_no_section(self, wallet_tables):
         agent = _build_agent(tools=["erc20_transfer"])
-        assert await _build_wallet_section(agent) == ""
+        assert await _build_wallet_section(agent, _prompt_context()) == ""
+
+    @pytest.mark.asyncio
+    async def test_guest_with_only_signing_tools_gets_no_section(self, wallet_tables):
+        """Signing web3 tools are not bound for guests, so the wallet list
+        (and its usage instructions) must not be injected either."""
+        await TeamWallet.create(
+            team_id="team-1",
+            name="main",
+            wallet_provider="cdp",
+            evm_wallet_address="0xaaa",
+            created_by="user-1",
+        )
+        agent = _build_agent(tools=["erc20_transfer"])
+        assert await _build_wallet_section(agent, _prompt_context(False)) == ""
+
+    @pytest.mark.asyncio
+    async def test_guest_with_read_tools_gets_section(self, wallet_tables):
+        await TeamWallet.create(
+            team_id="team-1",
+            name="main",
+            wallet_provider="cdp",
+            evm_wallet_address="0xaaa",
+            created_by="user-1",
+        )
+        agent = _build_agent(tools=["erc20_get_balance", "erc20_transfer"])
+        section = await _build_wallet_section(agent, _prompt_context(False))
+        assert "Team Wallets" in section
+        assert "`0xaaa`" in section
 
     @pytest.mark.asyncio
     async def test_lists_all_team_wallets(self, wallet_tables):
@@ -141,7 +175,7 @@ class TestPromptWalletSection:
             created_by="user-1",
         )
         agent = _build_agent(tools=["erc20_transfer"])
-        section = await _build_wallet_section(agent)
+        section = await _build_wallet_section(agent, _prompt_context())
         assert "Team Wallets" in section
         assert "trading" in section and "`0xaaa`" in section
         assert "treasury" in section and "`0xbbb`" in section

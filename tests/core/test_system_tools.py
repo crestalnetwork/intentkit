@@ -47,6 +47,7 @@ def mock_runtime():
     mock_context.team_id = "team_1"
     mock_context.payer = "team_1"
     mock_context.entrypoint = "web"
+    mock_context.is_own_team = True
     mock_context.start_message_attachments = None
     mock_context.agent = MagicMock()
     mock_context.agent.sub_agents = None
@@ -498,6 +499,18 @@ async def test_create_activity_success(mock_runtime):
         result = await tool._arun(text="Hello world")
 
     assert "Activity created successfully with ID: activity_123" in result
+
+
+@pytest.mark.asyncio
+async def test_create_activity_refused_for_guests(mock_runtime):
+    """team_only write tools must refuse when a guest runs a published agent."""
+    _, mock_context = mock_runtime
+    mock_context.is_own_team = False
+
+    tool = CreateActivityTool()
+    assert tool.team_only is True
+    with pytest.raises(ToolException, match="own team"):
+        await tool._arun(text="Hello world")
 
 
 @pytest.mark.asyncio

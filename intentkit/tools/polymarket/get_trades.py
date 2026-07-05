@@ -35,6 +35,7 @@ class GetTrades(PolymarketBaseTool):
 
     name: str = "polymarket_get_trades"
     title: str = "Get Trades"
+    team_only: bool = True
     description: str = (
         "Get trade history on Polymarket. "
         "Shows executed trades with prices, sizes, and timestamps. "

@@ -19,6 +19,7 @@ class ToolMeta:
 
     title: str
     description: str
+    team_only: bool = False
 
 
 @dataclass(frozen=True)

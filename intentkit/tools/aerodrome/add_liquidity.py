@@ -68,6 +68,7 @@ class AerodromeAddLiquidity(AerodromeBaseTool):
 
     name: str = NAME
     title: str = "Add Liquidity"
+    team_only: bool = True
     description: str = (
         "Add liquidity to an Aerodrome Slipstream pool on Base. "
         "Creates a full-range CL position. "

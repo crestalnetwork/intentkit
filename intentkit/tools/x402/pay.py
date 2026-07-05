@@ -59,6 +59,7 @@ class X402Pay(X402BaseTool):
 
     name: str = "x402_pay"
     title: str = "Pay Request"
+    team_only: bool = True
     description: str = (
         "Send a paid x402 HTTP request with a max payment limit (max_value in base units, e.g. 1000000 = 1 USDC). "
         "Use x402_check_price first to preview costs."

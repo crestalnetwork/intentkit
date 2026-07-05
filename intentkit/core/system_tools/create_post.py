@@ -45,6 +45,7 @@ class CreatePostTool(SystemTool):
     """
 
     name: str = "create_post"
+    team_only: bool = True
     description: str = (
         "Create a post with title, markdown body, and optional cover image."
     )
@@ -76,6 +77,7 @@ class CreatePostTool(SystemTool):
         """
 
         try:
+            self.ensure_own_team()
             context = self.get_context()
             agent_id = context.agent_id
 

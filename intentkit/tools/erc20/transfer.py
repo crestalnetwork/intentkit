@@ -34,6 +34,7 @@ class ERC20Transfer(ERC20BaseTool):
 
     name: str = "erc20_transfer"
     title: str = "Transfer ERC20"
+    team_only: bool = True
     description: str = "Transfer ERC20 tokens to another address. Use erc20_get_token_address first if only a symbol is provided. Ensure sufficient balance for transfer and gas."
     args_schema: ArgsSchema | None = TransferInput
 

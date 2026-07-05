@@ -48,6 +48,7 @@ class PancakeSwapRemoveLiquidity(PancakeSwapBaseTool):
 
     name: str = NAME
     title: str = "Remove Liquidity"
+    team_only: bool = True
     description: str = (
         "Remove liquidity from a PancakeSwap V3 position. "
         "Auto-unstakes from MasterChef V3 farm if staked. "

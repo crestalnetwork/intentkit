@@ -56,6 +56,12 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
     title: str = ""
     """Human-readable display name for tool pickers; falls back to the name."""
 
+    team_only: bool = False
+    """Tools that operate the team's assets (signing/spending) are only
+    bound when the owning team runs the agent; guests of a published agent
+    never see them. Signing paths must still call ``ensure_signing_allowed``
+    as a second line of defense."""
+
     def available(self) -> bool:
         """Check if this tool is available. Override in subclasses to check dependencies."""
         return True

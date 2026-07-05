@@ -35,6 +35,7 @@ class AaveV3Withdraw(AaveV3BaseTool):
 
     name: str = NAME
     title: str = "Withdraw"
+    team_only: bool = True
     description: str = (
         "Withdraw supplied tokens from Aave V3. "
         "Use 'max' as amount to withdraw the entire supplied balance. "

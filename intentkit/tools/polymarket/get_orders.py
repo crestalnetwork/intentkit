@@ -29,6 +29,7 @@ class GetOrders(PolymarketBaseTool):
 
     name: str = "polymarket_get_orders"
     title: str = "Get Orders"
+    team_only: bool = True
     description: str = (
         "Get open orders on Polymarket. "
         "Optionally filter by market condition_id. "

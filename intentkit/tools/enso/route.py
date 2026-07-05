@@ -148,6 +148,7 @@ class EnsoRouteShortcut(EnsoBaseTool):
 
     name: str = "enso_route_shortcut"
     title: str = "Route Shortcut"
+    team_only: bool = True
     description: str = "Find optimal swap/deposit route across DeFi protocols. Can broadcast if requested."
     args_schema: ArgsSchema | None = EnsoRouteShortcutInput
 

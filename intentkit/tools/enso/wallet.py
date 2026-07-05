@@ -191,6 +191,7 @@ class EnsoWalletApprove(EnsoBaseTool):
 
     name: str = "enso_wallet_approve"
     title: str = "Wallet Approve"
+    team_only: bool = True
     description: str = "Broadcast an ERC20 token spending approval transaction."
     args_schema: ArgsSchema | None = EnsoWalletApproveInput
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"

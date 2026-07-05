@@ -185,7 +185,7 @@ async def test_build_executor_openrouter_tools(mock_agent, mock_agent_data):
             m for m in middleware if isinstance(m, ToolBindingMiddleware)
         )
 
-    keys = _tool_keys(tool_binding.team_tools)
+    keys = _tool_keys(tool_binding.all_tools)
     assert "current_time" in keys
     assert "openrouter:web_search" in keys
     assert "openrouter:web_fetch" in keys
@@ -222,7 +222,7 @@ async def test_build_executor_compatible_tools(mock_agent, mock_agent_data):
             m for m in middleware if isinstance(m, ToolBindingMiddleware)
         )
 
-    keys = _tool_keys(tool_binding.team_tools)
+    keys = _tool_keys(tool_binding.all_tools)
     assert "current_time" in keys
     assert "web_search" in keys
     assert "read_webpage_cloudflare" in keys

@@ -65,6 +65,7 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
 
     name: str = NAME
     title: str = "Add Liquidity"
+    team_only: bool = True
     description: str = (
         "Add liquidity to a PancakeSwap V3 pool. Creates a full-range position. "
         "Auto-stakes into MasterChef V3 farm if eligible for CAKE rewards. "

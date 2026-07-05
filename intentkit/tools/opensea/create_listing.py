@@ -36,6 +36,7 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
 
     name: str = NAME
     title: str = "Create Listing"
+    team_only: bool = True
     description: str = (
         "Create a listing to sell an NFT on OpenSea marketplace. "
         "Requires the NFT contract address, token ID, and price in ETH. "

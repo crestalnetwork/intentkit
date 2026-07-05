@@ -37,6 +37,22 @@ class SystemTool(BaseTool, metaclass=ABCMeta):
 
     logger: logging.Logger = logging.getLogger(__name__)
 
+    team_only: bool = False
+    """Tools that act with the agent's identity or assets (publishing,
+    spending) are only bound when the owning team runs the agent; guests of
+    a published agent never see them. Runtime code must still call
+    ``ensure_own_team()`` as a second line of defense."""
+
+    def ensure_own_team(self) -> None:
+        """Refuse execution unless the owning team is running the agent."""
+        context = self.get_context()
+        if not context.is_own_team:
+            raise ToolException(
+                f"{self.name} is not allowed in this conversation: it acts "
+                "with the agent's identity and can only be used by the "
+                "agent's own team."
+            )
+
     @override
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError(

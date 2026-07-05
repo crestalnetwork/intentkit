@@ -39,6 +39,7 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
 
     name: str = NAME
     title: str = "Remove Liquidity"
+    team_only: bool = True
     description: str = (
         "Remove liquidity from a Uniswap V3 position. "
         "Specify percentage (1-100) to partially or fully remove."

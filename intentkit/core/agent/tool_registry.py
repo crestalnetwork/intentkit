@@ -91,6 +91,7 @@ def _load_catalog() -> dict[str, _CategoryEntry]:
         tools_by_category[category][name] = ToolMeta(
             title=title if isinstance(title, str) and title else name,
             description=description if isinstance(description, str) else "",
+            team_only=bool(tool_field_default(cls, "team_only")),
         )
 
     catalog: dict[str, _CategoryEntry] = {}
@@ -168,6 +169,17 @@ def get_web3_categories() -> frozenset[str]:
     """
     return frozenset(
         category for category, entry in _load_catalog().items() if entry.meta.web3
+    )
+
+
+@lru_cache(maxsize=1)
+def get_team_only_tool_names() -> frozenset[str]:
+    """Tool names hidden from guests of a published agent (``team_only``)."""
+    return frozenset(
+        name
+        for entry in _load_catalog().values()
+        for name, tool in entry.tools.items()
+        if tool.team_only
     )
 
 

@@ -34,6 +34,7 @@ class MorphoWithdraw(MorphoBaseTool):
 
     name: str = "morpho_withdraw"
     title: str = "Vault Withdraw"
+    team_only: bool = True
     description: str = "Withdraw assets from a Morpho Vault. Ensure sufficient vault shares. Amount in whole units."
     args_schema: ArgsSchema | None = WithdrawInput
 

@@ -51,6 +51,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
 
     name: str = NAME
     title: str = "Execute Swap"
+    team_only: bool = True
     description: str = (
         "Execute a token swap on PancakeSwap V3. "
         "Handles ERC20 approval automatically. "

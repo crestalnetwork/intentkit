@@ -118,11 +118,10 @@ async def build_executor(
     except RuntimeError:
         checkpointer = InMemorySaver()
 
-    # ==== Load tools. Guest tools are what strangers to a published agent
-    # get; team tools additionally include the agent's self-management surface
-    # (posts, activities, memory, delegation) reserved for the owning team.
-    guest_tools: list[BaseTool | dict[str, Any]] = []
-    team_tools: list[BaseTool | dict[str, Any]] = []
+    # ==== Load tools into ONE list. Per-request gating happens in
+    # ToolBindingMiddleware: tools marked team_only (publishing, signing,
+    # spending) are dropped when a guest of a published agent is talking.
+    tools: list[BaseTool | dict[str, Any]] = []
 
     if agent.tools:
         from intentkit.core.agent.tool_registry import group_tool_names_by_category
@@ -135,16 +134,15 @@ async def build_executor(
                         names, agent_id=agent.id, agent=agent
                     )
                     if tool_tools and len(tool_tools) > 0:
-                        guest_tools.extend(tool_tools)
-                        team_tools.extend(tool_tools)
+                        tools.extend(tool_tools)
                 else:
                     logger.error("Tool %s does not have get_tools function", category)
             except ImportError as e:
                 logger.error("Could not import tool module: %s (%s)", category, e)
 
-    # add custom tools to team tools
+    # custom tools (lead engine): lead agents are never public
     if custom_tools and len(custom_tools) > 0:
-        team_tools.extend(custom_tools)
+        tools.extend(custom_tools)
 
     # add system tools — each conditionally based on agent config and provider
     from intentkit.core.system_tools import (
@@ -166,41 +164,38 @@ async def build_executor(
     # current_time: system tool used by every provider. We intentionally do
     # NOT use OpenRouter's openrouter:datetime server tool, so all agents share
     # the same time behaviour (formatted time plus a Unix timestamp).
-    guest_tools.append(current_time)
-    team_tools.append(current_time)
+    tools.append(current_time)
 
-    # call_agent: only when sub-agents are configured
+    # call_agent: only when sub-agents are configured. Open to guests —
+    # sub-agent runs recompute their own access context per message.
     if agent.sub_agents:
-        team_tools.append(call_agent)
+        tools.append(call_agent)
 
-    # activity tools: enabled by default
+    # activity tools: enabled by default (create_activity is team_only)
     if agent.is_activity_enabled:
-        team_tools.append(create_activity)
-        team_tools.append(recent_activities)
+        tools.append(create_activity)
+        tools.append(recent_activities)
 
-    # post tools: enabled by default
+    # post tools: enabled by default (create_post is team_only)
     if agent.is_post_enabled:
-        team_tools.append(create_post)
-        team_tools.append(get_post)
-        team_tools.append(recent_posts)
+        tools.append(create_post)
+        tools.append(get_post)
+        tools.append(recent_posts)
 
     # scoped long-term memory: guests update their own rows (their user
     # memory and their team's memory of this agent), so everyone gets it
     if agent.enable_long_term_memory:
-        guest_tools.append(update_memory)
-        team_tools.append(update_memory)
+        tools.append(update_memory)
 
     # search-related tools based on provider
     extra_llm_params: dict[str, Any] = {}
     if agent.search_internet:
         if model_provider == LLMProvider.OPENAI:
             search_tools: list[dict[str, Any]] = [{"type": "web_search"}]
-            guest_tools.extend(search_tools)
-            team_tools.extend(search_tools)
+            tools.extend(search_tools)
         elif model_provider == LLMProvider.XAI:
             search_tools = [{"type": "web_search"}, {"type": "x_search"}]
-            guest_tools.extend(search_tools)
-            team_tools.extend(search_tools)
+            tools.extend(search_tools)
         elif model_provider == LLMProvider.OPENROUTER:
             # Pair web search with OpenRouter's web_fetch server tool so the
             # agent can both discover and read pages natively, instead of our
@@ -209,19 +204,16 @@ async def build_executor(
                 {"type": "openrouter:web_search"},
                 {"type": "openrouter:web_fetch"},
             ]
-            guest_tools.extend(search_tools)
-            team_tools.extend(search_tools)
+            tools.extend(search_tools)
         elif model_provider == LLMProvider.GOOGLE:
             search_tools = [{"google_search": {}}, {"url_context": {}}]
-            guest_tools.extend(search_tools)
-            team_tools.extend(search_tools)
+            tools.extend(search_tools)
         else:
             # Providers without a native search tool (deepseek, minimax,
             # mimo_plan, ollama, *_compatible): use our unified web_search tool
             # plus the Cloudflare webpage reader. Each self-checks its own
             # config and raises a clear error if unconfigured.
-            guest_tools.extend([web_search, read_webpage_cloudflare])
-            team_tools.extend([web_search, read_webpage_cloudflare])
+            tools.extend([web_search, read_webpage_cloudflare])
 
         # store_image: paired with the search/reader tools above so the
         # agent can persist URLs it discovered online. Registered for every
@@ -230,16 +222,10 @@ async def build_executor(
         # branch. Gated additionally on S3 config so we don't expose a tool
         # that will always fail.
         if config.aws_s3_bucket and config.aws_s3_cdn_url:
-            guest_tools.append(store_image)
-            team_tools.append(store_image)
+            tools.append(store_image)
 
     # filter out unavailable tools
-    guest_tools = [
-        t for t in guest_tools if not isinstance(t, IntentKitTool) or t.available()
-    ]
-    team_tools = [
-        t for t in team_tools if not isinstance(t, IntentKitTool) or t.available()
-    ]
+    tools = [t for t in tools if not isinstance(t, IntentKitTool) or t.available()]
 
     # filter the duplicate tools
     def _tool_key(tool: BaseTool | dict[str, Any]) -> str:
@@ -247,10 +233,9 @@ async def build_executor(
             return tool.name
         return str(tool.get("name") or tool.get("type") or tool)
 
-    guest_tools = list({_tool_key(t): t for t in guest_tools}.values())
-    team_tools = list({_tool_key(t): t for t in team_tools}.values())
+    tools = list({_tool_key(t): t for t in tools}.values())
 
-    for tool in team_tools:
+    for tool in tools:
         logger.info(
             "[%s] loaded tool: %s",
             agent.id,
@@ -260,7 +245,7 @@ async def build_executor(
     base_model = await llm_model.create_instance()
 
     middleware: list[Any] = [
-        ToolBindingMiddleware(llm_model, guest_tools, team_tools, extra_llm_params),
+        ToolBindingMiddleware(llm_model, tools, extra_llm_params),
         DynamicPromptMiddleware(agent, agent_data),
         EmptyContentSafetyMiddleware(),
         MediaBlockSanitizerMiddleware(),
@@ -286,13 +271,13 @@ async def build_executor(
     # SystemTool instances are pinned via `always_include` so core
     # capabilities (time, memory, posts, activities, sub-agent calls) stay
     # reachable even when the selector picks a small subset.
-    selectable_tool_count = sum(1 for t in team_tools if isinstance(t, BaseTool))
+    selectable_tool_count = sum(1 for t in tools if isinstance(t, BaseTool))
     if selectable_tool_count > 30:
         selector_model_name = pick_tool_selector_model()
         if selector_model_name:
             selector_llm = await create_llm_model(model_name=selector_model_name)
             selector_model = await selector_llm.create_instance()
-            always_include = [t.name for t in team_tools if isinstance(t, SystemTool)]
+            always_include = [t.name for t in tools if isinstance(t, SystemTool)]
             middleware.append(
                 SafeLLMToolSelectorMiddleware(
                     model=selector_model,
@@ -338,7 +323,7 @@ async def build_executor(
 
     executor = create_langchain_agent(
         model=base_model,
-        tools=team_tools,
+        tools=tools,
         middleware=middleware,
         state_schema=AgentState,
         context_schema=AgentContext,

@@ -35,6 +35,21 @@ class TestSystemToolsSection:
         agent.telegram_entrypoint_enabled = False
         return agent
 
+    def test_guest_sees_reads_but_not_writes(self):
+        """Guests get the read bullets; create_* lines and the CRITICAL RULE
+        caution are reserved for the owning team."""
+        agent = self._make_agent()
+        context = MagicMock(spec=AgentContext)
+        context.is_own_team = False
+
+        result = build_system_tools_section(agent, context)
+        assert "get_post" in result
+        assert "recent_posts" in result
+        assert "recent_activities" in result
+        assert "create_post" not in result
+        assert "create_activity" not in result
+        assert "CRITICAL RULE" not in result
+
     def test_update_memory_not_in_guide(self):
         """The Memory section documents update_memory itself; the own-team
         guide must not duplicate it (the tool is bound for guests too)."""
@@ -267,15 +282,28 @@ class TestSubAgentsPromptSection:
         assert result == ""
 
     @pytest.mark.asyncio
-    async def test_sub_agents_section_not_shown_in_guest_context(self):
+    async def test_sub_agents_section_shown_to_guests(self):
+        """call_agent is open to guests: delegation grants no extra privileges
+        because sub-agent runs recompute their own access context."""
         agent = MagicMock()
         agent.sub_agents = ["helper-bot"]
+        agent.sub_agent_prompt = None
 
         context = MagicMock(spec=AgentContext)
         context.is_own_team = False
 
-        result = await build_sub_agents_section(agent, context)
-        assert result == ""
+        target_agent = MagicMock()
+        target_agent.purpose = "Help with tasks"
+
+        with patch(
+            "intentkit.core.agent.queries.get_agent_by_id_or_slug",
+            new_callable=AsyncMock,
+            return_value=target_agent,
+        ):
+            result = await build_sub_agents_section(agent, context)
+
+        assert "## Sub-Agents" in result
+        assert "helper-bot" in result
 
     @pytest.mark.asyncio
     async def test_sub_agents_section_included_when_configured(self):

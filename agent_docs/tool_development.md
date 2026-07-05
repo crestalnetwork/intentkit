@@ -124,6 +124,10 @@ Categories whose tools operate on team wallets must set `web3=True` in their
   guarded helpers (`get_unified_wallet` / `get_wallet_provider` /
   `get_wallet_signer` / `get_evm_account`), which refuse to sign unless the
   owning team is running the agent (`context.is_own_team`).
+- Every signing tool class must also declare `team_only: bool = True` so it
+  is never even bound for guests of a published agent
+  (`tests/tools/test_team_only_sync.py` enforces this in both directions);
+  the runtime guard above stays as the second line of defense.
 
 The `tags` in the toolset metadata should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search, Social
 

@@ -49,6 +49,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
 
     name: str = NAME
     title: str = "Remove Liquidity"
+    team_only: bool = True
     description: str = (
         "Remove liquidity from an Aerodrome Slipstream position. "
         "Auto-unstakes from gauge if staked, harvesting AERO rewards. "

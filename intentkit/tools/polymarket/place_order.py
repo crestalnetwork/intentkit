@@ -54,6 +54,7 @@ class PlaceOrder(PolymarketBaseTool):
 
     name: str = "polymarket_place_order"
     title: str = "Place Order"
+    team_only: bool = True
     description: str = (
         "Place a limit order to buy or sell Polymarket outcome tokens. "
         "Specify the token_id, side (BUY/SELL), price (0-1), and size. "

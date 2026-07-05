@@ -35,6 +35,7 @@ class SuperfluidCreateFlow(SuperfluidBaseTool):
 
     name: str = "superfluid_create_flow"
     title: str = "Create Flow"
+    team_only: bool = True
     description: str = "Create a Superfluid money stream. Token must be a Super Token. Flow rate in wei/second (no decimals). Example: 1 token/month ~ 385802469135802 wei/s."
     args_schema: ArgsSchema | None = CreateFlowInput
 

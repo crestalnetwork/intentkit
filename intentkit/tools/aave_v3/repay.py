@@ -40,6 +40,7 @@ class AaveV3Repay(AaveV3BaseTool):
 
     name: str = NAME
     title: str = "Repay"
+    team_only: bool = True
     description: str = (
         "Repay borrowed tokens on Aave V3. "
         "Use 'max' as amount to repay the full outstanding debt. "

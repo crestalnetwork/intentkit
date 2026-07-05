@@ -32,6 +32,7 @@ class WETHUnwrapEth(WethBaseTool):
 
     name: str = "weth_unwrap_eth"
     title: str = "Unwrap WETH"
+    team_only: bool = True
     description: str = "Unwrap WETH to native ETH (1:1 conversion). Ensure sufficient WETH balance and ETH for gas."
     args_schema: ArgsSchema | None = UnwrapEthInput
 

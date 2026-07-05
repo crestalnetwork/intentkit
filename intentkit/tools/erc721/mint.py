@@ -28,6 +28,7 @@ class ERC721Mint(ERC721BaseTool):
 
     name: str = "erc721_mint"
     title: str = "Mint NFT"
+    team_only: bool = True
     description: str = "Mint an ERC721 NFT to a destination address. Do not use the contract address as destination. The contract must support mint and wallet must have permission."
     args_schema: ArgsSchema | None = MintInput
 

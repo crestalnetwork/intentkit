@@ -50,21 +50,20 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that selects tools and model parameters based on context."""
 
     llm_model: LLMModel
-    guest_tools: list[BaseTool | dict[str, Any]]
-    team_tools: list[BaseTool | dict[str, Any]]
+    # Named all_tools: AgentMiddleware.tools has different semantics (tools a
+    # middleware itself contributes to the graph).
+    all_tools: list[BaseTool | dict[str, Any]]
     extra_llm_params: dict[str, Any]
 
     def __init__(
         self,
         llm_model: LLMModel,
-        guest_tools: list[BaseTool | dict[str, Any]],
-        team_tools: list[BaseTool | dict[str, Any]],
+        all_tools: list[BaseTool | dict[str, Any]],
         extra_llm_params: dict[str, Any] | None = None,
     ) -> None:
         super().__init__()
         self.llm_model = llm_model
-        self.guest_tools = guest_tools
-        self.team_tools = team_tools
+        self.all_tools = all_tools
         self.extra_llm_params = extra_llm_params or {}
 
     @override
@@ -76,10 +75,15 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         context: AgentContext = request.runtime.context
 
         llm_params: dict[str, Any] = {**self.extra_llm_params}
-        # Tools are already deduplicated at build time in executor.py
-        tools: list[BaseTool | dict[str, Any]] = list(
-            self.team_tools if context.is_own_team else self.guest_tools
-        )
+        # Tools are deduplicated at build time in executor.py. Tools marked
+        # team_only (publishing, signing, spending) are hidden from guests of
+        # a published agent; each such tool re-checks at execution time too.
+        # getattr covers dict-typed provider server tools too (no flag).
+        tools: list[BaseTool | dict[str, Any]] = [
+            t
+            for t in self.all_tools
+            if context.is_own_team or not getattr(t, "team_only", False)
+        ]
 
         model = await self.llm_model.create_instance(llm_params)
         updated_request = request.override(
@@ -264,11 +268,10 @@ class SafeLLMToolSelectorMiddleware(LLMToolSelectorMiddleware):
     missing from the current request's tool list.
 
     Upstream raises `ValueError` when any name in `always_include` isn't
-    present in `request.tools`. In IntentKit, `ToolBindingMiddleware` swaps
-    the tool list to guest or team per-request, so a name pinned from
-    `team_tools` (e.g. `call_agent`) may legitimately be
-    absent on a guest-context request. Filter to what's actually available
-    rather than crashing.
+    present in `request.tools`. In IntentKit, `ToolBindingMiddleware` drops
+    team_only tools per-request, so a pinned name (e.g. `create_post`) may
+    legitimately be absent on a guest-context request. Filter to what's
+    actually available rather than crashing.
     """
 
     @override

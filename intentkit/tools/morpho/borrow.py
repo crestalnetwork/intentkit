@@ -33,6 +33,7 @@ class MorphoBorrow(MorphoBaseTool):
 
     name: str = "morpho_borrow"
     title: str = "Borrow"
+    team_only: bool = True
     description: str = (
         "Borrow assets from a Morpho Blue market against your collateral. "
         "You must have sufficient collateral supplied to the market. "

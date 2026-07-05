@@ -63,6 +63,7 @@ class TokenExecute(LiFiBaseTool):
 
     name: str = "lifi_token_execute"
     title: str = "Token Execute"
+    team_only: bool = True
     description: str = (
         "Execute a cross-chain token transfer or same-chain swap via LiFi. "
         "Use lifi_token_quote first to check rates."

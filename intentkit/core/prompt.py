@@ -37,32 +37,43 @@ def _build_system_header(agent: Agent) -> str:
 
 
 def build_system_tools_section(agent: Agent, context: AgentContext) -> str:
-    """Build system tools guide section when the owning team runs the agent."""
-    if not context.is_own_team:
+    """Build the system tools guide for the tools bound in this context.
+
+    Guests of a published agent get the read tools only; the write tools
+    (create_post/create_activity) are team_only and their lines appear only
+    when the owning team runs the agent.
+    """
+    own_team = context.is_own_team
+
+    bullets = []
+    cautions = []
+    if agent.is_post_enabled:
+        if own_team:
+            bullets.append("- create_post: Publish long-form content or articles.\n")
+            cautions.append("create_post")
+        bullets.append(
+            "- get_post: Get the full content of a post by its ID.\n"
+            "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
+        )
+    if agent.is_activity_enabled:
+        if own_team:
+            bullets.append(
+                "- create_activity: Publish an activity to your public timeline. ONLY use when user explicitly requests it.\n"
+            )
+            cautions.append("create_activity")
+        bullets.append(
+            "- recent_activities: Retrieve your recent activities to maintain context.\n"
+        )
+
+    if not bullets:
         return ""
 
     lines = [
         "## System Tools Guide\n\n",
         "You have access to several system tools for internal operations:\n",
+        *bullets,
     ]
 
-    if agent.is_post_enabled:
-        lines.append(
-            "- create_post: Publish long-form content or articles.\n"
-            "- get_post: Get the full content of a post by its ID.\n"
-            "- recent_posts: Retrieve your recent posts (titles and excerpts only).\n"
-        )
-    if agent.is_activity_enabled:
-        lines.append(
-            "- create_activity: Publish an activity to your public timeline. ONLY use when user explicitly requests it.\n"
-            "- recent_activities: Retrieve your recent activities to maintain context.\n"
-        )
-
-    cautions = []
-    if agent.is_post_enabled:
-        cautions.append("create_post")
-    if agent.is_activity_enabled:
-        cautions.append("create_activity")
     if cautions:
         lines.append(
             f"\nCRITICAL RULE: NEVER use {' or '.join(cautions)} unless the user EXPLICITLY asks you to create/publish. "
@@ -77,7 +88,9 @@ def build_system_tools_section(agent: Agent, context: AgentContext) -> str:
 
 async def build_sub_agents_section(agent: Agent, context: AgentContext) -> str:
     """Build sub-agents section listing available sub-agents and their purposes."""
-    if not agent.sub_agents or not context.is_own_team:
+    # call_agent is open to guests too: sub-agent runs recompute their own
+    # access context per message, so delegation grants no extra privileges.
+    if not agent.sub_agents:
         return ""
 
     from intentkit.core.agent.queries import get_agent_by_id_or_slug
@@ -133,17 +146,28 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
     return "\n".join(social_parts) + ("\n" if social_parts else "")
 
 
-async def _build_wallet_section(agent: Agent) -> str:
-    """List the team's wallets when the agent has web3 tools.
+async def _build_wallet_section(agent: Agent, context: AgentContext) -> str:
+    """List the team's wallets when web3 tools are bound in this context.
 
-    Agents do not own wallets. When at least one web3 tool is enabled and
-    the team owns wallets, every team wallet is listed so the agent can
-    choose which one to use by passing its address to the tool.
+    Agents do not own wallets. When at least one web3 tool survives the
+    per-request team_only filtering and the team owns wallets, every team
+    wallet is listed so the agent can choose which one to use by passing its
+    address to the tool. A guest whose agent carries only signing web3 tools
+    gets no section — those tools are not bound for them.
     """
-    from intentkit.core.agent.tool_registry import filter_web3_tool_names
+    from intentkit.core.agent.tool_registry import (
+        filter_web3_tool_names,
+        get_team_only_tool_names,
+    )
     from intentkit.models.wallet import TeamWallet, wallet_owner_team
 
-    if not agent.tools or not filter_web3_tool_names(agent.tools):
+    if not agent.tools:
+        return ""
+    web3_names = filter_web3_tool_names(agent.tools)
+    if not context.is_own_team:
+        team_only = get_team_only_tool_names()
+        web3_names = [name for name in web3_names if name not in team_only]
+    if not web3_names:
         return ""
 
     wallets = await TeamWallet.list_for_team(wallet_owner_team(agent.team_id))
@@ -258,7 +282,7 @@ async def build_agent_prompt(
         _build_agent_identity_section(agent),
         _build_agent_characteristics_section(agent),
         _build_social_accounts_section(agent, agent_data),
-        await _build_wallet_section(agent),
+        await _build_wallet_section(agent, context),
         "\n",  # Add spacing before characteristics
     ]
 

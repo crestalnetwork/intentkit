@@ -36,6 +36,7 @@ class AaveV3Supply(AaveV3BaseTool):
 
     name: str = NAME
     title: str = "Supply"
+    team_only: bool = True
     description: str = (
         "Supply (deposit) tokens into Aave V3 lending protocol. "
         "The supplied tokens earn interest and can be used as collateral for borrowing. "
