@@ -37,6 +37,7 @@ class OpenSeaGetNftsByAccount(OpenSeaBaseTool):
     """Get NFTs owned by an account on a specific chain."""
 
     name: str = NAME
+    title: str = "Get NFTs by Account"
     description: str = (
         "Get NFTs owned by an account address on a specific blockchain via OpenSea. "
         "Can optionally filter by collection slug. "

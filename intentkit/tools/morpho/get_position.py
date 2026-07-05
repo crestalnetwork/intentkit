@@ -33,6 +33,7 @@ class MorphoGetPosition(MorphoBaseTool):
     """Get user position in a Morpho Blue market."""
 
     name: str = "morpho_get_position"
+    title: str = "Get Position"
     description: str = (
         "Get user position in a Morpho Blue market: supply shares, borrow shares, "
         "collateral amount, and market totals. Provide the market ID (bytes32)."

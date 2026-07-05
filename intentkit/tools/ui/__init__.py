@@ -1,8 +1,17 @@
 """UI tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.ui.ask_user import UIAskUser
 from intentkit.tools.ui.base import UIBaseTool
 from intentkit.tools.ui.show_card import UIShowCard
+
+toolset = ToolsetMeta(
+    title="UI Components",
+    description="Display rich UI components to users such as interactive cards and multiple-choice options. These tools enable agents to present structured, visually appealing content instead of plain text.",
+    tags=["Communication", "Infrastructure"],
+    icon="/tools/ui/ui.svg",
+)
+
 
 # Cache tools at the module level, because they are stateless
 _cache: dict[str, UIBaseTool] = {}

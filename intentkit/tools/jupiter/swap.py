@@ -14,6 +14,7 @@ class JupiterGetQuoteInput(BaseModel):
 
 class JupiterGetQuote(JupiterBaseTool):
     name: str = "jupiter_get_quote"
+    title: str = "Jupiter Swap Quote"
     description: str = "Get a swap quote from Jupiter. Returns best route and estimated output. Does NOT execute."
     args_schema: ArgsSchema | None = JupiterGetQuoteInput
 

@@ -1,0 +1,35 @@
+"""The agent schema endpoint must attach the toolset catalog (x-catalog)."""
+
+import json
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from app.common.schema import get_agent_schema
+
+
+@pytest.mark.asyncio
+async def test_agent_schema_includes_tool_catalog():
+    """``tools`` is a flat list of tool names; the per-category catalog
+    (titles, descriptions, tool maps) is attached as the ``x-catalog``
+    extension so UIs can render a picker."""
+    base_schema = {"properties": {"tools": {"type": "array"}}}
+    with patch(
+        "app.common.schema.Agent.get_json_schema",
+        new=AsyncMock(return_value=base_schema),
+    ):
+        response = await get_agent_schema()
+
+    schema = json.loads(bytes(response.body))
+    catalog = schema["properties"]["tools"]["x-catalog"]
+
+    assert "erc20" in catalog
+    erc20 = catalog["erc20"]
+    assert erc20["title"] == "ERC20"
+    # Web3 flag must reach the frontend so pickers can gate on team wallets.
+    assert erc20["x-web3"] is True
+    assert "erc20_get_balance" in erc20["tools"]
+    assert "erc20_transfer" in erc20["tools"]
+    assert erc20["tools"]["erc20_transfer"]["title"]
+    # Non-web3 categories must not carry the flag at all.
+    assert "x-web3" not in catalog["http"]

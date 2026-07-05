@@ -12,6 +12,14 @@ from intentkit.tools.cn_stock.get_kline import GetKLine
 from intentkit.tools.cn_stock.get_news import GetNews
 from intentkit.tools.cn_stock.get_quote import GetQuote
 from intentkit.tools.cn_stock.is_trading_day import IsTradingDay
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="China A-Share",
+    description="Real-time and historical market data for Chinese A-shares (Shanghai/Shenzhen/Beijing) backed by the akshare library — quotes, K-lines, indices, boards, capital flow, news, announcements, financials, and trading-day calendar.",
+    tags=["Analytics", "Stocks", "China"],
+)
+
 
 # Tool instances are stateless across calls; build once at import and reuse.
 _TOOLS: dict[str, CNStockBaseTool] = {

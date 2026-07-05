@@ -34,6 +34,7 @@ class OpenSeaGetEvents(OpenSeaBaseTool):
     """Get marketplace events for an NFT collection."""
 
     name: str = NAME
+    title: str = "Get Events"
     description: str = (
         "Get marketplace events for an NFT collection on OpenSea, "
         "including sales, listings, offers, transfers, and cancellations. "

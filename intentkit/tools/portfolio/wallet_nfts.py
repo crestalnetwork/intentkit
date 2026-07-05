@@ -60,6 +60,7 @@ class WalletNFTs(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_nfts"
+    title: str = "Wallet NFTs"
     description: str = "Get NFTs owned by a wallet address."
     args_schema: ArgsSchema | None = WalletNFTsInput
 

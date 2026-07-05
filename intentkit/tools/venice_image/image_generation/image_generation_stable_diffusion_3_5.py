@@ -16,6 +16,7 @@ class ImageGenerationStableDiffusion35(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_stable_diffusion_3_5"  # Different tool name
+    title: str = "Image Generation (Stable Diffusion 3.5 - Alt ID)"
     price: Decimal = Decimal("50")
     description: str = (
         "Generate images using Stability AI's Stable Diffusion 3.5 Large model (alternative ID via Venice AI).\n"

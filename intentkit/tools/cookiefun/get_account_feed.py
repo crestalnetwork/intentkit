@@ -52,6 +52,7 @@ class GetAccountFeed(CookieFunBaseTool):
     """Tool to get the feed (tweets) of a Twitter account."""
 
     name: str = "cookiefun_get_account_feed"
+    title: str = "Get Account Feed"
     description: str = (
         "Get tweets for a Twitter account with filtering and sorting options."
     )

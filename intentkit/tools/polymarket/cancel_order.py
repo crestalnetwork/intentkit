@@ -33,6 +33,7 @@ class CancelOrder(PolymarketBaseTool):
     """
 
     name: str = "polymarket_cancel_order"
+    title: str = "Cancel Order"
     description: str = (
         "Cancel orders on Polymarket. Either provide an order_id to cancel "
         "a specific order, or set cancel_all=true to cancel all open orders."

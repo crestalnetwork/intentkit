@@ -4,6 +4,16 @@ from intentkit.tools.erc20.base import ERC20BaseTool
 from intentkit.tools.erc20.get_balance import ERC20GetBalance
 from intentkit.tools.erc20.get_token_address import ERC20GetTokenAddress
 from intentkit.tools.erc20.transfer import ERC20Transfer
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="ERC20",
+    description="ERC20 token balance, transfer, and lookup actions",
+    tags=["Crypto", "DeFi"],
+    web3=True,
+    icon="/tools/erc20/erc20.svg",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, ERC20BaseTool] = {

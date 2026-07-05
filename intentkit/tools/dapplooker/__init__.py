@@ -5,6 +5,15 @@ import logging
 from intentkit.config.config import config as system_config
 from intentkit.tools.dapplooker.base import DappLookerBaseTool
 from intentkit.tools.dapplooker.dapplooker_token_data import DappLookerTokenData
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="DappLooker",
+    description="Retrieve comprehensive market data and analytics for AI agent tokens using DappLooker. This API specializes in AI-focused crypto projects and may not provide data for general cryptocurrencies like BTC or ETH.",
+    tags=["Analytics", "Crypto"],
+    icon="/tools/dapplooker/dapplooker.jpg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, DappLookerBaseTool] = {}

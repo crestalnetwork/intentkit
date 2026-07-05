@@ -41,6 +41,7 @@ class HttpGet(HttpBaseTool):
     """
 
     name: str = "http_get"
+    title: str = "HTTP GET"
     description: str = (
         "Make an HTTP GET request to a URL. Returns the response as text."
     )

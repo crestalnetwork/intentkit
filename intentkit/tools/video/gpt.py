@@ -105,6 +105,7 @@ class SoraVideo(SoraVideoBase):
     """Generate videos using OpenAI Sora 2."""
 
     name: str = "video_sora"
+    title: str = "Sora 2"
     description: str = (
         "Generate videos from text prompts or images using OpenAI Sora 2. "
         "Good for rapid iteration. Max 20 seconds, 720p."
@@ -117,6 +118,7 @@ class SoraVideoPro(SoraVideoBase):
     """Generate videos using OpenAI Sora 2 Pro."""
 
     name: str = "video_sora_pro"
+    title: str = "Sora 2 Pro"
     description: str = (
         "Generate high-quality videos from text prompts or images using OpenAI Sora 2 Pro. "
         "Higher quality and more stable output. Max 20 seconds, up to 1080p."

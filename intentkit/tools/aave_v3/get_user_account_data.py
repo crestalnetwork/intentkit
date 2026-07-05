@@ -29,6 +29,7 @@ class AaveV3GetUserAccountData(AaveV3BaseTool):
     """Get user account data from Aave V3 including health factor and positions."""
 
     name: str = NAME
+    title: str = "Get Account Data"
     description: str = (
         "Get Aave V3 account overview: total collateral, total debt, "
         "available borrows, health factor, and LTV."

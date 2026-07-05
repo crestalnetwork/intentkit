@@ -16,6 +16,7 @@ class ImageGenerationFluxDev(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_flux_dev"
+    title: str = "Image Generation (Flux-Dev)"
     price: Decimal = Decimal("50")
     description: str = (
         "Generate images using Venice AI's Flux Dev model (by Black Forest Labs).\n"

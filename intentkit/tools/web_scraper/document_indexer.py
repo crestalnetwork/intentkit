@@ -62,6 +62,7 @@ class DocumentIndexer(WebScraperBaseTool):
     """
 
     name: str = "web_scraper_document_indexer"
+    title: str = "Document Content Indexer"
     description: str = (
         "Index document content into the vector database for later querying."
     )

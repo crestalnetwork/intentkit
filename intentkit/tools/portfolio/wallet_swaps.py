@@ -64,6 +64,7 @@ class WalletSwaps(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_swaps"
+    title: str = "Wallet Swaps"
     description: str = "Get swap transactions (buy/sell) for a wallet."
     args_schema: ArgsSchema | None = WalletSwapsInput
 

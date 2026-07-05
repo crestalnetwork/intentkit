@@ -16,6 +16,7 @@ class ImageGenerationPonyRealism(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_pony_realism"
+    title: str = "Image Generation (Pony-Realism)"
     price: Decimal = Decimal("50")
     description: str = (
         "Generate images using the Pony Realism model (via Venice AI).\n"

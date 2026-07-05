@@ -46,6 +46,7 @@ class GitHubSearch(GitHubBaseTool):
     """
 
     name: str = "github_search"
+    title: str = "GitHub Search"
     description: str = "Search GitHub for repositories, users, or code snippets."
     args_schema: ArgsSchema | None = GitHubSearchInput
 

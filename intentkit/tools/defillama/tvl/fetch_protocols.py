@@ -92,6 +92,7 @@ class DefiLlamaFetchProtocols(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_protocols"
+    title: str = "Fetch Protocols"
     description: str = FETCH_PROTOCOLS_PROMPT
 
     class EmptyArgsSchema(BaseModel):

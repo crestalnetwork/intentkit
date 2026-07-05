@@ -116,6 +116,7 @@ class EnsoGetTokens(EnsoBaseTool):
     """
 
     name: str = "enso_get_tokens"
+    title: str = "Get Tokens"
     description: str = (
         "Get token info including APY, symbol, address, and underlying tokens."
     )

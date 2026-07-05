@@ -72,6 +72,7 @@ class DefiLlamaFetchStablecoins(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_stablecoins"
+    title: str = "Fetch Stablecoins"
     description: str = FETCH_STABLECOINS_PROMPT
     args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 

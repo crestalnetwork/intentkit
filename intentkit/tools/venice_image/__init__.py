@@ -1,6 +1,7 @@
 """Venice Image generation and analysis tools."""
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 
 # Import the base tool and all specific model tool classes
 from intentkit.tools.venice_image.base import VeniceImageBaseTool
@@ -28,6 +29,14 @@ from intentkit.tools.venice_image.image_generation.image_generation_venice_sd35 
 )
 from intentkit.tools.venice_image.image_upscale.image_upscale import ImageUpscale
 from intentkit.tools.venice_image.image_vision.image_vision import ImageVision
+
+toolset = ToolsetMeta(
+    title="Venice Image",
+    description="Tools for generating images using the Venice AI API.",
+    tags=["AI", "Image"],
+    icon="/tools/venice_image/venice_image.jpg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, VeniceImageBaseTool] = {}

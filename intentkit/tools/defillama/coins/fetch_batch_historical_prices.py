@@ -63,6 +63,7 @@ class DefiLlamaFetchBatchHistoricalPrices(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_batch_historical_prices"
+    title: str = "Fetch Batch Historical Prices"
     description: str = FETCH_BATCH_HISTORICAL_PRICES_PROMPT
     args_schema: ArgsSchema | None = FetchBatchHistoricalPricesInput
 

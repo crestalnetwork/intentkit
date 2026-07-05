@@ -116,6 +116,7 @@ class DefiLlamaFetchDexOverview(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_dex_overview"
+    title: str = "Fetch DEX Overview"
     description: str = FETCH_DEX_OVERVIEW_PROMPT
     args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 

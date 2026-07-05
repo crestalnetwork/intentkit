@@ -1,5 +1,6 @@
 """Morpho lending protocol tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.morpho.base import MorphoBaseTool
 from intentkit.tools.morpho.borrow import MorphoBorrow
 from intentkit.tools.morpho.deposit import MorphoDeposit
@@ -9,6 +10,15 @@ from intentkit.tools.morpho.repay import MorphoRepay
 from intentkit.tools.morpho.supply_collateral import MorphoSupplyCollateral
 from intentkit.tools.morpho.withdraw import MorphoWithdraw
 from intentkit.tools.morpho.withdraw_collateral import MorphoWithdrawCollateral
+
+toolset = ToolsetMeta(
+    title="Morpho",
+    description="Morpho protocol actions for vaults (deposit/withdraw) and Morpho Blue markets (collateral, borrow, repay)",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/morpho/morpho.svg",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, MorphoBaseTool] = {

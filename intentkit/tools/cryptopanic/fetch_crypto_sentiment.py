@@ -30,6 +30,7 @@ class FetchCryptoSentiment(CryptopanicBaseTool):
     """Tool to provide AI-driven insights on crypto market conditions using CryptoPanic news."""
 
     name: str = "fetch_crypto_sentiment"
+    title: str = "Fetch Crypto Sentiment"
     description: str = "Provides AI-driven market sentiment analysis for BTC or ETH based on recent news."
     args_schema: ArgsSchema | None = CryptopanicSentimentInput
 

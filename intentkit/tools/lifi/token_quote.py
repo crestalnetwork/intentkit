@@ -49,6 +49,7 @@ class TokenQuote(LiFiBaseTool):
     """
 
     name: str = "lifi_token_quote"
+    title: str = "Token Quote"
     description: str = (
         "Get a quote for cross-chain token transfers or same-chain swaps via LiFi. "
         "Returns rates, fees, and estimated time without executing."

@@ -21,6 +21,7 @@ class GetAccountSmartFollowers(CookieFunBaseTool):
     """Tool to get smart followers for a Twitter account."""
 
     name: str = "cookiefun_get_account_smart_followers"
+    title: str = "Get Account Smart Followers"
     description: str = (
         "Get top smart followers for a Twitter account with detailed metrics."
     )

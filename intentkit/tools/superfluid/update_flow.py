@@ -33,6 +33,7 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
     """
 
     name: str = "superfluid_update_flow"
+    title: str = "Update Flow"
     description: str = "Update the flow rate of an existing Superfluid stream. Rate in wei/second (no decimals). Stream must already exist."
     args_schema: ArgsSchema | None = UpdateFlowInput
 

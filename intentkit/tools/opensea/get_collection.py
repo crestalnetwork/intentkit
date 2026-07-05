@@ -23,6 +23,7 @@ class OpenSeaGetCollection(OpenSeaBaseTool):
     """Get detailed information about an NFT collection on OpenSea."""
 
     name: str = NAME
+    title: str = "Get Collection"
     description: str = (
         "Get detailed information about an NFT collection on OpenSea, "
         "including name, description, image, social links, and contract addresses. "

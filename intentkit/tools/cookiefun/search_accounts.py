@@ -52,6 +52,7 @@ class SearchAccounts(CookieFunBaseTool):
     """Tool to search for Twitter accounts based on tweet content."""
 
     name: str = "cookiefun_search_accounts"
+    title: str = "Search Accounts"
     description: str = (
         "Search Twitter accounts by tweet content with engagement metrics."
     )

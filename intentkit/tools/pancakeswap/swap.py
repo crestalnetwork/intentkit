@@ -50,6 +50,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
     """Execute a PancakeSwap V3 token swap."""
 
     name: str = NAME
+    title: str = "Execute Swap"
     description: str = (
         "Execute a token swap on PancakeSwap V3. "
         "Handles ERC20 approval automatically. "

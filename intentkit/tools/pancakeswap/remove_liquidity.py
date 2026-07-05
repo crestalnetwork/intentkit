@@ -47,6 +47,7 @@ class PancakeSwapRemoveLiquidity(PancakeSwapBaseTool):
     """Remove liquidity from a PancakeSwap V3 position."""
 
     name: str = NAME
+    title: str = "Remove Liquidity"
     description: str = (
         "Remove liquidity from a PancakeSwap V3 position. "
         "Auto-unstakes from MasterChef V3 farm if staked. "

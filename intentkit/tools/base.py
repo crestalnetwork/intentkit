@@ -53,6 +53,9 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
     category: str
     """Get the category of the tool."""
 
+    title: str = ""
+    """Human-readable display name for tool pickers; falls back to the name."""
+
     def available(self) -> bool:
         """Check if this tool is available. Override in subclasses to check dependencies."""
         return True
@@ -276,6 +279,7 @@ class IntentKitTool(BaseTool, metaclass=ABCMeta):
 _DEFAULT_PRICE = Decimal("1")
 _TOOL_PRICES: dict[str, Decimal] = {}
 _registry_built = False
+_modules_imported = False
 
 
 def _collect_subclasses(cls: type) -> list[type]:
@@ -287,10 +291,15 @@ def _collect_subclasses(cls: type) -> list[type]:
     return result
 
 
-def build_tool_prices() -> None:
-    """Scan all tool modules and collect {name: price} from IntentKitTool subclasses."""
-    global _registry_built
-    if _registry_built:
+def import_all_tool_modules() -> None:
+    """Import every module under intentkit.tools to register tool subclasses.
+
+    Broken modules are skipped with a warning so one misconfigured toolset
+    never takes down registry construction. Runs the package walk only once
+    per process (failed imports are not retried — they would just re-log).
+    """
+    global _modules_imported
+    if _modules_imported:
         return
 
     import importlib
@@ -298,7 +307,6 @@ def build_tool_prices() -> None:
     from pathlib import Path
 
     tools_dir = Path(__file__).parent
-    # Import all tool sub-packages to trigger class registration
     for module_info in pkgutil.walk_packages(
         [str(tools_dir)], prefix="intentkit.tools."
     ):
@@ -309,18 +317,45 @@ def build_tool_prices() -> None:
                 "Failed to import tool module %s", module_info.name, exc_info=True
             )
 
+    _modules_imported = True
+
+
+def collect_tool_classes() -> list[type["IntentKitTool"]]:
+    """All registered IntentKitTool subclasses (import side effects included)."""
+    import_all_tool_modules()
+    return _collect_subclasses(IntentKitTool)
+
+
+def tool_field_default(cls: type, field: str) -> Any:
+    """Class-level default of a pydantic field, or None when it has none.
+
+    Pydantic v2 stores field defaults in ``model_fields[...].default`` (with
+    the ``PydanticUndefined`` sentinel), not as class attributes; abstract
+    tool bases have no concrete ``name`` default and yield None here.
+    """
     from pydantic_core import PydanticUndefined
 
-    # Pydantic v2 stores field defaults in model_fields[...].default, not as class attributes.
-    for cls in _collect_subclasses(IntentKitTool):
-        name = cls.model_fields["name"].default
-        # Skip abstract classes without a concrete name default (isinstance excludes PydanticUndefined)
+    model_field = getattr(cls, "model_fields", {}).get(field)
+    if model_field is None or model_field.default is PydanticUndefined:
+        return None
+    return model_field.default
+
+
+def build_tool_prices() -> None:
+    """Scan all tool modules and collect {name: price} from IntentKitTool subclasses."""
+    global _registry_built
+    if _registry_built:
+        return
+
+    for cls in collect_tool_classes():
+        name = tool_field_default(cls, "name")
+        # Skip abstract classes without a concrete name default
         if not isinstance(name, str) or not name:
             continue
-        price = cls.model_fields["price"].default
+        price = tool_field_default(cls, "price")
         if isinstance(price, Decimal):
             _TOOL_PRICES[name] = price
-        elif price is PydanticUndefined:
+        elif price is None:
             _TOOL_PRICES[name] = _DEFAULT_PRICE
         else:
             _TOOL_PRICES[name] = Decimal(str(price))

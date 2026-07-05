@@ -41,6 +41,7 @@ class EnsoGetNetworks(EnsoBaseTool):
     """
 
     name: str = "enso_get_networks"
+    title: str = "Get Networks"
     description: str = "Retrieve networks supported by the Enso API"
     args_schema: ArgsSchema | None = EnsoGetNetworksInput
 

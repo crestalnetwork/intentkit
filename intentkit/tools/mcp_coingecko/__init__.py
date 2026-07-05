@@ -4,5 +4,6 @@ from intentkit.tools.mcp.wrapper import create_mcp_category
 
 _module = create_mcp_category("mcp_coingecko")
 
+toolset = _module.toolset
 get_tools = _module.get_tools
 available = _module.available

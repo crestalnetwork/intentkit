@@ -24,6 +24,7 @@ class GetAnnouncementInput(BaseModel):
 
 class GetAnnouncement(CNStockBaseTool):
     name: str = "cn_stock_get_announcement"
+    title: str = "Get Announcement"
     description: str = (
         "Get the day's listed-company announcements (财报、重大事项、增持减持、停复牌等). "
         "Use to surface material disclosures that may move stock prices."

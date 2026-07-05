@@ -1,11 +1,21 @@
 from collections.abc import Callable
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.pancakeswap.add_liquidity import PancakeSwapAddLiquidity
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.get_positions import PancakeSwapGetPositions
 from intentkit.tools.pancakeswap.quote import PancakeSwapQuote
 from intentkit.tools.pancakeswap.remove_liquidity import PancakeSwapRemoveLiquidity
 from intentkit.tools.pancakeswap.swap import PancakeSwapSwap
+
+toolset = ToolsetMeta(
+    title="PancakeSwap",
+    description="Swap tokens and manage V3 liquidity positions on PancakeSwap DEX",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/pancakeswap/pancakeswap.png",
+)
+
 
 _cache: dict[str, PancakeSwapBaseTool] = {}
 

@@ -43,6 +43,7 @@ class DappLookerTokenData(DappLookerBaseTool):
     """
 
     name: str = "dapplooker_token_data"
+    title: str = "AI Token Data"
     description: str = (
         "Fetch AI agent token market data from DappLooker. "
         "Query by ticker or contract address. Provide token_tickers or token_addresses."

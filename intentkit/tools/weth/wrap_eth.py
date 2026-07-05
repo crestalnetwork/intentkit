@@ -31,6 +31,7 @@ class WETHWrapEth(WethBaseTool):
     """
 
     name: str = "weth_wrap_eth"
+    title: str = "Wrap ETH"
     description: str = "Wrap ETH to WETH (1:1 conversion). Ensure sufficient ETH for the amount plus gas fees."
     args_schema: ArgsSchema | None = WrapEthInput
 

@@ -5,6 +5,15 @@ from typing import Any
 from intentkit.config.config import config as system_config
 from intentkit.tools.aixbt.base import AIXBTBaseTool
 from intentkit.tools.aixbt.projects import AIXBTProjects
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="AIXBT API",
+    description="Cryptocurrency project data and analytics through the AIXBT API",
+    tags=["Analytics", "Crypto", "Knowledge Base"],
+    icon="/tools/aixbt/aixbt.jpg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, AIXBTBaseTool] = {}

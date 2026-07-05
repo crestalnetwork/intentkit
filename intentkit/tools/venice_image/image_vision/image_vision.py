@@ -23,6 +23,7 @@ class ImageVision(VeniceImageVisionBaseTool):
     """
 
     name: str = "venice_image_vision"
+    title: str = "Image Vision"
     description: str = (
         "Describes an image from a URL using Venice AI.\n"
         "Provide the public URL of the image to describe.\n"

@@ -43,6 +43,7 @@ class DefiLlamaFetchStablecoinPrices(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_stablecoin_prices"
+    title: str = "Fetch Stablecoin Prices"
     description: str = FETCH_STABLECOIN_PRICES_PROMPT
     args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 

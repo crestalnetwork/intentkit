@@ -28,6 +28,7 @@ class PythFetchPriceFeed(PythBaseTool):
     """
 
     name: str = "pyth_fetch_price_feed"
+    title: str = "Fetch Price Feed"
     description: str = "Look up a Pyth price feed ID by asset symbol. Supports crypto, equities, FX, and metals."
     args_schema: ArgsSchema | None = FetchPriceFeedInput
 

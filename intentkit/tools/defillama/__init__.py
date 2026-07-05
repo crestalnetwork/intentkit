@@ -69,6 +69,15 @@ from intentkit.tools.defillama.yields.fetch_pool_chart import DefiLlamaFetchPool
 
 # Yields Tools
 from intentkit.tools.defillama.yields.fetch_pools import DefiLlamaFetchPools
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="DeFiLlama",
+    description="Integration with DeFi Llama API providing comprehensive decentralized finance data including token prices, protocol TVL, DEX volumes, and stablecoin metrics",
+    tags=["Analytics", "DeFi"],
+    icon="/tools/defillama/defillama.jpeg",
+)
+
 
 # we cache tools in system level, because they are stateless
 _cache: dict[str, DefiLlamaBaseTool] = {}

@@ -28,6 +28,7 @@ class UIShowCard(UIBaseTool):
     """Tool for displaying a rich card with title and optional description, image, label, and link."""
 
     name: str = "ui_show_card"
+    title: str = "Show Card"
     description: str = (
         "Display a rich card to the user. Only title is required. "
         "Optionally include description, image, action label, and a clickable URL."

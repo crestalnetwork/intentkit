@@ -33,6 +33,7 @@ class GetCapitalFlowInput(BaseModel):
 
 class GetCapitalFlow(CNStockBaseTool):
     name: str = "cn_stock_get_capital_flow"
+    title: str = "Get Capital Flow"
     description: str = (
         "Get net capital inflow / outflow data. For an individual stock returns recent "
         "main / retail / institutional flows; for the whole market returns aggregate "

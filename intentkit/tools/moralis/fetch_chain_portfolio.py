@@ -70,6 +70,7 @@ class FetchChainPortfolio(WalletBaseTool):
     """
 
     name: str = "moralis_fetch_chain_portfolio"
+    title: str = "Fetch Chain Portfolio"
     description: str = (
         "Fetch wallet token balances and USD values for a specific blockchain."
     )

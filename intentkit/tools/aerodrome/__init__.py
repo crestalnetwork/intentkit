@@ -8,6 +8,16 @@ from intentkit.tools.aerodrome.get_positions import AerodromeGetPositions
 from intentkit.tools.aerodrome.quote import AerodromeQuote
 from intentkit.tools.aerodrome.remove_liquidity import AerodromeRemoveLiquidity
 from intentkit.tools.aerodrome.swap import AerodromeSwap
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Aerodrome",
+    description="Swap tokens and manage Slipstream CL liquidity positions on Aerodrome DEX (Base)",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/aerodrome/aerodrome.svg",
+)
+
 
 _cache: dict[str, AerodromeBaseTool] = {}
 

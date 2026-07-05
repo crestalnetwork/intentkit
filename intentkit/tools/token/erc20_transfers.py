@@ -60,6 +60,7 @@ class ERC20Transfers(TokenBaseTool):
     """
 
     name: str = "token_erc20_transfers"
+    title: str = "ERC20 Token Transfers"
     description: str = "Get ERC20 token transfers for a wallet address."
     args_schema: ArgsSchema | None = ERC20TransfersInput
 

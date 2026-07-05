@@ -20,6 +20,7 @@ class ImageUpscale(VeniceImageUpscaleBaseTool):
 
     # --- Tool Specific Configuration ---
     name: str = "venice_image_upscale"
+    title: str = "Image Upscale"
     description: str = (
         "Upscales an existing image from a URL using Venice AI.\n"
         "Provide the public URL of the image to upscale.\n"

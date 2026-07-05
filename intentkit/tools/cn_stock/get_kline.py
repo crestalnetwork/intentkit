@@ -37,6 +37,7 @@ class GetKLineInput(BaseModel):
 
 class GetKLine(CNStockBaseTool):
     name: str = "cn_stock_get_kline"
+    title: str = "Get K-Line"
     description: str = (
         "Get historical K-line bars (open/high/low/close/volume) for a single A-share. "
         "Forward-adjusted (qfq) by default. Use for trend, volatility and pattern analysis."

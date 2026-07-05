@@ -2,6 +2,7 @@
 
 from intentkit.config.config import config as system_config
 from intentkit.tools.base import IntentKitTool
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.opensea.buy_nft import OpenSeaBuyNft
 from intentkit.tools.opensea.cancel_listing import OpenSeaCancelListing
 from intentkit.tools.opensea.create_listing import OpenSeaCreateListing
@@ -13,6 +14,15 @@ from intentkit.tools.opensea.get_nft import OpenSeaGetNft
 from intentkit.tools.opensea.get_nfts_by_account import OpenSeaGetNftsByAccount
 from intentkit.tools.opensea.get_offers import OpenSeaGetOffers
 from intentkit.tools.opensea.update_listing import OpenSeaUpdateListing
+
+toolset = ToolsetMeta(
+    title="OpenSea",
+    description="Integration with OpenSea marketplace API for NFT collection data, listings, offers, events, and marketplace operations (buy, list, cancel, update)",
+    tags=["NFT"],
+    web3=True,
+    icon="/tools/opensea/opensea.svg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, IntentKitTool] = {}

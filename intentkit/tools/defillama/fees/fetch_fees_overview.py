@@ -78,6 +78,7 @@ class DefiLlamaFetchFeesOverview(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_fees_overview"
+    title: str = "Fetch Fees Overview"
     description: str = FETCH_FEES_OVERVIEW_PROMPT
 
     class EmptyArgsSchema(BaseModel):

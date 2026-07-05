@@ -31,6 +31,7 @@ class ERC20GetBalance(ERC20BaseTool):
     """
 
     name: str = "erc20_get_balance"
+    title: str = "Get ERC20 Balance"
     description: str = "Get an ERC20 token balance. Use erc20_get_token_address first if only a symbol is provided."
     args_schema: ArgsSchema | None = GetBalanceInput
 

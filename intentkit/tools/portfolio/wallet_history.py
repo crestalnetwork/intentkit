@@ -68,6 +68,7 @@ class WalletHistory(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_history"
+    title: str = "Wallet Transaction History"
     description: str = "Get transaction history for a wallet address."
     args_schema: ArgsSchema | None = WalletHistoryInput
 

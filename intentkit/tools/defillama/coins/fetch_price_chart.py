@@ -59,6 +59,7 @@ class DefiLlamaFetchPriceChart(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_price_chart"
+    title: str = "Fetch Price Chart"
     description: str = FETCH_PRICE_CHART_PROMPT
     args_schema: ArgsSchema | None = FetchPriceChartInput
 

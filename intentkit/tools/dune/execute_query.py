@@ -34,6 +34,7 @@ class DuneExecuteQuery(DuneBaseTool):
     """
 
     name: str = "dune_execute_query"
+    title: str = "Execute Query"
     description: str = (
         "Execute a saved Dune Analytics query by ID and return fresh results. "
         "Use this when you need up-to-date blockchain data from a known query."

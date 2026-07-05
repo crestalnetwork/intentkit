@@ -24,6 +24,7 @@ class GetBoardInput(BaseModel):
 
 class GetBoard(CNStockBaseTool):
     name: str = "cn_stock_get_board"
+    title: str = "Get Board"
     description: str = (
         "Get a snapshot of industry or concept boards, sorted by intraday percentage "
         "change. Use to identify hot sectors and rotation. Returns top gainers and "

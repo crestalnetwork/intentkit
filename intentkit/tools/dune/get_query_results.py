@@ -34,6 +34,7 @@ class DuneGetQueryResults(DuneBaseTool):
     """
 
     name: str = "dune_get_query_results"
+    title: str = "Get Query Results"
     description: str = (
         "Get cached results for a Dune Analytics query without executing it. "
         "Use this when recent results are acceptable and you don't need fresh data."

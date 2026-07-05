@@ -48,6 +48,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
     """Remove liquidity from an Aerodrome Slipstream position on Base."""
 
     name: str = NAME
+    title: str = "Remove Liquidity"
     description: str = (
         "Remove liquidity from an Aerodrome Slipstream position. "
         "Auto-unstakes from gauge if staked, harvesting AERO rewards. "

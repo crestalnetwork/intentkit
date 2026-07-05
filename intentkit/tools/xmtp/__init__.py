@@ -1,9 +1,18 @@
 """XMTP tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.xmtp.base import XmtpBaseTool
 from intentkit.tools.xmtp.price import XmtpGetSwapPrice
 from intentkit.tools.xmtp.swap import XmtpSwap
 from intentkit.tools.xmtp.transfer import XmtpTransfer
+
+toolset = ToolsetMeta(
+    title="XMTP",
+    description="Use this tool only if you want make an XMTP Agent. XMTP protocol tools for creating blockchain transaction requests that can be sent to users for signing",
+    tags=["Communication", "Crypto", "DeFi"],
+    icon="/tools/xmtp/xmtp.png",
+)
+
 
 # Cache tools at the module level, because they are stateless
 _cache: dict[str, XmtpBaseTool] = {}

@@ -27,6 +27,7 @@ class OpenSeaGetOffers(OpenSeaBaseTool):
     """Get offers for an NFT collection on OpenSea."""
 
     name: str = NAME
+    title: str = "Get Offers"
     description: str = (
         "Get offers for an NFT collection on OpenSea, "
         "including offer price, bidder, and expiration time."

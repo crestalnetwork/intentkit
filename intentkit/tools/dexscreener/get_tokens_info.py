@@ -58,6 +58,7 @@ class GetTokensInfo(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_get_tokens_info"
+    title: str = "Get Tokens Info"
     description: str = f"Get trading pair info for multiple tokens (up to {MAX_TOKENS_BATCH}) by chain ID and addresses."
     args_schema: ArgsSchema | None = GetTokensInfoInput
 

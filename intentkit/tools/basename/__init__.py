@@ -5,6 +5,16 @@ from typing import Any
 from intentkit.config.config import config as system_config
 from intentkit.tools.basename.base import BasenameBaseTool
 from intentkit.tools.basename.register import BasenameRegister
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Basename",
+    description="Basename ENS-style name registration on Base network",
+    tags=["Crypto", "Identity"],
+    web3=True,
+    icon="/tools/basename/basename.svg",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, BasenameBaseTool] = {

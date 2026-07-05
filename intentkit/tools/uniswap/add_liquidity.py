@@ -63,6 +63,7 @@ class UniswapAddLiquidity(UniswapBaseTool):
     """Add liquidity to a Uniswap V3 pool."""
 
     name: str = NAME
+    title: str = "Add Liquidity"
     description: str = (
         "Add liquidity to a Uniswap V3 pool. Creates a full-range position. "
         "Provide token addresses and amounts in human-readable format."

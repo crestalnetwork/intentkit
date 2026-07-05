@@ -25,6 +25,7 @@ class AcpCancelCheckout(AcpBaseTool):
     """
 
     name: str = "acp_cancel_checkout"
+    title: str = "Cancel Checkout"
     description: str = (
         "Cancel an ACP checkout session. "
         "Only works for sessions that have not yet been paid."

@@ -38,6 +38,7 @@ class AerodromeQuote(AerodromeBaseTool):
     """Get an Aerodrome Slipstream swap quote."""
 
     name: str = NAME
+    title: str = "Swap Quote"
     description: str = (
         "Get an Aerodrome Slipstream swap quote on Base. Returns expected output amount. "
         "Provide token contract addresses and amount in human-readable format."

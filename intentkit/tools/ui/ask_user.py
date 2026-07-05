@@ -29,6 +29,7 @@ class UIAskUser(UIBaseTool):
     """Tool for presenting the user with a set of clickable options/choices."""
 
     name: str = "ui_ask_user"
+    title: str = "Ask User"
     description: str = (
         "Present the user with 2-3 clickable options to choose from. "
         "Each option has a title and description. The user can click an option to respond."

@@ -51,6 +51,7 @@ class UniswapSwap(UniswapBaseTool):
     """Execute a Uniswap V3 token swap."""
 
     name: str = NAME
+    title: str = "Execute Swap"
     description: str = (
         "Execute a token swap on Uniswap V3. "
         "Handles ERC20 approval automatically. "

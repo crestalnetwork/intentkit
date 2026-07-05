@@ -1,11 +1,20 @@
 """Token tools for blockchain token analysis."""
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.token.base import TokenBaseTool
 from intentkit.tools.token.erc20_transfers import ERC20Transfers
 from intentkit.tools.token.token_analytics import TokenAnalytics
 from intentkit.tools.token.token_price import TokenPrice
 from intentkit.tools.token.token_search import TokenSearch
+
+toolset = ToolsetMeta(
+    title="Token Tools",
+    description="Token analysis tools powered by Moralis API",
+    tags=["Analytics", "Crypto"],
+    icon="/tools/portfolio/moralis.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, TokenBaseTool] = {}

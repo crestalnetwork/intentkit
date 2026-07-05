@@ -39,6 +39,7 @@ class OnchainQueryTool(CarvBaseTool):
     """
 
     name: str = "carv_onchain_query"
+    title: str = "On-Chain Query"
     description: str = (
         "Query on-chain data from Ethereum, Base, Bitcoin, or Solana using natural language. "
         "Supports block info, transaction details, and aggregate analytics. "

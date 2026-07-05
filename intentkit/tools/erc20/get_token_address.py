@@ -30,6 +30,7 @@ class ERC20GetTokenAddress(ERC20BaseTool):
     """
 
     name: str = "erc20_get_token_address"
+    title: str = "Get Token Address"
     description: str = "Get the contract address for a token symbol on the current network. Returns available symbols if not found."
     args_schema: ArgsSchema | None = GetTokenAddressInput
 

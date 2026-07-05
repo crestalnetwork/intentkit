@@ -67,6 +67,7 @@ class GPTImageFlagship(GPTImageBase):
     """Generate images using GPT Image 2."""
 
     name: str = "image_gpt"
+    title: str = "GPT Image 2"
     description: str = "Generate images from text prompts using GPT Image 2."
     price: Decimal = Decimal("80")
     native_model: str = "gpt-image-2"
@@ -77,6 +78,7 @@ class GPTImageMini(GPTImageBase):
     """Generate images using GPT Image 1 Mini."""
 
     name: str = "image_gpt_mini"
+    title: str = "GPT Image 1 Mini"
     description: str = (
         "Generate images from text prompts using GPT Image 1 Mini (faster, cheaper)."
     )

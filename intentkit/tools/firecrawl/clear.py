@@ -27,6 +27,7 @@ class FirecrawlClearIndexedContent(FirecrawlBaseTool):
     """
 
     name: str = "firecrawl_clear_indexed_content"
+    title: str = "Clear Indexed Content"
     description: str = "Permanently clear all indexed Firecrawl content from the vector store. Cannot be undone."
     args_schema: ArgsSchema | None = FirecrawlClearInput
 

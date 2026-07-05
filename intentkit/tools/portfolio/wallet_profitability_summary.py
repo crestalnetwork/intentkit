@@ -32,6 +32,7 @@ class WalletProfitabilitySummary(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_profitability_summary"
+    title: str = "Wallet Profitability Summary"
     description: str = "Get wallet profitability summary (total P&L, trade volume)."
     args_schema: ArgsSchema | None = WalletProfitabilitySummaryInput
 

@@ -49,6 +49,7 @@ class DefiLlamaFetchBlock(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_block"
+    title: str = "Fetch Block"
     description: str = FETCH_BLOCK_PROMPT
     args_schema: ArgsSchema | None = FetchBlockInput
 

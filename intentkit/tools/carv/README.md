@@ -84,11 +84,7 @@ Here are the tools available:
 
 These tools are designed to be integrated into AI agent systems.
 
-*   **Configuration:** You'll need to set up how these tools access the CARV API. This usually involves:
-    *   Enabling the CARV tools.
-    *   Deciding if the tools can be used by everyone or just the agent owner.
-    *   Providing a CARV API key. This key can either be supplied directly in your agent's settings or managed by the platform your agent runs on.
-    *   Details on how to configure this are in a `schema.json` file within the `tools/carv/` directory.
+*   **Configuration:** Add the desired CARV tool names (e.g. `carv_token_info_and_price`) to the agent's `tools` list. The CARV API key is configured at the system level (`CARV_API_KEY`).
 
 *   **Using the Tools:** Your agent's code will call these tools, providing the necessary inputs (like the ticker for `TokenInfoAndPriceTool`). The tools will then contact the CARV API and return the information.
 

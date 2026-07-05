@@ -20,6 +20,7 @@ class IsTradingDayInput(BaseModel):
 
 class IsTradingDay(CNStockBaseTool):
     name: str = "cn_stock_is_trading_day"
+    title: str = "Is Trading Day"
     description: str = (
         "Check whether a given date is an A-share trading day (excludes weekends and "
         "Chinese stock-market holidays). Always call this at the start of a scheduled "

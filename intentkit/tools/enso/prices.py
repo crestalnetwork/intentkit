@@ -34,6 +34,7 @@ class EnsoGetPrices(EnsoBaseTool):
     """
 
     name: str = "enso_get_prices"
+    title: str = "Get Prices"
     description: str = "Get token USD price by chain ID and address."
     args_schema: ArgsSchema | None = EnsoGetPricesInput
 

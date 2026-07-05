@@ -114,6 +114,7 @@ class GrokVideo(GrokVideoBase):
     """Generate videos using Grok Imagine Video."""
 
     name: str = "video_grok"
+    title: str = "Grok Imagine Video"
     description: str = (
         "Generate videos from text prompts or images using xAI Grok Imagine Video. "
         "Supports text-to-video and image-to-video. Max 15 seconds, 720p."

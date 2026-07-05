@@ -83,6 +83,7 @@ class FirecrawlCrawl(FirecrawlBaseTool):
     """
 
     name: str = "firecrawl_crawl"
+    title: str = "Firecrawl Crawl"
     description: str = (
         "Crawl a website to extract content from multiple pages. "
         "Optionally indexes content for querying via firecrawl_query_indexed_content."

@@ -5,6 +5,15 @@ from typing import Any
 from intentkit.config.config import config as system_config
 from intentkit.tools.allora.base import AlloraBaseTool
 from intentkit.tools.allora.price import AlloraGetPrice
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Allora",
+    description="Integration with Allora API for blockchain-based price predictions and market forecasting services via Upshot's prediction markets",
+    tags=["Analytics", "Crypto"],
+    icon="/tools/allora/allora.jpeg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, AlloraBaseTool] = {}

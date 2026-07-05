@@ -1,8 +1,18 @@
 """WETH wrapping/unwrapping tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.weth.base import WethBaseTool
 from intentkit.tools.weth.unwrap_eth import WETHUnwrapEth
 from intentkit.tools.weth.wrap_eth import WETHWrapEth
+
+toolset = ToolsetMeta(
+    title="WETH",
+    description="Wrap and unwrap ETH to/from WETH (Wrapped ETH)",
+    tags=["Crypto", "DeFi"],
+    web3=True,
+    icon="/tools/weth/weth.svg",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, WethBaseTool] = {

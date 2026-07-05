@@ -48,6 +48,7 @@ class TokenPrice(TokenBaseTool):
     """
 
     name: str = "token_price"
+    title: str = "ERC20 Token Price"
     description: str = "Get token price in native currency and USD."
     args_schema: ArgsSchema | None = TokenPriceInput
 

@@ -27,6 +27,7 @@ class CryptoCompareFetchTopVolume(CryptoCompareBaseTool):
     """Tool for fetching top cryptocurrencies by trading volume from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_top_volume"
+    title: str = "Fetch Top Volume"
     description: str = "Fetch top cryptocurrencies ranked by 24h trading volume."
     args_schema: ArgsSchema | None = CryptoCompareFetchTopVolumeInput
 

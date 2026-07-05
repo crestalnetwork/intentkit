@@ -3,11 +3,20 @@
 from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.moralis.base import WalletBaseTool
 from intentkit.tools.moralis.fetch_chain_portfolio import FetchChainPortfolio
 from intentkit.tools.moralis.fetch_nft_portfolio import FetchNftPortfolio
 from intentkit.tools.moralis.fetch_solana_portfolio import FetchSolanaPortfolio
 from intentkit.tools.moralis.fetch_wallet_portfolio import FetchWalletPortfolio
+
+toolset = ToolsetMeta(
+    title="Moralis",
+    description="Comprehensive blockchain data access via Moralis API providing wallet portfolio information, NFT data, and transaction details across multiple EVM chains and Solana networks",
+    tags=["Analytics", "Crypto", "DeFi"],
+    icon="/tools/moralis/moralis.png",
+)
+
 
 _TOOL_CLASSES: dict[str, Callable[[], WalletBaseTool]] = {
     "moralis_fetch_wallet_portfolio": FetchWalletPortfolio,

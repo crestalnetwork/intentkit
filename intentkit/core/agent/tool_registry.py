@@ -1,158 +1,174 @@
 """Tool registry utilities.
 
-Loads tool schemas from ``intentkit.tools.<category>/schema.json`` and uses them
-to validate/sanitize an agent's ``tools`` config and to render a human/LLM
-readable catalog of the tools available in this deployment.
+Builds the tool catalog from code: each toolset package declares a
+module-level ``toolset`` (:class:`ToolsetMeta`) and its tools are the
+``IntentKitTool`` subclasses defined in the package (MCP-backed categories
+declare a fixed ``tools`` override instead, since their real tools are
+discovered live from the remote server). The catalog drives validation and
+sanitization of an agent's ``tools`` config, the picker payload served to
+frontends, and a human/LLM readable listing.
 
-These helpers are deployment-aware: categories whose system config (API keys,
-etc.) is not present are filtered out via ``intentkit.tools.availability`` so the
-LLM never advertises a tool that could never run.
+These helpers are deployment-aware where it matters: catalog renderings for
+users/LLMs filter out categories whose system config (API keys, etc.) is not
+present via ``intentkit.tools.availability``, while validation accepts every
+tool that exists in the codebase.
+
+Everything here is cached for the process lifetime: the catalog ships with
+the code and availability depends only on process-static system config.
+Callers must treat all returned structures as read-only. The first build
+imports every toolset module (seconds) — call :func:`warm_tool_registry`
+from app startup so no request or message pays that wall.
 """
 
 from __future__ import annotations
 
-import json
+import importlib
 import logging
-from collections.abc import Iterator
 from functools import lru_cache
-from importlib import resources
-from pathlib import Path
 from types import ModuleType
-from typing import Any, cast
+from typing import Any, NamedTuple
 
-import jsonref
-
+import intentkit.tools as tools_pkg
 from intentkit.tools.availability import (
-    import_toolset,
     is_individual_tool_available,
     is_toolset_available,
 )
+from intentkit.tools.base import (
+    build_tool_prices,
+    collect_tool_classes,
+    tool_field_default,
+)
+from intentkit.tools.meta import ToolMeta, ToolsetMeta
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
 
 
-def _load_tool_schema(schema_path: Path) -> dict[str, object]:
-    base_uri = f"file://{schema_path}"
-    with schema_path.open("r", encoding="utf-8") as schema_file:
-        embedded_schema: dict[str, object] = cast(
-            dict[str, object],
-            jsonref.load(
-                schema_file, base_uri=base_uri, proxies=False, lazy_load=False
-            ),
-        )
-
-    schema_copy = dict(embedded_schema)
-    _ = schema_copy.setdefault(
-        "title", schema_path.parent.name.replace("_", " ").title()
-    )
-    return schema_copy
-
-
-def _get_tools_map(tool_schema: dict[str, object]) -> dict[str, Any] | None:
-    """Extract the ``tools`` catalog map from a toolset schema, or None."""
-    tools = tool_schema.get("tools", {})
-    return cast(dict[str, Any], tools) if isinstance(tools, dict) else None
-
-
-def _iter_tool_schemas(
-    *, require_available: bool = False
-) -> Iterator[tuple[str, ModuleType | None, dict[str, object]]]:
-    """Yield ``(category, module, schema)`` for each loadable tool schema.
-
-    Walks ``intentkit/tools/*/schema.json`` in sorted category order, loading
-    each schema and skipping (with a warning) any that fail to parse. When
-    ``require_available`` is True the toolset module is imported and categories
-    whose ``available()`` reports False are skipped; ``module`` is then the
-    imported toolset, and None otherwise.
-
-    Raises ``AttributeError``/``ModuleNotFoundError``/``ImportError`` if the
-    ``intentkit.tools`` package itself cannot be located — callers decide how to
-    surface that.
-    """
-    traversable = resources.files("intentkit.tools")
-    with resources.as_file(traversable) as tools_root:
-        for entry in sorted(tools_root.iterdir(), key=lambda p: p.name):
-            if not entry.is_dir():
-                continue
-
-            schema_path = entry / "schema.json"
-            if not schema_path.is_file():
-                continue
-
-            category = entry.name
-
-            module: ModuleType | None = None
-            if require_available:
-                module = import_toolset(category)
-                if module is None or not is_toolset_available(module):
-                    logger.info("Skipped toolset '%s': not available", category)
-                    continue
-
-            try:
-                tool_schema = _load_tool_schema(schema_path)
-            except (
-                OSError,
-                ValueError,
-                json.JSONDecodeError,
-                jsonref.JsonRefError,
-            ) as exc:
-                logger.warning("Failed to load schema for tool '%s': %s", category, exc)
-                continue
-
-            yield category, module, tool_schema
+class _CategoryEntry(NamedTuple):
+    meta: ToolsetMeta
+    module: ModuleType
+    tools: dict[str, ToolMeta]
 
 
 @lru_cache(maxsize=1)
-def get_valid_tools_registry() -> dict[str, dict[str, str]]:
-    """Load all tool schemas and return a registry of valid tools.
+def _load_catalog() -> dict[str, _CategoryEntry]:
+    """Import every toolset package and derive the full catalog from code."""
+    tool_classes = collect_tool_classes()
 
-    Returns a nested dict mapping category name to a dict of tool names
-    and their descriptions: ``{category: {tool_name: description}}``.
+    metas: dict[str, tuple[ToolsetMeta, ModuleType]] = {}
+    for module_name in tools_pkg.__all__:
+        try:
+            module = importlib.import_module(f"intentkit.tools.{module_name}")
+        except Exception:  # already logged by collect_tool_classes' import walk
+            continue
+        meta = getattr(module, "toolset", None)
+        if isinstance(meta, ToolsetMeta):
+            metas[module_name] = (meta, module)
 
-    Broken or unreadable schemas are silently skipped. The result is cached for
-    the process lifetime: tool schemas ship with the code and never change at
-    runtime, so this is recomputed only after a restart. Callers must treat the
-    returned dict as read-only.
+    tools_by_category: dict[str, dict[str, ToolMeta]] = {cat: {} for cat in metas}
+    name_owner: dict[str, str] = {}
+    for cls in tool_classes:
+        name = tool_field_default(cls, "name")
+        if not isinstance(name, str) or not name:
+            continue  # abstract/base classes have no concrete name
+        category = tool_field_default(cls, "category")
+        if category not in tools_by_category:
+            continue  # not part of a declared toolset (e.g. test doubles)
+        owner = name_owner.get(name)
+        if owner is not None:
+            # Same category: two classes claim one tool name (one is lost).
+            # Different categories: the name is ambiguous across toolsets.
+            logger.warning(
+                "Tool name '%s' defined by both '%s' and '%s'; using '%s'",
+                name,
+                owner,
+                category,
+                category,
+            )
+        name_owner[name] = category
+        title = tool_field_default(cls, "title")
+        description = tool_field_default(cls, "description")
+        tools_by_category[category][name] = ToolMeta(
+            title=title if isinstance(title, str) and title else name,
+            description=description if isinstance(description, str) else "",
+        )
+
+    catalog: dict[str, _CategoryEntry] = {}
+    for category in sorted(metas):
+        meta, module = metas[category]
+        if meta.tools is not None:
+            if tools_by_category[category]:
+                logger.warning(
+                    "Toolset '%s' declares an explicit tools override; ignoring "
+                    "%d tool class(es) found in the package",
+                    category,
+                    len(tools_by_category[category]),
+                )
+            tools = dict(meta.tools)
+        else:
+            tools = dict(sorted(tools_by_category[category].items()))
+        if not tools:
+            logger.warning("Toolset '%s' declares no tools; skipping", category)
+            continue
+        catalog[category] = _CategoryEntry(meta=meta, module=module, tools=tools)
+
+    return catalog
+
+
+def _category_payload(meta: ToolsetMeta, tools: dict[str, ToolMeta]) -> dict[str, Any]:
+    """Render one category in the wire shape frontends consume (x-catalog)."""
+    payload: dict[str, Any] = {
+        "title": meta.title,
+        "description": meta.description,
+        "x-tags": list(meta.tags),
+    }
+    if meta.icon:
+        payload["x-icon"] = meta.icon
+    if meta.web3:
+        payload["x-web3"] = True
+    payload["tools"] = {
+        name: {"title": tool.title, "description": tool.description}
+        for name, tool in tools.items()
+    }
+    return payload
+
+
+@lru_cache(maxsize=2)
+def get_tool_catalog(*, available_only: bool = False) -> dict[str, dict[str, Any]]:
+    """The full toolset catalog in the wire shape served to frontends.
+
+    With ``available_only`` the result is filtered to categories (and
+    individual tools) usable in the current deployment; otherwise every tool
+    in the codebase is included.
     """
-    registry: dict[str, dict[str, str]] = {}
-    try:
-        for category, _module, tool_schema in _iter_tool_schemas():
-            tools_map = _get_tools_map(tool_schema)
-            if not tools_map:
+    result: dict[str, dict[str, Any]] = {}
+    for category, entry in _load_catalog().items():
+        tools = entry.tools
+        if available_only:
+            if not is_toolset_available(entry.module):
+                logger.info("Skipped toolset '%s': not available", category)
                 continue
-
-            tools: dict[str, str] = {}
-            for tool_name, tool_def in tools_map.items():
-                if isinstance(tool_def, dict):
-                    description = tool_def.get("description", "")
-                    if isinstance(description, str):
-                        tools[tool_name] = description
-
-            if tools:
-                registry[category] = tools
-
-    except (AttributeError, ModuleNotFoundError, ImportError):
-        logger.warning("intentkit tools package not found when building tools registry")
-
-    return registry
+            tools = {
+                name: tool
+                for name, tool in tools.items()
+                if is_individual_tool_available(entry.module, category, name)
+            }
+            if not tools:
+                continue
+        result[category] = _category_payload(entry.meta, tools)
+    return result
 
 
 @lru_cache(maxsize=1)
 def get_web3_categories() -> frozenset[str]:
-    """Categories whose tools operate on team wallets (``x-web3`` in schema).
+    """Categories whose tools operate on team wallets (``web3`` in their meta).
 
     These are only selectable for agents whose team owns at least one
     wallet, and their tools take a ``wallet_address`` chosen by the agent.
     """
-    categories: set[str] = set()
-    try:
-        for category, _module, tool_schema in _iter_tool_schemas():
-            if tool_schema.get("x-web3") is True:
-                categories.add(category)
-    except (AttributeError, ModuleNotFoundError, ImportError):
-        logger.warning("intentkit tools package not found when building web3 set")
-    return frozenset(categories)
+    return frozenset(
+        category for category, entry in _load_catalog().items() if entry.meta.web3
+    )
 
 
 def filter_web3_tool_names(tool_names: list[str]) -> list[str]:
@@ -162,26 +178,14 @@ def filter_web3_tool_names(tool_names: list[str]) -> list[str]:
     return [name for name in tool_names if index.get(name) in web3]
 
 
+@lru_cache(maxsize=1)
 def get_tool_category_index() -> dict[str, str]:
-    """Map every known tool name to its category.
-
-    Derived from the cached registry on every call (cheap dict build), so it
-    can never go stale relative to ``get_valid_tools_registry``.
-    """
-    index: dict[str, str] = {}
-    for category, tools in get_valid_tools_registry().items():
-        for tool_name in tools:
-            existing = index.get(tool_name)
-            if existing is not None:
-                logger.warning(
-                    "Tool name '%s' defined by both '%s' and '%s'; using '%s'",
-                    tool_name,
-                    existing,
-                    category,
-                    category,
-                )
-            index[tool_name] = category
-    return index
+    """Map every known tool name to its category (name collisions warned at load)."""
+    return {
+        tool_name: category
+        for category, entry in _load_catalog().items()
+        for tool_name in entry.tools
+    }
 
 
 def group_tool_names_by_category(tool_names: list[str]) -> dict[str, list[str]]:
@@ -248,80 +252,47 @@ def sanitize_tools(tools: list[str] | None) -> list[str] | None:
 
 def get_tools_hierarchical_text() -> str:
     """Extract tools organized by category and return as hierarchical text."""
-    # Group tools by category (x-tags)
-    categories: dict[str, list[Any]] = {}
-    try:
-        for category, module, tool_schema in _iter_tool_schemas(require_available=True):
-            if module is None:
-                # require_available=True guarantees a module; this also narrows
-                # the type for is_individual_tool_available below.
-                continue
+    catalog = get_tool_catalog(available_only=True)
 
-            tool_title = tool_schema.get("title", category.replace("_", " ").title())
-            tool_description = tool_schema.get(
-                "description", "No description available"
-            )
-            tool_tags = cast(list[str], tool_schema.get("x-tags", ["Other"]))
+    # Group toolsets by their primary tag
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for category, payload in catalog.items():
+        tags = payload.get("x-tags") or ["Other"]
+        groups.setdefault(tags[0], []).append(
+            {
+                "name": category,
+                "title": payload["title"],
+                "description": payload["description"],
+                "individual_tools": [
+                    {"name": name, "description": info["description"]}
+                    for name, info in payload["tools"].items()
+                ],
+            }
+        )
 
-            # Use the first tag as the primary group
-            primary_category = tool_tags[0] if tool_tags else "Other"
-
-            individual_tools: list[dict[str, str]] = []
-            tools_map = _get_tools_map(tool_schema)
-            if tools_map:
-                for ind_name, ind_def in tools_map.items():
-                    if not is_individual_tool_available(module, category, ind_name):
-                        continue
-                    ind_desc = (
-                        ind_def.get("description", "No description available")
-                        if isinstance(ind_def, dict)
-                        else "No description available"
-                    )
-                    individual_tools.append({"name": ind_name, "description": ind_desc})
-
-            # Drop the category entirely if every tool was filtered;
-            # surfacing an empty group would just be noise to the LLM.
-            if tools_map and not individual_tools:
-                continue
-
-            if primary_category not in categories:
-                categories[primary_category] = []
-
-            categories[primary_category].append(
-                {
-                    "name": category,
-                    "title": tool_title,
-                    "description": tool_description,
-                    "individual_tools": individual_tools,
-                }
-            )
-    except (AttributeError, ModuleNotFoundError, ImportError):
-        logger.warning("intentkit tools package not found when building tools text")
+    if not groups:
         return "No tools available"
 
-    # Build hierarchical text
-    text_lines = []
-    text_lines.append("Available Tools by Category:")
-    text_lines.append("")
-
-    # Sort categories alphabetically
-    for category in sorted(categories.keys()):
-        text_lines.append(f"#### {category}")
+    text_lines = ["Available Tools by Category:", ""]
+    for group in sorted(groups.keys()):
+        text_lines.append(f"#### {group}")
         text_lines.append("")
-
-        # Sort tools within category alphabetically by name
-        for tool in sorted(categories[category], key=lambda x: x["name"]):
+        for toolset in sorted(groups[group], key=lambda x: x["name"]):
             text_lines.append(
-                f"- **{tool['name']}** ({tool['title']}): {tool['description']}"
+                f"- **{toolset['name']}** ({toolset['title']}): {toolset['description']}"
             )
-            # Add individual tools indented under the category tool
-            for ind_tool in sorted(
-                tool.get("individual_tools", []), key=lambda x: x["name"]
-            ):
-                text_lines.append(
-                    f"  - `{ind_tool['name']}`: {ind_tool['description']}"
-                )
-
+            for tool in sorted(toolset["individual_tools"], key=lambda x: x["name"]):
+                text_lines.append(f"  - `{tool['name']}`: {tool['description']}")
         text_lines.append("")
 
     return "\n".join(text_lines)
+
+
+def warm_tool_registry() -> None:
+    """Pay the one-time toolset import/scan cost up front.
+
+    Call from app startup (off the event loop, e.g. ``asyncio.to_thread``) so
+    no request or chat message stalls on the first catalog build.
+    """
+    _ = get_tool_catalog(available_only=True)
+    build_tool_prices()

@@ -6,6 +6,15 @@ from intentkit.tools.casino.base import CasinoBaseTool
 from intentkit.tools.casino.deck_draw import CasinoDeckDraw
 from intentkit.tools.casino.deck_shuffle import CasinoDeckShuffle
 from intentkit.tools.casino.dice_roll import CasinoDiceRoll
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Casino",
+    description="Casino gaming tools including card decks and quantum dice rolling for interactive games with users",
+    tags=["Entertainment"],
+    icon="/tools/casino/casino.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, CasinoBaseTool] = {}

@@ -31,6 +31,7 @@ class UniswapGetPositions(UniswapBaseTool):
     """View Uniswap V3 liquidity positions."""
 
     name: str = NAME
+    title: str = "View Positions"
     description: str = (
         "View Uniswap V3 liquidity positions including pool details, "
         "liquidity amounts, and uncollected fees."

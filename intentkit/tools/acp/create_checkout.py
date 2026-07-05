@@ -28,6 +28,7 @@ class AcpCreateCheckout(AcpBaseTool):
     """
 
     name: str = "acp_create_checkout"
+    title: str = "Create Checkout"
     description: str = (
         "Create a checkout session on an ACP merchant. "
         "Returns a session ID, payment URL, and total amount in USDC. "

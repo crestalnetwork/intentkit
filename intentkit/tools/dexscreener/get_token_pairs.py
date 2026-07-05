@@ -37,6 +37,7 @@ class GetTokenPairs(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_get_token_pairs"
+    title: str = "Get Token Pairs"
     description: str = (
         "Find all trading pairs for a token by chain ID and token address."
     )

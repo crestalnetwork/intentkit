@@ -49,6 +49,7 @@ class X402HttpRequest(X402BaseTool):
     """Tool that performs signed HTTP requests via the x402 client."""
 
     name: str = "x402_http_request"
+    title: str = "HTTP Request"
     description: str = "Send a paid HTTP request using the x402 protocol. Returns response status and body."
     price: Decimal = Decimal("1")
     args_schema: ArgsSchema | None = X402HttpRequestInput

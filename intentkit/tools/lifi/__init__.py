@@ -3,6 +3,16 @@ from collections.abc import Callable
 from intentkit.tools.lifi.base import LiFiBaseTool
 from intentkit.tools.lifi.token_execute import TokenExecute
 from intentkit.tools.lifi.token_quote import TokenQuote
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="LiFi Token Transfer",
+    description="Cross-chain token transfer and swap capabilities using the LiFi protocol",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/lifi/lifi.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, LiFiBaseTool] = {}

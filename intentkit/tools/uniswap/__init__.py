@@ -1,11 +1,21 @@
 """Uniswap DEX tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.uniswap.add_liquidity import UniswapAddLiquidity
 from intentkit.tools.uniswap.base import UniswapBaseTool
 from intentkit.tools.uniswap.get_positions import UniswapGetPositions
 from intentkit.tools.uniswap.quote import UniswapQuote
 from intentkit.tools.uniswap.remove_liquidity import UniswapRemoveLiquidity
 from intentkit.tools.uniswap.swap import UniswapSwap
+
+toolset = ToolsetMeta(
+    title="Uniswap",
+    description="Swap tokens and manage V3 liquidity positions on Uniswap DEX",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/uniswap/uniswap.svg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, UniswapBaseTool] = {}

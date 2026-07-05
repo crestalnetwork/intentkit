@@ -11,6 +11,15 @@ from intentkit.tools.elfa.mention import (
 )
 from intentkit.tools.elfa.stats import ElfaGetSmartStats
 from intentkit.tools.elfa.tokens import ElfaGetTrendingTokens
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Elfa",
+    description="Integration with Elfa AI API providing data analysis and processing capabilities with secure authentication for advanced data operations",
+    tags=["AI", "Analytics"],
+    icon="/tools/elfa/elfa.jpg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, ElfaBaseTool] = {}

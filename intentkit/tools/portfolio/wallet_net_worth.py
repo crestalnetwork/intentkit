@@ -43,6 +43,7 @@ class WalletNetWorth(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_net_worth"
+    title: str = "Wallet Net Worth"
     description: str = "Get wallet net worth in USD across multiple chains."
     args_schema: ArgsSchema | None = WalletNetWorthInput
 

@@ -15,7 +15,7 @@ class McpServerDef:
     """Human-readable name for UI display."""
 
     description: str
-    """Description for schema.json."""
+    """Description shown in the tool catalog."""
 
     url: str
     """MCP server HTTP endpoint URL."""
@@ -33,10 +33,13 @@ class McpServerDef:
     """Prefix for the API key value, e.g. 'Bearer'. Set to None for raw key."""
 
     tags: list[str] = field(default_factory=list)
-    """Tags for schema categorization."""
+    """Tags for catalog categorization."""
 
     web3: bool = False
-    """Whether the server's tools operate on team wallets (marks x-web3)."""
+    """Whether the server's tools operate on team wallets."""
+
+    icon: str | None = None
+    """Icon URL path served by the API, e.g. '/tools/mcp_coingecko/coingecko.svg'."""
 
 
 MCP_SERVERS: dict[str, McpServerDef] = {
@@ -50,5 +53,6 @@ MCP_SERVERS: dict[str, McpServerDef] = {
         api_key_header="x-cg-demo-api-key",
         api_key_prefix=None,
         tags=["Crypto", "Market Data"],
+        icon="/tools/mcp_coingecko/coingecko.svg",
     ),
 }

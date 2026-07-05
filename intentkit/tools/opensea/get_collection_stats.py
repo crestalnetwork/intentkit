@@ -21,6 +21,7 @@ class OpenSeaGetCollectionStats(OpenSeaBaseTool):
     """Get statistics for an NFT collection including floor price and volume."""
 
     name: str = NAME
+    title: str = "Get Collection Stats"
     description: str = (
         "Get statistics for an NFT collection on OpenSea, "
         "including floor price, total volume, total supply, "

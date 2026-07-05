@@ -32,6 +32,7 @@ class MorphoWithdrawCollateral(MorphoBaseTool):
     """Withdraw collateral from a Morpho Blue market."""
 
     name: str = "morpho_withdraw_collateral"
+    title: str = "Withdraw Collateral"
     description: str = (
         "Withdraw collateral from a Morpho Blue market. "
         "Provide market_id (bytes32) and amount in whole units. "

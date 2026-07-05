@@ -8,6 +8,15 @@ from intentkit.tools.dune.base import DuneBaseTool
 from intentkit.tools.dune.execute_query import DuneExecuteQuery
 from intentkit.tools.dune.get_query_results import DuneGetQueryResults
 from intentkit.tools.dune.run_sql import DuneRunSQL
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Dune",
+    description="Dune tools for querying blockchain analytics data via the Dune API.",
+    tags=["Analytics", "Crypto", "Knowledge Base"],
+    icon="/tools/dune/dune.png",
+)
+
 
 _cache: dict[str, DuneBaseTool] = {}
 

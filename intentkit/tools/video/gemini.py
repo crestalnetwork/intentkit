@@ -95,6 +95,7 @@ class VeoVideo(VeoVideoBase):
     """Generate videos using Google Veo 3.1."""
 
     name: str = "video_veo"
+    title: str = "Veo 3.1"
     description: str = (
         "Generate videos from text prompts or images using Google Veo 3.1. "
         "Highest quality with audio. Max 8 seconds, 1080p."
@@ -107,6 +108,7 @@ class VeoVideoFast(VeoVideoBase):
     """Generate videos using Google Veo 3.1 Fast."""
 
     name: str = "video_veo_fast"
+    title: str = "Veo 3.1 Fast"
     description: str = (
         "Generate videos from text prompts or images using Google Veo 3.1 Fast. "
         "Faster generation with audio. Max 8 seconds, 1080p."

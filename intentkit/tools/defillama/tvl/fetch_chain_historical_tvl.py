@@ -52,6 +52,7 @@ class DefiLlamaFetchChainHistoricalTvl(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_chain_historical_tvl"
+    title: str = "Fetch Chain Historical TVL"
     description: str = FETCH_HISTORICAL_TVL_PROMPT
     args_schema: ArgsSchema | None = FetchChainHistoricalTVLInput
 

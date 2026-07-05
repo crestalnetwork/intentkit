@@ -29,6 +29,7 @@ class ERC721GetBalance(ERC721BaseTool):
     """
 
     name: str = "erc721_get_balance"
+    title: str = "Get NFT Balance"
     description: str = (
         "Get the number of NFTs (ERC721) owned by an address for a given contract."
     )

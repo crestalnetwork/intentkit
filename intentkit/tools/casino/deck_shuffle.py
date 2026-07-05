@@ -47,6 +47,7 @@ class CasinoDeckShuffle(CasinoBaseTool):
     """
 
     name: str = NAME
+    title: str = "Shuffle Card Deck"
     description: str = PROMPT
     args_schema: ArgsSchema | None = CasinoDeckShuffleInput
 

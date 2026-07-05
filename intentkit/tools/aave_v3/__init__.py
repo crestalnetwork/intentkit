@@ -10,6 +10,16 @@ from intentkit.tools.aave_v3.repay import AaveV3Repay
 from intentkit.tools.aave_v3.set_collateral import AaveV3SetCollateral
 from intentkit.tools.aave_v3.supply import AaveV3Supply
 from intentkit.tools.aave_v3.withdraw import AaveV3Withdraw
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Aave V3",
+    description="Aave V3 lending protocol: supply, borrow, repay, and manage collateral positions across multiple EVM chains",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/aave_v3/aave_v3.svg",
+)
+
 
 _cache: dict[str, AaveV3BaseTool] = {}
 

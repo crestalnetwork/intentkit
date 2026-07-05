@@ -22,6 +22,7 @@ class XmtpGetSwapPrice(XmtpBaseTool):
     """Tool for fetching indicative swap price using CDP SDK."""
 
     name: str = "xmtp_get_swap_price"
+    title: str = "XMTP Get Swap Price"
     description: str = "Get indicative swap price for a token pair on Ethereum, Base, Arbitrum, or Optimism mainnet via CDP."
     response_format: Literal["content", "content_and_artifact"] = "content"
     args_schema: ArgsSchema | None = SwapPriceInput

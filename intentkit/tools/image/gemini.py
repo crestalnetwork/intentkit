@@ -73,6 +73,7 @@ class GeminiImagePro(GeminiImageBase):
     """Generate images using Gemini 3 Pro."""
 
     name: str = "image_gemini_pro"
+    title: str = "Nano Banana Pro"
     description: str = "Generate images from text prompts using Gemini 3 Pro."
     price: Decimal = Decimal("130")
     native_model: str = "gemini-3-pro-image-preview"
@@ -83,6 +84,7 @@ class GeminiImageFlash(GeminiImageBase):
     """Generate images using Gemini 3.1 Flash."""
 
     name: str = "image_gemini_flash"
+    title: str = "Nano Banana 2"
     description: str = (
         "Generate images from text prompts using Gemini 3.1 Flash (faster, cheaper)."
     )

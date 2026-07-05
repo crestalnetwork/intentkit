@@ -66,6 +66,7 @@ class WebsiteIndexer(WebScraperBaseTool):
     """
 
     name: str = "web_scraper_website_indexer"
+    title: str = "Complete Website Indexer"
     description: str = "Index a website by discovering sitemaps, extracting URLs, and indexing content."
     price: Decimal = Decimal("200")
     args_schema: ArgsSchema | None = WebsiteIndexerInput

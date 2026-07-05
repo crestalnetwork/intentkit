@@ -75,6 +75,7 @@ class FirecrawlScrape(FirecrawlBaseTool):
     """
 
     name: str = "firecrawl_scrape"
+    title: str = "Firecrawl Scrape"
     description: str = (
         "Scrape a web page and replace any existing indexed content for that URL. "
         "Handles JS-rendered content, PDFs, and dynamic sites."

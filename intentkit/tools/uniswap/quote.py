@@ -38,6 +38,7 @@ class UniswapQuote(UniswapBaseTool):
     """Get a Uniswap V3 swap quote."""
 
     name: str = NAME
+    title: str = "Swap Quote"
     description: str = (
         "Get a Uniswap V3 swap quote. Returns expected output amount. "
         "Provide token contract addresses and amount in human-readable format."

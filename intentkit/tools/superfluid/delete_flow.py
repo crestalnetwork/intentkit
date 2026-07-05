@@ -32,6 +32,7 @@ class SuperfluidDeleteFlow(SuperfluidBaseTool):
     """
 
     name: str = "superfluid_delete_flow"
+    title: str = "Delete Flow"
     description: str = (
         "Delete an existing Superfluid money stream. The stream stops immediately."
     )

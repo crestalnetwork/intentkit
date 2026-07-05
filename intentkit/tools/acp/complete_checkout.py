@@ -29,6 +29,7 @@ class AcpCompleteCheckout(AcpBaseTool):
     """
 
     name: str = "acp_complete_checkout"
+    title: str = "Complete Checkout"
     description: str = (
         "Complete an ACP checkout session after payment. "
         "Requires the session_id and tx_hash from a successful x402_pay call. "

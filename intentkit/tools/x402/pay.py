@@ -58,6 +58,7 @@ class X402Pay(X402BaseTool):
     """Tool that performs a paid HTTP request with max payment limit via x402."""
 
     name: str = "x402_pay"
+    title: str = "Pay Request"
     description: str = (
         "Send a paid x402 HTTP request with a max payment limit (max_value in base units, e.g. 1000000 = 1 USDC). "
         "Use x402_check_price first to preview costs."

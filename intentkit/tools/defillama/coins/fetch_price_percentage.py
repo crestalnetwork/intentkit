@@ -43,6 +43,7 @@ class DefiLlamaFetchPricePercentage(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_price_percentage"
+    title: str = "Fetch Price Percentage"
     description: str = FETCH_PRICE_PERCENTAGE_PROMPT
     args_schema: ArgsSchema | None = FetchPricePercentageInput
 

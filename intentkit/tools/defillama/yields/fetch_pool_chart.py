@@ -56,6 +56,7 @@ class DefiLlamaFetchPoolChart(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_pool_chart"
+    title: str = "Fetch Pool Chart"
     description: str = FETCH_POOL_CHART_PROMPT
     args_schema: ArgsSchema | None = FetchPoolChartInput
 

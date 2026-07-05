@@ -19,6 +19,7 @@ class ImageEnhance(VeniceImageEnhanceBaseTool):
     """
 
     name: str = "venice_image_enhance"
+    title: str = "Image Enhance"
     description: str = (
         "Enhances an existing image from a URL using Venice AI.\n"
         "Provide the public URL of the image to enhance.\n"

@@ -27,6 +27,7 @@ class VeniceAudioTool(VeniceAudioBaseTool):
     """
 
     name: str = "venice_audio_text_to_speech"
+    title: str = "Text to Speech"
     description: str = (
         "Convert text to speech using Venice AI. "
         "Supports speed adjustment and multiple audio formats."

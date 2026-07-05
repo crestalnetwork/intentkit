@@ -47,6 +47,7 @@ class CasinoDiceRoll(CasinoBaseTool):
     """
 
     name: str = NAME
+    title: str = "Roll Quantum Dice"
     description: str = PROMPT
     args_schema: ArgsSchema | None = CasinoDiceRollInput
 

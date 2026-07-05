@@ -16,6 +16,7 @@ class ImageGenerationFluentlyXL(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_fluently_xl"
+    title: str = "Image Generation (Fluently-XL)"
     price: Decimal = Decimal("50")
     description: str = (
         "Generate images using the Fluently-XL model (via Venice AI).\n"

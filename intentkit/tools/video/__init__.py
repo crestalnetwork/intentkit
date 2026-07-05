@@ -3,11 +3,20 @@
 from collections.abc import Callable
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.video.base import VideoBaseTool
 from intentkit.tools.video.gemini import VeoVideo, VeoVideoFast
 from intentkit.tools.video.gpt import SoraVideo, SoraVideoPro
 from intentkit.tools.video.grok import GrokVideo
 from intentkit.tools.video.minimax import HailuoVideo
+
+toolset = ToolsetMeta(
+    title="Video Generation",
+    description="Generate videos from text prompts or images using multiple AI providers. Supports Grok, Sora, and Veo models.",
+    tags=["Media", "AI"],
+    icon="/tools/video/video.svg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, VideoBaseTool] = {}

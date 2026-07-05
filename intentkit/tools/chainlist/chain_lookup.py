@@ -35,6 +35,7 @@ class ChainLookup(ChainlistBaseTool):
     """Tool for looking up blockchain RPC endpoints from Chainlist."""
 
     name: str = "chain_lookup"
+    title: str = "Chain Lookup"
     description: str = "Look up blockchain RPC endpoints by chain name, symbol, or ID."
     args_schema: ArgsSchema | None = ChainLookupInput
 

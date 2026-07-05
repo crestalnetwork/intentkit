@@ -22,6 +22,7 @@ class AcpGetCheckout(AcpBaseTool):
     """Get the current status of an ACP checkout session."""
 
     name: str = "acp_get_checkout"
+    title: str = "Get Checkout Status"
     description: str = (
         "Get the current status of an ACP checkout session. "
         "Returns session details including status, items, total, and tx_hash."

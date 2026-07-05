@@ -70,6 +70,7 @@ class FetchNftPortfolio(WalletBaseTool):
     """
 
     name: str = "moralis_fetch_nft_portfolio"
+    title: str = "Fetch NFT Portfolio"
     description: str = (
         "Fetch NFT holdings for a wallet, including metadata and floor prices."
     )

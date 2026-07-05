@@ -2,12 +2,22 @@
 
 from typing import Any
 
+from intentkit.tools.meta import ToolsetMeta
+
 from .base import AcpBaseTool
 from .cancel_checkout import AcpCancelCheckout
 from .complete_checkout import AcpCompleteCheckout
 from .create_checkout import AcpCreateCheckout
 from .get_checkout import AcpGetCheckout
 from .list_products import AcpListProducts
+
+toolset = ToolsetMeta(
+    title="ACP Commerce",
+    description="Purchase products from ACP (Agentic Commerce Protocol) merchants using x402 crypto payments.",
+    tags=["Commerce", "Crypto"],
+    icon="/tools/acp/acp.png",
+)
+
 
 _cache: dict[str, AcpBaseTool] = {}
 

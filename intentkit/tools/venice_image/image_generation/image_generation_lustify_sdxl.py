@@ -16,6 +16,7 @@ class ImageGenerationLustifySDXL(VeniceImageGenerationBaseTool):
 
     # --- Model Specific Configuration ---
     name: str = "venice_image_generation_lustify_sdxl"
+    title: str = "Image Generation (Lustify-SDXL)"
     price: Decimal = Decimal("50")
     description: str = (
         "Generate images using the Lustify SDXL model (via Venice AI).\n"

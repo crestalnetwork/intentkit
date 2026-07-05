@@ -21,6 +21,7 @@ class GetAccountDetails(CookieFunBaseTool):
     """Tool to get detailed information about a Twitter account."""
 
     name: str = "cookiefun_get_account_details"
+    title: str = "Get Account Details"
     description: str = "Get detailed Twitter account info including followers, metrics, and engagement data."
     price: Decimal = Decimal("70")
     args_schema: ArgsSchema | None = GetAccountDetailsInput

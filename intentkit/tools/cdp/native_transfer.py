@@ -29,6 +29,7 @@ class CDPNativeTransfer(CDPBaseTool):
     """
 
     name: str = "cdp_native_transfer"
+    title: str = "Native Transfer"
     description: str = "Transfer native tokens (ETH, MATIC, etc.) to another address. Ensure sufficient balance for transfer and gas."
     args_schema: ArgsSchema | None = NativeTransferInput
 

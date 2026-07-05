@@ -24,6 +24,7 @@ class GetPositions(PolymarketBaseTool):
     """
 
     name: str = "polymarket_get_positions"
+    title: str = "Get Positions"
     description: str = (
         "Get current Polymarket positions (holdings). "
         "Shows all outcome tokens held with quantities and current market values."

@@ -26,49 +26,11 @@ uv run lint-imports
 echo "Checking dependency declarations..."
 uv run deptry .
 
-echo "Validating JSON schema files..."
-
-# Function to validate a JSON schema file using Python
-validate_schema() {
-    local schema_file=$1
-    echo "Validating $schema_file..."
-    
-    # Use Python to validate both JSON syntax and schema validity
-    uv run python -c "import json, jsonschema; schema = json.load(open('$schema_file')); jsonschema.Draft7Validator.check_schema(schema)" 2>/dev/null
-    
-    if [ $? -ne 0 ]; then
-        echo "Error: $schema_file is not a valid JSON schema"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Validate the main agent schema
-if ! validate_schema "intentkit/models/agent/schema.json"; then
+echo "Validating the agent JSON schema..."
+# The tool catalog now lives in code (ToolsetMeta + tool classes); the agent
+# model schema is the only JSON schema file left.
+if ! uv run python -c "import json, jsonschema; schema = json.load(open('intentkit/models/agent/schema.json')); jsonschema.Draft7Validator.check_schema(schema)"; then
+    echo "Error: intentkit/models/agent/schema.json is not a valid JSON schema"
     exit 1
 fi
-
-# Validate all schema.json files in tools subdirectories
-echo "Validating schema.json files in tools subdirectories..."
-find_exit_code=0
-
-# Find all schema.json files and store them in a temporary file
-find intentkit/tools -name "schema.json" > /tmp/schema_files.txt
-
-# Read each line from the temporary file
-while IFS= read -r schema_file; do
-    if ! validate_schema "$schema_file"; then
-        find_exit_code=1
-    fi
-done < /tmp/schema_files.txt
-
-# Clean up the temporary file
-rm -f /tmp/schema_files.txt
-
-if [ $find_exit_code -ne 0 ]; then
-    echo "Error: Some schema files are not valid"
-    exit 1
-fi
-
-echo "All JSON schema files are valid!"
+echo "Agent JSON schema is valid!"

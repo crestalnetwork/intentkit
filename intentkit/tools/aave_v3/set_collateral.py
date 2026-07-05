@@ -29,6 +29,7 @@ class AaveV3SetCollateral(AaveV3BaseTool):
     """Enable or disable an asset as collateral on Aave V3."""
 
     name: str = NAME
+    title: str = "Set Collateral"
     description: str = (
         "Enable or disable a supplied asset as collateral on Aave V3. "
         "Disabling collateral may affect your health factor and borrowing capacity. "

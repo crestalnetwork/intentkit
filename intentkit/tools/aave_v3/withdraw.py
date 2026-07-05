@@ -34,6 +34,7 @@ class AaveV3Withdraw(AaveV3BaseTool):
     """Withdraw supplied tokens from Aave V3."""
 
     name: str = NAME
+    title: str = "Withdraw"
     description: str = (
         "Withdraw supplied tokens from Aave V3. "
         "Use 'max' as amount to withdraw the entire supplied balance. "

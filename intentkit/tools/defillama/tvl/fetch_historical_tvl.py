@@ -55,6 +55,7 @@ class DefiLlamaFetchHistoricalTvl(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_total_historical_tvl"
+    title: str = "Fetch Historical TVL"
     description: str = FETCH_TOTAL_HISTORICAL_TVL_PROMPT
     args_schema: ArgsSchema | None = FetchHistoricalTVLInput
 

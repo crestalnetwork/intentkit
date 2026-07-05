@@ -1,6 +1,6 @@
 """Toolset wrappers that expose MCP servers as IntentKit tools.
 
-Not a toolset category itself (no schema.json); categories like
+Not a toolset category itself (no ``toolset`` meta); categories like
 ``mcp_coingecko`` build on this via ``create_mcp_category``. The underlying
 MCP protocol client lives in ``intentkit.clients.mcp``.
 """

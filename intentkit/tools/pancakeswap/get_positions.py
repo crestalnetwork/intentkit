@@ -33,6 +33,7 @@ class PancakeSwapGetPositions(PancakeSwapBaseTool):
     """View PancakeSwap V3 liquidity positions."""
 
     name: str = NAME
+    title: str = "View Positions"
     description: str = (
         "View PancakeSwap V3 liquidity positions including pool details, "
         "liquidity amounts, uncollected fees, and farming status."

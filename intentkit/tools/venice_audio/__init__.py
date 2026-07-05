@@ -1,8 +1,17 @@
 """Venice Audio text-to-speech tools."""
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.venice_audio.base import VeniceAudioBaseTool
 from intentkit.tools.venice_audio.venice_audio import VeniceAudioTool
+
+toolset = ToolsetMeta(
+    title="Venice Audio Tools",
+    description="Configuration for the Venice Audio tool.",
+    tags=["AI", "Audio"],
+    icon="/tools/venice_audio/venice_logo.jpg",
+)
+
 
 # Cache tools at the module level, because they are stateless
 _cache: dict[str, VeniceAudioBaseTool] = {}

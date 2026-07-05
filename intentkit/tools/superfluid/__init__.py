@@ -1,9 +1,19 @@
 """Superfluid streaming payment tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.superfluid.base import SuperfluidBaseTool
 from intentkit.tools.superfluid.create_flow import SuperfluidCreateFlow
 from intentkit.tools.superfluid.delete_flow import SuperfluidDeleteFlow
 from intentkit.tools.superfluid.update_flow import SuperfluidUpdateFlow
+
+toolset = ToolsetMeta(
+    title="Superfluid",
+    description="Superfluid streaming payment actions for continuous real-time token transfers",
+    tags=["DeFi"],
+    web3=True,
+    icon="/tools/superfluid/superfluid.svg",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, SuperfluidBaseTool] = {

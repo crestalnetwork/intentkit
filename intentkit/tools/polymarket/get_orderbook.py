@@ -29,6 +29,7 @@ class GetOrderbook(PolymarketBaseTool):
     """
 
     name: str = "polymarket_get_orderbook"
+    title: str = "Get Orderbook"
     description: str = (
         "Get the order book (bids and asks) for a Polymarket outcome token. "
         "Shows current buy and sell orders with prices and sizes. "

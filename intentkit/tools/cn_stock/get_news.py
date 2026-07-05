@@ -29,6 +29,7 @@ class GetNewsInput(BaseModel):
 
 class GetNews(CNStockBaseTool):
     name: str = "cn_stock_get_news"
+    title: str = "Get News"
     description: str = (
         "Get recent news for a specific A-share or top macro financial headlines. "
         "Use for sentiment context before deeper analysis."

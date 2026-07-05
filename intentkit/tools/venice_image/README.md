@@ -35,37 +35,19 @@ Obtain highly detailed, context-rich textual descriptions of images—useful for
 
 ## Setup and Configuration
 
-All tools require a **Venice API key** for operation.
+All tools require a **Venice API key**, configured at the system level
+(`VENICE_API_KEY`). Enable individual tools by adding their names to the
+agent's `tools` list, e.g.:
 
-### Required Configuration
-- `enabled` *(bool)*: Enable or disable the overall tool suite.
-- `api_key` *(string, sensitive)*: Your [Venice AI API key](https://venice.ai/).
-- `states`: Enable/disable and set visibility for each sub-tool (public/private/disabled).
-
-### Advanced Options
-- `safe_mode` *(bool, default: true)*: If true, blurs images classified as adult/NSFW.
-- `hide_watermark` *(bool, default: true)*: Request images without a Venice watermark (subject to Venice policy).
-- `embed_exif_metadata` *(bool, default: false)*: Whether to embed prompt/config info in EXIF metadata.
-- `negative_prompt` *(string)*: Default negative prompt, e.g. `(worst quality: 1.4), bad quality, nsfw`.
-- `rate_limit_number` / `rate_limit_minutes`: (optional) Set a max request rate per agent.
-
-For per-tool configuration, refer to the `states` section in [schema.json](schema.json):
-- Each tool (e.g. `image_generation_flux_dev`, `image_enhance`, etc.) can be set to `"public"` (all users), `"private"` (agent owner only), or `"disabled"` (hidden).
-
-#### Example (YAML/JSON-like)
-```json
-{
-  "enabled": true,
-  "api_key": "<YOUR_VENICE_API_KEY>",
-  "safe_mode": true,
-  "states": {
-    "image_vision": "public",
-    "image_enhance": "private",
-    "image_upscale": "disabled",
-    "image_generation_flux_dev": "public"
-  }
-}
+```yaml
+tools:
+  - venice_image_vision
+  - venice_image_enhance
+  - venice_image_generation_flux_dev
 ```
+
+Generation behaviour (safe mode, watermark, negative prompt, ...) is set
+per call through each tool's arguments.
 
 ---
 

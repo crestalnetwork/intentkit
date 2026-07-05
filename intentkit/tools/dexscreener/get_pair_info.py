@@ -32,6 +32,7 @@ class GetPairInfo(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_get_pair_info"
+    title: str = "Get Pair Info"
     description: str = "Get detailed trading pair info (price, volume, liquidity, market cap) by chain ID and pair address."
     args_schema: ArgsSchema | None = GetPairInfoInput
 

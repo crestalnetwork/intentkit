@@ -27,6 +27,7 @@ class FetchNewsTool(CarvBaseTool):
     """
 
     name: str = "carv_fetch_news"
+    title: str = "Fetch News"
     description: str = (
         "Fetch latest news articles from CARV API with title, URL, and summary."
     )

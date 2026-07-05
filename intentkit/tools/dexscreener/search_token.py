@@ -51,6 +51,7 @@ class SearchToken(DexScreenerBaseTool):
     """
 
     name: str = "dexscreener_search_token"
+    title: str = "Search Token"
     description: str = (
         f"Search DexScreener for token pairs by symbol, name, address, or $TICKER. "
         f"Returns top {MAX_SEARCH_RESULTS} results sorted by liquidity or volume."

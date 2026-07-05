@@ -15,6 +15,16 @@ from intentkit.tools.enso.wallet import (
     EnsoGetWalletBalances,
     EnsoWalletApprove,
 )
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Enso Finance",
+    description="Integration with Enso Finance API providing DeFi trading and portfolio management capabilities across multiple blockchain networks",
+    tags=["Analytics", "DeFi"],
+    web3=True,
+    icon="/tools/enso/enso.jpg",
+)
+
 
 logger = logging.getLogger(__name__)
 

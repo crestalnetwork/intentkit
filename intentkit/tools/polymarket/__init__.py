@@ -1,5 +1,6 @@
 """Polymarket prediction market tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 from intentkit.tools.polymarket.cancel_order import CancelOrder
 from intentkit.tools.polymarket.get_market import GetMarket
@@ -10,6 +11,15 @@ from intentkit.tools.polymarket.get_price_history import GetPriceHistory
 from intentkit.tools.polymarket.get_trades import GetTrades
 from intentkit.tools.polymarket.place_order import PlaceOrder
 from intentkit.tools.polymarket.search_markets import SearchMarkets
+
+toolset = ToolsetMeta(
+    title="Polymarket",
+    description="Integration with Polymarket prediction market for browsing markets, checking prices, and trading outcome tokens",
+    tags=["Crypto", "Analytics"],
+    web3=True,
+    icon="/tools/polymarket/polymarket.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, PolymarketBaseTool] = {}

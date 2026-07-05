@@ -37,6 +37,7 @@ class AerodromeGetPositions(AerodromeBaseTool):
     """View Aerodrome Slipstream liquidity positions on Base."""
 
     name: str = NAME
+    title: str = "View Positions"
     description: str = (
         "View Aerodrome Slipstream liquidity positions on Base including "
         "pool details, liquidity amounts, uncollected fees, and farming status."

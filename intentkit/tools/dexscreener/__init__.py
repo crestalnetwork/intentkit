@@ -5,6 +5,15 @@ from intentkit.tools.dexscreener.get_pair_info import GetPairInfo
 from intentkit.tools.dexscreener.get_token_pairs import GetTokenPairs
 from intentkit.tools.dexscreener.get_tokens_info import GetTokensInfo
 from intentkit.tools.dexscreener.search_token import SearchToken
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Dexscreener",
+    description="Integration with DexScreener API, enabling crypto token pair information",
+    tags=["Analytics", "DeFi"],
+    icon="/tools/dexscreener/dexscreener.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, DexScreenerBaseTool] = {}

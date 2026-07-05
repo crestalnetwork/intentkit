@@ -8,6 +8,15 @@ from intentkit.tools.carv.base import CarvBaseTool
 from intentkit.tools.carv.fetch_news import FetchNewsTool
 from intentkit.tools.carv.onchain_query import OnchainQueryTool
 from intentkit.tools.carv.token_info_and_price import TokenInfoAndPriceTool
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="CARV",
+    description="Configuration for the CARV tool.",
+    tags=["Analytics", "Crypto"],
+    icon="/tools/carv/carv.webp",
+)
+
 
 logger = logging.getLogger(__name__)
 

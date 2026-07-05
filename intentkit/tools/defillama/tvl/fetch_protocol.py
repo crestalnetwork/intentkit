@@ -119,6 +119,7 @@ class DefiLlamaFetchProtocol(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_protocol"
+    title: str = "Fetch Protocol"
     description: str = FETCH_PROTOCOL_PROMPT
     args_schema: ArgsSchema | None = DefiLlamaProtocolInput
 

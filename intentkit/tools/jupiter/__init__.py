@@ -2,6 +2,15 @@ from langchain_core.tools import BaseTool
 
 from intentkit.tools.jupiter.price import JupiterGetPrice
 from intentkit.tools.jupiter.swap import JupiterGetQuote
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Jupiter Solana Integration",
+    description="Swap and Price Check on Solana via Jupiter Aggregator",
+    tags=["Crypto", "DeFi"],
+    icon="/tools/jupiter/jupiter.png",
+)
+
 
 _TOOL_CLASSES: dict[str, type[BaseTool]] = {
     "jupiter_get_price": JupiterGetPrice,

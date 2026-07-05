@@ -67,6 +67,7 @@ class TokenBalances(PortfolioBaseTool):
     """
 
     name: str = "portfolio_token_balances"
+    title: str = "Token Balances"
     description: str = "Get token balances and prices in USD for a wallet address."
     args_schema: ArgsSchema | None = TokenBalancesInput
 

@@ -2,6 +2,15 @@ from collections.abc import Callable
 
 from intentkit.tools.github.base import GitHubBaseTool
 from intentkit.tools.github.github_search import GitHubSearch
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="GitHub",
+    description="Search capabilities for GitHub repositories, users, and code",
+    tags=["Developer Tools", "Search"],
+    icon="/tools/github/github.jpg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, GitHubBaseTool] = {}

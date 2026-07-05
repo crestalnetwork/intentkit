@@ -28,6 +28,7 @@ class CryptoCompareFetchPrice(CryptoCompareBaseTool):
     """Tool for fetching cryptocurrency prices from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_price"
+    title: str = "Fetch Price"
     description: str = "Fetch real-time crypto prices in multiple currencies."
     args_schema: ArgsSchema | None = CryptoCompareFetchPriceInput
 

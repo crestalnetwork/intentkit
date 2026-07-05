@@ -85,6 +85,7 @@ class MiniMaxImage(MiniMaxImageBase):
     """Generate images using MiniMax image-01."""
 
     name: str = "image_minimax"
+    title: str = "MiniMax image-01"
     description: str = (
         "Generate images from text prompts using MiniMax image-01. "
         "Supports subject reference for character consistency."

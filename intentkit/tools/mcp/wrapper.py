@@ -8,6 +8,7 @@ from intentkit.clients.mcp.client import list_mcp_tools
 from intentkit.clients.mcp.registry import MCP_SERVERS, McpServerDef
 from intentkit.config.config import config as system_config
 from intentkit.tools.mcp.tool import McpToolTool, create_mcp_tool
+from intentkit.tools.meta import ToolMeta, ToolsetMeta
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +70,32 @@ class McpCategoryModule:
     """Provides the standard toolset interface for an MCP server."""
 
     server_name: str
+    toolset: ToolsetMeta
     _server_def: McpServerDef
 
     def __init__(self, server_name: str):
         self.server_name = server_name
         self._server_def = MCP_SERVERS[server_name]
+        # Remote MCP servers own their (changing) tool list, so the catalog
+        # carries a single fixed entry for the whole server instead of a
+        # per-tool snapshot that could go stale.
+        self.toolset = ToolsetMeta(
+            title=self._server_def.display_name,
+            description=self._server_def.description,
+            tags=list(self._server_def.tags),
+            web3=self._server_def.web3,
+            icon=self._server_def.icon,
+            tools={
+                self._server_def.name: ToolMeta(
+                    title=f"All {self._server_def.display_name} Tools",
+                    description=(
+                        f"Expose every tool offered by the "
+                        f"{self._server_def.display_name} MCP server. The exact "
+                        "tools are discovered live from the server at runtime."
+                    ),
+                )
+            },
+        )
 
     async def get_tools(
         self,

@@ -32,6 +32,7 @@ class MorphoSupplyCollateral(MorphoBaseTool):
     """Supply collateral to a Morpho Blue market."""
 
     name: str = "morpho_supply_collateral"
+    title: str = "Supply Collateral"
     description: str = (
         "Supply collateral to a Morpho Blue market. "
         "Provide market_id (bytes32) and amount in whole units. "

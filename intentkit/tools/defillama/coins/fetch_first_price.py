@@ -51,6 +51,7 @@ class DefiLlamaFetchFirstPrice(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_first_price"
+    title: str = "Fetch First Price"
     description: str = FETCH_FIRST_PRICE_PROMPT
     args_schema: ArgsSchema | None = FetchFirstPriceInput
 

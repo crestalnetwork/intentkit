@@ -70,6 +70,7 @@ class FetchWalletPortfolio(WalletBaseTool):
     """
 
     name: str = "moralis_fetch_wallet_portfolio"
+    title: str = "Fetch Wallet Portfolio"
     description: str = "Fetch wallet portfolio across EVM chains and Solana, including balances and net worth."
     args_schema: ArgsSchema | None = FetchWalletPortfolioInput
 

@@ -45,6 +45,7 @@ class HttpPost(HttpBaseTool):
     """
 
     name: str = "http_post"
+    title: str = "HTTP POST"
     description: str = (
         "Make an HTTP POST request to a URL. Returns the response as text."
     )

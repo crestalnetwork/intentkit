@@ -34,6 +34,7 @@ class MorphoDeposit(MorphoBaseTool):
     """
 
     name: str = "morpho_deposit"
+    title: str = "Vault Deposit"
     description: str = "Deposit assets into a Morpho Vault. Provide token_address as a contract address. Use exact amounts in whole units; do not convert."
     args_schema: ArgsSchema | None = DepositInput
 

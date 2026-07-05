@@ -38,6 +38,7 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
     """Remove liquidity from a Uniswap V3 position."""
 
     name: str = NAME
+    title: str = "Remove Liquidity"
     description: str = (
         "Remove liquidity from a Uniswap V3 position. "
         "Specify percentage (1-100) to partially or fully remove."

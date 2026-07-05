@@ -30,6 +30,7 @@ class OpenSeaCancelListing(OpenSeaBaseTool):
     """Cancel an existing NFT listing on OpenSea."""
 
     name: str = NAME
+    title: str = "Cancel Listing"
     description: str = (
         "Cancel an existing NFT listing on OpenSea. "
         "This is an off-chain cancellation — no gas required. "

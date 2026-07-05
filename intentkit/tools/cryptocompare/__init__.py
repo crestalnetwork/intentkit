@@ -17,6 +17,15 @@ from intentkit.tools.cryptocompare.fetch_top_volume import CryptoCompareFetchTop
 from intentkit.tools.cryptocompare.fetch_trading_signals import (
     CryptoCompareFetchTradingSignals,
 )
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="CryptoCompare",
+    description="Integration with CryptoCompare API providing cryptocurrency market data, price information, and crypto news with rate limiting capabilities",
+    tags=["Analytics", "Crypto"],
+    icon="/tools/cryptocompare/cryptocompare.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, CryptoCompareBaseTool] = {}

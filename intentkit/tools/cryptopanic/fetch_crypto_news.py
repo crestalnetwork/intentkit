@@ -40,6 +40,7 @@ class FetchCryptoNews(CryptopanicBaseTool):
     """Tool to fetch the latest crypto market news from CryptoPanic API."""
 
     name: str = "fetch_crypto_news"
+    title: str = "Fetch Crypto News"
     description: str = (
         "Fetch latest crypto news for BTC or ETH from CryptoPanic, sorted by recency."
     )

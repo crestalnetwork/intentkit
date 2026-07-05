@@ -38,6 +38,7 @@ class AaveV3Borrow(AaveV3BaseTool):
     """Borrow tokens from Aave V3 against supplied collateral."""
 
     name: str = NAME
+    title: str = "Borrow"
     description: str = (
         "Borrow tokens from Aave V3 against your supplied collateral. "
         "You must have sufficient collateral and health factor to borrow. "

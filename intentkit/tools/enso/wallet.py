@@ -34,6 +34,7 @@ class EnsoGetWalletBalances(EnsoBaseTool):
     """Retrieve token balances of a wallet on a specified blockchain network."""
 
     name: str = "enso_get_wallet_balances"
+    title: str = "Get Wallet Balances"
     description: str = "Get wallet token balances on a blockchain network."
     args_schema: ArgsSchema | None = EnsoGetBalancesInput
 
@@ -105,6 +106,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
     """Retrieve token spend approvals for a wallet on a specified blockchain network."""
 
     name: str = "enso_get_wallet_approvals"
+    title: str = "Get Wallet Approvals"
     description: str = "Get wallet token spend approvals on a blockchain network."
     args_schema: ArgsSchema | None = EnsoGetApprovalsInput
 
@@ -188,6 +190,7 @@ class EnsoWalletApprove(EnsoBaseTool):
     """Broadcast an ERC20 token spending approval transaction."""
 
     name: str = "enso_wallet_approve"
+    title: str = "Wallet Approve"
     description: str = "Broadcast an ERC20 token spending approval transaction."
     args_schema: ArgsSchema | None = EnsoWalletApproveInput
     response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"

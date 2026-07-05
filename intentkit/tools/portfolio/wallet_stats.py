@@ -28,6 +28,7 @@ class WalletStats(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_stats"
+    title: str = "Wallet Stats"
     description: str = "Get wallet stats (NFT count, collections, transactions)."
     args_schema: ArgsSchema | None = WalletStatsInput
 

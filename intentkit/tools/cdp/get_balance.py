@@ -26,6 +26,7 @@ class CDPGetBalance(CDPBaseTool):
     """
 
     name: str = "cdp_get_balance"
+    title: str = "Get Balance"
     description: str = "Get the native token balance (ETH, MATIC, etc.)."
     args_schema: ArgsSchema | None = GetBalanceInput
 

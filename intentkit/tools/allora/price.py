@@ -44,6 +44,7 @@ class AlloraGetPrice(AlloraBaseTool):
     """Fetch ETH/BTC price predictions from Allora API."""
 
     name: str = "allora_get_price_prediction"
+    title: str = "Get Price Prediction"
     description: str = (
         "Get ETH or BTC price prediction from Allora (5-minute or 8-hour)."
     )

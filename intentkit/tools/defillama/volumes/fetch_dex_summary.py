@@ -81,6 +81,7 @@ class DefiLlamaFetchDexSummary(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_dex_summary"
+    title: str = "Fetch DEX Summary"
     description: str = FETCH_DEX_SUMMARY_PROMPT
     args_schema: ArgsSchema | None = FetchDexSummaryInput
 

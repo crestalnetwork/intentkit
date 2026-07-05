@@ -27,6 +27,7 @@ class OpenSeaGetListings(OpenSeaBaseTool):
     """Get the best (lowest price) active listings for an NFT collection."""
 
     name: str = NAME
+    title: str = "Get Listings"
     description: str = (
         "Get the best active listings for an NFT collection on OpenSea, "
         "sorted by price ascending. Returns listing price, seller, "

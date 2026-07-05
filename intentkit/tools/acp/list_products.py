@@ -21,6 +21,7 @@ class AcpListProducts(AcpBaseTool):
     """List available products from an ACP merchant."""
 
     name: str = "acp_list_products"
+    title: str = "List Products"
     description: str = (
         "List available products from an ACP merchant. "
         "Returns product IDs, names, descriptions, and prices in USDC."

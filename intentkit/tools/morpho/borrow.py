@@ -32,6 +32,7 @@ class MorphoBorrow(MorphoBaseTool):
     """Borrow assets from a Morpho Blue market against supplied collateral."""
 
     name: str = "morpho_borrow"
+    title: str = "Borrow"
     description: str = (
         "Borrow assets from a Morpho Blue market against your collateral. "
         "You must have sufficient collateral supplied to the market. "

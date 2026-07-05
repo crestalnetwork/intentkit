@@ -33,6 +33,7 @@ class MorphoRepay(MorphoBaseTool):
     """Repay borrowed assets in a Morpho Blue market."""
 
     name: str = "morpho_repay"
+    title: str = "Repay"
     description: str = (
         "Repay borrowed assets in a Morpho Blue market. "
         "Use 'max' as amount to repay the full outstanding debt. "

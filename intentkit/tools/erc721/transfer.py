@@ -31,6 +31,7 @@ class ERC721Transfer(ERC721BaseTool):
     """
 
     name: str = "erc721_transfer"
+    title: str = "Transfer NFT"
     description: str = "Transfer an ERC721 NFT to another address. Wallet must own or have approval for the NFT. Ensure sufficient gas."
     args_schema: ArgsSchema | None = TransferInput
 

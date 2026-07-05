@@ -39,6 +39,7 @@ class WalletApprovals(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_approvals"
+    title: str = "Wallet Approvals"
     description: str = "Get active ERC20 token approvals for a wallet."
     args_schema: ArgsSchema | None = WalletApprovalsInput
 

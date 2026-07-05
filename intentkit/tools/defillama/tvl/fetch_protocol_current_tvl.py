@@ -40,6 +40,7 @@ class DefiLlamaFetchProtocolCurrentTvl(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_protocol_tvl"
+    title: str = "Fetch Protocol Current TVL"
     description: str = FETCH_TVL_PROMPT
     args_schema: ArgsSchema | None = FetchProtocolCurrentTVLInput
 

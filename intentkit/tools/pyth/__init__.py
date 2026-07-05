@@ -1,8 +1,17 @@
 """Pyth price oracle tools."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.pyth.base import PythBaseTool
 from intentkit.tools.pyth.fetch_price import PythFetchPrice
 from intentkit.tools.pyth.fetch_price_feed import PythFetchPriceFeed
+
+toolset = ToolsetMeta(
+    title="Pyth",
+    description="Pyth oracle price data for crypto, equities, forex, and metals",
+    tags=["Analytics", "Crypto", "DeFi"],
+    icon="/tools/pyth/pyth.svg",
+)
+
 
 # Cache for stateless tools
 _cache: dict[str, PythBaseTool] = {

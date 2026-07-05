@@ -57,6 +57,7 @@ class EnsoGetBestYield(EnsoBaseTool):
     """
 
     name: str = "enso_get_best_yield"
+    title: str = "Get Best Yield"
     description: str = (
         "Find best yield options for a token across DeFi protocols, sorted by APY."
     )

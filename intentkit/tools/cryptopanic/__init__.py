@@ -6,8 +6,17 @@ Loads and initializes tools for fetching crypto news and providing market insigh
 import logging
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 
 from .base import CryptopanicBaseTool
+
+toolset = ToolsetMeta(
+    title="CryptoPanic",
+    description="CryptoPanic is a news aggregator platform indicating impact on price and market for traders and cryptocurrency enthusiasts.",
+    tags=["Analytics", "Crypto", "Knowledge Base"],
+    icon="/tools/cryptopanic/cryptopanic.png",
+)
+
 
 logger = logging.getLogger(__name__)
 

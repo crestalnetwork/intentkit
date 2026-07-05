@@ -56,6 +56,7 @@ class SearchMarkets(PolymarketBaseTool):
     """
 
     name: str = "polymarket_search_markets"
+    title: str = "Search Markets"
     description: str = (
         "Search Polymarket prediction markets by keyword or tag. "
         "Returns market titles, current probabilities, and trading volumes. "

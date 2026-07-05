@@ -26,6 +26,7 @@ class AIXBTProjects(AIXBTBaseTool):
     """Tool for searching cryptocurrency projects using the AIXBT API."""
 
     name: str = "aixbt_projects"
+    title: str = "AIXBT Projects"
     description: str = (
         "Search crypto projects via AIXBT for scores, analysis, and updates. "
         "MUST be called when user mentions 'alpha' in any context."

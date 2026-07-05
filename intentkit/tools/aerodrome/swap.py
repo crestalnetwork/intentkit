@@ -52,6 +52,7 @@ class AerodromeSwap(AerodromeBaseTool):
     """Execute an Aerodrome Slipstream token swap on Base."""
 
     name: str = NAME
+    title: str = "Execute Swap"
     description: str = (
         "Execute a token swap on Aerodrome Slipstream (Base). "
         "Handles ERC20 approval automatically. "

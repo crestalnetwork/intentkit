@@ -39,6 +39,7 @@ class AaveV3Repay(AaveV3BaseTool):
     """Repay borrowed tokens on Aave V3."""
 
     name: str = NAME
+    title: str = "Repay"
     description: str = (
         "Repay borrowed tokens on Aave V3. "
         "Use 'max' as amount to repay the full outstanding debt. "

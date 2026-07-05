@@ -1,6 +1,7 @@
 """Portfolio tools for blockchain wallet analysis."""
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.portfolio.base import PortfolioBaseTool
 from intentkit.tools.portfolio.token_balances import TokenBalances
 from intentkit.tools.portfolio.wallet_approvals import WalletApprovals
@@ -14,6 +15,14 @@ from intentkit.tools.portfolio.wallet_profitability_summary import (
 )
 from intentkit.tools.portfolio.wallet_stats import WalletStats
 from intentkit.tools.portfolio.wallet_swaps import WalletSwaps
+
+toolset = ToolsetMeta(
+    title="Portfolio Analysis",
+    description="Access blockchain wallet data and analytics through Moralis APIs for portfolio tracking, token balances, and investment performance",
+    tags=["Analytics", "Crypto", "DeFi"],
+    icon="/tools/portfolio/moralis.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, PortfolioBaseTool] = {}

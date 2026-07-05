@@ -24,6 +24,7 @@ class MorphoGetVaultData(MorphoBaseTool):
     """Get MetaMorpho Vault data including total assets, share price, and underlying token."""
 
     name: str = "morpho_get_vault_data"
+    title: str = "Vault Data"
     description: str = (
         "Get MetaMorpho Vault info: total assets, total shares, "
         "share price, and underlying asset token. "

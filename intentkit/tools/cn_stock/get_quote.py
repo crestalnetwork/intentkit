@@ -41,6 +41,7 @@ class GetQuoteInput(BaseModel):
 
 class GetQuote(CNStockBaseTool):
     name: str = "cn_stock_get_quote"
+    title: str = "Get Quote"
     description: str = (
         "Get real-time spot quote for one or more A-share stocks. "
         "Returns price, change %, volume, turnover, P/E, P/B, and market cap. "

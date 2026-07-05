@@ -55,6 +55,7 @@ class DefiLlamaFetchCurrentPrices(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_current_prices"
+    title: str = "Fetch Current Prices"
     description: str = FETCH_PRICES_PROMPT
     args_schema: ArgsSchema | None = FetchCurrentPricesInput
 

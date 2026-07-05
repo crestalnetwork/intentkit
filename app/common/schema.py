@@ -1,18 +1,12 @@
-import json
 import logging
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter
 from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse
 
+from intentkit.core.agent.tool_registry import get_tool_catalog
 from intentkit.models.agent import AGENT_TAG_CATEGORIES, Agent, AgentPublicInfo
-from intentkit.tools.availability import (
-    filter_unavailable_tools,
-    import_toolset,
-    is_toolset_available,
-)
 from intentkit.utils.error import IntentKitAPIError
 
 _AGENT_PUBLIC_TAGS_PAYLOAD = [
@@ -30,32 +24,14 @@ schema_router = APIRouter()
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
-def _simplify_tool_schema(tool_schema: dict[str, Any]) -> dict[str, Any]:
-    """Reduce a toolset catalog entry to what pickers need.
-
-    Keeps the category metadata plus the ``tools`` name → info map.
-    """
-    simplified: dict[str, Any] = {}
-
-    for key in ["title", "description", "x-icon", "x-tags"]:
-        if key in tool_schema:
-            simplified[key] = tool_schema[key]
-
-    tools = tool_schema.get("tools", {})
-    if isinstance(tools, dict):
-        simplified["tools"] = tools
-
-    return simplified
-
-
 @schema_router.get("/schema/agent", tags=["Metadata"], operation_id="get_agent_schema")
 async def get_agent_schema() -> JSONResponse:
     """Get the JSON schema for Agent model with all $ref references resolved.
 
     This function applies additional adaptations:
     - Populates the model enum from the in-memory LLM catalog (enabled models only)
-    - Filters out toolsets where available() returns False
-    - Reduces each toolset catalog entry to picker metadata + tool list
+    - Attaches the toolset catalog (x-catalog) filtered to what is available
+      in the current deployment
     - Removes telegram-related fields
 
     **Returns:**
@@ -69,34 +45,11 @@ async def get_agent_schema() -> JSONResponse:
     properties.pop("telegram_entrypoint_prompt", None)
     properties.pop("telegram_config", None)
 
-    # Filter and simplify the toolset catalog
-    tools_property = properties.get("tools", {})
-    if tools_property and "x-catalog" in tools_property:
-        original_catalog = tools_property["x-catalog"]
-        filtered_catalog: dict[str, Any] = {}
-
-        for category, tool_schema in original_catalog.items():
-            module = import_toolset(category)
-            if module is None or not is_toolset_available(module):
-                logger.info(
-                    "Filtered out tool '%s': not available in current config",
-                    category,
-                )
-                continue
-
-            simplified = _simplify_tool_schema(tool_schema)
-
-            tools_map = simplified.get("tools")
-            if tools_map:
-                simplified["tools"] = filter_unavailable_tools(
-                    module, category, tools_map
-                )
-                if not simplified["tools"]:
-                    continue
-
-            filtered_catalog[category] = simplified
-
-        tools_property["x-catalog"] = filtered_catalog
+    # Attach the toolset catalog so UIs can render a picker; the config
+    # value itself is just a flat list of tool names.
+    tools_property = properties.get("tools")
+    if tools_property is not None:
+        tools_property["x-catalog"] = get_tool_catalog(available_only=True)
 
     return JSONResponse(
         content=schema,
@@ -146,37 +99,30 @@ async def get_agent_public_tags() -> JSONResponse:
     responses={
         200: {"description": "Success"},
         404: {"description": "Tool not found"},
-        400: {"description": "Invalid tool name"},
     },
 )
 async def get_tool_schema(
     tool: str = PathParam(..., description="Tool name", pattern="^[a-zA-Z0-9_-]+$"),
 ) -> JSONResponse:
-    """Get the JSON schema for a specific tool.
+    """Get the catalog entry for a specific toolset category.
+
+    Synthesized from the in-code tool catalog (kept for compatibility with
+    the old per-toolset schema.json files this endpoint used to serve).
 
     **Path Parameters:**
-    * `tool` - Tool name
+    * `tool` - Toolset category name
 
     **Returns:**
-    * `JSONResponse` - The complete JSON schema for the tool with application/json content type
+    * `JSONResponse` - The catalog entry with application/json content type
 
     **Raises:**
-    * `IntentKitAPIError` - If the tool is not found or name is invalid
+    * `IntentKitAPIError` - If the toolset is not found
     """
-    base_path = PROJECT_ROOT / "intentkit" / "tools"
-    schema_path = base_path / tool / "schema.json"
-    normalized_path = schema_path.resolve()
-
-    if not normalized_path.is_relative_to(base_path):
-        raise IntentKitAPIError(400, "BadRequest", "Invalid tool name")
-
-    try:
-        with open(normalized_path) as f:
-            schema = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    catalog = get_tool_catalog()
+    if tool not in catalog:
         raise IntentKitAPIError(404, "NotFound", "Tool schema not found")
 
-    return JSONResponse(content=schema, media_type="application/json")
+    return JSONResponse(content=catalog[tool], media_type="application/json")
 
 
 @schema_router.get(

@@ -138,6 +138,7 @@ class HailuoVideo(HailuoVideoBase):
     """Generate videos using MiniMax Hailuo 2.3."""
 
     name: str = "video_hailuo"
+    title: str = "Hailuo 2.3"
     description: str = (
         "Generate videos from text prompts or images using MiniMax Hailuo 2.3. "
         "Supports text-to-video and image-to-video. Max 10 seconds, up to 1080p."

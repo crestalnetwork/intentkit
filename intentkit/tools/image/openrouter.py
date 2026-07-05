@@ -26,6 +26,7 @@ class FluxPro(OpenRouterImageBase):
     """Generate images using FLUX.2 Pro via OpenRouter."""
 
     name: str = "image_flux_pro"
+    title: str = "FLUX.2 Pro"
     description: str = "Generate images from text prompts using FLUX.2 Pro."
     price: Decimal = Decimal("30")
     openrouter_model: str = "black-forest-labs/flux.2-pro"
@@ -35,6 +36,7 @@ class Riverflow(OpenRouterImageBase):
     """Generate images using Riverflow v2 via OpenRouter."""
 
     name: str = "image_riverflow"
+    title: str = "Riverflow v2 Fast"
     description: str = "Generate images from text prompts using Riverflow v2 Fast."
     price: Decimal = Decimal("20")
     openrouter_model: str = "sourceful/riverflow-v2-fast"

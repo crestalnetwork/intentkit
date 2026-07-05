@@ -30,6 +30,7 @@ class AaveV3GetReserveData(AaveV3BaseTool):
     """Get reserve/market data from Aave V3 including APY rates and liquidity."""
 
     name: str = NAME
+    title: str = "Get Reserve Data"
     description: str = (
         "Get Aave V3 reserve/market data: supply APY, borrow APY, "
         "total supplied, total borrowed, and reserve configuration. "

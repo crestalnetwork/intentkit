@@ -1,6 +1,7 @@
 """Web scraper tools for content indexing and retrieval."""
 
 from intentkit.config.config import config as system_config
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.web_scraper.base import WebScraperBaseTool
 from intentkit.tools.web_scraper.document_indexer import DocumentIndexer
 from intentkit.tools.web_scraper.scrape_and_index import (
@@ -8,6 +9,14 @@ from intentkit.tools.web_scraper.scrape_and_index import (
     ScrapeAndIndex,
 )
 from intentkit.tools.web_scraper.website_indexer import WebsiteIndexer
+
+toolset = ToolsetMeta(
+    title="Web Scraper & Content Indexing",
+    description="Scrape web content and index it for intelligent querying and retrieval",
+    tags=["Knowledge Base"],
+    icon="/tools/web_scraper/langchain.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, WebScraperBaseTool] = {}

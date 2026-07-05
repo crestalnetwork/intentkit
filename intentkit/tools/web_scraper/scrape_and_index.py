@@ -64,6 +64,7 @@ class ScrapeAndIndex(WebScraperBaseTool):
     """
 
     name: str = "web_scraper_scrape_and_index"
+    title: str = "Scrape & Index Content"
     description: str = (
         "Scrape web URLs and index content into a vector store. "
         "Query later with query_indexed_content tool."
@@ -175,6 +176,7 @@ class QueryIndexedContent(WebScraperBaseTool):
     """
 
     name: str = "web_scraper_query_indexed_content"
+    title: str = "Query Indexed Content"
     description: str = (
         "Query previously indexed web content to find relevant information."
     )

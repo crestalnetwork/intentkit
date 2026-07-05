@@ -28,6 +28,7 @@ class CryptoCompareFetchTopExchanges(CryptoCompareBaseTool):
     """Tool for fetching top exchanges from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_top_exchanges"
+    title: str = "Fetch Top Exchanges"
     description: str = "Fetch top exchanges for a crypto pair, ranked by volume."
     args_schema: ArgsSchema | None = CryptoCompareFetchTopExchangesInput
 

@@ -34,6 +34,7 @@ class CryptoCompareFetchTradingSignals(CryptoCompareBaseTool):
     """Tool for fetching cryptocurrency trading signals from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_trading_signals"
+    title: str = "Fetch Trading Signals"
     description: str = "Fetch latest trading signals for a cryptocurrency."
     args_schema: ArgsSchema | None = CryptoCompareFetchTradingSignalsInput
 

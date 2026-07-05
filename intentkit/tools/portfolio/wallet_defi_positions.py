@@ -28,6 +28,7 @@ class WalletDefiPositions(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_defi_positions"
+    title: str = "Wallet DeFi Positions"
     description: str = "Get DeFi positions for a wallet (liquidity, staking, lending)."
     args_schema: ArgsSchema | None = WalletDefiPositionsInput
 

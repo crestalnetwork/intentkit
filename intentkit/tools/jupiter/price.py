@@ -11,6 +11,7 @@ class JupiterGetPriceInput(BaseModel):
 
 class JupiterGetPrice(JupiterBaseTool):
     name: str = "jupiter_get_price"
+    title: str = "Jupiter Price Check"
     description: str = (
         "Get the current price of Solana tokens in USD using Jupiter Price API."
     )

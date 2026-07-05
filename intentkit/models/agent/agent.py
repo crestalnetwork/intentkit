@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import textwrap
 import warnings
@@ -309,39 +308,7 @@ class Agent(AgentCreate, AgentPublicInfo):
                         else:
                             model_property["default"] = new_enum[0]
 
-            # Attach the toolset catalog (categories with their tool names and
-            # descriptions) so UIs can render a picker; the config value
-            # itself is just a flat list of tool names.
-            tools_property = schema.get("properties", {}).get("tools", {})
-
-            tools_catalog = {}
-            tools_dir = Path(__file__).parent.parent.parent / "tools"
-
-            if tools_dir.exists():
-                for category_dir in sorted(tools_dir.iterdir()):
-                    if not category_dir.is_dir():
-                        continue
-                    tool_schema_path = category_dir / "schema.json"
-                    if not tool_schema_path.exists():
-                        continue
-                    category = category_dir.name
-                    try:
-                        with open(tool_schema_path) as f:
-                            tool_schema = json.load(f)
-                        tools_catalog[category] = {
-                            "title": tool_schema.get("title", category.title()),
-                            **tool_schema,
-                        }
-                    except (FileNotFoundError, json.JSONDecodeError) as e:
-                        logger.warning(
-                            f"Could not load schema for toolset '{category}': {e}"
-                        )
-                        continue
-
-            if tools_property:
-                tools_property["x-catalog"] = tools_catalog
-
-            # Log the changes for debugging
-            logger.debug("Schema processed with merged LLM/tool defaults")
-
+            # The toolset catalog (x-catalog on the tools property) is attached
+            # by the API layer (app/common/schema.py): the models layer must
+            # not import intentkit.tools, where the catalog now lives in code.
             return schema

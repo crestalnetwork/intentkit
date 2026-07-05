@@ -27,6 +27,7 @@ class XmtpTransfer(XmtpBaseTool):
     """Tool for creating XMTP transfer transactions."""
 
     name: str = "xmtp_transfer"
+    title: str = "XMTP Transfer"
     description: str = (
         "Create XMTP transaction for transferring ETH or ERC20 tokens. "
         "Supports Ethereum, Base, Arbitrum, and Optimism networks."

@@ -57,6 +57,7 @@ class GrokImage(GrokImageBase):
     """Generate images using Grok Imagine Image."""
 
     name: str = "image_grok"
+    title: str = "Grok Imagine"
     description: str = "Generate images from text prompts using Grok Imagine Image."
     price: Decimal = Decimal("20")
     native_model: str = "grok-imagine-image"

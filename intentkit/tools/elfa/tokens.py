@@ -53,6 +53,7 @@ class ElfaGetTrendingTokens(ElfaBaseTool):
     """
 
     name: str = "elfa_get_trending_tokens"
+    title: str = "Get Trending Tokens"
     description: str = (
         "Get trending tokens ranked by smart mentions count. Updated every 5 minutes."
     )

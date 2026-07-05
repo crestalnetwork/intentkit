@@ -45,6 +45,7 @@ class HttpPut(HttpBaseTool):
     """
 
     name: str = "http_put"
+    title: str = "HTTP PUT"
     description: str = (
         "Make an HTTP PUT request to a URL. Returns the response as text."
     )

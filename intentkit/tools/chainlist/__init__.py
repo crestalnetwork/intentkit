@@ -4,6 +4,15 @@ from typing import Any
 
 from intentkit.tools.chainlist.base import ChainlistBaseTool
 from intentkit.tools.chainlist.chain_lookup import ChainLookup
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Chainlist Tools",
+    description="Access blockchain RPC endpoints and network information from chainlist.org. Enable this tool to look up EVM-compatible networks by name, symbol, or chain ID and get their RPC endpoints, native currencies, and explorer links.",
+    tags=["Crypto", "Infrastructure"],
+    icon="/tools/chainlist/chainlist.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, ChainlistBaseTool] = {}

@@ -78,6 +78,7 @@ class FetchSolanaPortfolio(WalletBaseTool):
     """
 
     name: str = "moralis_fetch_solana_portfolio"
+    title: str = "Fetch Solana Portfolio"
     description: str = (
         "Fetch Solana wallet portfolio: SOL balance, SPL tokens, and optional NFTs."
     )

@@ -29,6 +29,7 @@ class TokenInfoAndPriceTool(CarvBaseTool):
     """
 
     name: str = "carv_token_info_and_price"
+    title: str = "Token Information and Price"
     description: str = (
         "Get token info and current USD price from CARV by ticker or name. "
         "Returns metadata including symbol, platform, tags, and contract addresses."

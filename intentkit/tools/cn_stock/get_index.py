@@ -41,6 +41,7 @@ class GetIndexInput(BaseModel):
 
 class GetIndex(CNStockBaseTool):
     name: str = "cn_stock_get_index"
+    title: str = "Get Index"
     description: str = (
         "Get spot value (and optional 30-day history) for major Chinese stock indices "
         "such as 上证指数, 深证成指, 创业板指, 沪深300. Use to gauge overall market direction."

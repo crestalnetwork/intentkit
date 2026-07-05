@@ -6,6 +6,7 @@ including routers, middleware, and startup/shutdown events.
 The API server provides endpoints for agent execution and management.
 """
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -99,6 +100,12 @@ async def lifespan(app: FastAPI):
 
     await ensure_public_agent_prerequisites()
     await sync_public_agents()
+
+    # Warm the tool catalog off the event loop: the first build imports every
+    # toolset module (seconds) and must not stall the first request.
+    from intentkit.core.agent.tool_registry import warm_tool_registry
+
+    await asyncio.to_thread(warm_tool_registry)
 
     logger.info("API server start")
     yield

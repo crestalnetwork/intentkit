@@ -26,6 +26,7 @@ class CDPGetWalletDetails(CDPBaseTool):
     """
 
     name: str = "cdp_get_wallet_details"
+    title: str = "Get Wallet Details"
     description: str = (
         "Get wallet details including address, network, balance, and provider type."
     )

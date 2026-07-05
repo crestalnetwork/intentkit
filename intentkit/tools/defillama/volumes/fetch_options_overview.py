@@ -79,6 +79,7 @@ class DefiLlamaFetchOptionsOverview(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_options_overview"
+    title: str = "Fetch Options Overview"
     description: str = FETCH_OPTIONS_OVERVIEW_PROMPT
 
     class EmptyArgsSchema(BaseModel):

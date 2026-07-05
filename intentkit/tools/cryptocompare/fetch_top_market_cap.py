@@ -27,6 +27,7 @@ class CryptoCompareFetchTopMarketCap(CryptoCompareBaseTool):
     """Tool for fetching top cryptocurrencies by market cap from CryptoCompare."""
 
     name: str = "cryptocompare_fetch_top_market_cap"
+    title: str = "Fetch Top Market Cap"
     description: str = "Fetch top cryptocurrencies ranked by market cap."
     args_schema: ArgsSchema | None = CryptoCompareFetchTopMarketCapInput
 

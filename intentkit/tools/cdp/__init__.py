@@ -9,6 +9,16 @@ from intentkit.tools.cdp.base import CDPBaseTool
 from intentkit.tools.cdp.get_balance import CDPGetBalance
 from intentkit.tools.cdp.get_wallet_details import CDPGetWalletDetails
 from intentkit.tools.cdp.native_transfer import CDPNativeTransfer
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Wallet Operations",
+    description="Basic wallet operations including balance checking, wallet details, and native token transfers. Works with any EVM-compatible wallet.",
+    tags=["Crypto", "DeFi"],
+    web3=True,
+    icon="/tools/cdp/cdp.png",
+)
+
 
 # Cache for tool instances
 _cache: dict[str, CDPBaseTool] = {

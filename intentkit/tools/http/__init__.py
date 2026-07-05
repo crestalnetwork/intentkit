@@ -6,6 +6,15 @@ from intentkit.tools.http.base import HttpBaseTool
 from intentkit.tools.http.get import HttpGet
 from intentkit.tools.http.post import HttpPost
 from intentkit.tools.http.put import HttpPut
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="HTTP Client",
+    description="HTTP client tools for making web requests",
+    tags=["Developer Tools", "Infrastructure", "Knowledge Base"],
+    icon="/tools/http/http.svg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, HttpBaseTool] = {}

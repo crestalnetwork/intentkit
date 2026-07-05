@@ -46,6 +46,7 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
     """Update the price of an existing NFT listing on OpenSea."""
 
     name: str = NAME
+    title: str = "Update Listing"
     description: str = (
         "Update the price of an existing NFT listing on OpenSea. "
         "This cancels the old listing and creates a new one with the new price. "

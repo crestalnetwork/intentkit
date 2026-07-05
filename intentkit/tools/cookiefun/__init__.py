@@ -9,6 +9,15 @@ from intentkit.tools.cookiefun.get_account_smart_followers import (
 )
 from intentkit.tools.cookiefun.get_sectors import GetSectors
 from intentkit.tools.cookiefun.search_accounts import SearchAccounts
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="CookieFun Tools",
+    description="Access Twitter/X analytics and insights using CookieFun API. Get data about accounts, tweets, followers, and trends across different industry sectors.",
+    tags=["Analytics", "Social"],
+    icon="/tools/cookiefun/cookiefun.png",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, CookieFunBaseTool] = {}

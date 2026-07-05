@@ -28,6 +28,7 @@ class OpenSeaGetNft(OpenSeaBaseTool):
     """Get detailed information about a specific NFT on OpenSea."""
 
     name: str = NAME
+    title: str = "Get NFT"
     description: str = (
         "Get detailed information about a specific NFT on OpenSea, "
         "including metadata, traits, rarity, and collection info. "

@@ -42,6 +42,7 @@ class ElfaGetSmartStats(ElfaBaseTool):
     """
 
     name: str = "elfa_get_smart_stats"
+    title: str = "Get Smart Stats"
     description: str = "Get social media metrics for a username: smart followers, engagement, and reach."
     price: Decimal = Decimal("15")
     args_schema: ArgsSchema | None = ElfaGetSmartStatsInput

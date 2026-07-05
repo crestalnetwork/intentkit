@@ -30,6 +30,7 @@ class DuneRunSQL(DuneBaseTool):
     """
 
     name: str = "dune_run_sql"
+    title: str = "Run SQL"
     description: str = (
         "Execute a raw DuneSQL query against blockchain data. "
         "Use this for custom analytics when no saved query exists."

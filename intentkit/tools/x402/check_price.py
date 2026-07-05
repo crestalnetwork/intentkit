@@ -60,6 +60,7 @@ class X402CheckPrice(X402BaseTool):
     """Tool that checks the price of a 402-protected HTTP resource without making a payment."""
 
     name: str = "x402_check_price"
+    title: str = "Check Price"
     description: str = (
         "Check the price of a 402-protected resource without paying. "
         "Returns payment requirements (amount, asset, network)."

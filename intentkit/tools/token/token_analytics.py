@@ -28,6 +28,7 @@ class TokenAnalytics(TokenBaseTool):
     """
 
     name: str = "token_analytics"
+    title: str = "Token Analytics"
     description: str = (
         "Get token analytics: trading volume, buyers/sellers, and liquidity."
     )

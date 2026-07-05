@@ -9,6 +9,15 @@ from intentkit.tools.image.gpt import GPTImageFlagship, GPTImageMini
 from intentkit.tools.image.grok import GrokImage
 from intentkit.tools.image.minimax import MiniMaxImage
 from intentkit.tools.image.openrouter import FluxPro, Riverflow
+from intentkit.tools.meta import ToolsetMeta
+
+toolset = ToolsetMeta(
+    title="Image Generation",
+    description="Generate images from text prompts using multiple AI providers. Supports GPT, Gemini, Grok, FLUX, and Riverflow models with automatic API fallback to OpenRouter.",
+    tags=["Media", "AI"],
+    icon="/tools/image/image.svg",
+)
+
 
 # Cache tools at the system level, because they are stateless
 _cache: dict[str, ImageBaseTool] = {}

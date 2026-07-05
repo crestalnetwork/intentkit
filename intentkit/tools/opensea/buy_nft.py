@@ -29,6 +29,7 @@ class OpenSeaBuyNft(OpenSeaOnChainBaseTool):
     """Buy an NFT by fulfilling a listing on OpenSea."""
 
     name: str = NAME
+    title: str = "Buy NFT"
     description: str = (
         "Buy an NFT by fulfilling a listing on OpenSea. "
         "Requires the order_hash and protocol_address from get_listings. "

@@ -47,6 +47,7 @@ class CasinoDeckDraw(CasinoBaseTool):
     """
 
     name: str = NAME
+    title: str = "Draw Cards"
     description: str = PROMPT
     args_schema: ArgsSchema | None = CasinoDeckDrawInput
 

@@ -33,6 +33,7 @@ class XmtpSwap(XmtpBaseTool):
     """
 
     name: str = "xmtp_swap"
+    title: str = "XMTP Swap"
     description: str = (
         "Create XMTP swap transaction via CDP quote. "
         "Supports Ethereum, Base, Arbitrum, and Optimism mainnet."

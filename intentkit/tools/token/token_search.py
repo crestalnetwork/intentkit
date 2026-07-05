@@ -38,6 +38,7 @@ class TokenSearch(TokenBaseTool):
     """
 
     name: str = "token_search"
+    title: str = "Token Search (Premium)"
     description: str = (
         "Search tokens by address, name, or symbol. Requires Moralis Business plan."
     )

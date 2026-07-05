@@ -25,6 +25,7 @@ class PythFetchPrice(PythBaseTool):
     """
 
     name: str = "pyth_fetch_price"
+    title: str = "Fetch Price"
     description: str = "Fetch price from a Pyth price feed by ID. Use pyth_fetch_price_feed first to get the feed ID from a ticker symbol."
     args_schema: ArgsSchema | None = FetchPriceInput
 

@@ -26,6 +26,7 @@ class GetFinancialsInput(BaseModel):
 
 class GetFinancials(CNStockBaseTool):
     name: str = "cn_stock_get_financials"
+    title: str = "Get Financials"
     description: str = (
         "Get key financial metrics (EPS, ROE, profit, revenue, margins, growth) for "
         "an A-share by reporting period. Use for fundamental analysis and trend tracking."

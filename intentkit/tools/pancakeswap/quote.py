@@ -38,6 +38,7 @@ class PancakeSwapQuote(PancakeSwapBaseTool):
     """Get a PancakeSwap V3 swap quote."""
 
     name: str = NAME
+    title: str = "Swap Quote"
     description: str = (
         "Get a PancakeSwap V3 swap quote. Returns expected output amount. "
         "Provide token contract addresses and amount in human-readable format."

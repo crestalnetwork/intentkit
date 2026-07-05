@@ -62,6 +62,7 @@ class DefiLlamaFetchStablecoinCharts(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_stablecoin_charts"
+    title: str = "Fetch Stablecoin Charts"
     description: str = FETCH_STABLECOIN_CHARTS_PROMPT
     args_schema: ArgsSchema | None = FetchStablecoinChartsInput
 

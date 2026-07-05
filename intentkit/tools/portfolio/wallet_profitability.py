@@ -36,6 +36,7 @@ class WalletProfitability(PortfolioBaseTool):
     """
 
     name: str = "portfolio_wallet_profitability"
+    title: str = "Wallet Profitability Breakdown"
     description: str = "Get per-token profitability breakdown for a wallet."
     args_schema: ArgsSchema | None = WalletProfitabilityInput
 

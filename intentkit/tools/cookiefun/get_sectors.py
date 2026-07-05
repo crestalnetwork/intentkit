@@ -20,6 +20,7 @@ class GetSectors(CookieFunBaseTool):
     """Tool to get all available sectors from the CookieFun API."""
 
     name: str = "cookiefun_get_sectors"
+    title: str = "Get Sectors"
     description: str = (
         "Returns a list of all available sectors in the CookieFun system."
     )

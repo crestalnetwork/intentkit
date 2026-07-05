@@ -80,6 +80,7 @@ class DefiLlamaFetchPools(DefiLlamaBaseTool):
     """
 
     name: str = "defillama_fetch_pools"
+    title: str = "Fetch Pools"
     description: str = FETCH_POOLS_PROMPT
     args_schema: ArgsSchema | None = NoArgsSchema  # No input parameters needed
 

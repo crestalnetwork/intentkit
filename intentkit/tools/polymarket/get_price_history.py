@@ -39,6 +39,7 @@ class GetPriceHistory(PolymarketBaseTool):
     """
 
     name: str = "polymarket_get_price_history"
+    title: str = "Get Price History"
     description: str = (
         "Get historical price data for a Polymarket outcome token. "
         "Returns time-series data showing how the probability has changed. "

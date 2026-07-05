@@ -1,10 +1,20 @@
 """x402 toolset."""
 
+from intentkit.tools.meta import ToolsetMeta
 from intentkit.tools.x402.base import X402BaseTool
 from intentkit.tools.x402.check_price import X402CheckPrice
 from intentkit.tools.x402.get_orders import X402GetOrders
 from intentkit.tools.x402.http_request import X402HttpRequest
 from intentkit.tools.x402.pay import X402Pay
+
+toolset = ToolsetMeta(
+    title="x402",
+    description="Interact with other IntentKit agents through the x402 payment protocol.",
+    tags=["Communication", "Infrastructure"],
+    web3=True,
+    icon="/tools/x402/x402.webp",
+)
+
 
 # Cache tools at the module level, because they are stateless
 _cache: dict[str, X402BaseTool] = {}
