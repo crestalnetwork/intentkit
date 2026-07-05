@@ -141,7 +141,6 @@ async def execute_autonomous(
         owner_user_id=LEAD_USER_ID,
         task_id=task.id,
         prompt=task.prompt,
-        has_memory=task.has_memory,
         target_agent_id=task.target_agent_id,
         trigger=AutonomousExecutionTrigger.MANUAL,
         triggered_by=LEAD_USER_ID,

@@ -20,9 +20,6 @@ class AddAutonomousTaskInput(BaseModel):
     name: str | None = Field(default=None, description="Display name of the task")
     description: str | None = Field(default=None, description="Description of the task")
     enabled: bool = Field(default=True, description="Whether the task is enabled")
-    has_memory: bool = Field(
-        default=False, description="Whether to retain memory between runs"
-    )
     target_agent_id: str | None = Field(
         default=None,
         description=(
@@ -64,7 +61,6 @@ class LeadAddAutonomousTask(LeadTool):
         name: str | None = None,
         description: str | None = None,
         enabled: bool = True,
-        has_memory: bool = False,
         target_agent_id: str | None = None,
         **kwargs: Any,
     ) -> AddAutonomousTaskOutput:
@@ -77,7 +73,6 @@ class LeadAddAutonomousTask(LeadTool):
             cron=cron,
             prompt=prompt,
             enabled=enabled,
-            has_memory=has_memory,
             target_agent_id=target_agent_id,
         )
         created_task = await add_autonomous_task(

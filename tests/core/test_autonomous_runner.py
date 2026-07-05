@@ -39,7 +39,9 @@ def _ok_response():
 def _patch_runner(stack, *, claimed=True, response=None):
     """Patch the runner's collaborators; returns the mocks that tests assert on."""
     response = response if response is not None else _ok_response()
-    stack.enter_context(patch(f"{MODULE}.clear_thread_memory", new=AsyncMock()))
+    clear_memory_mock = stack.enter_context(
+        patch(f"{MODULE}.clear_thread_memory", new=AsyncMock())
+    )
     stack.enter_context(patch(f"{MODULE}.create_agent_activity", new=AsyncMock()))
     # The claim returns the persisted execution, or None when the task's run
     # slot is taken.
@@ -49,6 +51,7 @@ def _patch_runner(stack, *, claimed=True, response=None):
         else AsyncMock(return_value=None)
     )
     mocks = SimpleNamespace(
+        clear_thread_memory=clear_memory_mock,
         claim=stack.enter_context(
             patch(f"{MODULE}.claim_autonomous_execution", new=claim_mock)
         ),
@@ -76,12 +79,13 @@ async def test_runner_direct_path_when_target_agent_set():
             owner_user_id="user-1",
             task_id="task-1",
             prompt="do it",
-            has_memory=True,
             target_agent_id="agent-x",
         )
 
         mocks.execute_agent.assert_awaited_once()
         mocks.execute_lead.assert_not_awaited()
+        # Every run starts from a clean thread; history is never retained.
+        mocks.clear_thread_memory.assert_awaited_once()
         # The direct message targets the agent itself.
         call = mocks.execute_agent.await_args
         assert call is not None
@@ -100,12 +104,13 @@ async def test_runner_lead_path_when_no_target_agent():
             owner_user_id="user-1",
             task_id="task-1",
             prompt="do it",
-            has_memory=False,
             target_agent_id=None,
         )
 
         mocks.execute_agent.assert_not_awaited()
         mocks.execute_lead.assert_awaited_once()
+        # The unconditional clean-thread rule applies to the lead path too.
+        mocks.clear_thread_memory.assert_awaited_once()
         call = mocks.execute_lead.await_args
         assert call is not None
         assert call.args[0] == "team-1"
@@ -131,6 +136,8 @@ async def test_runner_skips_when_previous_run_in_progress():
         mocks.execute_agent.assert_not_awaited()
         mocks.execute_lead.assert_not_awaited()
         mocks.finish_execution.assert_not_awaited()
+        # A skipped run must not touch the running conversation's thread.
+        mocks.clear_thread_memory.assert_not_awaited()
 
 
 @pytest.mark.asyncio

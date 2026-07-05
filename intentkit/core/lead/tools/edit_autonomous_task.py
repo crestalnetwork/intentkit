@@ -23,9 +23,6 @@ class EditAutonomousTaskInput(BaseModel):
     cron: str | None = Field(default=None, description="Cron expression")
     prompt: str | None = Field(default=None, description="Special prompt")
     enabled: bool | None = Field(default=None, description="Whether enabled")
-    has_memory: bool | None = Field(
-        default=None, description="Whether to retain memory between runs"
-    )
     target_agent_id: str | None = Field(
         default=None,
         description="Pin the task to run directly on this team agent.",
@@ -66,7 +63,6 @@ class LeadEditAutonomousTask(LeadTool):
         cron: str | None = None,
         prompt: str | None = None,
         enabled: bool | None = None,
-        has_memory: bool | None = None,
         target_agent_id: str | None = None,
         clear_target_agent: bool = False,
         **kwargs: Any,
@@ -82,7 +78,6 @@ class LeadEditAutonomousTask(LeadTool):
             "cron": cron,
             "prompt": prompt,
             "enabled": enabled,
-            "has_memory": has_memory,
             "target_agent_id": target_agent_id,
         }
         provided = {

@@ -33,7 +33,6 @@ function buildFormData(
       cron: task.cron || "",
       prompt: task.prompt || "",
       enabled: task.enabled,
-      has_memory: task.has_memory,
       target_agent_id: task.target_agent_id || "",
     };
   }
@@ -43,7 +42,6 @@ function buildFormData(
     cron: "0 0 * * *",
     prompt: "",
     enabled: true,
-    has_memory: false,
     target_agent_id: defaultTargetAgentId || "",
   };
 }
@@ -193,42 +191,22 @@ export function TaskDialog({
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="enabled"
-                  checked={formData.enabled}
-                  onChange={(e) =>
-                    setFormData({ ...formData, enabled: e.target.checked })
-                  }
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label
-                  htmlFor="enabled"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Enabled
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="has_memory"
-                  checked={formData.has_memory}
-                  onChange={(e) =>
-                    setFormData({ ...formData, has_memory: e.target.checked })
-                  }
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label
-                  htmlFor="has_memory"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Enable Memory
-                </label>
-              </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="enabled"
+                checked={formData.enabled}
+                onChange={(e) =>
+                  setFormData({ ...formData, enabled: e.target.checked })
+                }
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label
+                htmlFor="enabled"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Enabled
+              </label>
             </div>
           </div>
 

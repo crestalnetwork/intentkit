@@ -43,7 +43,6 @@ async def test_add_autonomous_task_to_team():
         cron="0 9 * * *",
         prompt="Generate the daily report",
         enabled=True,
-        has_memory=False,
     )
     task = await add_autonomous_task("auto-team-1", task_request)
 

@@ -129,14 +129,6 @@ export default function TaskDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {task.has_memory && (
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-800 hover:bg-blue-100"
-              >
-                Memory
-              </Badge>
-            )}
             <Badge variant={task.enabled ? "default" : "secondary"}>
               {task.enabled ? "Enabled" : "Disabled"}
             </Badge>

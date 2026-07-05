@@ -73,7 +73,6 @@ def _to_row(task: AutonomousTask) -> AutonomousTaskTable:
         cron=task.cron,
         prompt=task.prompt,
         enabled=task.enabled,
-        has_memory=task.has_memory,
         status=task.status.value if task.status else None,
         next_run_time=task.next_run_time,
     )
@@ -125,7 +124,6 @@ async def add_autonomous_task(
             name=task_request.name,
             description=task_request.description,
             enabled=task_request.enabled,
-            has_memory=task_request.has_memory,
         ).normalize_status_defaults()
 
         row = _to_row(task)
@@ -168,7 +166,6 @@ async def update_autonomous_task(
         row.cron = merged.cron
         row.prompt = merged.prompt
         row.enabled = merged.enabled
-        row.has_memory = merged.has_memory
         row.status = merged.status.value if merged.status else None
         row.next_run_time = merged.next_run_time
 

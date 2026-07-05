@@ -40,10 +40,10 @@ _INSERT = text(
     """
     INSERT INTO autonomous_tasks
         (id, team_id, target_agent_id, name, description, cron, prompt,
-         enabled, has_memory, status, next_run_time)
+         enabled, status, next_run_time)
     VALUES
         (:id, :team_id, :target_agent_id, :name, :description, :cron, :prompt,
-         :enabled, :has_memory, :status, :next_run_time)
+         :enabled, :status, :next_run_time)
     ON CONFLICT (id) DO NOTHING
     """
 )
@@ -118,7 +118,6 @@ def build_task_rows(
                 continue
 
             enabled = task.get("enabled")
-            has_memory = task.get("has_memory")
             rows.append(
                 {
                     "id": task_id,
@@ -129,8 +128,6 @@ def build_task_rows(
                     "cron": cron,
                     "prompt": task.get("prompt") or "",
                     "enabled": True if enabled is None else bool(enabled),
-                    # Old scheduler treated unset has_memory as True; preserve that.
-                    "has_memory": True if has_memory is None else bool(has_memory),
                     "status": task.get("status"),
                     "next_run_time": _parse_dt(task.get("next_run_time")),
                 }

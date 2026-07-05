@@ -350,6 +350,9 @@ async def _build_autonomous_task_prompt(agent: Agent, context: AgentContext) -> 
     task_info += (
         ". In autonomous task, you cannot ask the user for clarification or input. "
         "You must make all decisions on your own. "
+        "Conversation history is NOT retained between runs: every run starts "
+        "fresh, so persist anything future runs need with the update_memory "
+        "tool (this task has its own cron-scoped memory). "
         "If an error prevents the task from proceeding, you may use create_activity to report the error only"
     )
 

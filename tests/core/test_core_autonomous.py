@@ -41,7 +41,6 @@ def _fake_row(**overrides):
         cron="*/5 * * * *",
         prompt="p",
         enabled=True,
-        has_memory=False,
         status="waiting",
         next_run_time=None,
         created_at=None,

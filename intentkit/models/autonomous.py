@@ -161,10 +161,6 @@ class AutonomousCreateRequest(BaseModel):
         default=True,
         description="Whether the autonomous configuration is enabled",
     )
-    has_memory: bool = PydanticField(
-        default=False,
-        description="Whether to retain conversation memory between autonomous runs.",
-    )
     target_agent_id: str | None = PydanticField(
         default=None,
         description=(
@@ -202,10 +198,6 @@ class AutonomousUpdateRequest(BaseModel):
     enabled: bool | None = PydanticField(
         default=None,
         description="Whether the autonomous configuration is enabled",
-    )
-    has_memory: bool | None = PydanticField(
-        default=None,
-        description="Whether to retain conversation memory between autonomous runs.",
     )
     target_agent_id: str | None = PydanticField(
         default=None,
@@ -283,16 +275,6 @@ class AutonomousTask(BaseModel):
             description="Whether the autonomous configuration is enabled",
         ),
     ] = True
-    has_memory: Annotated[
-        bool,
-        PydanticField(
-            default=False,
-            description=(
-                "Whether to retain conversation memory between autonomous runs. "
-                "If False, thread memory is cleared before each run."
-            ),
-        ),
-    ] = False
     status: Annotated[
         AutonomousTaskStatus | None,
         PydanticField(
@@ -400,12 +382,6 @@ class AutonomousTaskTable(Base):
         nullable=False,
         default=True,
         server_default=text("true"),
-    )
-    has_memory: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default=text("false"),
     )
     status: Mapped[str | None] = mapped_column(
         String,

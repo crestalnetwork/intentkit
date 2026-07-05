@@ -27,7 +27,6 @@ def test_create_request_carries_team_targeting_fields():
     )
     assert req.target_agent_id == "agent-abc"
     assert req.enabled is True
-    assert req.has_memory is False
 
 
 def test_update_request_target_agent_id_optional():

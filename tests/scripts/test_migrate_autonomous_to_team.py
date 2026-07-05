@@ -81,7 +81,7 @@ def test_build_rows_skips_task_without_schedule():
     assert stats["skipped_no_cron"] == 1
 
 
-def test_build_rows_preserves_runtime_and_defaults_has_memory():
+def test_build_rows_preserves_runtime():
     build_task_rows = load_script_module().build_task_rows
     agent_rows = [
         (
@@ -93,14 +93,12 @@ def test_build_rows_preserves_runtime_and_defaults_has_memory():
                     "cron": "0 9 * * *",
                     "prompt": "do",
                     "status": "waiting",
-                    # has_memory omitted -> preserve old scheduler default (True)
                 }
             ],
         )
     ]
     rows, _stats = build_task_rows(agent_rows)
     assert rows[0]["status"] == "waiting"
-    assert rows[0]["has_memory"] is True
 
 
 def _patch_module_session(module, first_row):

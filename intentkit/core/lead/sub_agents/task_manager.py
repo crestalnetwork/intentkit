@@ -71,7 +71,9 @@ def build_task_manager(team_id: str) -> Agent:
         "(e.g. every 5 min). Unless the user wants it to run forever, tell the "
         "task to delete itself once the condition is met.\n\n"
         "Tips:\n"
-        "- Set `has_memory=True` only when the task needs context between runs.\n"
+        "- Runs never retain conversation history; if a task must carry "
+        "facts between runs, tell it (in its prompt) to record them with "
+        "update_memory — each task has its own cron-scoped memory.\n"
         "- Prefer disabling (`enabled=False`) over deleting for temporary pauses.\n"
     )
 

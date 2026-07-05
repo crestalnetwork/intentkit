@@ -1119,7 +1119,6 @@ export interface AutonomousTask {
   cron?: string;
   prompt: string;
   enabled: boolean;
-  has_memory: boolean;
   status?: string;
   next_run_time?: string;
   chat_id: string;
