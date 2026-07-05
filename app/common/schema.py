@@ -93,39 +93,6 @@ async def get_agent_public_tags() -> JSONResponse:
 
 
 @schema_router.get(
-    "/tools/{tool}/schema.json",
-    tags=["Metadata"],
-    operation_id="get_tool_schema",
-    responses={
-        200: {"description": "Success"},
-        404: {"description": "Tool not found"},
-    },
-)
-async def get_tool_schema(
-    tool: str = PathParam(..., description="Tool name", pattern="^[a-zA-Z0-9_-]+$"),
-) -> JSONResponse:
-    """Get the catalog entry for a specific toolset category.
-
-    Synthesized from the in-code tool catalog (kept for compatibility with
-    the old per-toolset schema.json files this endpoint used to serve).
-
-    **Path Parameters:**
-    * `tool` - Toolset category name
-
-    **Returns:**
-    * `JSONResponse` - The catalog entry with application/json content type
-
-    **Raises:**
-    * `IntentKitAPIError` - If the toolset is not found
-    """
-    catalog = get_tool_catalog()
-    if tool not in catalog:
-        raise IntentKitAPIError(404, "NotFound", "Tool schema not found")
-
-    return JSONResponse(content=catalog[tool], media_type="application/json")
-
-
-@schema_router.get(
     "/tools/{tool}/{icon_name}.{ext}",
     tags=["Metadata"],
     operation_id="get_tool_icon",
