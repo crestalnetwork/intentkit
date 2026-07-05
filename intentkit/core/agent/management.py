@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -6,12 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from intentkit.config.db import get_session
 from intentkit.models.agent import Agent, AgentCreate, AgentUpdate
+from intentkit.models.agent.core import AgentVisibility
 from intentkit.models.agent.db import AgentTable
 from intentkit.models.agent_data import AgentData
 from intentkit.utils.error import IntentKitAPIError
 
 from .info import invalidate_agent_info
 from .notifications import send_agent_notification
+from .publish import (
+    ensure_not_referenced_by_public_agent,
+    ensure_sub_agents_public,
+    is_public_visibility,
+)
 from .queries import get_agent, get_agent_by_id_or_slug
 from .tool_registry import filter_web3_tool_names, sanitize_tools, validate_tools
 
@@ -73,6 +80,44 @@ async def _validate_sub_agents(sub_agents: list[str]) -> None:
             )
 
 
+async def _ensure_visibility_invariants(
+    agent_id: str,
+    existing_agent: Agent,
+    *,
+    new_visibility: int | AgentVisibility | None,
+    new_sub_agents: list[str] | None,
+    new_archived_at: datetime | None,
+    new_slug: str | None,
+    visibility_changing: bool,
+    sub_agents_changing: bool,
+) -> None:
+    """A live public agent may only reference public sub-agents, and an agent
+    referenced by a live public agent cannot be hidden or archived.
+
+    Covers every transition reachable through override/patch: becoming
+    public, editing sub_agents while public, un-archiving back into a live
+    public agent, leaving public, and archiving.
+    """
+    self_refs = {ref for ref in (agent_id, existing_agent.slug, new_slug) if ref}
+    was_public = is_public_visibility(existing_agent.visibility)
+    will_be_public = is_public_visibility(new_visibility)
+    was_archived = existing_agent.archived_at is not None
+    will_be_archived = new_archived_at is not None
+    unarchiving = was_archived and not will_be_archived
+
+    if (
+        will_be_public
+        and not will_be_archived
+        and (visibility_changing or sub_agents_changing or unarchiving)
+    ):
+        await ensure_sub_agents_public(new_sub_agents, exclude=self_refs)
+
+    becomes_hidden = was_public and visibility_changing and not will_be_public
+    archiving = will_be_archived and not was_archived
+    if becomes_hidden or archiving:
+        await ensure_not_referenced_by_public_agent(agent_id, existing_agent.slug)
+
+
 async def override_agent(
     agent_id: str, agent: AgentUpdate, owner: str | None = None
 ) -> tuple[Agent, AgentData]:
@@ -119,6 +164,18 @@ async def override_agent(
 
     # Web3 tools are only usable when the team owns at least one wallet
     await _validate_web3_tools(agent.tools, existing_agent.team_id)
+
+    # Visibility invariants (override replaces every field)
+    await _ensure_visibility_invariants(
+        agent_id,
+        existing_agent,
+        new_visibility=agent.visibility,
+        new_sub_agents=agent.sub_agents,
+        new_archived_at=agent.archived_at,
+        new_slug=agent.slug,
+        visibility_changing=True,
+        sub_agents_changing=True,
+    )
 
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
@@ -202,6 +259,18 @@ async def patch_agent(
     if "tools" in update_fields:
         await _validate_web3_tools(update_fields["tools"], existing_agent.team_id)
 
+    # Visibility invariants (patch changes only the provided fields)
+    await _ensure_visibility_invariants(
+        agent_id,
+        existing_agent,
+        new_visibility=update_fields.get("visibility", existing_agent.visibility),
+        new_sub_agents=update_fields.get("sub_agents", existing_agent.sub_agents),
+        new_archived_at=update_fields.get("archived_at", existing_agent.archived_at),
+        new_slug=update_fields.get("slug"),
+        visibility_changing="visibility" in update_fields,
+        sub_agents_changing="sub_agents" in update_fields,
+    )
+
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
         if not db_agent:
@@ -270,6 +339,12 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     # Validate sub-agents if present
     if agent.sub_agents:
         await _validate_sub_agents(agent.sub_agents)
+
+    # An agent born public may only reference public sub-agents
+    if is_public_visibility(agent.visibility):
+        await ensure_sub_agents_public(
+            agent.sub_agents, exclude={agent.slug} if agent.slug else None
+        )
 
     # Validate tools configuration
     if agent.tools:

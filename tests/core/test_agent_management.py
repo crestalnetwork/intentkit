@@ -44,6 +44,9 @@ def _make_existing_agent(**overrides):
         slug="my-slug",
         purpose="some purpose",
         team_id=None,
+        visibility=None,
+        archived_at=None,
+        sub_agents=None,
     )
     defaults.update(overrides)
     agent = MagicMock()
@@ -72,6 +75,8 @@ def _make_agent_update(**overrides):
     agent.slug = dump.get("slug")
     agent.sub_agents = dump.get("sub_agents")
     agent.tools = dump.get("tools")
+    agent.visibility = dump.get("visibility")
+    agent.archived_at = dump.get("archived_at")
     return agent
 
 

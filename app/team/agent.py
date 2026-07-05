@@ -17,6 +17,11 @@ from intentkit.core.agent import (
     publish_agent,
     unpublish_agent,
 )
+from intentkit.core.agent.publish import (
+    ensure_not_referenced_by_public_agent,
+    ensure_sub_agents_public,
+    is_public_visibility,
+)
 from intentkit.core.lead import invalidate_lead_cache
 from intentkit.core.team.membership import check_permission
 from intentkit.core.template import render_agent
@@ -295,6 +300,9 @@ async def archive_agent(
     _user_id, team_id = auth
     agent = await get_team_agent(agent_id, team_id)
 
+    # A sub-agent of a public agent cannot be archived while referenced.
+    await ensure_not_referenced_by_public_agent(agent.id, agent.slug)
+
     async with get_session() as db:
         result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))
         agent_row = result.scalar_one_or_none()
@@ -320,6 +328,14 @@ async def reactivate_agent(
     """Reactivate an archived agent within the team."""
     _user_id, team_id = auth
     agent = await get_team_agent(agent_id, team_id)
+
+    # Un-archiving a public agent revives its guest-facing call_agent
+    # surface: its sub-agents must all (still) be public.
+    if is_public_visibility(agent.visibility):
+        await ensure_sub_agents_public(
+            agent.sub_agents,
+            exclude={ref for ref in (agent.id, agent.slug) if ref},
+        )
 
     async with get_session() as db:
         result = await db.execute(select(AgentTable).where(AgentTable.id == agent.id))

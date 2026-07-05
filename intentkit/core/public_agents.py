@@ -75,6 +75,21 @@ async def ensure_public_agent_prerequisites() -> None:
         logger.error("Failed to create public agent prerequisites: %s", e)
 
 
+async def _warn_if_referenced(agent_id: str, slug: str | None) -> None:
+    """Log (never block) when archiving a predefined agent breaks references."""
+    from intentkit.core.agent.publish import ensure_not_referenced_by_public_agent
+    from intentkit.utils.error import IntentKitAPIError
+
+    try:
+        await ensure_not_referenced_by_public_agent(agent_id, slug)
+    except IntentKitAPIError as e:
+        logger.warning(
+            "Archiving predefined agent %s strands public references: %s",
+            agent_id,
+            e.message,
+        )
+
+
 async def sync_public_agents() -> None:
     """Sync public agent YAML files to the database.
 
@@ -163,6 +178,10 @@ async def sync_public_agents() -> None:
 
             if not model_available:
                 if existing and existing.archived_at is None:
+                    # System-curated agents are exempt from the visibility
+                    # invariants (they define their own YAML world), but
+                    # archiving one may strand user agents that reference it.
+                    await _warn_if_referenced(existing.id, existing.slug)
                     existing.archived_at = datetime.now(UTC)
                     logger.info(
                         "Archived public agent %s: model %s not available",
@@ -230,6 +249,7 @@ async def sync_public_agents() -> None:
         for agent in all_predefined.values():
             if agent.slug and agent.slug not in syncing_slugs:
                 if agent.archived_at is None:
+                    await _warn_if_referenced(agent.id, agent.slug)
                     agent.archived_at = datetime.now(UTC)
                     archived += 1
                     logger.info(

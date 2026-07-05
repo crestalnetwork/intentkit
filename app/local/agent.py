@@ -30,6 +30,11 @@ from intentkit.core.agent import (
 from intentkit.core.agent import (
     get_agent as get_agent_by_id,
 )
+from intentkit.core.agent.publish import (
+    ensure_not_referenced_by_public_agent,
+    ensure_sub_agents_public,
+    is_public_visibility,
+)
 from intentkit.core.lead import invalidate_lead_cache
 from intentkit.core.template import render_agent
 from intentkit.models.agent import (
@@ -462,6 +467,9 @@ async def archive_agent(
     if not agent:
         raise IntentKitAPIError(404, "NotFound", "Agent not found")
 
+    # A sub-agent of a public agent cannot be archived while referenced.
+    await ensure_not_referenced_by_public_agent(agent.id, agent.slug)
+
     # Update archived_at in database
     async with get_session() as db:
         result = await db.execute(select(AgentTable).where(AgentTable.id == agent_id))
@@ -500,6 +508,14 @@ async def reactivate_agent(
     agent = await get_agent_by_id(agent_id)
     if not agent:
         raise IntentKitAPIError(404, "NotFound", "Agent not found")
+
+    # Un-archiving a public agent revives its guest-facing call_agent
+    # surface: its sub-agents must all (still) be public.
+    if is_public_visibility(agent.visibility):
+        await ensure_sub_agents_public(
+            agent.sub_agents,
+            exclude={ref for ref in (agent.id, agent.slug) if ref},
+        )
 
     # Clear archived_at in database
     async with get_session() as db:

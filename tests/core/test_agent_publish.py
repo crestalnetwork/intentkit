@@ -276,8 +276,12 @@ async def test_unpublish_agent_idempotent_when_already_team(
 
     select_result = MagicMock()
     select_result.scalar_one_or_none.return_value = db_agent
+    ref_check_result = MagicMock()
+    ref_check_result.all.return_value = []
     delete_result = MagicMock()
-    session.execute = AsyncMock(side_effect=[select_result, delete_result])
+    session.execute = AsyncMock(
+        side_effect=[select_result, ref_check_result, delete_result]
+    )
     mock_agent_cls.model_validate.return_value = MagicMock()
 
     await unpublish_agent(agent_id="agent-1")
@@ -302,16 +306,20 @@ async def test_unpublish_agent_clears_subscriptions_only(
 
     select_result = MagicMock()
     select_result.scalar_one_or_none.return_value = db_agent
+    ref_check_result = MagicMock()
+    ref_check_result.all.return_value = []
     delete_result = MagicMock()
-    # First execute() returns the SELECT, second returns the DELETE.
-    session.execute = AsyncMock(side_effect=[select_result, delete_result])
+    # SELECT agent, then the public-reference check, then the DELETE.
+    session.execute = AsyncMock(
+        side_effect=[select_result, ref_check_result, delete_result]
+    )
     mock_agent_cls.model_validate.return_value = MagicMock()
 
     await unpublish_agent(agent_id="agent-1")
 
     assert db_agent.visibility == AgentVisibility.TEAM
-    # Exactly two execute calls: one SELECT for the agent + one DELETE
-    # against team_subscriptions. No further deletes against feed tables.
-    assert session.execute.await_count == 2
+    # Exactly three execute calls: agent SELECT + reference check + one
+    # DELETE against team_subscriptions. No deletes against feed tables.
+    assert session.execute.await_count == 3
     session.commit.assert_awaited_once()
     session.refresh.assert_awaited_once_with(db_agent)

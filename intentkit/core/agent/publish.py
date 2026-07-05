@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 
 from intentkit.config.db import get_session
 from intentkit.core.agent.public_info import apply_public_info_update
@@ -18,6 +18,98 @@ if TYPE_CHECKING:
     from intentkit.models.agent import Agent
 
 
+def is_public_visibility(visibility: int | AgentVisibility | None) -> bool:
+    return visibility is not None and visibility >= AgentVisibility.PUBLIC
+
+
+async def ensure_sub_agents_public(
+    sub_agents: list[str] | None, *, exclude: set[str] | None = None
+) -> None:
+    """Every referenced sub-agent must itself be public (and alive).
+
+    A public agent's call_agent is usable by guests, so a hidden sub-agent
+    reachable through it would leak across the visibility boundary.
+
+    Best-effort validation: it runs in its own transaction, so a concurrent
+    visibility flip can slip past it (same trade-off as the pre-existing
+    ``_validate_sub_agents``; the no-FK convention rules out DB enforcement).
+
+    Raises:
+        IntentKitAPIError 400 ``SubAgentsNotPublic`` listing offending refs.
+    """
+    if not sub_agents:
+        return
+    exclude = exclude or set()
+    not_public: list[str] = []
+    async with get_session() as session:
+        for ref in dict.fromkeys(sub_agents):  # dedup, keep order
+            if ref in exclude:
+                continue
+            rows = (
+                (
+                    await session.execute(
+                        select(AgentTable).where(
+                            or_(AgentTable.id == ref, AgentTable.slug == ref)
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            # Id takes priority over slug, mirroring runtime resolution
+            # (get_agent_by_id_or_slug): a ref could match one agent's id
+            # and another agent's slug.
+            row = next((r for r in rows if r.id == ref), rows[0] if rows else None)
+            if (
+                row is None
+                or row.archived_at is not None
+                or not is_public_visibility(row.visibility)
+            ):
+                not_public.append(ref)
+    if not_public:
+        raise IntentKitAPIError(
+            400,
+            "SubAgentsNotPublic",
+            "All sub-agents of a public agent must be public themselves. "
+            f"Not public: {', '.join(not_public)}",
+        )
+
+
+async def ensure_not_referenced_by_public_agent(
+    agent_id: str, slug: str | None = None
+) -> None:
+    """Refuse hiding/archiving/deleting an agent a public agent delegates to.
+
+    Sub-agent references may use the agent's id or its slug; both are checked.
+    Best-effort validation (own transaction; see ``ensure_sub_agents_public``).
+
+    Raises:
+        IntentKitAPIError 409 ``ReferencedByPublicAgent``.
+    """
+    refs = [agent_id] + ([slug] if slug else [])
+    async with get_session() as session:
+        stmt = (
+            select(AgentTable.id, AgentTable.name)
+            .where(
+                AgentTable.visibility >= AgentVisibility.PUBLIC,
+                AgentTable.archived_at.is_(None),
+                AgentTable.id != agent_id,
+                or_(*[AgentTable.sub_agents.contains([ref]) for ref in refs]),
+            )
+            .order_by(AgentTable.id)
+            .limit(5)
+        )
+        rows = (await session.execute(stmt)).all()
+    if rows:
+        names = ", ".join(str(name or row_id) for row_id, name in rows)
+        raise IntentKitAPIError(
+            409,
+            "ReferencedByPublicAgent",
+            "This agent is a sub-agent of public agent(s) and cannot be "
+            f"hidden, archived, or deleted while referenced: {names}",
+        )
+
+
 async def publish_agent(*, agent_id: str, public_info: AgentPublicInfo) -> "Agent":
     """Mark an agent as public after merging in the supplied public info.
 
@@ -27,7 +119,8 @@ async def publish_agent(*, agent_id: str, public_info: AgentPublicInfo) -> "Agen
 
     Raises:
         IntentKitAPIError 404: agent missing.
-        IntentKitAPIError 400: agent has no team_id (cannot enforce limit).
+        IntentKitAPIError 400: agent has no team_id, or a sub-agent is not
+            public (``SubAgentsNotPublic``).
         IntentKitAPIError 403: team has reached its public_agent_limit.
     """
     from intentkit.models.agent import Agent
@@ -47,13 +140,13 @@ async def publish_agent(*, agent_id: str, public_info: AgentPublicInfo) -> "Agen
                 "Only team-owned agents can be published",
             )
 
+        self_refs = {ref for ref in (db_agent.id, db_agent.slug) if ref}
+        await ensure_sub_agents_public(db_agent.sub_agents, exclude=self_refs)
+
         # Re-publishing an already public agent is allowed and bypasses the
         # quota check so operators can update public_info without losing
         # access to their own existing slot.
-        is_already_public = (
-            db_agent.visibility is not None
-            and db_agent.visibility >= AgentVisibility.PUBLIC
-        )
+        is_already_public = is_public_visibility(db_agent.visibility)
 
         if not is_already_public:
             # SELECT FOR UPDATE on the team row serializes concurrent publishes
@@ -101,6 +194,7 @@ async def unpublish_agent(*, agent_id: str) -> "Agent":
 
     Raises:
         IntentKitAPIError 404: agent missing.
+        IntentKitAPIError 409: a live public agent references this agent.
     """
     from intentkit.models.agent import Agent
 
@@ -111,6 +205,8 @@ async def unpublish_agent(*, agent_id: str) -> "Agent":
         db_agent = result.scalar_one_or_none()
         if not db_agent:
             raise IntentKitAPIError(404, "NotFound", f"Agent {agent_id} not found")
+
+        await ensure_not_referenced_by_public_agent(db_agent.id, db_agent.slug)
 
         db_agent.visibility = AgentVisibility.TEAM
 
