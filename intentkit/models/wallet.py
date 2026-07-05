@@ -282,7 +282,15 @@ class TeamWallet(BaseModel):
             for key, value in data.items():
                 setattr(item, key, value)
             db.add(item)
-            await db.commit()
+            try:
+                await db.commit()
+            except IntegrityError as e:
+                # ix_team_wallets_team_name: names are unique per team
+                raise IntentKitAPIError(
+                    400,
+                    "WalletNameTaken",
+                    f"The team already has a wallet named '{data.get('name')}'.",
+                ) from e
             await db.refresh(item)
             wallet = cls.model_validate(item)
         _cache_put(wallet)

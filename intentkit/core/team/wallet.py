@@ -9,10 +9,12 @@ import json
 import logging
 
 from epyxid import XID
+from sqlalchemy import or_, select
 
 from intentkit.config.config import config
+from intentkit.config.db import get_session
 from intentkit.models.team import Team
-from intentkit.models.wallet import WALLET_PROVIDERS, TeamWallet
+from intentkit.models.wallet import WALLET_PROVIDERS, TeamWallet, wallet_owner_team
 from intentkit.utils.error import IntentKitAPIError
 
 logger = logging.getLogger(__name__)
@@ -183,14 +185,15 @@ async def create_team_wallet(
 
 
 async def set_wallet_safe_token_spending_limit(
+    team_id: str,
     wallet_id: str,
     token_address: str,
     spending_limit: float,
 ) -> dict:
-    """Set a token spending limit on a team's Safe wallet."""
+    """Set a token spending limit on a team's Safe wallet (team-scoped)."""
     from intentkit.wallets.privy import PrivyClient, set_safe_token_spending_limit
 
-    wallet = await TeamWallet.get(wallet_id)
+    wallet = await TeamWallet.get_for_team(wallet_id, team_id)
     if not wallet:
         raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
     if wallet.wallet_provider != "safe":
@@ -234,3 +237,73 @@ async def set_wallet_safe_token_spending_limit(
         network_id=network_id,
         rpc_url=rpc_url,
     )
+
+
+async def rename_team_wallet(team_id: str, wallet_id: str, name: str) -> TeamWallet:
+    """Rename a team wallet (names stay unique within the team).
+
+    Raises:
+        IntentKitAPIError 404: wallet missing or not owned by the team.
+        IntentKitAPIError 400: the team already has a wallet with that name.
+    """
+    wallet = await TeamWallet.get_for_team(wallet_id, team_id)
+    if not wallet:
+        raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
+    updated = await TeamWallet.patch(wallet_id, {"name": name})
+    if updated is None:
+        raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
+    return updated
+
+
+async def delete_team_wallet(team_id: str, wallet_id: str) -> None:
+    """Delete a team wallet.
+
+    Deleting the team's LAST wallet is refused while any live team agent has
+    web3 tools configured — agent create/update enforces "team owns a wallet"
+    for web3 tools, and deletion must not silently break that invariant.
+    Funds are NOT swept: the caller is expected to have emptied the wallet.
+
+    Raises:
+        IntentKitAPIError 404: wallet missing or not owned by the team.
+        IntentKitAPIError 409: last wallet while web3-tool agents exist.
+    """
+    from intentkit.core.agent.tool_registry import filter_web3_tool_names
+    from intentkit.models.agent.db import AgentTable
+
+    wallet = await TeamWallet.get_for_team(wallet_id, team_id)
+    if not wallet:
+        raise IntentKitAPIError(404, "WalletNotFound", "Wallet not found")
+
+    team_wallets = await TeamWallet.list_for_team(team_id)
+    if len(team_wallets) <= 1:
+        # Teamless agents belong to the synthetic "system" team by the
+        # wallet_owner_team convention — the guard must see them too.
+        team_filter = AgentTable.team_id == team_id
+        if team_id == wallet_owner_team(None):
+            team_filter = or_(
+                AgentTable.team_id == team_id, AgentTable.team_id.is_(None)
+            )
+        async with get_session() as db:
+            rows = (
+                await db.execute(
+                    select(AgentTable.id, AgentTable.name, AgentTable.tools).where(
+                        team_filter,
+                        AgentTable.archived_at.is_(None),
+                        AgentTable.tools.isnot(None),
+                    )
+                )
+            ).all()
+        blocking = [
+            str(name or agent_id)
+            for agent_id, name, tools in rows
+            if tools and filter_web3_tool_names(tools)
+        ]
+        if blocking:
+            raise IntentKitAPIError(
+                409,
+                "WalletRequiredByAgents",
+                "Cannot delete the team's last wallet: these agents have "
+                f"web3 tools configured: {', '.join(blocking[:5])}",
+            )
+
+    await TeamWallet.delete(wallet_id)

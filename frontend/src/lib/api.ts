@@ -1352,9 +1352,36 @@ export const walletApi = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.message || `Failed to create wallet: ${response.statusText}`,
+        errorData.msg || errorData.message || `Failed to create wallet: ${response.statusText}`,
       );
     }
     return response.json();
+  },
+
+  async renameWallet(walletId: string, name: string): Promise<TeamWallet> {
+    const response = await fetch(`${API_BASE}/wallets/${walletId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.msg || errorData.message || `Failed to rename wallet: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
+
+  async deleteWallet(walletId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/wallets/${walletId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.msg || errorData.message || `Failed to delete wallet: ${response.statusText}`,
+      );
+    }
   },
 };

@@ -2,16 +2,22 @@
 
 Wallets belong to the team, never to an agent. Web3 tools pick a wallet by
 address from the team's pool at call time. Members can list wallets; only
-admins can create them. Provider payloads (private keys, Privy ids) are never returned —
-``TeamWallet.wallet_data`` is excluded from serialization.
+admins can create, rename, delete, or adjust them. Provider payloads
+(private keys, Privy ids) are never returned — ``TeamWallet.wallet_data``
+is excluded from serialization.
 """
 
 import logging
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Path, Response
 from pydantic import BaseModel, Field
 
-from intentkit.core.team.wallet import create_team_wallet
+from intentkit.core.team.wallet import (
+    create_team_wallet,
+    delete_team_wallet,
+    rename_team_wallet,
+    set_wallet_safe_token_spending_limit,
+)
 from intentkit.models.wallet import TeamWallet
 
 from app.team.auth import verify_team_admin, verify_team_member
@@ -78,4 +84,77 @@ async def create_wallet(
         network_id=body.network_id,
         readonly_address=body.readonly_address,
         weekly_spending_limit=body.weekly_spending_limit,
+    )
+
+
+class WalletRenameRequest(BaseModel):
+    """Rename a wallet."""
+
+    name: str = Field(
+        min_length=1,
+        max_length=50,
+        description="New display name, unique within the team",
+    )
+
+
+@team_wallet_router.patch(
+    "/teams/{team_id}/wallets/{wallet_id}",
+    response_model=TeamWallet,
+    operation_id="team_rename_wallet",
+    summary="Rename a team wallet (Team)",
+    tags=["Wallet"],
+)
+async def rename_wallet(
+    wallet_id: str = Path(..., description="Wallet ID"),
+    body: WalletRenameRequest = Body(...),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+) -> TeamWallet:
+    """Rename a team wallet."""
+    _user_id, team_id = auth
+    return await rename_team_wallet(team_id, wallet_id, body.name)
+
+
+@team_wallet_router.delete(
+    "/teams/{team_id}/wallets/{wallet_id}",
+    status_code=204,
+    operation_id="team_delete_wallet",
+    summary="Delete a team wallet (Team)",
+    tags=["Wallet"],
+)
+async def delete_wallet(
+    wallet_id: str = Path(..., description="Wallet ID"),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+) -> Response:
+    """Delete a team wallet.
+
+    Funds are not swept — empty the wallet first. Refused (409) for the
+    team's last wallet while live agents have web3 tools configured.
+    """
+    _user_id, team_id = auth
+    await delete_team_wallet(team_id, wallet_id)
+    return Response(status_code=204)
+
+
+class WalletSpendingLimitRequest(BaseModel):
+    """Set a token spending limit on a Safe wallet."""
+
+    token_address: str = Field(description="ERC20 token contract address")
+    spending_limit: float = Field(ge=0.0, description="Spending limit in token units")
+
+
+@team_wallet_router.put(
+    "/teams/{team_id}/wallets/{wallet_id}/spending-limit",
+    operation_id="team_set_wallet_spending_limit",
+    summary="Set a Safe wallet token spending limit (Team)",
+    tags=["Wallet"],
+)
+async def set_wallet_spending_limit(
+    wallet_id: str = Path(..., description="Wallet ID"),
+    body: WalletSpendingLimitRequest = Body(...),
+    auth: tuple[str, str] = Depends(verify_team_admin),
+) -> dict:
+    """Set a token spending limit on the team's Safe wallet."""
+    _user_id, team_id = auth
+    return await set_wallet_safe_token_spending_limit(
+        team_id, wallet_id, body.token_address, body.spending_limit
     )

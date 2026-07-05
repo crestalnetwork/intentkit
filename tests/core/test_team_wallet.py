@@ -10,6 +10,8 @@ import pytest_asyncio
 from intentkit.config.base import Base
 from intentkit.core.team.wallet import (
     create_team_wallet,
+    delete_team_wallet,
+    rename_team_wallet,
     set_wallet_safe_token_spending_limit,
 )
 from intentkit.models.agent import Agent, AgentVisibility
@@ -26,6 +28,35 @@ async def wallet_tables(db_engine):
             Base.metadata.create_all, tables=[TeamWalletTable.__table__]
         )
     yield
+
+
+@pytest_asyncio.fixture()
+async def agent_table(db_engine):
+    from intentkit.models.agent.db import AgentTable
+
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all, tables=[AgentTable.__table__])
+    yield
+
+
+async def _add_agent_row(
+    agent_id: str, *, tools: list[str] | None, team_id: str | None = "team-1"
+) -> None:
+    from intentkit.config.db import get_session
+    from intentkit.models.agent.db import AgentTable
+
+    async with get_session() as db:
+        db.add(
+            AgentTable(
+                id=agent_id,
+                name=agent_id,
+                model="gpt-4o",
+                owner="user-1",
+                team_id=team_id,
+                tools=tools,
+            )
+        )
+        await db.commit()
 
 
 def _build_agent(team_id: str | None = "team-1") -> Agent:
@@ -219,7 +250,9 @@ class TestSafeSpendingLimit:
             created_by="user-1",
         )
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await set_wallet_safe_token_spending_limit(wallet.id, "0xtoken", 10.0)
+            await set_wallet_safe_token_spending_limit(
+                "team-1", wallet.id, "0xtoken", 10.0
+            )
         assert exc_info.value.key == "SafeWalletRequired"
 
     @pytest.mark.asyncio
@@ -248,7 +281,7 @@ class TestSafeSpendingLimit:
         )
 
         result = await set_wallet_safe_token_spending_limit(
-            wallet.id, "0x1111111111111111111111111111111111111111", 123.45
+            "team-1", wallet.id, "0x1111111111111111111111111111111111111111", 123.45
         )
 
         set_limit_mock.assert_awaited_once()
@@ -260,3 +293,119 @@ class TestSafeSpendingLimit:
         assert kwargs["network_id"] == "base-mainnet"
         assert kwargs["rpc_url"] == "http://rpc.url"
         assert result == {"next_nonce": 1}
+
+
+class TestWalletManagement:
+    @pytest.mark.asyncio
+    async def test_rename(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="old-name",
+            wallet_provider="readonly",
+            evm_wallet_address="0xw",
+            created_by="user-1",
+        )
+        renamed = await rename_team_wallet("team-1", wallet.id, "new-name")
+        assert renamed.name == "new-name"
+
+    @pytest.mark.asyncio
+    async def test_rename_to_taken_name_rejected(self, wallet_tables):
+        await TeamWallet.create(
+            team_id="team-1",
+            name="taken",
+            wallet_provider="readonly",
+            evm_wallet_address="0xa",
+            created_by="user-1",
+        )
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="mine",
+            wallet_provider="readonly",
+            evm_wallet_address="0xb",
+            created_by="user-1",
+        )
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await rename_team_wallet("team-1", wallet.id, "taken")
+        assert exc_info.value.key == "WalletNameTaken"
+
+    @pytest.mark.asyncio
+    async def test_rename_other_team_wallet_rejected(self, wallet_tables):
+        wallet = await TeamWallet.create(
+            team_id="team-2",
+            name="other",
+            wallet_provider="readonly",
+            evm_wallet_address="0xo",
+            created_by="user-2",
+        )
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await rename_team_wallet("team-1", wallet.id, "stolen")
+        assert exc_info.value.key == "WalletNotFound"
+
+    @pytest.mark.asyncio
+    async def test_delete_with_remaining_wallets(self, wallet_tables, agent_table):
+        keep = await TeamWallet.create(
+            team_id="team-1",
+            name="keep",
+            wallet_provider="readonly",
+            evm_wallet_address="0xk",
+            created_by="user-1",
+        )
+        gone = await TeamWallet.create(
+            team_id="team-1",
+            name="gone",
+            wallet_provider="readonly",
+            evm_wallet_address="0xg",
+            created_by="user-1",
+        )
+        await delete_team_wallet("team-1", gone.id)
+        wallets = await TeamWallet.list_for_team("team-1")
+        assert [w.id for w in wallets] == [keep.id]
+
+    @pytest.mark.asyncio
+    async def test_delete_last_wallet_blocked_by_web3_agents(
+        self, wallet_tables, agent_table
+    ):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="last",
+            wallet_provider="readonly",
+            evm_wallet_address="0xl",
+            created_by="user-1",
+        )
+        await _add_agent_row("agent-web3", tools=["erc20_transfer"])
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await delete_team_wallet("team-1", wallet.id)
+        assert exc_info.value.key == "WalletRequiredByAgents"
+
+    @pytest.mark.asyncio
+    async def test_delete_last_system_wallet_blocked_by_teamless_web3_agents(
+        self, wallet_tables, agent_table
+    ):
+        """Teamless agents belong to the synthetic system team by convention;
+        the last-wallet guard must count them too."""
+        wallet = await TeamWallet.create(
+            team_id="system",
+            name="sys",
+            wallet_provider="readonly",
+            evm_wallet_address="0xs",
+            created_by="system",
+        )
+        await _add_agent_row("agent-orphan", tools=["erc20_transfer"], team_id=None)
+        with pytest.raises(IntentKitAPIError) as exc_info:
+            await delete_team_wallet("system", wallet.id)
+        assert exc_info.value.key == "WalletRequiredByAgents"
+
+    @pytest.mark.asyncio
+    async def test_delete_last_wallet_ok_without_web3_agents(
+        self, wallet_tables, agent_table
+    ):
+        wallet = await TeamWallet.create(
+            team_id="team-1",
+            name="last",
+            wallet_provider="readonly",
+            evm_wallet_address="0xl",
+            created_by="user-1",
+        )
+        await _add_agent_row("agent-plain", tools=["http_get"])
+        await delete_team_wallet("team-1", wallet.id)
+        assert await TeamWallet.list_for_team("team-1") == []

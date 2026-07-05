@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, Plus, Wallet as WalletIcon } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  Wallet as WalletIcon,
+  X,
+} from "lucide-react";
 
 import {
   walletApi,
@@ -11,6 +20,17 @@ import {
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +81,10 @@ function shortAddress(address: string): string {
 }
 
 function WalletCard({ wallet }: { wallet: TeamWallet }) {
+  const queryClient = useQueryClient();
   const provider = PROVIDERS.find((p) => p.value === wallet.wallet_provider);
+  const [editing, setEditing] = useState(false);
+  const [newName, setNewName] = useState(wallet.name);
 
   const copyAddress = () => {
     if (!wallet.evm_wallet_address) return;
@@ -69,17 +92,106 @@ function WalletCard({ wallet }: { wallet: TeamWallet }) {
     toast({ title: "Address copied", variant: "success" });
   };
 
+  const renameMutation = useMutation({
+    mutationFn: (name: string) => walletApi.renameWallet(wallet.id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      toast({ title: "Wallet renamed", variant: "success" });
+      setEditing(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to rename wallet",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => walletApi.deleteWallet(wallet.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      toast({ title: "Wallet deleted", variant: "success" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete wallet",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const submitRename = () => {
+    if (renameMutation.isPending) return;
+    const name = newName.trim();
+    if (!name || name === wallet.name) {
+      setEditing(false);
+      setNewName(wallet.name);
+      return;
+    }
+    renameMutation.mutate(name);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <WalletIcon className="h-4 w-4 text-muted-foreground" />
-            {wallet.name}
-          </CardTitle>
-          <Badge variant="secondary">
-            {provider?.label ?? wallet.wallet_provider}
-          </Badge>
+        <div className="flex items-center justify-between gap-2">
+          {editing ? (
+            <div className="flex flex-1 items-center gap-1.5">
+              <Input
+                value={newName}
+                maxLength={50}
+                className="h-8"
+                autoFocus
+                disabled={renameMutation.isPending}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitRename();
+                  if (e.key === "Escape") {
+                    setEditing(false);
+                    setNewName(wallet.name);
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={submitRename}
+                disabled={renameMutation.isPending}
+              >
+                {renameMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                disabled={renameMutation.isPending}
+                onClick={() => {
+                  setEditing(false);
+                  setNewName(wallet.name);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <CardTitle className="flex items-center gap-2 text-base">
+              <WalletIcon className="h-4 w-4 text-muted-foreground" />
+              {wallet.name}
+            </CardTitle>
+          )}
+          {!editing ? (
+            <Badge variant="secondary">
+              {provider?.label ?? wallet.wallet_provider}
+            </Badge>
+          ) : null}
         </div>
         {wallet.network_id ? (
           <CardDescription>{wallet.network_id}</CardDescription>
@@ -103,6 +215,57 @@ function WalletCard({ wallet }: { wallet: TeamWallet }) {
           <p className="mt-1 text-xs text-muted-foreground">
             Weekly limit: {wallet.weekly_spending_limit} USDC
           </p>
+        ) : null}
+        {!editing ? (
+          <div className="mt-3 flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                setNewName(wallet.name);
+                setEditing(true);
+              }}
+            >
+              <Pencil className="mr-1 h-3 w-3" />
+              Rename
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-1 h-3 w-3" />
+                  )}
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Delete wallet &quot;{wallet.name}&quot;?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Funds are NOT swept automatically — make sure the wallet
+                    is empty first. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteMutation.mutate()}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         ) : null}
       </CardContent>
     </Card>
@@ -156,8 +319,8 @@ function CreateWalletForm({ onDone }: { onDone: () => void }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-base">New Wallet</CardTitle>
         <CardDescription>
-          Wallets are shared team resources. Authorize an agent to use one by
-          setting its Team Wallet field.
+          Wallets are shared team resources. Agents with web3 tools pick one
+          by address at tool-call time.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
