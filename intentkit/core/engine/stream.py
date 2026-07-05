@@ -368,18 +368,20 @@ async def stream_agent_raw(
             yield payment_error
             return
 
-    is_private = False
+    # Is the agent operated by its owning team? Owner, same-team member, or
+    # the system user qualify; anyone else is a guest of a published agent.
+    is_own_team = False
     if user_message.user_id == agent.owner:
-        is_private = True
-    # Team-level access: if both team_ids exist and match, treat as private
+        is_own_team = True
+    # Team-level access: if both team_ids exist and match
     # Use original message (not user_message) because team_id is excluded from DB persistence
     if message.team_id and agent.team_id and message.team_id == agent.team_id:
-        is_private = True
-    # Hack for local mode: treat "system" user as private.
+        is_own_team = True
+    # Hack for local mode: treat the "system" user as the owning team.
     # This is safe because in authenticated environments,
     # user_id cannot be "system".
     if user_message.user_id == "system":
-        is_private = True
+        is_own_team = True
 
     last = start
 
@@ -499,7 +501,7 @@ async def stream_agent_raw(
         team_id=message.team_id,
         app_id=user_message.app_id,
         entrypoint=user_message.thread_entrypoint,
-        is_private=is_private,
+        is_own_team=is_own_team,
         payer=payer if payment_enabled else None,
         start_message_id=user_message.id,
         start_message_attachments=user_message.attachments,

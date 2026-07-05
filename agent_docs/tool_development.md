@@ -122,8 +122,8 @@ Categories whose tools operate on team wallets must set `web3=True` in their
 - Read-only usage resolves the wallet with `self.resolve_wallet(address)` and
   reads via `self.web3_client()`. Anything that signs or sends must use the
   guarded helpers (`get_unified_wallet` / `get_wallet_provider` /
-  `get_wallet_signer` / `get_evm_account`), which refuse to sign when the
-  agent is being used outside its own team (public conversations).
+  `get_wallet_signer` / `get_evm_account`), which refuse to sign unless the
+  owning team is running the agent (`context.is_own_team`).
 
 The `tags` in the toolset metadata should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search, Social
 

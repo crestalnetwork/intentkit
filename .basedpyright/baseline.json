@@ -160,14 +160,6 @@
                     "endColumn": 0,
                     "lineCount": 1
                 }
-            },
-            {
-                "code": "reportImportCycles",
-                "range": {
-                    "startColumn": 0,
-                    "endColumn": 0,
-                    "lineCount": 1
-                }
             }
         ],
         "./intentkit/core/public_api.py": [

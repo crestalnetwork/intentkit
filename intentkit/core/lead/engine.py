@@ -250,9 +250,9 @@ async def _get_lead_executor(
     if not executor or not lead_agent:
         start = time.perf_counter()
 
-        # The executor needs a real AgentData so DynamicPromptMiddleware can
-        # render long_term_memory into the system prompt. When both the agent
-        # and executor are cold, fetch agent_data in parallel with the build.
+        # The executor needs a real AgentData for DynamicPromptMiddleware.
+        # When both the agent and executor are cold, fetch agent_data in
+        # parallel with the build.
         # The Composio MCP tools for the team's linked accounts ([] when the
         # team has none) also load here, in the same gather — they hit the
         # network, and this is the cold-start path. They are rebuilt per

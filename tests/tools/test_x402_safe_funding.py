@@ -46,7 +46,7 @@ def _safe_agent_context() -> MagicMock:
 
     mock_context = MagicMock()
     mock_context.agent = mock_agent
-    mock_context.is_private = True
+    mock_context.is_own_team = True
     return mock_context
 
 

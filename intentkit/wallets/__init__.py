@@ -110,7 +110,7 @@ async def get_wallet_signer(agent: "Agent", wallet_address: str) -> WalletSigner
     """Build the signer for one of the agent's team wallets.
 
     This only constructs the signer; the signing authorization check
-    (private context + team ownership) lives in the tool layer, which has
+    (own-team context + team ownership) lives in the tool layer, which has
     the caller context.
     """
     wallet = await resolve_team_wallet(agent, wallet_address)

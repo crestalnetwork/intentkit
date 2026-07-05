@@ -348,7 +348,7 @@ async def test_call_agent_forwards_billing_payer(
     forwarded = mock_execute_agent.await_args.args[0]
     assert forwarded.payer == expected
     # team_id is intentionally left untouched so the sub-agent's access context
-    # (is_private) is unaffected by delegation.
+    # (is_own_team) is unaffected by delegation.
     assert forwarded.team_id is None
 
 

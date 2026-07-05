@@ -18,6 +18,7 @@ from web3.exceptions import TimeExhausted, Web3RPCError
 from x402.schemas import PaymentRequired, PaymentRequiredV1
 
 from intentkit.config.config import config
+from intentkit.models.chat import AUTONOMOUS_CHAT_PREFIX
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.tools.onchain import IntentKitOnChainTool
 from intentkit.utils.alert import send_alert
@@ -612,8 +613,8 @@ class X402BaseTool(IntentKitOnChainTool):
 
             # Derive task_id from chat_id for autonomous tasks
             task_id = None
-            if chat_id.startswith("autonomous-"):
-                task_id = chat_id.removeprefix("autonomous-")
+            if chat_id.startswith(AUTONOMOUS_CHAT_PREFIX):
+                task_id = chat_id.removeprefix(AUTONOMOUS_CHAT_PREFIX)
 
             # Parse payment response header (v1/v2, base64-encoded JSON)
             payment_response_header = get_payment_response_header(response)

@@ -247,7 +247,7 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
         CLOB credentials give full control of the wallet's trading account,
         so even the CACHED path is gated on the signing rule — otherwise a
-        public conversation could reuse creds derived during a private run.
+        guest conversation could reuse creds derived during an own-team run.
         """
         self.ensure_signing_allowed()
         cache_key = f"api_creds:{wallet_address.lower()}"

@@ -35,16 +35,18 @@ class LeadUpdateSelfMemory(LeadTool):
 
     @override
     async def _arun(self, content: str, **kwargs: Any) -> str:
-        from intentkit.core.memory import update_memory
+        from intentkit.core.memory import update_scoped_memory
 
         context = self.get_context()
         if not context.team_id:
             raise ToolException("No team_id in context")
         lead_agent_id = f"team-{context.team_id}"
 
-        # update_memory invalidates the lead cache internally for team-* IDs,
-        # so no explicit invalidate_lead_cache call is needed here.
-        updated = await update_memory(lead_agent_id, content)
+        # The lead's own memory is its team-scope row; write it directly so
+        # this works from the self-updater sub-agent context too.
+        updated = await update_scoped_memory(
+            lead_agent_id, "team", context.team_id, content
+        )
         return f"Lead agent memory updated successfully. Current memory:\n{updated}"
 
 

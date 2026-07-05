@@ -41,6 +41,11 @@ class ChatMessageAttachmentType(str, Enum):
     CHOICE = "choice"
 
 
+# Autonomous runs use chat ids of the form "autonomous-{task_id}"; shared so
+# consumers (prompt/memory/entrypoints) parse the task id one way.
+AUTONOMOUS_CHAT_PREFIX = "autonomous-"
+
+
 class AuthorType(str, Enum):
     """Type of message author."""
 

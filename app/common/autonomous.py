@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from intentkit.core.agent import AgentInfo, get_agent_infos
 from intentkit.models.autonomous import AutonomousExecution, AutonomousTask
+from intentkit.models.chat import AUTONOMOUS_CHAT_PREFIX
 
 
 class AutonomousResponse(AutonomousTask):
@@ -19,7 +20,7 @@ class AutonomousResponse(AutonomousTask):
     def from_model(cls, model: AutonomousTask) -> "AutonomousResponse":
         """Convert from AutonomousTask model to AutonomousResponse."""
         data = model.model_dump()
-        data["chat_id"] = f"autonomous-{model.id}"
+        data["chat_id"] = f"{AUTONOMOUS_CHAT_PREFIX}{model.id}"
         return cls.model_validate(data)
 
 

@@ -50,21 +50,21 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
     """Middleware that selects tools and model parameters based on context."""
 
     llm_model: LLMModel
-    public_tools: list[BaseTool | dict[str, Any]]
-    private_tools: list[BaseTool | dict[str, Any]]
+    guest_tools: list[BaseTool | dict[str, Any]]
+    team_tools: list[BaseTool | dict[str, Any]]
     extra_llm_params: dict[str, Any]
 
     def __init__(
         self,
         llm_model: LLMModel,
-        public_tools: list[BaseTool | dict[str, Any]],
-        private_tools: list[BaseTool | dict[str, Any]],
+        guest_tools: list[BaseTool | dict[str, Any]],
+        team_tools: list[BaseTool | dict[str, Any]],
         extra_llm_params: dict[str, Any] | None = None,
     ) -> None:
         super().__init__()
         self.llm_model = llm_model
-        self.public_tools = public_tools
-        self.private_tools = private_tools
+        self.guest_tools = guest_tools
+        self.team_tools = team_tools
         self.extra_llm_params = extra_llm_params or {}
 
     @override
@@ -78,7 +78,7 @@ class ToolBindingMiddleware(AgentMiddleware[AgentState, AgentContext]):
         llm_params: dict[str, Any] = {**self.extra_llm_params}
         # Tools are already deduplicated at build time in executor.py
         tools: list[BaseTool | dict[str, Any]] = list(
-            self.private_tools if context.is_private else self.public_tools
+            self.team_tools if context.is_own_team else self.guest_tools
         )
 
         model = await self.llm_model.create_instance(llm_params)
@@ -265,9 +265,9 @@ class SafeLLMToolSelectorMiddleware(LLMToolSelectorMiddleware):
 
     Upstream raises `ValueError` when any name in `always_include` isn't
     present in `request.tools`. In IntentKit, `ToolBindingMiddleware` swaps
-    the tool list to public or private per-request, so a name pinned from
-    `private_tools` (e.g. `update_memory`, `call_agent`) may legitimately be
-    absent on a public-context request. Filter to what's actually available
+    the tool list to guest or team per-request, so a name pinned from
+    `team_tools` (e.g. `call_agent`) may legitimately be
+    absent on a guest-context request. Filter to what's actually available
     rather than crashing.
     """
 

@@ -31,7 +31,7 @@ def _mock_context(network_id: str = "base-mainnet") -> MagicMock:
     mock_agent.id = "test-agent"
     ctx = MagicMock()
     ctx.agent = mock_agent
-    ctx.is_private = True
+    ctx.is_own_team = True
     return ctx
 
 
@@ -341,8 +341,8 @@ class TestAaveV3GetUserAccountData:
         """Reads only resolve the team wallet; they never acquire a signer."""
         tool = AaveV3GetUserAccountData()
         ctx = _mock_context()
-        # Public conversation: signing would be rejected, reads must still work
-        ctx.is_private = False
+        # Guest conversation: signing would be rejected, reads must still work
+        ctx.is_own_team = False
 
         mock_pool = MagicMock()
         mock_pool.functions.getUserAccountData.return_value.call = AsyncMock(

@@ -58,27 +58,27 @@ class _DummyOnChainTool(IntentKitOnChainTool):
 
 
 class TestSigningGuard:
-    def _tool_with_context(self, is_private: bool) -> _DummyOnChainTool:
+    def _tool_with_context(self, is_own_team: bool) -> _DummyOnChainTool:
         tool = _DummyOnChainTool()
         context = MagicMock()
-        context.is_private = is_private
+        context.is_own_team = is_own_team
         context.agent = _build_agent()
         object.__setattr__(tool, "get_context", lambda: context)
         return tool
 
-    def test_public_context_cannot_sign(self):
+    def test_guest_context_cannot_sign(self):
         from langchain_core.tools.base import ToolException
 
-        tool = self._tool_with_context(is_private=False)
+        tool = self._tool_with_context(is_own_team=False)
         with pytest.raises(ToolException, match="Signing is not allowed"):
             tool.ensure_signing_allowed()
 
-    def test_private_context_can_sign(self):
-        tool = self._tool_with_context(is_private=True)
+    def test_own_team_context_can_sign(self):
+        tool = self._tool_with_context(is_own_team=True)
         tool.ensure_signing_allowed()  # must not raise
 
     @pytest.mark.asyncio
-    async def test_public_context_can_still_read(self, wallet_tables):
+    async def test_guest_context_can_still_read(self, wallet_tables):
         wallet = await TeamWallet.create(
             team_id="team-1",
             name="readable",
@@ -86,7 +86,7 @@ class TestSigningGuard:
             evm_wallet_address="0xread",
             created_by="user-1",
         )
-        tool = self._tool_with_context(is_private=False)
+        tool = self._tool_with_context(is_own_team=False)
         resolved = await tool.resolve_wallet("0xread")
         assert resolved.id == wallet.id
 
@@ -102,7 +102,7 @@ class TestSigningGuard:
             wallet_data='{"address": "0xhot", "private_key": "00", "network_id": "base-mainnet"}',
             created_by="user-1",
         )
-        tool = self._tool_with_context(is_private=False)
+        tool = self._tool_with_context(is_own_team=False)
         with pytest.raises(ToolException):
             await tool.get_wallet_signer("0xhot")
         with pytest.raises(ToolException):

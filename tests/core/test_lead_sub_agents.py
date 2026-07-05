@@ -32,9 +32,6 @@ async def test_get_self_info_defaults(mock_lead_runtime):
     """Returns default values when no persisted config exists."""
     from intentkit.core.lead.tools.get_self_info import LeadGetSelfInfo
 
-    mock_agent_data = MagicMock()
-    mock_agent_data.long_term_memory = None
-
     tool = LeadGetSelfInfo()
     with (
         patch(
@@ -42,8 +39,8 @@ async def test_get_self_info_defaults(mock_lead_runtime):
             new=AsyncMock(return_value=None),
         ),
         patch(
-            "intentkit.core.lead.tools.get_self_info.AgentData.get",
-            new=AsyncMock(return_value=mock_agent_data),
+            "intentkit.core.lead.tools.get_self_info.Memory.get",
+            new=AsyncMock(return_value=None),
         ),
     ):
         result = await tool._arun()
@@ -62,8 +59,8 @@ async def test_get_self_info_with_config(mock_lead_runtime):
     """Returns persisted config values when they exist."""
     from intentkit.core.lead.tools.get_self_info import LeadGetSelfInfo
 
-    mock_agent_data = MagicMock()
-    mock_agent_data.long_term_memory = "I remember things"
+    mock_memory = MagicMock()
+    mock_memory.content = "I remember things"
 
     tool = LeadGetSelfInfo()
     with (
@@ -78,8 +75,8 @@ async def test_get_self_info_with_config(mock_lead_runtime):
             ),
         ),
         patch(
-            "intentkit.core.lead.tools.get_self_info.AgentData.get",
-            new=AsyncMock(return_value=mock_agent_data),
+            "intentkit.core.lead.tools.get_self_info.Memory.get",
+            new=AsyncMock(return_value=mock_memory),
         ),
     ):
         result = await tool._arun()
@@ -186,12 +183,14 @@ async def test_update_self_memory(mock_lead_runtime):
 
     tool = LeadUpdateSelfMemory()
     with patch(
-        "intentkit.core.memory.update_memory",
+        "intentkit.core.memory.update_scoped_memory",
         new=AsyncMock(return_value="merged memory content"),
     ) as mock_update:
         result = await tool._arun(content="New info to remember")
 
-    mock_update.assert_called_once_with("team-test-team", "New info to remember")
+    mock_update.assert_called_once_with(
+        "team-test-team", "team", "test-team", "New info to remember"
+    )
     assert "merged memory content" in result
     assert "updated successfully" in result
 

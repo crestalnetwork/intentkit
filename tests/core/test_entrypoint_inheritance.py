@@ -69,7 +69,7 @@ def _context(
         get_agent=lambda: agent,
         chat_id=chat_id,
         entrypoint=entrypoint,
-        is_private=True,
+        is_own_team=True,
         call_depth=call_depth,
     )
 

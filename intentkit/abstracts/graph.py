@@ -94,7 +94,11 @@ class AgentContext(BaseModel):
     # Original user entry channel (web/telegram/trigger/...), inherited across
     # call_agent chains. Never INTERNAL — use is_subagent to detect delegation.
     entrypoint: AuthorType
-    is_private: bool
+    # True when the agent is operated by its owning team: the owner user, a
+    # member of the owning team, or the system user. False when a stranger
+    # talks to a published agent. Gates team-facing system tools and wallet
+    # signing — a guest conversation must never operate the team's assets.
+    is_own_team: bool
     thinking: bool = False
     payer: str | None = None
     start_message_id: str = ""

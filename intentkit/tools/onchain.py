@@ -9,8 +9,8 @@ the agent picks it from the list injected into its system prompt.
 Read helpers only resolve the wallet row (or use a plain web3 client);
 signing helpers additionally enforce the signing authorization rule: the
 wallet must belong to the agent's own team (guaranteed by the team-scoped
-lookup) AND the agent must be serving its own team (private context) — a
-publicly used agent can never operate its team's wallets.
+lookup) AND the owning team must be running the agent (``is_own_team``) — a
+guest-facing conversation can never operate the team's wallets.
 """
 
 from abc import ABCMeta
@@ -47,7 +47,7 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
 
     Wallet-using tools receive the wallet address as a tool argument and
     resolve it against the agent's team wallets. Signing acquisition is
-    gated on the private-context rule (see module docstring).
+    gated on the own-team rule (see module docstring).
     """
 
     def web3_client(self) -> AsyncWeb3:
@@ -108,15 +108,15 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
         Enforce the signing authorization rule.
 
         Signing is only allowed when the agent is serving its own team
-        (owner, team member, or an autonomous run of the team). Public
+        (owner, team member, or an autonomous run of the team). Guest
         conversations can read on-chain data but can never operate the
         team's wallets.
 
         Raises:
-            ToolException: When the caller context is not private.
+            ToolException: When the owning team is not running the agent.
         """
         context = self.get_context()
-        if not context.is_private:
+        if not context.is_own_team:
             raise ToolException(
                 "Signing is not allowed in this conversation: this agent is "
                 "being used outside its own team, and team wallets can only "

@@ -17,7 +17,12 @@ from intentkit.models.autonomous import (
     AutonomousExecutionStatus,
     AutonomousExecutionTrigger,
 )
-from intentkit.models.chat import AuthorType, ChatMessage, ChatMessageCreate
+from intentkit.models.chat import (
+    AUTONOMOUS_CHAT_PREFIX,
+    AuthorType,
+    ChatMessage,
+    ChatMessageCreate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +141,7 @@ async def run_autonomous_task(
 
     # The agent the run (and any error activity) is attributed to.
     effective_agent_id = target_agent_id or f"team-{team_id}"
-    chat_id = f"autonomous-{task_id}"
+    chat_id = f"{AUTONOMOUS_CHAT_PREFIX}{task_id}"
 
     message = ChatMessageCreate(
         id=str(XID()),

@@ -48,7 +48,7 @@ async def test_wechat_entrypoint_prompt_advertises_markdown(monkeypatch):
         get_agent=lambda: agent,
         chat_id="chat-1",
         entrypoint=AuthorType.WECHAT,
-        is_private=True,
+        is_own_team=True,
     )
 
     result = await build_entrypoint_prompt(agent, context)

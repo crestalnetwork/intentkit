@@ -251,7 +251,7 @@ class CallAgentTool(SystemTool):
             # (payer) so the sub-agent's LLM/tool cost is charged to the same
             # account that pays for this conversation, instead of being lost.
             # This is kept separate from team_id on purpose: team_id drives the
-            # sub-agent's team access context (is_private), which delegation
+            # sub-agent's team access context (is_own_team), which delegation
             # must not change — only billing flows through. Prefer the resolved
             # payer, falling back to team_id when payment is disabled (payer is
             # None) so the cost still lands on a real team.
