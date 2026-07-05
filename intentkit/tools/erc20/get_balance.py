@@ -9,15 +9,17 @@ from web3 import Web3
 
 from intentkit.tools.erc20.base import ERC20BaseTool
 from intentkit.tools.erc20.utils import get_token_details
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class GetBalanceInput(BaseModel):
     """Input schema for ERC20 get_balance."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     contract_address: str = Field(..., description="ERC20 token contract address")
     address: str | None = Field(
         default=None,
-        description="Address to check balance for. Defaults to wallet address.",
+        description="Address to check balance for. Defaults to the wallet_address argument.",
     )
 
 
@@ -35,6 +37,7 @@ class ERC20GetBalance(ERC20BaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         contract_address: str,
         address: str | None = None,
         **kwargs: Any,
@@ -42,23 +45,23 @@ class ERC20GetBalance(ERC20BaseTool):
         """Get the balance of an ERC20 token for a given address.
 
         Args:
+            wallet_address: The team wallet address to use.
             contract_address: The contract address of the ERC20 token.
-            address: The address to check the balance for. Uses wallet address if not provided.
+            address: The address to check the balance for. Uses wallet_address if not provided.
 
         Returns:
             A message containing the balance or error details.
         """
         try:
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Read-only: validate the wallet belongs to the team, no signing.
+            await self.resolve_wallet(wallet_address)
 
-            # Use wallet address if not provided
-            check_address = address if address else wallet.address
-            checksum_address = Web3.to_checksum_address(check_address)
+            # Use the selected wallet address if no explicit address is given
+            checksum_address = Web3.to_checksum_address(address or wallet_address)
 
             # Get token details (includes balance)
             token_details = await get_token_details(
-                wallet, contract_address, checksum_address
+                self.web3_client(), contract_address, checksum_address
             )
 
             if not token_details:

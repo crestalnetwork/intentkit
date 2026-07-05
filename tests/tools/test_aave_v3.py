@@ -6,6 +6,7 @@ import pytest
 from langchain_core.tools.base import ToolException
 
 from intentkit.tools.aave_v3.constants import MAX_UINT256
+from intentkit.tools.aave_v3.get_user_account_data import AaveV3GetUserAccountData
 from intentkit.tools.aave_v3.supply import AaveV3Supply
 from intentkit.tools.aave_v3.utils import (
     convert_amount,
@@ -21,6 +22,8 @@ from intentkit.tools.aave_v3.withdraw import AaveV3Withdraw
 # Helpers
 # ---------------------------------------------------------------------------
 
+WALLET_ADDRESS = "0x1111111111111111111111111111111111111111"
+
 
 def _mock_context(network_id: str = "base-mainnet") -> MagicMock:
     mock_agent = MagicMock()
@@ -28,11 +31,12 @@ def _mock_context(network_id: str = "base-mainnet") -> MagicMock:
     mock_agent.id = "test-agent"
     ctx = MagicMock()
     ctx.agent = mock_agent
+    ctx.is_private = True
     return ctx
 
 
 def _mock_wallet(
-    address: str = "0x1111111111111111111111111111111111111111",
+    address: str = WALLET_ADDRESS,
 ) -> MagicMock:
     wallet = MagicMock()
     wallet.address = address
@@ -199,6 +203,7 @@ class TestAaveV3Supply:
             ),
         ):
             result = await tool._arun(
+                wallet_address=WALLET_ADDRESS,
                 token_address="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                 amount="100",
             )
@@ -220,6 +225,7 @@ class TestAaveV3Supply:
         ):
             with pytest.raises(ToolException, match="not supported"):
                 await tool._arun(
+                    wallet_address=WALLET_ADDRESS,
                     token_address="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                     amount="100",
                 )
@@ -248,6 +254,7 @@ class TestAaveV3Supply:
         ):
             with pytest.raises(ToolException, match="failed"):
                 await tool._arun(
+                    wallet_address=WALLET_ADDRESS,
                     token_address="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                     amount="100",
                 )
@@ -281,6 +288,7 @@ class TestAaveV3Withdraw:
             ),
         ):
             result = await tool._arun(
+                wallet_address=WALLET_ADDRESS,
                 token_address="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                 amount="max",
             )
@@ -310,6 +318,7 @@ class TestAaveV3Withdraw:
             ),
         ):
             result = await tool._arun(
+                wallet_address=WALLET_ADDRESS,
                 token_address="0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
                 amount="50.5",
             )
@@ -319,3 +328,74 @@ class TestAaveV3Withdraw:
         # Should not send approval tx for withdraw
         # 2 calls: decimals + symbol (via gather), then 1 send_transaction for withdraw
         assert wallet.send_transaction.await_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Get user account data tool (read path — no signing required)
+# ---------------------------------------------------------------------------
+
+
+class TestAaveV3GetUserAccountData:
+    @pytest.mark.asyncio
+    async def test_read_works_without_signing(self):
+        """Reads only resolve the team wallet; they never acquire a signer."""
+        tool = AaveV3GetUserAccountData()
+        ctx = _mock_context()
+        # Public conversation: signing would be rejected, reads must still work
+        ctx.is_private = False
+
+        mock_pool = MagicMock()
+        mock_pool.functions.getUserAccountData.return_value.call = AsyncMock(
+            return_value=(
+                100_050_000_000,  # $1,000.50 collateral
+                0,  # no debt
+                50_000_000_000,  # $500.00 available to borrow
+                8000,  # 80% liquidation threshold
+                7500,  # 75% LTV
+                MAX_UINT256,  # health factor: no borrows
+            )
+        )
+        mock_w3 = MagicMock()
+        mock_w3.eth.contract = MagicMock(return_value=mock_pool)
+
+        with (
+            patch(
+                "intentkit.tools.base.IntentKitTool.get_context",
+                return_value=ctx,
+            ),
+            patch(
+                "intentkit.tools.onchain.get_async_web3_client",
+                return_value=mock_w3,
+            ),
+            patch(
+                "intentkit.tools.onchain.resolve_team_wallet",
+                new=AsyncMock(return_value=MagicMock()),
+            ),
+        ):
+            result = await tool._arun(wallet_address=WALLET_ADDRESS)
+
+        assert "Aave V3 Account Data" in result
+        assert "$1,000.50" in result
+        assert "no borrows" in result
+
+    @pytest.mark.asyncio
+    async def test_rejects_unknown_wallet(self):
+        tool = AaveV3GetUserAccountData()
+        ctx = _mock_context()
+
+        with (
+            patch(
+                "intentkit.tools.base.IntentKitTool.get_context",
+                return_value=ctx,
+            ),
+            patch(
+                "intentkit.tools.onchain.get_async_web3_client",
+                return_value=MagicMock(),
+            ),
+            patch(
+                "intentkit.tools.onchain.resolve_team_wallet",
+                new=AsyncMock(side_effect=Exception("WalletNotFound")),
+            ),
+        ):
+            with pytest.raises(ToolException, match="WalletNotFound"):
+                await tool._arun(wallet_address=WALLET_ADDRESS)

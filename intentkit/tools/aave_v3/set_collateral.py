@@ -10,6 +10,7 @@ from web3 import Web3
 from intentkit.tools.aave_v3.base import AaveV3BaseTool
 from intentkit.tools.aave_v3.constants import POOL_ABI, POOL_ADDRESSES
 from intentkit.tools.aave_v3.utils import get_token_symbol
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 NAME = "aave_v3_set_collateral"
 
@@ -17,6 +18,7 @@ NAME = "aave_v3_set_collateral"
 class SetCollateralInput(BaseModel):
     """Input for Aave V3 set collateral."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_address: str = Field(description="ERC20 token contract address")
     use_as_collateral: bool = Field(
         description="True to enable as collateral, False to disable"
@@ -37,13 +39,14 @@ class AaveV3SetCollateral(AaveV3BaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_address: str,
         use_as_collateral: bool,
         **kwargs: Any,
     ) -> str:
         try:
             chain_id = self._resolve_chain_id()
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             pool_address = POOL_ADDRESSES[chain_id]

@@ -5,11 +5,12 @@
     "Crypto",
     "Identity"
   ],
+  "x-web3": true,
   "x-icon": "/tools/basename/basename.svg",
   "tools": {
     "basename_register_basename": {
       "title": "Register Basename",
-      "description": "Register a Basename ENS-style domain for the agent"
+      "description": "Register a Basename ENS-style domain on Base network"
     }
   }
 }

@@ -118,11 +118,6 @@ async def test_expense_tool_creates_transactions():
             "intentkit.models.agent_data.AgentQuota.add_free_income_in_session",
             new_callable=AsyncMock,
         ) as mock_add_free,
-        patch(
-            "intentkit.core.credit.expense.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value=None,
-        ),
     ):
         mock_tool_cost.return_value = tool_cost_info
         mock_expense.return_value = (
@@ -202,11 +197,6 @@ async def test_expense_summarize_with_payment_enabled_creates_transactions():
             "intentkit.models.credit.CreditAccount.income_in_session",
             new_callable=AsyncMock,
             return_value=mock_income_account,
-        ),
-        patch(
-            "intentkit.core.credit.expense.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value=None,
         ),
         patch(
             "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",

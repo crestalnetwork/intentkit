@@ -8,6 +8,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     FEE_TIERS,
@@ -29,6 +30,7 @@ NAME = "pancakeswap_swap"
 class PancakeSwapSwapInput(BaseModel):
     """Input for PancakeSwap swap."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_in: str = Field(
         description="Input token address, or 'native' for native token"
     )
@@ -58,6 +60,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_in: str,
         token_out: str,
         amount: str,
@@ -81,7 +84,7 @@ class PancakeSwapSwap(PancakeSwapBaseTool):
             if not router_address or not quoter_address:
                 raise ToolException(f"No PancakeSwap contracts for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             # Resolve tokens

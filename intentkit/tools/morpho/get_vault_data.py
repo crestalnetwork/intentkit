@@ -38,8 +38,11 @@ class MorphoGetVaultData(MorphoBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            wallet = await self.get_unified_wallet()
-            self._validate_network(wallet.network_id)
+            # Pure on-chain read: no wallet involved at all.
+            network_id = self.get_agent_network_id()
+            if not network_id:
+                raise ToolException("Agent network_id is not configured")
+            self._validate_network(network_id)
             w3 = self.web3_client()
 
             checksum_vault = Web3.to_checksum_address(vault_address)
@@ -76,7 +79,7 @@ class MorphoGetVaultData(MorphoBaseTool):
                 f"Total Assets: {total_assets_formatted} {symbol}\n"
                 f"Total Shares: {Decimal(total_supply) / Decimal(10**18)}\n"
                 f"Share Price: 1 share = {share_price} {symbol}\n"
-                f"Network: {wallet.network_id}"
+                f"Network: {network_id}"
             )
 
         except ToolException:

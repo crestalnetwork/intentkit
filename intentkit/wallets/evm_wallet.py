@@ -32,7 +32,7 @@ class EvmWallet:
     abstracting away the differences between CDP and Safe/Privy providers.
 
     Usage:
-        wallet = await EvmWallet.create(agent)
+        wallet = await EvmWallet.create(agent, wallet_address)
         address = wallet.address
         balance = await wallet.get_balance()
         tx_hash = await wallet.send_transaction(to="0x...", value=1000)
@@ -65,12 +65,13 @@ class EvmWallet:
         self._w3 = get_async_web3_client(network_id)
 
     @classmethod
-    async def create(cls, agent: "Agent") -> "EvmWallet":
+    async def create(cls, agent: "Agent", wallet_address: str) -> "EvmWallet":
         """
-        Factory method to create a unified wallet for an agent.
+        Factory method to create a unified wallet over a team wallet.
 
         Args:
-            agent: The agent to create a wallet for.
+            agent: The active agent (network context + team scoping).
+            wallet_address: Address of one of the team's wallets.
 
         Returns:
             A configured EvmWallet instance.
@@ -85,7 +86,7 @@ class EvmWallet:
                 "Agent network_id is not configured",
             )
 
-        provider = await get_wallet_provider(agent)
+        provider = await get_wallet_provider(agent, wallet_address)
 
         w3 = get_async_web3_client(agent.network_id)
         try:

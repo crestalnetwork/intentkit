@@ -8,11 +8,13 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
 from intentkit.tools.cdp.base import CDPBaseTool
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class NativeTransferInput(BaseModel):
     """Input schema for native_transfer."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     to: str = Field(..., description="Destination address")
     value: str = Field(
         ...,
@@ -33,12 +35,14 @@ class CDPNativeTransfer(CDPBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         to: str,
         value: str,
     ) -> str:
         """Transfer native tokens to a destination address.
 
         Args:
+            wallet_address: The team wallet address to send from.
             to: The destination address.
             value: The amount to transfer in whole units (e.g., '0.1' for 0.1 ETH).
 
@@ -47,10 +51,10 @@ class CDPNativeTransfer(CDPBaseTool):
         """
         try:
             # Ensure the wallet provider is CDP
-            await self.ensure_cdp_provider()
+            await self.ensure_cdp_provider(wallet_address)
 
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Get the unified wallet (signing-capable, guarded)
+            wallet = await self.get_unified_wallet(wallet_address)
 
             # Convert value to Decimal
             value_decimal = Decimal(value)

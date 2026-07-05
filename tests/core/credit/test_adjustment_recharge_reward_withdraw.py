@@ -536,11 +536,6 @@ async def test_withdraw_success():
             "intentkit.core.credit.withdraw.get_agent", new_callable=AsyncMock
         ) as mock_get_agent,
         patch(
-            "intentkit.core.credit.withdraw.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value="0x123",
-        ),
-        patch(
             "intentkit.models.credit.CreditAccount.get_in_session",
             new_callable=AsyncMock,
         ) as mock_get_account,
@@ -667,11 +662,6 @@ async def test_withdraw_insufficient_balance():
         patch(
             "intentkit.core.credit.withdraw.get_agent", new_callable=AsyncMock
         ) as mock_get_agent,
-        patch(
-            "intentkit.core.credit.withdraw.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value="0x123",
-        ),
         patch(
             "intentkit.models.credit.CreditAccount.get_in_session",
             new_callable=AsyncMock,

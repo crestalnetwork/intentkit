@@ -6,6 +6,7 @@
     "Crypto",
     "NFT"
   ],
+  "x-web3": true,
   "tools": {
     "erc721_get_balance": {
       "title": "Get NFT Balance",

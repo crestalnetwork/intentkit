@@ -8,6 +8,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.uniswap.base import UniswapBaseTool
 from intentkit.tools.uniswap.constants import (
     FEE_TIERS,
@@ -30,6 +31,7 @@ NAME = "uniswap_swap"
 class UniswapSwapInput(BaseModel):
     """Input for Uniswap swap."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_in: str = Field(
         description="Input token address, or 'native' for native token"
     )
@@ -59,6 +61,7 @@ class UniswapSwap(UniswapBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_in: str,
         token_out: str,
         amount: str,
@@ -82,7 +85,7 @@ class UniswapSwap(UniswapBaseTool):
             if not router_address or not quoter_address:
                 raise ToolException(f"No Uniswap contracts for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             # Resolve tokens

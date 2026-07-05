@@ -9,6 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.uniswap.base import UniswapBaseTool
 from intentkit.tools.uniswap.constants import (
     NETWORK_TO_CHAIN_ID,
@@ -25,6 +26,7 @@ UINT128_MAX = (1 << 128) - 1
 class UniswapRemoveLiquidityInput(BaseModel):
     """Input for Uniswap remove liquidity."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_id: int = Field(description="NFT position ID to remove liquidity from")
     percentage: float = Field(
         default=100.0,
@@ -45,6 +47,7 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_id: int,
         percentage: float = 100.0,
         **kwargs: Any,
@@ -68,9 +71,9 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
             if not pm_address:
                 raise ToolException(f"No PositionManager address for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            recipient = Web3.to_checksum_address(wallet.address)
 
             checksum_pm = Web3.to_checksum_address(pm_address)
             pm = w3.eth.contract(address=checksum_pm, abi=POSITION_MANAGER_ABI)
@@ -108,7 +111,7 @@ class UniswapRemoveLiquidity(UniswapBaseTool):
             # Collect all tokens + fees
             collect_data = pm.encode_abi(
                 "collect",
-                [(token_id, wallet_address, UINT128_MAX, UINT128_MAX)],
+                [(token_id, recipient, UINT128_MAX, UINT128_MAX)],
             )
             tx_hash = await wallet.send_transaction(
                 to=checksum_pm,

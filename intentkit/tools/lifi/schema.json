@@ -5,6 +5,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "tools": {
     "lifi_token_quote": {
       "title": "Token Quote",
@@ -12,7 +13,7 @@
     },
     "lifi_token_execute": {
       "title": "Token Execute",
-      "description": "Execute token transfers (requires CDP wallet and cdp tools enabled)"
+      "description": "Execute cross-chain token transfers or same-chain swaps via LiFi"
     }
   }
 }

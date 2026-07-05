@@ -62,11 +62,6 @@ async def test_expense_message_soft_off():
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
         patch(
-            "intentkit.core.credit.expense.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value="0x123",
-        ),
-        patch(
             "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
             new_callable=AsyncMock,
         ),
@@ -165,11 +160,6 @@ async def test_expense_message_enabled():
         patch(
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
-        patch(
-            "intentkit.core.credit.expense.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value="0x123",
-        ),
         patch(
             "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
             new_callable=AsyncMock,
@@ -298,11 +288,6 @@ async def test_expense_summarize_soft_off():
         patch(
             "intentkit.models.app_setting.AppSetting.payment", new_callable=AsyncMock
         ) as mock_payment_settings,
-        patch(
-            "intentkit.core.credit.expense.get_agent_wallet_address",
-            new_callable=AsyncMock,
-            return_value="0x123",
-        ),
         patch(
             "intentkit.core.credit.expense.accumulate_hourly_base_llm_amount",
             new_callable=AsyncMock,

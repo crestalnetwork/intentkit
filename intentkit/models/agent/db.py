@@ -78,12 +78,7 @@ class AgentUserInputColumns:
         comment="Controls topic adherence (-2.0~2.0). Higher values allow more topic deviation, lower values enforce stricter topic adherence.",
     )
 
-    # Wallet and network configuration fields
-    wallet_id: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        comment="Team wallet this agent is authorized to use",
-    )
+    # Network configuration from AgentCore
     network_id: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

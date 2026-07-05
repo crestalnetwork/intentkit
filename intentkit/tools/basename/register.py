@@ -19,11 +19,13 @@ from intentkit.tools.basename.constants import (
     REGISTRATION_DURATION,
     SUPPORTED_NETWORKS,
 )
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class RegisterBasenameInput(BaseModel):
     """Input schema for registering a Basename."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     basename: str = Field(
         ...,
         description="Basename to register (e.g., 'myname.base.eth' or 'myname.basetest.eth')",
@@ -37,7 +39,7 @@ class RegisterBasenameInput(BaseModel):
 class BasenameRegister(BasenameBaseTool):
     """Register a Basename ENS-style domain.
 
-    This tool registers a Basename for the agent's wallet address on Base network.
+    This tool registers a Basename for the selected wallet address on Base network.
     """
 
     name: str = "basename_register_basename"
@@ -50,12 +52,14 @@ class BasenameRegister(BasenameBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         basename: str,
         amount: str = "0.002",
     ) -> str:
-        """Register a Basename for the agent.
+        """Register a Basename for the selected wallet.
 
         Args:
+            wallet_address: The team wallet address to register with.
             basename: The Basename to register.
             amount: The amount of ETH to pay for registration.
 
@@ -63,8 +67,8 @@ class BasenameRegister(BasenameBaseTool):
             A message containing the registration result or error details.
         """
         try:
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Get the unified wallet (signing-capable, guarded)
+            wallet = await self.get_unified_wallet(wallet_address)
             network_id = self.get_agent_network_id()
 
             # Validate network
@@ -135,7 +139,7 @@ class BasenameRegister(BasenameBaseTool):
             )
 
             # Wait for receipt
-            receipt = await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
+            receipt = await wallet.wait_for_receipt(tx_hash)
 
             if receipt.get("status") == 0:
                 return (

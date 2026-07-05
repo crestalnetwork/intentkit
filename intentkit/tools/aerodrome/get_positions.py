@@ -3,7 +3,9 @@
 from decimal import Decimal
 from typing import Any, override
 
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
+from pydantic import BaseModel, Field
 from web3 import Web3
 
 from intentkit.tools.aerodrome.base import AerodromeBaseTool
@@ -12,13 +14,23 @@ from intentkit.tools.aerodrome.constants import (
     NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
-    STAKED_DATA_KEY,
     TOOL_DATA_NAMESPACE,
 )
-from intentkit.tools.aerodrome.utils import get_decimals, get_token_symbol
+from intentkit.tools.aerodrome.utils import (
+    get_decimals,
+    get_token_symbol,
+    staked_data_key,
+)
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 NAME = "aerodrome_get_positions"
 MAX_POSITIONS = 20
+
+
+class AerodromeGetPositionsInput(BaseModel):
+    """Input for Aerodrome get positions."""
+
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
 
 
 class AerodromeGetPositions(AerodromeBaseTool):
@@ -26,12 +38,13 @@ class AerodromeGetPositions(AerodromeBaseTool):
 
     name: str = NAME
     description: str = (
-        "View your Aerodrome Slipstream liquidity positions on Base including "
+        "View Aerodrome Slipstream liquidity positions on Base including "
         "pool details, liquidity amounts, uncollected fees, and farming status."
     )
+    args_schema: ArgsSchema | None = AerodromeGetPositionsInput
 
     @override
-    async def _arun(self, **kwargs: Any) -> str:
+    async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         try:
             network_id = self.get_agent_network_id()
             if not network_id:
@@ -44,9 +57,10 @@ class AerodromeGetPositions(AerodromeBaseTool):
                     f"Current network: {network_id}"
                 )
 
-            wallet = await self.get_unified_wallet()
+            # Read-only: validate the wallet belongs to the team, no signing.
+            await self.resolve_wallet(wallet_address)
             w3 = self.web3_client()
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            checksum_wallet = Web3.to_checksum_address(wallet_address)
 
             pm = w3.eth.contract(
                 address=Web3.to_checksum_address(POSITION_MANAGER_ADDRESS),
@@ -54,13 +68,13 @@ class AerodromeGetPositions(AerodromeBaseTool):
             )
 
             # Get unstaked positions
-            balance = await pm.functions.balanceOf(wallet_address).call()
+            balance = await pm.functions.balanceOf(checksum_wallet).call()
             positions: list[str] = []
 
             count = min(balance, MAX_POSITIONS)
             for i in range(count):
                 token_id = await pm.functions.tokenOfOwnerByIndex(
-                    wallet_address, i
+                    checksum_wallet, i
                 ).call()
                 pos_info = await pm.functions.positions(token_id).call()
                 entry = await _format_position(w3, token_id, pos_info, staked=False)
@@ -68,7 +82,7 @@ class AerodromeGetPositions(AerodromeBaseTool):
                     positions.append(entry)
 
             staked_data = await self.get_agent_tool_data_raw(
-                TOOL_DATA_NAMESPACE, STAKED_DATA_KEY
+                TOOL_DATA_NAMESPACE, staked_data_key(wallet_address)
             )
             if staked_data and "token_ids" in staked_data:
                 gauges = staked_data.get("gauges", {})
@@ -84,14 +98,14 @@ class AerodromeGetPositions(AerodromeBaseTool):
                         )
 
                         is_staked = await gauge.functions.stakedContains(
-                            wallet_address, token_id
+                            checksum_wallet, token_id
                         ).call()
                         if not is_staked:
                             continue
 
                         pos_info = await pm.functions.positions(token_id).call()
                         pending_aero = await gauge.functions.earned(
-                            wallet_address, token_id
+                            checksum_wallet, token_id
                         ).call()
                         entry = await _format_position(
                             w3,

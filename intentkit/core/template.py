@@ -131,10 +131,6 @@ class AgentCreationFromTemplate(BaseModel):
     description: str | None = PydanticField(
         default=None, description="Description of the agent"
     )
-    wallet_id: str | None = PydanticField(
-        default=None,
-        description="ID of the team wallet the agent is authorized to use",
-    )
     extra_prompt: str | None = PydanticField(
         default=None,
         description="Additional prompt text to be injected into the system prompt",
@@ -167,11 +163,6 @@ async def create_agent_from_template(
         # Set visibility based on team_id
         visibility = AgentVisibility.TEAM if team_id else AgentVisibility.PRIVATE
 
-        # Wallets are team property; validate the binding before persisting
-        from intentkit.core.agent import validate_wallet_binding
-
-        _ = await validate_wallet_binding(data.wallet_id, team_id)
-
         # Create new agent with only user-provided fields
         # Template's AgentCore fields will be applied dynamically via render_agent
         db_agent = AgentTable(
@@ -183,7 +174,6 @@ async def create_agent_from_template(
             picture=data.picture,
             description=data.description,
             model=template_row.model,
-            wallet_id=data.wallet_id,
             extra_prompt=data.extra_prompt,
             visibility=visibility,
         )

@@ -309,13 +309,6 @@
       "x-group": "tools",
       "x-inline": true
     },
-    "wallet_id": {
-      "title": "Team Wallet",
-      "type": "string",
-      "description": "ID of the team wallet this agent is authorized to use. Wallets are owned by the team; create them in the Crypto Wallets page.",
-      "x-group": "onchain",
-      "x-advanced": true
-    },
     "network_id": {
       "title": "Default Network",
       "type": "string",

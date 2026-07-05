@@ -30,7 +30,7 @@ def generate_schema(server_def: McpServerDef) -> dict:
     actual tools are discovered live at runtime, so the catalog never
     enumerates them and therefore never goes stale when the server changes.
     """
-    return {
+    schema: dict = {
         "title": server_def.display_name,
         "description": server_def.description,
         "x-tags": server_def.tags,
@@ -45,6 +45,9 @@ def generate_schema(server_def: McpServerDef) -> dict:
             }
         },
     }
+    if server_def.web3:
+        schema["x-web3"] = True
+    return schema
 
 
 def generate_init_py(server_name: str) -> str:

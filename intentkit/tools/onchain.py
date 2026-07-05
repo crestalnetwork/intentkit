@@ -1,9 +1,16 @@
 """
 On-chain tool base class with unified wallet support.
 
-This module provides the IntentKitOnChainTool class which offers
-helpers for on-chain operations, supporting both CDP and Privy
-wallet providers.
+This module provides the IntentKitOnChainTool class which offers helpers
+for on-chain operations. Agents do not own wallets: every wallet-using tool
+takes a ``wallet_address`` argument naming one of the team's wallets, and
+the agent picks it from the list injected into its system prompt.
+
+Read helpers only resolve the wallet row (or use a plain web3 client);
+signing helpers additionally enforce the signing authorization rule: the
+wallet must belong to the agent's own team (guaranteed by the team-scoped
+lookup) AND the agent must be serving its own team (private context) — a
+publicly used agent can never operate its team's wallets.
 """
 
 from abc import ABCMeta
@@ -13,26 +20,34 @@ from cdp import EvmServerAccount
 from langchain_core.tools.base import ToolException
 from web3 import AsyncWeb3
 
+from intentkit.models.wallet import TeamWallet
 from intentkit.tools.base import IntentKitTool
-from intentkit.wallets import get_agent_wallet, require_agent_wallet
 from intentkit.wallets import get_cdp_network as resolve_cdp_network
 from intentkit.wallets import get_evm_account as fetch_evm_account
 from intentkit.wallets import get_wallet_provider as unified_get_wallet_provider
 from intentkit.wallets import get_wallet_signer as unified_get_wallet_signer
+from intentkit.wallets import list_agent_team_wallets, resolve_team_wallet
 from intentkit.wallets.web3 import get_async_web3_client
 
 if TYPE_CHECKING:
     from intentkit.wallets import WalletProviderType, WalletSignerType
     from intentkit.wallets.evm_wallet import EvmWallet
 
+# Description snippet for the wallet_address tool argument; keep tool schemas
+# consistent across categories.
+WALLET_ADDRESS_ARG_DESCRIPTION = (
+    "Address of the team wallet to use. Must be one of the wallet addresses "
+    "listed in your system prompt."
+)
+
 
 class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
     """
     Shared helpers for on-chain enabled tools.
 
-    This base class provides unified access to wallet providers and signers,
-    automatically selecting the appropriate implementation based on the
-    provider of the agent's bound team wallet.
+    Wallet-using tools receive the wallet address as a tool argument and
+    resolve it against the agent's team wallets. Signing acquisition is
+    gated on the private-context rule (see module docstring).
     """
 
     def web3_client(self) -> AsyncWeb3:
@@ -43,179 +58,117 @@ class IntentKitOnChainTool(IntentKitTool, metaclass=ABCMeta):
             AsyncWeb3 instance configured for the agent's network.
 
         Raises:
-            ValueError: If network_id is not configured.
+            ToolException: If network_id is not configured.
         """
         context = self.get_context()
-        agent = context.agent
-        network_id = agent.network_id
+        network_id = context.agent.network_id
         if network_id is None:
             raise ToolException("Agent network_id is not configured")
         return get_async_web3_client(network_id)
 
-    async def get_evm_account(self) -> EvmServerAccount:
+    # =========================================================================
+    # Read helpers (no signing authorization required)
+    # =========================================================================
+
+    async def list_team_wallets(self) -> list[TeamWallet]:
+        """All wallets owned by the active agent's team."""
+        context = self.get_context()
+        return await list_agent_team_wallets(context.agent)
+
+    async def resolve_wallet(self, wallet_address: str) -> TeamWallet:
         """
-        Fetch the EVM account associated with the active agent's wallet.
+        Resolve one of the team's wallets by address (read usage).
 
-        Note: This method is CDP-specific. For a provider-agnostic approach,
-        use get_wallet_provider() instead.
-
-        Returns:
-            The CDP EVM server account.
-
-        Raises:
-            IntentKitAPIError: If the agent's wallet is not a CDP wallet.
+        Works for every provider, including readonly wallets. Raises when the
+        address is not one of the agent's team wallets.
         """
         context = self.get_context()
-        wallet = await require_agent_wallet(context.agent)
-        return await fetch_evm_account(wallet)
+        return await resolve_team_wallet(context.agent, wallet_address)
 
     def get_cdp_network(self) -> str:
         """
         Get CDP network mapped from the agent's network id.
 
         Note: This method is CDP-specific.
-
-        Returns:
-            The CDP network identifier (e.g., 'base', 'ethereum').
         """
         context = self.get_context()
         return resolve_cdp_network(context.agent.network_id)
 
+    def get_agent_network_id(self) -> str | None:
+        """The network ID for the active agent (e.g., 'base-mainnet')."""
+        context = self.get_context()
+        return context.agent.network_id
+
     # =========================================================================
-    # Unified Wallet Methods (Support both CDP and Privy)
+    # Signing helpers (guarded)
     # =========================================================================
 
-    async def get_unified_wallet(self) -> "EvmWallet":
+    def ensure_signing_allowed(self) -> None:
         """
-        Get a unified wallet interface for the active agent.
+        Enforce the signing authorization rule.
 
-        This method returns an EvmWallet instance that provides a consistent
-        async interface for wallet operations, regardless of whether the
-        underlying provider is CDP or Safe/Privy.
-
-        Returns:
-            An EvmWallet instance for the current agent.
+        Signing is only allowed when the agent is serving its own team
+        (owner, team member, or an autonomous run of the team). Public
+        conversations can read on-chain data but can never operate the
+        team's wallets.
 
         Raises:
-            IntentKitAPIError: If the wallet cannot be created.
+            ToolException: When the caller context is not private.
+        """
+        context = self.get_context()
+        if not context.is_private:
+            raise ToolException(
+                "Signing is not allowed in this conversation: this agent is "
+                "being used outside its own team, and team wallets can only "
+                "be operated by the team itself."
+            )
 
-        Example:
-            ```python
-            wallet = await self.get_unified_wallet()
-            address = wallet.address
-            balance = await wallet.get_balance()
-            tx_hash = await wallet.send_transaction(to="0x...", value=1000)
-            ```
+    async def get_signing_wallet(self, wallet_address: str) -> TeamWallet:
+        """Resolve a team wallet for a signing operation (guarded)."""
+        self.ensure_signing_allowed()
+        return await self.resolve_wallet(wallet_address)
+
+    async def get_unified_wallet(self, wallet_address: str) -> "EvmWallet":
+        """
+        Get a unified wallet interface for a team wallet (signing-capable).
+
+        Returns an EvmWallet instance providing a consistent async interface
+        regardless of the underlying provider.
         """
         from intentkit.wallets.evm_wallet import EvmWallet
 
+        self.ensure_signing_allowed()
         context = self.get_context()
-        return await EvmWallet.create(context.agent)
+        return await EvmWallet.create(context.agent, wallet_address)
 
-    async def get_wallet_provider(self) -> "WalletProviderType":
+    async def get_wallet_provider(self, wallet_address: str) -> "WalletProviderType":
         """
-        Get the wallet provider for the active agent.
+        Get the provider object for a team wallet (signing-capable).
 
-        This method automatically selects the appropriate wallet provider
-        based on the provider of the agent's bound team wallet:
-        - 'cdp': Returns CdpWalletProvider
-        - 'safe'/'privy': Returns SafeWalletProvider
-
-        Returns:
-            The wallet provider instance.
-
-        Raises:
-            IntentKitAPIError: If the wallet provider is not supported
-                or not properly configured.
-
-        Example:
-            ```python
-            provider = await self.get_wallet_provider()
-            address = provider.get_address()  # CDP
-            # or
-            address = await provider.get_address()  # Privy
-            ```
+        The provider can send transactions, so acquisition is gated on the
+        signing authorization rule.
         """
+        self.ensure_signing_allowed()
         context = self.get_context()
-        return await unified_get_wallet_provider(context.agent)
+        return await unified_get_wallet_provider(context.agent, wallet_address)
 
-    async def get_wallet_signer(self) -> "WalletSignerType":
+    async def get_wallet_signer(self, wallet_address: str) -> "WalletSignerType":
         """
-        Get the wallet signer for the active agent.
+        Get the signer for a team wallet (guarded).
 
-        This method returns a signer compatible with eth_account interfaces,
-        suitable for use with libraries like x402 that require signing
-        capabilities.
-
-        The signer supports:
-        - sign_message(signable_message) -> SignedMessage
-        - sign_typed_data(...) -> SignedMessage
-        - unsafe_sign_hash(message_hash) -> SignedMessage
-        - address property
-
-        Returns:
-            The wallet signer instance:
-            - 'cdp': ThreadSafeEvmWalletSigner
-            - 'privy': PrivyWalletSigner
-
-        Raises:
-            IntentKitAPIError: If the wallet provider is not supported
-                or not properly configured.
-
-        Example:
-            ```python
-            signer = await self.get_wallet_signer()
-            signature = signer.sign_message(message)
-            ```
+        The signer supports sign_message / sign_typed_data /
+        unsafe_sign_hash and exposes an address property.
         """
+        self.ensure_signing_allowed()
         context = self.get_context()
-        return await unified_get_wallet_signer(context.agent)
+        return await unified_get_wallet_signer(context.agent, wallet_address)
 
-    async def get_wallet_address(self) -> str:
+    async def get_evm_account(self, wallet_address: str) -> EvmServerAccount:
         """
-        Get the wallet address for the active agent.
+        Fetch the CDP EVM account behind a team wallet (signing-capable).
 
-        This is a convenience method that works with both CDP and Privy
-        wallet providers.
-
-        Returns:
-            The wallet address as a checksummed hex string.
-
-        Raises:
-            IntentKitAPIError: If the wallet provider is not configured.
+        Note: CDP-specific; raises when the wallet is not a CDP wallet.
         """
-        provider = await self.get_wallet_provider()
-        return provider.get_address()
-
-    async def get_agent_wallet_provider_type(self) -> str | None:
-        """
-        Get the wallet provider type of the active agent's wallet.
-
-        Returns:
-            The wallet provider type ('cdp', 'native', 'readonly', 'safe',
-            'privy') or None when the agent has no wallet bound.
-        """
-        context = self.get_context()
-        wallet = await get_agent_wallet(context.agent)
-        return wallet.wallet_provider if wallet else None
-
-    async def is_onchain_capable(self) -> bool:
-        """
-        Check if the agent can perform on-chain operations.
-
-        Returns:
-            True if the agent's wallet supports signing
-            (CDP, native, Safe, or Privy).
-        """
-        wallet_provider = await self.get_agent_wallet_provider_type()
-        return wallet_provider in ("cdp", "native", "safe", "privy")
-
-    def get_agent_network_id(self) -> str | None:
-        """
-        Get the network ID for the active agent.
-
-        Returns:
-            The network ID string (e.g., 'base-mainnet') or None if not set.
-        """
-        context = self.get_context()
-        return context.agent.network_id
+        self.ensure_signing_allowed()
+        wallet = await self.resolve_wallet(wallet_address)
+        return await fetch_evm_account(wallet)

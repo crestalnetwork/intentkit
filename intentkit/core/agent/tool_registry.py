@@ -138,6 +138,30 @@ def get_valid_tools_registry() -> dict[str, dict[str, str]]:
     return registry
 
 
+@lru_cache(maxsize=1)
+def get_web3_categories() -> frozenset[str]:
+    """Categories whose tools operate on team wallets (``x-web3`` in schema).
+
+    These are only selectable for agents whose team owns at least one
+    wallet, and their tools take a ``wallet_address`` chosen by the agent.
+    """
+    categories: set[str] = set()
+    try:
+        for category, _module, tool_schema in _iter_tool_schemas():
+            if tool_schema.get("x-web3") is True:
+                categories.add(category)
+    except (AttributeError, ModuleNotFoundError, ImportError):
+        logger.warning("intentkit tools package not found when building web3 set")
+    return frozenset(categories)
+
+
+def filter_web3_tool_names(tool_names: list[str]) -> list[str]:
+    """The subset of the given tool names that belong to web3 categories."""
+    web3 = get_web3_categories()
+    index = get_tool_category_index()
+    return [name for name in tool_names if index.get(name) in web3]
+
+
 def get_tool_category_index() -> dict[str, str]:
     """Map every known tool name to its category.
 

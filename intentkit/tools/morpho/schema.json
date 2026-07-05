@@ -5,6 +5,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "tools": {
     "morpho_deposit": {
       "title": "Vault Deposit",

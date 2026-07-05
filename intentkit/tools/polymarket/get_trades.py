@@ -7,12 +7,14 @@ from typing import Any
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 
 
 class GetTradesInput(BaseModel):
     """Input for getting trade history."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     market: str | None = Field(
         default=None,
         description="Filter by market condition_id. Leave empty for all.",
@@ -26,14 +28,14 @@ class GetTradesInput(BaseModel):
 
 
 class GetTrades(PolymarketBaseTool):
-    """Get trade history for the agent's wallet on Polymarket.
+    """Get trade history on Polymarket.
 
     Shows completed trades with execution prices, sizes, and timestamps.
     """
 
     name: str = "polymarket_get_trades"
     description: str = (
-        "Get trade history on Polymarket for the agent's wallet. "
+        "Get trade history on Polymarket. "
         "Shows executed trades with prices, sizes, and timestamps. "
         "Optionally filter by market."
     )
@@ -42,19 +44,18 @@ class GetTrades(PolymarketBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         market: str | None = None,
         limit: int = 20,
         **kwargs: Any,
     ) -> str:
-        await self._require_wallet("view trades")
-
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 
         params: dict[str, Any] = {}
         if market:
             params["market"] = market
 
-        data = await self._clob_auth_get("/trades", params=params)
+        data = await self._clob_auth_get(wallet_address, "/trades", params=params)
 
         raw_trades: list[Any] = (
             data if isinstance(data, list) else data.get("trades", [])

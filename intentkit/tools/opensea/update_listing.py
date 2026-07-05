@@ -9,6 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.opensea.constants import OPENSEA_PROTOCOL_ADDRESS
 from intentkit.tools.opensea.onchain_base import OpenSeaOnChainBaseTool
 
@@ -18,6 +19,7 @@ NAME = "opensea_update_listing"
 class UpdateListingInput(BaseModel):
     """Input for updating an OpenSea listing price."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     order_hash: str = Field(description="The order hash of the listing to update")
     chain: str = Field(
         description=(
@@ -47,14 +49,14 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
     description: str = (
         "Update the price of an existing NFT listing on OpenSea. "
         "This cancels the old listing and creates a new one with the new price. "
-        "Requires the old order details and the new price. "
-        "Requires an on-chain wallet."
+        "Requires the old order details and the new price."
     )
     args_schema: ArgsSchema | None = UpdateListingInput
 
     @override
     async def _arun(
         self,
+        wallet_address: str,
         order_hash: str,
         chain: str,
         protocol_address: str,
@@ -65,10 +67,9 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            if not await self.is_onchain_capable():
-                raise ToolException(
-                    "This agent does not have an on-chain wallet configured"
-                )
+            # Validate signing authorization and team ownership before
+            # cancelling the old listing, so a forbidden call has no effect.
+            await self.get_signing_wallet(wallet_address)
 
             _, cancel_error = await self._post(
                 f"/orders/chain/{chain}/protocol/{protocol_address}/{order_hash}/cancel",
@@ -81,7 +82,6 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
                     }
                 )
 
-            wallet_address = await self.get_wallet_address()
             new_price_wei = Web3.to_wei(Decimal(new_price), "ether")
             counter = await self._get_seaport_counter(wallet_address)
 
@@ -94,7 +94,7 @@ class OpenSeaUpdateListing(OpenSeaOnChainBaseTool):
                 counter=counter,
             )
 
-            signature = await self._sign_seaport_order(order_params)
+            signature = await self._sign_seaport_order(order_params, wallet_address)
 
             data, error = await self._post(
                 f"/orders/{chain}/seaport/listings",

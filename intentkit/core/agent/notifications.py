@@ -38,10 +38,6 @@ def send_agent_notification(agent: Agent, agent_data: AgentData, message: str) -
                         "value": agent_data.telegram_username,
                     },
                     {
-                        "title": "Wallet ID",
-                        "value": agent.wallet_id or "None",
-                    },
-                    {
                         "title": "Tools",
                         "value": tools_formatted,
                     },

@@ -9,6 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.opensea.constants import OPENSEA_PROTOCOL_ADDRESS
 from intentkit.tools.opensea.onchain_base import OpenSeaOnChainBaseTool
 
@@ -18,6 +19,7 @@ NAME = "opensea_create_listing"
 class CreateListingInput(BaseModel):
     """Input for creating an NFT listing on OpenSea."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     contract_address: str = Field(description="The ERC721 NFT contract address")
     token_id: str = Field(description="The token ID of the NFT to list")
     price: str = Field(description="Listing price in ETH (e.g., '0.5' for 0.5 ETH)")
@@ -36,14 +38,14 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
     description: str = (
         "Create a listing to sell an NFT on OpenSea marketplace. "
         "Requires the NFT contract address, token ID, and price in ETH. "
-        "The NFT will be approved for OpenSea if not already. "
-        "Requires an on-chain wallet."
+        "The NFT will be approved for OpenSea if not already."
     )
     args_schema: ArgsSchema | None = CreateListingInput
 
     @override
     async def _arun(
         self,
+        wallet_address: str,
         contract_address: str,
         token_id: str,
         price: str,
@@ -51,13 +53,9 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
         **kwargs: Any,
     ) -> str:
         try:
-            if not await self.is_onchain_capable():
-                raise ToolException(
-                    "This agent does not have an on-chain wallet configured"
-                )
-
             chain = self._get_chain_name()
-            wallet_address = await self.get_wallet_address()
+            # Validate signing authorization and team ownership up front.
+            await self.get_signing_wallet(wallet_address)
             price_wei = Web3.to_wei(Decimal(price), "ether")
 
             approval_tx = await self._ensure_nft_approval(
@@ -74,7 +72,7 @@ class OpenSeaCreateListing(OpenSeaOnChainBaseTool):
                 counter=counter,
             )
 
-            signature = await self._sign_seaport_order(order_params)
+            signature = await self._sign_seaport_order(order_params, wallet_address)
 
             data, error = await self._post(
                 f"/orders/{chain}/seaport/listings",

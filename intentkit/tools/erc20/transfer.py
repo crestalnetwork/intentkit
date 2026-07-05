@@ -11,11 +11,13 @@ from web3 import Web3
 from intentkit.tools.erc20.base import ERC20BaseTool
 from intentkit.tools.erc20.constants import ERC20_ABI
 from intentkit.tools.erc20.utils import get_token_details
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class TransferInput(BaseModel):
     """Input schema for ERC20 transfer."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     contract_address: str = Field(..., description="ERC20 token contract address")
     destination_address: str = Field(..., description="Recipient address")
     amount: str = Field(
@@ -37,6 +39,7 @@ class ERC20Transfer(ERC20BaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         contract_address: str,
         destination_address: str,
         amount: str,
@@ -45,6 +48,7 @@ class ERC20Transfer(ERC20BaseTool):
         """Transfer ERC20 tokens to a destination address.
 
         Args:
+            wallet_address: The team wallet address to send from.
             contract_address: The contract address of the ERC20 token.
             destination_address: The address to send the tokens to.
             amount: The amount to transfer in whole units.
@@ -53,15 +57,18 @@ class ERC20Transfer(ERC20BaseTool):
             A message containing the transfer result or error details.
         """
         try:
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Get the unified wallet (signing-capable, guarded)
+            wallet = await self.get_unified_wallet(wallet_address)
+            w3_read = self.web3_client()
 
             w3 = Web3()
             checksum_contract = w3.to_checksum_address(contract_address)
             checksum_destination = w3.to_checksum_address(destination_address)
 
             # Get token details
-            token_details = await get_token_details(wallet, contract_address)
+            token_details = await get_token_details(
+                w3_read, contract_address, wallet.address
+            )
 
             if not token_details:
                 raise ToolException(
@@ -90,7 +97,7 @@ class ERC20Transfer(ERC20BaseTool):
             # Check if destination is also an ERC20 token contract
             # This helps prevent accidental transfers to token contracts
             destination_token_details = await get_token_details(
-                wallet, destination_address
+                w3_read, destination_address, wallet.address
             )
             if destination_token_details:
                 raise ToolException(

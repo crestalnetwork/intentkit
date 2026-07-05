@@ -4,6 +4,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/aave_v3/aave_v3.svg",
   "tools": {
     "aave_v3_get_user_account_data": {

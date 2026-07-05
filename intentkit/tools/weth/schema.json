@@ -5,6 +5,7 @@
     "Crypto",
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/weth/weth.svg",
   "tools": {
     "weth_wrap_eth": {

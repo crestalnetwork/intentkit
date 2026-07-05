@@ -1,8 +1,8 @@
 """Team API: Crypto Wallets — wallets owned at the team level.
 
-Wallets belong to the team, never to an agent; agents are only authorized to
-use one via ``Agent.wallet_id``. Members can list wallets; only admins can
-create them. Provider payloads (private keys, Privy ids) are never returned —
+Wallets belong to the team, never to an agent. Web3 tools pick a wallet by
+address from the team's pool at call time. Members can list wallets; only
+admins can create them. Provider payloads (private keys, Privy ids) are never returned —
 ``TeamWallet.wallet_data`` is excluded from serialization.
 """
 

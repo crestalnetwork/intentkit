@@ -2,8 +2,9 @@
 Tests for unified wallet provider functionality.
 
 These tests verify that the unified wallet provider and signer
-interfaces resolve the agent's bound TeamWallet and dispatch to the
-correct provider implementation (CDP, native, Safe/Privy, readonly).
+interfaces resolve a team wallet by address within the agent's team and
+dispatch to the correct provider implementation (CDP, native,
+Safe/Privy, readonly).
 """
 
 import json
@@ -20,6 +21,7 @@ from intentkit.wallets.signer import ThreadSafeEvmWalletSigner
 
 TEAM_ID = "team-1"
 WALLET_ID = "wallet-1"
+WALLET_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678"
 
 
 def _team_wallet(
@@ -41,20 +43,19 @@ def _team_wallet(
     )
 
 
-def _agent(wallet_id: str | None = WALLET_ID) -> MagicMock:
-    """Build a fake agent bound to the team wallet."""
+def _agent() -> MagicMock:
+    """Build a fake agent belonging to the wallet's team."""
     agent = MagicMock()
     agent.id = "test-agent"
     agent.team_id = TEAM_ID
-    agent.wallet_id = wallet_id
     agent.network_id = "base-mainnet"
     return agent
 
 
 def _patch_wallet_get(wallet: TeamWallet | None):
-    """Patch TeamWallet.get so the agent resolves to the given wallet."""
+    """Patch the by-address lookup so it resolves to the given wallet."""
     return patch(
-        "intentkit.models.wallet.TeamWallet.get",
+        "intentkit.models.wallet.TeamWallet.get_by_address",
         new=AsyncMock(return_value=wallet),
     )
 
@@ -78,7 +79,7 @@ class TestGetWalletProvider:
                 return_value=mock_cdp_provider,
             ) as mock_get_cdp,
         ):
-            provider = await get_wallet_provider(mock_agent)
+            provider = await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
             mock_get_cdp.assert_called_once_with(wallet, mock_agent.network_id)
             assert provider == mock_cdp_provider
@@ -106,7 +107,7 @@ class TestGetWalletProvider:
                 return_value=mock_privy_provider,
             ) as mock_get_privy,
         ):
-            provider = await get_wallet_provider(mock_agent)
+            provider = await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
             mock_get_privy.assert_called_once_with(wallet.wallet_data_json())
             assert provider == mock_privy_provider
@@ -119,19 +120,20 @@ class TestGetWalletProvider:
 
         with _patch_wallet_get(wallet):
             with pytest.raises(IntentKitAPIError) as exc_info:
-                await get_wallet_provider(mock_agent)
+                await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
         assert exc_info.value.key == "ReadonlyWalletNotSupported"
 
     @pytest.mark.asyncio
-    async def test_unbound_agent_raises(self):
-        """Test that an agent without a bound wallet raises error."""
-        mock_agent = _agent(wallet_id=None)
+    async def test_unknown_address_raises(self):
+        """An address outside the team's wallet pool is rejected."""
+        mock_agent = _agent()
 
-        with pytest.raises(IntentKitAPIError) as exc_info:
-            await get_wallet_provider(mock_agent)
+        with _patch_wallet_get(None):
+            with pytest.raises(IntentKitAPIError) as exc_info:
+                await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
-        assert exc_info.value.key == "NoWalletConfigured"
+        assert exc_info.value.key == "WalletNotFound"
 
     @pytest.mark.asyncio
     async def test_unsupported_provider_raises(self):
@@ -141,7 +143,7 @@ class TestGetWalletProvider:
 
         with _patch_wallet_get(wallet):
             with pytest.raises(IntentKitAPIError) as exc_info:
-                await get_wallet_provider(mock_agent)
+                await get_wallet_provider(mock_agent, WALLET_ADDRESS)
 
         assert exc_info.value.key == "UnsupportedWalletProvider"
 
@@ -177,7 +179,7 @@ class TestEvmWallet:
                 return_value=mock_w3,
             ),
         ):
-            wallet = await EvmWallet.create(mock_agent)
+            wallet = await EvmWallet.create(mock_agent, WALLET_ADDRESS)
 
         assert wallet.address == "0x123"
         assert wallet.chain_id == 8453
@@ -212,7 +214,7 @@ class TestGetWalletSigner:
             mock_signer.address = mock_account.address
             mock_local_account_class.return_value = mock_signer
 
-            signer = await get_wallet_signer(mock_agent)
+            signer = await get_wallet_signer(mock_agent, WALLET_ADDRESS)
 
             mock_get_account.assert_called_once_with(wallet)
             mock_local_account_class.assert_called_once_with(mock_account)
@@ -227,7 +229,7 @@ class TestGetWalletSigner:
 
         with _patch_wallet_get(wallet):
             with pytest.raises(IntentKitAPIError) as exc_info:
-                await get_wallet_signer(mock_agent)
+                await get_wallet_signer(mock_agent, WALLET_ADDRESS)
 
         assert exc_info.value.key == "ReadonlyWalletNotSupported"
 

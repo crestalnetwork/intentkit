@@ -138,28 +138,42 @@ def _build_social_accounts_section(agent: Agent, agent_data: AgentData) -> str:
 
 
 async def _build_wallet_section(agent: Agent) -> str:
-    """Build wallet information section from the agent's team wallet."""
-    from intentkit.models.wallet import TeamWallet
+    """List the team's wallets when the agent has web3 tools.
 
-    wallet = await TeamWallet.get_for_team(agent.wallet_id, agent.team_id)
-    if not wallet:
+    Agents do not own wallets. When at least one web3 tool is enabled and
+    the team owns wallets, every team wallet is listed so the agent can
+    choose which one to use by passing its address to the tool.
+    """
+    from intentkit.core.agent.tool_registry import filter_web3_tool_names
+    from intentkit.models.wallet import TeamWallet, wallet_owner_team
+
+    if not agent.tools or not filter_web3_tool_names(agent.tools):
         return ""
 
-    wallet_parts = []
-    network_id = agent.network_id
+    wallets = await TeamWallet.list_for_team(wallet_owner_team(agent.team_id))
+    if not wallets:
+        return ""
 
-    if wallet.evm_wallet_address and network_id != "solana":
-        wallet_parts.append(
-            f"Your EVM wallet address is {wallet.evm_wallet_address}."
-            f"You are now in {network_id} network."
-        )
-    if wallet.solana_wallet_address and network_id == "solana":
-        wallet_parts.append(
-            f"Your Solana wallet address is {wallet.solana_wallet_address}."
-            f"You are now in {network_id} network."
-        )
+    lines = [
+        "## Team Wallets\n",
+        "Your team owns the following crypto wallets. Web3 tools take a "
+        "`wallet_address` argument — pass the address of the wallet you "
+        "want to use. Ask the user which wallet to use when it is unclear.\n",
+    ]
+    for wallet in wallets:
+        details = [f"provider: {wallet.wallet_provider}"]
+        if wallet.network_id:
+            details.append(f"network: {wallet.network_id}")
+        address = wallet.evm_wallet_address or wallet.solana_wallet_address or "n/a"
+        lines.append(f"- {wallet.name}: `{address}` ({', '.join(details)})")
+    lines.append(
+        "\nOn-chain reads work anywhere, but transactions and signing are "
+        "only permitted when you are serving your own team.\n"
+    )
+    if agent.network_id:
+        lines.append(f"You are now in the {agent.network_id} network.\n")
 
-    return "\n".join(wallet_parts) + ("\n" if wallet_parts else "")
+    return "\n".join(lines)
 
 
 def _build_agent_characteristics_section(agent: Agent) -> str:

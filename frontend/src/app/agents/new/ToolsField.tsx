@@ -1,8 +1,10 @@
 "use client";
 import React from "react";
 import { FieldProps } from "@rjsf/utils";
+import { useQuery } from "@tanstack/react-query";
 import { ToolsetCard } from "./ToolsetCard";
 import { config } from "@/lib/config";
+import { walletApi } from "@/lib/api";
 
 interface ToolInfo {
     title?: string;
@@ -13,6 +15,7 @@ interface ToolsetCatalogEntry {
     title?: string;
     description?: string;
     "x-icon"?: string;
+    "x-web3"?: boolean;
     tools?: Record<string, ToolInfo>;
 }
 
@@ -24,6 +27,13 @@ interface ToolsetCatalogEntry {
  */
 export function ToolsField(props: FieldProps<string[]>) {
     const { schema, formData, onChange, idSchema, fieldPathId } = props;
+
+    // Web3 toolsets are only selectable when the team owns at least one wallet.
+    const { data: wallets } = useQuery({
+        queryKey: ["wallets"],
+        queryFn: () => walletApi.listWallets(),
+    });
+    const hasWallets = (wallets?.length ?? 0) > 0;
 
     const catalog = ((schema as Record<string, unknown>)["x-catalog"] ||
         {}) as Record<string, ToolsetCatalogEntry>;
@@ -52,12 +62,14 @@ export function ToolsField(props: FieldProps<string[]>) {
         setSelected(next);
     };
 
-    // Sort toolsets alphabetically by title
-    const sortedCategories = Object.entries(catalog).sort(([, a], [, b]) => {
-        const titleA = a.title || "";
-        const titleB = b.title || "";
-        return titleA.localeCompare(titleB);
-    });
+    // Web3 categories are hidden until the team owns a wallet; sort by title
+    const sortedCategories = Object.entries(catalog)
+        .filter(([, entry]) => hasWallets || entry["x-web3"] !== true)
+        .sort(([, a], [, b]) => {
+            const titleA = a.title || "";
+            const titleB = b.title || "";
+            return titleA.localeCompare(titleB);
+        });
 
     return (
         <div id={idSchema?.$id || "tools-field"} className="space-y-4">

@@ -5,6 +5,7 @@
     "Crypto",
     "Analytics"
   ],
+  "x-web3": true,
   "x-icon": "/tools/polymarket/polymarket.png",
   "tools": {
     "polymarket_search_markets": {

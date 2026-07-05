@@ -13,10 +13,32 @@ from intentkit.utils.error import IntentKitAPIError
 from .info import invalidate_agent_info
 from .notifications import send_agent_notification
 from .queries import get_agent, get_agent_by_id_or_slug
-from .tool_registry import sanitize_tools, validate_tools
-from .wallet import validate_wallet_binding
+from .tool_registry import filter_web3_tool_names, sanitize_tools, validate_tools
 
 logger = logging.getLogger(__name__)
+
+
+async def _validate_web3_tools(tools: list[str] | None, team_id: str | None) -> None:
+    """Reject web3 tools for teams that own no wallets.
+
+    Web3 tools operate on team wallets; without at least one wallet they can
+    never run, so they are not selectable.
+    """
+    if not tools:
+        return
+    web3_names = filter_web3_tool_names(tools)
+    if not web3_names:
+        return
+    from intentkit.models.wallet import TeamWallet, wallet_owner_team
+
+    wallets = await TeamWallet.list_for_team(wallet_owner_team(team_id))
+    if not wallets:
+        raise IntentKitAPIError(
+            400,
+            "Web3ToolsRequireWallet",
+            "This team has no crypto wallets, so web3 tools cannot be enabled. "
+            "Create a wallet first in the Crypto Wallets page.",
+        )
 
 
 async def _validate_slug_unique(
@@ -95,8 +117,8 @@ async def override_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
-    # Wallets are team property; validate the binding before persisting
-    _ = await validate_wallet_binding(agent.wallet_id, existing_agent.team_id)
+    # Web3 tools are only usable when the team owns at least one wallet
+    await _validate_web3_tools(agent.tools, existing_agent.team_id)
 
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
@@ -176,11 +198,9 @@ async def patch_agent(
     ):
         raise IntentKitAPIError(400, "SlugImmutable", "Slug cannot be changed once set")
 
-    # Wallets are team property; validate the binding before persisting
-    if "wallet_id" in update_fields:
-        _ = await validate_wallet_binding(
-            update_fields["wallet_id"], existing_agent.team_id
-        )
+    # Web3 tools are only usable when the team owns at least one wallet
+    if "tools" in update_fields:
+        await _validate_web3_tools(update_fields["tools"], existing_agent.team_id)
 
     async with get_session() as db:
         db_agent = await db.get(AgentTable, agent_id)
@@ -255,8 +275,8 @@ async def create_agent(agent: AgentCreate) -> tuple[Agent, AgentData]:
     if agent.tools:
         validate_tools(agent.tools)
 
-    # Wallets are team property; validate the binding before persisting
-    _ = await validate_wallet_binding(agent.wallet_id, agent.team_id)
+    # Web3 tools are only usable when the team owns at least one wallet
+    await _validate_web3_tools(agent.tools, agent.team_id)
 
     async with get_session() as db:
         try:

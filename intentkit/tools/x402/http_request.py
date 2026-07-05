@@ -9,6 +9,7 @@ from langchain_core.tools import ArgsSchema, ToolException
 from pydantic import BaseModel, Field
 from web3.exceptions import TimeExhausted, Web3RPCError
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.x402.base import X402BaseTool, format_prefund_web3_error
 from intentkit.tools.x402.httpx_compat import PaymentError, X402HttpxCompatClient
 from intentkit.utils.error import IntentKitAPIError
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 class X402HttpRequestInput(BaseModel):
     """Arguments for a generic x402 HTTP request."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     method: str = Field(description="HTTP method (GET or POST).")
     url: str = Field(description="Absolute URL (must include scheme and host).")
     headers: dict[str, str] | None = Field(
@@ -54,6 +56,7 @@ class X402HttpRequest(X402BaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         method: str,
         url: str,
         headers: dict[str, str] | None = None,
@@ -97,11 +100,12 @@ class X402HttpRequest(X402BaseTool):
 
         try:
             await self._prefund_safe_wallet(
+                wallet_address=wallet_address,
                 method=method_upper,
                 request_kwargs=request_kwargs,
                 timeout=timeout,
             )
-            account = await self.get_signer()
+            account = await self.get_signer(wallet_address)
             async with X402HttpxCompatClient(
                 account=account,
                 timeout=timeout,
@@ -118,6 +122,7 @@ class X402HttpRequest(X402BaseTool):
                     tool_name=self.name,
                     method=method_upper,
                     url=url,
+                    wallet_address=wallet_address,
                     pay_to_fallback=pay_to,
                 )
 

@@ -40,20 +40,6 @@ class AgentResponse(Agent):
     wechat_entrypoint_prompt: SkipJsonSchema[str | None] = None
 
     # Additional fields specific to AgentResponse
-    evm_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="EVM wallet address of the agent",
-        ),
-    ]
-    solana_wallet_address: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="Solana wallet address of the agent",
-        ),
-    ]
     has_telegram_self_key: Annotated[
         bool,
         PydanticField(
@@ -118,13 +104,6 @@ class AgentResponse(Agent):
         Returns:
             AgentResponse: Response model with additional processed data
         """
-        # Resolve wallet addresses from the bound team wallet
-        from intentkit.models.wallet import TeamWallet
-
-        wallet = await TeamWallet.get_for_team(agent.wallet_id, agent.team_id)
-        evm_wallet_address = wallet.evm_wallet_address if wallet else None
-        solana_wallet_address = wallet.solana_wallet_address if wallet else None
-
         # Process Telegram self-key status
         linked_telegram_username = None
         linked_telegram_name = None
@@ -145,8 +124,6 @@ class AgentResponse(Agent):
             # Copy all fields from agent
             **agent.model_dump(),
             # Add computed fields
-            evm_wallet_address=evm_wallet_address,
-            solana_wallet_address=solana_wallet_address,
             has_telegram_self_key=has_telegram_self_key,
             linked_telegram_username=linked_telegram_username,
             linked_telegram_name=linked_telegram_name,
@@ -220,32 +197,6 @@ class AgentResponse(Agent):
                         else example
                     )
             data["examples"] = converted_examples
-
-        # Filter tools to only include enabled ones with specific configurations
-        if "tools" in data and data["tools"]:
-            filtered_tools = {}
-            for tool_name, tool_config in data["tools"].items():
-                if isinstance(tool_config, dict) and tool_config.get("enabled") is True:
-                    # Filter out disabled states from the tool configuration
-                    original_states = tool_config.get("states", {})
-                    filtered_states = {
-                        state_name: state_value
-                        for state_name, state_value in original_states.items()
-                        if state_value != "disabled"
-                    }
-
-                    # Only include the tool if it has at least one non-disabled state
-                    if filtered_states:
-                        filtered_config = {
-                            "enabled": tool_config["enabled"],
-                            "states": filtered_states,
-                        }
-                        # Add other non-sensitive config fields if needed
-                        for key in ["public", "private"]:
-                            if key in tool_config:
-                                filtered_config[key] = tool_config[key]
-                        filtered_tools[tool_name] = filtered_config
-            data["tools"] = filtered_tools
 
         return data
 

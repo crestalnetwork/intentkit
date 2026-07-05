@@ -8,12 +8,14 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 
 
 class CancelOrderInput(BaseModel):
     """Input for canceling orders."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     order_id: str | None = Field(
         default=None,
         description="ID of a specific order to cancel. Leave empty to cancel all.",
@@ -40,19 +42,18 @@ class CancelOrder(PolymarketBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         order_id: str | None = None,
         cancel_all: bool = False,
         **kwargs: Any,
     ) -> str:
-        await self._require_wallet("cancel orders")
-
         await self.user_rate_limit_by_tool(limit=20, seconds=60)
 
         if not order_id and not cancel_all:
             raise ToolException("Provide either an order_id or set cancel_all=true")
 
         if cancel_all:
-            result = await self._clob_auth_delete("/cancel-all")
+            result = await self._clob_auth_delete(wallet_address, "/cancel-all")
             return json.dumps(
                 {
                     "success": True,
@@ -62,7 +63,9 @@ class CancelOrder(PolymarketBaseTool):
                 }
             )
         else:
-            result = await self._clob_auth_delete("/order", body={"orderID": order_id})
+            result = await self._clob_auth_delete(
+                wallet_address, "/order", body={"orderID": order_id}
+            )
             return json.dumps(
                 {
                     "success": True,

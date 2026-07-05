@@ -35,6 +35,9 @@ class McpServerDef:
     tags: list[str] = field(default_factory=list)
     """Tags for schema categorization."""
 
+    web3: bool = False
+    """Whether the server's tools operate on team wallets (marks x-web3)."""
+
 
 MCP_SERVERS: dict[str, McpServerDef] = {
     "mcp_coingecko": McpServerDef(

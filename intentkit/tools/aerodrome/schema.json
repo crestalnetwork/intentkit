@@ -4,6 +4,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/aerodrome/aerodrome.svg",
   "tools": {
     "aerodrome_quote": {
@@ -12,7 +13,7 @@
     },
     "aerodrome_swap": {
       "title": "Execute Swap",
-      "description": "Execute token swaps on Aerodrome Slipstream (requires wallet)"
+      "description": "Execute token swaps on Aerodrome Slipstream"
     },
     "aerodrome_get_positions": {
       "title": "View Positions",
@@ -20,11 +21,11 @@
     },
     "aerodrome_add_liquidity": {
       "title": "Add Liquidity",
-      "description": "Add liquidity to Aerodrome Slipstream pools (requires wallet)"
+      "description": "Add liquidity to Aerodrome Slipstream pools"
     },
     "aerodrome_remove_liquidity": {
       "title": "Remove Liquidity",
-      "description": "Remove liquidity from Aerodrome Slipstream positions (requires wallet)"
+      "description": "Remove liquidity from Aerodrome Slipstream positions"
     }
   }
 }

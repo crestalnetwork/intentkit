@@ -5,6 +5,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.superfluid.base import SuperfluidBaseTool
 from intentkit.tools.superfluid.constants import (
     SUPERFLUID_HOST_ADDRESS,
@@ -15,6 +16,7 @@ from intentkit.tools.superfluid.constants import (
 class UpdateFlowInput(BaseModel):
     """Input schema for update_flow."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_address: str = Field(..., description="Super Token contract address")
     recipient: str = Field(..., description="Recipient wallet address")
     new_flow_rate: str = Field(
@@ -36,6 +38,7 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         token_address: str,
         recipient: str,
         new_flow_rate: str,
@@ -43,6 +46,7 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
         """Update an existing money stream using Superfluid.
 
         Args:
+            wallet_address: Address of the team wallet that sends the stream.
             token_address: The Super token contract address.
             recipient: The address receiving the stream.
             new_flow_rate: The new flowrate in wei per second.
@@ -51,8 +55,8 @@ class SuperfluidUpdateFlow(SuperfluidBaseTool):
             A message containing the result or error details.
         """
         try:
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Get the unified wallet (guarded signing helper)
+            wallet = await self.get_unified_wallet(wallet_address)
 
             w3 = Web3()
             checksum_token = w3.to_checksum_address(token_address)

@@ -5,12 +5,15 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
+
 from .base import EnsoBaseTool, base_url
 
 
 class EnsoGetBalancesInput(BaseModel):
     """Input model for retrieving wallet balances."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     chainId: int | None = Field(None, description="Chain ID")
 
 
@@ -36,22 +39,24 @@ class EnsoGetWalletBalances(EnsoBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         chainId: int | None = None,
         **_: object,
     ) -> EnsoGetBalancesOutput:
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_wallet_address()
+        # Read-only: just validate the wallet belongs to the agent's team.
+        await self.resolve_wallet(wallet_address)
 
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {api_token}",
         }
 
-        params = EnsoGetBalancesInput(chainId=resolved_chain_id).model_dump(
-            exclude_none=True
-        )
+        params = EnsoGetBalancesInput(
+            wallet_address=wallet_address, chainId=resolved_chain_id
+        ).model_dump(exclude_none=True, exclude={"wallet_address"})
         params["eoaAddress"] = wallet_address
         params["useEoa"] = True
 
@@ -77,6 +82,7 @@ class EnsoGetWalletBalances(EnsoBaseTool):
 class EnsoGetApprovalsInput(BaseModel):
     """Input model for retrieving wallet approvals."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     chainId: int | None = Field(None, description="Chain ID")
     routingStrategy: Literal["ensowallet", "router", "delegate"] | None = Field(
         None, description="Routing strategy"
@@ -104,6 +110,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         chainId: int | None = None,
         routingStrategy: Literal["ensowallet", "router", "delegate"] | None = None,
         **_: object,
@@ -111,7 +118,8 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_wallet_address()
+        # Read-only: just validate the wallet belongs to the agent's team.
+        await self.resolve_wallet(wallet_address)
 
         headers = {
             "accept": "application/json",
@@ -119,9 +127,10 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
         }
 
         params = EnsoGetApprovalsInput(
+            wallet_address=wallet_address,
             chainId=resolved_chain_id,
             routingStrategy=routingStrategy,
-        ).model_dump(exclude_none=True)
+        ).model_dump(exclude_none=True, exclude={"wallet_address"})
         params["fromAddress"] = wallet_address
 
         async with httpx.AsyncClient() as client:
@@ -150,6 +159,7 @@ class EnsoGetWalletApprovals(EnsoBaseTool):
 class EnsoWalletApproveInput(BaseModel):
     """Input model for approving token spend for the wallet."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     tokenAddress: str = Field(description="ERC20 token address")
     amount: int = Field(description="Amount to approve in wei")
     chainId: int | None = Field(None, description="Chain ID")
@@ -184,6 +194,7 @@ class EnsoWalletApprove(EnsoBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         tokenAddress: str,
         amount: int,
         chainId: int | None = None,
@@ -193,7 +204,8 @@ class EnsoWalletApprove(EnsoBaseTool):
         context = self.get_context()
         resolved_chain_id = self.resolve_chain_id(context, chainId)
         api_token = self.get_api_token(context)
-        wallet_address = await self.get_wallet_address()
+        # Signing operation: acquire the guarded wallet provider up front.
+        wallet_provider = await self.get_wallet_provider(wallet_address)
 
         headers = {
             "accept": "application/json",
@@ -201,11 +213,12 @@ class EnsoWalletApprove(EnsoBaseTool):
         }
 
         params = EnsoWalletApproveInput(
+            wallet_address=wallet_address,
             tokenAddress=tokenAddress,
             amount=amount,
             chainId=resolved_chain_id,
             routingStrategy=routingStrategy,
-        ).model_dump(exclude_none=True)
+        ).model_dump(exclude_none=True, exclude={"wallet_address"})
         params["fromAddress"] = wallet_address
 
         async with httpx.AsyncClient() as client:
@@ -221,7 +234,6 @@ class EnsoWalletApprove(EnsoBaseTool):
                 content = EnsoWalletApproveOutput(**json_dict)
                 artifact = EnsoWalletApproveArtifact(**json_dict)
 
-                wallet_provider = await self.get_wallet_provider()
                 tx_data = json_dict.get("tx", {})
                 if tx_data:
                     tx_hash = await wallet_provider.send_transaction(  # pyright: ignore[reportAttributeAccessIssue]

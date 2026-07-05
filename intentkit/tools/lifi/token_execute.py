@@ -26,11 +26,13 @@ from intentkit.tools.lifi.utils import (
     prepare_transaction_params,
     validate_inputs,
 )
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class TokenExecuteInput(BaseModel):
     """Input for the TokenExecute tool."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     from_chain: str = Field(
         description="Source chain (e.g. 'ETH', 'POL', 'ARB'). Chain ID or key."
     )
@@ -55,14 +57,14 @@ class TokenExecuteInput(BaseModel):
 class TokenExecute(LiFiBaseTool):
     """Tool for executing token transfers across chains using LiFi.
 
-    This tool executes actual token transfers and swaps using the CDP EVM account.
-    Requires a properly configured CDP wallet to work.
+    This tool executes actual token transfers and swaps using the CDP EVM
+    account behind the selected team wallet.
     """
 
     name: str = "lifi_token_execute"
     description: str = (
         "Execute a cross-chain token transfer or same-chain swap via LiFi. "
-        "Use token_quote first to check rates. Requires CDP wallet with sufficient funds."
+        "Use lifi_token_quote first to check rates."
     )
     args_schema: ArgsSchema | None = TokenExecuteInput
     api_url: str = LIFI_API_URL
@@ -100,6 +102,7 @@ class TokenExecute(LiFiBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         from_chain: str,
         to_chain: str,
         from_token: str,
@@ -145,12 +148,12 @@ class TokenExecute(LiFiBaseTool):
             )
 
             # Get CDP EVM account and web3 client
-            evm_account = await self._get_evm_account()
+            evm_account = await self._get_evm_account(wallet_address)
 
             from_address = evm_account.address
             if not from_address:
                 raise ToolException(
-                    "No wallet address available. Please check your CDP wallet configuration."
+                    "No wallet address available for the selected wallet."
                 )
 
             try:
@@ -206,14 +209,12 @@ class TokenExecute(LiFiBaseTool):
             self.logger.error("LiFi_Error: %s", str(e))
             raise ToolException(f"An unexpected error occurred: {e!s}")
 
-    async def _get_evm_account(self) -> EvmServerAccount:
-        """Get CDP EVM account with error handling."""
+    async def _get_evm_account(self, wallet_address: str) -> EvmServerAccount:
+        """Get the CDP EVM account behind a team wallet, with error handling."""
         try:
-            evm_account = await self.get_evm_account()
+            evm_account = await self.get_evm_account(wallet_address)
             if not evm_account:
-                raise ToolException(
-                    "CDP wallet account not configured. Please set up your agent's CDP wallet first."
-                )
+                raise ToolException("No CDP account available for the selected wallet.")
 
             return evm_account
 
@@ -222,7 +223,7 @@ class TokenExecute(LiFiBaseTool):
         except Exception as e:
             self.logger.error("LiFi_CDP_Error: %s", str(e))
             raise ToolException(
-                f"Cannot access CDP wallet: {e!s}\n\nPlease ensure your agent has a properly configured CDP wallet with sufficient funds."
+                f"Cannot access CDP account: {e!s}\n\nEnsure the selected wallet is a CDP wallet with sufficient funds."
             )
 
     async def _get_quote(

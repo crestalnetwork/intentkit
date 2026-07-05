@@ -6,6 +6,7 @@
     "Crypto",
     "DeFi"
   ],
+  "x-web3": true,
   "tools": {
     "erc20_get_balance": {
       "title": "Get ERC20 Balance",

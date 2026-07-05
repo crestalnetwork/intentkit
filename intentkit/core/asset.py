@@ -17,7 +17,7 @@ from intentkit.config.redis import get_redis
 from intentkit.core.agent import get_agent
 from intentkit.models.agent import Agent, AgentTable
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.wallets import get_agent_wallet_address
+from intentkit.wallets import list_agent_team_wallets
 from intentkit.wallets.web3 import get_async_web3_client
 
 logger = logging.getLogger(__name__)
@@ -200,19 +200,34 @@ async def agent_asset(agent_id: str) -> AgentAssets:
         cached_assets = AgentAssets.model_validate(cached_data)
         return cached_assets
 
-    wallet_address = await get_agent_wallet_address(agent)
-    if not wallet_address:
-        assets_result = AgentAssets(net_worth="0", tokens=[])
-    elif not agent.network_id:
+    # Agents have no wallet of their own; aggregate over the team's wallets.
+    wallets = await list_agent_team_wallets(agent)
+    addresses = [w.evm_wallet_address for w in wallets if w.evm_wallet_address]
+    if not addresses or not agent.network_id:
         assets_result = AgentAssets(net_worth="0", tokens=[])
     else:
         try:
             web3_client = get_async_web3_client(str(agent.network_id))
-            tokens = await build_assets_list(agent, wallet_address, web3_client)
-            net_worth = await _get_wallet_net_worth(
-                wallet_address, str(agent.network_id)
+            merged: dict[str, Decimal] = {}
+            net_worth_total = Decimal(0)
+            for address in addresses:
+                tokens = await build_assets_list(agent, address, web3_client)
+                for token in tokens:
+                    merged[token.symbol] = (
+                        merged.get(token.symbol, Decimal(0)) + token.balance
+                    )
+                net_worth = await _get_wallet_net_worth(address, str(agent.network_id))
+                try:
+                    net_worth_total += Decimal(net_worth)
+                except Exception:
+                    pass
+            assets_result = AgentAssets(
+                net_worth=str(net_worth_total),
+                tokens=[
+                    Asset(symbol=symbol, balance=balance)
+                    for symbol, balance in merged.items()
+                ],
             )
-            assets_result = AgentAssets(net_worth=net_worth, tokens=tokens)
         except IntentKitAPIError:
             raise
         except Exception as exc:

@@ -4,6 +4,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/uniswap/uniswap.svg",
   "tools": {
     "uniswap_quote": {

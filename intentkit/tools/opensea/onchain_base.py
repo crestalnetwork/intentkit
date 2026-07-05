@@ -63,7 +63,7 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
         return counter
 
     async def _ensure_nft_approval(
-        self, contract_address: str, owner_address: str
+        self, contract_address: str, wallet_address: str
     ) -> str | None:
         """Ensure the NFT contract is approved for OpenSea conduit.
 
@@ -71,14 +71,14 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
             Transaction hash if approval was sent, None if already approved.
         """
         w3 = self.web3_client()
-        wallet = await self.get_unified_wallet()
+        wallet = await self.get_unified_wallet(wallet_address)
 
         nft_contract = w3.eth.contract(
             address=Web3.to_checksum_address(contract_address),
             abi=ERC721_APPROVAL_ABI,
         )
         is_approved = await nft_contract.functions.isApprovedForAll(
-            Web3.to_checksum_address(owner_address),
+            Web3.to_checksum_address(wallet_address),
             Web3.to_checksum_address(OPENSEA_CONDUIT_ADDRESS),
         ).call()
 
@@ -155,13 +155,15 @@ class OpenSeaOnChainBaseTool(OpenSeaApiMixin, IntentKitOnChainTool):
             "counter": counter,
         }
 
-    async def _sign_seaport_order(self, order_parameters: dict[str, Any]) -> str:
+    async def _sign_seaport_order(
+        self, order_parameters: dict[str, Any], wallet_address: str
+    ) -> str:
         """Sign a Seaport order using EIP-712 typed data.
 
         Returns:
             The signature hex string.
         """
-        signer = await self.get_wallet_signer()
+        signer = await self.get_wallet_signer(wallet_address)
         w3 = self.web3_client()
         chain_id = await w3.eth.chain_id
 

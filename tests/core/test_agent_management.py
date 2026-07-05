@@ -43,7 +43,6 @@ def _make_existing_agent(**overrides):
         owner="owner-1",
         slug="my-slug",
         purpose="some purpose",
-        wallet_id=None,
         team_id=None,
     )
     defaults.update(overrides)
@@ -73,7 +72,6 @@ def _make_agent_update(**overrides):
     agent.slug = dump.get("slug")
     agent.sub_agents = dump.get("sub_agents")
     agent.tools = dump.get("tools")
-    agent.wallet_id = dump.get("wallet_id")
     return agent
 
 
@@ -204,7 +202,7 @@ class TestOverrideAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}.validate_wallet_binding", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     @patch(f"{MODULE}.get_agent", new_callable=AsyncMock)
     async def test_successful_override(
@@ -227,7 +225,7 @@ class TestOverrideAgent:
         mock_session.get = AsyncMock(return_value=db_agent)
         mock_session.scalar = AsyncMock(return_value=None)  # slug unique check
 
-        mock_validate_wallet.return_value = None
+        mock_validate_wallet.return_value = None  # web3 gating no-op
 
         agent_update = _make_agent_update(slug="my-slug")
 
@@ -240,7 +238,7 @@ class TestOverrideAgent:
         mock_session.commit.assert_awaited_once()
         # Wallet binding is validated before persisting
         mock_validate_wallet.assert_awaited_once_with(
-            agent_update.wallet_id, existing.team_id
+            agent_update.tools, existing.team_id
         )
         mock_notify.assert_called_once()
 
@@ -275,7 +273,7 @@ class TestPatchAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}.validate_wallet_binding", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     @patch(f"{MODULE}.get_agent", new_callable=AsyncMock)
     async def test_successful_patch(
@@ -298,10 +296,10 @@ class TestPatchAgent:
         mock_session.get = AsyncMock(return_value=db_agent)
         mock_session.scalar = AsyncMock(return_value=None)
 
-        mock_validate_wallet.return_value = None
+        mock_validate_wallet.return_value = None  # web3 gating no-op
 
-        # Updating slug (same value) and wallet_id via exclude_unset
-        agent_update = _make_agent_update(slug="my-slug", wallet_id="wallet-1")
+        # Updating slug (same value) and tools via exclude_unset
+        agent_update = _make_agent_update(slug="my-slug", tools=["http_get"])
 
         with patch("intentkit.models.agent.Agent.model_validate") as mock_validate:
             mock_validate.return_value = _make_existing_agent()
@@ -310,8 +308,8 @@ class TestPatchAgent:
             )
 
         mock_session.commit.assert_awaited_once()
-        # Wallet binding is validated when wallet_id is part of the patch
-        mock_validate_wallet.assert_awaited_once_with("wallet-1", existing.team_id)
+        # Web3 gating runs when tools are part of the patch
+        mock_validate_wallet.assert_awaited_once_with(["http_get"], existing.team_id)
         mock_notify.assert_called_once()
 
 
@@ -353,8 +351,8 @@ class TestCreateAgent:
         agent_create.upstream_id = None
         agent_create.sub_agents = None
         agent_create.slug = None
-        # No wallet bound, so the real validate_wallet_binding is a no-op
-        agent_create.wallet_id = None
+        # No tools set, so the real web3 gating is a no-op
+        agent_create.tools = None
 
         with patch(f"{MODULE}.AgentTable") as mock_table:
             mock_table.return_value = MagicMock()
@@ -365,7 +363,7 @@ class TestCreateAgent:
 
     @pytest.mark.asyncio
     @patch(f"{MODULE}.send_agent_notification")
-    @patch(f"{MODULE}.validate_wallet_binding", new_callable=AsyncMock)
+    @patch(f"{MODULE}._validate_web3_tools", new_callable=AsyncMock)
     @patch(f"{MODULE}.get_session")
     async def test_successful_creation(
         self, mock_get_session, mock_validate_wallet, mock_notify, agent_data_table
@@ -376,7 +374,7 @@ class TestCreateAgent:
         mock_get_session.return_value = session_ctx
         mock_session.scalar = AsyncMock(return_value=None)
 
-        mock_validate_wallet.return_value = None
+        mock_validate_wallet.return_value = None  # web3 gating no-op
 
         agent_create = _make_agent_create(owner="owner-1")
         agent_create.upstream_id = None
@@ -401,7 +399,7 @@ class TestCreateAgent:
         mock_session.commit.assert_awaited_once()
         # Wallet binding is validated before persisting
         mock_validate_wallet.assert_awaited_once_with(
-            agent_create.wallet_id, agent_create.team_id
+            agent_create.tools, agent_create.team_id
         )
         mock_notify.assert_called_once()
 

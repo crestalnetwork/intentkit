@@ -6,7 +6,20 @@ from typing import Any
 from langchain_core.tools.base import ToolException
 from web3 import Web3
 
-from intentkit.tools.aerodrome.constants import ERC20_ABI, WRAPPED_NATIVE_ADDRESS
+from intentkit.tools.aerodrome.constants import (
+    ERC20_ABI,
+    STAKED_DATA_KEY,
+    WRAPPED_NATIVE_ADDRESS,
+)
+
+
+def staked_data_key(wallet_address: str) -> str:
+    """Per-wallet tool-data key for persisted staked position ids.
+
+    The key embeds the lowercased wallet address so several team wallets
+    never clobber each other's staked position lists.
+    """
+    return f"{STAKED_DATA_KEY}:{wallet_address.lower()}"
 
 
 def resolve_token(token: str) -> str:

@@ -7,11 +7,13 @@ from web3 import Web3
 
 from intentkit.tools.erc721.base import ERC721BaseTool
 from intentkit.tools.erc721.constants import ERC721_ABI
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class MintInput(BaseModel):
     """Input schema for ERC721 mint."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     contract_address: str = Field(..., description="ERC721 NFT contract address")
     destination: str = Field(..., description="Address to receive the minted NFT")
 
@@ -30,12 +32,14 @@ class ERC721Mint(ERC721BaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         contract_address: str,
         destination: str,
     ) -> str:
         """Mint an NFT to a destination address.
 
         Args:
+            wallet_address: The team wallet address to mint with.
             contract_address: The NFT contract address.
             destination: The address to receive the minted NFT.
 
@@ -43,8 +47,8 @@ class ERC721Mint(ERC721BaseTool):
             A message containing the mint result or error details.
         """
         try:
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
+            # Get the unified wallet (signing-capable, guarded)
+            wallet = await self.get_unified_wallet(wallet_address)
 
             w3 = Web3()
             checksum_contract = w3.to_checksum_address(contract_address)
@@ -70,7 +74,7 @@ class ERC721Mint(ERC721BaseTool):
             )
 
             # Wait for receipt
-            receipt = await wallet.wait_for_transaction_receipt(tx_hash)  # pyright: ignore[reportAttributeAccessIssue]
+            receipt = await wallet.wait_for_receipt(tx_hash)
 
             # Check transaction status
             status = receipt.get("status", 1)

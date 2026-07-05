@@ -210,17 +210,6 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
     category: str = "polymarket"
 
-    async def _require_wallet(self, action: str = "perform this action") -> None:
-        """Validate the agent has a signing-capable wallet.
-
-        Raises ToolException if not.
-        """
-        if not await self.is_onchain_capable():
-            raise ToolException(
-                f"Agent wallet is not configured to {action}. "
-                "Configure a CDP, Native, Safe, or Privy wallet."
-            )
-
     # --- Public API helpers ---
 
     async def _gamma_get(self, path: str, params: dict[str, Any] | None = None) -> Any:
@@ -237,39 +226,43 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
     # --- L1 Auth: derive API credentials via EIP-712 ---
 
-    async def _current_signer_address(self) -> str | None:
-        """Signing address of the bound wallet, without network calls.
+    async def _signer_address_for(self, wallet_address: str) -> str | None:
+        """Signing address for the requested team wallet, without network calls.
 
-        Cached CLOB creds are derived from the wallet's signer; when the
-        agent is rebound to a different team wallet the cache must be
-        invalidated, so compare against this address.
+        Cached CLOB creds are derived from the wallet's signer; if the signer
+        behind the wallet row ever changes, the cache must be invalidated, so
+        compare against this address.
         """
-        from intentkit.wallets import get_agent_wallet
-
-        wallet = await get_agent_wallet(self.get_context().agent)
-        if wallet is None:
-            return None
+        wallet = await self.resolve_wallet(wallet_address)
         if wallet.wallet_provider in ("safe", "privy"):
             return wallet.wallet_data_json().get("privy_wallet_address")
         return wallet.evm_wallet_address
 
-    async def _ensure_api_creds(self) -> dict[str, str]:
-        """Ensure API credentials exist, derive them if not.
+    async def _ensure_api_creds(self, wallet_address: str) -> dict[str, str]:
+        """Ensure API credentials exist for the requested wallet, derive if not.
 
-        Returns dict with keys: api_key, api_secret, api_passphrase, wallet_address
+        Creds are cached per team wallet so multiple wallets don't clobber
+        each other. Returns dict with keys: api_key, api_secret,
+        api_passphrase, wallet_address (the signer address).
+
+        CLOB credentials give full control of the wallet's trading account,
+        so even the CACHED path is gated on the signing rule — otherwise a
+        public conversation could reuse creds derived during a private run.
         """
-        cached = await self.get_agent_tool_data_raw(self.category, "api_creds")
+        self.ensure_signing_allowed()
+        cache_key = f"api_creds:{wallet_address.lower()}"
+        cached = await self.get_agent_tool_data_raw(self.category, cache_key)
         if cached and all(
             k in cached
             for k in ("api_key", "api_secret", "api_passphrase", "wallet_address")
         ):
-            expected = await self._current_signer_address()
+            expected = await self._signer_address_for(wallet_address)
             if expected and cached["wallet_address"].lower() == expected.lower():
                 return cached
-            # Wallet changed since the creds were derived; drop and re-derive.
+            # Signer changed since the creds were derived; drop and re-derive.
 
-        signer = await self.get_wallet_signer()
-        wallet_address = signer.address
+        signer = await self.get_wallet_signer(wallet_address)
+        signer_address = signer.address
         timestamp = str(int(time.time()))
         nonce = 0
 
@@ -277,7 +270,7 @@ class PolymarketBaseTool(IntentKitOnChainTool):
             domain_data=CLOB_AUTH_DOMAIN,
             message_types=CLOB_AUTH_TYPES,
             message_data={
-                "address": wallet_address,
+                "address": signer_address,
                 "timestamp": timestamp,
                 "nonce": nonce,
                 "message": CLOB_AUTH_MESSAGE_TEXT,
@@ -286,7 +279,7 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
         url = f"{CLOB_URL}/auth/api-key"
         headers = {
-            "POLY_ADDRESS": wallet_address,
+            "POLY_ADDRESS": signer_address,
             "POLY_SIGNATURE": _get_signature_hex(signed),
             "POLY_TIMESTAMP": timestamp,
             "POLY_NONCE": str(nonce),
@@ -299,10 +292,10 @@ class PolymarketBaseTool(IntentKitOnChainTool):
             "api_secret": result.get("secret") or result.get("api_secret", ""),
             "api_passphrase": result.get("passphrase")
             or result.get("api_passphrase", ""),
-            "wallet_address": wallet_address,
+            "wallet_address": signer_address,
         }
 
-        await self.save_agent_tool_data_raw(self.category, "api_creds", creds)
+        await self.save_agent_tool_data_raw(self.category, cache_key, creds)
         return creds
 
     # --- L2 Auth: HMAC-signed requests ---
@@ -328,10 +321,10 @@ class PolymarketBaseTool(IntentKitOnChainTool):
         }
 
     async def _clob_auth_get(
-        self, path: str, params: dict[str, Any] | None = None
+        self, wallet_address: str, path: str, params: dict[str, Any] | None = None
     ) -> Any:
         """Authenticated GET to CLOB API."""
-        creds = await self._ensure_api_creds()
+        creds = await self._ensure_api_creds(wallet_address)
         full_path = path
         if params:
             qs = str(httpx.QueryParams(params))
@@ -340,9 +333,11 @@ class PolymarketBaseTool(IntentKitOnChainTool):
         headers = self._build_auth_headers(creds, "GET", full_path)
         return await _http_get(f"{CLOB_URL}{path}", params=params, headers=headers)
 
-    async def _clob_auth_post(self, path: str, body: dict[str, Any]) -> Any:
+    async def _clob_auth_post(
+        self, wallet_address: str, path: str, body: dict[str, Any]
+    ) -> Any:
         """Authenticated POST to CLOB API."""
-        creds = await self._ensure_api_creds()
+        creds = await self._ensure_api_creds(wallet_address)
         body_str = json.dumps(body, separators=(",", ":"))
         headers = self._build_auth_headers(creds, "POST", path, body_str)
         headers["Content-Type"] = "application/json"
@@ -351,10 +346,10 @@ class PolymarketBaseTool(IntentKitOnChainTool):
         )
 
     async def _clob_auth_delete(
-        self, path: str, body: dict[str, Any] | None = None
+        self, wallet_address: str, path: str, body: dict[str, Any] | None = None
     ) -> Any:
         """Authenticated DELETE to CLOB API."""
-        creds = await self._ensure_api_creds()
+        creds = await self._ensure_api_creds(wallet_address)
         body_str = json.dumps(body, separators=(",", ":")) if body else None
         headers = self._build_auth_headers(creds, "DELETE", path, body_str or "")
         if body:
@@ -365,6 +360,7 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
     async def _sign_order(
         self,
+        wallet_address: str,
         token_id: str,
         side: int,
         price: float,
@@ -377,13 +373,15 @@ class PolymarketBaseTool(IntentKitOnChainTool):
 
         Returns a dict ready to POST to /order endpoint.
         """
-        signer = await self.get_wallet_signer()
+        signer = await self.get_wallet_signer(wallet_address)
         signer_address = signer.address
 
         # For Safe/Privy wallets, maker (funds holder) differs from signer (EOA)
-        wallet_provider = await self.get_agent_wallet_provider_type()
+        wallet_provider = (
+            await self.get_signing_wallet(wallet_address)
+        ).wallet_provider
         if wallet_provider in ("safe", "privy"):
-            provider = await self.get_wallet_provider()
+            provider = await self.get_wallet_provider(wallet_address)
             maker_address = provider.get_address()
             sig_type = (
                 SIG_POLY_GNOSIS_SAFE if wallet_provider == "safe" else SIG_POLY_PROXY

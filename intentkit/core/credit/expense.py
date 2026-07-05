@@ -30,7 +30,6 @@ from intentkit.models.credit import (
     UpstreamType,
 )
 from intentkit.models.llm import LLMModelInfo
-from intentkit.wallets import get_agent_wallet_address
 
 from .base import FOURPLACES, ToolCost
 
@@ -294,8 +293,8 @@ async def expense_message(
             )
 
     # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
-    # Get agent wallet address
-    agent_wallet_address = await get_agent_wallet_address(agent)
+    # Agents no longer have an identity wallet; the field stays for history.
+    agent_wallet_address = None
 
     # MESSAGE-SPECIFIC: event_type=MESSAGE, records base_llm_amount
     event = CreditEventTable(
@@ -673,8 +672,8 @@ async def expense_tool(
     # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
     # TOOL-SPECIFIC: event_type=TOOL_CALL, records base_tool_amount and tool metadata
 
-    # Get agent wallet address
-    agent_wallet_address = await get_agent_wallet_address(agent)
+    # Agents no longer have an identity wallet; the field stays for history.
+    agent_wallet_address = None
 
     event = CreditEventTable(
         id=event_id,
@@ -1011,8 +1010,8 @@ async def expense_summarize(
     # --- SHARED STEP 9: Create CreditEvent record with full breakdown ---
     # SUMMARIZE-SPECIFIC: event_type=MEMORY, records base_llm_amount
 
-    # Get agent wallet address
-    agent_wallet_address = await get_agent_wallet_address(agent)
+    # Agents no longer have an identity wallet; the field stays for history.
+    agent_wallet_address = None
 
     event = CreditEventTable(
         id=event_id,

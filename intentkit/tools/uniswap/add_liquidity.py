@@ -9,6 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.uniswap.base import UniswapBaseTool
 from intentkit.tools.uniswap.constants import (
     FACTORY_ABI,
@@ -35,6 +36,7 @@ NAME = "uniswap_add_liquidity"
 class UniswapAddLiquidityInput(BaseModel):
     """Input for Uniswap add liquidity."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_a: str = Field(
         description="First token address, or 'native' for native token"
     )
@@ -70,6 +72,7 @@ class UniswapAddLiquidity(UniswapBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_a: str,
         token_b: str,
         amount_a: str,
@@ -100,7 +103,7 @@ class UniswapAddLiquidity(UniswapBaseTool):
             if not pm_address or not factory_address:
                 raise ToolException(f"No Uniswap contracts for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             # Resolve tokens (V3 uses wrapped tokens)
@@ -186,7 +189,7 @@ class UniswapAddLiquidity(UniswapBaseTool):
 
             # Build mint calldata
             pm = w3.eth.contract(address=checksum_pm, abi=POSITION_MANAGER_ABI)
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            recipient = Web3.to_checksum_address(wallet.address)
             deadline = int(time.time()) + 600  # 10 minutes
 
             mint_data = pm.encode_abi(
@@ -202,7 +205,7 @@ class UniswapAddLiquidity(UniswapBaseTool):
                         amount1,
                         amount0_min,
                         amount1_min,
-                        wallet_address,
+                        recipient,
                         deadline,
                     )
                 ],

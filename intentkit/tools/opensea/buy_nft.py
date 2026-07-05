@@ -7,6 +7,7 @@ from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.opensea.onchain_base import OpenSeaOnChainBaseTool
 
 NAME = "opensea_buy_nft"
@@ -15,6 +16,7 @@ NAME = "opensea_buy_nft"
 class BuyNftInput(BaseModel):
     """Input for buying an NFT on OpenSea."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     order_hash: str = Field(
         description="The order hash of the listing to fulfill (from get_listings)"
     )
@@ -30,27 +32,21 @@ class OpenSeaBuyNft(OpenSeaOnChainBaseTool):
     description: str = (
         "Buy an NFT by fulfilling a listing on OpenSea. "
         "Requires the order_hash and protocol_address from get_listings. "
-        "The purchase price (in ETH) will be sent as part of the transaction. "
-        "Requires an on-chain wallet with sufficient ETH balance."
+        "The purchase price (in ETH) will be sent as part of the transaction."
     )
     args_schema: ArgsSchema | None = BuyNftInput
 
     @override
     async def _arun(
         self,
+        wallet_address: str,
         order_hash: str,
         protocol_address: str,
         **kwargs: Any,
     ) -> str:
         try:
-            if not await self.is_onchain_capable():
-                raise ToolException(
-                    "This agent does not have an on-chain wallet configured"
-                )
-
             chain = self._get_chain_name()
-            wallet = await self.get_unified_wallet()
-            wallet_address = wallet.address
+            wallet = await self.get_unified_wallet(wallet_address)
 
             data, error = await self._post(
                 "/listings/fulfillment_data",
@@ -60,7 +56,7 @@ class OpenSeaBuyNft(OpenSeaOnChainBaseTool):
                         "chain": chain,
                         "protocol_address": protocol_address,
                     },
-                    "fulfiller": {"address": wallet_address},
+                    "fulfiller": {"address": wallet.address},
                 },
             )
 

@@ -3,9 +3,12 @@
 from decimal import Decimal
 from typing import Any, override
 
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
+from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     MASTERCHEF_V3_ABI,
@@ -20,17 +23,24 @@ NAME = "pancakeswap_get_positions"
 MAX_POSITIONS = 20
 
 
+class PancakeSwapGetPositionsInput(BaseModel):
+    """Input for PancakeSwap get positions."""
+
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
+
+
 class PancakeSwapGetPositions(PancakeSwapBaseTool):
     """View PancakeSwap V3 liquidity positions."""
 
     name: str = NAME
     description: str = (
-        "View your PancakeSwap V3 liquidity positions including pool details, "
+        "View PancakeSwap V3 liquidity positions including pool details, "
         "liquidity amounts, uncollected fees, and farming status."
     )
+    args_schema: ArgsSchema | None = PancakeSwapGetPositionsInput
 
     @override
-    async def _arun(self, **kwargs: Any) -> str:
+    async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         try:
             network_id = self.get_agent_network_id()
             if not network_id:
@@ -43,9 +53,10 @@ class PancakeSwapGetPositions(PancakeSwapBaseTool):
                     f"Supported: {', '.join(NETWORK_TO_CHAIN_ID.keys())}"
                 )
 
-            wallet = await self.get_unified_wallet()
+            # Read-only: just validate the wallet belongs to the agent's team.
+            await self.resolve_wallet(wallet_address)
             w3 = self.web3_client()
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            wallet_address = Web3.to_checksum_address(wallet_address)
 
             pm = w3.eth.contract(
                 address=Web3.to_checksum_address(POSITION_MANAGER_ADDRESS),
@@ -71,7 +82,10 @@ class PancakeSwapGetPositions(PancakeSwapBaseTool):
             # Get staked positions from persisted data
             masterchef_addr = MASTERCHEF_V3_ADDRESSES.get(chain_id)
             if masterchef_addr:
-                staked_data = await self.get_agent_tool_data("staked_token_ids")
+                # Staked token IDs are cached per wallet address.
+                staked_data = await self.get_agent_tool_data(
+                    f"staked_token_ids:{wallet_address.lower()}"
+                )
                 if staked_data and "token_ids" in staked_data:
                     mc = w3.eth.contract(
                         address=Web3.to_checksum_address(masterchef_addr),

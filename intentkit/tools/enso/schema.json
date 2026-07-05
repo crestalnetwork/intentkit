@@ -6,6 +6,7 @@
     "Analytics",
     "DeFi"
   ],
+  "x-web3": true,
   "tools": {
     "enso_get_networks": {
       "title": "Get Networks",

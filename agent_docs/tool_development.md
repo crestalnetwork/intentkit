@@ -93,6 +93,23 @@ Add a `schema.json` catalog file describing the category and its tools:
 The `tools` keys must match the runtime tool names exactly; the registry and
 the frontend pickers are built from this catalog.
 
+### Web3 tool categories
+
+Categories whose tools operate on team wallets must set `"x-web3": true` at
+the top level of `schema.json`. Consequences:
+
+- They are only selectable for agents whose team owns at least one wallet
+  (enforced at agent create/update, hidden in pickers otherwise).
+- The team's wallets are listed in the agent's system prompt.
+- Every wallet-using tool takes a `wallet_address` argument (use
+  `WALLET_ADDRESS_ARG_DESCRIPTION` from `intentkit.tools.onchain`); the agent
+  picks the wallet per call.
+- Read-only usage resolves the wallet with `self.resolve_wallet(address)` and
+  reads via `self.web3_client()`. Anything that signs or sends must use the
+  guarded helpers (`get_unified_wallet` / `get_wallet_provider` /
+  `get_wallet_signer` / `get_evm_account`), which refuse to sign when the
+  agent is being used outside its own team (public conversations).
+
 The `x-tags` in schema should be in this list: AI, Analytics, Audio, Communication, Crypto, DeFi, Developer Tools, Entertainment, Identity, Image, Infrastructure, Knowledge Base, NFT, Search, Social
 
 ## Exception Handling

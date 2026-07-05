@@ -15,10 +15,14 @@ from intentkit.tools.aerodrome.constants import (
     NETWORK_TO_CHAIN_ID,
     POSITION_MANAGER_ABI,
     POSITION_MANAGER_ADDRESS,
-    STAKED_DATA_KEY,
     TOOL_DATA_NAMESPACE,
 )
-from intentkit.tools.aerodrome.utils import format_amount, get_token_symbol
+from intentkit.tools.aerodrome.utils import (
+    format_amount,
+    get_token_symbol,
+    staked_data_key,
+)
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 NAME = "aerodrome_remove_liquidity"
 
@@ -28,6 +32,7 @@ UINT128_MAX = (1 << 128) - 1
 class AerodromeRemoveLiquidityInput(BaseModel):
     """Input for Aerodrome remove liquidity."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_id: int = Field(description="NFT position ID to remove liquidity from")
     percentage: float = Field(
         default=100.0,
@@ -53,6 +58,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_id: int,
         percentage: float = 100.0,
         slippage: float = 0.5,
@@ -73,9 +79,9 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
             if not 1 <= percentage <= 100:
                 raise ToolException("Percentage must be between 1 and 100")
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            checksum_wallet = Web3.to_checksum_address(wallet.address)
 
             pm_address = Web3.to_checksum_address(POSITION_MANAGER_ADDRESS)
             pm = w3.eth.contract(address=pm_address, abi=POSITION_MANAGER_ABI)
@@ -84,8 +90,9 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
             aero_reward = 0
             was_staked = False
 
+            data_key = staked_data_key(wallet_address)
             staked_data = await self.get_agent_tool_data_raw(
-                TOOL_DATA_NAMESPACE, STAKED_DATA_KEY
+                TOOL_DATA_NAMESPACE, data_key
             )
             if staked_data and token_id in staked_data.get("token_ids", []):
                 gauges = staked_data.get("gauges", {})
@@ -98,7 +105,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
                     # Get pending AERO before withdraw
                     try:
                         aero_reward = await gauge.functions.earned(
-                            wallet_address, token_id
+                            checksum_wallet, token_id
                         ).call()
                     except Exception:
                         pass
@@ -114,7 +121,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
                         raise ToolException(f"Gauge unstake failed. Hash: {tx_hash}")
 
                     # Remove from persisted staked list
-                    await self._remove_staked_token_id(token_id)
+                    await self._remove_staked_token_id(data_key, token_id)
 
             # Get position details
             pos_info = await pm.functions.positions(token_id).call()
@@ -148,7 +155,7 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
             # Collect all tokens + fees
             collect_data = pm.encode_abi(
                 "collect",
-                [(token_id, wallet_address, UINT128_MAX, UINT128_MAX)],
+                [(token_id, checksum_wallet, UINT128_MAX, UINT128_MAX)],
             )
             tx_hash = await wallet.send_transaction(
                 to=pm_address,
@@ -198,11 +205,9 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
         except Exception as e:
             raise ToolException(f"Remove liquidity failed: {e!s}")
 
-    async def _remove_staked_token_id(self, token_id: int) -> None:
-        """Remove a token ID from the persisted staked list."""
-        staked_data = await self.get_agent_tool_data_raw(
-            TOOL_DATA_NAMESPACE, STAKED_DATA_KEY
-        )
+    async def _remove_staked_token_id(self, data_key: str, token_id: int) -> None:
+        """Remove a token ID from the persisted per-wallet staked list."""
+        staked_data = await self.get_agent_tool_data_raw(TOOL_DATA_NAMESPACE, data_key)
         if staked_data and "token_ids" in staked_data:
             token_ids = [tid for tid in staked_data["token_ids"] if tid != token_id]
             gauges = staked_data.get("gauges", {})
@@ -210,11 +215,11 @@ class AerodromeRemoveLiquidity(AerodromeBaseTool):
             if token_ids:
                 await self.save_agent_tool_data_raw(
                     TOOL_DATA_NAMESPACE,
-                    STAKED_DATA_KEY,
+                    data_key,
                     {"token_ids": token_ids, "gauges": gauges},
                 )
             else:
                 context = self.get_context()
                 await AgentToolData.delete(
-                    context.agent_id, TOOL_DATA_NAMESPACE, STAKED_DATA_KEY
+                    context.agent_id, TOOL_DATA_NAMESPACE, data_key
                 )

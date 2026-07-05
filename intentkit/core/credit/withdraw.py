@@ -23,7 +23,6 @@ from intentkit.models.credit import (
 )
 from intentkit.utils.alert import send_alert
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.wallets import get_agent_wallet_address
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +67,8 @@ async def withdraw(
             status_code=400, key="AgentNoOwner", message="Agent has no owner"
         )
 
-    # Get agent wallet address
-    agent_wallet_address = await get_agent_wallet_address(agent)
+    # Agents no longer have an identity wallet; the field stays for history.
+    agent_wallet_address = None
 
     user_id = agent.owner
 

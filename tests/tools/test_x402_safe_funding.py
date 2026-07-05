@@ -38,15 +38,15 @@ def _safe_wallet() -> TeamWallet:
 
 
 def _safe_agent_context() -> MagicMock:
-    """Build a tool context whose agent is bound to the safe team wallet."""
+    """Build a private tool context whose team owns the safe wallet."""
     mock_agent = MagicMock()
     mock_agent.id = "agent-id"
     mock_agent.team_id = "team-1"
-    mock_agent.wallet_id = "wallet-1"
     mock_agent.network_id = "base-mainnet"
 
     mock_context = MagicMock()
     mock_context.agent = mock_agent
+    mock_context.is_private = True
     return mock_context
 
 
@@ -61,7 +61,7 @@ async def test_safe_funding_transfers_when_balance_insufficient():
             return_value=mock_context,
         ),
         patch(
-            "intentkit.models.wallet.TeamWallet.get",
+            "intentkit.models.wallet.TeamWallet.get_by_address",
             new=AsyncMock(return_value=_safe_wallet()),
         ),
         patch.object(tool, "_resolve_rpc_url", return_value="https://rpc.example"),
@@ -76,6 +76,7 @@ async def test_safe_funding_transfers_when_balance_insufficient():
         ) as mock_transfer,
     ):
         await tool.ensure_safe_funding(
+            wallet_address=PRIVY_WALLET_DATA["smart_wallet_address"],
             amount=REQUIRED_AMOUNT,
             token_address="0x3333333333333333333333333333333333333333",
             max_value=REQUIRED_AMOUNT,
@@ -100,7 +101,7 @@ async def test_safe_funding_skips_when_balance_sufficient():
             return_value=mock_context,
         ),
         patch(
-            "intentkit.models.wallet.TeamWallet.get",
+            "intentkit.models.wallet.TeamWallet.get_by_address",
             new=AsyncMock(return_value=_safe_wallet()),
         ),
         patch.object(tool, "_resolve_rpc_url", return_value="https://rpc.example"),
@@ -115,6 +116,7 @@ async def test_safe_funding_skips_when_balance_sufficient():
         ) as mock_transfer,
     ):
         await tool.ensure_safe_funding(
+            wallet_address=PRIVY_WALLET_DATA["smart_wallet_address"],
             amount=REQUIRED_AMOUNT,
             token_address="0x3333333333333333333333333333333333333333",
             max_value=REQUIRED_AMOUNT,
@@ -134,6 +136,7 @@ async def test_x402_pay_returns_tool_error_when_prefund_fails():
     ):
         result = await tool.arun(
             {
+                "wallet_address": PRIVY_WALLET_DATA["smart_wallet_address"],
                 "method": "GET",
                 "url": "https://example.com/pay",
                 "max_value": 1,
@@ -159,6 +162,7 @@ async def test_x402_pay_returns_timeout_tool_error_when_prefund_receipt_times_ou
     ):
         result = await tool.arun(
             {
+                "wallet_address": PRIVY_WALLET_DATA["smart_wallet_address"],
                 "method": "GET",
                 "url": "https://example.com/pay",
                 "max_value": 1,
@@ -190,6 +194,7 @@ async def test_x402_pay_returns_gas_tool_error_when_prefund_rpc_has_insufficient
     ):
         result = await tool.arun(
             {
+                "wallet_address": PRIVY_WALLET_DATA["smart_wallet_address"],
                 "method": "GET",
                 "url": "https://example.com/pay",
                 "max_value": 1,

@@ -64,12 +64,12 @@ async def test_agent_asset_no_wallet(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    async def mock_get_agent_wallet_address(agent_obj):
-        return None
+    async def mock_list_agent_team_wallets(agent_obj):
+        return []
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(
-        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+        asset_module, "list_agent_team_wallets", mock_list_agent_team_wallets
     )
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
     mock_redis = AsyncMock()
@@ -93,10 +93,11 @@ async def test_agent_asset_success(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    async def mock_get_agent_wallet_address(agent_obj):
-        return "0x123"
+    async def mock_list_agent_team_wallets(agent_obj):
+        return [SimpleNamespace(evm_wallet_address="0x123")]
 
     async def mockbuild_assets_list(agent_obj, wallet_address, web3_client):
+        assert wallet_address == "0x123"
         return [Asset(symbol="ETH", balance=Decimal("1"))]
 
     async def mock_get_wallet_net_worth(wallet, network_id):
@@ -105,7 +106,7 @@ async def test_agent_asset_success(monkeypatch):
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(
-        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+        asset_module, "list_agent_team_wallets", mock_list_agent_team_wallets
     )
     monkeypatch.setattr(
         asset_module, "get_async_web3_client", lambda network: MagicMock()
@@ -136,12 +137,12 @@ async def test_agent_asset_missing_network(monkeypatch):
     async def mock_get_agent(agent_id):
         return agent
 
-    async def mock_get_agent_wallet_address(agent_obj):
-        return "0x123"
+    async def mock_list_agent_team_wallets(agent_obj):
+        return [SimpleNamespace(evm_wallet_address="0x123")]
 
     monkeypatch.setattr(asset_module, "get_agent", mock_get_agent)
     monkeypatch.setattr(
-        asset_module, "get_agent_wallet_address", mock_get_agent_wallet_address
+        asset_module, "list_agent_team_wallets", mock_list_agent_team_wallets
     )
     monkeypatch.setattr(asset_module, "get_session", mock_session_ctx)
     mock_redis = AsyncMock()

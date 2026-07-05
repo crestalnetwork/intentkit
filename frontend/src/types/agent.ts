@@ -17,7 +17,6 @@ export interface Agent {
   temperature: number | null;
   frequency_penalty: number | null;
   presence_penalty: number | null;
-  wallet_id: string | null;
   network_id: string | null;
   tools: string[] | null;
   version: string | null;

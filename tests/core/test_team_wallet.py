@@ -8,7 +8,6 @@ import pytest
 import pytest_asyncio
 
 from intentkit.config.base import Base
-from intentkit.core.agent.wallet import validate_wallet_binding
 from intentkit.core.team.wallet import (
     create_team_wallet,
     set_wallet_safe_token_spending_limit,
@@ -17,7 +16,7 @@ from intentkit.models.agent import Agent, AgentVisibility
 from intentkit.models.team import Team
 from intentkit.models.wallet import TeamWallet, TeamWalletTable
 from intentkit.utils.error import IntentKitAPIError
-from intentkit.wallets import get_agent_wallet
+from intentkit.wallets import list_agent_team_wallets, resolve_team_wallet
 
 
 @pytest_asyncio.fixture()
@@ -29,7 +28,7 @@ async def wallet_tables(db_engine):
     yield
 
 
-def _build_agent(wallet_id: str | None, team_id: str | None = "team-1") -> Agent:
+def _build_agent(team_id: str | None = "team-1") -> Agent:
     now = datetime.now()
     return Agent(
         id="agent-1",
@@ -46,7 +45,6 @@ def _build_agent(wallet_id: str | None, team_id: str | None = "team-1") -> Agent
         temperature=0.7,
         visibility=AgentVisibility.PRIVATE,
         public_info_updated_at=now,
-        wallet_id=wallet_id,
         network_id="base-mainnet",
     )
 
@@ -144,16 +142,11 @@ class TestCreateTeamWallet:
         assert exc_info.value.key == "PrivyUserIdMissing"
 
 
-class TestWalletBinding:
+class TestWalletResolution:
     @pytest.mark.asyncio
-    async def test_unbound_agent(self, wallet_tables):
-        assert await validate_wallet_binding(None, "team-1") is None
-        assert await get_agent_wallet(_build_agent(None)) is None
-
-    @pytest.mark.asyncio
-    async def test_missing_wallet_rejected(self, wallet_tables):
+    async def test_unknown_address_rejected(self, wallet_tables):
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await validate_wallet_binding("nope", "team-1")
+            await resolve_team_wallet(_build_agent(), "0xnope")
         assert exc_info.value.key == "WalletNotFound"
 
     @pytest.mark.asyncio
@@ -162,29 +155,25 @@ class TestWalletBinding:
             team_id="team-2",
             name="other",
             wallet_provider="readonly",
-            evm_wallet_address="0xother",
+            evm_wallet_address="0xOther",
             created_by="user-2",
         )
+        assert wallet.evm_wallet_address is not None
         with pytest.raises(IntentKitAPIError) as exc_info:
-            await validate_wallet_binding(wallet.id, "team-1")
-        assert exc_info.value.key == "WalletNotOwnedByTeam"
-
-        # Runtime resolution refuses instead of raising
-        assert await get_agent_wallet(_build_agent(wallet.id, "team-1")) is None
+            await resolve_team_wallet(_build_agent("team-1"), wallet.evm_wallet_address)
+        assert exc_info.value.key == "WalletNotFound"
 
     @pytest.mark.asyncio
-    async def test_own_team_wallet_resolves(self, wallet_tables):
+    async def test_own_team_wallet_resolves_case_insensitive(self, wallet_tables):
         wallet = await TeamWallet.create(
             team_id="team-1",
             name="mine",
             wallet_provider="readonly",
-            evm_wallet_address="0xmine",
+            evm_wallet_address="0xMiNe",
             created_by="user-1",
         )
-        bound = await validate_wallet_binding(wallet.id, "team-1")
-        assert bound is not None and bound.id == wallet.id
-        resolved = await get_agent_wallet(_build_agent(wallet.id, "team-1"))
-        assert resolved is not None and resolved.id == wallet.id
+        resolved = await resolve_team_wallet(_build_agent("team-1"), "0xmine")
+        assert resolved.id == wallet.id
 
     @pytest.mark.asyncio
     async def test_teamless_agent_uses_system_wallets(self, wallet_tables):
@@ -195,8 +184,28 @@ class TestWalletBinding:
             evm_wallet_address="0xsys",
             created_by="system",
         )
-        resolved = await get_agent_wallet(_build_agent(wallet.id, None))
-        assert resolved is not None and resolved.id == wallet.id
+        resolved = await resolve_team_wallet(_build_agent(None), "0xsys")
+        assert resolved.id == wallet.id
+
+    @pytest.mark.asyncio
+    async def test_list_team_wallets(self, wallet_tables):
+        await TeamWallet.create(
+            team_id="team-1",
+            name="a",
+            wallet_provider="readonly",
+            evm_wallet_address="0xa",
+            created_by="user-1",
+        )
+        await TeamWallet.create(
+            team_id="team-1",
+            name="b",
+            wallet_provider="readonly",
+            evm_wallet_address="0xb",
+            created_by="user-1",
+        )
+        wallets = await list_agent_team_wallets(_build_agent("team-1"))
+        assert [w.name for w in wallets] == ["a", "b"]
+        assert await list_agent_team_wallets(_build_agent("team-9")) == []
 
 
 class TestSafeSpendingLimit:

@@ -2,6 +2,7 @@
 
 from langchain_core.tools.base import ToolException
 
+from intentkit.models.wallet import TeamWallet
 from intentkit.tools.onchain import IntentKitOnChainTool
 
 
@@ -16,9 +17,14 @@ class CDPBaseTool(IntentKitOnChainTool):
 
     category: str = "cdp"
 
-    async def ensure_cdp_provider(self) -> None:
-        """Ensure the agent's wallet provider is CDP."""
-        if await self.get_agent_wallet_provider_type() != "cdp":
+    async def ensure_cdp_provider(self, wallet_address: str) -> TeamWallet:
+        """Resolve a team wallet and ensure its provider is CDP.
+
+        This is a read-side check (no signing authorization involved).
+        """
+        wallet = await self.resolve_wallet(wallet_address)
+        if wallet.wallet_provider != "cdp":
             raise ToolException(
                 "This tool is only available when the wallet provider is 'cdp'."
             )
+        return wallet

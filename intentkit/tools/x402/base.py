@@ -21,7 +21,7 @@ from intentkit.config.config import config
 from intentkit.models.x402_order import X402Order, X402OrderCreate
 from intentkit.tools.onchain import IntentKitOnChainTool
 from intentkit.utils.alert import send_alert
-from intentkit.wallets import get_agent_wallet
+from intentkit.wallets import resolve_team_wallet
 from intentkit.wallets.privy import CHAIN_CONFIGS, PrivyClient, transfer_erc20_gasless
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,6 @@ HTTP_STATUS_PHRASES: dict[int, str] = {
 # Maximum content length to return (in bytes)
 MAX_CONTENT_LENGTH = 1000
 DEFAULT_NETWORK_ID = "base-mainnet"
-SUPPORTED_WALLET_PROVIDERS = {"cdp", "native", "safe", "privy"}
 
 PAYMENT_RESPONSE_HEADERS = ("payment-response", "x-payment-response")
 PAYMENT_REQUIRED_HEADERS = ("payment-required",)
@@ -220,8 +219,8 @@ class X402BaseTool(IntentKitOnChainTool):
     Base class for x402 tools.
 
     This class provides unified wallet signer support for x402 operations,
-    automatically selecting the appropriate signer based on the agent's
-    wallet_provider configuration (CDP, Native, Privy, or Safe).
+    automatically selecting the appropriate signer based on the requested
+    team wallet's provider (CDP, Native, Privy, or Safe).
 
     Safe wallet mode is supported by prefunding the Privy EOA signer
     before initiating an x402 payment.
@@ -230,21 +229,9 @@ class X402BaseTool(IntentKitOnChainTool):
     category: str = "x402"
     description: str = ""
 
-    async def _validate_wallet_provider(self) -> None:
-        """Validate that the wallet provider supports x402 operations.
-
-        Raises:
-            ValueError: If wallet provider is not supported for x402.
+    async def get_signer(self, wallet_address: str) -> Any:
         """
-        wallet_provider = await self.get_agent_wallet_provider_type()
-        if wallet_provider not in SUPPORTED_WALLET_PROVIDERS:
-            raise ValueError(
-                "x402 operations require the agent's wallet to be 'cdp', 'native', 'safe', or 'privy'."
-            )
-
-    async def get_signer(self) -> Any:
-        """
-        Get the wallet signer for x402 operations.
+        Get the wallet signer for x402 operations (guarded).
 
         This method uses the unified wallet signer interface from
         IntentKitOnChainTool, which automatically selects:
@@ -258,15 +245,13 @@ class X402BaseTool(IntentKitOnChainTool):
         - sign_typed_data()
         - unsafe_sign_hash()
 
+        Args:
+            wallet_address: Address of the team wallet to use.
+
         Returns:
             A wallet signer compatible with x402 requirements.
-
-        Raises:
-            ValueError: If wallet provider is unsupported.
         """
-        # Validate wallet provider before getting signer
-        await self._validate_wallet_provider()
-        return await self.get_wallet_signer()
+        return await self.get_wallet_signer(wallet_address)
 
     def alert_prefund_paymaster_gas_shortage(
         self,
@@ -449,19 +434,22 @@ class X402BaseTool(IntentKitOnChainTool):
     async def ensure_safe_funding(
         self,
         *,
+        wallet_address: str,
         amount: int,
         token_address: str,
         max_value: int | None = None,
         network: str | None = None,
     ) -> None:
         agent = self.get_context().agent
-        wallet = await get_agent_wallet(agent) if agent else None
-        if not wallet or wallet.wallet_provider != "safe":
+        wallet = await resolve_team_wallet(agent, wallet_address)
+        if wallet.wallet_provider != "safe":
             return
         if amount <= 0:
             return
         if max_value is not None and amount > max_value:
             raise ValueError(f"Payment amount {amount} exceeds max_value {max_value}.")
+        # Prefunding moves funds out of the Safe, so it is a signing path.
+        self.ensure_signing_allowed()
 
         privy_wallet_data = wallet.wallet_data_json()
         if not privy_wallet_data:
@@ -512,14 +500,15 @@ class X402BaseTool(IntentKitOnChainTool):
     async def _prefund_safe_wallet(
         self,
         *,
+        wallet_address: str,
         method: str,
         request_kwargs: dict[str, Any],
         timeout: float,
         max_value: int | None = None,
     ) -> None:
         agent = self.get_context().agent
-        wallet = await get_agent_wallet(agent) if agent else None
-        if not wallet or wallet.wallet_provider != "safe":
+        wallet = await resolve_team_wallet(agent, wallet_address)
+        if wallet.wallet_provider != "safe":
             return
         payment_response = await self._get_payment_requirement(
             method=method,
@@ -543,6 +532,7 @@ class X402BaseTool(IntentKitOnChainTool):
             amount,
         )
         await self.ensure_safe_funding(
+            wallet_address=wallet_address,
             amount=amount,
             token_address=requirement.asset,
             max_value=max_value,
@@ -590,6 +580,7 @@ class X402BaseTool(IntentKitOnChainTool):
         tool_name: str,
         method: str,
         url: str,
+        wallet_address: str,
         max_value: int | None = None,
         pay_to_fallback: str | None = None,
     ) -> None:
@@ -604,6 +595,7 @@ class X402BaseTool(IntentKitOnChainTool):
             tool_name: Name of the tool that made the request
             method: HTTP method used
             url: Target URL
+            wallet_address: Address of the team wallet that paid
             max_value: Maximum payment value (for x402_pay only)
             pay_to_fallback: Fallback address if pay_to is missing in headers
         """
@@ -615,7 +607,7 @@ class X402BaseTool(IntentKitOnChainTool):
             user_id = context.user_id
 
             # Get payer address from signer
-            signer = await self.get_signer()
+            signer = await self.get_signer(wallet_address)
             payer = signer.address
 
             # Derive task_id from chat_id for autonomous tasks

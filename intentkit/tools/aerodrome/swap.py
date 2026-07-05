@@ -24,6 +24,7 @@ from intentkit.tools.aerodrome.utils import (
     get_decimals,
     resolve_token,
 )
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 NAME = "aerodrome_swap"
 
@@ -31,6 +32,7 @@ NAME = "aerodrome_swap"
 class AerodromeSwapInput(BaseModel):
     """Input for Aerodrome swap."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_in: str = Field(
         description="Input token address, or 'native' for ETH on Base"
     )
@@ -60,6 +62,7 @@ class AerodromeSwap(AerodromeBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_in: str,
         token_out: str,
         amount: str,
@@ -78,7 +81,7 @@ class AerodromeSwap(AerodromeBaseTool):
                     f"Current network: {network_id}"
                 )
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             is_native_in = token_in.lower() == "native"

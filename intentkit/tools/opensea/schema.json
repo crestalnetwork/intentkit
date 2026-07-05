@@ -5,6 +5,7 @@
   "x-tags": [
     "NFT"
   ],
+  "x-web3": true,
   "tools": {
     "opensea_get_collection": {
       "title": "Get Collection",
@@ -36,11 +37,11 @@
     },
     "opensea_create_listing": {
       "title": "Create Listing",
-      "description": "Create a listing to sell an NFT on OpenSea. Requires on-chain wallet with NFT ownership."
+      "description": "Create a listing to sell an NFT on OpenSea."
     },
     "opensea_buy_nft": {
       "title": "Buy NFT",
-      "description": "Buy an NFT by fulfilling a listing on OpenSea. Requires on-chain wallet with sufficient ETH."
+      "description": "Buy an NFT by fulfilling a listing on OpenSea."
     },
     "opensea_cancel_listing": {
       "title": "Cancel Listing",
@@ -48,7 +49,7 @@
     },
     "opensea_update_listing": {
       "title": "Update Listing",
-      "description": "Update the price of an existing listing by canceling and relisting. Requires on-chain wallet."
+      "description": "Update the price of an existing listing by canceling and relisting."
     }
   }
 }

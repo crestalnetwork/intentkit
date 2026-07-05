@@ -31,14 +31,6 @@ class AgentUserInput(AgentCore):
             pattern=r"^[a-z]([a-z0-9-]*[a-z0-9])?$",
         ),
     ] = None
-    # Wallets belong to the team; this only authorizes the agent to use one.
-    wallet_id: Annotated[
-        str | None,
-        PydanticField(
-            default=None,
-            description="ID of the team wallet this agent is authorized to use.",
-        ),
-    ] = None
     # if telegram_entrypoint_enabled, the telegram_entrypoint_enabled will be enabled, telegram_config will be checked
     telegram_entrypoint_enabled: Annotated[
         bool | None,

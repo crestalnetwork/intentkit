@@ -5,6 +5,7 @@
     "Crypto",
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/cdp/cdp.png",
   "tools": {
     "cdp_get_balance": {

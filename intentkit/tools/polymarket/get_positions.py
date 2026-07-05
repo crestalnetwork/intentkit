@@ -5,47 +5,41 @@ from decimal import Decimal
 from typing import Any
 
 from langchain_core.tools import ArgsSchema
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 
 
 class GetPositionsInput(BaseModel):
-    """Input for getting positions (no parameters needed)."""
+    """Input for getting positions."""
 
-    pass
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
 
 
 class GetPositions(PolymarketBaseTool):
-    """Get the current positions (holdings) for the agent's wallet.
+    """Get the current Polymarket positions (holdings).
 
     Shows all outcome tokens held, their quantities, and current values.
     """
 
     name: str = "polymarket_get_positions"
     description: str = (
-        "Get current Polymarket positions (holdings) for the agent's wallet. "
-        "Shows all outcome tokens held with quantities and current market values. "
-        "No input needed - automatically uses the configured wallet address."
+        "Get current Polymarket positions (holdings). "
+        "Shows all outcome tokens held with quantities and current market values."
     )
     args_schema: ArgsSchema | None = GetPositionsInput
     price: Decimal = Decimal("5")
 
-    async def _arun(self, **kwargs: Any) -> str:
-        await self._require_wallet("view positions")
-
+    async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 
-        wallet_address = await self.get_wallet_address()
+        # Read-only: validate team ownership, then query the public data API
+        # with the wallet's on-chain (funds-holder) address.
+        wallet = await self.resolve_wallet(wallet_address)
+        holder_address = wallet.evm_wallet_address or wallet_address
 
-        try:
-            positions = await self._data_get(
-                "/positions", params={"user": wallet_address}
-            )
-        except Exception:
-            positions = await self._clob_auth_get(
-                "/positions", params={"user": wallet_address}
-            )
+        positions = await self._data_get("/positions", params={"user": holder_address})
 
         if not positions:
             return json.dumps(

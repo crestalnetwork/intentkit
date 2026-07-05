@@ -179,9 +179,7 @@ class TokenQuote(LiFiBaseTool):
                 result += route_text + "\n"
 
             result += "---\n"
-            result += (
-                "*Use token_execute to perform this transfer with your CDP wallet*"
-            )
+            result += "*Use lifi_token_execute to perform this transfer*"
 
             return result
 

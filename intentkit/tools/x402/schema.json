@@ -5,6 +5,7 @@
     "Communication",
     "Infrastructure"
   ],
+  "x-web3": true,
   "x-icon": "/tools/x402/x402.webp",
   "tools": {
     "x402_http_request": {

@@ -15,15 +15,17 @@ from intentkit.tools.morpho.constants import (
     MORPHO_BLUE_ABI,
     MORPHO_BLUE_ADDRESS,
 )
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class GetPositionInput(BaseModel):
     """Input for getting Morpho Blue position."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     market_id: str = Field(description="Morpho Blue market ID (bytes32 hex string)")
     user_address: str | None = Field(
         default=None,
-        description="Address to query. Defaults to agent's own wallet address if not provided.",
+        description="Optional address to query instead of wallet_address.",
     )
 
 
@@ -33,21 +35,25 @@ class MorphoGetPosition(MorphoBaseTool):
     name: str = "morpho_get_position"
     description: str = (
         "Get user position in a Morpho Blue market: supply shares, borrow shares, "
-        "collateral amount, and market totals. Provide the market ID (bytes32). "
-        "Defaults to querying the agent's own wallet."
+        "collateral amount, and market totals. Provide the market ID (bytes32)."
     )
     args_schema: ArgsSchema | None = GetPositionInput
 
     @override
     async def _arun(
         self,
+        wallet_address: str,
         market_id: str,
         user_address: str | None = None,
         **kwargs: Any,
     ) -> str:
         try:
-            wallet = await self.get_unified_wallet()
-            self._validate_network(wallet.network_id)
+            network_id = self.get_agent_network_id()
+            if not network_id:
+                raise ToolException("Agent network_id is not configured")
+            self._validate_network(network_id)
+            # Read-only: just validate the wallet belongs to the agent's team.
+            await self.resolve_wallet(wallet_address)
             w3 = self.web3_client()
 
             checksum_morpho = Web3.to_checksum_address(MORPHO_BLUE_ADDRESS)
@@ -56,7 +62,7 @@ class MorphoGetPosition(MorphoBaseTool):
             if user_address:
                 query_address = Web3.to_checksum_address(user_address)
             else:
-                query_address = Web3.to_checksum_address(wallet.address)
+                query_address = Web3.to_checksum_address(wallet_address)
 
             market_id_bytes = self._parse_market_id(market_id)
 
@@ -129,7 +135,7 @@ class MorphoGetPosition(MorphoBaseTool):
                 f"Borrow: {borrow_formatted} {loan_symbol}\n"
                 f"Collateral: {collateral_formatted} {collateral_symbol}\n"
                 f"LLTV: {lltv_pct:.2f}%\n"
-                f"Network: {wallet.network_id}"
+                f"Network: {network_id}"
             )
 
         except ToolException:

@@ -3,9 +3,12 @@
 from decimal import Decimal
 from typing import Any, override
 
+from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
+from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.uniswap.base import UniswapBaseTool
 from intentkit.tools.uniswap.constants import (
     NETWORK_TO_CHAIN_ID,
@@ -18,17 +21,24 @@ NAME = "uniswap_get_positions"
 MAX_POSITIONS = 20
 
 
+class UniswapGetPositionsInput(BaseModel):
+    """Input for Uniswap get positions."""
+
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
+
+
 class UniswapGetPositions(UniswapBaseTool):
     """View Uniswap V3 liquidity positions."""
 
     name: str = NAME
     description: str = (
-        "View your Uniswap V3 liquidity positions including pool details, "
+        "View Uniswap V3 liquidity positions including pool details, "
         "liquidity amounts, and uncollected fees."
     )
+    args_schema: ArgsSchema | None = UniswapGetPositionsInput
 
     @override
-    async def _arun(self, **kwargs: Any) -> str:
+    async def _arun(self, wallet_address: str, **kwargs: Any) -> str:
         try:
             network_id = self.get_agent_network_id()
             if not network_id:
@@ -45,9 +55,10 @@ class UniswapGetPositions(UniswapBaseTool):
             if not pm_address:
                 raise ToolException(f"No PositionManager address for chain {chain_id}")
 
-            wallet = await self.get_unified_wallet()
+            # Read-only: validate team ownership, then query on-chain state.
+            await self.resolve_wallet(wallet_address)
             w3 = self.web3_client()
-            wallet_address = Web3.to_checksum_address(wallet.address)
+            owner = Web3.to_checksum_address(wallet_address)
 
             pm = w3.eth.contract(
                 address=Web3.to_checksum_address(pm_address),
@@ -55,14 +66,12 @@ class UniswapGetPositions(UniswapBaseTool):
             )
 
             # Get positions owned by wallet
-            balance = await pm.functions.balanceOf(wallet_address).call()
+            balance = await pm.functions.balanceOf(owner).call()
             positions: list[str] = []
 
             count = min(balance, MAX_POSITIONS)
             for i in range(count):
-                token_id = await pm.functions.tokenOfOwnerByIndex(
-                    wallet_address, i
-                ).call()
+                token_id = await pm.functions.tokenOfOwnerByIndex(owner, i).call()
                 pos_info = await pm.functions.positions(token_id).call()
                 entry = await _format_position(w3, chain_id, token_id, pos_info)
                 if entry:

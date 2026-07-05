@@ -26,7 +26,7 @@ async def get_tools(tool_names: list[str], **_: Any) -> list[CDPBaseTool]:
 def available() -> bool:
     """Check if this toolset is available based on system config.
 
-    CDP wallet tools are globally available but require the agent's
-    wallet provider to be configured as 'cdp'.
+    CDP wallet tools are globally available but only work with team
+    wallets whose provider is 'cdp'.
     """
     return True

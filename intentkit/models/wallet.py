@@ -1,7 +1,8 @@
 """Team wallets: crypto wallets owned at the team level.
 
 A wallet belongs to a team, never to an agent. A team may own several
-wallets; an agent is *authorized* to use one of them via ``Agent.wallet_id``.
+wallets; an agent chooses one per tool call by address (the pool is listed
+in its system prompt), scoped to its own team.
 Provider-specific payloads (Privy wallet ids, native private keys, ...) are
 stored in ``wallet_data`` as JSON, mirroring the shapes previously kept in
 ``agent_data.privy_wallet_data`` / ``native_wallet_data``.
@@ -197,6 +198,22 @@ class TeamWallet(BaseModel):
             )
             result = await db.scalars(stmt)
             return [cls.model_validate(row) for row in result]
+
+    @classmethod
+    async def get_by_address(cls, team_id: str, address: str) -> TeamWallet | None:
+        """Resolve a team's wallet by its EVM address (case-insensitive)."""
+        if not address:
+            return None
+        async with get_session() as db:
+            stmt = select(TeamWalletTable).where(
+                TeamWalletTable.team_id == team_id,
+                func.lower(TeamWalletTable.evm_wallet_address) == address.lower(),
+            )
+            item = (await db.scalars(stmt)).first()
+            wallet = cls.model_validate(item) if item else None
+        if wallet:
+            _cache_put(wallet)
+        return wallet
 
     @classmethod
     async def create(

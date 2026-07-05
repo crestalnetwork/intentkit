@@ -16,11 +16,13 @@ from intentkit.tools.morpho.constants import (
     MORPHO_BLUE_ABI,
     MORPHO_BLUE_ADDRESS,
 )
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class RepayInput(BaseModel):
     """Input for Morpho Blue repay."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     market_id: str = Field(description="Morpho Blue market ID (bytes32 hex string)")
     amount: str = Field(
         description="Amount to repay in whole units (e.g. '100'), or 'max' to repay full debt"
@@ -41,12 +43,13 @@ class MorphoRepay(MorphoBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         market_id: str,
         amount: str,
         **kwargs: Any,
     ) -> str:
         try:
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             self._validate_network(wallet.network_id)
             w3 = self.web3_client()
 

@@ -7,12 +7,14 @@ from typing import Any
 from langchain_core.tools import ArgsSchema
 from pydantic import BaseModel, Field
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.polymarket.base import PolymarketBaseTool
 
 
 class GetOrdersInput(BaseModel):
     """Input for getting orders."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     market: str | None = Field(
         default=None,
         description="Filter by market condition_id. Leave empty for all markets.",
@@ -20,14 +22,14 @@ class GetOrdersInput(BaseModel):
 
 
 class GetOrders(PolymarketBaseTool):
-    """Get open orders for the agent's wallet on Polymarket.
+    """Get open orders on Polymarket.
 
     Shows all pending/open orders with prices, sizes, and order details.
     """
 
     name: str = "polymarket_get_orders"
     description: str = (
-        "Get open orders on Polymarket for the agent's wallet. "
+        "Get open orders on Polymarket. "
         "Optionally filter by market condition_id. "
         "Shows order details including side, price, size, and status."
     )
@@ -36,18 +38,17 @@ class GetOrders(PolymarketBaseTool):
 
     async def _arun(
         self,
+        wallet_address: str,
         market: str | None = None,
         **kwargs: Any,
     ) -> str:
-        await self._require_wallet("view orders")
-
         await self.user_rate_limit_by_tool(limit=30, seconds=60)
 
         params: dict[str, Any] = {}
         if market:
             params["market"] = market
 
-        data = await self._clob_auth_get("/orders", params=params)
+        data = await self._clob_auth_get(wallet_address, "/orders", params=params)
 
         raw_orders: list[Any] = (
             data if isinstance(data, list) else data.get("orders", [])

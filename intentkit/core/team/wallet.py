@@ -1,9 +1,8 @@
 """Team wallet provisioning.
 
-Creates wallets owned by a team (see ``intentkit.models.wallet``). This is
-the team-level successor of the removed per-agent provisioning: agents no
-longer own wallets, they are only authorized to use one of their team's
-wallets via ``Agent.wallet_id``.
+Creates wallets owned by a team (see ``intentkit.models.wallet``). Agents
+never own or bind wallets: web3 tools receive a wallet address chosen by the
+agent from the team's pool, which is listed in its system prompt.
 """
 
 import json

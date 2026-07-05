@@ -5,6 +5,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "tools": {
     "pancakeswap_quote": {
       "title": "Swap Quote",

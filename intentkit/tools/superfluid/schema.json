@@ -4,6 +4,7 @@
   "x-tags": [
     "DeFi"
   ],
+  "x-web3": true,
   "x-icon": "/tools/superfluid/superfluid.svg",
   "tools": {
     "superfluid_create_flow": {

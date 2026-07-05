@@ -9,6 +9,7 @@ from langchain_core.tools.base import ToolException
 from pydantic import BaseModel, Field
 from web3 import Web3
 
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 from intentkit.tools.pancakeswap.base import PancakeSwapBaseTool
 from intentkit.tools.pancakeswap.constants import (
     FACTORY_ABI,
@@ -36,6 +37,7 @@ NAME = "pancakeswap_add_liquidity"
 class PancakeSwapAddLiquidityInput(BaseModel):
     """Input for PancakeSwap add liquidity."""
 
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
     token_a: str = Field(
         description="First token address, or 'native' for native token"
     )
@@ -72,6 +74,7 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
     @override
     async def _arun(
         self,
+        wallet_address: str,
         token_a: str,
         token_b: str,
         amount_a: str,
@@ -98,7 +101,7 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
                     f"Invalid fee tier {fee_tier}. Valid: 100, 500, 2500, 10000"
                 )
 
-            wallet = await self.get_unified_wallet()
+            wallet = await self.get_unified_wallet(wallet_address)
             w3 = self.web3_client()
 
             # Resolve tokens (V3 uses wrapped tokens)
@@ -272,15 +275,14 @@ class PancakeSwapAddLiquidity(PancakeSwapBaseTool):
             if receipt.get("status", 0) != 1:
                 raise ToolException("Not staked (farm transaction failed)")
 
-            # Persist staked token ID
-            staked_data = await self.get_agent_tool_data("staked_token_ids")
+            # Persist staked token ID (cached per wallet address)
+            staked_key = f"staked_token_ids:{wallet_address.lower()}"
+            staked_data = await self.get_agent_tool_data(staked_key)
             token_ids: list[int] = (
                 staked_data.get("token_ids", []) if staked_data else []
             )
             token_ids.append(token_id)
-            await self.save_agent_tool_data(
-                "staked_token_ids", {"token_ids": token_ids}
-            )
+            await self.save_agent_tool_data(staked_key, {"token_ids": token_ids})
 
             return "Staked in MasterChef V3 farm"
         except ToolException:

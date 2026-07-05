@@ -23,7 +23,6 @@ from .notifications import send_agent_notification
 from .public_info import override_public_info, update_public_info
 from .publish import publish_agent, unpublish_agent
 from .queries import get_agent, get_agent_by_id_or_slug, iterate_agent_id_batches
-from .wallet import validate_wallet_binding
 
 __all__ = [
     "AgentInfo",
@@ -34,7 +33,6 @@ __all__ = [
     "get_agent",
     "get_agent_by_id_or_slug",
     "iterate_agent_id_batches",
-    "validate_wallet_binding",
     "send_agent_notification",
     "override_agent",
     "patch_agent",

@@ -1,55 +1,59 @@
-"""CDP get_wallet_details tool - Get connected wallet details."""
+"""CDP get_wallet_details tool - Get wallet details."""
 
 from decimal import Decimal
 from typing import override
 
 from langchain_core.tools import ArgsSchema
 from langchain_core.tools.base import ToolException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from web3 import Web3
 
 from intentkit.tools.cdp.base import CDPBaseTool
+from intentkit.tools.onchain import WALLET_ADDRESS_ARG_DESCRIPTION
 
 
 class GetWalletDetailsInput(BaseModel):
-    """Input schema for get_wallet_details. No inputs required."""
+    """Input schema for get_wallet_details."""
 
-    pass
+    wallet_address: str = Field(description=WALLET_ADDRESS_ARG_DESCRIPTION)
 
 
 class CDPGetWalletDetails(CDPBaseTool):
-    """Get details about the connected wallet.
+    """Get details about a wallet.
 
-    This tool returns comprehensive information about the connected wallet
+    This tool returns comprehensive information about the selected wallet
     including address, network information, and native token balance.
     """
 
     name: str = "cdp_get_wallet_details"
-    description: str = "Get connected wallet details including address, network, balance, and provider type. No inputs required."
+    description: str = (
+        "Get wallet details including address, network, balance, and provider type."
+    )
     args_schema: ArgsSchema | None = GetWalletDetailsInput
 
     @override
-    async def _arun(self) -> str:
-        """Get details about the connected wallet.
+    async def _arun(self, wallet_address: str) -> str:
+        """Get details about the selected wallet.
 
         Returns:
             A formatted string containing wallet details and network information.
         """
         try:
-            # Ensure the wallet provider is CDP
-            await self.ensure_cdp_provider()
+            # Read-only: validate team ownership and the CDP provider.
+            await self.ensure_cdp_provider(wallet_address)
 
-            # Get the unified wallet
-            wallet = await self.get_unified_wallet()
-
-            # Get balance in wei
-            balance_wei = await wallet.get_balance()
+            # Read balance and chain id directly from the chain (no signing)
+            w3 = self.web3_client()
+            checksum_address = Web3.to_checksum_address(wallet_address)
+            balance_wei = await w3.eth.get_balance(checksum_address)
+            chain_id = await w3.eth.chain_id
 
             # Convert to human-readable format (18 decimals for ETH-like tokens)
             balance_decimal = Decimal(balance_wei) / Decimal(10**18)
             formatted_balance = f"{balance_decimal:.18f}".rstrip("0").rstrip(".")
 
             # Determine the native token symbol based on network
-            network_id = wallet.network_id
+            network_id = self.get_agent_network_id() or ""
             network_info = {
                 "ethereum-mainnet": {"symbol": "ETH", "display": "Ethereum Mainnet"},
                 "base-mainnet": {"symbol": "ETH", "display": "Base Mainnet"},
@@ -65,22 +69,13 @@ class CDPGetWalletDetails(CDPBaseTool):
             native_symbol = info["symbol"]
             network_display = info["display"]
 
-            # Determine provider type
-            provider_type = await self.get_agent_wallet_provider_type()
-            if provider_type == "cdp":
-                provider_name = "CDP (Coinbase Developer Platform)"
-            elif provider_type == "privy":
-                provider_name = "Safe (Smart Account)"
-            else:
-                provider_name = str(provider_type)
-
             return f"""Wallet Details:
-- Provider: {provider_name}
-- Address: {wallet.address}
+- Provider: CDP (Coinbase Developer Platform)
+- Address: {checksum_address}
 - Network:
   * Name: {network_display}
   * Network ID: {network_id}
-  * Chain ID: {wallet.chain_id or "N/A"}
+  * Chain ID: {chain_id}
 - Native Balance: {balance_wei} wei
 - Native Balance: {formatted_balance} {native_symbol}"""
 
